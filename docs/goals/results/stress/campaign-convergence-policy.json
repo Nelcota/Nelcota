@@ -1,0 +1,107 @@
+{
+  "started_at_utc": "2026-10-17T21:27:36Z",
+  "deadline_utc": "2026-10-19T03:27:36Z",
+  "wall_clock_budget_seconds": 108000,
+  "source_head": "1a0b49694ac0e26e5344957fb48e8ad3f8a99404",
+  "order": [
+    "extract_eleven_production_fixes",
+    "one_final_freeze_after_18_checks",
+    "guest_reboot",
+    "disk_4h",
+    "real_s3_4h",
+    "single_fault_under_load",
+    "report_and_stop"
+  ],
+  "new_product_findings": "record_without_fix_or_refreeze",
+  "critical_exception": "authorization_or_RLS_escape_or_acknowledged_data_loss_or_corruption: stop_all_traffic_preserve_diagnostics_wait_for_human",
+  "no_retry_environment_blocked": true,
+  "environment_blocked_cells": [
+    {
+      "cell": "Off-host restore",
+      "verdict": "blocked (environment)",
+      "reason": "No independently provisioned recovery host and approved private backup transfer path",
+      "required_staging_profile": "Two independently isolated hosts, separately owned storage and verified encrypted backup transport; a fresh recovery database/file target with capacity for the original dataset plus backup/restore temporary space and the 15% disk/inode and 10% RAM reserves. Record unchanged RPO/RTO, credentials and checksum/row/file reconciliation before starting.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    },
+    {
+      "cell": "Real WAL/PITR with pgBackRest/S3",
+      "verdict": "blocked (environment)",
+      "reason": "No configured real WAL archive/repository and recovery target",
+      "required_staging_profile": "Dedicated PostgreSQL 17/systemd host with real pgBackRest, verified-TLS S3 repository and generated fixture credentials; independent fresh restore target, continuous timestamped acknowledged-write ledger, retained base backups/WAL and enough bounded repository/target disk for the complete replay window plus reserves. The marker-only error adapter is not a substitute.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    },
+    {
+      "cell": "Public DNS/ACME/TLS",
+      "verdict": "blocked (environment)",
+      "reason": "No owned public staging hostname, DNS control and reachable ACME ingress",
+      "required_staging_profile": "Dedicated public staging address and domain with narrowly scoped DNS credentials, verified authority/provenance, ports 80/443 available and bounded traffic; disposable Caddy/ACME certificate lifecycle, renewal/reload tests and unchanged TLS validation. A local CA is not public ACME evidence.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    },
+    {
+      "cell": "ARM64",
+      "verdict": "blocked (environment)",
+      "reason": "No native ARM64 staging runner",
+      "required_staging_profile": "Dedicated Linux ARM64 machine with Docker/systemd as applicable, compatible pinned toolchain and native provider/generator images; at least the original effective CPU slots (3 disk/4 S3), measured per-component RAM/disk budgets and original reserves. Emulation does not satisfy the native architecture cell.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    },
+    {
+      "cell": "Separate load-generator machine",
+      "verdict": "blocked (environment)",
+      "reason": "No independently isolated generator host/network measurement path",
+      "required_staging_profile": "Dedicated target host plus separate generator machine and controlled network; generator capacity above the declared offered load, measured saturation/drops/steal and network limits, TLS enabled, synchronized metadata and monotonic local measurements. Co-located CPU affinity is not off-host capacity evidence.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    },
+    {
+      "cell": "Ten-project host topology",
+      "verdict": "blocked (environment)",
+      "reason": "Current disk cannot fit the declared physical fixtures and root reserve",
+      "required_staging_profile": "Disposable host with ten independent project PostgreSQL/file/JWT fixtures at the original sizes, provider and proxy as applicable, declared aggregate CPU/RAM plus OS/controller/generator headroom. The last projection required 16,062,994,022.4 free bytes including reserve; provision additional physical disk headroom for telemetry, WAL, temporary files and full-run growth before admission. Do not delete caches, shrink fixtures, oversubscribe silently or retry on this host.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    },
+    {
+      "cell": "24-hour rehearsal",
+      "verdict": "blocked (environment)",
+      "reason": "No separately reserved uninterrupted 24-hour staging window compatible with the remaining ordered campaigns and hard deadline",
+      "required_staging_profile": "Dedicated disposable host, independent observer/watchdog and resource/storage reservation for 24 uninterrupted measured hours plus preparation and safe cleanup; original traffic, SLOs, reserves, recovery and evidence retention. Short campaigns cannot be added together to claim this cell.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    },
+    {
+      "cell": "Power loss beyond VM process cuts",
+      "verdict": "blocked (environment)",
+      "reason": "No isolated physical power/storage fault apparatus",
+      "required_staging_profile": "Dedicated nonproduction hardware or equivalently controlled infrastructure exposing real host/storage power interruption, independently durable acknowledged-write witness and diagnostics, externally controlled recovery/power cycle and restore material. QEMU process/RAM cuts do not prove controller-cache or physical-media durability.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    }
+  ],
+  "production_pr": 91,
+  "production_source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+  "remaining_campaigns": [
+    {
+      "cell": "restore-fencing guest reboot",
+      "status": "not run"
+    },
+    {
+      "cell": "continuous four-hour disk endurance",
+      "status": "not run"
+    },
+    {
+      "cell": "continuous four-hour real S3 endurance",
+      "status": "not run"
+    },
+    {
+      "cell": "single faults under load",
+      "status": "not run"
+    }
+  ],
+  "status": "final artifact frozen once; campaigns not started",
+  "certifies_g05": false,
+  "frozen_artifact_evidence": "campaign-final-artifact.json"
+}

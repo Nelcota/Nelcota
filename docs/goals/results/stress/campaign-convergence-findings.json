@@ -1,0 +1,71 @@
+{
+  "status": "open findings retained; no automatic product fixes after final freeze",
+  "production_defects_confirmed": 12,
+  "production_defects_corrected": 11,
+  "finding_policy": "record_without_fix_or_refreeze",
+  "critical_exception": "authorization_or_RLS_escape_or_acknowledged_data_loss_or_corruption: stop_all_traffic_preserve_diagnostics_wait_for_human",
+  "findings": [
+    {
+      "id": "P12",
+      "status": "open",
+      "classification": "confirmed product defect",
+      "finding": "PostgreSQL autostarts after guest reboot following an uncertain marker-only PITR restore error; authenticated API reopening not established in the original observation.",
+      "evidence": [
+        "native-pitr-boot-persistence-confirmed-001.json"
+      ],
+      "action": "Record final reboot probe; no persistent-fence fix, refreeze or campaign restart."
+    },
+    {
+      "id": "O1",
+      "status": "open",
+      "classification": "unexplained historical failure",
+      "finding": "Original native startup failure cause remains unconfirmed after eight later reproductions passed.",
+      "evidence": [
+        "native-final007-startup-reproductions-001/index.json"
+      ],
+      "action": "Retain history; no further reproduction campaign in narrowed schedule."
+    },
+    {
+      "id": "O2",
+      "status": "open",
+      "classification": "unexplained historical SLO failure",
+      "finding": "Original browser refresh SLO failure cause remains unconfirmed; later measured browser passes do not erase it.",
+      "evidence": [
+        "browser-sdk007-refresh-slo-first-failure-001.json"
+      ],
+      "action": "Retain finding; no additional browser campaigns."
+    },
+    {
+      "id": "O3",
+      "status": "open",
+      "classification": "historical fairness failures",
+      "finding": "Healthy-project fairness/latency failures under shared CPU pressure remain unresolved.",
+      "evidence": [
+        "fleet-5-sharing-final-pass-1.json",
+        "fleet-5-sharing-smoke-findings.json"
+      ],
+      "action": "Retain failures; ten-project cell blocked, no topology workaround."
+    },
+    {
+      "id": "O4",
+      "status": "open",
+      "classification": "resource attribution incomplete",
+      "finding": "Application anonymous memory retention and real S3 provider allocator ownership are not fully attributed; RSS retention alone is not proof of a live-owner leak.",
+      "evidence": [
+        "disk-final007-pass-1-001.json"
+      ],
+      "action": "Report final endurance observations; no additional allocation campaign."
+    }
+  ],
+  "harness_ledger": [
+    {
+      "id": "H01",
+      "status": "minimal correction; final probe not run yet",
+      "problem": "Previous guest-cut diagnostics observed zero-byte installed executable and unit; no explicit durable fixture baseline preceded the reboot-fencing cut. Recovery cause is not asserted solely from this observation.",
+      "original_workflow": 39070711756,
+      "correction": "One bounded sync inside the owned disposable guest immediately before the PITR reboot cut, followed by the existing safety assertion. Existing 20/50-second boot observation, quotas and all production code stay unchanged.",
+      "scope_limit": "Preparation of the installed fixture only; no physical-power-loss, installation durability or real WAL/PITR approval. No new campaign or retry of environment-blocked cells."
+    }
+  ],
+  "scope": "Original historical findings are not relabelled as fixed by extraction or by later passes."
+}

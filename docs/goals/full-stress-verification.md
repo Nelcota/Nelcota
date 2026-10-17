@@ -8,6 +8,55 @@ Planning baseline: `2efede8c27ee12119142170e8bd9742ff7cb900e` (PR #89).
 Its 17 PR checks and 17 post-merge checks passed. Those checks do not establish
 the load capacity of this revision or of a future VPS.
 
+## Campaign convergence directive — 2026-10-17
+
+The owner narrowed the remaining work at **2026-10-17 21:27:36 UTC**. The hard
+wall-clock deadline is **2026-10-19 03:27:36 UTC** (30 hours); preparation counts
+against this deadline, but does not count as effective load. This directive
+supersedes the earlier automatic fix/refreeze/repeat loop and remaining campaign
+schedule. Historical failures, thresholds, SLOs and evidence remain unchanged.
+Unexecuted original criteria stay unapproved.
+
+First extract the eleven reproduced production corrections, focused regressions
+and necessary translated guides/assets into a separate review PR from current
+`main`. Exclude stress harness changes and G05 evidence documents. Keep #90 a
+draft. Require all **18** ordinary checks on the extraction PR's exact head.
+Then freeze that production source and its built artifact once. Do not change
+or refreeze it for this campaign.
+
+Run only these remaining campaigns, in order: (a) restore-fencing guest reboot,
+(b) one continuous four-hour disk endurance, (c) one continuous four-hour real S3
+endurance, (d) existing fault-under-load campaign with one fault at a time.
+Retain all existing workload, quota, reserve, latency, correctness, recovery and
+observation thresholds. No new harness features. Only minimal fixes to harness
+bugs that invalidate evidence are permitted, and each requires a ledger entry.
+A failed campaign is recorded without restarting it or modifying the product;
+continue the remaining feasible campaigns after safe cleanup.
+
+New product findings are recorded with reproductions and remain open. An
+authorization/RLS escape, acknowledged-data loss or corruption immediately stops
+all campaign traffic: preserve diagnostics, report and await human instruction.
+Do not auto-fix such a failure. Stop on the deadline wherever execution stands,
+write the Portuguese per-cell report (passed/failed/blocked/not run), then end.
+No production deployment, merge or additional qualification work is authorized.
+
+### Environment-blocked cells: no workaround and no retry
+
+All cells below are **blocked (environment)** for this campaign. The staging
+profiles describe prerequisites for a future separately authorized campaign;
+they do not lower or satisfy any original acceptance criterion.
+
+| Cell | Missing prerequisite | Required disposable staging profile |
+|---|---|---|
+| Off-host restore | No independently provisioned recovery host and approved private backup transfer path | Two independently isolated hosts, separately owned storage and verified encrypted backup transport; a fresh recovery database/file target with capacity for the original dataset plus backup/restore temporary space and the 15% disk/inode and 10% RAM reserves. Record unchanged RPO/RTO, credentials and checksum/row/file reconciliation before starting. |
+| Real WAL/PITR with pgBackRest/S3 | No configured real WAL archive/repository and recovery target | Dedicated PostgreSQL 17/systemd host with real pgBackRest, verified-TLS S3 repository and generated fixture credentials; independent fresh restore target, continuous timestamped acknowledged-write ledger, retained base backups/WAL and enough bounded repository/target disk for the complete replay window plus reserves. The marker-only error adapter is not a substitute. |
+| Public DNS/ACME/TLS | No owned public staging hostname, DNS control and reachable ACME ingress | Dedicated public staging address and domain with narrowly scoped DNS credentials, verified authority/provenance, ports 80/443 available and bounded traffic; disposable Caddy/ACME certificate lifecycle, renewal/reload tests and unchanged TLS validation. A local CA is not public ACME evidence. |
+| ARM64 | No native ARM64 staging runner | Dedicated Linux ARM64 machine with Docker/systemd as applicable, compatible pinned toolchain and native provider/generator images; at least the original effective CPU slots (3 disk/4 S3), measured per-component RAM/disk budgets and original reserves. Emulation does not satisfy the native architecture cell. |
+| Separate load-generator machine | No independently isolated generator host/network measurement path | Dedicated target host plus separate generator machine and controlled network; generator capacity above the declared offered load, measured saturation/drops/steal and network limits, TLS enabled, synchronized metadata and monotonic local measurements. Co-located CPU affinity is not off-host capacity evidence. |
+| Ten-project host topology | Current disk cannot fit the declared physical fixtures and root reserve | Disposable host with ten independent project PostgreSQL/file/JWT fixtures at the original sizes, provider and proxy as applicable, declared aggregate CPU/RAM plus OS/controller/generator headroom. The last projection required 16,062,994,022.4 free bytes including reserve; provision additional physical disk headroom for telemetry, WAL, temporary files and full-run growth before admission. Do not delete caches, shrink fixtures, oversubscribe silently or retry on this host. |
+| 24-hour rehearsal | No separately reserved uninterrupted 24-hour staging window compatible with the remaining ordered campaigns and hard deadline | Dedicated disposable host, independent observer/watchdog and resource/storage reservation for 24 uninterrupted measured hours plus preparation and safe cleanup; original traffic, SLOs, reserves, recovery and evidence retention. Short campaigns cannot be added together to claim this cell. |
+| Power loss beyond VM process cuts | No isolated physical power/storage fault apparatus | Dedicated nonproduction hardware or equivalently controlled infrastructure exposing real host/storage power interruption, independently durable acknowledged-write witness and diagnostics, externally controlled recovery/power cycle and restore material. QEMU process/RAM cuts do not prove controller-cache or physical-media durability. |
+
 ## Objective
 
 Measure Nelcota's sustainable capacity, breaking points and recovery behavior

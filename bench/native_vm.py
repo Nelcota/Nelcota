@@ -677,6 +677,9 @@ def campaign(binary, output, scenario, pass_index=None):
                 require(control.get("explicit_fixture_recovery_deferred") is True
                         and control.get("unknown_state_kept_stopped") is True,
                         "Immediate PITR fencing/deferred recovery was not reached before boot")
+                # Establish a durable disposable installation before testing boot fencing.
+                guest.ssh(["sudo", "-n", "sync"], timeout=30)
+                guest.assert_safe()
                 before_boot = guest.action("resources")["boot_id"]
                 guest.phase = "pitr-error-guest-reboot"
                 guest.ready = False

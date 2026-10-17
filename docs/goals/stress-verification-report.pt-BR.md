@@ -1,5 +1,31 @@
 # G05 — relatório técnico de stress
 
+## Encerramento com escopo fixo — 17/10, 21:27:36 UTC
+
+A campanha segue agora a [diretriz de convergência](results/stress/campaign-convergence-policy.json).
+O [PR #91](https://github.com/Nelcota/Nelcota/pull/91) separa as onze correções
+de produção, regressões e guias/assets, sem harness ou evidências G05. O CI do
+SHA `5b2b2a4` passou18/18 e o PR está pronto para revisão. O único artefato
+final está [congelado](results/stress/campaign-final-artifact.json), SHA-256
+`b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e`, 30.484.800 bytes.
+O PR #90 permanece como rascunho.
+
+Após CI18/18, haverá um único congelamento e somente quatro campanhas:
+reboot da convidada, quatro horas contínuas em disco, quatro horas contínuas
+em S3 real e falhas simples sob carga. Novos defeitos ficam no
+[ledger](results/stress/campaign-convergence-findings.json), sem correção automática,
+novo congelamento ou reinício. Escape de autorização/RLS, perda de dados
+confirmados ou corrupção exige parada imediata e instrução humana.
+
+Os oito casos operacionais declarados estão **blocked (environment)**, com
+perfil necessário no goal: off-host restore, WAL/PITR real com pgBackRest/S3,
+DNS/ACME/TLS público, ARM64, gerador em outra máquina, host com dez projetos,
+ensaio de 24 horas e perda de energia além de cortes da VM. Não haverá
+workaround ou nova tentativa. SLOs, reservas e limites continuam iguais.
+O prazo absoluto é **19/10/2026, 03:27:36 UTC**; ao atingir esse prazo, a
+execução para e os casos pendentes recebem veredicto explícito. Os resultados
+abaixo continuam históricos até o relatório de encerramento.
+
 **Estado: em execução, sem aprovação do G05.** Este relatório é atualizado
 durante as campanhas. Checkpoint de carga consolidada: 17/10/2026, 18:57 UTC.
 Atualização da investigação: 17/10/2026, 21:15 UTC.
@@ -79,11 +105,13 @@ A aplicação estava inativa na amostra; reabertura da API não foi comprovada.
 A falha de recuperação posterior também foi preservada, com causa ainda
 indeterminada. A limpeza foi confirmada e nenhum arquivo PG real foi
 modificado pelo adaptador. Onze defeitos já foram corrigidos; este exige
-um gate persistente, regressões e novas VMs antes de congelar o artefato final.
+um gate persistente em trabalho futuro. Pela diretriz de convergência, fica
+aberto: não será corrigido nem impedirá o único congelamento após CI18/18.
 
-O executor recebeu diagnóstico numérico para evitar perder etapa/status
-quando a recuperação falha.61controles nativos passaram. Uma nova VM
-diagnóstica usará a mesma implementação615 e não concede aprovação aoG05.
+O executor recebeu diagnóstico numérico para preservar etapa/status quando a
+recuperação falha; 62 controles locais passaram. O diagnóstico posterior018
+falhou com limpeza confirmada e não será repetido. O probe final será uma
+única campanha após o congelamento e não concede aprovação aos outros casos.
 
 ## Cancelamento de exportações: precondição do teste corrigida
 
