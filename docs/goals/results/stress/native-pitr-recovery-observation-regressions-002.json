@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "tests_passed": 62,
+  "failed": 0,
+  "skipped": 0,
+  "execution_seconds": 0.072,
+  "log_sha256": "45311d44875df2c52e47f4ba4cfa4c2f503a3d2c80f75f010c8975c69a2a400d",
+  "scope": "Retain failed helper unit Result/MemoryPeak/exitcode without --collect so a process death before JSON remains diagnosable. Wrong ownership rejected; no quota/SLO/boot-verdict change, no productionchange/loadcredit."
+}

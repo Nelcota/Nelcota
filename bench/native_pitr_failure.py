@@ -54,12 +54,28 @@ def helper_name(identity):
     return "g05-pitr-error-" + identity + ".service"
 
 
-def helper_budget(identity):
+def helper_budget(identity, *, observations=None):
     name = helper_name(identity)
     value = unit_state(name)
     description = command(["systemctl", "show", name, "--property=Description", "--value"]).stdout.decode().strip()
     expected = {"cpu_quota_usec": 10000, "cpu_period_usec": 100000, "memory_bytes": 96 * 1024 ** 2,
                 "swap_bytes": 0, "pids": 32}
+    if observations is not None:
+        require(isinstance(observations, dict), "Invalid recovery observation owner")
+        budget = value.get("kernel_budget", {})
+        actual = {}
+        for key in expected:
+            number = budget.get(key)
+            actual[key] = None
+            if type(number) is int and number >= 0:
+                actual[key] = number
+        observations["helper_budget_observation"] = {
+            "MainPID_matches_helper": value.get("MainPID") == os.getpid(),
+            "active": value.get("ActiveState") == "active",
+            "description_matches": description == "g05-pitr-error:" + identity,
+            "kernel_budget": actual,
+            "zero_oom_kills": value.get("memory_events", {}).get("oom_kill") == 0,
+        }
     require(description == "g05-pitr-error:" + identity and value.get("MainPID") == os.getpid()
             and value.get("ActiveState") == "active" and value.get("kernel_budget") == expected
             and all(type(value["kernel_budget"].get(key)) is int for key in expected)
@@ -115,19 +131,43 @@ def sync_parent(path):
         os.close(descriptor)
 
 
-def recover_fixture(identity, expected_rows):
+def recover_fixture(identity, expected_rows, *, observations=None):
+    result = {}
+    if observations is not None:
+        require(isinstance(observations, dict), "Invalid recovery observation owner")
+        result = observations
+    result["fixture_recovery_stage"] = "guest-ownership"
     owned(identity)
-    helper_budget(identity)
+    result["fixture_recovery_stage"] = "helper-budget"
+    helper_budget(identity, observations=result)
+    result["fixture_recovery_stage"] = "digest-validation"
     require(isinstance(expected_rows, str) and re.fullmatch(r"[0-9a-f]{64}", expected_rows) is not None,
             "Missing owned pre-fault row digest")
+    result["fixture_recovery_stage"] = "CLI-up"
     recovery = cli("-p", PROJECT, "up", timeout=PROFILE["explicit_recovery_timeout_seconds"], check=False)
-    result = {"explicit_fixture_recovery_exit_code": recovery.returncode,
-              "after_explicit_fixture_recovery": snapshot()}
+    result["explicit_fixture_recovery_exit_code"] = recovery.returncode
+    result["fixture_recovery_stage"] = "unit-snapshot"
+    result["after_explicit_fixture_recovery"] = snapshot()
     require(recovery.returncode == 0 and all(point["MainPID"] > 1 and point["ActiveState"] == "active"
                                             for point in result["after_explicit_fixture_recovery"].values()),
             "Explicit owned fixture recovery failed")
+    result["fixture_recovery_stage"] = "row-digest"
     result["fixture_rows_preserved"] = fixture_digest() == expected_rows
     require(result["fixture_rows_preserved"], "Controlled fixture rows changed")
+    result["fixture_recovery_stage"] = "complete"
+    result["explicit_fixture_recovery_successful"] = True
+    return result
+
+
+def recovery_observation(identity, expected_rows):
+    result = {}
+    try:
+        recover_fixture(identity, expected_rows, observations=result)
+    except Exception as error:
+        # Stages, booleans and numeric statuses survive failure. Command output
+        # and exception messages can contain private data and are never emitted.
+        result["explicit_fixture_recovery_successful"] = False
+        result["fixture_recovery_failure_type"] = type(error).__name__
     return result
 
 
@@ -223,6 +263,7 @@ if __name__ == "__main__":
     mode.add_argument("--recover-fixture")
     args = parser.parse_args()
     if args.recover_fixture is not None:
-        print(json.dumps(recover_fixture(args.identity, args.recover_fixture), allow_nan=False))
-        raise SystemExit(0)
+        result = recovery_observation(args.identity, args.recover_fixture)
+        print(json.dumps(result, allow_nan=False))
+        raise SystemExit(int(result.get("explicit_fixture_recovery_successful") is not True))
     print(json.dumps(observe(args.identity, defer_recovery=args.defer_recovery), allow_nan=False))

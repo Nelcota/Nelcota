@@ -1,5 +1,6 @@
 """Controlled native restore errors need a fail-closed, secret-safe oracle."""
 import hashlib
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -128,6 +129,42 @@ class NativePitrErrorControl(unittest.TestCase):
                     patch.object(control, "cli") as cli, self.assertRaises(RuntimeError):
                 control.recover_fixture(self.identity, value)
             cli.assert_not_called()
+
+    def test_failed_recovery_retains_cli_status_and_units_without_private_output(self):
+        observed = {}
+        result = SimpleNamespace(returncode=1, stdout=b"private payload", stderr=b"private secret")
+        with patch.object(control, "owned"), patch.object(control, "helper_budget"), \
+                patch.object(control, "cli", return_value=result), \
+                patch.object(control, "snapshot", return_value=self.stopped()), \
+                patch.object(control, "fixture_digest") as digest:
+            with self.assertRaisesRegex(RuntimeError, "Explicit owned fixture recovery failed"):
+                control.recover_fixture(self.identity, "a" * 64, observations=observed)
+        self.assertEqual(observed["explicit_fixture_recovery_exit_code"], 1)
+        self.assertEqual(observed["after_explicit_fixture_recovery"], self.stopped())
+        self.assertEqual(observed["fixture_recovery_stage"], "unit-snapshot")
+        self.assertNotIn("private", json.dumps(observed))
+        digest.assert_not_called()
+
+    def test_unowned_recovery_emits_only_stage_and_failure_type_without_cli_work(self):
+        with patch.object(control, "owned", side_effect=RuntimeError("private identity detail")), \
+                patch.object(control, "helper_budget") as budget, patch.object(control, "cli") as cli:
+            actual = control.recovery_observation(self.identity, "a" * 64)
+        self.assertEqual(actual, {"fixture_recovery_stage": "guest-ownership",
+                                  "explicit_fixture_recovery_successful": False,
+                                  "fixture_recovery_failure_type": "RuntimeError"})
+        budget.assert_not_called(); cli.assert_not_called()
+
+    def test_budget_failure_preserves_actual_numeric_limits_and_rejects_private_fields(self):
+        observed = {}
+        raw = {**self.unit(), "kernel_budget": {**self.unit()["kernel_budget"], "memory_bytes": None},
+               "private": "never publish"}
+        description = SimpleNamespace(stdout=("g05-pitr-error:" + self.identity).encode())
+        with patch.object(control, "unit_state", return_value=raw), \
+                patch.object(control, "command", return_value=description), self.assertRaises(RuntimeError):
+            control.helper_budget(self.identity, observations=observed)
+        self.assertIsNone(observed["helper_budget_observation"]["kernel_budget"]["memory_bytes"])
+        self.assertTrue(observed["helper_budget_observation"]["MainPID_matches_helper"])
+        self.assertNotIn("private", json.dumps(observed))
 
     def test_parent_sync_closes_its_descriptor_even_when_sync_fails(self):
         with patch.object(control.os, "open", return_value=123), patch.object(control.os, "fsync", side_effect=OSError), \

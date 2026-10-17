@@ -12,6 +12,17 @@ import native_pitr_reboot as reboot
 
 
 class NativePitrBootControl(unittest.TestCase):
+    identity = "native-vm-pitr-recovery-test-1"
+
+    def helper_state(self, *, owner=None):
+        description = "g05-pitr-error:" + self.identity
+        if owner is not None:
+            description = owner
+        values = {"Id": reboot.helper_name(self.identity), "Description": description,
+                  "LoadState": "loaded", "ActiveState": "failed", "Result": "oom-kill",
+                  "MainPID": "0", "ExecMainCode": "2", "ExecMainStatus": "9", "MemoryPeak": "100663296"}
+        return SimpleNamespace(stdout="".join(key + "=" + value + "\n" for key, value in values.items()).encode(), returncode=0)
+
     def stopped(self):
         return {role: {"MainPID": 0, "ActiveState": "inactive"} for role in ["app", "postgres"]}
 
@@ -63,6 +74,49 @@ class NativePitrBootControl(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "critical guard"):
             reboot.observe(guest, api, object())
         guest.action.assert_not_called(); api.request.assert_not_called()
+
+    def test_failed_recovery_transports_numeric_evidence_before_rejecting_the_case(self):
+        observed = {"explicit_fixture_recovery_successful": False,
+                    "fixture_recovery_stage": "CLI-up", "explicit_fixture_recovery_exit_code": 1}
+        guest = SimpleNamespace(identity=self.identity,
+                                ssh=Mock(side_effect=[SimpleNamespace(stdout=json.dumps(observed).encode(), returncode=1), self.helper_state()]),
+                                assert_safe=Mock())
+        original = {"fixture_rows_before_sha256": "a" * 64, "boot_observation": {"failed": True}}
+        with self.assertRaisesRegex(RuntimeError, "numeric observation retained"):
+            reboot.recover(guest, ["owned-helper"], original)
+        self.assertEqual(original["explicit_fixture_recovery_exit_code"], 1)
+        self.assertEqual(original["post_boot_fixture_helper_exit_code"], 1)
+        self.assertEqual(original["boot_observation"], {"failed": True})
+        guest.ssh.assert_any_call(["owned-helper", "--recover-fixture", "a" * 64], timeout=145, check=False)
+        self.assertEqual(original["post_boot_fixture_helper_unit"]["Result"], "oom-kill")
+
+    def test_recovery_cannot_replace_earlier_boot_verdict(self):
+        observed = {"boot_observation": {"failed": False}, "explicit_fixture_recovery_successful": True}
+        guest = SimpleNamespace(ssh=Mock(return_value=SimpleNamespace(stdout=json.dumps(observed).encode(), returncode=0)),
+                                assert_safe=Mock())
+        original = {"fixture_rows_before_sha256": "a" * 64, "boot_observation": {"failed": True}}
+        with self.assertRaisesRegex(RuntimeError, "cannot replace"):
+            reboot.recover(guest, ["owned-helper"], original)
+        self.assertEqual(original["boot_observation"], {"failed": True})
+
+    def test_recovery_transport_cannot_swallow_a_critical_guard_or_certify_empty_output(self):
+        guest = SimpleNamespace(identity=self.identity, ssh=Mock(return_value=SimpleNamespace(stdout=b"", returncode=1)),
+                                assert_safe=Mock(side_effect=RuntimeError("critical guard")))
+        original = {"fixture_rows_before_sha256": "a" * 64}
+        with self.assertRaisesRegex(RuntimeError, "critical guard"):
+            reboot.recover(guest, ["owned-helper"], original)
+        guest.assert_safe = Mock()
+        guest.ssh = Mock(side_effect=[SimpleNamespace(stdout=b"", returncode=1), self.helper_state()])
+        with self.assertRaisesRegex(RuntimeError, "Missing bounded"):
+            reboot.recover(guest, ["owned-helper", "--collect"], original)
+        guest.ssh.assert_any_call(["owned-helper", "--recover-fixture", "a" * 64], timeout=145, check=False)
+        self.assertEqual(original["post_boot_fixture_helper_unit"]["MemoryPeak"], 100663296)
+
+    def test_failed_helper_metadata_refuses_foreign_description(self):
+        guest = SimpleNamespace(identity=self.identity, ssh=Mock(return_value=self.helper_state(owner="foreign private detail")),
+                                assert_safe=Mock())
+        with self.assertRaisesRegex(RuntimeError, "another owner"):
+            reboot.failed_helper(guest)
 
 
 if __name__ == "__main__":

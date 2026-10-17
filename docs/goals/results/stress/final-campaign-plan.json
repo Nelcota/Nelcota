@@ -757,10 +757,11 @@
     "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
     "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
     "build_evidence": "final-local-candidate-615a0a0.json",
-    "status": "Source009test-only correction/byte-equal008localELF verified; all18exactsource615CIpassed; actual017bootprobe running. No longcampaign before criticalprobe/anyconfirmedfix closes.",
+    "status": "Source009CI18passed; actual017bootprobe FAILED. PGautorestarts beforeexplicitrecovery. Persistentfencecorrectionpending; no longcampaign.",
     "certifies_g05": false,
     "CI_evidence": "ci-candidate009-source615a0a0.json",
-    "ordinary_CI_checks_passed": 18
+    "ordinary_CI_checks_passed": 18,
+    "boot_evidence": "native-pitr-boot-persistence-confirmed-001.json"
   },
   "historical_candidate006": {
     "source_commit": "860d2f990949bfc5c8c612de3341c65a39e8d259",
@@ -1738,7 +1739,9 @@
     "new_production_fix_applied": false,
     "confirmed_defects": 11,
     "next_attempt_evidence": "native-pitr-boot-final009-predeclaration-001.json",
-    "current_status": "Actual017probe workflow39069412746 running onimmutable615ref after all18CI. Hypothesisstillunconfirmed; no productionpatchbeforeproof."
+    "current_status": "ConfirmedPGautorestart inactual009VM. Separatefixture-recoverySSH1failedwithoutnumericdetails; originalfailurepreserved. No app/APIreopeningclaim.",
+    "actual_before_evidence": "native-pitr-boot-persistence-confirmed-001.json",
+    "recovery_diagnostic_predeclaration": "native-pitr-recovery-diagnostic-predeclaration-001.json"
   },
   "historical_candidate008_at_diagnostic_freeze": {
     "source_commit": "da262d77f4d2557ff5cbd9007b9a3a6273a92221",

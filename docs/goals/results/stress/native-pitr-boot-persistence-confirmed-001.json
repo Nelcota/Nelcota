@@ -1,0 +1,50 @@
+{
+  "status": "failed; twelfth production defect confirmed, correction pending",
+  "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
+  "workflow_run_id": 39069412746,
+  "job_id": 117503713499,
+  "binary_sha256": "17a2b4525f84b592768db6b2f51d0e914ea09cc2a0cf89dd560b79c81eec53ec",
+  "report": "native-pitr-boot-final009-before-001.json",
+  "original_notice_sha256": "10a5f610100313004a48fccbd5416917026c21215d78277ab6fabfba7ef6a40f",
+  "defect": "Native PostgreSQL automatically starts after a marker-only failed restore and guest reboot, before explicit verified recovery. A systemctl stop does not persist a boot fence.",
+  "immediate_error_kept_stopped": true,
+  "guest_boot_id_changed": true,
+  "controlled_cleanup_persisted": true,
+  "boot_observation": {
+    "profile": {
+      "minimum_observation_seconds": 20,
+      "maximum_observation_seconds": 50,
+      "minimum_sample_gap_seconds": 1,
+      "maximum_samples": 22,
+      "maximum_guest_resource_request_seconds": 12,
+      "maximum_authenticated_HTTP_seconds": 5,
+      "scope": "Owned guest RAM loss after marker-only restore failure; no physical host, real PITR or corruption claim"
+    },
+    "samples": [
+      {
+        "units": {
+          "app": {
+            "MainPID": 0,
+            "ActiveState": "inactive"
+          },
+          "postgres": {
+            "MainPID": 736,
+            "ActiveState": "active"
+          }
+        },
+        "authenticated_API_reopened": false
+      }
+    ],
+    "elapsed_seconds": 0.3357971149999912,
+    "unknown_state_kept_stopped_after_boot": false
+  },
+  "recovery_failure": {
+    "phase": "pitr-error-explicit-fixture-recovery",
+    "type": "RuntimeError",
+    "reason": "Host command failed: ssh exit 1"
+  },
+  "cleanup_confirmed": true,
+  "safety_guard_failure": null,
+  "effective_load_credit_seconds": 0,
+  "scope": "PG PID736 active versus previousPID0, before explicitrecovery. Appinactive/APIreopeningnotobserved in single0.336s sample, not proof of20sAPIclosure. RealPGfilesunmodified; no S3/PITRcorruptionclaim. Separatefixture-recoverySSHexit1lostnumericcontext, remainsunexplained. All originalfailuredata retained; do not relabelpassed."
+}

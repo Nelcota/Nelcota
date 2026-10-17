@@ -3859,3 +3859,41 @@ continuam presentes.36,924s de preparação, zero carga e zero bytes
 reclamados. Revalidar estado ocioso/metadata/tipos/nlinks/paths/arquivos
 e diretórios desconhecidos antes de qualquer manutenção posterior.
 [Recibo](results/stress/rebuildable-source-cache-readonly-proof-009-003.json).
+
+
+### 2026-10-17, 21:11 UTC — décimo segundo defeito confirmado no boot
+
+Workflow39069412746/job117503713499,fonte615a0a0,ELF17a2b4525f84b592
+768db6b2f51d0e914ea09cc2a0cf89dd560b79c81eec53ec. Restauração controlada
+com erro mantevePG/appPID0inativos imediatamente. Após perda daRAM,
+bootid mudou, pacote/flags/marcador estavam duravelmente limpos, mas
+PGPID736ativo antes de recuperação explícita; appPID0inativo eAPI não
+reaberta na única amostra0,336s. Não é prova de20sfechados daAPI.
+`systemctl stop` não impede o autostart de unidade habilitada no boot.
+Décimo segundo defeito de produto confirmado;11corrigidos, novo gate
+persistente pendente.0arquivosPGreais modificados pelo adaptador.
+[Original](results/stress/native-pitr-boot-final009-before-001.json) e
+[conclusão delimitada](results/stress/native-pitr-boot-persistence-confirmed-001.json).
+
+A recuperação da fixture falhou separadamente emSSHexit1, antes de publicar
+CLIstatus/units/rows. Causa não atribuída; sem canários finais aprovados.
+Cleanuptrue/guardnull,87,168s incluindo preparação; zero crédito de carga.
+Não transformar falha em aprovação porque oPGautostart esperado foi visto.
+
+Executor passa a reter stage/CLIexit/units e orçamento numérico do helper
+antes da exceção; não emite erro/stdio privado, não permite que recuperação
+substitua observação anterior de boot e não engole guardas críticos.
+61controles nativos focados passaram, incluindo24dePITR;6novos.
+[Regressões](results/stress/native-pitr-recovery-observation-regressions-001.json).
+Uma VM diagnóstica nova é declarada para o produto exato615/CI18jápassado,
+seis árvores iguais e harness novo pinado/testado; CI novo separado. Não
+é aprovação deG05 nem dispensa20sfechados. Rootcauseda recuperação ainda
+pendente, nova fonteRust de proteção ainda não foi modificada.
+[Protocolo diagnóstico](results/stress/native-pitr-recovery-diagnostic-predeclaration-001.json).
+
+Antes do primeiro dispatch diagnóstico, acrescentar retenção do helper
+falho sem `--collect` e projeção Id/Description/Result/MemoryPeak/status.
+Isso preserva evidência mesmo se o processo morrer antes doJSON; não
+atribuiOOM sem observação real. Orçamento96MiB/10%CPU/32tasks/120s
+mantido.62controles nativos agora aprovados, com25PITR; recibo002 e
+amendment pré-dispatch preservam o primeiro recibo001de61controles.

@@ -673,7 +673,7 @@ def campaign(binary, output, scenario, pass_index=None):
             control = report["native_contract"]
             if scenario == "runtime-pitr-reboot":
                 from native_pitr_failure import BINARY, FLAG, SAVED, MARKER
-                from native_pitr_reboot import observe as observe_boot
+                from native_pitr_reboot import observe as observe_boot, recover as recover_boot_fixture
                 require(control.get("explicit_fixture_recovery_deferred") is True
                         and control.get("unknown_state_kept_stopped") is True,
                         "Immediate PITR fencing/deferred recovery was not reached before boot")
@@ -697,9 +697,7 @@ def campaign(binary, output, scenario, pass_index=None):
                 guest.phase = "pitr-error-post-boot-observation"
                 control["boot_observation"] = observe_boot(guest, api, users[0])
                 guest.phase = "pitr-error-explicit-fixture-recovery"
-                raw = guest.ssh([*helper_command, "--recover-fixture", control["fixture_rows_before_sha256"]], timeout=145).stdout
-                require(len(raw) <= 65536, "Controlled post-boot recovery report exceeded its byte boundary")
-                control.update(json.loads(raw))
+                recover_boot_fixture(guest, helper_command, control)
             require(control.get("profile") == PITR_PROFILE and control.get("real_PG_files_modified") is False
                     and control.get("owned_marker_written_before_adapter_failure") is True
                     and control.get("controlled_adapter_and_flag_removed") is True

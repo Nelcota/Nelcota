@@ -1,9 +1,10 @@
 """Check boot-time fencing after a marker-only failed native restore."""
 import math
 import http.client
+import json
 import time
 
-from native_pitr_failure import PG_UNIT, UNIT, fenced
+from native_pitr_failure import PG_UNIT, UNIT, fenced, helper_name
 from native_guest import require
 
 PROFILE = {"minimum_observation_seconds": 20, "maximum_observation_seconds": 50,
@@ -11,6 +12,55 @@ PROFILE = {"minimum_observation_seconds": 20, "maximum_observation_seconds": 50,
            "maximum_guest_resource_request_seconds": 12,
            "maximum_authenticated_HTTP_seconds": 5,
            "scope": "Owned guest RAM loss after marker-only restore failure; no physical host, real PITR or corruption claim"}
+
+
+def recover(guest, helper_command, control):
+    # Keep a failed transient unit available for Result/MemoryPeak inspection.
+    # --collect would discard the only evidence when the helper dies before JSON.
+    arguments = [value for value in helper_command if value != "--collect"]
+    result = guest.ssh([*arguments, "--recover-fixture", control["fixture_rows_before_sha256"]],
+                       timeout=145, check=False)
+    control["post_boot_fixture_helper_exit_code"] = result.returncode
+    control["post_boot_fixture_helper_stdout_bytes"] = len(result.stdout)
+    guest.assert_safe()
+    if result.returncode:
+        control["post_boot_fixture_helper_unit"] = failed_helper(guest)
+    require(0 < len(result.stdout) <= 65536, "Missing bounded post-boot recovery observation")
+    observed = json.loads(result.stdout)
+    require(isinstance(observed, dict) and not set(control).intersection(observed),
+            "Recovery observation cannot replace earlier restore or boot evidence")
+    control.update(observed)
+    require(result.returncode == 0 and observed.get("explicit_fixture_recovery_successful") is True,
+            "Post-boot fixture recovery failed; numeric observation retained")
+
+
+def failed_helper(guest):
+    name = helper_name(guest.identity)
+    fields = "Id,Description,LoadState,ActiveState,Result,MainPID,ExecMainCode,ExecMainStatus,MemoryPeak"
+    result = guest.ssh(["sudo", "-n", "systemctl", "show", name, "--property=" + fields], timeout=15, check=False)
+    guest.assert_safe()
+    require(result.returncode in {0, 1} and 0 < len(result.stdout) <= 4096,
+            "Missing bounded failed fixture-helper state")
+    rows = result.stdout.decode().splitlines()
+    value = dict(row.split("=", 1) for row in rows if "=" in row)
+    require(len(value) == len(rows) and set(value) == set(fields.split(",")) and value["Id"] == name,
+            "Failed fixture-helper identity is ambiguous")
+    if value["LoadState"] == "not-found":
+        return {"load_state": "not-found"}
+    require(value["LoadState"] == "loaded" and value["Description"] == "g05-pitr-error:" + guest.identity,
+            "Failed fixture-helper belongs to another owner")
+    observed = {"load_state": "loaded", "identity_verified": True}
+    for key in ["MainPID", "ExecMainCode", "ExecMainStatus", "MemoryPeak"]:
+        observed[key] = None
+        if value[key].isdecimal():
+            observed[key] = int(value[key])
+    for key, allowed in [("ActiveState", {"active", "inactive", "failed", "activating", "deactivating"}),
+                         ("Result", {"success", "exit-code", "signal", "core-dump", "watchdog", "timeout",
+                                     "oom-kill", "resources", "start-limit-hit", "protocol", "condition", "assert"})]:
+        observed[key] = None
+        if value[key] in allowed:
+            observed[key] = value[key]
+    return observed
 
 
 def snapshot(resources):

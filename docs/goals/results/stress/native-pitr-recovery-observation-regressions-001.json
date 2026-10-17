@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "exit_code": 0,
+  "log_sha256": "db6c94f68edea514a4745e4947f0995f3a8f80eec2f566f2480698a924923ad1",
+  "scope": "Related native executor regressions for numeric recovery failure retention; no productioncodechange, no loadtimecredit.",
+  "tests_passed": 61,
+  "execution_seconds": 0.075,
+  "skipped": 0
+}

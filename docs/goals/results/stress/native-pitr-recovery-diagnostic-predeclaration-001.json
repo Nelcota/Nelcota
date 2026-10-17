@@ -1,0 +1,32 @@
+{
+  "recorded_utc": "2026-10-17T21:19:33.314073+00:00",
+  "status": "prepared; diagnostic only, not an approval rerun",
+  "diagnostic_case": "native-pitr-recovery-diagnostic-009-002",
+  "fixed_product_source": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
+  "source_CI_evidence": "ci-candidate009-source615a0a0.json",
+  "production_changes_permitted": false,
+  "source_guard": "All six product tree objects must exactly match source615; only benchmark/related Python tests/docs may differ. Harnesssource/ref pinned before dispatch. NewharnessCI runs separately; no G05acceptance inferred from this diagnostic.",
+  "local_native_controls_passed": 61,
+  "source_files_sha256": {
+    "bench/native_pitr_failure.py": "34b8722ec9d42c7dfabbaae5ef4fb782b1c134b796fdf371c5a494212d6d4364",
+    "bench/native_pitr_reboot.py": "90528711bf2e0dc2a1eb86e04d196beaa7d1889a7463f4fc5313b1ffca7e821c",
+    "bench/native_vm.py": "68beec2aa3a26f37b63e1c90d1b14011339a723420602c85b27ab998a06b0194",
+    "scripts/review_tests/test_stress_native_pitr_error.py": "4738bc264e2fda27227bb470da2e35a4a9f517974d6c9ef777a9290d41e4ae75",
+    "scripts/review_tests/test_stress_native_pitr_reboot.py": "043ddc4c0f2b3bad420fcdc9dc0fd02a0f0b4ca264564af706e8d9c3294ec99c"
+  },
+  "maximum_seconds": 7200,
+  "maximum_seconds_each_workflow": 5400,
+  "scope": "Repeat original marker-only restore error/guestboot in one fresh owned VM to retain previously lost recovery stage/CLIstatus/units/helperkernelbudget. Original boot failure and20s/50s/22sample/PID0/security gates unchanged; expectedPGbootfailure remains a failure. No realPGfileschanged, no loadcredit, no productionaction. Stop on guard/resource violations; bounded ownedcleanup.",
+  "amendment_before_first_dispatch": {
+    "utc": "2026-10-17T21:21:48.427388+00:00",
+    "local_native_controls_passed": 62,
+    "source_files_sha256": {
+      "bench/native_pitr_failure.py": "34b8722ec9d42c7dfabbaae5ef4fb782b1c134b796fdf371c5a494212d6d4364",
+      "bench/native_pitr_reboot.py": "9871a151b208b014cb4a492b63a09f32fcb049f8a5a53a8edcd3b47791eb9e31",
+      "bench/native_vm.py": "68beec2aa3a26f37b63e1c90d1b14011339a723420602c85b27ab998a06b0194",
+      "scripts/review_tests/test_stress_native_pitr_error.py": "4738bc264e2fda27227bb470da2e35a4a9f517974d6c9ef777a9290d41e4ae75",
+      "scripts/review_tests/test_stress_native_pitr_reboot.py": "9d388a915d635571b825c42568da0312adba985c99a2b12169f0857cc3b3a621"
+    },
+    "reason": "Do not discard failed transienthelper before Result/MemoryPeak capture when process dies before JSON. Preserve original96MiB/10percent/32tasks/120s quotas; no inferredOOMcause and no productionfix/approval."
+  }
+}

@@ -1547,7 +1547,7 @@
   },
   "current_final_candidate": {
     "identity": "009diagnostic",
-    "status": "All18ordinaryCI615passed;017actualownedguestbootprobe dispatched, no verdictyet. No longloadactive.",
+    "status": "Diagnostic009source615CI18passed; actual017bootprobe FAILED withPGactivebeforeexplicitrecovery. Twelfthproductiondefect confirmed; eleven corrected, persistentfence pending.",
     "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
     "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
     "last_frozen_artifact_evidence": "final-local-candidate-615a0a0.json",
@@ -1555,13 +1555,15 @@
     "product_changes_since_008": [
       "crates/server/tests/sql_cancellation.rs"
     ],
-    "confirmed_production_defects": 11,
+    "confirmed_production_defects": 12,
     "focused_cancellation_controls_passed": 3,
     "additional_export_repetitions_passed": 6,
     "focused_boot_executor_controls_passed": 18,
     "scope": "Source009 implementation/asset bytes unchanged from008 and localELF actuallyequal. Retained008CI/nativechecks do not replace exactsource615ordinaryCI. Testpreconditioncorrection is not a twelfth production defect.",
     "ordinary_CI_checks_passed": 18,
-    "CI_evidence": "ci-candidate009-source615a0a0.json"
+    "CI_evidence": "ci-candidate009-source615a0a0.json",
+    "corrected_production_defects": 11,
+    "actual_boot_evidence": "native-pitr-boot-persistence-confirmed-001.json"
   },
   "current_campaign_checkpoint": {
     "checkpoint": "load-time-checkpoint-020.json",
@@ -1603,7 +1605,7 @@
     "corrective_evidence": "host-resource-and-collected-watchdog-correction-001.json",
     "latest_focused_evidence": "host-Docker-name-and-watchdog-guards-001.json"
   },
-  "latest_inventory_update_utc": "2026-10-17T21:05:41.119737+00:00",
+  "latest_inventory_update_utc": "2026-10-17T21:19:33.314944+00:00",
   "native_startup_reproductions": {
     "status": "passed scoped repetitions; original failure unresolved",
     "count": 8,
@@ -1625,8 +1627,8 @@
     "actual_after_passes": 2
   },
   "next_final_candidate": {
-    "status": "Next longcampaign requires criticalbootprobe/anyconfirmedfix and exactsourceCIclose; current009isdiagnostic",
-    "confirmed_production_defects": 11,
+    "status": "Requires persistentPITRbootfix and actualrecoveryverification before newfinalfreeze/longcampaign",
+    "confirmed_production_defects": 12,
     "evidence": "final-local-candidate-615a0a0.json",
     "scope": "No change to19predeclared workloads/SLOs/budgets/reserves and no partial008credit."
   },
@@ -1682,11 +1684,11 @@
     "previous_suite": "native-final-suite-860d2f9/index.json"
   },
   "native_PITR_boot_persistence": {
-    "status": "hypothesis unconfirmed;017actualprobe dispatched",
+    "status": "confirmed failed; PGautorestart beforeverifiedrecovery",
     "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
-    "evidence": "native-pitr-boot-final009-predeclaration-001.json",
-    "confirmed_production_defects": 11,
-    "pending": "ActualVMverdict pending; no productionpatchbeforeproof"
+    "evidence": "native-pitr-boot-persistence-confirmed-001.json",
+    "confirmed_production_defects": 12,
+    "pending": "Persistentrecoveryfence+regressions+twoactualVMs; separatefixture-recoveryfailureSSH1diagnostic planned withnumericretention."
   },
   "historical_candidate008_at_diagnostic_freeze": {
     "status": "Source008 CI18/native12/immediatePITR2/smoke retained as historical source-bound evidence. FirstS3 interrupted atcalibration2445s/422samples,zero soak,cleanuptrue,no partialcredit.",

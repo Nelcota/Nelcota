@@ -32,7 +32,7 @@
   "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
   "size": 30484800,
   "scope": "Source-pinned diagnostic candidate009 after correcting only the export cancellation test readiness; same eleven production corrections and regenerated assets as008. Existing release cache retained; fresh bounded Cargo invocation, not a clean-cache rebuild. Boot-persistence probe and new CI/endurance remain mandatory. No production release or deployment.",
-  "status": "Diagnostic009 source615CI18/18 passed; actual017bootprobe running; no long009campaign and no G05approval",
+  "status": "Diagnostic009sourceCI18passed; actualbootprobe017FAILED, persistentPITRfencecorrectionpending; no finalendorsement",
   "certifies_g05": false,
   "product_tree_objects": {
     "crates": "ff4529b132261df3a58ea375dfcf509d150c686a",
@@ -51,5 +51,6 @@
   ],
   "binary_bytes_equal_008": true,
   "CI_evidence": "ci-candidate009-source615a0a0.json",
-  "ordinary_CI_checks_passed": 18
+  "ordinary_CI_checks_passed": 18,
+  "boot_evidence": "native-pitr-boot-persistence-confirmed-001.json"
 }
