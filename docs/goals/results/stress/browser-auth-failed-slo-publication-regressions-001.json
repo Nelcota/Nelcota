@@ -1,0 +1,50 @@
+{
+  "status": "passed focused publication regressions; real bridge repetition pending",
+  "certifies_g05": false,
+  "observed_utc": "2026-10-17T14:15:24.241415+00:00",
+  "python_tests": 38,
+  "python_framework_elapsed_seconds": 0.058,
+  "python_operator_elapsed_seconds": 0.2159040059777908,
+  "python_log_sha256": "2a2ebe8994ffb0359f85d1467decfdb3e0f3fc51febc18c8d459863f9ff573b1",
+  "new_failure_regressions": 4,
+  "JavaScript_syntax": {
+    "utc": "2026-10-17T14:11:47.179746+00:00",
+    "command": [
+      "timeout",
+      "--signal=TERM",
+      "--kill-after=3s",
+      "10s",
+      "taskset",
+      "-c",
+      "4",
+      "nice",
+      "-n",
+      "19",
+      "ionice",
+      "-c3",
+      "node",
+      "--max-old-space-size=32",
+      "--check",
+      "bench/browser_auth.js"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.0646380499820225,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source_sha256": "ea710e415c77a84df94524b2290c63067822f404299beee812cec5103eb1568a",
+    "scope": "Syntax only on reserved OS CPU4 at low priority; no HTTP, benchmark load or effective-time credit."
+  },
+  "scope": "Preserve complete numeric auth measurements before enforcing unchanged SLOs. Actual first final007 remote refresh-SLO failure remains failed; no numeric values invented for it. Shared numeric validator rejects nonfinite, partial, contradictory and private payloads; the positive validator still rejects a failed SLO. Bridge/mount need actual next browser run. No production source changes or effective stress-time credit.",
+  "previous_focused_control_log_sha256": "a7f163493b083035182415d49b95557b1c87e886a6d24b2f8b03fc963f289bcd",
+  "harness_sources_sha256": {
+    "bench/browser_auth.py": "6162dc9977eb27f36096d1ef76df1a9d0311f3970da526fdd2f5f524fb105ee8",
+    "bench/browser_auth.js": "ea710e415c77a84df94524b2290c63067822f404299beee812cec5103eb1568a",
+    "bench/browser_driver.py": "5f4caae687da61e2182e0ee66a4e266303c0dfa1b40cea2e4ae2a07bdda328db",
+    "bench/browser_campaign.py": "b9fdecbe52c2c62bd0a402c29043fa8a02644858fd771cdd939641962b876c0a",
+    "bench/browser_auth_probe.py": "b3ddb202635e038441d8b2689666a3e40e7f467cb10f94da4f3df2a404b31469",
+    "scripts/review_tests/test_stress_browser_auth.py": "3a4730d989f1f7029b9869e0e806df5d981c1614c7e8773695f00e5680b873fe",
+    ".github/workflows/stress.yml": "c02f4e4c5102cd7b38c0ce7731124e2bc0209643db2f0b620c152d99ef00bf5e"
+  },
+  "bridge_maximum_receipts": 5,
+  "bridge_requires_active_distinct_cycle": true,
+  "bridge_installed_before_baseline_sampling": true
+}

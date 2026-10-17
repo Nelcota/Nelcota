@@ -1,0 +1,11 @@
+{
+  "scope": "Read-only local Docker CLI bootstrap control; no daemon mutation or backend load",
+  "address_space_ceiling_bytes": 134217728,
+  "exit_code": 2,
+  "elapsed_seconds": 0.004164004989434034,
+  "fixed_diagnostic_categories": {
+    "Go_virtual_address_reservation_failed": true,
+    "runtime_memory_reservation": true
+  },
+  "raw_output_published": false
+}

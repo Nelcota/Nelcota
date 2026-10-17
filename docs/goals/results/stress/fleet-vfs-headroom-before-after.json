@@ -1,0 +1,45 @@
+{
+  "scope": "ten-project VFS startup safety; no capacity or ten-project isolation certification",
+  "certifies_g05": false,
+  "before": {
+    "run_id": "fleet-caddy-10-smoke-002",
+    "completion": {
+      "status": "failed",
+      "projects": 10,
+      "load_seconds": 0,
+      "resource_observations": 0,
+      "cleanup_confirmed": true,
+      "error_type": "RuntimeError"
+    },
+    "watchdog_stop": {
+      "reason": "host_disk_reserve",
+      "monotonic": 141279.972731158
+    }
+  },
+  "after": {
+    "run_id": "fleet-caddy-10-preflight-003",
+    "verdict": "blocked",
+    "resources_created": false,
+    "ownership_manifest_exists": false,
+    "startup_budget": {
+      "per_project_mib": 780,
+      "container_layer_copy_factor": 2,
+      "total_startup_mib": 8440,
+      "image_storage_drivers": [
+        "vfs",
+        "vfs"
+      ]
+    },
+    "database_data_budget_mib": 2048,
+    "observer_growth_budget_mib": 512,
+    "minimum_free_fraction": 0.15,
+    "minimum_initial_free_bytes": 16599864934
+  },
+  "regressions": {
+    "python_review_tests": 140,
+    "seconds": 6.617,
+    "unknown_storage_driver_and_invalid_image_size_rejected": true,
+    "old_admitted_fixture_is_rejected_before_resource_creation": true
+  },
+  "limitation": "Current 32-GiB workspace cannot cover the declared ten-project VFS footprint plus reserve. Keep independent clusters, fixtures and 15% reserve unchanged; a larger dedicated disk or separately validated copy-on-write Docker environment is required."
+}

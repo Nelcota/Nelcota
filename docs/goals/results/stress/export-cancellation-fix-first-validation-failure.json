@@ -1,0 +1,71 @@
+{
+  "status": "failed",
+  "scope": "First export correction attempt, not the original production reproduction. Existing response-lifetime regression rejected premature dedicated-client closure. Preserve this validation failure; no stress credit.",
+  "runner_result": {
+    "status": "failed",
+    "scope": "Related Rust regressions only, fresh owned shared Postgres; no production data or load-time credit",
+    "cases": [
+      {
+        "target": "sql_cancellation",
+        "exit_code": 0,
+        "elapsed_seconds_including_compilation": 43.33982096798718,
+        "log_sha256": "06c4d8fb23d8ef84b67af474d97a868f0527fcd3a1c582eba552e5b195dbe9ea"
+      },
+      {
+        "target": "admin",
+        "exit_code": 101,
+        "elapsed_seconds_including_compilation": 15.275007223011926,
+        "log_sha256": "b644ade222dcccc6bd6fc69f051351c478edb21d91e0f591ef957141aaf8665a"
+      }
+    ],
+    "profile": {
+      "compiler_jobs": 4,
+      "test_threads": 2,
+      "compiler_affinity": [
+        0,
+        1,
+        2
+      ],
+      "postgres_cpus": 1,
+      "postgres_affinity": 3,
+      "postgres_memory_mib": 512,
+      "postgres_data_tmpfs_mib": 256,
+      "postgres_pids": 128,
+      "maximum_seconds": 1200,
+      "private_log_mib_each": 16
+    },
+    "source_commit": "cb916d04fa43679152b2a463870c466a17bd9e91",
+    "source_files_sha256": {
+      "crates/admin/src/sql/executor.rs": "fe5638689356dd06a1d75819dd3683aab7af7ee26c7225d5b5de14b8b619c1d9",
+      "crates/server/tests/sql_cancellation.rs": "8f7e3b8b24d3272eceebf106b41c0fd53ec3b247801d73d802db862ce9d88d30",
+      "crates/server/tests/common/mod.rs": "29287cd61c5219f25a9aa77a91408ee3eb0ba7229c51e80089cad01803882b80",
+      "crates/admin/src/tables/export.rs": "e324700fac03cc3ee80a86e10f83f8ee2bc0e87261b5fa6a05c437603a220498",
+      "crates/admin/src/tables/export/connection.rs": "2b93cde80aa4a5a9c115901b8acb243b21ec81ff8e4b958eb7ae626b7a18c8cc",
+      "Cargo.lock": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff"
+    },
+    "working_diff_sha256": "71bd1b1176f18b8da04343472eef53109e06bb75b3601a812233f5a4a9d95300",
+    "failure_type": "RuntimeError",
+    "cleanup_confirmed": true,
+    "resource_observations": 12,
+    "resource_violations": [],
+    "elapsed_seconds_including_preparation": 62.06399599398719
+  },
+  "focused_cancellation_tests": {
+    "passed": 3,
+    "failed": 0,
+    "ignored": 0,
+    "execution_seconds": 39.59
+  },
+  "admin_performance_tests": {
+    "passed": 8,
+    "failed": 1,
+    "ignored": 0,
+    "filtered_out": 34,
+    "execution_seconds": 10.96,
+    "failed_test": "performance::export_lifetime_expires_even_when_the_body_is_not_polled",
+    "location": "crates/server/tests/admin/performance.rs:147"
+  },
+  "cause": "The initial correction dropped the dedicated client immediately after obtaining RowStream. Small buffered exports closed the database connection before the response lifetime elapsed, breaking the existing unpolled-response boundary.",
+  "correction_under_validation": "The supervisor retains a shared client owner until response completion, cancellation or deadline; then drops it before bounded backend cleanup. Existing deadline and footer checks remain unchanged.",
+  "architecture_tests_status": "not run after preceding failed step"
+}

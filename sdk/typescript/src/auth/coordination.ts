@@ -14,12 +14,14 @@ function locks(): LockManagerLike | undefined {
   return nav?.locks;
 }
 
-const pending = new Map<string, Promise<void>>();
+const pending = new Map<string | symbol, Promise<void>>();
 
 /** Web Locks across tabs, or a queue shared by clients in this module instance. */
-export function withLock<T>(name: string, task: () => Promise<T>): Promise<T> {
-  const manager = locks();
-  if (manager) return manager.request(name, task);
+export function withLock<T>(name: string | symbol, task: () => Promise<T>): Promise<T> {
+  if (typeof name === 'string') {
+    const manager = locks();
+    if (manager) return manager.request(name, task);
+  }
   const run = (pending.get(name) ?? Promise.resolve()).then(task);
   const tail = run.then(() => undefined, () => undefined);
   pending.set(name, tail);

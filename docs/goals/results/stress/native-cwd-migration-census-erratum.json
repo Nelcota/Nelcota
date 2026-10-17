@@ -1,0 +1,13 @@
+{
+  "status": "failed",
+  "certifies_g05": false,
+  "scope": "A producer-oracle defect; original reports and their original status are preserved.",
+  "affected_report": "native-cwd-migration-before.json",
+  "affected_source": "f3c8d49f0536ebbf0ef1d49c57426f1b547b0625",
+  "affected_field": "report.native_contract.fixture_table_created",
+  "cause": "The raw psql helper returns bytes; comparison with string t always recorded false.",
+  "withdrawn_claim": "The reported false value independently proves that the fixture table was absent.",
+  "unaffected_evidence": "Both actual migration subprocesses returned exit 1 with deployment_busy. That independent evidence still reproduces the nested lease failure.",
+  "fix": "Accept only byte booleans t/f; observe migration journal presence independently; require a finite bounded decimal count, with fresh actual-VM repetition still required.",
+  "regressions": "Three focused byte/absence/invalid-value regressions; fifteen native-VM tests passed before the separate clock-control extensions."
+}

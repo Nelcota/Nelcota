@@ -1,0 +1,210 @@
+{
+  "run": "disk-pass-1-005",
+  "scope": "partial 15-minute memory and live-owner windows, no leak/endurance certification",
+  "certifies_g05": false,
+  "windows": [
+    {
+      "minute_start": 0,
+      "samples": 147,
+      "median": {
+        "rss_mib": 45.21484375,
+        "anon_mib": 26.91796875,
+        "fds": 156,
+        "tasks": 7,
+        "sockets": 150,
+        "pg_disk_mib": 233
+      },
+      "maximum": {
+        "rss_mib": 45.28125,
+        "anon_mib": 28.6171875,
+        "fds": 160,
+        "tasks": 7,
+        "sockets": 150,
+        "pg_disk_mib": 237
+      }
+    },
+    {
+      "minute_start": 15,
+      "samples": 147,
+      "median": {
+        "rss_mib": 46.02734375,
+        "anon_mib": 27.73046875,
+        "fds": 156,
+        "tasks": 7,
+        "sockets": 150,
+        "pg_disk_mib": 241
+      },
+      "maximum": {
+        "rss_mib": 46.03515625,
+        "anon_mib": 29.41796875,
+        "fds": 160,
+        "tasks": 7,
+        "sockets": 150,
+        "pg_disk_mib": 246
+      }
+    },
+    {
+      "minute_start": 30,
+      "samples": 148,
+      "median": {
+        "rss_mib": 46.03515625,
+        "anon_mib": 27.73828125,
+        "fds": 156.0,
+        "tasks": 7.0,
+        "sockets": 150.0,
+        "pg_disk_mib": 251.0
+      },
+      "maximum": {
+        "rss_mib": 46.0703125,
+        "anon_mib": 29.41796875,
+        "fds": 157,
+        "tasks": 7,
+        "sockets": 151,
+        "pg_disk_mib": 255
+      }
+    },
+    {
+      "minute_start": 45,
+      "samples": 147,
+      "median": {
+        "rss_mib": 46.0703125,
+        "anon_mib": 27.7734375,
+        "fds": 156,
+        "tasks": 7,
+        "sockets": 150,
+        "pg_disk_mib": 259
+      },
+      "maximum": {
+        "rss_mib": 46.19921875,
+        "anon_mib": 29.45703125,
+        "fds": 160,
+        "tasks": 7,
+        "sockets": 152,
+        "pg_disk_mib": 264
+      }
+    },
+    {
+      "minute_start": 60,
+      "samples": 147,
+      "median": {
+        "rss_mib": 46.19921875,
+        "anon_mib": 27.8984375,
+        "fds": 156,
+        "tasks": 7,
+        "sockets": 150,
+        "pg_disk_mib": 284
+      },
+      "maximum": {
+        "rss_mib": 46.19921875,
+        "anon_mib": 29.59375,
+        "fds": 158,
+        "tasks": 7,
+        "sockets": 154,
+        "pg_disk_mib": 288
+      }
+    },
+    {
+      "minute_start": 75,
+      "samples": 147,
+      "median": {
+        "rss_mib": 46.19921875,
+        "anon_mib": 27.90234375,
+        "fds": 156,
+        "tasks": 7,
+        "sockets": 150,
+        "pg_disk_mib": 292
+      },
+      "maximum": {
+        "rss_mib": 46.21484375,
+        "anon_mib": 29.60546875,
+        "fds": 160,
+        "tasks": 7,
+        "sockets": 154,
+        "pg_disk_mib": 296
+      }
+    },
+    {
+      "minute_start": 90,
+      "samples": 146,
+      "median": {
+        "rss_mib": 46.21484375,
+        "anon_mib": 27.921875,
+        "fds": 156.0,
+        "tasks": 7.0,
+        "sockets": 150.0,
+        "pg_disk_mib": 300.0
+      },
+      "maximum": {
+        "rss_mib": 46.2578125,
+        "anon_mib": 29.65234375,
+        "fds": 160,
+        "tasks": 7,
+        "sockets": 153,
+        "pg_disk_mib": 304
+      }
+    },
+    {
+      "minute_start": 105,
+      "samples": 146,
+      "median": {
+        "rss_mib": 46.2578125,
+        "anon_mib": 27.95703125,
+        "fds": 156.0,
+        "tasks": 7.0,
+        "sockets": 150.0,
+        "pg_disk_mib": 308.0
+      },
+      "maximum": {
+        "rss_mib": 46.50390625,
+        "anon_mib": 29.64453125,
+        "fds": 160,
+        "tasks": 8,
+        "sockets": 154,
+        "pg_disk_mib": 328
+      }
+    },
+    {
+      "minute_start": 120,
+      "samples": 138,
+      "median": {
+        "rss_mib": 46.50390625,
+        "anon_mib": 28.203125,
+        "fds": 156.0,
+        "tasks": 8.0,
+        "sockets": 150.0,
+        "pg_disk_mib": 333.0
+      },
+      "maximum": {
+        "rss_mib": 46.50390625,
+        "anon_mib": 29.8984375,
+        "fds": 160,
+        "tasks": 8,
+        "sockets": 154,
+        "pg_disk_mib": 337
+      }
+    }
+  ],
+  "retention_cohorts": [
+    {
+      "cohort": 1,
+      "seeded_elapsed": 63.63954285799991,
+      "auth_pruned": true,
+      "events_pruned": true,
+      "storage_pruned": true,
+      "observed_elapsed": 3585.534703334997
+    },
+    {
+      "cohort": 2,
+      "seeded_elapsed": 3664.185016028001,
+      "auth_pruned": true,
+      "events_pruned": true,
+      "storage_pruned": true,
+      "observed_elapsed": 7180.413882428984
+    }
+  ],
+  "source_commit": "2efede8c27ee12119142170e8bd9742ff7cb900e",
+  "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+  "frozen_harness_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+  "continuous_process_identity_evidence": "target/stress-g05/disk-pass-1-005/observer-reconnection-002.json",
+  "scope_note": "Both aged retention cohorts were pruned; the four-hour load interval, post-load plateau and final data/file/event reconciliation are still pending. A bounded thread-pool expansion is a hypothesis until idle recovery is observed."
+}

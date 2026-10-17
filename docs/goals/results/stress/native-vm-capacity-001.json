@@ -1,0 +1,45 @@
+{
+  "scope": "read-only inventory only; no native runtime or durability acceptance",
+  "certifies_g05": false,
+  "workflow_run": "https://github.com/Nelcota/Nelcota/actions/runs/38960782906",
+  "check_run_id": 117175003980,
+  "self_hosted_benchmark_job": "skipped",
+  "inventory": {
+    "schema": 1,
+    "source": "22acf2191b4f8ff4686acab64d5a1015ee5a13fc",
+    "runner_environment": "github-hosted",
+    "measurement": "read-only capacity inventory; no stress or runtime acceptance",
+    "cpu_affinity_slots": 4,
+    "memory_bytes": {
+      "MemTotal": 16766406656,
+      "MemAvailable": 15329460224
+    },
+    "filesystem_free_bytes": 92078571520,
+    "filesystem_free_inodes": 18428704,
+    "pid1": "systemd",
+    "systemd": {
+      "available": true,
+      "exit_code": 1,
+      "stdout": "starting"
+    },
+    "noninteractive_sudo": {
+      "available": true,
+      "exit_code": 0,
+      "stdout": ""
+    },
+    "kvm_exists": true,
+    "kvm_read_write": false,
+    "docker": {
+      "available": true,
+      "exit_code": 0,
+      "stdout": "28.0.4"
+    },
+    "guest_tools": {
+      "qemu-system-x86_64": false,
+      "cloud-localds": false,
+      "genisoimage": false,
+      "xorriso": false
+    },
+    "elapsed_seconds": 0.0875768800000003
+  }
+}

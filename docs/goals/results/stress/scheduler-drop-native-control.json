@@ -1,0 +1,58 @@
+{
+  "scope": "Native k6 scheduler-drop selector control only; artificial sleep iterations, no HTTP service or capacity claim",
+  "certifies_g05": false,
+  "maximum_seconds": 180,
+  "generator_cpus": 0.25,
+  "metrics_cpus": 0.25,
+  "memory_mib_each": 128,
+  "traffic_seconds": 20,
+  "status": "passed",
+  "rows": [
+    {
+      "project": "project-0",
+      "old_project_selector": 0.0,
+      "correct_scenario_selector": 127.0,
+      "completed_iterations": 34.0
+    },
+    {
+      "project": "project-1",
+      "old_project_selector": 0.0,
+      "correct_scenario_selector": 51.0,
+      "completed_iterations": 30.0
+    }
+  ],
+  "scheduler_counters": [
+    {
+      "metric": {
+        "__name__": "k6_dropped_iterations_total",
+        "project": "single",
+        "run_id": "scheduler-control",
+        "scenario": "project-0"
+      },
+      "value": [
+        1792143462.824,
+        "127"
+      ]
+    },
+    {
+      "metric": {
+        "__name__": "k6_dropped_iterations_total",
+        "project": "single",
+        "run_id": "scheduler-control",
+        "scenario": "project-1"
+      },
+      "value": [
+        1792143462.824,
+        "51"
+      ]
+    }
+  ],
+  "k6_image": "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+  "prometheus_image": "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996",
+  "control_js_sha256": "e81418895dbdb5fd77b1e5a907c3fbcf615951ed4cd343a950ad6c9d1ce79e3e",
+  "elapsed_seconds": 23.804333647014573,
+  "cleanup_confirmed": true,
+  "source_commit": "621dab9c7609b7e6ad34d9b53f5ce082d2d447d1",
+  "metrics_source_sha256": "6448612907e9ff068f78f388aaae9c3f7e4fb9f20f6f07578ea1baf887b01508",
+  "raw_evidence_location": "target/stress-g05/scheduler-drop-control-001"
+}

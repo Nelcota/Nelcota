@@ -1,0 +1,1219 @@
+{
+  "scope": "First complete-step ten-project attempt at the default CPU period failed the first nominal sample; not a topology capacity/fairness certification",
+  "run_id": "fleet-caddy-10-pass-1-001",
+  "status": "failed",
+  "frozen_harness": {
+    "run_id": "fleet-caddy-10-pass-1-001",
+    "git": "75f92c491974f75899407172908ff7859aaf442f",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "harness_sources": {
+      "bench/allocation.py": "4b98e093b86e9b9187812cd49e8d5710f54561f196bdd222573c0edd06cff34d",
+      "bench/browser_campaign.py": "35b750c93b78cb29045cd17e3d82d81446bf783e7efe54fcba3a6279a65f5113",
+      "bench/browser_driver.py": "7a97e7f83cea534add1c75bd13d6764c2fb8ef94a0c2d4e4f1a7ee8ece9c244a",
+      "bench/browser_runtime.py": "1720ee9bab4b959260f366ca7c8767d2b810a1884f3940ff3735755ef6ba48ba",
+      "bench/campaign.py": "bdee44f7731f2d6bcfb037335d7407edb2faa1ec2019aaacdf61645d0d8815a1",
+      "bench/compare.py": "95791d04b968c5e57892f767205d1f44de1c16d17a370a6d0ec49ac373524fd0",
+      "bench/disk_usage.py": "502da50d95f979128c91d49b3037cb08885ddcbb941af0a9bd842e0d193da38e",
+      "bench/evidence.py": "34909a7f6660072928d58743a291727dec3aa34bd196c0cdb32f5897c2d27ac3",
+      "bench/fault_campaign.py": "33fca029d3414e5c03d8d8a9e7a90e38c978bc307c05f3b98eef1e3957be30f4",
+      "bench/fixture_copy.py": "8c1421202b5543c16fa0fd0af4e47f7a8f9ef1bd9cd9423bfde28eda3dec6288",
+      "bench/fleet_webhooks.py": "ae5d21861ef3951a50a37fdfc84507685e87c2f8cc1698ae0d5972244d0b97ce",
+      "bench/guard_check.py": "2fa55b5e70154e7498ab79f627ef7623ae965cb4727a8318845bc5eb9baf481d",
+      "bench/host_campaign.py": "44e558cdb849829a5f16f8c148ae983872829b1ff18c56d7c5c854c2932f087d",
+      "bench/host_compare.py": "186f3378bff16247e248a9481a7fdab26a0227a5a515fdcaaa153e434612d02d",
+      "bench/host_resources.py": "1205842ab861a036ff526b85d237c08de437e8b7a52455e6fe7e56410dcb0a31",
+      "bench/http_boundary.py": "b69ff97c9e65f8ec94ccf36ac282a3b6b53c1a07aa01fbd33ac1fbe68a976db3",
+      "bench/ingress.py": "4976738ec1c3e96862f87a02d81843087a72a665a2de829acc4c6804b6117ed2",
+      "bench/launch.py": "915eb76ea3a712799777f27dfbe8bbffe4de8f5a48d9a5b541ee844f0391a498",
+      "bench/load_time.py": "23e9b43a24b7842259e94958cf2a0836a7b970cabdab2c908d5761dd688527c5",
+      "bench/lost_reply.py": "2048c95f21169fe46adddb28c4feffa60da365d369f4730ed6f7c6bcbfd348bb",
+      "bench/metrics.py": "ad692683d6fe95428c98ca922593d36c01d4bb4bb41078bc04f8c25d9a025a91",
+      "bench/monitor.py": "bd869d88b833930602dc3770e5467040021cca6930f89fd298c269b6850c2e61",
+      "bench/objects.py": "a1612bc2e457481705044ce21a376d898544dbbff004a8920511218858a8210b",
+      "bench/observations.py": "8f88a60899928c2b30da0f888127034ec5c7117e34630121297f8bf11f64379b",
+      "bench/oracle_check.py": "690eb5a17c735f40b666ad313b56ed09301285c79da75835cee563021b5725ce",
+      "bench/ownership.py": "ffd3e9343b7f8262d05ee0363ab01b1f7e77089bb8f09ca8d0a350532402fa06",
+      "bench/ports.py": "edcb747bf4f29429d2abf5abf2741289c586cb64b0cf3484fa891edb5d798276",
+      "bench/postgres_evidence.py": "7152ea8c58232981c07b6c20d4a6a8cfba1046de1893d09c78de58607a95855a",
+      "bench/projects.py": "53b097879fead2517ea1522f6c89f3fb3155b017bda2cd85bdcbc59d85d639f2",
+      "bench/receiver.py": "b4f172be66aee69649c826052951ff839272d7501ec0d0a2e648d65dedd4ee9d",
+      "bench/watchdog.py": "25ab3e86efdcec9c1da84942ef27fee285339adbda15b70791030e4863ff7bb3",
+      "bench/allocation_probe.c": "f833882f9c9697d7e838871dad3d398fb6427e78b21104d30ea8fcd7f13678f3",
+      "bench/campaign.js": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+      "bench/setup.sql": "104496228668127c3a95a0defa6efe2d6c06a00c56bdc19999052043e700c798",
+      "scripts/upgrade/support.py": "97fd54c7d8fe80d70d0201e71454dd4f72fef760e161800ad503760d3f90feb8"
+    }
+  },
+  "profile": {
+    "schema": 2,
+    "scope": "local independent app/PG clusters with verified local Caddy, no public DNS/controller",
+    "projects": 10,
+    "rows_per_project": 1000,
+    "shared_user_id": "00000000-0000-4000-8000-000000000001",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "cpu_effective": 4.0,
+    "app_aggregate_cpus": 1,
+    "postgres_aggregate_cpus": 1,
+    "generator_cpus": 1,
+    "metrics_cpus": 0.25,
+    "app_memory_mib_each": 128,
+    "postgres_memory_mib_each": 256,
+    "max_arrival_rate": 10000,
+    "fixture_disk_mib": 2048,
+    "storage_filesystem": "overlayfs",
+    "seconds_per_step": 300,
+    "certifies_five_minute_steps": true,
+    "base_rate_per_project": 8,
+    "SLOs": "G05 unchanged",
+    "startup_disk_budget": {
+      "per_project_mib": 780,
+      "container_layer_copy_factor": 2,
+      "total_startup_mib": 8440,
+      "image_storage_drivers": [
+        "vfs",
+        "vfs"
+      ],
+      "separate_database_data_mib": 2048
+    },
+    "ingress": {
+      "kind": "real Caddy with verified internal CA on loopback",
+      "cpus": 0.25,
+      "cpu_affinity": 3,
+      "memory_mib": 128,
+      "pids_limit": 64,
+      "fixture_disk_mib": 128,
+      "binary_sha256": "678ade3bfc088749c81a681adc603333ee0bb023b6a6cfe3c0f58bef8ff854e9",
+      "image_file_capabilities_removed_for_unprivileged_ports": true,
+      "image_digests": [
+        "caddy@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f"
+      ],
+      "public_dns_acme_certified": false,
+      "reload_fault": "valid configuration rejected by an occupied owned backend listener; restore and probe without process replacement"
+    },
+    "webhooks": {
+      "enabled": true,
+      "receiver": "owned loopback, verified signatures and durable event identities",
+      "evidence_limit_mib": 128,
+      "drain_seconds": 30
+    },
+    "resource_protocol": "component cgroup v2 plus host/process owners; allocated du totals count only disappearing child entries",
+    "container_log_profile": {
+      "driver": "local",
+      "max_size_bytes": 8388608,
+      "max_files": 2
+    },
+    "harness_js_sha256": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+    "client_initialization": {
+      "maximum_sessions_per_project": 128,
+      "bootstrap_concurrency": 4,
+      "setup_timeout_seconds": 120,
+      "fully_preallocated_arrival_VUs": true,
+      "mix_schedule": "global scenario arrival ordinal",
+      "bootstrap_excluded_from_nominal_metrics": true
+    },
+    "cpu_affinity": [
+      0,
+      1,
+      2
+    ],
+    "metrics_cpu_affinity": 4,
+    "capacity_qualification": true,
+    "provisional_rate_per_project": 32,
+    "max_connections_each": 32,
+    "pool_each": 4,
+    "generator_memory_mib": 512,
+    "metrics_memory_mib": 512,
+    "images": {
+      "ubuntu:24.04": [
+        "ubuntu@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55"
+      ],
+      "postgres:17-alpine": [
+        "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+      ],
+      "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1": [
+        "grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1"
+      ],
+      "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996": [
+        "prom/prometheus@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+      ]
+    },
+    "nominal_rate_per_project": 19
+  },
+  "completion": {
+    "status": "failed",
+    "projects": 10,
+    "load_seconds": 1590,
+    "resource_observations": 124,
+    "cleanup_confirmed": true,
+    "error_type": "RuntimeError"
+  },
+  "cleanup": {
+    "confirmed": true,
+    "containers": [],
+    "volumes": [],
+    "directory_removed": true
+  },
+  "cross_project_preflight": {
+    "distinct_keys": true,
+    "directed_rejections": 90,
+    "status": "passed"
+  },
+  "capacity": {
+    "qualified_lower_bound_per_project": 24,
+    "nominal_rate_per_project": 19,
+    "provisional_per_project": 32
+  },
+  "capacity_probes": [
+    {
+      "percent": 25,
+      "per_project_iterations_per_second": 8,
+      "qualified": true,
+      "failures": []
+    },
+    {
+      "percent": 50,
+      "per_project_iterations_per_second": 16,
+      "qualified": true,
+      "failures": []
+    },
+    {
+      "percent": 75,
+      "per_project_iterations_per_second": 24,
+      "qualified": true,
+      "failures": []
+    },
+    {
+      "percent": 100,
+      "per_project_iterations_per_second": 32,
+      "qualified": false,
+      "failures": [
+        {
+          "project": "project-0",
+          "workload": "refresh",
+          "metric": "p(95)",
+          "observed": "221.8259419805879",
+          "maximum_ms": 200
+        },
+        {
+          "project": "project-1",
+          "workload": "refresh",
+          "metric": "p(95)",
+          "observed": "211.1368059065189",
+          "maximum_ms": 200
+        },
+        {
+          "project": "project-2",
+          "workload": "refresh",
+          "metric": "p(95)",
+          "observed": "212.05347055716382",
+          "maximum_ms": 200
+        },
+        {
+          "project": "project-3",
+          "workload": "refresh",
+          "metric": "p(95)",
+          "observed": "211.1368059065189",
+          "maximum_ms": 200
+        },
+        {
+          "project": "project-4",
+          "workload": "refresh",
+          "metric": "p(95)",
+          "observed": "233.66280404632946",
+          "maximum_ms": 200
+        },
+        {
+          "project": "project-6",
+          "workload": "refresh",
+          "metric": "p(95)",
+          "observed": "217.0099854755085",
+          "maximum_ms": 200
+        },
+        {
+          "project": "project-8",
+          "workload": "refresh",
+          "metric": "p(95)",
+          "observed": "205.94235834999014",
+          "maximum_ms": 200
+        },
+        {
+          "project": "project-9",
+          "workload": "refresh",
+          "metric": "p(95)",
+          "observed": "229.91407071874806",
+          "maximum_ms": 200
+        }
+      ]
+    }
+  ],
+  "failed_nominal_gates": [
+    {
+      "project": "project-1",
+      "workload": "refresh",
+      "metric": "p(95)",
+      "observed": "233.00575604972357",
+      "maximum_ms": 200
+    },
+    {
+      "project": "project-9",
+      "workload": "refresh",
+      "metric": "p(95)",
+      "observed": "234.27095426378742",
+      "maximum_ms": 200
+    }
+  ],
+  "resource_violations": [],
+  "resource_cadence_seconds": {
+    "target": 5,
+    "median": 16.09248598999693,
+    "maximum": 24.300786559004337,
+    "critical_gap_limit": 30
+  },
+  "nominal_samples": {
+    "project-0": {
+      "iterations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "successful_operations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "dropped_iterations": {
+        "count": 0.0
+      },
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 11970.0,
+        "fails": 0.0
+      },
+      "overload_rejections": {
+        "count": 0.0
+      },
+      "latency_read": {
+        "p(50)": 3.1797410583151327,
+        "p(95)": 54.18398894199683,
+        "p(99)": 94.85764716789205,
+        "min": 1.2664448775888766,
+        "max": 192.77635317599263
+      },
+      "latency_rls": {
+        "p(50)": 2.3116692107853867,
+        "p(95)": 16.082847447554535,
+        "p(99)": 89.93334875067622,
+        "min": 1.5060652591874424,
+        "max": 176.77669529663686
+      },
+      "latency_panel": {
+        "p(50)": 3.9621296462628837,
+        "p(95)": 29.92510252183035,
+        "p(99)": 103.530302495384,
+        "min": 2.532889755177753,
+        "max": 229.2510108011678
+      },
+      "latency_storage": {
+        "p(50)": 5.907956831761487,
+        "p(95)": 54.58648081872403,
+        "p(99)": 211.59464183866217,
+        "min": 1.953125,
+        "max": 250.0
+      },
+      "latency_login": {
+        "p(50)": 240.03404947136096,
+        "p(95)": 343.73650977918555,
+        "p(99)": 434.6471731146859,
+        "min": 136.3134665831572,
+        "max": 545.2538663326288
+      },
+      "latency_refresh": {
+        "p(50)": 86.91171381845193,
+        "p(95)": 163.8701514405955,
+        "p(99)": 286.55321741213345,
+        "min": 10.131559020711013,
+        "max": 385.55270635198525
+      },
+      "latency_write": {
+        "p(50)": 43.78580794228459,
+        "p(95)": 100.89819159169782,
+        "p(99)": 232.2499192313151,
+        "min": 2.762135864009951,
+        "max": 324.2098886627524
+      }
+    },
+    "project-1": {
+      "iterations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "successful_operations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "dropped_iterations": {
+        "count": 0.0
+      },
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 11974.0,
+        "fails": 0.0
+      },
+      "overload_rejections": {
+        "count": 0.0
+      },
+      "latency_read": {
+        "p(50)": 2.853830537865041,
+        "p(95)": 61.280101624559464,
+        "p(99)": 128.26949365086446,
+        "min": 1.3810679320049755,
+        "max": 297.3017787506803
+      },
+      "latency_rls": {
+        "p(50)": 2.223582904613716,
+        "p(95)": 9.642155612451687,
+        "p(99)": 78.29152741400794,
+        "min": 1.3810679320049755,
+        "max": 162.1049443313762
+      },
+      "latency_panel": {
+        "p(50)": 3.8377125354644863,
+        "p(95)": 21.160242920888937,
+        "p(99)": 89.5445849096635,
+        "min": 2.532889755177753,
+        "max": 229.2510108011678
+      },
+      "latency_storage": {
+        "p(50)": 5.505893072833748,
+        "p(95)": 52.46852900946312,
+        "p(99)": 195.2981245245776,
+        "min": 1.7910235218841235,
+        "max": 500.0
+      },
+      "latency_login": {
+        "p(50)": 244.643015521925,
+        "p(95)": 367.3656043708064,
+        "p(99)": 434.6471731146859,
+        "min": 136.3134665831572,
+        "max": 545.2538663326288
+      },
+      "latency_refresh": {
+        "p(50)": 83.68980244714508,
+        "p(95)": 233.00575604972357,
+        "p(99)": 340.7711249734307,
+        "min": 17.03918332289465,
+        "max": 385.55270635198525
+      },
+      "latency_write": {
+        "p(50)": 44.29505545773458,
+        "p(95)": 172.98873524547878,
+        "p(99)": 274.40430108859067,
+        "min": 8.519591661447325,
+        "max": 324.2098886627524
+      }
+    },
+    "project-2": {
+      "iterations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "successful_operations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "dropped_iterations": {
+        "count": 0.0
+      },
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 11972.0,
+        "fails": 0.0
+      },
+      "overload_rejections": {
+        "count": 0.0
+      },
+      "latency_read": {
+        "p(50)": 2.942550509006543,
+        "p(95)": 54.62071861720112,
+        "p(99)": 112.15312047259724,
+        "min": 1.2664448775888766,
+        "max": 324.2098886627524
+      },
+      "latency_rls": {
+        "p(50)": 2.3151591756763987,
+        "p(95)": 29.496072271302875,
+        "p(99)": 89.76035687992166,
+        "min": 1.2664448775888766,
+        "max": 176.77669529663686
+      },
+      "latency_panel": {
+        "p(50)": 3.9122984416599444,
+        "p(95)": 46.15081706060933,
+        "p(99)": 117.64402868813349,
+        "min": 2.762135864009951,
+        "max": 250.0
+      },
+      "latency_storage": {
+        "p(50)": 4.816107577591118,
+        "p(95)": 80.17937600492358,
+        "p(99)": 388.0662841729951,
+        "min": 1.953125,
+        "max": 500.0
+      },
+      "latency_login": {
+        "p(50)": 253.76955606537805,
+        "p(95)": 362.6018858075081,
+        "p(99)": 464.4998384626301,
+        "min": 176.77669529663686,
+        "max": 545.2538663326288
+      },
+      "latency_refresh": {
+        "p(50)": 80.66326178856797,
+        "p(95)": 182.61472427258076,
+        "p(99)": 299.24001221371367,
+        "min": 17.03918332289465,
+        "max": 385.55270635198525
+      },
+      "latency_write": {
+        "p(50)": 39.62349639160101,
+        "p(95)": 119.0539588636046,
+        "p(99)": 240.9615733012813,
+        "min": 6.0242610367497695,
+        "max": 297.3017787506803
+      }
+    },
+    "project-3": {
+      "iterations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "successful_operations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "dropped_iterations": {
+        "count": 0.0
+      },
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 11974.0,
+        "fails": 0.0
+      },
+      "overload_rejections": {
+        "count": 0.0
+      },
+      "latency_read": {
+        "p(50)": 2.9208742061708124,
+        "p(95)": 52.05358380354862,
+        "p(99)": 92.54687749326953,
+        "min": 1.3810679320049755,
+        "max": 272.6269331663144
+      },
+      "latency_rls": {
+        "p(50)": 2.238004374220097,
+        "p(95)": 22.580950109016324,
+        "p(99)": 89.76035687992166,
+        "min": 1.2664448775888766,
+        "max": 210.22410381342857
+      },
+      "latency_panel": {
+        "p(50)": 3.7785145242413587,
+        "p(95)": 21.506812043039535,
+        "p(99)": 91.982294726601,
+        "min": 2.532889755177753,
+        "max": 297.3017787506803
+      },
+      "latency_storage": {
+        "p(50)": 5.539249548126622,
+        "p(95)": 49.63885459974217,
+        "p(99)": 179.089169819327,
+        "min": 1.7910235218841235,
+        "max": 229.2510108011678
+      },
+      "latency_login": {
+        "p(50)": 258.1714753429947,
+        "p(95)": 364.152242944099,
+        "p(99)": 422.27361181303814,
+        "min": 162.1049443313762,
+        "max": 458.50202160233556
+      },
+      "latency_refresh": {
+        "p(50)": 78.31492209463879,
+        "p(95)": 143.38009582997591,
+        "p(99)": 253.27033283263063,
+        "min": 13.139006488339291,
+        "max": 324.2098886627524
+      },
+      "latency_write": {
+        "p(50)": 41.30166492509867,
+        "p(95)": 95.34988442153359,
+        "p(99)": 164.22549281849086,
+        "min": 7.164094087536494,
+        "max": 250.0
+      }
+    },
+    "project-4": {
+      "iterations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "successful_operations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "dropped_iterations": {
+        "count": 0.0
+      },
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 11970.0,
+        "fails": 0.0
+      },
+      "overload_rejections": {
+        "count": 0.0
+      },
+      "latency_read": {
+        "p(50)": 2.7593544649327195,
+        "p(95)": 55.62618190020504,
+        "p(99)": 109.67069642858944,
+        "min": 1.3810679320049755,
+        "max": 297.3017787506803
+      },
+      "latency_rls": {
+        "p(50)": 2.342727031369134,
+        "p(95)": 19.40402831364814,
+        "p(99)": 86.6193606141893,
+        "min": 1.2664448775888766,
+        "max": 176.77669529663686
+      },
+      "latency_panel": {
+        "p(50)": 3.8649062177544162,
+        "p(95)": 54.88288001166557,
+        "p(99)": 187.01812475901409,
+        "min": 2.532889755177753,
+        "max": 272.6269331663144
+      },
+      "latency_storage": {
+        "p(50)": 5.569327125412087,
+        "p(95)": 106.83361019377887,
+        "p(99)": 390.5962490491551,
+        "min": 1.953125,
+        "max": 458.50202160233556
+      },
+      "latency_login": {
+        "p(50)": 261.06844560685346,
+        "p(95)": 377.2911068983557,
+        "p(99)": 470.06673672387586,
+        "min": 162.1049443313762,
+        "max": 500.0
+      },
+      "latency_refresh": {
+        "p(50)": 75.27853451730962,
+        "p(95)": 190.69976884306718,
+        "p(99)": 301.1908818236716,
+        "min": 7.8125,
+        "max": 420.4482076268572
+      },
+      "latency_write": {
+        "p(50)": 39.562510228960306,
+        "p(95)": 133.3925500846028,
+        "p(99)": 240.9615733012813,
+        "min": 6.5695032441696455,
+        "max": 272.6269331663144
+      }
+    },
+    "project-5": {
+      "iterations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "successful_operations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "dropped_iterations": {
+        "count": 0.0
+      },
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 11974.0,
+        "fails": 0.0
+      },
+      "overload_rejections": {
+        "count": 0.0
+      },
+      "latency_read": {
+        "p(50)": 2.6616205370778796,
+        "p(95)": 49.90394295969391,
+        "p(99)": 95.96319488254684,
+        "min": 1.2664448775888766,
+        "max": 192.77635317599263
+      },
+      "latency_rls": {
+        "p(50)": 2.293405721730392,
+        "p(95)": 25.71492934615567,
+        "p(99)": 83.33116731819989,
+        "min": 1.3810679320049755,
+        "max": 250.0
+      },
+      "latency_panel": {
+        "p(50)": 3.921321256228418,
+        "p(95)": 38.80805662729628,
+        "p(99)": 97.22694493825114,
+        "min": 2.532889755177753,
+        "max": 210.22410381342857
+      },
+      "latency_storage": {
+        "p(50)": 6.587314974407787,
+        "p(95)": 55.78176910371672,
+        "p(99)": 358.178339638654,
+        "min": 1.953125,
+        "max": 500.0
+      },
+      "latency_login": {
+        "p(50)": 259.5237284038838,
+        "p(95)": 350.620138949436,
+        "p(99)": 416.0478673103351,
+        "min": 176.77669529663686,
+        "max": 545.2538663326288
+      },
+      "latency_refresh": {
+        "p(50)": 73.4363868667379,
+        "p(95)": 199.14276891778323,
+        "p(99)": 285.6236804091622,
+        "min": 6.0242610367497695,
+        "max": 324.2098886627524
+      },
+      "latency_write": {
+        "p(50)": 45.2598307545628,
+        "p(95)": 129.12810987765346,
+        "p(99)": 230.74559311559685,
+        "min": 7.164094087536494,
+        "max": 297.3017787506803
+      }
+    },
+    "project-6": {
+      "iterations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "successful_operations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "dropped_iterations": {
+        "count": 0.0
+      },
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 11970.0,
+        "fails": 0.0
+      },
+      "overload_rejections": {
+        "count": 0.0
+      },
+      "latency_read": {
+        "p(50)": 2.5202602981369986,
+        "p(95)": 51.98184986284741,
+        "p(99)": 107.06858476305274,
+        "min": 1.3810679320049755,
+        "max": 229.2510108011678
+      },
+      "latency_rls": {
+        "p(50)": 2.2158335340623987,
+        "p(95)": 24.09704414699897,
+        "p(99)": 83.91078142376645,
+        "min": 1.3810679320049755,
+        "max": 176.77669529663686
+      },
+      "latency_panel": {
+        "p(50)": 3.9885845963632076,
+        "p(95)": 29.2838692829734,
+        "p(99)": 90.71594729372093,
+        "min": 2.532889755177753,
+        "max": 192.77635317599263
+      },
+      "latency_storage": {
+        "p(50)": 6.7245518811809095,
+        "p(95)": 61.16075388048119,
+        "p(99)": 461.4911862311936,
+        "min": 1.7910235218841235,
+        "max": 545.2538663326288
+      },
+      "latency_login": {
+        "p(50)": 247.7372501877763,
+        "p(95)": 373.22693207281617,
+        "p(99)": 450.13744923405625,
+        "min": 148.65088937534014,
+        "max": 545.2538663326288
+      },
+      "latency_refresh": {
+        "p(50)": 67.47874363736392,
+        "p(95)": 133.39255008460296,
+        "p(99)": 299.24001221371367,
+        "min": 7.8125,
+        "max": 385.55270635198525
+      },
+      "latency_write": {
+        "p(50)": 37.48611175127819,
+        "p(95)": 99.57138445889161,
+        "p(99)": 212.9741149690742,
+        "min": 4.6453402929793794,
+        "max": 272.6269331663144
+      }
+    },
+    "project-7": {
+      "iterations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "successful_operations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "dropped_iterations": {
+        "count": 0.0
+      },
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 11972.0,
+        "fails": 0.0
+      },
+      "overload_rejections": {
+        "count": 0.0
+      },
+      "latency_read": {
+        "p(50)": 2.4322921787497473,
+        "p(95)": 50.05921270487103,
+        "p(99)": 102.39732980026963,
+        "min": 1.2664448775888766,
+        "max": 229.2510108011678
+      },
+      "latency_rls": {
+        "p(50)": 2.1110290719309512,
+        "p(95)": 9.290680585958718,
+        "p(99)": 77.7507283311543,
+        "min": 1.3810679320049755,
+        "max": 176.77669529663686
+      },
+      "latency_panel": {
+        "p(50)": 3.885914515802936,
+        "p(95)": 37.56739785789695,
+        "p(99)": 98.92644199985659,
+        "min": 2.532889755177753,
+        "max": 229.2510108011678
+      },
+      "latency_storage": {
+        "p(50)": 7.086922560548433,
+        "p(95)": 108.58336470460657,
+        "p(99)": 371.6135468525651,
+        "min": 1.7910235218841235,
+        "max": 545.2538663326288
+      },
+      "latency_login": {
+        "p(50)": 249.32401402136753,
+        "p(95)": 368.4076692861781,
+        "p(99)": 416.0478673103351,
+        "min": 162.1049443313762,
+        "max": 458.50202160233556
+      },
+      "latency_refresh": {
+        "p(50)": 66.28477884423774,
+        "p(95)": 153.56006701335866,
+        "p(99)": 290.0921845879125,
+        "min": 6.0242610367497695,
+        "max": 385.55270635198525
+      },
+      "latency_write": {
+        "p(50)": 43.20972921027484,
+        "p(95)": 112.16931718769406,
+        "p(99)": 230.24631949130276,
+        "min": 5.524271728019902,
+        "max": 250.0
+      }
+    },
+    "project-8": {
+      "iterations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "successful_operations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "dropped_iterations": {
+        "count": 0.0
+      },
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 11974.0,
+        "fails": 0.0
+      },
+      "overload_rejections": {
+        "count": 0.0
+      },
+      "latency_read": {
+        "p(50)": 2.5006076228478356,
+        "p(95)": 46.76719218945765,
+        "p(99)": 88.06346983472076,
+        "min": 1.2664448775888766,
+        "max": 210.22410381342857
+      },
+      "latency_rls": {
+        "p(50)": 2.299417052031374,
+        "p(95)": 27.048017531441925,
+        "p(99)": 84.7458019957076,
+        "min": 1.2664448775888766,
+        "max": 192.77635317599263
+      },
+      "latency_panel": {
+        "p(50)": 4.68680508586301,
+        "p(95)": 33.3481375211507,
+        "p(99)": 128.29172298630297,
+        "min": 2.3226701464896897,
+        "max": 192.77635317599263
+      },
+      "latency_storage": {
+        "p(50)": 7.557924815210028,
+        "p(95)": 54.58648081872403,
+        "p(99)": 301.1908818236716,
+        "min": 1.7910235218841235,
+        "max": 420.4482076268572
+      },
+      "latency_login": {
+        "p(50)": 239.1870754398245,
+        "p(95)": 323.6701337264985,
+        "p(99)": 412.777860945467,
+        "min": 162.1049443313762,
+        "max": 458.50202160233556
+      },
+      "latency_refresh": {
+        "p(50)": 74.86403749858701,
+        "p(95)": 153.56006701335866,
+        "p(99)": 251.08539182298105,
+        "min": 7.164094087536494,
+        "max": 272.6269331663144
+      },
+      "latency_write": {
+        "p(50)": 38.808056627296374,
+        "p(95)": 93.81337935165158,
+        "p(99)": 212.9741149690742,
+        "min": 6.0242610367497695,
+        "max": 272.6269331663144
+      }
+    },
+    "project-9": {
+      "iterations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "successful_operations": {
+        "count": 5701.0,
+        "rate": 19.003333333333334
+      },
+      "dropped_iterations": {
+        "count": 0.0
+      },
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 11974.0,
+        "fails": 0.0
+      },
+      "overload_rejections": {
+        "count": 0.0
+      },
+      "latency_read": {
+        "p(50)": 3.162568623427468,
+        "p(95)": 55.91589162244134,
+        "p(99)": 123.37525742412902,
+        "min": 1.2664448775888766,
+        "max": 297.3017787506803
+      },
+      "latency_rls": {
+        "p(50)": 2.2610996806379027,
+        "p(95)": 15.62499999999998,
+        "p(99)": 79.66003920745386,
+        "min": 1.3810679320049755,
+        "max": 176.77669529663686
+      },
+      "latency_panel": {
+        "p(50)": 4.253437078254981,
+        "p(95)": 28.042329296923516,
+        "p(99)": 97.22694493825114,
+        "min": 2.532889755177753,
+        "max": 250.0
+      },
+      "latency_storage": {
+        "p(50)": 6.156175176202682,
+        "p(95)": 51.63280614463198,
+        "p(99)": 253.27033283263063,
+        "min": 1.953125,
+        "max": 385.55270635198525
+      },
+      "latency_login": {
+        "p(50)": 219.04434456752088,
+        "p(95)": 379.6333317463371,
+        "p(99)": 464.4998384626301,
+        "min": 114.6255054005839,
+        "max": 594.6035575013606
+      },
+      "latency_refresh": {
+        "p(50)": 94.11868669646356,
+        "p(95)": 234.27095426378742,
+        "p(99)": 316.3477704788759,
+        "min": 17.03918332289465,
+        "max": 420.4482076268572
+      },
+      "latency_write": {
+        "p(50)": 47.00036560573706,
+        "p(95)": 124.1007150614086,
+        "p(99)": 251.6298535709896,
+        "min": 9.290680585958759,
+        "max": 297.3017787506803
+      }
+    }
+  },
+  "cpu_throttling_tail": [
+    {
+      "role": "app-0",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 6.101355,
+      "throttled_period_fraction": 0.15795654726952438,
+      "throttled_seconds": 5.063447
+    },
+    {
+      "role": "app-1",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.996951,
+      "throttled_period_fraction": 0.14159811985898943,
+      "throttled_seconds": 4.050557
+    },
+    {
+      "role": "app-2",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 6.003174,
+      "throttled_period_fraction": 0.10875955320399765,
+      "throttled_seconds": 3.6089
+    },
+    {
+      "role": "app-3",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.977897,
+      "throttled_period_fraction": 0.10934744268077601,
+      "throttled_seconds": 3.341395
+    },
+    {
+      "role": "app-4",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 6.092494,
+      "throttled_period_fraction": 0.091015854374633,
+      "throttled_seconds": 3.1457
+    },
+    {
+      "role": "app-5",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 6.081658,
+      "throttled_period_fraction": 0.09700176366843033,
+      "throttled_seconds": 3.349954
+    },
+    {
+      "role": "app-6",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.795531,
+      "throttled_period_fraction": 0.08716136631330977,
+      "throttled_seconds": 3.139881
+    },
+    {
+      "role": "app-7",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.791225,
+      "throttled_period_fraction": 0.08759553203997648,
+      "throttled_seconds": 3.274901
+    },
+    {
+      "role": "app-8",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.668125,
+      "throttled_period_fraction": 0.09074837949322334,
+      "throttled_seconds": 2.460227
+    },
+    {
+      "role": "app-9",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.903706,
+      "throttled_period_fraction": 0.1791396582203889,
+      "throttled_seconds": 8.345558
+    },
+    {
+      "role": "pg-0",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.946622,
+      "throttled_period_fraction": 0.06227967097532315,
+      "throttled_seconds": 7.168779
+    },
+    {
+      "role": "pg-1",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.897716,
+      "throttled_period_fraction": 0.06400469759248385,
+      "throttled_seconds": 7.72368
+    },
+    {
+      "role": "pg-2",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.935824,
+      "throttled_period_fraction": 0.056924882629107984,
+      "throttled_seconds": 7.282858
+    },
+    {
+      "role": "pg-3",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.968073,
+      "throttled_period_fraction": 0.06103286384976526,
+      "throttled_seconds": 6.251117
+    },
+    {
+      "role": "pg-4",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.858492,
+      "throttled_period_fraction": 0.06576629477392835,
+      "throttled_seconds": 7.742611
+    },
+    {
+      "role": "pg-5",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.906599,
+      "throttled_period_fraction": 0.06459189665296536,
+      "throttled_seconds": 7.553099
+    },
+    {
+      "role": "pg-6",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.709467,
+      "throttled_period_fraction": 0.060481503229594835,
+      "throttled_seconds": 7.508906
+    },
+    {
+      "role": "pg-7",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.584823,
+      "throttled_period_fraction": 0.05927230046948357,
+      "throttled_seconds": 5.826007
+    },
+    {
+      "role": "pg-8",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.423252,
+      "throttled_period_fraction": 0.06279342723004695,
+      "throttled_seconds": 6.594885
+    },
+    {
+      "role": "pg-9",
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "sample_window_seconds": 170.50816644800943,
+      "cpu_usage_seconds": 5.91726,
+      "throttled_period_fraction": 0.06635349383440986,
+      "throttled_seconds": 7.936294
+    }
+  ],
+  "later_matrix_cells": "not run: remaining balanced samples, proxy reload, noisy-neighbor phases and final event identity reconciliation were not reached",
+  "finding": "Each app/database is limited to 10 ms CPU per 100 ms. Bursty hashing and observed scheduling throttling motivate a separately declared shorter CPU-bandwidth-period experiment; root cause and improvement are not inferred from a setting change. SLOs and aggregate CPU bandwidth stay unchanged.",
+  "raw_evidence_location": "target/stress-g05/fleet-caddy-10-pass-1-001"
+}

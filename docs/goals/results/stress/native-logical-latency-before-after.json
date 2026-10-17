@@ -1,0 +1,429 @@
+{
+  "scope": "Native k6 response-oracle and logical-request timing regression using the actual campaign workload. A controlled first-hop 250ms delay is included only by the corrected workload. Eighteen expected outcomes passed, including intentional invalid-response rejection. No BaaS capacity/endurance certification.",
+  "cases": [
+    {
+      "case": "candidate-valid",
+      "mode": "valid",
+      "expected_exit_code": 0,
+      "actual_exit_code": 0,
+      "positive_object_reads": 108,
+      "responses": {
+        "200": 323,
+        "201": 1
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 0,
+        "rls": 0,
+        "panel": 0,
+        "storage": 324,
+        "login": 0,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true
+    },
+    {
+      "case": "candidate-corrupt",
+      "mode": "corrupt",
+      "expected_exit_code": 108,
+      "actual_exit_code": 108,
+      "positive_object_reads": 1,
+      "responses": {
+        "200": 2
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 0,
+        "rls": 0,
+        "panel": 0,
+        "storage": 2,
+        "login": 0,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true
+    },
+    {
+      "case": "candidate-truncated",
+      "mode": "truncated",
+      "expected_exit_code": 108,
+      "actual_exit_code": 108,
+      "positive_object_reads": 1,
+      "responses": {
+        "200": 2
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 0,
+        "rls": 0,
+        "panel": 0,
+        "storage": 2,
+        "login": 0,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true
+    },
+    {
+      "case": "candidate-mixed",
+      "mode": "mixed",
+      "expected_exit_code": 0,
+      "actual_exit_code": 0,
+      "positive_object_reads": 6,
+      "responses": {
+        "200": 326,
+        "201": 1
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 166,
+        "rls": 64,
+        "panel": 32,
+        "storage": 16,
+        "login": 16,
+        "refresh": 16,
+        "write": 16
+      },
+      "passed": true,
+      "bootstrap_logins": 1,
+      "mix_preserved": true
+    },
+    {
+      "case": "candidate-redirect-latency",
+      "mode": "redirect-latency",
+      "expected_exit_code": 0,
+      "actual_exit_code": 0,
+      "positive_object_reads": 8,
+      "responses": {
+        "200": 22,
+        "302": 8,
+        "201": 1
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 0,
+        "rls": 0,
+        "panel": 0,
+        "storage": 23,
+        "login": 0,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true,
+      "storage_p95_ms": 256.7976004,
+      "redirect_delay_ms": 250,
+      "redirects": 8
+    },
+    {
+      "case": "baseline-redirect-latency",
+      "mode": "redirect-latency",
+      "expected_exit_code": 0,
+      "actual_exit_code": 0,
+      "positive_object_reads": 8,
+      "responses": {
+        "200": 22,
+        "302": 8,
+        "201": 1
+      },
+      "oom_killed": false,
+      "script_sha256": "2bd5487c3b1c64a8ae1ee641fde679039d271d916bcd191201fb6b5442e1897c",
+      "operations": {
+        "read": 0,
+        "rls": 0,
+        "panel": 0,
+        "storage": 23,
+        "login": 0,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true,
+      "storage_p95_ms": 6.165387899999999,
+      "redirect_delay_ms": 250,
+      "redirects": 8
+    },
+    {
+      "case": "candidate-empty-read",
+      "mode": "empty-read",
+      "expected_exit_code": 108,
+      "actual_exit_code": 108,
+      "positive_object_reads": 0,
+      "responses": {
+        "200": 2
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 1,
+        "rls": 0,
+        "panel": 0,
+        "storage": 0,
+        "login": 0,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true
+    },
+    {
+      "case": "candidate-wrong-read-filter",
+      "mode": "wrong-read-filter",
+      "expected_exit_code": 108,
+      "actual_exit_code": 108,
+      "positive_object_reads": 0,
+      "responses": {
+        "200": 2
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 1,
+        "rls": 0,
+        "panel": 0,
+        "storage": 0,
+        "login": 0,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true
+    },
+    {
+      "case": "candidate-wrong-read-order",
+      "mode": "wrong-read-order",
+      "expected_exit_code": 108,
+      "actual_exit_code": 108,
+      "positive_object_reads": 0,
+      "responses": {
+        "200": 2
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 1,
+        "rls": 0,
+        "panel": 0,
+        "storage": 0,
+        "login": 0,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true
+    },
+    {
+      "case": "candidate-malformed-read",
+      "mode": "malformed-read",
+      "expected_exit_code": 108,
+      "actual_exit_code": 108,
+      "positive_object_reads": 0,
+      "responses": {
+        "200": 2
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 1,
+        "rls": 0,
+        "panel": 0,
+        "storage": 0,
+        "login": 0,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true
+    },
+    {
+      "case": "candidate-unexpected-read-status",
+      "mode": "unexpected-read-status",
+      "expected_exit_code": 108,
+      "actual_exit_code": 108,
+      "positive_object_reads": 0,
+      "responses": {
+        "200": 1,
+        "204": 1
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 1,
+        "rls": 0,
+        "panel": 0,
+        "storage": 0,
+        "login": 0,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true
+    },
+    {
+      "case": "candidate-empty-rls",
+      "mode": "empty-rls",
+      "expected_exit_code": 108,
+      "actual_exit_code": 108,
+      "positive_object_reads": 0,
+      "responses": {
+        "200": 12
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 10,
+        "rls": 1,
+        "panel": 0,
+        "storage": 0,
+        "login": 0,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true
+    },
+    {
+      "case": "candidate-bad-panel",
+      "mode": "bad-panel",
+      "expected_exit_code": 108,
+      "actual_exit_code": 108,
+      "positive_object_reads": 0,
+      "responses": {
+        "200": 16
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 10,
+        "rls": 4,
+        "panel": 1,
+        "storage": 0,
+        "login": 0,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true
+    },
+    {
+      "case": "candidate-empty-list",
+      "mode": "empty-list",
+      "expected_exit_code": 108,
+      "actual_exit_code": 108,
+      "positive_object_reads": 0,
+      "responses": {
+        "200": 1
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 0,
+        "rls": 0,
+        "panel": 0,
+        "storage": 1,
+        "login": 0,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true
+    },
+    {
+      "case": "candidate-bad-upload",
+      "mode": "bad-upload",
+      "expected_exit_code": 108,
+      "actual_exit_code": 108,
+      "positive_object_reads": 1,
+      "responses": {
+        "200": 2,
+        "201": 1
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 0,
+        "rls": 0,
+        "panel": 0,
+        "storage": 3,
+        "login": 0,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true
+    },
+    {
+      "case": "candidate-wrong-login-user",
+      "mode": "wrong-login-user",
+      "expected_exit_code": 108,
+      "actual_exit_code": 108,
+      "positive_object_reads": 1,
+      "responses": {
+        "200": 19
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 10,
+        "rls": 4,
+        "panel": 2,
+        "storage": 1,
+        "login": 1,
+        "refresh": 0,
+        "write": 0
+      },
+      "passed": true
+    },
+    {
+      "case": "candidate-invalid-refresh-expiry",
+      "mode": "invalid-refresh-expiry",
+      "expected_exit_code": 108,
+      "actual_exit_code": 108,
+      "positive_object_reads": 1,
+      "responses": {
+        "200": 20
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 10,
+        "rls": 4,
+        "panel": 2,
+        "storage": 1,
+        "login": 1,
+        "refresh": 1,
+        "write": 0
+      },
+      "passed": true
+    },
+    {
+      "case": "candidate-empty-write",
+      "mode": "empty-write",
+      "expected_exit_code": 108,
+      "actual_exit_code": 108,
+      "positive_object_reads": 1,
+      "responses": {
+        "200": 21
+      },
+      "oom_killed": false,
+      "script_sha256": "2a50ffa35b8fb93ef6a86be2165ea6479156111eb1558bcd6df5f0620b3619e7",
+      "operations": {
+        "read": 10,
+        "rls": 4,
+        "panel": 2,
+        "storage": 1,
+        "login": 1,
+        "refresh": 1,
+        "write": 1
+      },
+      "passed": true
+    }
+  ],
+  "certifies_g05": false,
+  "completion": {
+    "status": "passed",
+    "certifies_g05": false,
+    "scope": "oracle regression only",
+    "cleanup_confirmed": true
+  },
+  "cleanup": {
+    "confirmed": true
+  },
+  "candidate_workload_sha256": "0ac01578bf19155302fe465884b480d792569086f23bb4ba3615ca5f0ce2547d",
+  "baseline_workload_sha256": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81"
+}

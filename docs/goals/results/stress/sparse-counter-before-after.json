@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "run_id": "s3-pass-1-002",
+  "scope": "real Prometheus and native k6 session canary; controlled abort to fix its measurement oracle",
+  "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+  "old_harness_commit": "6d770102478f13000868af4e51ae16134af91e41",
+  "candidate_metrics_sha256": "ad692683d6fe95428c98ca922593d36c01d4bb4bb41078bc04f8c25d9a025a91",
+  "utc": "2026-10-15T13:05:55.251279+00:00",
+  "reason": "sparse_counter_instant_query_loses_valid_renewal_evidence",
+  "old_instant_value": null,
+  "old_error_type": "ValueError",
+  "corrected_last_regular_sample": 5.0,
+  "positive_refresh_operations": 5.0,
+  "canary_iterations": 5081.0,
+  "observed_counter_resets": 0,
+  "minimum_renewals_preserved": 3,
+  "threshold_changed": false,
+  "action": "controlled termination before the invalid final gate; repeat affected campaign with a fresh fixture",
+  "four_hour_endurance_approved": false,
+  "completion_status": "failed",
+  "completed_load_seconds": 3495.0,
+  "cleanup_confirmed": true
+}

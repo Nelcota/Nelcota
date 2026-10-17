@@ -1,0 +1,75 @@
+{
+  "status": "failed",
+  "source_binding": {
+    "base_commit": "cb916d04fa43679152b2a463870c466a17bd9e91",
+    "file_hashes": {
+      "crates/admin/src/tables/export/connection.rs": "1703181e387b928ee0d85e579ec9eaa95ce2cea8272868d3b9a4d20000cf3cf5",
+      "crates/server/tests/sql_cancellation.rs": "7a4d57658298e52a7c549785e8164f1a5d01a8ab558729313bad1be99f17dfcc",
+      "crates/server/tests/common/mod.rs": "29287cd61c5219f25a9aa77a91408ee3eb0ba7229c51e80089cad01803882b80"
+    },
+    "working_diff_sha256": "7984d45cf03ef7e4faf1a7ac638be5d057dbb1d8eb154f86f12d637624a54ea9",
+    "scope": "Read-only source binding for pending real export cancellation reproduction; production export bytes unchanged"
+  },
+  "regression_summary": {
+    "tests": 1,
+    "passed": 0,
+    "failed": 1,
+    "ignored": 0,
+    "filtered_out": 2,
+    "execution_seconds": 4.54
+  },
+  "original_numeric_control": {
+    "authorized_api_status": 200,
+    "backend_queries_after_release": 0,
+    "backend_queries_before_releasing_cancellation": 2,
+    "case": "cancelled_exports_keep_admission_until_postgres_finishes_cleanup",
+    "held_cancellation_packets": 2,
+    "scope": "Real owned PostgreSQL, two bounded export queries, delayed CancelRequest only; no load-time credit",
+    "third_export_busy_code": null,
+    "third_export_status_while_cleanup_pending": 200,
+    "unauthorized_api_status": 401
+  },
+  "runner_result": {
+    "status": "failed",
+    "scope": "Related Rust regressions only, fresh owned shared Postgres; no production data or load-time credit",
+    "cases": [
+      {
+        "target": "sql_cancellation",
+        "exit_code": 101,
+        "elapsed_seconds_including_compilation": 8.170280656020623,
+        "log_sha256": "0a05183260e4fefd3df6323b14d2057c83811e02f9cc8dc2dc94000caa2b0cad"
+      }
+    ],
+    "profile": {
+      "compiler_jobs": 4,
+      "test_threads": 2,
+      "compiler_affinity": [
+        0,
+        1,
+        2
+      ],
+      "postgres_cpus": 1,
+      "postgres_affinity": 3,
+      "postgres_memory_mib": 512,
+      "postgres_data_tmpfs_mib": 256,
+      "postgres_pids": 128,
+      "maximum_seconds": 1200,
+      "private_log_mib_each": 16
+    },
+    "source_commit": "cb916d04fa43679152b2a463870c466a17bd9e91",
+    "source_files_sha256": {
+      "crates/admin/src/sql/executor.rs": "fe5638689356dd06a1d75819dd3683aab7af7ee26c7225d5b5de14b8b619c1d9",
+      "crates/server/tests/sql_cancellation.rs": "7a4d57658298e52a7c549785e8164f1a5d01a8ab558729313bad1be99f17dfcc",
+      "Cargo.lock": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff"
+    },
+    "working_diff_sha256": "17e909fabeb5616fe315cba95b6879cde9235445ee849ab8c1462f13d1e3e167",
+    "failure_type": "RuntimeError",
+    "cleanup_confirmed": true,
+    "resource_observations": 2,
+    "resource_violations": [],
+    "elapsed_seconds_including_preparation": 12.071893618034665
+  },
+  "cause": "Export supervisor dropped its connection future as soon as the caller signalled cancellation, then released admission after the cancellation write/timeout instead of confirmed backend cleanup. Two backend queries remained active after the two-second cancellation write timeout while a third export was accepted.",
+  "scope": "Local fresh owned PostgreSQL, held protocol CancelRequest only, static generated view and canaries. Production export source unchanged before reproduction. No load-time credit; original failed result retained.",
+  "after_status": "correction under focused validation"
+}

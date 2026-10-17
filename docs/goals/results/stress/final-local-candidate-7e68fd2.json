@@ -1,0 +1,49 @@
+{
+  "source_commit": "7e68fd21430ac93125149f60927f8676b077811d",
+  "binary_sha256": "b047fb880feb10e41e7d0308e6037b8cd3bc770b0452a30cab59c3e2d20514a0",
+  "size": 30469304,
+  "status": "frozen; load and final CI pending",
+  "started_utc": "2026-10-17T01:23:44.905640+00:00",
+  "completed_utc": "2026-10-17T01:25:18.801373+00:00",
+  "build_command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "nelcota-server"
+  ],
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+  "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+  "cargo_lock_sha256": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff",
+  "workspace_manifest_sha256": "2527746af359ef502f1bd6a836fda5a161456fcf7d11766a1b1d4da64a86de09",
+  "build_jobs": 4,
+  "incremental": "0",
+  "release_profile": {
+    "lto": "thin",
+    "codegen_units": 1
+  },
+  "compiler_overrides": [],
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "build_exit": 0,
+  "build_seconds": 93.83057219203329,
+  "build_log_sha256": "6464cfaab34b5b2cab26fa07fe56de3dd8f25f5fcd06046d3227d6fab1145389",
+  "certifies_g05": false,
+  "architecture": "x86_64-unknown-linux-gnu",
+  "scope": "Immutable local release candidate. This build receipt establishes bytes/source/profile, not stress approval or a production release. Native Actions builds retain distinct executable identities.",
+  "product_tree_objects": {
+    "crates": "982c1e0337e3ec82ebd269a1e4bef286554eb170",
+    "sdk": "864119c5aa5bfd0edc1799d9de018e096f39d67e",
+    "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+    "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+    "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+    "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
+  },
+  "private_log": "target/stress-g05/artifacts/build-candidate-final-001.log"
+}

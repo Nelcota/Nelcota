@@ -1,0 +1,258 @@
+{
+  "scope": "Complete original provider diagnostic reconstructed losslessly from checksummed public notices. Original source, failed/passed verdict and cleanup are preserved; no BaaS or exact heap attribution is inferred.",
+  "workflow_run_id": 39002499251,
+  "job_id": 117308197879,
+  "job_conclusion": "failure",
+  "notice_report_sha256": "94b746e2dc77956f0e36a5e3b22a81a6b42f6eea680e497f80c671a0e5891fa9",
+  "notice_parts": 1,
+  "regression_summary": null,
+  "report": {
+    "identity": "native-provider-runtime-39002499251-1",
+    "source": "ff74094bd8293c5378e477eeb16705a3b42cf825",
+    "status": "failed",
+    "certifies_g05": false,
+    "scope": "Measure owned RustFS runtime workers separately from ordinary G05 campaigns.\n\nThree fresh fixtures vary one public runtime setting at a time. Small signed\nPUT/GET/DELETE bursts verify bytes, then observe ten minutes without traffic.\nOS owners and allocator gauges do not establish exact live heap ownership.\n",
+    "image": "rustfs/rustfs@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c",
+    "controller_kernel_budget": {
+      "cpu_quota_usec": 50000,
+      "cpu_period_usec": 100000,
+      "memory_bytes": 268435456,
+      "swap_bytes": 0,
+      "pids": 128
+    },
+    "cpu_affinity": [
+      0,
+      1
+    ],
+    "profile": {
+      "provider_cpus": 0.5,
+      "provider_memory_mib": 1024,
+      "provider_pids": 256,
+      "data_mib": 512,
+      "writable_layer_mib": 512,
+      "concurrency": 16,
+      "bursts": 60,
+      "burst_interval_seconds": 3,
+      "pressure_seconds": 180,
+      "idle_seconds": 600,
+      "payload_bytes": 64,
+      "maximum_signed_requests_per_case": 4096,
+      "sample_seconds": 5,
+      "maximum_fd_observation_entries": 4096,
+      "maximum_resource_samples_per_case": 200,
+      "maximum_observation_gap_seconds": 30,
+      "maximum_case_seconds": 1080,
+      "maximum_total_seconds": 3600,
+      "maximum_network_bytes": 4294967296,
+      "host_memory_reserve_fraction": 0.1,
+      "host_disk_inode_reserve_fraction": 0.15
+    },
+    "cases": [
+      {
+        "name": "default",
+        "status": "failed",
+        "overrides": {},
+        "snapshots": [
+          {
+            "label": "before-pressure",
+            "monotonic": 40.441084607,
+            "elapsed_seconds": 1.3083456560000002,
+            "phase": "preparation",
+            "memory_current_bytes": 116146176,
+            "memory_peak_bytes": 122617856,
+            "anonymous_bytes": 111386624,
+            "file_bytes": 1662976,
+            "cgroup_tasks": 21,
+            "data_bytes": 192512,
+            "writable_layer_bytes": 3547,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 19,
+              "thread_categories": {
+                "rustfs": 16,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 43,
+              "sockets": 7,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "after-pressure",
+            "monotonic": 220.313556401,
+            "elapsed_seconds": 181.18081745,
+            "phase": "pressure",
+            "memory_current_bytes": 270716928,
+            "memory_peak_bytes": 277549056,
+            "anonymous_bytes": 231378944,
+            "file_bytes": 15802368,
+            "cgroup_tasks": 48,
+            "data_bytes": 13115392,
+            "writable_layer_bytes": 454367,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 45,
+              "thread_categories": {
+                "rustfs": 42,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 42,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-60",
+            "monotonic": 280.315361711,
+            "elapsed_seconds": 241.18262276,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 266899456,
+            "memory_peak_bytes": 277688320,
+            "anonymous_bytes": 229240832,
+            "file_bytes": 15802368,
+            "cgroup_tasks": 31,
+            "data_bytes": 13115392,
+            "writable_layer_bytes": 454367,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 29,
+              "thread_categories": {
+                "rustfs": 26,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 42,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-180",
+            "monotonic": 400.289697618,
+            "elapsed_seconds": 361.15695866699997,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 248684544,
+            "memory_peak_bytes": 277688320,
+            "anonymous_bytes": 235483136,
+            "file_bytes": 7442432,
+            "cgroup_tasks": 31,
+            "data_bytes": 327680,
+            "writable_layer_bytes": 454367,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 29,
+              "thread_categories": {
+                "rustfs": 26,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 42,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-360",
+            "monotonic": 580.291850999,
+            "elapsed_seconds": 541.159112048,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 248516608,
+            "memory_peak_bytes": 277688320,
+            "anonymous_bytes": 235491328,
+            "file_bytes": 7442432,
+            "cgroup_tasks": 31,
+            "data_bytes": 327680,
+            "writable_layer_bytes": 454367,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 29,
+              "thread_categories": {
+                "rustfs": 26,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 42,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          }
+        ],
+        "requests_attempted": 2882,
+        "requests_completed": 2881,
+        "verified_operations": 960,
+        "unauthorized_collector_status": 403,
+        "container_runtime_environment": {},
+        "unauthorized_provider_status": 403,
+        "measured_pressure_seconds": 180.000980032,
+        "failure": {
+          "stage": "owner-release-observation",
+          "phase": "post-load-idle",
+          "type": "RuntimeError"
+        },
+        "exports_received": 128,
+        "telemetry_wire_bytes": 3151161,
+        "allocator_capabilities": {
+          "numeric_points": 18,
+          "memory_gauges_observed": [
+            "rustfs_memory_allocator_committed_bytes",
+            "rustfs_memory_allocator_page_committed_bytes",
+            "rustfs_memory_allocator_reserved_bytes"
+          ],
+          "requested_bytes_available": false,
+          "live_owner_release": "not verified"
+        },
+        "telemetry_failure": {
+          "type": "RuntimeError",
+          "category": "cumulative_budget"
+        },
+        "resource_samples": 129,
+        "maximum_gap_seconds": 5.190092281999966,
+        "peaks": {
+          "memory_current_bytes": 271360000,
+          "memory_peak_bytes": 277688320,
+          "anonymous_bytes": 237633536,
+          "cgroup_tasks": 48,
+          "data_bytes": 13115392,
+          "writable_layer_bytes": 454367
+        },
+        "resource_series_sha256": "b6a4aa32adaa47a67ae7d7f29e67652f8822ef1daffb5f93549a5bc836c65e90",
+        "resource_violations": [
+          {
+            "type": "RuntimeError",
+            "phase": "post-load-idle",
+            "step": "telemetry"
+          }
+        ],
+        "cleanup_confirmed": true,
+        "cleanup_errors": [],
+        "elapsed_seconds": 648.260143252,
+        "heap_ownership_status": "not verified; no live-byte or cache attribution inferred"
+      }
+    ],
+    "completed_effective_baas_load_seconds": 0,
+    "heap_ownership_status": "not verified; OS owner/gauge diagnostic only",
+    "cleanup_confirmed": true,
+    "image_id": "sha256:f6b22807f10db2aee80b8a9ed1e36bd12c2fba25ac2d98dc3b0332a23f1a5c4d",
+    "failure": {
+      "type": "RuntimeError"
+    },
+    "elapsed_seconds": 659.023530804
+  }
+}

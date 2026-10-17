@@ -1,0 +1,107 @@
+{
+  "utc": "2026-10-17T17:11:50.428090+00:00",
+  "status": "prepared; not started",
+  "plan": "remaining-campaign-commands-006.json",
+  "plan_sha256": "6be421d7ea51ad3e03bbcabf1a481ff4c807a2a0d77bd6de2072e69a68bdb695",
+  "wrapper": "run-planned-campaign-once-v9.py",
+  "wrapper_sha256": "3df14b2fd125d7e9a7ade201458ba9b4bdd2bfbb47c6f90e89c0eee68e7a410e",
+  "chain": "run-post-endurance-qualification-chain-003.py",
+  "chain_sha256": "d19ed8cbaacf3a381c0b81a66a3a776141cbef1dde47233e0c56d3888db8e2e3",
+  "maximum_seconds": 86400,
+  "selected_cases": [
+    {
+      "run_id": "large-disk-candidate-pass-1-003",
+      "baseline": "large-disk-retained-baseline-001"
+    },
+    {
+      "run_id": "large-s3-candidate-pass-1-003",
+      "baseline": "large-s3-retained-baseline-001"
+    },
+    {
+      "run_id": "large-disk-candidate-pass-2-003",
+      "baseline": "large-disk-retained-baseline-001"
+    },
+    {
+      "run_id": "large-s3-candidate-pass-2-003",
+      "baseline": "large-s3-retained-baseline-001"
+    },
+    {
+      "run_id": "fault-final007-pass-1-001",
+      "baseline": null
+    },
+    {
+      "run_id": "fault-final007-pass-2-001",
+      "baseline": null
+    },
+    {
+      "run_id": "host1-retained-baseline-003",
+      "baseline": null
+    },
+    {
+      "run_id": "host1-candidate-pass-1-003",
+      "baseline": "host1-retained-baseline-003"
+    },
+    {
+      "run_id": "host1-candidate-pass-2-003",
+      "baseline": "host1-retained-baseline-003"
+    },
+    {
+      "run_id": "host5-retained-baseline-003",
+      "baseline": null
+    },
+    {
+      "run_id": "host5-candidate-pass-1-003",
+      "baseline": "host5-retained-baseline-003"
+    },
+    {
+      "run_id": "host5-candidate-pass-2-003",
+      "baseline": "host5-retained-baseline-003"
+    },
+    {
+      "run_id": "host10-retained-baseline-003",
+      "baseline": null
+    },
+    {
+      "run_id": "host10-candidate-pass-1-003",
+      "baseline": "host10-retained-baseline-003"
+    },
+    {
+      "run_id": "host10-candidate-pass-2-003",
+      "baseline": "host10-retained-baseline-003"
+    }
+  ],
+  "changed_host_IDs": {
+    "host1-retained-baseline-002": "host1-retained-baseline-003",
+    "host1-candidate-pass-1-002": "host1-candidate-pass-1-003",
+    "host1-candidate-pass-2-002": "host1-candidate-pass-2-003",
+    "host5-retained-baseline-002": "host5-retained-baseline-003",
+    "host5-candidate-pass-1-002": "host5-candidate-pass-1-003",
+    "host5-candidate-pass-2-002": "host5-candidate-pass-2-003",
+    "host10-retained-baseline-002": "host10-retained-baseline-003",
+    "host10-candidate-pass-1-002": "host10-candidate-pass-1-003",
+    "host10-candidate-pass-2-002": "host10-candidate-pass-2-003"
+  },
+  "host_extra_flag": "--private-file-isolation",
+  "all_other_case_arguments_unchanged": true,
+  "preconditions": "All four ordinary final007 endurance workload,summary,comparison,cleanup PASS; no overlapping local measurement; final host guard/real preflight evidence reviewed. Same six product trees and fixed candidate007ELF. No implicit pass from this declaration.",
+  "certifies_g05": false,
+  "profile": {
+    "enabled": true,
+    "protocol": "g05-private-project-files-v1",
+    "maximum_requests": 8192,
+    "maximum_requests_per_second": 64,
+    "request_timeout_seconds": 2,
+    "maximum_body_bytes": 128,
+    "maximum_read_bytes": 2048,
+    "maximum_header_bytes": 16384,
+    "maximum_logical_HTTP_bytes": 134217728,
+    "maximum_graph_seconds": 20,
+    "extra_controller_threads_during_graph": 1,
+    "minimum_foreground_seconds": 60,
+    "controller_affinity_policy": "one telemetry/OS slot, disjoint from app/PostgreSQL/k6",
+    "transport": "owned direct loopback HTTP; main k6 ingress unchanged",
+    "units": "auxiliary requests excluded from k6 useful throughput and latency"
+  },
+  "approval_thresholds_reduced": false,
+  "scope": "Fifteen unique prepared cases; unchanged ordinary four-case chain. New host IDs replace only unstarted host002 plans and add private-file auxiliary pressure equally to fresh retained baselines and both candidates. No case launched."
+}

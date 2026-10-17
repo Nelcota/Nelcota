@@ -1,0 +1,77 @@
+{
+  "scope": "Actual built-SDK before/after on Node24 with two default memory clients, controlled fetch and a held first sign-in. Native Web Locks are available to both revisions; the corrected default server client intentionally uses its private Symbol/module queue. These are ownership/independence diagnostics, not backend latency/capacity/endurance or effective-load credit.",
+  "fix_commit": "9bca03bc689c425a7660c5da9305180450aeaa7c",
+  "before_sdk_manifest_sha256": "1065f539462b879d8d92d3531cdfb79f466d8478de9e48fcabd806062b9c9d15",
+  "current_manager_source_sha256": "ad8f05920a1bb76ec225e833a035b8c87b7442bab30051c73e67ff3fdcfefa4e",
+  "before": {
+    "scope": "Built-SDK control of independent default-memory server clients; first client sign-in fetch is held while a second client reads its already-seeded private cached session. Real Node Web Locks when available, otherwise SDK module queue. Controlled fetch only: no backend/network traffic, no G05 capacity or effective-time credit.",
+    "default_nonbrowser_memory_clients": 2,
+    "explicit_shared_adapter": false,
+    "native_node_web_locks_available": true,
+    "first_signin_held_until_read_result": true,
+    "second_cached_read_completed_with_own_session": false,
+    "second_read_error": "aborted",
+    "second_session_unchanged_after_first_completed": true,
+    "first_signin_succeeded": true,
+    "http_requests": 1,
+    "passed": false,
+    "elapsed_seconds": 0.14472332599999999,
+    "effective_load_credit_seconds": 0
+  },
+  "after": {
+    "scope": "Built-SDK control of independent default-memory server clients; first client sign-in fetch is held while a second client reads its already-seeded private cached session. Real Node Web Locks when available, otherwise SDK module queue. Controlled fetch only: no backend/network traffic, no G05 capacity or effective-time credit.",
+    "default_nonbrowser_memory_clients": 2,
+    "explicit_shared_adapter": false,
+    "native_node_web_locks_available": true,
+    "first_signin_held_until_read_result": true,
+    "second_cached_read_completed_with_own_session": true,
+    "second_read_error": null,
+    "second_session_unchanged_after_first_completed": true,
+    "first_signin_succeeded": true,
+    "http_requests": 1,
+    "passed": true,
+    "elapsed_seconds": 0.030624549999999993,
+    "effective_load_credit_seconds": 0
+  },
+  "unchanged_gzip_size_budgets": {
+    "main": 17100,
+    "auth": 11250,
+    "rest": 9550,
+    "storage": 7400
+  },
+  "measured_gzip_bytes": {
+    "main": 17060,
+    "auth": 11242,
+    "rest": 9387,
+    "storage": 7267
+  },
+  "all_size_gates_passed": true,
+  "size_log_sha256": "fe6f2b2f59988bb9c59a0c8dd10b273d3db0f9856b24db563c481f0363456dbc",
+  "new_python_harness_validation": {
+    "utc": "2026-10-17T13:07:50.138731+00:00",
+    "scope": "Sequential source-specific stress harness and public SDK projection regressions, after retained realS3 load ended and owned cleanup confirmed. No backend load credit.",
+    "checks": [
+      {
+        "name": "stress",
+        "exit_code": 0,
+        "elapsed_seconds": 13.611865555052646,
+        "expected": 308,
+        "reported": 308,
+        "log_sha256": "fbb20cdc6157440a1691c18f8d8d137c001216949243bdb11cb5b69e46504b5a",
+        "passed": true
+      },
+      {
+        "name": "sdk-unit-evidence",
+        "exit_code": 0,
+        "elapsed_seconds": 0.11462761199800298,
+        "expected": 3,
+        "reported": 3,
+        "log_sha256": "0491c4c833427bc5f027d348c3af87fd24928ad5196da25433035f9f1fc46af4",
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "certifies_g05": false,
+  "effective_load_credit_seconds": 0
+}

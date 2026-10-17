@@ -1,0 +1,776 @@
+{
+  "scope": "Complete original provider diagnostic reconstructed losslessly from checksummed public notices. Original source, failed/passed verdict and cleanup are preserved; no BaaS or exact heap attribution is inferred.",
+  "workflow_run_id": 39003974676,
+  "job_id": 117312534031,
+  "job_conclusion": "success",
+  "notice_report_sha256": "720738e1f3c609ec0e28f17945a2c0fca0ab158b49289e11899662db40d81fe2",
+  "notice_parts": 2,
+  "regression_summary": {
+    "source_commit": "a8fd8d0c9bd1909258f242958ab47731d0cb56d6",
+    "tests": 15,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 1.1359394059999914,
+    "successful": true,
+    "failure_locations": []
+  },
+  "report": {
+    "identity": "native-provider-runtime-39003974676-1",
+    "source": "a8fd8d0c9bd1909258f242958ab47731d0cb56d6",
+    "status": "passed",
+    "certifies_g05": false,
+    "scope": "Measure owned RustFS runtime workers separately from ordinary G05 campaigns.\n\nThree fresh fixtures vary one public runtime setting at a time. Small signed\nPUT/GET/DELETE bursts verify bytes, then observe ten minutes without traffic.\nOS owners and allocator gauges do not establish exact live heap ownership.\n",
+    "image": "rustfs/rustfs@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c",
+    "controller_kernel_budget": {
+      "cpu_quota_usec": 50000,
+      "cpu_period_usec": 100000,
+      "memory_bytes": 268435456,
+      "swap_bytes": 0,
+      "pids": 128
+    },
+    "cpu_affinity": [
+      0,
+      1
+    ],
+    "profile": {
+      "provider_cpus": 0.5,
+      "provider_memory_mib": 1024,
+      "provider_pids": 256,
+      "data_mib": 512,
+      "writable_layer_mib": 512,
+      "concurrency": 16,
+      "bursts": 60,
+      "burst_interval_seconds": 3,
+      "pressure_seconds": 180,
+      "idle_seconds": 600,
+      "payload_bytes": 64,
+      "maximum_signed_requests_per_case": 4096,
+      "sample_seconds": 5,
+      "maximum_fd_observation_entries": 4096,
+      "maximum_resource_samples_per_case": 200,
+      "maximum_telemetry_exports_per_case": 256,
+      "maximum_telemetry_wire_bytes_per_case": 16777216,
+      "maximum_observation_gap_seconds": 30,
+      "maximum_case_seconds": 1080,
+      "maximum_total_seconds": 3600,
+      "maximum_network_bytes": 4294967296,
+      "host_memory_reserve_fraction": 0.1,
+      "host_disk_inode_reserve_fraction": 0.15
+    },
+    "cases": [
+      {
+        "name": "default",
+        "status": "passed",
+        "overrides": {},
+        "snapshots": [
+          {
+            "label": "before-pressure",
+            "monotonic": 97.454867967,
+            "elapsed_seconds": 0.8305662629999944,
+            "phase": "preparation",
+            "memory_current_bytes": 105562112,
+            "memory_peak_bytes": 112320512,
+            "anonymous_bytes": 105058304,
+            "file_bytes": 1658880,
+            "cgroup_tasks": 20,
+            "data_bytes": 192512,
+            "writable_layer_bytes": 3545,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 18,
+              "thread_categories": {
+                "rustfs": 15,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 42,
+              "sockets": 7,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "after-pressure",
+            "monotonic": 272.47743453,
+            "elapsed_seconds": 175.85313282599998,
+            "phase": "pressure",
+            "memory_current_bytes": 266379264,
+            "memory_peak_bytes": 272318464,
+            "anonymous_bytes": 229359616,
+            "file_bytes": 15671296,
+            "cgroup_tasks": 50,
+            "data_bytes": 12890112,
+            "writable_layer_bytes": 479552,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 48,
+              "thread_categories": {
+                "rustfs": 45,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 41,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-60",
+            "monotonic": 332.475911413,
+            "elapsed_seconds": 235.851609709,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 266661888,
+            "memory_peak_bytes": 274993152,
+            "anonymous_bytes": 231882752,
+            "file_bytes": 15904768,
+            "cgroup_tasks": 39,
+            "data_bytes": 13103104,
+            "writable_layer_bytes": 488358,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 37,
+              "thread_categories": {
+                "rustfs": 34,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 41,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-180",
+            "monotonic": 457.408711986,
+            "elapsed_seconds": 360.784410282,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 254898176,
+            "memory_peak_bytes": 274993152,
+            "anonymous_bytes": 241860608,
+            "file_bytes": 7548928,
+            "cgroup_tasks": 37,
+            "data_bytes": 323584,
+            "writable_layer_bytes": 488358,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 35,
+              "thread_categories": {
+                "rustfs": 32,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 41,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-360",
+            "monotonic": 637.412598889,
+            "elapsed_seconds": 540.788297185,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 257064960,
+            "memory_peak_bytes": 274993152,
+            "anonymous_bytes": 243970048,
+            "file_bytes": 7548928,
+            "cgroup_tasks": 37,
+            "data_bytes": 323584,
+            "writable_layer_bytes": 488358,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 35,
+              "thread_categories": {
+                "rustfs": 32,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 41,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-600",
+            "monotonic": 877.418488187,
+            "elapsed_seconds": 780.794186483,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 263393280,
+            "memory_peak_bytes": 274993152,
+            "anonymous_bytes": 250281984,
+            "file_bytes": 7548928,
+            "cgroup_tasks": 37,
+            "data_bytes": 323584,
+            "writable_layer_bytes": 488358,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 35,
+              "thread_categories": {
+                "rustfs": 32,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 41,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          }
+        ],
+        "requests_attempted": 2883,
+        "requests_completed": 2883,
+        "verified_operations": 960,
+        "unauthorized_collector_status": 403,
+        "container_runtime_environment": {},
+        "unauthorized_provider_status": 403,
+        "measured_pressure_seconds": 180.00124551700003,
+        "measured_idle_seconds": 600.000105846,
+        "physical_inventory": {
+          "objects": 0,
+          "bytes": 0,
+          "multipart_uploads": 0
+        },
+        "exports_received": 156,
+        "telemetry_wire_bytes": 3887065,
+        "allocator_capabilities": {
+          "numeric_points": 18,
+          "memory_gauges_observed": [
+            "rustfs_memory_allocator_committed_bytes",
+            "rustfs_memory_allocator_page_committed_bytes",
+            "rustfs_memory_allocator_reserved_bytes"
+          ],
+          "requested_bytes_available": false,
+          "live_owner_release": "not verified"
+        },
+        "allocator_first_observation": {
+          "observed_monotonic": 102.061645174,
+          "gauges_bytes": {
+            "rustfs_memory_allocator_reserved_bytes": 1076166656.0,
+            "rustfs_memory_allocator_committed_bytes": 64159744.0,
+            "rustfs_memory_allocator_page_committed_bytes": 281248.0
+          }
+        },
+        "allocator_last_observation": {
+          "observed_monotonic": 877.080372066,
+          "gauges_bytes": {
+            "rustfs_memory_allocator_reserved_bytes": 1076232192.0,
+            "rustfs_memory_allocator_committed_bytes": 263389184.0,
+            "rustfs_memory_allocator_page_committed_bytes": 260531296.0
+          }
+        },
+        "telemetry_failure": null,
+        "resource_samples": 157,
+        "maximum_gap_seconds": 5.241744780999966,
+        "peaks": {
+          "memory_current_bytes": 268521472,
+          "memory_peak_bytes": 274993152,
+          "anonymous_bytes": 250281984,
+          "cgroup_tasks": 50,
+          "data_bytes": 13103104,
+          "writable_layer_bytes": 488358
+        },
+        "resource_series_sha256": "723dd6f4bdb1b07430f080752cc2db9aa686dd7ef9251712b1a84ac1ec387a30",
+        "resource_violations": [],
+        "cleanup_confirmed": true,
+        "cleanup_errors": [],
+        "elapsed_seconds": 782.367556078,
+        "heap_ownership_status": "not verified; no live-byte or cache attribution inferred"
+      },
+      {
+        "name": "runtime-workers",
+        "status": "passed",
+        "overrides": {
+          "RUSTFS_RUNTIME_WORKER_THREADS": "4"
+        },
+        "snapshots": [
+          {
+            "label": "before-pressure",
+            "monotonic": 879.92499054,
+            "elapsed_seconds": 0.9322040039999138,
+            "phase": "preparation",
+            "memory_current_bytes": 143601664,
+            "memory_peak_bytes": 149606400,
+            "anonymous_bytes": 139980800,
+            "file_bytes": 73728,
+            "cgroup_tasks": 27,
+            "data_bytes": 192512,
+            "writable_layer_bytes": 3545,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 25,
+              "thread_categories": {
+                "rustfs": 22,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 47,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "after-pressure",
+            "monotonic": 1054.946575358,
+            "elapsed_seconds": 175.95378882199998,
+            "phase": "pressure",
+            "memory_current_bytes": 336400384,
+            "memory_peak_bytes": 340508672,
+            "anonymous_bytes": 315789312,
+            "file_bytes": 9293824,
+            "cgroup_tasks": 75,
+            "data_bytes": 12869632,
+            "writable_layer_bytes": 361077,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 73,
+              "thread_categories": {
+                "rustfs": 70,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 47,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-60",
+            "monotonic": 1114.950368077,
+            "elapsed_seconds": 235.95758154099985,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 337076224,
+            "memory_peak_bytes": 345427968,
+            "anonymous_bytes": 316960768,
+            "file_bytes": 9441280,
+            "cgroup_tasks": 44,
+            "data_bytes": 13090816,
+            "writable_layer_bytes": 369958,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 42,
+              "thread_categories": {
+                "rustfs": 39,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 47,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-180",
+            "monotonic": 1239.922862642,
+            "elapsed_seconds": 360.9300761059999,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 320503808,
+            "memory_peak_bytes": 345427968,
+            "anonymous_bytes": 304586752,
+            "file_bytes": 1093632,
+            "cgroup_tasks": 46,
+            "data_bytes": 327680,
+            "writable_layer_bytes": 369958,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 44,
+              "thread_categories": {
+                "rustfs": 41,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 47,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-360",
+            "monotonic": 1419.922792809,
+            "elapsed_seconds": 540.9300062729999,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 318447616,
+            "memory_peak_bytes": 345427968,
+            "anonymous_bytes": 302514176,
+            "file_bytes": 1093632,
+            "cgroup_tasks": 44,
+            "data_bytes": 327680,
+            "writable_layer_bytes": 369958,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 42,
+              "thread_categories": {
+                "rustfs": 39,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 47,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-600",
+            "monotonic": 1654.934345984,
+            "elapsed_seconds": 775.9415594479999,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 318476288,
+            "memory_peak_bytes": 345427968,
+            "anonymous_bytes": 302051328,
+            "file_bytes": 1093632,
+            "cgroup_tasks": 44,
+            "data_bytes": 327680,
+            "writable_layer_bytes": 369958,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 42,
+              "thread_categories": {
+                "rustfs": 39,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 47,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          }
+        ],
+        "requests_attempted": 2884,
+        "requests_completed": 2883,
+        "verified_operations": 960,
+        "unauthorized_collector_status": 403,
+        "container_runtime_environment": {
+          "RUSTFS_RUNTIME_WORKER_THREADS": 4
+        },
+        "unauthorized_provider_status": 403,
+        "measured_pressure_seconds": 180.00154456600012,
+        "measured_idle_seconds": 600.0001320030001,
+        "physical_inventory": {
+          "objects": 0,
+          "bytes": 0,
+          "multipart_uploads": 0
+        },
+        "exports_received": 156,
+        "telemetry_wire_bytes": 3900720,
+        "allocator_capabilities": {
+          "numeric_points": 18,
+          "memory_gauges_observed": [
+            "rustfs_memory_allocator_committed_bytes",
+            "rustfs_memory_allocator_page_committed_bytes",
+            "rustfs_memory_allocator_reserved_bytes"
+          ],
+          "requested_bytes_available": false,
+          "live_owner_release": "not verified"
+        },
+        "allocator_first_observation": {
+          "observed_monotonic": 884.339329345,
+          "gauges_bytes": {
+            "rustfs_memory_allocator_reserved_bytes": 1076166656.0,
+            "rustfs_memory_allocator_committed_bytes": 101318656.0,
+            "rustfs_memory_allocator_page_committed_bytes": 407008.0
+          }
+        },
+        "allocator_last_observation": {
+          "observed_monotonic": 1659.360031597,
+          "gauges_bytes": {
+            "rustfs_memory_allocator_reserved_bytes": 1076232192.0,
+            "rustfs_memory_allocator_committed_bytes": 336789504.0,
+            "rustfs_memory_allocator_page_committed_bytes": 253745408.0
+          }
+        },
+        "telemetry_failure": null,
+        "resource_samples": 157,
+        "maximum_gap_seconds": 5.110525899999857,
+        "peaks": {
+          "memory_current_bytes": 339214336,
+          "memory_peak_bytes": 345427968,
+          "anonymous_bytes": 317616128,
+          "cgroup_tasks": 75,
+          "data_bytes": 13090816,
+          "writable_layer_bytes": 369958
+        },
+        "resource_series_sha256": "5cf81c6c7d1ddd5c09e6c777a60cf40ba0df10c381f2e557e1aaa0d8d7daf713",
+        "resource_violations": [],
+        "cleanup_confirmed": true,
+        "cleanup_errors": [],
+        "elapsed_seconds": 782.366965296,
+        "heap_ownership_status": "not verified; no live-byte or cache attribution inferred"
+      },
+      {
+        "name": "fsync-workers",
+        "status": "passed",
+        "overrides": {
+          "RUSTFS_RUNTIME_FSYNC_BLOCKING_THREADS": "4"
+        },
+        "snapshots": [
+          {
+            "label": "before-pressure",
+            "monotonic": 1662.204550812,
+            "elapsed_seconds": 0.8439447470000232,
+            "phase": "preparation",
+            "memory_current_bytes": 114458624,
+            "memory_peak_bytes": 122699776,
+            "anonymous_bytes": 111366144,
+            "file_bytes": 77824,
+            "cgroup_tasks": 18,
+            "data_bytes": 192512,
+            "writable_layer_bytes": 3546,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 16,
+              "thread_categories": {
+                "rustfs": 13,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 37,
+              "sockets": 7,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "after-pressure",
+            "monotonic": 1837.230665268,
+            "elapsed_seconds": 175.87005920299998,
+            "phase": "pressure",
+            "memory_current_bytes": 255954944,
+            "memory_peak_bytes": 262193152,
+            "anonymous_bytes": 222572544,
+            "file_bytes": 8744960,
+            "cgroup_tasks": 44,
+            "data_bytes": 12865536,
+            "writable_layer_bytes": 449062,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 42,
+              "thread_categories": {
+                "rustfs": 39,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 36,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-60",
+            "monotonic": 1897.232480274,
+            "elapsed_seconds": 235.871874209,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 261799936,
+            "memory_peak_bytes": 272769024,
+            "anonymous_bytes": 232542208,
+            "file_bytes": 8892416,
+            "cgroup_tasks": 42,
+            "data_bytes": 13082624,
+            "writable_layer_bytes": 454495,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 40,
+              "thread_categories": {
+                "rustfs": 37,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 36,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-180",
+            "monotonic": 2022.20330325,
+            "elapsed_seconds": 360.84269718500013,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 252469248,
+            "memory_peak_bytes": 272769024,
+            "anonymous_bytes": 246177792,
+            "file_bytes": 544768,
+            "cgroup_tasks": 42,
+            "data_bytes": 319488,
+            "writable_layer_bytes": 454495,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 40,
+              "thread_categories": {
+                "rustfs": 37,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 36,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-360",
+            "monotonic": 2197.205725252,
+            "elapsed_seconds": 535.8451191869999,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 256176128,
+            "memory_peak_bytes": 272769024,
+            "anonymous_bytes": 250318848,
+            "file_bytes": 544768,
+            "cgroup_tasks": 40,
+            "data_bytes": 319488,
+            "writable_layer_bytes": 454495,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 38,
+              "thread_categories": {
+                "rustfs": 35,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 36,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          },
+          {
+            "label": "idle-600",
+            "monotonic": 2437.213389997,
+            "elapsed_seconds": 775.852783932,
+            "phase": "post-load-idle",
+            "memory_current_bytes": 264396800,
+            "memory_peak_bytes": 272769024,
+            "anonymous_bytes": 258715648,
+            "file_bytes": 544768,
+            "cgroup_tasks": 40,
+            "data_bytes": 319488,
+            "writable_layer_bytes": 454495,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "owners": {
+              "process_threads": 38,
+              "thread_categories": {
+                "rustfs": 35,
+                "tokio": 0,
+                "rayon": 0,
+                "other": 3
+              },
+              "thread_census_stable": true,
+              "descriptors": 36,
+              "sockets": 6,
+              "observed_entry_races": 0
+            }
+          }
+        ],
+        "requests_attempted": 2884,
+        "requests_completed": 2883,
+        "verified_operations": 960,
+        "unauthorized_collector_status": 403,
+        "container_runtime_environment": {
+          "RUSTFS_RUNTIME_FSYNC_BLOCKING_THREADS": 4
+        },
+        "unauthorized_provider_status": 403,
+        "measured_pressure_seconds": 180.00141236699983,
+        "measured_idle_seconds": 600.0001472460001,
+        "physical_inventory": {
+          "objects": 0,
+          "bytes": 0,
+          "multipart_uploads": 0
+        },
+        "exports_received": 156,
+        "telemetry_wire_bytes": 3891081,
+        "allocator_capabilities": {
+          "numeric_points": 18,
+          "memory_gauges_observed": [
+            "rustfs_memory_allocator_committed_bytes",
+            "rustfs_memory_allocator_page_committed_bytes",
+            "rustfs_memory_allocator_reserved_bytes"
+          ],
+          "requested_bytes_available": false,
+          "live_owner_release": "not verified"
+        },
+        "allocator_first_observation": {
+          "observed_monotonic": 1666.689568239,
+          "gauges_bytes": {
+            "rustfs_memory_allocator_reserved_bytes": 1076166656.0,
+            "rustfs_memory_allocator_committed_bytes": 71630848.0,
+            "rustfs_memory_allocator_page_committed_bytes": 258208.0
+          }
+        },
+        "allocator_last_observation": {
+          "observed_monotonic": 2441.709426425,
+          "gauges_bytes": {
+            "rustfs_memory_allocator_reserved_bytes": 1076166656.0,
+            "rustfs_memory_allocator_committed_bytes": 266928128.0,
+            "rustfs_memory_allocator_page_committed_bytes": 259436432.0
+          }
+        },
+        "telemetry_failure": null,
+        "resource_samples": 157,
+        "maximum_gap_seconds": 5.170873927999992,
+        "peaks": {
+          "memory_current_bytes": 264871936,
+          "memory_peak_bytes": 272769024,
+          "anonymous_bytes": 258719744,
+          "cgroup_tasks": 44,
+          "data_bytes": 13082624,
+          "writable_layer_bytes": 454495
+        },
+        "resource_series_sha256": "ec887599535f51d2a4673a449f0143a2ed455b578cbc64df0d1098d746946890",
+        "resource_violations": [],
+        "cleanup_confirmed": true,
+        "cleanup_errors": [],
+        "elapsed_seconds": 782.402714325,
+        "heap_ownership_status": "not verified; no live-byte or cache attribution inferred"
+      }
+    ],
+    "completed_effective_baas_load_seconds": 0,
+    "heap_ownership_status": "not verified; OS owner/gauge diagnostic only",
+    "cleanup_confirmed": true,
+    "image_id": "sha256:f6b22807f10db2aee80b8a9ed1e36bd12c2fba25ac2d98dc3b0332a23f1a5c4d",
+    "elapsed_seconds": 2350.224856938
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "scope": "Verified restoration of all 121 inventoried rebuildable compiler-cache paths, SHA-256 bytes, modes, mtimes and hardlink relationships; not application data or load time",
+  "status": "passed",
+  "restored_paths": 121,
+  "already_present_verified_paths": 0,
+  "archive_sha256": "9824802547ec9c7e56d8620b5e0c9da66835bd136b5fc51bde002d8a907d9f86",
+  "original_paths": 121,
+  "elapsed_seconds": 20.043008506996557,
+  "original_manifest": "target/stress-g05/cache-relocation-003/restore-manifest.json"
+}

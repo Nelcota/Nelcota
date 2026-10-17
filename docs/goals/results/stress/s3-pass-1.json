@@ -1,0 +1,1095 @@
+{
+  "run_id": "s3-pass-1-004",
+  "status": "passed",
+  "certifies_g05": false,
+  "scope": "One complete local single-project s3 campaign; second independent pass, fleet and other matrix gates remain separate. No maximum-capacity or production/VPS certification.",
+  "backend_source": "2efede8c27ee12119142170e8bd9742ff7cb900e",
+  "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+  "frozen_harness": {
+    "run_id": "s3-pass-1-004",
+    "git": "f46ab4b1df3bca4f661001b77901827b4fbede49",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "harness_sources": {
+      "bench/browser_campaign.py": "35b750c93b78cb29045cd17e3d82d81446bf783e7efe54fcba3a6279a65f5113",
+      "bench/browser_driver.py": "7a97e7f83cea534add1c75bd13d6764c2fb8ef94a0c2d4e4f1a7ee8ece9c244a",
+      "bench/browser_runtime.py": "1720ee9bab4b959260f366ca7c8767d2b810a1884f3940ff3735755ef6ba48ba",
+      "bench/campaign.py": "956cc20d6d1490015f0826c5960837256b4c19ea6bef62f33709845554eb318d",
+      "bench/compare.py": "d2682a63b4b1bc1c5eeaba538713aa8430e24458e5ea87ec0fe573aabe911394",
+      "bench/disk_usage.py": "502da50d95f979128c91d49b3037cb08885ddcbb941af0a9bd842e0d193da38e",
+      "bench/evidence.py": "61803fb6b3d6463984244f76f5e17f822fd865d19d55bf619a879d7b7886260d",
+      "bench/fault_campaign.py": "33fca029d3414e5c03d8d8a9e7a90e38c978bc307c05f3b98eef1e3957be30f4",
+      "bench/fixture_copy.py": "8c1421202b5543c16fa0fd0af4e47f7a8f9ef1bd9cd9423bfde28eda3dec6288",
+      "bench/fleet_webhooks.py": "ae5d21861ef3951a50a37fdfc84507685e87c2f8cc1698ae0d5972244d0b97ce",
+      "bench/guard_check.py": "2fa55b5e70154e7498ab79f627ef7623ae965cb4727a8318845bc5eb9baf481d",
+      "bench/host_campaign.py": "44e558cdb849829a5f16f8c148ae983872829b1ff18c56d7c5c854c2932f087d",
+      "bench/host_compare.py": "186f3378bff16247e248a9481a7fdab26a0227a5a515fdcaaa153e434612d02d",
+      "bench/host_resources.py": "1205842ab861a036ff526b85d237c08de437e8b7a52455e6fe7e56410dcb0a31",
+      "bench/http_boundary.py": "b69ff97c9e65f8ec94ccf36ac282a3b6b53c1a07aa01fbd33ac1fbe68a976db3",
+      "bench/ingress.py": "4976738ec1c3e96862f87a02d81843087a72a665a2de829acc4c6804b6117ed2",
+      "bench/launch.py": "c7b0bf59c58995014bb68805bf41eb777703976d8bc03a060720fd8cae922874",
+      "bench/load_time.py": "23e9b43a24b7842259e94958cf2a0836a7b970cabdab2c908d5761dd688527c5",
+      "bench/lost_reply.py": "2048c95f21169fe46adddb28c4feffa60da365d369f4730ed6f7c6bcbfd348bb",
+      "bench/metrics.py": "ad692683d6fe95428c98ca922593d36c01d4bb4bb41078bc04f8c25d9a025a91",
+      "bench/monitor.py": "bd869d88b833930602dc3770e5467040021cca6930f89fd298c269b6850c2e61",
+      "bench/objects.py": "a1612bc2e457481705044ce21a376d898544dbbff004a8920511218858a8210b",
+      "bench/observations.py": "8f88a60899928c2b30da0f888127034ec5c7117e34630121297f8bf11f64379b",
+      "bench/oracle_check.py": "690eb5a17c735f40b666ad313b56ed09301285c79da75835cee563021b5725ce",
+      "bench/ownership.py": "ffd3e9343b7f8262d05ee0363ab01b1f7e77089bb8f09ca8d0a350532402fa06",
+      "bench/ports.py": "edcb747bf4f29429d2abf5abf2741289c586cb64b0cf3484fa891edb5d798276",
+      "bench/postgres_evidence.py": "7152ea8c58232981c07b6c20d4a6a8cfba1046de1893d09c78de58607a95855a",
+      "bench/projects.py": "53b097879fead2517ea1522f6c89f3fb3155b017bda2cd85bdcbc59d85d639f2",
+      "bench/receiver.py": "b4f172be66aee69649c826052951ff839272d7501ec0d0a2e648d65dedd4ee9d",
+      "bench/watchdog.py": "25ab3e86efdcec9c1da84942ef27fee285339adbda15b70791030e4863ff7bb3",
+      "bench/campaign.js": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+      "bench/setup.sql": "104496228668127c3a95a0defa6efe2d6c06a00c56bdc19999052043e700c798",
+      "scripts/upgrade/support.py": "97fd54c7d8fe80d70d0201e71454dd4f72fef760e161800ad503760d3f90feb8"
+    }
+  },
+  "completion": {
+    "status": "passed",
+    "load_seconds": 17985.0,
+    "resource_observations": 2934,
+    "soak_seconds": 14400,
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "cleanup_confirmed": true,
+    "error_type": "NoneType"
+  },
+  "cleanup": {
+    "containers": [],
+    "volumes": [],
+    "directory_removed": true
+  },
+  "profile": {
+    "storage_backend": "s3",
+    "workloads": [
+      "read",
+      "rls",
+      "panel",
+      "storage",
+      "login",
+      "refresh",
+      "write",
+      "mixed"
+    ],
+    "dataset": {
+      "products": 100000,
+      "private": 100000,
+      "objects": 10000
+    },
+    "object_payload_bytes": 17,
+    "physical_seeded_objects": 10000,
+    "steady_duration": "30s",
+    "steady_rate": 0,
+    "write_steady_rate": 50,
+    "final_idle_seconds": 180,
+    "soak_seconds": 14400,
+    "soak_fraction": 0.7,
+    "calibration_ceiling_iterations_per_second": 400,
+    "cpu_affinity": [
+      0,
+      1,
+      2
+    ],
+    "effective_cpu_quota": 4.0,
+    "app_cpus": 1,
+    "app_memory_mb": 128,
+    "pg_cpus": 1,
+    "pg_memory_mb": 384,
+    "generator_memory_mb": 512,
+    "generator_go_memory_limit_mib": 448,
+    "metrics_cpus": 0.25,
+    "metrics_memory_mb": 512,
+    "pool": 8,
+    "max_connections": 40,
+    "max_fixture_disk_mb": 1024,
+    "max_storage_fixture_disk_mib": 1024,
+    "max_wal_mb": 256,
+    "images": {
+      "ubuntu:24.04": [
+        "ubuntu@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55"
+      ],
+      "postgres:17-alpine": [
+        "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+      ],
+      "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1": [
+        "grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1"
+      ],
+      "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996": [
+        "prom/prometheus@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+      ],
+      "rustfs/rustfs:1.0.1": [
+        "rustfs/rustfs@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c"
+      ]
+    },
+    "k6": "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+    "postgres_version": "PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "storage_filesystem": "overlayfs",
+    "nominal_slos_ms": {
+      "read": [
+        200,
+        500
+      ],
+      "rls": [
+        200,
+        500
+      ],
+      "refresh": [
+        200,
+        500
+      ],
+      "login": [
+        750,
+        1500
+      ],
+      "storage": [
+        500,
+        2000
+      ],
+      "panel": [
+        500,
+        2000
+      ],
+      "write": [
+        500,
+        1500
+      ]
+    },
+    "offered_rate_unit": "iterations_per_second",
+    "resource_protocol": "component cgroup v2, PostgreSQL IO/WAL/checkpointer/locks, process owners; allocated du totals count only disappearing child entries",
+    "client_initialization": {
+      "maximum_sessions_per_project": 128,
+      "bootstrap_concurrency": 4,
+      "setup_timeout_seconds": 120,
+      "fully_preallocated_arrival_VUs": true,
+      "mix_schedule": "global scenario arrival ordinal",
+      "bootstrap_excluded_from_nominal_metrics": true
+    },
+    "webhook_history_maintenance": "explicit admin clear at 5000 terminal records; committed identities retained by fixture audit trigger",
+    "container_log_profile": {
+      "driver": "local",
+      "max_size_bytes": 8388608,
+      "max_files": 2
+    },
+    "s3": {
+      "cpu_affinity": 3,
+      "cpus": 0.5,
+      "memory_mb": 1024,
+      "ca_bundle_sha256": "43e169bf3454bc74c12d3df8c1403f0b4e7da135bf5959f8ab31eb634896bf73"
+    }
+  },
+  "capacity": {
+    "provisional_median_iterations_per_second": 400,
+    "measured_closed_loop_median_iterations_per_second": 697.1333333333333,
+    "calibration_ceiling_iterations_per_second": 400,
+    "provisional_workload": "mixed",
+    "qualified_lower_bound_iterations_per_second": 400,
+    "qualification_step_seconds": 300,
+    "five_minute_qualification": true,
+    "soak_iterations_per_second": 280,
+    "soak_fraction": 0.7,
+    "soak_rps": 280,
+    "p95_regression_gate": 1.1,
+    "throughput_regression_gate": 0.9
+  },
+  "continuous_load_interval": {
+    "phase": "soak",
+    "workload": "mixed",
+    "requested_seconds": 14400,
+    "elapsed_seconds": 14404.158063637005,
+    "completed": true,
+    "exit_code": 0,
+    "started_monotonic": 169068.811857595,
+    "ended_monotonic": 183472.970031438
+  },
+  "processes_unchanged": true,
+  "continuous_processes": {
+    "nelcota-bench-9d213c1d2cd4d18b2887d96edcd6892e-app": {
+      "container_id": "aa59abc2b1d0215c0f19dd9863fb288c131250dbbec01247505099af564c01f1",
+      "pid": 2026704,
+      "started_at": "2026-10-15T23:04:42.257633602Z"
+    },
+    "nelcota-bench-9d213c1d2cd4d18b2887d96edcd6892e-pg": {
+      "container_id": "0513b3abe3034be0309cc40b5f6a7e87141a5811eec3db2572dd5887750f7dbb",
+      "pid": 1597880,
+      "started_at": "2026-10-15T22:01:25.172266281Z"
+    }
+  },
+  "session_canary": {
+    "access_renewals": 16.0,
+    "iterations": 14343.0,
+    "minimum_renewals": 3,
+    "counter_observation": "last regular sample within retained 3600 seconds, no observed reset",
+    "scope": "one continuous VU reuses its session and renews near actual access-token expiry"
+  },
+  "retention_cohorts": [
+    {
+      "cohort": 1,
+      "seeded_elapsed": 62.70532081800047,
+      "auth_pruned": true,
+      "events_pruned": true,
+      "storage_pruned": true,
+      "observed_elapsed": 3585.721630649001
+    },
+    {
+      "cohort": 2,
+      "seeded_elapsed": 3666.0376383450057,
+      "auth_pruned": true,
+      "events_pruned": true,
+      "storage_pruned": true,
+      "observed_elapsed": 7184.947694920003
+    }
+  ],
+  "soak_metrics": {
+    "http_reqs": {
+      "count": 4120493.0,
+      "rate": 286.1453472222222
+    },
+    "iterations": {
+      "count": 4031965.0,
+      "rate": 279.9975694444444
+    },
+    "successful_operations": {
+      "count": 4031965.0,
+      "rate": 279.9975694444444
+    },
+    "data_received": {
+      "bytes": 11304536905.0,
+      "bytes_per_second": 785037.2850694444
+    },
+    "data_sent": {
+      "bytes": 1128030916.0,
+      "bytes_per_second": 78335.48027777778
+    },
+    "dropped_iterations": {
+      "count": 0.0
+    },
+    "unexpected": {
+      "value": 0.0
+    },
+    "checks": {
+      "passes": 7664671.0,
+      "fails": 0.0
+    },
+    "expected_rejections": {
+      "count": 0.0
+    },
+    "overload_rejections": {
+      "count": 0.0
+    },
+    "http_req_duration": {
+      "p(50)": 1.7414558756969898,
+      "p(95)": 22.32707411959743,
+      "p(99)": 33.87086941208253,
+      "min": 0.41059395276060284,
+      "max": 707.1067811865474
+    },
+    "latency_read": {
+      "p(50)": 1.448626939585032,
+      "p(95)": 5.717699049277929,
+      "p(99)": 11.07929790567322,
+      "min": 0.7530326295937212,
+      "max": 594.6035575013606
+    },
+    "throughput_read": {
+      "count": 2015985.0,
+      "rate": 139.99895833333332
+    },
+    "latency_rls": {
+      "p(50)": 1.5232282878663954,
+      "p(95)": 4.707819310684974,
+      "p(99)": 10.615829404597525,
+      "min": 0.8955117609420618,
+      "max": 545.2538663326288
+    },
+    "throughput_rls": {
+      "count": 806392.0,
+      "rate": 55.99944444444444
+    },
+    "latency_panel": {
+      "p(50)": 2.1327511671712207,
+      "p(95)": 4.927251172392692,
+      "p(99)": 10.17553457732394,
+      "min": 1.3810679320049755,
+      "max": 500.0
+    },
+    "throughput_panel": {
+      "count": 403196.0,
+      "rate": 27.99972222222222
+    },
+    "latency_storage": {
+      "p(50)": 1.9906509028955617,
+      "p(95)": 24.128613645380124,
+      "p(99)": 37.07672125434642,
+      "min": 0.41059395276060284,
+      "max": 594.6035575013606
+    },
+    "throughput_storage": {
+      "count": 201598.0,
+      "rate": 13.99986111111111
+    },
+    "latency_login": {
+      "p(50)": 26.773834721955275,
+      "p(95)": 42.03301349739058,
+      "p(99)": 56.325437406391316,
+      "min": 18.581361171917518,
+      "max": 707.1067811865474
+    },
+    "throughput_login": {
+      "count": 201598.0,
+      "rate": 13.99986111111111
+    },
+    "latency_refresh": {
+      "p(50)": 8.20842876598288,
+      "p(95)": 16.098778170885357,
+      "p(99)": 24.195060937050403,
+      "min": 2.1298979153618314,
+      "max": 594.6035575013606
+    },
+    "throughput_refresh": {
+      "count": 201598.0,
+      "rate": 13.99986111111111
+    },
+    "latency_write": {
+      "p(50)": 4.902102205507619,
+      "p(95)": 12.14928141331043,
+      "p(99)": 19.763139991823525,
+      "min": 1.6423758110424114,
+      "max": 594.6035575013606
+    },
+    "throughput_write": {
+      "count": 201598.0,
+      "rate": 13.99986111111111
+    }
+  },
+  "invariants": {
+    "auth": {
+      "users": 1,
+      "password_hashes": 1
+    },
+    "outstanding": 0,
+    "database": {
+      "connections": 15,
+      "idle_in_transaction": 0,
+      "waiting_locks": 0
+    },
+    "signature_errors": 0,
+    "file_integrity": {
+      "verified_objects": 129,
+      "maximum_object_bytes": 64,
+      "physical_inventory": {
+        "physical_objects": 10129,
+        "physical_bytes": 2195,
+        "multipart_uploads": 0,
+        "unreferenced_keys": [],
+        "gc_grace_seconds": 86400,
+        "collector_period_seconds": 3600
+      }
+    },
+    "event_identities": {
+      "unique_events": 249824,
+      "deliveries": 249824,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0
+    }
+  },
+  "resources": {
+    "sample_count": 2934,
+    "soak_sample_count": 2297,
+    "maximum_observation_gap_seconds": 11.5,
+    "app_peak_rss_kib": 51072,
+    "soak_app_peak_rss_kib": 48148,
+    "pg_peak_disk_mib": 431,
+    "storage_peak_disk_mib": 179,
+    "component_peaks": {
+      "app": {
+        "memory_current_bytes": 36573184,
+        "memory_peak_bytes": 37654528,
+        "anonymous_bytes": 34652160,
+        "file_cache_including_shmem_bytes": 0,
+        "shmem_bytes": 0,
+        "pids_current": 6,
+        "oom_events": 0,
+        "oom_kill_events": 0
+      },
+      "pg": {
+        "memory_current_bytes": 402591744,
+        "memory_peak_bytes": 402665472,
+        "anonymous_bytes": 56598528,
+        "file_cache_including_shmem_bytes": 335101952,
+        "shmem_bytes": 76877824,
+        "pids_current": 23,
+        "oom_events": 0,
+        "oom_kill_events": 0
+      },
+      "metrics": {
+        "memory_current_bytes": 114323456,
+        "memory_peak_bytes": 120377344,
+        "anonymous_bytes": 102707200,
+        "file_cache_including_shmem_bytes": 21540864,
+        "shmem_bytes": 0,
+        "pids_current": 10,
+        "oom_events": 0,
+        "oom_kill_events": 0
+      },
+      "s3": {
+        "memory_current_bytes": 677158912,
+        "memory_peak_bytes": 677838848,
+        "anonymous_bytes": 442126336,
+        "file_cache_including_shmem_bytes": 118235136,
+        "shmem_bytes": 0,
+        "pids_current": 179,
+        "oom_events": 0,
+        "oom_kill_events": 0
+      }
+    },
+    "steady_15_minute_windows": [
+      {
+        "minute_start": 0,
+        "samples": 142,
+        "median_app_rss_mib": 45.94921875,
+        "median_app_anonymous_mib": 27.65234375,
+        "median_app_owners": {
+          "fds": 157.0,
+          "tasks": 4.0,
+          "sockets": 151.0
+        },
+        "median_s3_anonymous_mib": 353.41796875,
+        "median_s3_pids_current": 178.0
+      },
+      {
+        "minute_start": 15,
+        "samples": 142,
+        "median_app_rss_mib": 45.94921875,
+        "median_app_anonymous_mib": 27.65625,
+        "median_app_owners": {
+          "fds": 157.0,
+          "tasks": 4.0,
+          "sockets": 151.0
+        },
+        "median_s3_anonymous_mib": 362.546875,
+        "median_s3_pids_current": 178.0
+      },
+      {
+        "minute_start": 30,
+        "samples": 142,
+        "median_app_rss_mib": 45.94921875,
+        "median_app_anonymous_mib": 27.65625,
+        "median_app_owners": {
+          "fds": 157.0,
+          "tasks": 4.0,
+          "sockets": 151.0
+        },
+        "median_s3_anonymous_mib": 364.740234375,
+        "median_s3_pids_current": 178.0
+      },
+      {
+        "minute_start": 45,
+        "samples": 142,
+        "median_app_rss_mib": 45.94921875,
+        "median_app_anonymous_mib": 27.65625,
+        "median_app_owners": {
+          "fds": 157.0,
+          "tasks": 4.0,
+          "sockets": 151.0
+        },
+        "median_s3_anonymous_mib": 370.35546875,
+        "median_s3_pids_current": 178.0
+      },
+      {
+        "minute_start": 60,
+        "samples": 141,
+        "median_app_rss_mib": 45.94921875,
+        "median_app_anonymous_mib": 27.65625,
+        "median_app_owners": {
+          "fds": 157,
+          "tasks": 4,
+          "sockets": 151
+        },
+        "median_s3_anonymous_mib": 377.19140625,
+        "median_s3_pids_current": 178
+      },
+      {
+        "minute_start": 75,
+        "samples": 141,
+        "median_app_rss_mib": 45.94921875,
+        "median_app_anonymous_mib": 27.65625,
+        "median_app_owners": {
+          "fds": 157,
+          "tasks": 4,
+          "sockets": 151
+        },
+        "median_s3_anonymous_mib": 380.76171875,
+        "median_s3_pids_current": 178
+      },
+      {
+        "minute_start": 90,
+        "samples": 142,
+        "median_app_rss_mib": 45.94921875,
+        "median_app_anonymous_mib": 27.654296875,
+        "median_app_owners": {
+          "fds": 157.0,
+          "tasks": 4.0,
+          "sockets": 151.0
+        },
+        "median_s3_anonymous_mib": 385.876953125,
+        "median_s3_pids_current": 178.0
+      },
+      {
+        "minute_start": 105,
+        "samples": 141,
+        "median_app_rss_mib": 45.94921875,
+        "median_app_anonymous_mib": 27.96484375,
+        "median_app_owners": {
+          "fds": 157,
+          "tasks": 4,
+          "sockets": 151
+        },
+        "median_s3_anonymous_mib": 389.921875,
+        "median_s3_pids_current": 178
+      },
+      {
+        "minute_start": 120,
+        "samples": 146,
+        "median_app_rss_mib": 46.37109375,
+        "median_app_anonymous_mib": 28.07421875,
+        "median_app_owners": {
+          "fds": 157.0,
+          "tasks": 4.0,
+          "sockets": 151.0
+        },
+        "median_s3_anonymous_mib": 396.88671875,
+        "median_s3_pids_current": 178.0
+      },
+      {
+        "minute_start": 135,
+        "samples": 146,
+        "median_app_rss_mib": 47.01171875,
+        "median_app_anonymous_mib": 28.71484375,
+        "median_app_owners": {
+          "fds": 157.0,
+          "tasks": 4.0,
+          "sockets": 151.0
+        },
+        "median_s3_anonymous_mib": 399.427734375,
+        "median_s3_pids_current": 178.0
+      },
+      {
+        "minute_start": 150,
+        "samples": 145,
+        "median_app_rss_mib": 47.01953125,
+        "median_app_anonymous_mib": 28.72265625,
+        "median_app_owners": {
+          "fds": 157,
+          "tasks": 4,
+          "sockets": 151
+        },
+        "median_s3_anonymous_mib": 400.71484375,
+        "median_s3_pids_current": 178
+      },
+      {
+        "minute_start": 165,
+        "samples": 146,
+        "median_app_rss_mib": 47.01953125,
+        "median_app_anonymous_mib": 28.72265625,
+        "median_app_owners": {
+          "fds": 157.0,
+          "tasks": 4.0,
+          "sockets": 151.0
+        },
+        "median_s3_anonymous_mib": 403.4296875,
+        "median_s3_pids_current": 178.0
+      },
+      {
+        "minute_start": 180,
+        "samples": 144,
+        "median_app_rss_mib": 47.01953125,
+        "median_app_anonymous_mib": 28.7265625,
+        "median_app_owners": {
+          "fds": 157.0,
+          "tasks": 4.0,
+          "sockets": 151.0
+        },
+        "median_s3_anonymous_mib": 407.43359375,
+        "median_s3_pids_current": 178.0
+      },
+      {
+        "minute_start": 195,
+        "samples": 146,
+        "median_app_rss_mib": 47.01953125,
+        "median_app_anonymous_mib": 28.72265625,
+        "median_app_owners": {
+          "fds": 157.0,
+          "tasks": 4.0,
+          "sockets": 151.0
+        },
+        "median_s3_anonymous_mib": 410.970703125,
+        "median_s3_pids_current": 178.0
+      },
+      {
+        "minute_start": 210,
+        "samples": 145,
+        "median_app_rss_mib": 47.01953125,
+        "median_app_anonymous_mib": 28.7265625,
+        "median_app_owners": {
+          "fds": 157,
+          "tasks": 4,
+          "sockets": 151
+        },
+        "median_s3_anonymous_mib": 415.42578125,
+        "median_s3_pids_current": 178
+      },
+      {
+        "minute_start": 225,
+        "samples": 146,
+        "median_app_rss_mib": 47.01953125,
+        "median_app_anonymous_mib": 28.7265625,
+        "median_app_owners": {
+          "fds": 157.0,
+          "tasks": 4.0,
+          "sockets": 151.0
+        },
+        "median_s3_anonymous_mib": 415.43359375,
+        "median_s3_pids_current": 178.0
+      }
+    ],
+    "idle_plateaus": [
+      {
+        "phase": "spike-idle-1",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.07264951698016375,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 28,
+          "tasks": 4,
+          "sockets": 22
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 33734656,
+            "memory_peak_bytes": 36884480,
+            "anonymous_bytes": 31875072,
+            "file_cache_including_shmem_bytes": 0,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 385376256,
+            "memory_peak_bytes": 390619136,
+            "anonymous_bytes": 52142080,
+            "file_cache_including_shmem_bytes": 315883520,
+            "shmem_bytes": 76730368,
+            "pids_current": 23,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 49823744,
+            "memory_peak_bytes": 79929344,
+            "anonymous_bytes": 39079936,
+            "file_cache_including_shmem_bytes": 9256960,
+            "shmem_bytes": 0,
+            "pids_current": 15,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "s3": {
+            "memory_current_bytes": 546291712,
+            "memory_peak_bytes": 553439232,
+            "anonymous_bytes": 364367872,
+            "file_cache_including_shmem_bytes": 68071424,
+            "shmem_bytes": 0,
+            "pids_current": 180,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "spike-idle-2",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.6731049170193728,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 31,
+          "tasks": 4,
+          "sockets": 25
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 35794944,
+            "memory_peak_bytes": 37453824,
+            "anonymous_bytes": 34406400,
+            "file_cache_including_shmem_bytes": 0,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 385331200,
+            "memory_peak_bytes": 393646080,
+            "anonymous_bytes": 51359744,
+            "file_cache_including_shmem_bytes": 316563456,
+            "shmem_bytes": 76730368,
+            "pids_current": 22,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 50925568,
+            "memory_peak_bytes": 79929344,
+            "anonymous_bytes": 39800832,
+            "file_cache_including_shmem_bytes": 9322496,
+            "shmem_bytes": 0,
+            "pids_current": 9,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "s3": {
+            "memory_current_bytes": 518639616,
+            "memory_peak_bytes": 556650496,
+            "anonymous_bytes": 364290048,
+            "file_cache_including_shmem_bytes": 50155520,
+            "shmem_bytes": 0,
+            "pids_current": 179,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "spike-idle-3",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.07197325897868723,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 28,
+          "tasks": 4,
+          "sockets": 22
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 35823616,
+            "memory_peak_bytes": 37453824,
+            "anonymous_bytes": 32657408,
+            "file_cache_including_shmem_bytes": 0,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 386134016,
+            "memory_peak_bytes": 393646080,
+            "anonymous_bytes": 51376128,
+            "file_cache_including_shmem_bytes": 317300736,
+            "shmem_bytes": 76730368,
+            "pids_current": 22,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 52592640,
+            "memory_peak_bytes": 79929344,
+            "anonymous_bytes": 41414656,
+            "file_cache_including_shmem_bytes": 9392128,
+            "shmem_bytes": 0,
+            "pids_current": 9,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "s3": {
+            "memory_current_bytes": 518311936,
+            "memory_peak_bytes": 556650496,
+            "anonymous_bytes": 362102784,
+            "file_cache_including_shmem_bytes": 51851264,
+            "shmem_bytes": 0,
+            "pids_current": 176,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "spike-idle-4",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.092210213013459,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 27,
+          "tasks": 4,
+          "sockets": 21
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 36065280,
+            "memory_peak_bytes": 37654528,
+            "anonymous_bytes": 32886784,
+            "file_cache_including_shmem_bytes": 0,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 388255744,
+            "memory_peak_bytes": 393646080,
+            "anonymous_bytes": 51560448,
+            "file_cache_including_shmem_bytes": 317530112,
+            "shmem_bytes": 76746752,
+            "pids_current": 23,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 52744192,
+            "memory_peak_bytes": 79929344,
+            "anonymous_bytes": 41570304,
+            "file_cache_including_shmem_bytes": 9461760,
+            "shmem_bytes": 0,
+            "pids_current": 9,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "s3": {
+            "memory_current_bytes": 520810496,
+            "memory_peak_bytes": 556650496,
+            "anonymous_bytes": 360812544,
+            "file_cache_including_shmem_bytes": 53620736,
+            "shmem_bytes": 0,
+            "pids_current": 177,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "spike-idle-5",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.10122447100002319,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 26,
+          "tasks": 4,
+          "sockets": 20
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 36196352,
+            "memory_peak_bytes": 37654528,
+            "anonymous_bytes": 32894976,
+            "file_cache_including_shmem_bytes": 0,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 386883584,
+            "memory_peak_bytes": 393646080,
+            "anonymous_bytes": 49713152,
+            "file_cache_including_shmem_bytes": 318152704,
+            "shmem_bytes": 76746752,
+            "pids_current": 22,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 53649408,
+            "memory_peak_bytes": 79929344,
+            "anonymous_bytes": 42455040,
+            "file_cache_including_shmem_bytes": 9531392,
+            "shmem_bytes": 0,
+            "pids_current": 9,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "s3": {
+            "memory_current_bytes": 523264000,
+            "memory_peak_bytes": 556650496,
+            "anonymous_bytes": 361365504,
+            "file_cache_including_shmem_bytes": 55353344,
+            "shmem_bytes": 0,
+            "pids_current": 177,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "post-load-idle",
+        "idle_seconds": 180,
+        "queue_drain_seconds": 0.08027133901487105,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 24,
+          "tasks": 4,
+          "sockets": 18
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 33353728,
+            "memory_peak_bytes": 35905536,
+            "anonymous_bytes": 31883264,
+            "file_cache_including_shmem_bytes": 0,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 397697024,
+            "memory_peak_bytes": 402665472,
+            "anonymous_bytes": 49143808,
+            "file_cache_including_shmem_bytes": 329834496,
+            "shmem_bytes": 76877824,
+            "pids_current": 22,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 56569856,
+            "memory_peak_bytes": 120377344,
+            "anonymous_bytes": 32907264,
+            "file_cache_including_shmem_bytes": 21213184,
+            "shmem_bytes": 0,
+            "pids_current": 10,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "s3": {
+            "memory_current_bytes": 642756608,
+            "memory_peak_bytes": 677838848,
+            "anonymous_bytes": 424308736,
+            "file_cache_including_shmem_bytes": 50974720,
+            "shmem_bytes": 0,
+            "pids_current": 79,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      }
+    ],
+    "ownership_scope": "Application live FD/task/socket counts returned to their pressure/rest plateau. RustFS owner counts decreased after load; its anonymous memory remains around 407 MiB and is not yet attributed to live objects versus its own allocator/cache. The optional glibc diagnostic applies to Nelcota, not the provider. No absolute leak-absence claim.",
+    "component_owner_checkpoints": [
+      {
+        "scope": "Same-process PID1 owner counts only; PostgreSQL child-process ownership is represented by component cgroups, not the master alone.",
+        "monotonic": 169454.758801403,
+        "components": {
+          "app": {
+            "process": {
+              "container_id": "aa59abc2b1d0215c0f19dd9863fb288c131250dbbec01247505099af564c01f1",
+              "pid": 2026704,
+              "started_at": "2026-10-15T23:04:42.257633602Z"
+            },
+            "pid1_owners": {
+              "fds": 157,
+              "tasks": 4,
+              "sockets": 151
+            }
+          },
+          "pg": {
+            "process": {
+              "container_id": "0513b3abe3034be0309cc40b5f6a7e87141a5811eec3db2572dd5887750f7dbb",
+              "pid": 1597880,
+              "started_at": "2026-10-15T22:01:25.172266281Z"
+            },
+            "pid1_owners": {
+              "fds": 10,
+              "tasks": 1,
+              "sockets": 3
+            }
+          },
+          "s3": {
+            "process": {
+              "container_id": "45d1dec90043b718298936c0f7f1b175f4329e37e2270a9d988e599efdfa9fcd",
+              "pid": 1598278,
+              "started_at": "2026-10-15T22:01:27.542353294Z"
+            },
+            "pid1_owners": {
+              "fds": 114,
+              "tasks": 176,
+              "sockets": 99
+            }
+          }
+        }
+      },
+      {
+        "scope": "Same-process PID1 owner counts only; PostgreSQL child-process ownership is represented by component cgroups, not the master alone.",
+        "monotonic": 183586.175615625,
+        "components": {
+          "app": {
+            "process": {
+              "container_id": "aa59abc2b1d0215c0f19dd9863fb288c131250dbbec01247505099af564c01f1",
+              "pid": 2026704,
+              "started_at": "2026-10-15T23:04:42.257633602Z"
+            },
+            "pid1_owners": {
+              "fds": 24,
+              "tasks": 4,
+              "sockets": 18
+            }
+          },
+          "pg": {
+            "process": {
+              "container_id": "0513b3abe3034be0309cc40b5f6a7e87141a5811eec3db2572dd5887750f7dbb",
+              "pid": 1597880,
+              "started_at": "2026-10-15T22:01:25.172266281Z"
+            },
+            "pid1_owners": {
+              "fds": 10,
+              "tasks": 1,
+              "sockets": 3
+            }
+          },
+          "s3": {
+            "process": {
+              "container_id": "45d1dec90043b718298936c0f7f1b175f4329e37e2270a9d988e599efdfa9fcd",
+              "pid": 1598278,
+              "started_at": "2026-10-15T22:01:27.542353294Z"
+            },
+            "pid1_owners": {
+              "fds": 18,
+              "tasks": 172,
+              "sockets": 6
+            }
+          }
+        }
+      }
+    ]
+  },
+  "baseline_candidate_regression": "not yet established; requires final independent comparable run",
+  "raw_evidence_location": "target/stress-g05/s3-pass-1-004",
+  "retained_findings": [
+    "RustFS source associated with image revision 6de965ae3c965a78ff819fbcd7acd4aa44177d92 selects MiMalloc on non-Windows. Source review is a hypothesis for retained arenas, not allocation ownership evidence or verified build provenance.",
+    "Provider PID1 has a large steady worker pool; 176 observed tasks during early load decreased to 172 at idle. OS-exec sampling includes its own transient cgroup tasks.",
+    "No off-host/AWS/public TLS or production deployment capacity is certified."
+  ]
+}

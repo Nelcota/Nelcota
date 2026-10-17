@@ -1,0 +1,70 @@
+{
+  "status": "focused controls passed; real VM cases not run",
+  "certifies_g05": false,
+  "planned_native_case": "runtime-inflight",
+  "framework": {
+    "tests": 35,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "elapsed_seconds": 0.01922782597830519
+  },
+  "operator": {
+    "utc": "2026-10-17T16:17:45.340554+00:00",
+    "command": [
+      "timeout",
+      "--signal=TERM",
+      "--kill-after=3s",
+      "15s",
+      "taskset",
+      "-c",
+      "3",
+      "nice",
+      "-n",
+      "19",
+      "ionice",
+      "-c3",
+      "prlimit",
+      "--as=134217728:134217728",
+      "--cpu=3:3",
+      "--",
+      "python3",
+      "target/stress-g05/artifacts/run-native-inflight-focused-003.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.215415705984924,
+    "log_sha256": "5e0e96bfc9a95a63df7fbbaee692bdb943f345673021c129dbdefeffe32b2b56",
+    "source_sha256": {
+      "bench/native_vm.py": "895d9e17b7869488dcfb04aafa3eed2a524e039468d35556f1fde872edc0ea94",
+      "bench/native_guest.py": "f0313f05b2fab7913a0487dfef842831af3f27d2c791b45e1ad18704f82d464f",
+      "bench/native_inflight.py": "e8741a77f6de21e19ae85ba280d65df2a4799bbc5c2cdd97df9387a80d14a79a",
+      "bench/native_cut.py": "13e637bdb527e7768ea52a37d54971781f35dd11e1a3dbe9350b1633c275aa9c",
+      "bench/native_evidence.py": "7550dec3d08035fa58bd8a64598140ebc79210367c47da622c3b9b01c9e6459c",
+      "scripts/review_tests/test_stress_native_vm.py": "87bd97e7e49c7007ec3c20ec8f201bf00a1955dc5a2621cb2575ece40514ffcb",
+      ".github/workflows/stress.yml": "6b8633f1ad7c6f7cd6a4c98ef96ddbcd691f0035f0db2f8d7b4e651d11cf7fbc",
+      "bench/README.md": "1d803944c76d60c7c671e101e374bba1e2a2bccc07a9dde1d76504f48545fba6"
+    },
+    "scope": "Final native harness controls on currently unused provider CPU3 during disk soak; app0/PG1/generator2/metrics4 remain separate. Low priority,128MiB/3CPU-seconds/15s; no VM/network/load-time credit, unchanged ordinary snapshot and product trees."
+  },
+  "new_boundary_cases": 10,
+  "scope": "Additional native helper/witness/row-value ownership controls. Original twelve-case suite and all actual failed reports remain unchanged. Two fresh real final-product guest cases are required before any interrupted-write acceptance. No product correction or effective stress time is claimed.",
+  "additional_guest_profile": {
+    "helper_cpu_quota": 0.05,
+    "helper_memory_mib": 48,
+    "helper_pids": 16,
+    "helper_swap_bytes": 0,
+    "maximum_table_lock_seconds": 30,
+    "systemd_runtime_maximum_seconds": 40,
+    "maximum_pre_cut_witness_age_seconds": 2,
+    "same_aggregate_guest_cpu": 1.5,
+    "same_aggregate_guest_memory_mib": 2048
+  },
+  "oracles": [
+    "One real HTTPS write remains unfinished with exactly one owned granted table lock and one waiting RowExclusiveLock before the signal.",
+    "All thirty externally fsynced ACKs and31row values survive; the blocked unacknowledged row is absent.",
+    "The transient helper and all controlled locks disappear after recovery; failure cleanup only cancels the owned marked table-lock holder.",
+    "No cut during COMMIT, physical host power loss, off-host or ordinary throughput claim.",
+    "Status roundtrip time cannot hide a stale witness; a stale final witness prevents SIGKILL after owned-unit lookup."
+  ]
+}

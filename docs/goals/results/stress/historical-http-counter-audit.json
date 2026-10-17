@@ -1,0 +1,44 @@
+{
+  "status": "historical counter evidence invalidated",
+  "certifies_g05": false,
+  "scope": "Independent assertion accounting recovers expected negative probes; physical HTTP counters remain incomplete. Original reports unchanged. S3 HTTP differences include real 302 redirects and cannot be treated as negative probes. Scheduler drops cannot be recovered without sufficient historical observations.",
+  "formula": "assertions_passed - successful_operations - overload_rejections - sum(throughput_read, rls, panel, storage, write)",
+  "runs": [
+    {
+      "run_id": "disk-pass-1-005",
+      "raw_report_sha256": "15e191f1e8ee9fa05e0730c03e5d29b1db644c4cf7b2ef6dd526513d8430f2c2",
+      "raw_expected_rejections": 0.0,
+      "raw_http_reqs": 4031806.0,
+      "successful_operations": 4031806.0,
+      "overload_rejections": 0.0,
+      "assertions_passed": 7664369.0,
+      "assertions_failed": 0.0,
+      "additional_body_assertions": 3628626.0,
+      "derived_expected_rejections": 3937.0
+    },
+    {
+      "run_id": "s3-pass-1-004",
+      "raw_report_sha256": "da1f9996773dd60cd694d15e4b10e430175b729012c00bc451176479e7972d9c",
+      "raw_expected_rejections": 0.0,
+      "raw_http_reqs": 4120493.0,
+      "successful_operations": 4031965.0,
+      "overload_rejections": 0.0,
+      "assertions_passed": 7664671.0,
+      "assertions_failed": 0.0,
+      "additional_body_assertions": 3628769.0,
+      "derived_expected_rejections": 3937.0
+    },
+    {
+      "run_id": "disk-pass-2-001",
+      "raw_report_sha256": "0edf68615165963f8c06715b415c24dbcf87fab5cc82bb90f79bdff6aabb4f3c",
+      "raw_expected_rejections": 0.0,
+      "raw_http_reqs": 4030874.0,
+      "successful_operations": 4030874.0,
+      "overload_rejections": 0.0,
+      "assertions_passed": 7662599.0,
+      "assertions_failed": 0.0,
+      "additional_body_assertions": 3627788.0,
+      "derived_expected_rejections": 3937.0
+    }
+  ]
+}

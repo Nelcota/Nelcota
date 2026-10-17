@@ -1,0 +1,26 @@
+{
+  "scope": "Lossless original numeric resource gzip recovered from original provider artifact; original report and verdict preserved. No new load or checkpoint credit.",
+  "publisher_run_id": 39027209861,
+  "publisher_job_id": 117380452553,
+  "original_workflow_run_id": 39024051590,
+  "original_job_id": 117371420877,
+  "notice_proof": {
+    "original_identity": "native-browser-auth-39024051590-1",
+    "original_source": "df51f80b29bcd0edaacd91270cd19d610381afff",
+    "binary_sha256": "872c3b1efc71e0118386cdd3caf36bae0de26cb213307b91396fe30c0af83d75",
+    "original_report_sha256": "12d2ef2e1d0c2f31d9dbdec693225c9a66479b2d20b364aa89a9cbb1840a3754",
+    "publisher_source": "daf5fb51a9eabd2abcde32cedc38dc8ed61bbdce",
+    "sha256": "bedc9b228de0274db3bbaea0bffbd4994896861787adfe58a56adf0d792d0017",
+    "compressed_bytes": 12081,
+    "parts": 6,
+    "original_status": "passed",
+    "original_cleanup_confirmed": true,
+    "encoding": "original-gzip+base64",
+    "kind": "browser-auth",
+    "local_effective_load_credit_seconds": 0,
+    "samples": 219,
+    "maximum_gap_seconds": 5.296579693000012
+  },
+  "raw_annotation_sha256": "b3a36d1d741bb72a6c56025b52b041b4f403a291e1a6084052c0fff35121b264",
+  "output_sha256": "bedc9b228de0274db3bbaea0bffbd4994896861787adfe58a56adf0d792d0017"
+}

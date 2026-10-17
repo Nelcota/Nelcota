@@ -1,0 +1,141 @@
+{
+  "run_id": "fleet-caddy-5-sharing-smoke-001",
+  "status": "failed",
+  "certifies_g05": false,
+  "scope": "Short 30-second CPU-sharing smoke; failed absolute/relative latency gates remain failed. Longer already-predeclared 300-second campaigns retain the same thresholds and are separate measurements.",
+  "failed_gates_per_phase": [
+    {
+      "phase": "noisy-mixed",
+      "count": 6
+    },
+    {
+      "phase": "noisy-login",
+      "count": 22
+    },
+    {
+      "phase": "noisy-read",
+      "count": 14
+    },
+    {
+      "phase": "noisy-storage",
+      "count": 11
+    },
+    {
+      "phase": "noisy-write",
+      "count": 8
+    }
+  ],
+  "noisy_login_healthy_rls": [
+    {
+      "project": "project-1",
+      "useful_operations": 61.0,
+      "rls_observations": 12.0,
+      "rls_p95_ms": 217.637640824031,
+      "baseline_rls_p95_ms": 10.488847677970806
+    },
+    {
+      "project": "project-2",
+      "useful_operations": 61.0,
+      "rls_observations": 12.0,
+      "rls_p95_ms": 217.637640824031,
+      "baseline_rls_p95_ms": 6.980276981997277
+    },
+    {
+      "project": "project-3",
+      "useful_operations": 61.0,
+      "rls_observations": 12.0,
+      "rls_p95_ms": 199.57459658916244,
+      "baseline_rls_p95_ms": 6.801176275750969
+    },
+    {
+      "project": "project-4",
+      "useful_operations": 61.0,
+      "rls_observations": 12.0,
+      "rls_p95_ms": 217.637640824031,
+      "baseline_rls_p95_ms": 5.719084749787599
+    }
+  ],
+  "resource_phase_cpu": {
+    "observed_span_seconds": 45.053723977995105,
+    "scope": "Resource phase spans include k6 session bootstrap; these are not isolated nominal-window CPU averages. Throttling is observed but is not proof that it caused an individual latency sample.",
+    "components": [
+      {
+        "role": "app-0",
+        "cpu_percent_over_observed_phase": 47.28901213672347,
+        "throttled_usec_delta": 0,
+        "throttled_periods_delta": 0
+      },
+      {
+        "role": "app-1",
+        "cpu_percent_over_observed_phase": 6.87953564396549,
+        "throttled_usec_delta": 0,
+        "throttled_periods_delta": 0
+      },
+      {
+        "role": "app-2",
+        "cpu_percent_over_observed_phase": 6.680804014047992,
+        "throttled_usec_delta": 0,
+        "throttled_periods_delta": 0
+      },
+      {
+        "role": "app-3",
+        "cpu_percent_over_observed_phase": 7.001063888837639,
+        "throttled_usec_delta": 0,
+        "throttled_periods_delta": 0
+      },
+      {
+        "role": "app-4",
+        "cpu_percent_over_observed_phase": 6.636951923131714,
+        "throttled_usec_delta": 0,
+        "throttled_periods_delta": 0
+      },
+      {
+        "role": "postgres-0",
+        "cpu_percent_over_observed_phase": 6.8068202342115685,
+        "throttled_usec_delta": 0,
+        "throttled_periods_delta": 0
+      },
+      {
+        "role": "postgres-1",
+        "cpu_percent_over_observed_phase": 2.7806247506019113,
+        "throttled_usec_delta": 0,
+        "throttled_periods_delta": 0
+      },
+      {
+        "role": "postgres-2",
+        "cpu_percent_over_observed_phase": 2.867119265503794,
+        "throttled_usec_delta": 0,
+        "throttled_periods_delta": 0
+      },
+      {
+        "role": "postgres-3",
+        "cpu_percent_over_observed_phase": 2.7611302466530487,
+        "throttled_usec_delta": 0,
+        "throttled_periods_delta": 0
+      },
+      {
+        "role": "postgres-4",
+        "cpu_percent_over_observed_phase": 2.7761811667574823,
+        "throttled_usec_delta": 0,
+        "throttled_periods_delta": 0
+      },
+      {
+        "role": "metrics",
+        "cpu_percent_over_observed_phase": 0.6573441079912682,
+        "throttled_usec_delta": 92224,
+        "throttled_periods_delta": 2
+      },
+      {
+        "role": "proxy",
+        "cpu_percent_over_observed_phase": 3.859576626450004,
+        "throttled_usec_delta": 250000,
+        "throttled_periods_delta": 7
+      }
+    ]
+  },
+  "resource_violations": [],
+  "data_signature_and_queue_invariants": "Reconciled all 1129 event identities/deliveries with zero missing/extra/duplicates/signature errors and zero pending work; final marker/credential assertions completed.",
+  "cleanup_confirmed": true,
+  "root_cause": "Unattributed; real native per-project histograms contain the outlier and distinct scenario/project labels. No production or observer-effect fix is claimed.",
+  "full_evidence": "fleet-5-sharing-smoke.json"
+}

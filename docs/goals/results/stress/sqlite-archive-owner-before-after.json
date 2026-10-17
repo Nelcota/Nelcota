@@ -1,0 +1,13 @@
+{
+  "scope": "Native owned SQLite archive-reader descriptor control; no production database or backend resource claim",
+  "status": "passed",
+  "calls_each": 35,
+  "initial_descriptors": 4,
+  "legacy_transaction_context_descriptors": 39,
+  "after_collecting_legacy_connections": 4,
+  "explicit_close_descriptors": 4,
+  "garbage_collection_disabled_during_both_loops": true,
+  "database_bytes_unchanged": true,
+  "database_checks": "PRAGMA integrity_check read-only/immutable",
+  "known_legacy_rule": "sqlite3 connection context managers manage transactions, not connection lifetime"
+}

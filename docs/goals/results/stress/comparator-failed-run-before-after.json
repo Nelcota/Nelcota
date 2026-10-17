@@ -1,0 +1,38 @@
+{
+  "scope": "native comparator regression using identical initial samples from an actually failed retained campaign; not a before/after product performance claim",
+  "certifies_g05": false,
+  "retained_failed_run": "s3-pass-1-003",
+  "retained_completion": {
+    "status": "failed",
+    "load_seconds": 3495.0,
+    "resource_observations": 803,
+    "soak_seconds": 14400,
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "cleanup_confirmed": true,
+    "error_type": "RuntimeError"
+  },
+  "control": "self-comparison only makes initial samples identical; final campaign failure must still prevent certification",
+  "results": [
+    {
+      "version": "before",
+      "exit_code": 0,
+      "gate_passed": true,
+      "campaign_evidence_valid": null,
+      "throughput_metric": null,
+      "reported_failed_workloads": []
+    },
+    {
+      "version": "after",
+      "exit_code": 1,
+      "gate_passed": false,
+      "campaign_evidence_valid": [
+        false,
+        false
+      ],
+      "throughput_metric": "successful_operations",
+      "reported_failed_workloads": [
+        "mixed"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "status": "reproduced benchmark-only pacing defect and verified cooldown correction",
+  "certifies_g05": false,
+  "before_source_sha256": "92d61d37adc7eac950d7276fa7e72b0bbb70850306494ae07c23052fb97a1417",
+  "after_source_sha256": "8059590e30f1fdf42cc2b0473321744c670f2deaa4bc7126965d51e1bcbb0940",
+  "before": {
+    "requests": 2,
+    "first_wire_after_seconds": 0.01999999999999602,
+    "inter_wire_gap_seconds": 0.0010000000000047748,
+    "minimum_required_gap_seconds": 0.015625,
+    "gap_gate_passed": false,
+    "responses_closed": 2
+  },
+  "after": {
+    "requests": 2,
+    "first_wire_after_seconds": 0.01999999999999602,
+    "inter_wire_gap_seconds": 0.016625000000004775,
+    "minimum_required_gap_seconds": 0.015625,
+    "gap_gate_passed": true,
+    "responses_closed": 2
+  },
+  "scope": "Deterministic virtual-clock transport control, two mocked HTTP responses and one20ms client setup delay. No network, BaaS, server performance claim or effective load time credit."
+}

@@ -1,0 +1,689 @@
+{
+  "scope": "Complete original real browser/auth report reconstructed losslessly from checksummed public notices. Original source, verdict and cleanup are preserved; overlapping remote time earns no local checkpoint credit.",
+  "workflow_run_id": 39032916083,
+  "job_id": 117396841206,
+  "job_conclusion": "success",
+  "notice_report_sha256": "a886e46afafdf3ffd55cf6aece6bba79bea5fe85b7cc722a6bff3fc98b37821f",
+  "notice_parts": 2,
+  "regression_summary": {
+    "source_commit": "f385843e63e63c876c9c151c25e4697f2894484b",
+    "tests": 27,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 0.2945417620000015,
+    "successful": true,
+    "failed_tests": []
+  },
+  "report": {
+    "identity": "native-browser-auth-39032916083-1",
+    "source": "f385843e63e63c876c9c151c25e4697f2894484b",
+    "binary_sha256": "6aa5d48e502dc9b2ac46c595bc24bea4e56a5960f07af81c291e8f8b2708aedc",
+    "scenario": "browser-auth-concurrency",
+    "certifies_g05": false,
+    "status": "passed",
+    "cleanup_confirmed": true,
+    "checks": {
+      "product_artifact": {
+        "source_commit": "860d2f990949bfc5c8c612de3341c65a39e8d259",
+        "binary_sha256": "6aa5d48e502dc9b2ac46c595bc24bea4e56a5960f07af81c291e8f8b2708aedc",
+        "size_bytes": 30463736,
+        "product_tree_objects": {
+          "crates": "edcd9d9f13b82a7062fb2738031ff7b5abd1b35f",
+          "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+          "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+          "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+          "sdk": "273cc4331f10fb509e1b77590d970854d4a73a2e",
+          "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
+        },
+        "artifact_workflow_run_id": 39029580219,
+        "scope": "The retained Actions ELF is distinct from the local performance ELF; current product trees must match its build source."
+      },
+      "controller_kernel_budget": {
+        "cpu_quota_usec": 100000,
+        "cpu_period_usec": 100000,
+        "memory_bytes": 536870912,
+        "swap_bytes": 0,
+        "pids": 128
+      },
+      "auth_profile": {
+        "cycles": 5,
+        "accounts_per_cycle": 8,
+        "requests_per_cycle": 112,
+        "maximum_inflight": 8,
+        "maximum_arrivals_per_second": 16,
+        "maximum_response_bytes": 65536,
+        "maximum_cycle_seconds": 40,
+        "mutation_retries": 0,
+        "login_p95_ms": 750,
+        "login_p99_ms": 1500,
+        "read_refresh_p95_ms": 200,
+        "read_refresh_p99_ms": 500,
+        "scope": "Concurrent with existing navigation pressure, two real auth consumers, verified owned HTTPS. SMTP/OAuth and public ingress remain separate."
+      },
+      "local_load_checkpoint_credit_seconds": 0,
+      "observer_and_proxy_share_one_CPU_explicitly": true,
+      "configured_total_component_CPUs": 3.75,
+      "OS_CPU_headroom": 0.25,
+      "observer_plus_proxy_configured_quota_on_one_slot": 1.25,
+      "scope": "Separate VM with four CPU slots, distinct app/database/browser slots; observer and proxy share slot3. Existing local five-slot browser profile is separate. No SMTP/OAuth/public ingress or full G05 certification.",
+      "auth_cycles": [
+        {
+          "cycle": 0,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 489.9000000000233,
+              "p95_ms": 513.8000000000175,
+              "p99_ms": 513.8000000000175
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 126.20000000001164,
+              "p95_ms": 335.70000000001164,
+              "p99_ms": 335.70000000001164
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 80.89999999999418,
+              "p95_ms": 97.29999999998836,
+              "p99_ms": 97.29999999998836
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 76.60000000000582,
+              "p95_ms": 109.29999999998836,
+              "p99_ms": 109.29999999998836
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 66.5,
+              "p95_ms": 111.5,
+              "p99_ms": 155.89999999999418
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 44.5,
+              "p95_ms": 87.69999999998254,
+              "p99_ms": 87.69999999998254
+            }
+          },
+          "elapsed_seconds": 6.858600000000006,
+          "response_bytes_consumed": 44088,
+          "mutation_retries": 0
+        },
+        {
+          "cycle": 1,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 148.5,
+              "p95_ms": 430.5,
+              "p99_ms": 430.5
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 116.20000000001164,
+              "p95_ms": 308.79999999998836,
+              "p99_ms": 308.79999999998836
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 94,
+              "p95_ms": 137.20000000001164,
+              "p99_ms": 137.20000000001164
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 87.60000000000582,
+              "p95_ms": 184.89999999999418,
+              "p99_ms": 184.89999999999418
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 78.39999999999418,
+              "p95_ms": 180.89999999999418,
+              "p99_ms": 195.5
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 55.70000000001164,
+              "p95_ms": 127.39999999999418,
+              "p99_ms": 127.39999999999418
+            }
+          },
+          "elapsed_seconds": 6.801,
+          "response_bytes_consumed": 44088,
+          "mutation_retries": 0
+        },
+        {
+          "cycle": 2,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 189.60000000000582,
+              "p95_ms": 411.9000000000233,
+              "p99_ms": 411.9000000000233
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 121,
+              "p95_ms": 259.0999999999767,
+              "p99_ms": 259.0999999999767
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 82.79999999998836,
+              "p95_ms": 179.69999999998254,
+              "p99_ms": 179.69999999998254
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 64.20000000001164,
+              "p95_ms": 179.69999999998254,
+              "p99_ms": 179.69999999998254
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 86.79999999998836,
+              "p95_ms": 169.70000000001164,
+              "p99_ms": 263.30000000001746
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 70.10000000000582,
+              "p95_ms": 84.79999999998836,
+              "p99_ms": 84.79999999998836
+            }
+          },
+          "elapsed_seconds": 6.593300000000017,
+          "response_bytes_consumed": 44088,
+          "mutation_retries": 0
+        },
+        {
+          "cycle": 3,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 148.29999999998836,
+              "p95_ms": 322.20000000001164,
+              "p99_ms": 322.20000000001164
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 170,
+              "p95_ms": 256.3999999999651,
+              "p99_ms": 256.3999999999651
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 80.70000000001164,
+              "p95_ms": 179.09999999997672,
+              "p99_ms": 179.09999999997672
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 73.30000000004657,
+              "p95_ms": 168.10000000003492,
+              "p99_ms": 168.10000000003492
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 51.09999999997672,
+              "p95_ms": 188,
+              "p99_ms": 189.20000000001164
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 69.5,
+              "p95_ms": 93.70000000001164,
+              "p99_ms": 93.70000000001164
+            }
+          },
+          "elapsed_seconds": 6.525299999999988,
+          "response_bytes_consumed": 44072,
+          "mutation_retries": 0
+        },
+        {
+          "cycle": 4,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 174.5,
+              "p95_ms": 439.69999999995343,
+              "p99_ms": 439.69999999995343
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 155.5,
+              "p95_ms": 309.1000000000349,
+              "p99_ms": 309.1000000000349
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 57.79999999998836,
+              "p95_ms": 166.39999999996508,
+              "p99_ms": 166.39999999996508
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 70,
+              "p95_ms": 166.29999999998836,
+              "p99_ms": 166.29999999998836
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 86.40000000002328,
+              "p95_ms": 187,
+              "p99_ms": 242.30000000004657
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 65.89999999996508,
+              "p95_ms": 120.29999999998836,
+              "p99_ms": 120.29999999998836
+            }
+          },
+          "elapsed_seconds": 6.711900000000023,
+          "response_bytes_consumed": 44066,
+          "mutation_retries": 0
+        }
+      ],
+      "auth_census": {
+        "created_users": 40,
+        "unrevoked_sessions": 0
+      },
+      "browser": {
+        "browser_version": "151.0.7922.34",
+        "tabs": 3,
+        "pressure_rest_cycles": 5,
+        "navigation_samples": 596,
+        "authoritative_visual_feedback_p95_ms": 366.5,
+        "feedback_SLO_ms": 1000,
+        "api_requests": 4355,
+        "decoded_network_bytes": 23395436,
+        "auth_grants": {
+          "password": 81,
+          "refresh_token": 283
+        },
+        "auth_consumers": {
+          "1": 1537,
+          "0": 1536
+        },
+        "sdk_RLS_reads": 2499,
+        "actual_expired_access_status": 401,
+        "actual_expires_in_seconds": 900,
+        "auth_observation_seconds": 1082.2803793150001,
+        "logout_refresh_status": 400,
+        "cross_tab_refresh_coalesced": true,
+        "actual_credential_renewal": true,
+        "disposed_clients_collected": true,
+        "page_errors": 0,
+        "external_requests_blocked": 0
+      },
+      "singleflight_control": {
+        "simultaneous_refresh_callers": 48,
+        "actual_refresh_requests": 1,
+        "shared_access_token_digest_matches": true,
+        "all_tabs_returned_session": true,
+        "callers_started_per_tab": [
+          16,
+          16,
+          16
+        ],
+        "first_real_response_held_until_late_callers_started": true,
+        "held_refresh_locks": 1,
+        "queued_refresh_locks": 2,
+        "real_auth_consumers": {
+          "1": 3,
+          "0": 2
+        }
+      },
+      "browser_owners": {
+        "scope": "Three real Chromium tabs after explicit garbage collection; baseline,fivepressure/rest cycles and final SDK disposal. Same existing8MiB/250node/32listener growth gates, not an absence-of-all-leaks claim.",
+        "plateaus": [
+          {
+            "phase": "baseline",
+            "seconds_since_auth": 17.124280107000004,
+            "pages": [
+              {
+                "documents": 2,
+                "nodes": 31228,
+                "listeners": 701,
+                "heap_bytes": 18797272
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 14033300
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 14116228
+              }
+            ]
+          },
+          {
+            "phase": "navigation-rest-1",
+            "seconds_since_auth": 62.835167896,
+            "pages": [
+              {
+                "documents": 2,
+                "nodes": 31228,
+                "listeners": 701,
+                "heap_bytes": 19864732
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 15469444
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 15391720
+              }
+            ]
+          },
+          {
+            "phase": "navigation-rest-2",
+            "seconds_since_auth": 108.34078430399998,
+            "pages": [
+              {
+                "documents": 2,
+                "nodes": 23990,
+                "listeners": 549,
+                "heap_bytes": 19125316
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 15692424
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 15625612
+              }
+            ]
+          },
+          {
+            "phase": "navigation-rest-3",
+            "seconds_since_auth": 154.115071766,
+            "pages": [
+              {
+                "documents": 2,
+                "nodes": 23990,
+                "listeners": 549,
+                "heap_bytes": 19256888
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16009460
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16020076
+              }
+            ]
+          },
+          {
+            "phase": "navigation-rest-4",
+            "seconds_since_auth": 199.796303807,
+            "pages": [
+              {
+                "documents": 2,
+                "nodes": 23990,
+                "listeners": 549,
+                "heap_bytes": 19459608
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16075300
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16144992
+              }
+            ]
+          },
+          {
+            "phase": "navigation-rest-5",
+            "seconds_since_auth": 245.78322331299998,
+            "pages": [
+              {
+                "documents": 2,
+                "nodes": 23990,
+                "listeners": 549,
+                "heap_bytes": 19676768
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16333936
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16276676
+              }
+            ]
+          },
+          {
+            "phase": "final-disposed",
+            "seconds_since_auth": 1082.27972584,
+            "pages": [
+              {
+                "documents": 2,
+                "nodes": 23990,
+                "listeners": 549,
+                "heap_bytes": 19367512
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16248000
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16201236
+              }
+            ]
+          }
+        ],
+        "final_minus_baseline_per_tab": [
+          {
+            "documents": 0,
+            "heap_bytes": 570240,
+            "listeners": -152,
+            "nodes": -7238
+          },
+          {
+            "documents": 0,
+            "heap_bytes": 2214700,
+            "listeners": 0,
+            "nodes": 0
+          },
+          {
+            "documents": 0,
+            "heap_bytes": 2085008,
+            "listeners": 0,
+            "nodes": 0
+          }
+        ]
+      },
+      "resource_evidence": {
+        "samples": 219,
+        "maximum_gap_seconds": 5.354480007999996,
+        "component_peaks": {
+          "app-0": {
+            "memory_current_bytes": 48529408,
+            "memory_peak_bytes": 57032704,
+            "anonymous_bytes": 45449216,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 22962
+          },
+          "app-1": {
+            "memory_current_bytes": 45547520,
+            "memory_peak_bytes": 53891072,
+            "anonymous_bytes": 43622400,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 50576
+          },
+          "pg-0": {
+            "memory_current_bytes": 106057728,
+            "memory_peak_bytes": 113942528,
+            "anonymous_bytes": 32956416,
+            "tasks": 20,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 2185332
+          },
+          "proxy": {
+            "memory_current_bytes": 23334912,
+            "memory_peak_bytes": 31731712,
+            "anonymous_bytes": 20893696,
+            "tasks": 12,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 3293568
+          },
+          "browser": {
+            "memory_current_bytes": 1220050944,
+            "memory_peak_bytes": 1231114240,
+            "anonymous_bytes": 1096953856,
+            "tasks": 167,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 2912
+          }
+        },
+        "public_file": "resources.jsonl.gz",
+        "compressed_bytes": 13148,
+        "sha256": "ff49efec44a22f6a0d57d7b4cea8c5294798e6fe3d6f5aa36f5f680b5581c706",
+        "scope": "Numeric cgroup projection only; private resource/log/SQL fields are excluded."
+      }
+    },
+    "resource_samples": 219,
+    "elapsed_seconds_including_preparation": 1110.981565321
+  }
+}

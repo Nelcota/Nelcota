@@ -266,10 +266,10 @@ async fn bootstrap_is_idempotent() {
     );
     drop(client);
 
-    db::bootstrap(&app.admin, AUTHENTICATOR_PASSWORD, 10)
+    db::bootstrap(&app.admin, authenticator_password(), 10)
         .await
         .unwrap();
-    db::bootstrap(&app.admin, AUTHENTICATOR_PASSWORD, 10)
+    db::bootstrap(&app.admin, authenticator_password(), 10)
         .await
         .unwrap();
 
@@ -277,7 +277,7 @@ async fn bootstrap_is_idempotent() {
     assert_eq!(status, StatusCode::OK);
 
     // New authenticator connections inherit the statement_timeout.
-    let (client, connection) = db::authenticator_config(&app.admin, AUTHENTICATOR_PASSWORD)
+    let (client, connection) = db::authenticator_config(&app.admin, authenticator_password())
         .connect(tokio_postgres::NoTls)
         .await
         .unwrap();

@@ -1,0 +1,53 @@
+{
+  "scope": "Native allocation visibility controls on the staging image, no backend load or performance certification",
+  "image_id": "sha256:69f919497cada9a8611f3de61df902d9f94bf20f84552ef5bd93125c38608ef9",
+  "image_digests": [
+    "ubuntu@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55"
+  ],
+  "probe_source_sha256": "f833882f9c9697d7e838871dad3d398fb6427e78b21104d30ea8fcd7f13678f3",
+  "library_sha256": "a5396ed7b8ed580f27dbfe7358444c734b1a486e9566e41114fa6ef5636f9ec3",
+  "fixture_source_sha256": "2dd33680f143656b8a4682a8d07abe4caae3334b11dba89ba4c3267a4d154742",
+  "budgets": {
+    "cpu": 0.125,
+    "affinity": [
+      4
+    ],
+    "memory_mib": 96,
+    "pids": 16,
+    "seconds": 60,
+    "network": "none",
+    "root_read_only": true
+  },
+  "controls": [
+    {
+      "kind": "main",
+      "status": "passed",
+      "samples": 11,
+      "first_in_use_bytes": 944,
+      "peak_in_use_bytes": 67113904,
+      "last_in_use_bytes": 944,
+      "arena_delta_bytes": 0,
+      "mmap_delta_bytes": 67112960,
+      "binary_sha256": "47af167961770908e54184f46c7422136b9102dbea60ec6684155f9bf692909d",
+      "raw_samples_sha256": "1b93581d26d2ca846267fa36292dbc14513eb78301e834602aa8f32880878526",
+      "exit_code": 0,
+      "oom_killed": false
+    },
+    {
+      "kind": "worker",
+      "status": "passed",
+      "samples": 11,
+      "first_in_use_bytes": 944,
+      "peak_in_use_bytes": 33559088,
+      "last_in_use_bytes": 4144,
+      "arena_delta_bytes": 33558528,
+      "mmap_delta_bytes": 0,
+      "binary_sha256": "d21d817a65bcd0784b33722557c0606264b91245adc0d739c5dbb2c2f4bba4e1",
+      "raw_samples_sha256": "59fd9c7ff366e89cc27b88c4dce40eff936291cade67f83118c0b5b1bfec8e79",
+      "exit_code": 0,
+      "oom_killed": false
+    }
+  ],
+  "status": "passed",
+  "cleanup_confirmed": true
+}

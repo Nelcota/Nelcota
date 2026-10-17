@@ -1,0 +1,335 @@
+{
+  "scope": "complete bounded local fault pass under independently qualified atomic-transfer traffic; not off-host/PITR/systemd or generic exactly-once certification",
+  "certifies_g05": false,
+  "run_id": "fault-pass-1-001",
+  "launch": {
+    "run_id": "fault-pass-1-001",
+    "git": "be76404c4bb93aaad134a667a464d1f8fbe45e90",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "harness_sources": {
+      "bench/campaign.py": "68c3564045a65d60893eff17e50819058937f087891a539136298b2617e3b079",
+      "bench/compare.py": "9956d07b64811316f6e672ac87009a4451e57714ddbf84a0ce51044c40a953bc",
+      "bench/disk_usage.py": "502da50d95f979128c91d49b3037cb08885ddcbb941af0a9bd842e0d193da38e",
+      "bench/evidence.py": "61803fb6b3d6463984244f76f5e17f822fd865d19d55bf619a879d7b7886260d",
+      "bench/fault_campaign.py": "33fca029d3414e5c03d8d8a9e7a90e38c978bc307c05f3b98eef1e3957be30f4",
+      "bench/fixture_copy.py": "8c1421202b5543c16fa0fd0af4e47f7a8f9ef1bd9cd9423bfde28eda3dec6288",
+      "bench/fleet_webhooks.py": "ae5d21861ef3951a50a37fdfc84507685e87c2f8cc1698ae0d5972244d0b97ce",
+      "bench/guard_check.py": "2fa55b5e70154e7498ab79f627ef7623ae965cb4727a8318845bc5eb9baf481d",
+      "bench/host_campaign.py": "44e558cdb849829a5f16f8c148ae983872829b1ff18c56d7c5c854c2932f087d",
+      "bench/host_compare.py": "186f3378bff16247e248a9481a7fdab26a0227a5a515fdcaaa153e434612d02d",
+      "bench/host_resources.py": "1205842ab861a036ff526b85d237c08de437e8b7a52455e6fe7e56410dcb0a31",
+      "bench/http_boundary.py": "b69ff97c9e65f8ec94ccf36ac282a3b6b53c1a07aa01fbd33ac1fbe68a976db3",
+      "bench/ingress.py": "4976738ec1c3e96862f87a02d81843087a72a665a2de829acc4c6804b6117ed2",
+      "bench/launch.py": "eb17e66a8ca882f63e348c9183ff1df321ac0b63ddff2c48054f959de83ead60",
+      "bench/lost_reply.py": "2048c95f21169fe46adddb28c4feffa60da365d369f4730ed6f7c6bcbfd348bb",
+      "bench/metrics.py": "ad692683d6fe95428c98ca922593d36c01d4bb4bb41078bc04f8c25d9a025a91",
+      "bench/monitor.py": "bd869d88b833930602dc3770e5467040021cca6930f89fd298c269b6850c2e61",
+      "bench/objects.py": "a1612bc2e457481705044ce21a376d898544dbbff004a8920511218858a8210b",
+      "bench/observations.py": "8f88a60899928c2b30da0f888127034ec5c7117e34630121297f8bf11f64379b",
+      "bench/oracle_check.py": "690eb5a17c735f40b666ad313b56ed09301285c79da75835cee563021b5725ce",
+      "bench/ownership.py": "ffd3e9343b7f8262d05ee0363ab01b1f7e77089bb8f09ca8d0a350532402fa06",
+      "bench/ports.py": "edcb747bf4f29429d2abf5abf2741289c586cb64b0cf3484fa891edb5d798276",
+      "bench/postgres_evidence.py": "7152ea8c58232981c07b6c20d4a6a8cfba1046de1893d09c78de58607a95855a",
+      "bench/projects.py": "53b097879fead2517ea1522f6c89f3fb3155b017bda2cd85bdcbc59d85d639f2",
+      "bench/receiver.py": "b4f172be66aee69649c826052951ff839272d7501ec0d0a2e648d65dedd4ee9d",
+      "bench/watchdog.py": "25ab3e86efdcec9c1da84942ef27fee285339adbda15b70791030e4863ff7bb3",
+      "bench/campaign.js": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+      "bench/setup.sql": "104496228668127c3a95a0defa6efe2d6c06a00c56bdc19999052043e700c798",
+      "scripts/upgrade/support.py": "97fd54c7d8fe80d70d0201e71454dd4f72fef760e161800ad503760d3f90feb8"
+    }
+  },
+  "results": {
+    "completion": {
+      "status": "passed",
+      "load_seconds": 1580,
+      "resource_observations": 309,
+      "cleanup_confirmed": true,
+      "error_type": "NoneType"
+    },
+    "capacity": {
+      "qualified_lower_bound_iterations_per_second": 48,
+      "fault_rate": 38,
+      "ratio": 0.7916666666666666,
+      "workload": "90% acknowledged atomic-transfer RPC plus negative JWT probe, 5% pre-response disconnects, 5% discarded real upstream commit replies; ambiguous outcomes reconciled without retries"
+    },
+    "capacity-probes": [
+      {
+        "counts": {
+          "200": 4320,
+          "acknowledged": 4320,
+          "deliberately-dropped-reply": 240,
+          "deliberately-lost-committed-reply": 240
+        },
+        "requested_seconds": 300,
+        "elapsed_seconds": 300.00009948501247,
+        "offered_iterations": 4800,
+        "rate": 16,
+        "fault_injected": false,
+        "exploratory": true,
+        "success_latency": {
+          "p95_ms": 26.995503023499623,
+          "p99_ms": 40.84455699194223,
+          "successful_post_responses": 4320,
+          "method": "nearest rank, successful POST only"
+        },
+        "nominal_qualified": true
+      },
+      {
+        "counts": {
+          "200": 8639,
+          "acknowledged": 8639,
+          "deliberately-dropped-reply": 480,
+          "deliberately-lost-committed-reply": 480,
+          "late_arrivals": 1,
+          "dropped_arrivals": 1
+        },
+        "requested_seconds": 300,
+        "elapsed_seconds": 300.0000750779873,
+        "offered_iterations": 9600,
+        "rate": 32,
+        "fault_injected": false,
+        "exploratory": true,
+        "success_latency": {
+          "p95_ms": 24.580783996498212,
+          "p99_ms": 40.89087402098812,
+          "successful_post_responses": 8639,
+          "method": "nearest rank, successful POST only"
+        },
+        "nominal_qualified": true
+      },
+      {
+        "counts": {
+          "200": 12893,
+          "acknowledged": 12893,
+          "deliberately-dropped-reply": 708,
+          "deliberately-lost-committed-reply": 716,
+          "late_arrivals": 46,
+          "dropped_arrivals": 83
+        },
+        "requested_seconds": 300,
+        "elapsed_seconds": 300.0000966920052,
+        "offered_iterations": 14400,
+        "rate": 48,
+        "fault_injected": false,
+        "exploratory": true,
+        "success_latency": {
+          "p95_ms": 45.34021599101834,
+          "p99_ms": 73.42309498926625,
+          "successful_post_responses": 12893,
+          "method": "nearest rank, successful POST only"
+        },
+        "nominal_qualified": true
+      },
+      {
+        "counts": {
+          "200": 15562,
+          "acknowledged": 15562,
+          "late_arrivals": 730,
+          "dropped_arrivals": 1940,
+          "deliberately-dropped-reply": 838,
+          "deliberately-lost-committed-reply": 860
+        },
+        "requested_seconds": 300,
+        "elapsed_seconds": 300.0455905990093,
+        "offered_iterations": 19200,
+        "rate": 64,
+        "fault_injected": false,
+        "exploratory": true,
+        "success_latency": {
+          "p95_ms": 79.03860000078566,
+          "p99_ms": 146.13212199765258,
+          "successful_post_responses": 15562,
+          "method": "nearest rank, successful POST only"
+        },
+        "nominal_qualified": false
+      }
+    ],
+    "invariants": {
+      "attempted": 59390,
+      "acknowledged": 53049,
+      "committed": 55988,
+      "acknowledged_missing": 0,
+      "unknown_or_corrupt": 0,
+      "ambiguous_attempts": 6155,
+      "ambiguous_committed": 2939,
+      "automatic_mutation_retries": 0,
+      "explicit_primary_key_duplicate_status": 409,
+      "accounting": {
+        "accounts": 2,
+        "total": 2000000,
+        "first_balance": 1002924,
+        "committed": 55988,
+        "delta": 2924,
+        "counter": 55988
+      }
+    },
+    "lost-commit-replies": {
+      "confirmed_backend_commit_replies_discarded": 2938,
+      "lost_commits_missing_or_corrupt": 0,
+      "downstream_transport": "owned HTTP socketpair",
+      "upstream": "real project HTTP",
+      "automatic_retries": 0
+    },
+    "mutation-boundaries": {
+      "invalid_delta_status": 400,
+      "authenticated_without_execute_status": 403,
+      "partial_invalid_rows": 0
+    },
+    "declared-oom": {
+      "status": "observed",
+      "state": {
+        "Status": "exited",
+        "Running": false,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": true,
+        "Dead": false,
+        "Pid": 0,
+        "ExitCode": 137,
+        "Error": "",
+        "StartedAt": "2026-10-15T16:02:15.151927119Z",
+        "FinishedAt": "2026-10-15T16:02:16.161041864Z"
+      },
+      "limit_mib": 8,
+      "tag": "io.nelcota.stress.fault=oom",
+      "scope": "only the owned source app",
+      "trigger": "one normal password verification with unchanged Argon2 parameters"
+    },
+    "restore": {
+      "status": "passed",
+      "rto_seconds": 2.6361438960011583,
+      "rpo_upper_bound_seconds": 17.996962095989147,
+      "restored_rows": 49692,
+      "source_rows": 50338,
+      "restored_accounting": {
+        "accounts": 2,
+        "total": 2000000,
+        "first_balance": 1002588,
+        "committed": 49692,
+        "delta": 2588,
+        "counter": 49692
+      },
+      "intentional_snapshot_rewind_rows": 646,
+      "cross_project_token_status": 401,
+      "restored_user_matches": true,
+      "physical_bytes_match": true,
+      "scope": "local DB snapshot plus immutable files, no off-host/PITR/systemd certification"
+    },
+    "snapshot": {
+      "bytes": 3104889,
+      "sha256": "6ae8a2f08aeee8bdb148dd47885675fc6054fa54fb163339fd68e64ade7c30b7",
+      "writers_active": true,
+      "object_fixture_mutations": false,
+      "started_monotonic": 143748.972054663,
+      "ended_monotonic": 143749.959812313
+    },
+    "deadlock": {
+      "observed": 1,
+      "status": "passed",
+      "direct_locker_mutations": false
+    },
+    "filesystem-bytes": {
+      "status": "passed",
+      "filesystem": "owned 16-MiB tmpfs",
+      "host_disk_filled": false,
+      "observed_enospc": true,
+      "inodes": null,
+      "database_commits_during_fault": 99,
+      "failure_http_status": 507,
+      "failure_code": "storage_full",
+      "failed_metadata_rows": 0,
+      "subsequent_upload_and_bytes_verified": true
+    },
+    "filesystem-inodes": {
+      "status": "passed",
+      "filesystem": "owned 16-MiB tmpfs",
+      "host_disk_filled": false,
+      "observed_enospc": true,
+      "inodes": 64,
+      "database_commits_during_fault": 93,
+      "failure_http_status": 500,
+      "failure_code": "internal",
+      "failed_metadata_rows": 0,
+      "subsequent_upload_and_bytes_verified": true
+    },
+    "provider-restart": {
+      "status": "passed",
+      "responses": {
+        "200": 38,
+        "201": 1,
+        "connection-unavailable": 52,
+        "503": 1,
+        "500": 1
+      },
+      "recovery_seconds": 0.4721408670011442,
+      "positive_bytes_verified": true,
+      "unauthorized_status": 401,
+      "real_provider": "RustFS"
+    },
+    "provider-pause": {
+      "status": "passed",
+      "responses": {
+        "200": 49
+      },
+      "recovery_seconds": 0.5280664539895952,
+      "positive_bytes_verified": true,
+      "unauthorized_status": 401,
+      "real_provider": "RustFS"
+    },
+    "database-recovery": {
+      "status": "passed",
+      "recovery_seconds": 0.2872550119936932,
+      "positive_status": 200,
+      "unauthorized_status": 401
+    },
+    "app-recovery": {
+      "status": "passed",
+      "recovery_seconds": 1.8765206550015137,
+      "positive_status": 200,
+      "unauthorized_status": 401
+    },
+    "oom-recovery": {
+      "status": "passed",
+      "recovery_seconds": 1.5085715859895572,
+      "positive_status": 200,
+      "unauthorized_status": 401
+    },
+    "cleanup": {
+      "confirmed": true,
+      "containers": [],
+      "volumes": [],
+      "directory_removed": true
+    }
+  },
+  "raw_evidence_sha256": {
+    "completion.json": "a419803ba8211ca39a777a24e5b1f0ba5afcd513714a0663adc551da52e621a0",
+    "capacity.json": "5c0aa8318aa8a4f8eafca2f8688e449e34fabf40f71728c56dfbb670a2e7190e",
+    "capacity-probes.json": "6b1fe6734adac9f3efbb8b9af058e9674520d63533ac7e4bf5e28412ff62d47b",
+    "invariants.json": "438564f32082d353ce4a49dacbfd03520228f8bd4f949b2ae9ef24e46549521b",
+    "lost-commit-replies.json": "8e3d3b8edc056ba8d3455f5075c01286f2c6840a56916a58a71a410fafae5939",
+    "mutation-boundaries.json": "cb1158d96959b5b4caf50cce341d4c091737600efe7c645dad8b0158b826e3a3",
+    "declared-oom.json": "8cc62bd0864a34292a0a26e4bf1d912348560882c2e4a2e32eded24ca5b54164",
+    "restore.json": "401bf4ff95293482749e3ec77cee211a1e9a4516b325f81c1cb737c65dd49236",
+    "snapshot.json": "ef74677813ed22af2514d91dea45265e60b571142db8505f33fc2dc55a7b777d",
+    "deadlock.json": "aedac539ada8d7ea66cc42c27f62da75e278dafff3a5ea25c353dceeb5e4287e",
+    "filesystem-bytes.json": "8a44f18d98d2948993dc027f41fea0637042e962f5b508b1a104b145b94c5f97",
+    "filesystem-inodes.json": "117f6066ebe73415d8c96f76ce546a0e0c15dd1045c0ab37290bff57c1e9a051",
+    "provider-restart.json": "6dd1947588bc83921837d33b0a2285a676591bd5e0e42bbc100f75924de0feb8",
+    "provider-pause.json": "ecbfc1a63aabac9f109a4bbdda82d32a0690bb811eefa0802dc15e5c794ee3d2",
+    "database-recovery.json": "f352dd5dabd10d5e02f577be1d052046714c1b521ffd83f201c5e45e1217236a",
+    "app-recovery.json": "635cf2045c8c8691eb1721c0b0bab1131868bea0eaa646c2df9159f38797e273",
+    "oom-recovery.json": "38e5a737cd4786002eb422df871e193505a99a97ea8520048d5a076d0d690708",
+    "cleanup.json": "f1a540c4a5bfba821f8e5ec123ebf7dbe52f06bea6e62ef6b277e598bab1daf0"
+  },
+  "resource_timeline": {
+    "observations": 309,
+    "maximum_observed_gap_seconds": 19.592155903985258,
+    "maximum_allowed_gap_seconds": 30
+  },
+  "provider_multipart_drain_gate": "Passed: frozen source requires zero real-provider multipart uploads before leaving the S3 fault phase; assertion result is established by the successful completed pass, not a separately exported inventory file.",
+  "interpretation": {
+    "capacity_64": "Not qualified: 1940/19200 arrivals dropped (10.104%); the eight-inflight Python generator profile limits the claim. This is not a backend maximum-throughput measurement.",
+    "fault_rate": "38 iterations/s is 79.167% of the qualified 48-iteration/s lower bound.",
+    "snapshot_rewind": "646 rows intentionally absent only from the fresh restored snapshot target; no acknowledged operation was lost from the live source."
+  }
+}

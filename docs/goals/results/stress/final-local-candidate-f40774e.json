@@ -1,0 +1,48 @@
+{
+  "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+  "build_command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "nelcota-server"
+  ],
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+  "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+  "cargo_lock_sha256": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff",
+  "workspace_manifest_sha256": "2527746af359ef502f1bd6a836fda5a161456fcf7d11766a1b1d4da64a86de09",
+  "build_jobs": 4,
+  "incremental": "0",
+  "release_profile": {
+    "lto": "thin",
+    "codegen_units": 1
+  },
+  "compiler_overrides": [],
+  "build_exit": 0,
+  "build_seconds": 90.63318545097718,
+  "completed_utc": "2026-10-17T08:32:28.812587+00:00",
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "binary_sha256": "9cc6cbf0be68d38ba1c9e138cbeee7c4fac0324e91c406fae977eba591c76f44",
+  "size": 30480704,
+  "scope": "Fresh frozen local staging candidate after SQL/export cleanup ownership and large unpolled export deadline corrections; no production release or deployment",
+  "status": "frozen; fresh final affected CI/native/live campaigns pending",
+  "certifies_g05": false,
+  "product_tree_objects": {
+    "crates": "986c88ac9de6d4c117ed8027d329b3e7b566140c",
+    "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+    "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+    "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+    "sdk": "864119c5aa5bfd0edc1799d9de018e096f39d67e",
+    "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
+  },
+  "previous_build": "final-local-candidate-e6fdfd7.json",
+  "build_receipt": "candidate-final-005.json",
+  "architecture": "x86_64-unknown-linux-gnu"
+}

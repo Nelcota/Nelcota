@@ -1,0 +1,23 @@
+{
+  "status": "failed",
+  "certifies_g05": false,
+  "source": "b43dc5802d6d236a3ed5b8c0253122ee12b8ae5e",
+  "check_run": "https://github.com/Nelcota/Nelcota/runs/117219931423",
+  "annotations": [
+    {
+      "path": "crates/cli/src/native/postgres.rs",
+      "start_line": 331,
+      "end_line": 331,
+      "title": "Hard-coded cryptographic value",
+      "message": "This hard-coded value is used as [a password](1)."
+    },
+    {
+      "path": "crates/cli/src/native/postgres.rs",
+      "start_line": 332,
+      "end_line": 332,
+      "title": "Hard-coded cryptographic value",
+      "message": "This hard-coded value is used as [a password](1)."
+    }
+  ],
+  "scope": "Original failed aggregate CodeQL check retained. Invalid validation input and a random-base malformed candidate were still reported by credential-parameter heuristics; this is not an alert dismissal."
+}

@@ -1,0 +1,15 @@
+{
+  "status": "failed",
+  "certifies_g05": false,
+  "source": "14725d64cb3f3ec93f91c8d4bad26715473c68a1",
+  "job": "https://github.com/Nelcota/Nelcota/runs/117231644395",
+  "annotations": [
+    {
+      "title": "Rust reported a failed test",
+      "message": "updates::runtime::tests::running_native_identity_rejects_replacement_even_with_the_same_hash",
+      "path": ".github",
+      "start_line": 10
+    }
+  ],
+  "scope": "Original Rust check failure retained. A later unchanged-Rust-source check passed, but the intermittent executable-identity fixture failure still requires diagnosis; neither a cause nor an exact test count is inferred from the job conclusion."
+}

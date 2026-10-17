@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+  "checks": [
+    {
+      "name": "CodeQL",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/runs/116534825467"
+    },
+    {
+      "name": "Analyze (python)",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767535330/job/116534566230"
+    },
+    {
+      "name": "Analyze (javascript-typescript)",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767535330/job/116534565046"
+    },
+    {
+      "name": "Analyze (rust)",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767535330/job/116534564641"
+    },
+    {
+      "name": "Analyze (actions)",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767535330/job/116534564385"
+    },
+    {
+      "name": "native-presets",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767539532/job/116534551738"
+    },
+    {
+      "name": "sdk-rust (macos-latest)",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767539228/job/116534551568"
+    },
+    {
+      "name": "sdk / sdk-node (22)",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551552"
+    },
+    {
+      "name": "check",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551527"
+    },
+    {
+      "name": "sdk-rust (ubuntu-latest)",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767539228/job/116534551417"
+    },
+    {
+      "name": "sdk-rust (windows-latest)",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767539228/job/116534551357"
+    },
+    {
+      "name": "upgrade",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551290"
+    },
+    {
+      "name": "sdk / sdk",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551241"
+    },
+    {
+      "name": "sdk / sdk-node (26)",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551196"
+    },
+    {
+      "name": "native-lint",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551192"
+    },
+    {
+      "name": "msrv",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767539228/job/116534550988"
+    },
+    {
+      "name": "admin-ui",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534550866"
+    },
+    {
+      "name": "supply-chain",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534550655"
+    }
+  ],
+  "all_checks_passed": true,
+  "python_review_test_count": 140,
+  "python_review_seconds": 5.622,
+  "rust_test_counts_extracted": false,
+  "certifies_release_capacity": false,
+  "certifies_g05": false,
+  "previous_verified_source": "be76404c4bb93aaad134a667a464d1f8fbe45e90"
+}

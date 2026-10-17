@@ -1,0 +1,26 @@
+{
+  "scope": "Lossless original numeric resource gzip recovered from original provider artifact; original report and verdict preserved. No new load or checkpoint credit.",
+  "publisher_run_id": 39025350760,
+  "publisher_job_id": 117380266086,
+  "original_workflow_run_id": 39021737154,
+  "original_job_id": 117364981562,
+  "notice_proof": {
+    "original_identity": "native-matrix-39021737154-1",
+    "original_source": "812296ab88a49715906f57edd21bec8afdca9b3b",
+    "binary_sha256": "872c3b1efc71e0118386cdd3caf36bae0de26cb213307b91396fe30c0af83d75",
+    "original_report_sha256": "e6686cc417eccb98f5f97b7bfbcf33fa1edf0590bec1f82bce2b26d5e9cb9425",
+    "publisher_source": "6a05f637677f5de19cb85761e363bd25947903f9",
+    "sha256": "2cad1fe9590f59451d797ae2d581bc7bb014b3e6c9b9b3586899d08e86b3050d",
+    "compressed_bytes": 9186,
+    "parts": 5,
+    "original_status": "passed",
+    "original_cleanup_confirmed": true,
+    "encoding": "original-gzip+base64",
+    "kind": "matrix",
+    "local_effective_load_credit_seconds": 0,
+    "samples": 347,
+    "maximum_gap_seconds": 6.044718686999886
+  },
+  "raw_annotation_sha256": "f81d5c365e91b628a50cacb0ee2461b5caabe3157bc9aa2a2b8a101163c9380e",
+  "output_sha256": "2cad1fe9590f59451d797ae2d581bc7bb014b3e6c9b9b3586899d08e86b3050d"
+}

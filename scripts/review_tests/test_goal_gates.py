@@ -12,6 +12,11 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[2]
 COMPARE = ROOT / "bench/compare.py"
 CHECKER = ROOT / "scripts/check-boundaries.py"
+sys.path.insert(0, str(ROOT / 'bench'))
+from metrics import STORAGE_PROFILE
+from latency import PROTOCOL as LATENCY_PROTOCOL
+from arrival_counters import PROTOCOL as ARRIVAL_COUNTER_PROTOCOL
+from http_counters import PROTOCOL as HTTP_COUNTER_PROTOCOL
 
 
 class Comparison(unittest.TestCase):
@@ -90,6 +95,121 @@ class Comparison(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertTrue(report["rows"][0]["gate_passed"])
 
+    def useful_fixture(self,candidate_rate):
+        for directory in [self.baseline,self.candidate]:
+            path=directory/'metadata.json'
+            metadata=json.loads(path.read_text());metadata['schema']=2
+            metadata['arrival_counter_protocol']=ARRIVAL_COUNTER_PROTOCOL
+            metadata['http_counter_protocol']=HTTP_COUNTER_PROTOCOL
+            metadata['successful_latency_protocol']=LATENCY_PROTOCOL
+            metadata['metrics_storage_profile']=STORAGE_PROFILE.copy()
+            path.write_text(json.dumps(metadata))
+            (directory/'completion.json').write_text(json.dumps({'status':'passed','cleanup_confirmed':True}))
+            (directory/'cleanup.json').write_text(json.dumps({'containers':[],'volumes':[],'directory_removed':True}))
+            rate=100
+            if directory==self.candidate:
+                rate=candidate_rate
+            for index in range(1,4):
+                self.change_sample(directory,index,lambda metrics:metrics.update(successful_operations={'rate':rate,'count':rate*30}))
+                path=directory/f'read-{index}.json'
+                sample=json.loads(path.read_text())
+                sample['duration_seconds']=30
+                sample['arrival_counter_evidence']={'phase':f'read-{index}','protocol':ARRIVAL_COUNTER_PROTOCOL,'began_monotonic':0,'last_monotonic':30,'maximum_poll_gap_seconds':5,'observations':8,'closed':True,'dropped_by_scenario':{'traffic':0}}
+                sample['metrics']['dropped_iterations']={'count':0}
+                sample['metrics']['expected_rejections']={'count':0}
+                sample['http_counter_evidence']={'phase':f'read-{index}','protocol':HTTP_COUNTER_PROTOCOL,'began_monotonic':0,'last_monotonic':30,'maximum_poll_gap_seconds':5,'observations':8,'closed':True,'tracked_series_count':1,'scenarios':{'traffic':{'project':'single','http_reqs':3000,'expected_rejections':0,'status_counts':{'200':3000}}}}
+                path.write_text(json.dumps(sample))
+
+    def test_missing_continuous_counter_protocol_cannot_certify_useful_work(self):
+        self.useful_fixture(100)
+        for directory in [self.baseline,self.candidate]:
+            path=directory/'metadata.json';value=json.loads(path.read_text());value.pop('arrival_counter_protocol');path.write_text(json.dumps(value))
+        code,report=self.compare()
+        self.assertNotEqual(code,0)
+        self.assertEqual(report['campaign_evidence_valid'],[False,False])
+
+    def test_stale_http_or_negative_counts_cannot_certify_useful_work(self):
+        self.useful_fixture(100)
+        path=self.candidate/'read-1.json'
+        sample=json.loads(path.read_text())
+        sample['http_counter_evidence']['scenarios']['traffic']['status_counts']['401']=3
+        sample['http_counter_evidence']['scenarios']['traffic']['http_reqs']=3003
+        sample['http_counter_evidence']['scenarios']['traffic']['expected_rejections']=3
+        path.write_text(json.dumps(sample))
+        code,report=self.compare()
+        self.assertNotEqual(code,0)
+        self.assertFalse(report['rows'][0]['comparable'])
+
+    def test_missing_bounded_compaction_profile_cannot_certify_a_campaign(self):
+        self.useful_fixture(100)
+        for directory in [self.baseline,self.candidate]:
+            path=directory/'metadata.json';value=json.loads(path.read_text());value.pop('metrics_storage_profile');path.write_text(json.dumps(value))
+        code,report=self.compare()
+        self.assertNotEqual(code,0)
+        self.assertEqual(report['campaign_evidence_valid'],[False,False])
+
+    def test_final_hop_latency_protocol_cannot_certify_logical_request_latency(self):
+        self.useful_fixture(100)
+        for directory in [self.baseline,self.candidate]:
+            path=directory/'metadata.json';value=json.loads(path.read_text());value.pop('successful_latency_protocol');path.write_text(json.dumps(value))
+        code,report=self.compare()
+        self.assertNotEqual(code,0)
+        self.assertEqual(report['campaign_evidence_valid'],[False,False])
+
+    def test_missing_http_protocol_cannot_certify_useful_work(self):
+        self.useful_fixture(100)
+        for directory in [self.baseline,self.candidate]:
+            path=directory/'metadata.json';value=json.loads(path.read_text());value.pop('http_counter_protocol');path.write_text(json.dumps(value))
+        code,report=self.compare()
+        self.assertNotEqual(code,0)
+        self.assertEqual(report['campaign_evidence_valid'],[False,False])
+
+    def test_stale_zero_disagrees_with_a_retained_drop_and_cannot_pass(self):
+        self.useful_fixture(100)
+        path=self.candidate/'read-1.json';sample=json.loads(path.read_text());sample['arrival_counter_evidence']['dropped_by_scenario']['traffic']=7;path.write_text(json.dumps(sample))
+        code,report=self.compare()
+        self.assertNotEqual(code,0)
+        self.assertFalse(report['rows'][0]['comparable'])
+
+    def test_rejected_requests_cannot_mask_twenty_percent_loss_of_useful_work(self):
+        self.useful_fixture(80)
+        code,report=self.compare()
+        self.assertNotEqual(code,0)
+        self.assertTrue(report['useful_throughput_verified'])
+        self.assertAlmostEqual(report['rows'][0]['rps_ratio'],.8)
+
+    def test_missing_useful_counter_cannot_fall_back_to_http_requests(self):
+        self.useful_fixture(100)
+        self.change_sample(self.candidate,1,lambda metrics:metrics.pop('successful_operations'))
+        code,report=self.compare()
+        self.assertNotEqual(code,0)
+        self.assertFalse(report['rows'][0]['comparable'])
+
+    def test_later_campaign_failure_cannot_be_hidden_by_good_steady_samples(self):
+        self.useful_fixture(100)
+        (self.baseline/'completion.json').write_text(json.dumps({'status':'failed','cleanup_confirmed':True}))
+        code,report=self.compare()
+        self.assertNotEqual(code,0)
+        self.assertFalse(report['rows'][0]['comparable'])
+
+    def test_completed_equivalent_useful_protocol_passes(self):
+        self.useful_fixture(100)
+        code,report=self.compare()
+        self.assertEqual(code,0)
+        self.assertTrue(report['rows'][0]['gate_passed'])
+
+    def test_matching_instrumented_runs_cannot_certify_ordinary_performance(self):
+        self.useful_fixture(100)
+        for directory in [self.baseline,self.candidate]:
+            path=directory/'metadata.json'
+            metadata=json.loads(path.read_text())
+            metadata['allocator_observer']={}
+            path.write_text(json.dumps(metadata))
+        code,report=self.compare()
+        self.assertNotEqual(code,0)
+        self.assertEqual(report['campaign_evidence_valid'],[False,False])
+        self.assertFalse(report['rows'][0]['gate_passed'])
+
     def test_failed_baseline_cannot_certify_candidate(self):
         self.change_sample(
             self.baseline, 1, lambda value: value["unexpected"].update(value=1)
@@ -121,6 +241,15 @@ class Comparison(unittest.TestCase):
         code, report = self.compare()
         self.assertNotEqual(code, 0)
         self.assertFalse(report["rows"][0]["gate_passed"])
+
+    def test_different_metric_protocol_cannot_certify_candidate(self):
+        path = self.candidate / 'metadata.json'
+        metadata = json.loads(path.read_text())
+        metadata['metrics_backend'] = 'different estimator'
+        path.write_text(json.dumps(metadata))
+        code, report = self.compare()
+        self.assertNotEqual(code, 0)
+        self.assertIn('metrics_backend', report['fixture_differences'])
 
     def test_different_nominal_duration_is_incomparable(self):
         for iteration in range(1, 4):

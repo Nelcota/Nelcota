@@ -1,0 +1,478 @@
+{
+  "scope": "Complete original real browser/auth report reconstructed losslessly from checksummed public notices. Original source, verdict and cleanup are preserved; overlapping remote time earns no local checkpoint credit.",
+  "workflow_run_id": 39024051590,
+  "job_id": 117371420877,
+  "job_conclusion": "success",
+  "notice_report_sha256": "12d2ef2e1d0c2f31d9dbdec693225c9a66479b2d20b364aa89a9cbb1840a3754",
+  "notice_parts": 2,
+  "regression_summary": {
+    "source_commit": "df51f80b29bcd0edaacd91270cd19d610381afff",
+    "tests": 21,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 0.1594189799999981,
+    "successful": true,
+    "failed_tests": []
+  },
+  "report": {
+    "identity": "native-browser-auth-39024051590-1",
+    "source": "df51f80b29bcd0edaacd91270cd19d610381afff",
+    "binary_sha256": "872c3b1efc71e0118386cdd3caf36bae0de26cb213307b91396fe30c0af83d75",
+    "scenario": "browser-auth-concurrency",
+    "certifies_g05": false,
+    "status": "passed",
+    "cleanup_confirmed": true,
+    "checks": {
+      "product_artifact": {
+        "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+        "binary_sha256": "872c3b1efc71e0118386cdd3caf36bae0de26cb213307b91396fe30c0af83d75",
+        "size_bytes": 30463736,
+        "product_tree_objects": {
+          "crates": "986c88ac9de6d4c117ed8027d329b3e7b566140c",
+          "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+          "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+          "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+          "sdk": "864119c5aa5bfd0edc1799d9de018e096f39d67e",
+          "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
+        },
+        "artifact_workflow_run_id": 39017663454,
+        "scope": "The retained Actions ELF is distinct from the local performance ELF; current product trees must match its build source."
+      },
+      "controller_kernel_budget": {
+        "cpu_quota_usec": 100000,
+        "cpu_period_usec": 100000,
+        "memory_bytes": 536870912,
+        "swap_bytes": 0,
+        "pids": 128
+      },
+      "auth_profile": {
+        "cycles": 5,
+        "accounts_per_cycle": 8,
+        "requests_per_cycle": 112,
+        "maximum_inflight": 8,
+        "maximum_arrivals_per_second": 16,
+        "maximum_response_bytes": 65536,
+        "maximum_cycle_seconds": 40,
+        "mutation_retries": 0,
+        "login_p95_ms": 750,
+        "login_p99_ms": 1500,
+        "read_refresh_p95_ms": 200,
+        "read_refresh_p99_ms": 500,
+        "scope": "Concurrent with existing navigation pressure, two real auth consumers, verified owned HTTPS. SMTP/OAuth and public ingress remain separate."
+      },
+      "local_load_checkpoint_credit_seconds": 0,
+      "observer_and_proxy_share_one_CPU_explicitly": true,
+      "configured_total_component_CPUs": 3.75,
+      "OS_CPU_headroom": 0.25,
+      "observer_plus_proxy_configured_quota_on_one_slot": 1.25,
+      "scope": "Separate VM with four CPU slots, distinct app/database/browser slots; observer and proxy share slot3. Existing local five-slot browser profile is separate. No SMTP/OAuth/public ingress or full G05 certification.",
+      "auth_cycles": [
+        {
+          "cycle": 0,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 154.29999999998836,
+              "p95_ms": 448.30000000001746,
+              "p99_ms": 448.30000000001746
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 297,
+              "p95_ms": 335.6000000000058,
+              "p99_ms": 335.6000000000058
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 127.20000000001164,
+              "p95_ms": 154.60000000000582,
+              "p99_ms": 154.60000000000582
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 51.20000000001164,
+              "p95_ms": 76.5,
+              "p99_ms": 76.5
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 66.70000000001164,
+              "p95_ms": 141.20000000001164,
+              "p99_ms": 143.60000000000582
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 39.5,
+              "p95_ms": 112.79999999998836,
+              "p99_ms": 112.79999999998836
+            }
+          },
+          "elapsed_seconds": 6.566799999999988,
+          "response_bytes_consumed": 44074,
+          "mutation_retries": 0
+        },
+        {
+          "cycle": 1,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 137.69999999998254,
+              "p95_ms": 312.3999999999942,
+              "p99_ms": 312.3999999999942
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 110.30000000001746,
+              "p95_ms": 192,
+              "p99_ms": 192
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 81,
+              "p95_ms": 99.39999999999418,
+              "p99_ms": 99.39999999999418
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 32.69999999998254,
+              "p95_ms": 151.70000000001164,
+              "p99_ms": 151.70000000001164
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 66.60000000000582,
+              "p95_ms": 162.70000000001164,
+              "p99_ms": 175.79999999998836
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 28.900000000023283,
+              "p95_ms": 39,
+              "p99_ms": 39
+            }
+          },
+          "elapsed_seconds": 6.406800000000017,
+          "response_bytes_consumed": 44074,
+          "mutation_retries": 0
+        },
+        {
+          "cycle": 2,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 136.29999999998836,
+              "p95_ms": 265.20000000001164,
+              "p99_ms": 265.20000000001164
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 128.89999999999418,
+              "p95_ms": 193,
+              "p99_ms": 193
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 65.89999999999418,
+              "p95_ms": 78.79999999998836,
+              "p99_ms": 78.79999999998836
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 50.79999999998836,
+              "p95_ms": 156.10000000003492,
+              "p99_ms": 156.10000000003492
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 71.79999999998836,
+              "p95_ms": 134.40000000002328,
+              "p99_ms": 152.09999999997672
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 47,
+              "p95_ms": 110.40000000002328,
+              "p99_ms": 110.40000000002328
+            }
+          },
+          "elapsed_seconds": 6.388699999999982,
+          "response_bytes_consumed": 44074,
+          "mutation_retries": 0
+        },
+        {
+          "cycle": 3,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 159.20000000001164,
+              "p95_ms": 298.9000000000233,
+              "p99_ms": 298.9000000000233
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 149.10000000003492,
+              "p95_ms": 197.79999999998836,
+              "p99_ms": 197.79999999998836
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 66.59999999997672,
+              "p95_ms": 102.59999999997672,
+              "p99_ms": 102.59999999997672
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 44.09999999997672,
+              "p95_ms": 94.70000000001164,
+              "p99_ms": 94.70000000001164
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 59.899999999965075,
+              "p95_ms": 82.70000000001164,
+              "p99_ms": 88.70000000001164
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 42.29999999998836,
+              "p95_ms": 68.10000000003492,
+              "p99_ms": 68.10000000003492
+            }
+          },
+          "elapsed_seconds": 6.387299999999988,
+          "response_bytes_consumed": 44082,
+          "mutation_retries": 0
+        },
+        {
+          "cycle": 4,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 126.79999999998836,
+              "p95_ms": 234,
+              "p99_ms": 234
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 107.69999999995343,
+              "p95_ms": 176,
+              "p99_ms": 176
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 48.600000000034925,
+              "p95_ms": 119.29999999998836,
+              "p99_ms": 119.29999999998836
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 41.5,
+              "p95_ms": 120.29999999998836,
+              "p99_ms": 120.29999999998836
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 51.600000000034925,
+              "p95_ms": 73.5,
+              "p99_ms": 107.5
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 21,
+              "p95_ms": 69.29999999998836,
+              "p99_ms": 69.29999999998836
+            }
+          },
+          "elapsed_seconds": 6.371,
+          "response_bytes_consumed": 44074,
+          "mutation_retries": 0
+        }
+      ],
+      "auth_census": {
+        "created_users": 40,
+        "unrevoked_sessions": 0
+      },
+      "browser": {
+        "browser_version": "151.0.7922.34",
+        "tabs": 3,
+        "pressure_rest_cycles": 5,
+        "navigation_samples": 823,
+        "authoritative_visual_feedback_p95_ms": 267.20000000001164,
+        "feedback_SLO_ms": 1000,
+        "api_requests": 4819,
+        "decoded_network_bytes": 26578923,
+        "auth_grants": {
+          "password": 81,
+          "refresh_token": 283
+        },
+        "auth_consumers": {
+          "1": 1543,
+          "0": 1542
+        },
+        "sdk_RLS_reads": 2511,
+        "actual_expired_access_status": 401,
+        "actual_expires_in_seconds": 900,
+        "auth_observation_seconds": 1082.087152701,
+        "logout_refresh_status": 400,
+        "cross_tab_refresh_coalesced": true,
+        "actual_credential_renewal": true,
+        "disposed_clients_collected": true,
+        "page_errors": 0,
+        "external_requests_blocked": 0
+      },
+      "resource_evidence": {
+        "samples": 219,
+        "maximum_gap_seconds": 5.296579693000012,
+        "component_peaks": {
+          "app-0": {
+            "memory_current_bytes": 49065984,
+            "memory_peak_bytes": 57634816,
+            "anonymous_bytes": 45973504,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 3349
+          },
+          "app-1": {
+            "memory_current_bytes": 25649152,
+            "memory_peak_bytes": 34111488,
+            "anonymous_bytes": 23781376,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 43612
+          },
+          "pg-0": {
+            "memory_current_bytes": 111779840,
+            "memory_peak_bytes": 120332288,
+            "anonymous_bytes": 37515264,
+            "tasks": 22,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 798048
+          },
+          "proxy": {
+            "memory_current_bytes": 24186880,
+            "memory_peak_bytes": 32849920,
+            "anonymous_bytes": 21045248,
+            "tasks": 9,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 205874
+          },
+          "browser": {
+            "memory_current_bytes": 1250897920,
+            "memory_peak_bytes": 1260036096,
+            "anonymous_bytes": 1123774464,
+            "tasks": 163,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 6774
+          }
+        },
+        "public_file": "resources.jsonl.gz",
+        "compressed_bytes": 12081,
+        "sha256": "bedc9b228de0274db3bbaea0bffbd4994896861787adfe58a56adf0d792d0017",
+        "scope": "Numeric cgroup projection only; private resource/log/SQL fields are excluded."
+      }
+    },
+    "resource_samples": 219,
+    "elapsed_seconds_including_preparation": 1106.718655079
+  }
+}

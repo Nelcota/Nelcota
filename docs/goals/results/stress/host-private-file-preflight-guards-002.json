@@ -1,0 +1,98 @@
+{
+  "utc": "2026-10-17T17:48:19.195272+00:00",
+  "status": "prepared and focused guards passed; real disposable host-file preflight not run",
+  "certifies_g05": false,
+  "focused_result": {
+    "tests": 55,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "elapsed_seconds": 0.06887458200799301
+  },
+  "operator": {
+    "utc": "2026-10-17T17:48:19.195272+00:00",
+    "command": [
+      "timeout",
+      "--signal=TERM",
+      "--kill-after=3s",
+      "15s",
+      "taskset",
+      "-c",
+      "3",
+      "nice",
+      "-n",
+      "19",
+      "ionice",
+      "-c3",
+      "prlimit",
+      "--as=134217728:134217728",
+      "--cpu=3:3",
+      "--",
+      "python3",
+      "target/stress-g05/artifacts/run-host-private-focused-008.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.26634696195833385,
+    "log_sha256": "19409e58de04db0af292ae2f4e4a8a1ad2501f4cb93c6471283bebd1ff46354e",
+    "source_sha256": {
+      "bench/host_file_probe.py": "1931df7cdb596715f4a971fbd8770384fe16232377420e71ad6ccf70e44cdfbd",
+      "scripts/review_tests/test_stress_host_file_probe.py": "db4bf9fa2ce6001987228bbec21cae411ef0c7a12ff4c29e669c281685879b6f",
+      ".github/workflows/stress.yml": "f9e99ea373017503b319dca1ba95868fd419d829b1c90ba29e5a92e504b3de5a"
+    },
+    "scope": "Focused controls only on idle provider CPU3 during current DISK; low priority128MiB/3 CPU-seconds/15seconds. No real Docker/systemd/network/load credit."
+  },
+  "preflight_cases": [
+    {
+      "projects": 1,
+      "rate_per_project": 4,
+      "CPU_policy": "quota"
+    },
+    {
+      "projects": 5,
+      "rate_per_project": 1,
+      "CPU_policy": "shared"
+    }
+  ],
+  "seconds_per_phase": 60,
+  "aggregate_postgres_disk_ceiling_mib": 1536,
+  "case_maximum_seconds": 1200,
+  "combined_maximum_seconds": 2400,
+  "controller": {
+    "CPU_percent": 50,
+    "memory_mib": 512,
+    "swap_bytes": 0,
+    "tasks": 128,
+    "runtime_max_seconds": 2700
+  },
+  "independent_watchdog": {
+    "CPU_percent": 5,
+    "memory_mib": 128,
+    "swap_bytes": 0,
+    "tasks": 32,
+    "runtime_max_seconds": 1500,
+    "CPU_affinity": "telemetry/OS slot",
+    "outside_controller_cgroup": true,
+    "checks_live_every_seconds": 5
+  },
+  "artifact": "exact retained final007 Actions ELF after six-product-tree and twelve-case native proof",
+  "scope": "Fresh empty four-slot hosted Actions Docker VM, verified local ownership only; direct loopback HTTP without Caddy/webhooks. Same private-file protocol as future full host campaigns, with all original absolute SLO and short-profile relative gates retained. The functional preflight rates/durations differ explicitly from full300s capacity/fairness. A failed gate remains failed; no full G05 certificate, production dependency, deployment or merge. Remote overlap earns zero local load credit.",
+  "preconditions": "Remote005all11cases and EC native007bothactualin-flightcases must pass with cleanup and globalqueueempty. All18ordinaryCIchecks must pass on the newly committed half-CPU preflight source; oldD4CI does not cover this amendment. Freeze exact source/ref before dispatch.",
+  "supersedes_unstarted": "host-private-file-preflight-guards-001.json",
+  "CPU_accounting": {
+    "one_project_configured_quota_sum": 3.8,
+    "five_project_configured_quota_sum": 11.8,
+    "five_project_shared_app_and_pg_role_affinity_bounds_each": 1,
+    "effective_role_and_controller_bound_sum": 3.8,
+    "telemetry_slot": {
+      "metrics": 0.25,
+      "controller": 0.5,
+      "independent_watchdog": 0.05,
+      "total": 0.8,
+      "OS_reserve": 0.2
+    },
+    "scope": "Five shared project quotas intentionally exceed their single role CPU affinity bounds. Generator is separate from app/PG. The controller is tightened before first real preflight; no product/rate/SLO change."
+  },
+  "minimum_effective_host_CPUs": 3.8,
+  "additional_guards": "Actual cgroup-file quota check rejects the old full-CPU controller; insufficient3.5-effective-CPU host is refused before Docker/artifact work."
+}

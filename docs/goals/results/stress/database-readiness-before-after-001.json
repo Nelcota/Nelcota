@@ -1,0 +1,37 @@
+{
+  "workflow_run_id": 39024053691,
+  "job_id": 117374937394,
+  "source": "df51f80b29bcd0edaacd91270cd19d610381afff",
+  "original_annotations_sha256": "f45deef49b8fb8acc32a5a1e076fd10fac3183ad8a6411654b5d3676546f932a",
+  "report": {
+    "source": "df51f80b29bcd0edaacd91270cd19d610381afff",
+    "status": "passed",
+    "cleanup_confirmed": true,
+    "scope": "Real PostgreSQL entrypoint regression only; no backend load or G05 capacity certification",
+    "effective_backend_load_seconds": 0,
+    "budgets": {
+      "cpu": 0.5,
+      "memory_mib": 256,
+      "disk_tmpfs_mib": 192,
+      "pids": 64,
+      "maximum_seconds": 120,
+      "SQL_probes_per_second_maximum": 8,
+      "network": "none; no host port"
+    },
+    "unix_socket_admitted_temporary_server": true,
+    "temporary_server_TCP_listening_disabled": true,
+    "TCP_rejected_temporary_server": true,
+    "final_authenticated_TCP_ready": true,
+    "controller_kernel_budget": {
+      "cpu_quota_usec": 100000,
+      "cpu_period_usec": 100000,
+      "memory_bytes": 268435456,
+      "swap_bytes": 0,
+      "pids": 64
+    },
+    "resource_guard_breached": false,
+    "state_samples": 5,
+    "elapsed_seconds_including_preparation": 14.08697978299999
+  },
+  "scope": "Original real PostgreSQL entrypoint before/after control. The TCP probe supplies its generated credential and verifies final TCP readiness; this does not separately certify localhost pg_hba password enforcement. Controller kernel budget and owned cleanup verified;0backendloadcredit. Original opaque matrix preparation failure remains causally unresolved."
+}

@@ -1,0 +1,528 @@
+{
+  "scope": "Complete original public native report reconstructed losslessly from bounded checksummed Actions notices; original verdict and source preserved",
+  "notice_report_sha256": "74aa75e928e3299010b309d4b25a6c931cfaeb3ce5b26dc63aa1fd31326ae563",
+  "notice_encoding": "gzip+base64",
+  "notice_parts": 1,
+  "report": {
+    "identity": "native-provider-38981893129-1",
+    "source": "5fd78f2e8ef69cb383cbe0afc026dec0d3224e32",
+    "certifies_g05": false,
+    "status": "blocked",
+    "scope": "Discover allocator telemetry from the exact provider on a disposable Actions VM.\n\nNo BaaS workload runs here. Observed gauges do not establish live-owner release\nor explain historical anonymous memory. Only the owned provider can export to\nthe private bridge listener; labels and payloads never enter public evidence.\n",
+    "controller_kernel_budget": {
+      "cpu_quota_usec": 50000,
+      "cpu_period_usec": 100000,
+      "memory_bytes": 268435456,
+      "swap_bytes": 0,
+      "pids": 128
+    },
+    "resource_samples": 18,
+    "profile": {
+      "provider_cpu": 0.5,
+      "provider_memory_mib": 1024,
+      "provider_pids": 128,
+      "provider_data_mib": 512,
+      "provider_writable_layer_mib": 512,
+      "maximum_network_bytes": 4294967296,
+      "maximum_seconds": 300,
+      "observation_seconds": 90,
+      "sample_seconds": 5,
+      "heap_export_interval_seconds": 5,
+      "transport": "nonce-authenticated local bridge HTTP; no public ingress",
+      "minimum_free_memory_fraction": 0.1,
+      "minimum_free_disk_inode_fraction": 0.15
+    },
+    "image": "rustfs/rustfs@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c",
+    "heap_ownership_status": "not run",
+    "completed_effective_load_seconds": 0,
+    "collector_unauthorized_probe_status": 403,
+    "image_id": "sha256:f6b22807f10db2aee80b8a9ed1e36bd12c2fba25ac2d98dc3b0332a23f1a5c4d",
+    "exports_received": 17,
+    "telemetry_wire_bytes": 252677,
+    "first_memory_export": {
+      "observed_monotonic": 49.53680258,
+      "points": [
+        {
+          "name": "rustfs_memory_allocator_reclaim_enabled",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 1.0
+        },
+        {
+          "name": "rustfs_memory_allocator_backend_info",
+          "kind": "sum",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 1
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_active_requests",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_delete_tail_activity_current",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_scanner_activity_current",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_heal_activity_current",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_ec_inflight_bytes_current",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_get_buffered_bytes_current",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_reclaimable_work_current",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_idle_streak",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 1.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_skipped_total",
+          "kind": "sum",
+          "attributes": {},
+          "available": true,
+          "value": 1
+        },
+        {
+          "name": "rustfs_memory_used_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 151339008.0
+        },
+        {
+          "name": "rustfs_memory_total_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 1073741824.0
+        },
+        {
+          "name": "rustfs_memory_usage_percent",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 14.09454345703125
+        },
+        {
+          "name": "rustfs_memory_effective_total_bytes",
+          "kind": "gauge",
+          "attributes": {
+            "basis": "cgroup"
+          },
+          "available": true,
+          "value": 1073741824.0
+        },
+        {
+          "name": "rustfs_memory_process_resident_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 151339008.0
+        },
+        {
+          "name": "rustfs_memory_process_virtual_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 1367719936.0
+        },
+        {
+          "name": "rustfs_memory_cgroup_current_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 76173312.0
+        },
+        {
+          "name": "rustfs_memory_cgroup_limit_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 1073741824.0
+        },
+        {
+          "name": "rustfs_memory_cgroup_anon_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 72466432.0
+        },
+        {
+          "name": "rustfs_memory_cgroup_file_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 1642496.0
+        },
+        {
+          "name": "rustfs_memory_cgroup_active_file_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 1503232.0
+        },
+        {
+          "name": "rustfs_memory_cgroup_inactive_file_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 139264.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reserved_bytes",
+          "kind": "gauge",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 1076166656.0
+        },
+        {
+          "name": "rustfs_memory_allocator_committed_bytes",
+          "kind": "gauge",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 76808192.0
+        },
+        {
+          "name": "rustfs_memory_allocator_page_committed_bytes",
+          "kind": "gauge",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 335424.0
+        },
+        {
+          "name": "rustfs_memory_allocator_malloc_requested_bytes_available",
+          "kind": "gauge",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_malloc_requested_total_bytes",
+          "kind": "gauge",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 124848.0
+        },
+        {
+          "name": "rustfs_memory_allocator_heap_count",
+          "kind": "gauge",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 1.0
+        },
+        {
+          "name": "rustfs_process_memory_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 179343360.0
+        }
+      ]
+    },
+    "last_memory_export": {
+      "observed_monotonic": 129.539025808,
+      "points": [
+        {
+          "name": "rustfs_memory_allocator_reclaim_enabled",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 1.0
+        },
+        {
+          "name": "rustfs_memory_allocator_backend_info",
+          "kind": "sum",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 1
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_active_requests",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_delete_tail_activity_current",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_scanner_activity_current",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_heal_activity_current",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_ec_inflight_bytes_current",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_get_buffered_bytes_current",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_reclaimable_work_current",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_idle_streak",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_skipped_total",
+          "kind": "sum",
+          "attributes": {},
+          "available": true,
+          "value": 2
+        },
+        {
+          "name": "rustfs_memory_used_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 226955264.0
+        },
+        {
+          "name": "rustfs_memory_total_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 1073741824.0
+        },
+        {
+          "name": "rustfs_memory_usage_percent",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 21.136856079101562
+        },
+        {
+          "name": "rustfs_memory_effective_total_bytes",
+          "kind": "gauge",
+          "attributes": {
+            "basis": "cgroup"
+          },
+          "available": true,
+          "value": 1073741824.0
+        },
+        {
+          "name": "rustfs_memory_process_resident_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 226955264.0
+        },
+        {
+          "name": "rustfs_memory_process_virtual_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 1362493440.0
+        },
+        {
+          "name": "rustfs_memory_cgroup_current_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 143986688.0
+        },
+        {
+          "name": "rustfs_memory_cgroup_limit_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 1073741824.0
+        },
+        {
+          "name": "rustfs_memory_cgroup_anon_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 139902976.0
+        },
+        {
+          "name": "rustfs_memory_cgroup_file_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 1687552.0
+        },
+        {
+          "name": "rustfs_memory_cgroup_active_file_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 1503232.0
+        },
+        {
+          "name": "rustfs_memory_cgroup_inactive_file_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 184320.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reserved_bytes",
+          "kind": "gauge",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 1076166656.0
+        },
+        {
+          "name": "rustfs_memory_allocator_committed_bytes",
+          "kind": "gauge",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 150601728.0
+        },
+        {
+          "name": "rustfs_memory_allocator_page_committed_bytes",
+          "kind": "gauge",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 63271824.0
+        },
+        {
+          "name": "rustfs_memory_allocator_malloc_requested_bytes_available",
+          "kind": "gauge",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 0.0
+        },
+        {
+          "name": "rustfs_memory_allocator_malloc_requested_total_bytes",
+          "kind": "gauge",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 87361616.0
+        },
+        {
+          "name": "rustfs_memory_allocator_heap_count",
+          "kind": "gauge",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 1.0
+        },
+        {
+          "name": "rustfs_process_memory_bytes",
+          "kind": "gauge",
+          "attributes": {},
+          "available": true,
+          "value": 226955264.0
+        },
+        {
+          "name": "rustfs_memory_allocator_reclaim_total",
+          "kind": "sum",
+          "attributes": {
+            "backend": "mimalloc"
+          },
+          "available": true,
+          "value": 1
+        }
+      ]
+    },
+    "resource_peaks": {
+      "memory_bytes": 147259392,
+      "anonymous_bytes": 142745600,
+      "tasks": 19,
+      "data_bytes": 126976,
+      "writable_layer_bytes": 2609
+    },
+    "allocator_numeric_points": 0,
+    "blocker": "No numeric allocator telemetry observed; heap ownership remains unverified",
+    "telemetry_failure": null,
+    "cleanup_confirmed": true,
+    "cleanup_errors": [],
+    "elapsed_seconds_including_preparation": 102.15676463
+  },
+  "workflow_run": "https://github.com/Nelcota/Nelcota/actions/runs/38981893129"
+}

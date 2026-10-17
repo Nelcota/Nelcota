@@ -1,0 +1,22 @@
+{
+  "source_commit": "4eb097bb26d64b62688a3f922f23c1419568c7cc",
+  "workflow_run_id": 39008557497,
+  "job_id": 117325955308,
+  "job_conclusion": "failure",
+  "status": "failed",
+  "observed_utc": "2026-10-17T06:15:32.436095+00:00",
+  "original_numeric_control": {
+    "authorized_api_status": 200,
+    "backend_queries_after_release": 0,
+    "backend_queries_before_releasing_cancellation": 4,
+    "case": "cancelled_sql_keeps_admission_until_postgres_finishes_cleanup",
+    "fifth_rejected_while_cleanup_pending": false,
+    "held_cancellation_packets": 4,
+    "scope": "Real owned PostgreSQL and bounded loopback CancelRequest gate; no load-time credit",
+    "unauthorized_api_status": 401
+  },
+  "original_annotations_sha256": "4c79c5aadd1312e1b50356c2a966256b12b850023d58a07becb536926fafda11",
+  "cause": "The SQL semaphore permit belongs to the caller future. Dropping that future releases admission while a separate cancellation task has not yet stopped backend work. The driver socket is aborted before cleanup completes.",
+  "scope": "One real owned PostgreSQL integration reproduction with at most12 loopback relay handlers. No user rows changed, no BaaS load credit, original failed verdict retained.",
+  "after_status": "not run; production correction pending"
+}

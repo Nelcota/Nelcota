@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-17T16:36:34.328594+00:00",
+  "scope": "Read-only capability probe for a private staging encryption-key transport before considering a two-runner encrypted recovery rehearsal. No secret created, read, overwritten or deleted; no workflow dispatched, backup transferred or permission changed.",
+  "exit_code": 1,
+  "public_metadata_only": true,
+  "private_key_or_payload_published": false,
+  "effective_load_time_credit_seconds": 0,
+  "offhost_recovery_test_status": "not run",
+  "public_key_metadata_accessible": false,
+  "http_status": 403,
+  "status": "blocked: no established private staging secret transport; do not publish credentials or payloads through workflow inputs/notices"
+}

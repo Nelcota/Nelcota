@@ -10,6 +10,10 @@ G04 completed three project reviews with an evolving finding ledger; its
 evidence is recorded in [the review execution record](triple-review-execution.md).
 A focused [memory lifecycle review](memory-review-execution.md) records subsequent
 ownership/cancellation corrections and their release-of-resource evidence.
+G05 is in progress: it defines fresh stress/endurance campaigns, ten-project host
+isolation, controlled failures and measurable recovery gates. Its
+[execution record](stress-verification-execution.md) separates measured runs
+from incomplete work; it does not inherit capacity certification from earlier CI.
 
 | Goal | Outcome |
 |---|---|
@@ -17,6 +21,7 @@ ownership/cancellation corrections and their release-of-resource evidence.
 | [G02: Architecture and operational quality](architecture-security-performance.md) | Clear module ownership, tested security boundaries and reproducible performance, load and stress evidence across the project. |
 | [G03: Controlled panel updates](panel-updates-and-recovery.md) | Implemented: scoped authority, verified release discovery, durable jobs and recovery; production activation remains gated by exact-binary VPS acceptance. |
 | [G04: Three project reviews](triple-project-review.md) | Three complementary reviews, reproduced corrections, evolving criteria and a final evidence-based report. |
+| [G05: Full stress verification](full-stress-verification.md) | In progress: sustainable capacity, overload, spikes, ten-project fairness, continuous disk/S3 endurance and fault recovery with final-artifact evidence. |
 
 G02 established the inventory and retained release baseline; G01's archive
 consumer proves the auth boundary. The ownership map and regression gates keep

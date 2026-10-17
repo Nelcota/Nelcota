@@ -1,0 +1,51 @@
+{
+  "source_commit": "af01678ac773f932232d0f37e6d0a2fa02edc343",
+  "binary_sha256": "acfb2c604a7376be95690852ef016bca90eba599a55bad4be27b6c071b59a6b2",
+  "size": 30477344,
+  "started_utc": "2026-10-17T06:53:33.258271+00:00",
+  "completed_utc": "2026-10-17T06:55:03.157931+00:00",
+  "build_command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "nelcota-server"
+  ],
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+  "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+  "cargo_lock_sha256": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff",
+  "workspace_manifest_sha256": "2527746af359ef502f1bd6a836fda5a161456fcf7d11766a1b1d4da64a86de09",
+  "build_jobs": 4,
+  "incremental": "0",
+  "release_profile": {
+    "lto": "thin",
+    "codegen_units": 1
+  },
+  "compiler_overrides": [],
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "build_exit": 0,
+  "build_seconds": 89.89962256298168,
+  "build_log_sha256": "e3909342a85f67fcd970f65ff6ac0520db3067e486f650e92bf417ec05db828c",
+  "status": "frozen; first disk campaign running; full CI/native/repeated load pending",
+  "certifies_g05": false,
+  "architecture": "x86_64-unknown-linux-gnu",
+  "scope": "Immutable local staging release candidate after confirmed SQL and export cancellation admission bugs. Native Actions builds retain separate ELF identities; no stress approval or production release.",
+  "product_tree_objects": {
+    "crates": "ea0f09ed01ffc110dd077e4ba78450dc5b15d156",
+    "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+    "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+    "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+    "sdk": "864119c5aa5bfd0edc1799d9de018e096f39d67e",
+    "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
+  },
+  "private_log": "target/stress-g05/artifacts/build-candidate-final-003.log",
+  "previous_build": "final-local-candidate-cb916d0.json",
+  "tmpdir": "/workspace/nelcota-g05-tmp-f3a60e"
+}

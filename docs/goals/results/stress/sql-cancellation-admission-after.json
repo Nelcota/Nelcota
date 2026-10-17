@@ -1,0 +1,92 @@
+{
+  "status": "passed",
+  "scope": "Real PostgreSQL regressions on a fresh owned bounded cluster. Source base plus exact tested dirty file hashes identify the correction; no preparation or regression time is BaaS stress credit. CI and final-artifact campaigns still pending.",
+  "source_base_commit": "4eb097bb26d64b62688a3f922f23c1419568c7cc",
+  "tested_source_files_sha256": {
+    "crates/admin/src/sql/executor.rs": "fe5638689356dd06a1d75819dd3683aab7af7ee26c7225d5b5de14b8b619c1d9",
+    "crates/server/tests/sql_cancellation.rs": "703cfdc055d8557084a720d87917285dc13e6bd487f2fcfc665e5454bbdf5d67",
+    "Cargo.lock": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff"
+  },
+  "tested_working_diff_sha256": "036f5de6e3f8381bbfc36f6a62d48ba48ba4314e8b02ef3a1d05520d874d1a51",
+  "controls": [
+    {
+      "authorized_api_status": 200,
+      "backend_queries_after_release": 0,
+      "backend_queries_before_releasing_cancellation": 4,
+      "case": "cancelled_sql_keeps_admission_until_postgres_finishes_cleanup",
+      "fifth_rejected_while_cleanup_pending": true,
+      "held_cancellation_packets": 4,
+      "recovered_parallel_read_queries": 4,
+      "scope": "Real owned PostgreSQL and bounded loopback CancelRequest gate; no load-time credit",
+      "unauthorized_api_status": 401
+    },
+    {
+      "admission_blocked_during_uncertain_cleanup": true,
+      "authorized_api_status": 200,
+      "backend_queries_before_termination": 4,
+      "case": "lost_sql_transport_has_bounded_cleanup_admission_and_recovers",
+      "owned_sql_sessions_terminated": 4,
+      "recovered_parallel_read_queries": 4,
+      "recovery_budget_seconds": 40,
+      "recovery_seconds": 35.260505711,
+      "scope": "Owned database sessions only; bounded degraded cleanup, no load-time credit"
+    }
+  ],
+  "regression_summary": {
+    "tests": 2,
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0,
+    "execution_seconds": 37.24
+  },
+  "regression_runner": {
+    "status": "passed",
+    "scope": "Related Rust regressions only, fresh owned shared Postgres; no production data or load-time credit",
+    "cases": [
+      {
+        "target": "sql_cancellation",
+        "exit_code": 0,
+        "elapsed_seconds_including_compilation": 40.64248742494965,
+        "log_sha256": "3a59a1d049a04aa0a0fd406903a947b54680b7da73ecaa3b148458053831e04f"
+      }
+    ],
+    "profile": {
+      "compiler_jobs": 4,
+      "test_threads": 2,
+      "compiler_affinity": [
+        0,
+        1,
+        2
+      ],
+      "postgres_cpus": 1,
+      "postgres_affinity": 3,
+      "postgres_memory_mib": 512,
+      "postgres_data_tmpfs_mib": 256,
+      "postgres_pids": 128,
+      "maximum_seconds": 1200,
+      "private_log_mib_each": 16
+    },
+    "source_commit": "4eb097bb26d64b62688a3f922f23c1419568c7cc",
+    "source_files_sha256": {
+      "crates/admin/src/sql/executor.rs": "fe5638689356dd06a1d75819dd3683aab7af7ee26c7225d5b5de14b8b619c1d9",
+      "crates/server/tests/sql_cancellation.rs": "703cfdc055d8557084a720d87917285dc13e6bd487f2fcfc665e5454bbdf5d67",
+      "Cargo.lock": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff"
+    },
+    "working_diff_sha256": "036f5de6e3f8381bbfc36f6a62d48ba48ba4314e8b02ef3a1d05520d874d1a51",
+    "cleanup_confirmed": true,
+    "resource_observations": 8,
+    "resource_violations": [],
+    "elapsed_seconds_including_preparation": 44.072207766992506
+  },
+  "related_architecture_tests": {
+    "tests": 4,
+    "passed": 4,
+    "failed": 0,
+    "ignored": 0,
+    "execution_seconds": 7.05,
+    "production_executor_sha256": "fe5638689356dd06a1d75819dd3683aab7af7ee26c7225d5b5de14b8b619c1d9",
+    "log_sha256": "336883dd54ff6233f0e72ba609cc032ccc8ef1b5b05d5297ff230ce0a92b645e"
+  },
+  "before_evidence": "sql-cancellation-admission-before.json",
+  "final_artifact_status": "new build and affected repeated campaigns required"
+}

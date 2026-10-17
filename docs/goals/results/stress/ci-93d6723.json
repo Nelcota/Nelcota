@@ -1,0 +1,98 @@
+{
+  "observed_utc": "2026-10-16T16:10:10.666791+00:00",
+  "source_commit": "93d6723b1f46852c7b8feb9219f9138ed4eaabf5",
+  "scope": "Exact-head CI status only; no G05 capacity or unavailable deployment certification",
+  "certifies_g05": false,
+  "checks": [
+    {
+      "name": "CodeQL",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/runs/117060188270"
+    },
+    {
+      "name": "native-lint",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926702448/job/117059968719"
+    },
+    {
+      "name": "sdk / sdk",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926702448/job/117059968317"
+    },
+    {
+      "name": "sdk / sdk-node (22)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926702448/job/117059968287"
+    },
+    {
+      "name": "check",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926702448/job/117059968232"
+    },
+    {
+      "name": "sdk / sdk-node (26)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926702448/job/117059968212"
+    },
+    {
+      "name": "upgrade",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926702448/job/117059968166"
+    },
+    {
+      "name": "supply-chain",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926702448/job/117059968096"
+    },
+    {
+      "name": "admin-ui",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926702448/job/117059967822"
+    },
+    {
+      "name": "sdk-rust (ubuntu-latest)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926702217/job/117059967469"
+    },
+    {
+      "name": "msrv",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926702217/job/117059967440"
+    },
+    {
+      "name": "native-presets",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926702283/job/117059967430"
+    },
+    {
+      "name": "sdk-rust (macos-latest)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926702217/job/117059967256"
+    },
+    {
+      "name": "sdk-rust (windows-latest)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926702217/job/117059966840"
+    },
+    {
+      "name": "Analyze (rust)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926694498/job/117059948205"
+    },
+    {
+      "name": "Analyze (python)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926694498/job/117059948162"
+    },
+    {
+      "name": "Analyze (javascript-typescript)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926694498/job/117059948077"
+    },
+    {
+      "name": "Analyze (actions)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38926694498/job/117059947780"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "scope": "real local verified HTTPS, actual reload bind rejection and signed webhook functional diagnostic; not host capacity/endurance certification",
+  "certifies_g05": false,
+  "before": [
+    {
+      "run_id": "fleet-caddy-1-smoke-001",
+      "completion": {
+        "status": "failed",
+        "projects": 1,
+        "load_seconds": 0,
+        "resource_observations": 0,
+        "cleanup_confirmed": true,
+        "error_type": "RuntimeError"
+      }
+    },
+    {
+      "run_id": "fleet-caddy-1-smoke-002",
+      "completion": {
+        "status": "failed",
+        "projects": 1,
+        "load_seconds": 0,
+        "resource_observations": 0,
+        "cleanup_confirmed": true,
+        "error_type": "RuntimeError"
+      }
+    }
+  ],
+  "source_image_capability": {
+    "image": "caddy:2-alpine",
+    "source_file_capability_output": "/usr/sbin/getcap\n/usr/bin/caddy cap_net_bind_service=ep",
+    "scope": "read-only image diagnostic"
+  },
+  "after": {
+    "run_id": "fleet-caddy-1-smoke-003",
+    "completion": {
+      "status": "passed",
+      "projects": 1,
+      "load_seconds": 120,
+      "resource_observations": 27,
+      "cleanup_confirmed": true,
+      "error_type": "NoneType"
+    },
+    "proxy": {
+      "kind": "real Caddy with verified internal CA on loopback",
+      "cpus": 0.25,
+      "cpu_affinity": 3,
+      "memory_mib": 128,
+      "pids_limit": 64,
+      "fixture_disk_mib": 128,
+      "binary_sha256": "678ade3bfc088749c81a681adc603333ee0bb023b6a6cfe3c0f58bef8ff854e9",
+      "image_file_capabilities_removed_for_unprivileged_ports": true,
+      "image_digests": [
+        "caddy@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f"
+      ],
+      "public_dns_acme_certified": false,
+      "reload_fault": "valid configuration rejected by an occupied owned backend listener; restore and probe without process replacement",
+      "ca_sha256": "09a4cf87dff1f72898be1bd567115e4d4ac056552b7090b2d561a3ce74fc9817",
+      "config_sha256": "6d56149b22a6b13ba730df29643da9ae946087eeb535602a21142d025ae7ce0a",
+      "https_frontends": 1,
+      "tls_verification": true,
+      "untrusted_ca_rejected": true
+    },
+    "reload_failure": {
+      "expected_bind_rejection": true,
+      "good_configuration_restored": true,
+      "projects_with_positive_and_401_probes": 1,
+      "same_proxy_process": true,
+      "elapsed_seconds": 0.42037033897941,
+      "recovery_seconds_after_restore": 0.10823278198949993,
+      "tls_verification": true,
+      "public_dns_acme_certified": false
+    },
+    "nominal_reload_gates": [],
+    "webhook_invariants": {
+      "project-0": {
+        "unique_events": 24,
+        "deliveries": 24,
+        "duplicates": 0,
+        "missing": 0,
+        "extra": 0,
+        "outstanding": 0,
+        "signature_errors": 0
+      }
+    }
+  }
+}

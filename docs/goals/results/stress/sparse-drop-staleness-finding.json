@@ -1,0 +1,86 @@
+{
+  "scope": "Confirmed sparse scheduler counter staleness; preserves original verdicts and distinguishes unavailable historical counts from a new live prefix observation",
+  "status": "confirmed harness defect",
+  "production_source_changed": false,
+  "cause": "Instant queries lose sparse samples after the five-minute lookback; the telemetry store retains only one hour. Querying once at the end of four hours can invent zero.",
+  "historical_endurances": [
+    {
+      "run_id": "disk-pass-1-005",
+      "original_recorded_status": "passed",
+      "original_reported_dropped_iterations": 0.0,
+      "drop_series_present_in_final_instant_snapshot": false,
+      "recorded_iterations": 4031806.0,
+      "scheduled_rate": 280,
+      "continuous_seconds": 14400,
+      "delivery_ratio_to_declared_rate": 0.9999518849206349,
+      "insufficient_vu_warning_lines": [
+        "time=\"2026-10-15T20:13:14Z\" level=warning msg=\"Insufficient VUs, reached 127 active VUs and cannot initialize more\" executor=constant-arrival-rate scenario=traffic"
+      ],
+      "corrected_total_dropped_iterations": null,
+      "scope": "Physical continuity, successful operations, resource samples and integrity evidence remain recorded. Exact full-window drop totals are unavailable after owned telemetry teardown; the prior zero claim is unsupported, so this run cannot certify the corrected arrival evidence protocol."
+    },
+    {
+      "run_id": "s3-pass-1-004",
+      "original_recorded_status": "passed",
+      "original_reported_dropped_iterations": 0.0,
+      "drop_series_present_in_final_instant_snapshot": false,
+      "recorded_iterations": 4031965.0,
+      "scheduled_rate": 280,
+      "continuous_seconds": 14400,
+      "delivery_ratio_to_declared_rate": 0.9999913194444444,
+      "insufficient_vu_warning_lines": [
+        "time=\"2026-10-16T00:57:44Z\" level=warning msg=\"Insufficient VUs, reached 127 active VUs and cannot initialize more\" executor=constant-arrival-rate scenario=traffic"
+      ],
+      "corrected_total_dropped_iterations": null,
+      "scope": "Physical continuity, successful operations, resource samples and integrity evidence remain recorded. Exact full-window drop totals are unavailable after owned telemetry teardown; the prior zero claim is unsupported, so this run cannot certify the corrected arrival evidence protocol."
+    }
+  ],
+  "live_current_investigation": {
+    "observed_monotonic": 213417.224735627,
+    "initial_lookback_seconds": 3600,
+    "initial_max": 607.0,
+    "counter_resets": 0.0,
+    "scope": "Read-only investigation of sparse drops; no replacement of original frozen reports"
+  },
+  "fix": "Poll sparse scenario counters throughout each phase, retain monotonic totals in bounded state, reject gaps/resets and require closed coverage in comparisons. New native validation and replacement campaigns remain pending.",
+  "native_comparator_before_after": {
+    "scope": "Self-comparison of the historical disk run only; not a before/after product performance comparison",
+    "rows": [
+      {
+        "script_sha256": "95791d04b968c5e57892f767205d1f44de1c16d17a370a6d0ec49ac373524fd0",
+        "exit_code": 0,
+        "campaign_evidence_valid": [
+          true,
+          true
+        ],
+        "comparable_workloads": 8,
+        "passed_workloads": 8
+      },
+      {
+        "script_sha256": "5063bbdeb1a6b9b27185c5d60295de369847a9c503213e060f302459eb53a0dc",
+        "exit_code": 1,
+        "campaign_evidence_valid": [
+          false,
+          false
+        ],
+        "comparable_workloads": 0,
+        "passed_workloads": 0
+      }
+    ]
+  },
+  "completed_live_investigation": {
+    "run_id": "disk-pass-2-001",
+    "evidence": "disk-pass-2-diagnostic.json",
+    "physical_continuous_seconds": 14400,
+    "old_instant_final_count": 0,
+    "retained_supplemental_max": 1127,
+    "actual_expiry_observation": {
+      "observed_monotonic": 221562.929124216,
+      "instant": 0.0,
+      "range_last_hour": 0.0,
+      "supplemental": 1127.0
+    },
+    "corrected_protocol_certified": false,
+    "cleanup_confirmed": true
+  }
+}

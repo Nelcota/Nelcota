@@ -1,0 +1,192 @@
+{
+  "scope": "Short native single-project parallel-observer smoke only, not five-minute capacity or ten-project certification",
+  "run_id": "fleet-observer-1-smoke-001",
+  "status": "passed",
+  "completion": {
+    "status": "passed",
+    "projects": 1,
+    "load_seconds": 120,
+    "resource_observations": 27,
+    "cleanup_confirmed": true,
+    "error_type": "NoneType"
+  },
+  "cleanup": {
+    "confirmed": true,
+    "containers": [],
+    "volumes": [],
+    "directory_removed": true
+  },
+  "profile": {
+    "schema": 2,
+    "scope": "local independent app/PG clusters with verified local Caddy, no public DNS/controller",
+    "projects": 1,
+    "rows_per_project": 1000,
+    "shared_user_id": "00000000-0000-4000-8000-000000000001",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "cpu_effective": 4.0,
+    "app_aggregate_cpus": 1,
+    "postgres_aggregate_cpus": 1,
+    "generator_cpus": 1,
+    "metrics_cpus": 0.25,
+    "app_memory_mib_each": 128,
+    "postgres_memory_mib_each": 256,
+    "max_arrival_rate": 10000,
+    "fixture_disk_mib": 2048,
+    "storage_filesystem": "overlayfs",
+    "seconds_per_step": 30,
+    "project_cpu_period_micros": 100000,
+    "certifies_five_minute_steps": false,
+    "base_rate_per_project": 8,
+    "SLOs": "G05 unchanged",
+    "startup_disk_budget": {
+      "per_project_mib": 780,
+      "container_layer_copy_factor": 2,
+      "total_startup_mib": 1420,
+      "image_storage_drivers": [
+        "vfs",
+        "vfs"
+      ],
+      "separate_database_data_mib": 2048
+    },
+    "ingress": {
+      "kind": "real Caddy with verified internal CA on loopback",
+      "cpus": 0.25,
+      "cpu_affinity": 3,
+      "memory_mib": 128,
+      "pids_limit": 64,
+      "fixture_disk_mib": 128,
+      "binary_sha256": "678ade3bfc088749c81a681adc603333ee0bb023b6a6cfe3c0f58bef8ff854e9",
+      "image_file_capabilities_removed_for_unprivileged_ports": true,
+      "image_digests": [
+        "caddy@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f"
+      ],
+      "public_dns_acme_certified": false,
+      "reload_fault": "valid configuration rejected by an occupied owned backend listener; restore and probe without process replacement"
+    },
+    "webhooks": {
+      "enabled": true,
+      "receiver": "owned loopback, verified signatures and durable event identities",
+      "evidence_limit_mib": 128,
+      "drain_seconds": 30
+    },
+    "resource_protocol": "component cgroup v2 via shell builtins and bounded parallel owned probes; allocated du totals count only disappearing child entries",
+    "resource_probe_workers": 4,
+    "container_log_profile": {
+      "driver": "local",
+      "max_size_bytes": 8388608,
+      "max_files": 2
+    },
+    "harness_js_sha256": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+    "client_initialization": {
+      "maximum_sessions_per_project": 128,
+      "bootstrap_concurrency": 4,
+      "setup_timeout_seconds": 120,
+      "fully_preallocated_arrival_VUs": true,
+      "mix_schedule": "global scenario arrival ordinal",
+      "bootstrap_excluded_from_nominal_metrics": true
+    },
+    "cpu_affinity": [
+      0,
+      1,
+      2
+    ],
+    "metrics_cpu_affinity": 4,
+    "capacity_qualification": false,
+    "provisional_rate_per_project": 32,
+    "max_connections_each": 32,
+    "pool_each": 4,
+    "generator_memory_mib": 512,
+    "metrics_memory_mib": 512,
+    "images": {
+      "ubuntu:24.04": [
+        "ubuntu@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55"
+      ],
+      "postgres:17-alpine": [
+        "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+      ],
+      "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1": [
+        "grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1"
+      ],
+      "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996": [
+        "prom/prometheus@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+      ]
+    },
+    "nominal_rate_per_project": 8
+  },
+  "frozen_harness": {
+    "run_id": "fleet-observer-1-smoke-001",
+    "git": "9b46fe15715cce7c20dbe0b504054d82fdba6fa0",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "harness_sources": {
+      "bench/allocation.py": "4b98e093b86e9b9187812cd49e8d5710f54561f196bdd222573c0edd06cff34d",
+      "bench/browser_campaign.py": "35b750c93b78cb29045cd17e3d82d81446bf783e7efe54fcba3a6279a65f5113",
+      "bench/browser_driver.py": "7a97e7f83cea534add1c75bd13d6764c2fb8ef94a0c2d4e4f1a7ee8ece9c244a",
+      "bench/browser_runtime.py": "1720ee9bab4b959260f366ca7c8767d2b810a1884f3940ff3735755ef6ba48ba",
+      "bench/campaign.py": "bdee44f7731f2d6bcfb037335d7407edb2faa1ec2019aaacdf61645d0d8815a1",
+      "bench/compare.py": "95791d04b968c5e57892f767205d1f44de1c16d17a370a6d0ec49ac373524fd0",
+      "bench/disk_usage.py": "502da50d95f979128c91d49b3037cb08885ddcbb941af0a9bd842e0d193da38e",
+      "bench/evidence.py": "34909a7f6660072928d58743a291727dec3aa34bd196c0cdb32f5897c2d27ac3",
+      "bench/fault_campaign.py": "33fca029d3414e5c03d8d8a9e7a90e38c978bc307c05f3b98eef1e3957be30f4",
+      "bench/fixture_copy.py": "8c1421202b5543c16fa0fd0af4e47f7a8f9ef1bd9cd9423bfde28eda3dec6288",
+      "bench/fleet_observer.py": "3e51bb4b4229f0854c2e67c2fadef489feed0b28893ba3fe1baad67e1fe415b4",
+      "bench/fleet_webhooks.py": "ae5d21861ef3951a50a37fdfc84507685e87c2f8cc1698ae0d5972244d0b97ce",
+      "bench/guard_check.py": "2fa55b5e70154e7498ab79f627ef7623ae965cb4727a8318845bc5eb9baf481d",
+      "bench/host_campaign.py": "aa13fcacbfe5633e098f15ee43c5f3f58d9fb79607196f140c89828433d3e27e",
+      "bench/host_compare.py": "eeda83fe61a966075d42a6a35a986c77d588c89a081e899bc94a48e23c14a256",
+      "bench/host_resources.py": "8efc29fce9b182aca6bdc2fa91e26ad9d526a4b1267f69a917d132270e4065e5",
+      "bench/http_boundary.py": "b69ff97c9e65f8ec94ccf36ac282a3b6b53c1a07aa01fbd33ac1fbe68a976db3",
+      "bench/ingress.py": "4976738ec1c3e96862f87a02d81843087a72a665a2de829acc4c6804b6117ed2",
+      "bench/launch.py": "915eb76ea3a712799777f27dfbe8bbffe4de8f5a48d9a5b541ee844f0391a498",
+      "bench/load_time.py": "23e9b43a24b7842259e94958cf2a0836a7b970cabdab2c908d5761dd688527c5",
+      "bench/lost_reply.py": "2048c95f21169fe46adddb28c4feffa60da365d369f4730ed6f7c6bcbfd348bb",
+      "bench/metrics.py": "ad692683d6fe95428c98ca922593d36c01d4bb4bb41078bc04f8c25d9a025a91",
+      "bench/monitor.py": "bd869d88b833930602dc3770e5467040021cca6930f89fd298c269b6850c2e61",
+      "bench/objects.py": "a1612bc2e457481705044ce21a376d898544dbbff004a8920511218858a8210b",
+      "bench/observations.py": "8f88a60899928c2b30da0f888127034ec5c7117e34630121297f8bf11f64379b",
+      "bench/oracle_check.py": "690eb5a17c735f40b666ad313b56ed09301285c79da75835cee563021b5725ce",
+      "bench/ownership.py": "ffd3e9343b7f8262d05ee0363ab01b1f7e77089bb8f09ca8d0a350532402fa06",
+      "bench/ports.py": "edcb747bf4f29429d2abf5abf2741289c586cb64b0cf3484fa891edb5d798276",
+      "bench/postgres_evidence.py": "7152ea8c58232981c07b6c20d4a6a8cfba1046de1893d09c78de58607a95855a",
+      "bench/projects.py": "3a96324abebab46e14c7a45b9fb0f79daeaa7cccb0d61ff1e48e0bd3c80e0342",
+      "bench/receiver.py": "b4f172be66aee69649c826052951ff839272d7501ec0d0a2e648d65dedd4ee9d",
+      "bench/sqlite_evidence.py": "77b0da843ac1c0d5a29c97e2f6fa78b67fbbe96a68c5aeef05df9f0895c16215",
+      "bench/watchdog.py": "25ab3e86efdcec9c1da84942ef27fee285339adbda15b70791030e4863ff7bb3",
+      "bench/allocation_probe.c": "f833882f9c9697d7e838871dad3d398fb6427e78b21104d30ea8fcd7f13678f3",
+      "bench/campaign.js": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+      "bench/setup.sql": "104496228668127c3a95a0defa6efe2d6c06a00c56bdc19999052043e700c798",
+      "scripts/upgrade/support.py": "97fd54c7d8fe80d70d0201e71454dd4f72fef760e161800ad503760d3f90feb8"
+    }
+  },
+  "sample_count": 27,
+  "sample_interval_seconds": {
+    "median": 4.999761237006169,
+    "maximum": 5.048572920990409
+  },
+  "observation_duration_seconds": {
+    "median": 2.569882381998468,
+    "maximum": 2.7500572910066694
+  },
+  "proxy_reload": {
+    "expected_bind_rejection": true,
+    "good_configuration_restored": true,
+    "projects_with_positive_and_401_probes": 1,
+    "same_proxy_process": true,
+    "elapsed_seconds": 0.43047260798630305,
+    "recovery_seconds_after_restore": 0.04094142699614167,
+    "tls_verification": true,
+    "public_dns_acme_certified": false
+  },
+  "webhook_reconciliation": {
+    "project-0": {
+      "unique_events": 48,
+      "deliveries": 48,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0,
+      "outstanding": 0,
+      "signature_errors": 0
+    }
+  },
+  "resource_violations": [],
+  "raw_evidence_location": "target/stress-g05/fleet-observer-1-smoke-001"
+}

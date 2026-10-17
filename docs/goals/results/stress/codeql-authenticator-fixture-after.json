@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "source_commit": "e6fdfd7cca377edb0b36184a21a9a7b30a4d1d0c",
+  "fixture_fix_commit": "26e727d",
+  "unchanged_rule_enabled": true,
+  "ordinary_checks_passed": 18,
+  "ordinary_checks_failed": 0,
+  "CodeQL": {
+    "id": 117342902595,
+    "name": "CodeQL",
+    "head_sha": "e6fdfd7cca377edb0b36184a21a9a7b30a4d1d0c",
+    "status": "completed",
+    "conclusion": "success",
+    "html_url": "https://github.com/Nelcota/Nelcota/runs/117342902595"
+  },
+  "before_evidence": "codeql-authenticator-fixture-before.json",
+  "all_check_metadata": "ci-e6fdfd7-final-product-source.json",
+  "production_ELF_equivalence": "release-test-fixture-byte-equivalence.json",
+  "scope": "The original critical fixed test-password finding is corrected; all18exact-source checks passed. This does not establish native boot reliability, all repository alert closure or G05 acceptance."
+}

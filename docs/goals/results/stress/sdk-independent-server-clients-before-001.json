@@ -1,0 +1,52 @@
+{
+  "finding": "Tenth confirmed production defect: a slow sign-in blocks independent default-memory server clients",
+  "status": "before reproduced in two CI controls; private-symbol correction implemented, full final source validation pending",
+  "certifies_g05": false,
+  "before": {
+    "job_id": 117396628956,
+    "workflow_head_commit": "583d31a47d2c27f4daa23858d409d777dbb5f02d",
+    "scope": "Original fixed public SDK unit notice, source is the actual checkout merge commit; no local or backend load credit. Job metadata remains distinct from checkout identity.",
+    "report": {
+      "source_commit": "332e6e6742dee1cb98467c36438d34023eb144e0",
+      "tests": 204,
+      "passed": 202,
+      "failed": 2,
+      "pending": 0,
+      "independent_server_clients": [
+        {
+          "web_locks": false,
+          "status": "failed"
+        },
+        {
+          "web_locks": true,
+          "status": "failed"
+        }
+      ],
+      "successful": false,
+      "scope": "SDK unit regressions only; no backend load or G05 effective-time credit.",
+      "original_report_sha256": "c49dc922ac02c0da53abbc8b6068fa046527d3a5ed8fa02f2b62210af0008077"
+    }
+  },
+  "actual_checkout_source_proof": [
+    {
+      "path": "sdk/typescript/src/auth/manager.ts",
+      "checkout_blob_sha": "f9bdfec2d7c1a60e18c1ed380617647fd75fd0cb",
+      "bytes": 14144,
+      "sha256": "75cd3f64945ffe1189c14be5615418a53c88c80426415c2022136231be1d7a50"
+    },
+    {
+      "path": "sdk/typescript/src/auth/coordination.ts",
+      "checkout_blob_sha": "bdb4982ffe588987e427bad8276b21b6f4205203",
+      "bytes": 1888,
+      "sha256": "223f98a8b256881cc2f308dc13d8782c2252ecde0ae99691e74e71e8fc81dce3"
+    }
+  ],
+  "cause": "SessionManager keyed every queue by the URL/storage-key string. Separate default server memory adapters still shared the same global Web Lock or module-local queue, and authenticate held it across HTTP. Another request cached read could therefore wait for an unrelated sign-in.",
+  "fix_commit": "9bca03bc689c425a7660c5da9305180450aeaa7c",
+  "fix_scope": "Give default non-browser memory clients a private Symbol queue. Keep stable string names for browser sessions and supplied custom/shared adapters. Existing queue tails release after settlement. The public storage key, journal, auth and cancellation contracts are preserved.",
+  "before_control": "Two isolated default clients for the same backend URL, each with its own memory adapter. Hold the first client sign-in response, then read the second client seeded cached session with a one-second cancellation bound. Both fallback and Web Locks modes failed; 202 existing tests passed, 2 new tests failed, 0 pending.",
+  "checkout_identity_note": "The fixed SDK notice records the actual PR merge checkout SHA. The workflow head SHA is recorded separately; both source files were fetched at that checkout and matched byte for byte to the before head. No synthetic checkout is relabeled as the branch head.",
+  "after_validation": "Node22/24/26 SDK jobs now passed; the original after-ci evidence contains204/204unit results, both previously failing controls passed and unchanged size gates passed. Local retained built-SDK control, embedded assets and new final candidate remain pending.",
+  "final_artifact_requirement": "Candidate006 is historical for this additional SDK correction. No candidate006 endurance had started. Rebuild the bundled guide assets separately, freeze a new local/common native artifact and repeat affected final campaigns.",
+  "effective_load_credit_seconds": 0
+}

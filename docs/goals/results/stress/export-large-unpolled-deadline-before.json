@@ -1,0 +1,25 @@
+{
+  "status": "failed",
+  "source_commit": "7468c3ace27fc9a815f7eb8e844379a4c4bf7db8",
+  "workflow_run_id": 39016496402,
+  "job_id": 117349580901,
+  "job_url": "https://github.com/Nelcota/Nelcota/actions/runs/39016496402/job/117349580901",
+  "observed_utc": "2026-10-17T08:23:25.258885+00:00",
+  "controls": [
+    {
+      "case": "large_unpolled_exports_close_database_connections_at_the_response_deadline",
+      "connection_release_budget_seconds": 3,
+      "database_connections_after_cleanup": 0,
+      "database_connections_before_retiring_bodies": 2,
+      "database_connections_released_without_body_poll": false,
+      "expired_complete_bodies_rejected": 2,
+      "payload_bytes_per_row": 1024,
+      "response_deadline_milliseconds": 500,
+      "rows_each": 8192,
+      "scope": "Real owned PostgreSQL and deliberately unpolled response channels; generated fixture only, no load-time credit",
+      "unpolled_exports": 2
+    }
+  ],
+  "scope": "Real generated PostgreSQL fixture, large unpolled HTTP response streams. Test-only commit exposes a deadline connection-retention defect after prior admission correction. Original failed result preserved; no stress-time credit.",
+  "certifies_g05": false
+}

@@ -34,7 +34,7 @@ mod util;
 
 use std::path::PathBuf;
 
-use anyhow::bail;
+use anyhow::{Context, bail};
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use nelcota_core::Config;
 
@@ -364,36 +364,24 @@ pub enum Outcome {
     UpdatesServe(nelcota_deployment::protocol::ControllerConfig),
 }
 
-pub fn run(cli: Cli) -> anyhow::Result<Outcome> {
+pub fn run(mut cli: Cli) -> anyhow::Result<Outcome> {
+    cli.dir = std::path::absolute(&cli.dir).context("could not resolve the host directory")?;
     let host = host::Host::new(&cli.dir);
     // Every enrolled host mutation participates in the same deployment lease.
     let _deployment = match cli.command.as_ref() {
         Some(
-            Command::Init(_)
-            | Command::Up
+            Command::Up
             | Command::Down { .. }
             | Command::Remove { .. }
             | Command::PanelLogin { .. }
-            | Command::Migrate { .. }
             | Command::Upgrade { .. }
             | Command::Backup { .. }
             | Command::Restore { .. }
             | Command::Pitr { .. }
             | Command::AdminPassword,
-        ) if cli.dir.join(host::MANIFEST).is_file() => {
-            let lease = nelcota_deployment::HostLock::acquire(&cli.dir)?;
-            nelcota_deployment::management::ensure_idle(&cli.dir)?;
-            let journal = nelcota_deployment::Journal::open(&cli.dir)?;
-            if journal
-                .list()?
-                .iter()
-                .any(|job| !job.public.phase.terminal())
-            {
-                bail!(
-                    "deployment needs recovery: use nelcota updates recover before mutating this host"
-                );
-            }
-            Some(lease)
+        ) => {
+            host.require()?;
+            Some(host::acquire_mutation_lease(&cli.dir)?)
         }
         _ => None,
     };

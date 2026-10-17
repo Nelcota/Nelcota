@@ -1,0 +1,279 @@
+{
+  "source_commit": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+  "observed_utc": "2026-10-17T00:23:09.120392+00:00",
+  "certifies_g05": false,
+  "scope": "Exact-source CI statuses, including the failed panel asset-drift step. Full Rust test, host lifecycle and real-S3 job completed; test counts are not inferred from logs. Final source after generated assets still requires its own CI.",
+  "checks": [
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/runs/117251128247",
+      "id": 117251128247,
+      "name": "CodeQL",
+      "status": "completed"
+    },
+    {
+      "conclusion": "skipped",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983972058/job/117251060499",
+      "id": 117251060499,
+      "name": "native-identity",
+      "status": "completed"
+    },
+    {
+      "conclusion": "skipped",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983972058/job/117251016937",
+      "id": 117251016937,
+      "name": "stress",
+      "status": "completed"
+    },
+    {
+      "conclusion": "skipped",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983972058/job/117251016716",
+      "id": 117251016716,
+      "name": "native-preflight",
+      "status": "completed"
+    },
+    {
+      "conclusion": "skipped",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983972058/job/117251016708",
+      "id": 117251016708,
+      "name": "provider-preflight",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983972058/job/117251015639",
+      "id": 117251015639,
+      "name": "native-vm",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983965260/job/117250989426",
+      "id": 117250989426,
+      "name": "sdk / sdk",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983965260/job/117250989414",
+      "id": 117250989414,
+      "name": "upgrade",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983965260/job/117250989404",
+      "id": 117250989404,
+      "name": "native-lint",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983965260/job/117250989401",
+      "id": 117250989401,
+      "name": "sdk / sdk-node (26)",
+      "status": "completed"
+    },
+    {
+      "conclusion": "failure",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983965260/job/117250989342",
+      "id": 117250989342,
+      "name": "admin-ui",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983965260/job/117250989313",
+      "id": 117250989313,
+      "name": "supply-chain",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983965260/job/117250989263",
+      "id": 117250989263,
+      "name": "sdk / sdk-node (22)",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983965260/job/117250989155",
+      "id": 117250989155,
+      "name": "check",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983965193/job/117250989030",
+      "id": 117250989030,
+      "name": "sdk-rust (ubuntu-latest)",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983965193/job/117250989023",
+      "id": 117250989023,
+      "name": "sdk-rust (windows-latest)",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983965251/job/117250988966",
+      "id": 117250988966,
+      "name": "native-presets",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983965193/job/117250988911",
+      "id": 117250988911,
+      "name": "msrv",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983965193/job/117250988717",
+      "id": 117250988717,
+      "name": "sdk-rust (macos-latest)",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983962477/job/117250984955",
+      "id": 117250984955,
+      "name": "Analyze (actions)",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983962477/job/117250984772",
+      "id": 117250984772,
+      "name": "Analyze (python)",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983962477/job/117250984712",
+      "id": 117250984712,
+      "name": "Analyze (rust)",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "85b3c5a056590ebb3176533025f7b9c91891ce9d",
+      "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38983962477/job/117250984512",
+      "id": 117250984512,
+      "name": "Analyze (javascript-typescript)",
+      "status": "completed"
+    }
+  ],
+  "panel_steps": [
+    {
+      "conclusion": "success",
+      "name": "Set up job",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Run npm ci",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Run npm audit --audit-level=high",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Run node scripts/contracts.mjs",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "generated browser validators are up to date",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Run npm run check",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Run npm test",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Run npm run test:memory",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Run npx playwright install --with-deps chromium",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Run npm run test:e2e",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Run npm run build",
+      "status": "completed"
+    },
+    {
+      "conclusion": "failure",
+      "name": "versioned dist is up to date",
+      "status": "completed"
+    },
+    {
+      "conclusion": "skipped",
+      "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Complete job",
+      "status": "completed"
+    }
+  ]
+}

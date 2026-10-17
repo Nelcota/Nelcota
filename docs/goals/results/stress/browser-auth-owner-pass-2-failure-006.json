@@ -1,0 +1,272 @@
+{
+  "scope": "Complete original real browser/auth report reconstructed losslessly from checksummed public notices. Original source, verdict and cleanup are preserved; overlapping remote time earns no local checkpoint credit.",
+  "workflow_run_id": 39027213435,
+  "job_id": 117380475440,
+  "job_conclusion": "failure",
+  "notice_report_sha256": "b47f3218332e1b32cc1c4ad0ab8a47a7f0ccafd5ecdbdf1fcd3c23a023c98fa4",
+  "notice_parts": 1,
+  "regression_summary": {
+    "source_commit": "daf5fb51a9eabd2abcde32cedc38dc8ed61bbdce",
+    "tests": 24,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 0.27388883199999725,
+    "successful": true,
+    "failed_tests": []
+  },
+  "report": {
+    "identity": "native-browser-auth-39027213435-1",
+    "source": "daf5fb51a9eabd2abcde32cedc38dc8ed61bbdce",
+    "binary_sha256": "872c3b1efc71e0118386cdd3caf36bae0de26cb213307b91396fe30c0af83d75",
+    "scenario": "browser-auth-concurrency",
+    "certifies_g05": false,
+    "status": "failed",
+    "cleanup_confirmed": true,
+    "checks": {
+      "product_artifact": {
+        "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+        "binary_sha256": "872c3b1efc71e0118386cdd3caf36bae0de26cb213307b91396fe30c0af83d75",
+        "size_bytes": 30463736,
+        "product_tree_objects": {
+          "crates": "986c88ac9de6d4c117ed8027d329b3e7b566140c",
+          "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+          "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+          "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+          "sdk": "864119c5aa5bfd0edc1799d9de018e096f39d67e",
+          "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
+        },
+        "artifact_workflow_run_id": 39017663454,
+        "scope": "The retained Actions ELF is distinct from the local performance ELF; current product trees must match its build source."
+      },
+      "controller_kernel_budget": {
+        "cpu_quota_usec": 100000,
+        "cpu_period_usec": 100000,
+        "memory_bytes": 536870912,
+        "swap_bytes": 0,
+        "pids": 128
+      },
+      "auth_profile": {
+        "cycles": 5,
+        "accounts_per_cycle": 8,
+        "requests_per_cycle": 112,
+        "maximum_inflight": 8,
+        "maximum_arrivals_per_second": 16,
+        "maximum_response_bytes": 65536,
+        "maximum_cycle_seconds": 40,
+        "mutation_retries": 0,
+        "login_p95_ms": 750,
+        "login_p99_ms": 1500,
+        "read_refresh_p95_ms": 200,
+        "read_refresh_p99_ms": 500,
+        "scope": "Concurrent with existing navigation pressure, two real auth consumers, verified owned HTTPS. SMTP/OAuth and public ingress remain separate."
+      },
+      "local_load_checkpoint_credit_seconds": 0,
+      "observer_and_proxy_share_one_CPU_explicitly": true,
+      "configured_total_component_CPUs": 3.75,
+      "OS_CPU_headroom": 0.25,
+      "observer_plus_proxy_configured_quota_on_one_slot": 1.25,
+      "scope": "Separate VM with four CPU slots, distinct app/database/browser slots; observer and proxy share slot3. Existing local five-slot browser profile is separate. No SMTP/OAuth/public ingress or full G05 certification.",
+      "failure_diagnostics": {
+        "source": {
+          "stage": "app-ready",
+          "app": {
+            "available": true,
+            "running": true,
+            "oom_killed": false,
+            "exit_code": 0,
+            "restart_count": 0,
+            "logs_available": true,
+            "observed_log_bytes": 0,
+            "log_truncated": false,
+            "categories": {
+              "database-authentication": 0,
+              "database-unavailable": 0,
+              "permission": 0,
+              "bind": 0,
+              "native-loader": 0,
+              "configuration": 0,
+              "panic": 0,
+              "disk-full": 0
+            }
+          },
+          "postgres": {
+            "available": true,
+            "running": true,
+            "oom_killed": false,
+            "exit_code": 0,
+            "restart_count": 0,
+            "logs_available": true,
+            "observed_log_bytes": 3204,
+            "log_truncated": false,
+            "categories": {
+              "database-authentication": 0,
+              "database-unavailable": 0,
+              "permission": 0,
+              "bind": 0,
+              "native-loader": 0,
+              "configuration": 0,
+              "panic": 0,
+              "disk-full": 0
+            }
+          }
+        },
+        "consumer": {
+          "available": true,
+          "running": true,
+          "oom_killed": false,
+          "exit_code": 0,
+          "restart_count": 0,
+          "logs_available": true,
+          "observed_log_bytes": 0,
+          "log_truncated": false,
+          "categories": {
+            "database-authentication": 0,
+            "database-unavailable": 0,
+            "permission": 0,
+            "bind": 0,
+            "native-loader": 0,
+            "configuration": 0,
+            "panic": 0,
+            "disk-full": 0
+          }
+        },
+        "driver": {
+          "available": true,
+          "running": false,
+          "oom_killed": false,
+          "exit_code": 1,
+          "restart_count": 0,
+          "logs_available": true,
+          "observed_log_bytes": 8677,
+          "log_truncated": false,
+          "categories": {
+            "database-authentication": 0,
+            "database-unavailable": 0,
+            "permission": 0,
+            "bind": 0,
+            "native-loader": 0,
+            "configuration": 0,
+            "panic": 0,
+            "disk-full": 0
+          }
+        },
+        "drivers": {
+          "live-panel-SDK": {
+            "markers": {
+              "driver-finished": false,
+              "driver-ready": true,
+              "driver-release": false,
+              "driver-start": true
+            },
+            "log": {
+              "observed_log_bytes": 8678,
+              "log_truncated": false,
+              "categories": {
+                "python-import": 0,
+                "missing-playwright": 0,
+                "python-encodings": 0,
+                "native-loader": 0,
+                "browser-launch": 0,
+                "browser-sandbox": 0,
+                "permission": 0,
+                "disk-full": 0
+              },
+              "driver_lines": [
+                17,
+                176,
+                481
+              ]
+            }
+          },
+          "untrusted-ca": {
+            "markers": {
+              "driver-finished": true,
+              "driver-ready": true,
+              "driver-release": true,
+              "driver-start": true
+            },
+            "log": {
+              "observed_log_bytes": 7857,
+              "log_truncated": false,
+              "categories": {
+                "python-import": 0,
+                "missing-playwright": 0,
+                "python-encodings": 0,
+                "native-loader": 0,
+                "browser-launch": 0,
+                "browser-sandbox": 0,
+                "permission": 0,
+                "disk-full": 0
+              },
+              "driver_lines": []
+            }
+          }
+        },
+        "resource_failures": []
+      },
+      "resource_evidence": {
+        "samples": 2,
+        "maximum_gap_seconds": 5.155567434999995,
+        "component_peaks": {
+          "app-0": {
+            "memory_current_bytes": 25284608,
+            "memory_peak_bytes": 29880320,
+            "anonymous_bytes": 24027136,
+            "tasks": 6,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 49224
+          },
+          "app-1": {
+            "memory_current_bytes": 3842048,
+            "memory_peak_bytes": 23138304,
+            "anonymous_bytes": 2572288,
+            "tasks": 6,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 48364
+          },
+          "pg-0": {
+            "memory_current_bytes": 89567232,
+            "memory_peak_bytes": 96522240,
+            "anonymous_bytes": 20987904,
+            "tasks": 16,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 1289836
+          },
+          "proxy": {
+            "memory_current_bytes": 20332544,
+            "memory_peak_bytes": 28852224,
+            "anonymous_bytes": 18055168,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 274438
+          },
+          "browser": {
+            "memory_current_bytes": 456216576,
+            "memory_peak_bytes": 488501248,
+            "anonymous_bytes": 373485568,
+            "tasks": 150,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 1066
+          }
+        },
+        "public_file": "resources.jsonl.gz",
+        "compressed_bytes": 460,
+        "sha256": "a7a4d4faad009dd585649944d4dfb51d89f4923fce392b655397d852153fc5f3",
+        "scope": "Numeric cgroup projection only; private resource/log/SQL fields are excluded."
+      }
+    },
+    "failure": {
+      "checkpoint": "live-browser",
+      "type": "RuntimeError",
+      "kind": "other"
+    },
+    "resource_samples": 2,
+    "elapsed_seconds_including_preparation": 26.509111577
+  }
+}

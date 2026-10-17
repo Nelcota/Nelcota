@@ -1,0 +1,25 @@
+{
+  "certifies_g05": false,
+  "status": "passed",
+  "source": "f560493ae6bcd8c4c94d51b6d7d049a608b30de0",
+  "original_second_failed_fixture_check": "codeql-invalid-fixtures-second-failure.json",
+  "aggregate_check": {
+    "conclusion": "success",
+    "html_url": "https://github.com/Nelcota/Nelcota/runs/117226939938",
+    "id": 117226939938,
+    "name": "CodeQL",
+    "output": {
+      "summary": "[View all branch alerts](/Nelcota/Nelcota/security/code-scanning?query=pr%3A90+tool%3ACodeQL+is%3Aopen).",
+      "title": "No new alerts in code changed by this pull request"
+    },
+    "status": "completed"
+  },
+  "rust_analysis": {
+    "conclusion": "success",
+    "html_url": "https://github.com/Nelcota/Nelcota/actions/runs/38976408717/job/117226811332",
+    "id": 117226811332,
+    "name": "Analyze (rust)",
+    "status": "completed"
+  },
+  "scope": "Original CodeQL failures remain unchanged. The aggregate check and matching Rust analysis passed after fresh malformed-input concatenation and distinguishing the pure validation candidate from an actual credential. No rule was disabled or alert dismissed. The complete code-scanning alert listing remains inaccessible (HTTP 403); no total branch-alert count is claimed."
+}

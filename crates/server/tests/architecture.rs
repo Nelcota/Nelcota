@@ -51,6 +51,21 @@ async fn sql_stream_limits_rows_bytes_batches_and_concurrency() {
     let app = TestApp::spawn().await;
     let cookie = login(&app).await;
     let reply = sql(&app, &cookie, "select i from generate_series(1,100000) i").await;
+    if !reply.body["results"][0]["rows"].is_array() {
+        let message = reply.body["error"]["message"].as_str().unwrap_or("");
+        let code = reply.body["error"]["code"]
+            .as_str()
+            .filter(|value| value.len() == 5 && value.bytes().all(|c| c.is_ascii_alphanumeric()));
+        println!(
+            "::notice title=G05 SQL row budget failure::{}",
+            json!({"http_status":reply.status.as_u16(), "sqlstate":code,
+                "connection_closed":message.contains("connection closed"),
+                "connection_refused":message.contains("Connection refused"),
+                "has_error":reply.body.get("error").is_some(),
+                "scope":"Fixed numeric/boolean diagnostics only; no SQL or error message publication"})
+        );
+    }
+    assert_eq!(reply.status, StatusCode::OK);
     assert_eq!(
         reply.body["results"][0]["rows"].as_array().unwrap().len(),
         1000

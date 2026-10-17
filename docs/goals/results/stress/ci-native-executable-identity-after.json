@@ -1,0 +1,26 @@
+{
+  "workflow_run": "https://github.com/Nelcota/Nelcota/actions/runs/38982945656",
+  "certifies_g05": false,
+  "report": {
+    "requested_repetitions": 1000,
+    "attempted": 1000,
+    "passed": 1000,
+    "status": "passed",
+    "elapsed_seconds": 9.064132096999998,
+    "source": "c98aaaff0de51f44e8d355c0e18c8db664478a8d",
+    "test": "updates::runtime::tests::running_native_identity_rejects_replacement_even_with_the_same_hash",
+    "test_binary_sha256": "151c748462ab3f6be46d4928f1627cdddd39283e8e39aec359d3ce49fa6ca137",
+    "certifies_g05": false,
+    "scope": "Repeated real unit test only; no BaaS traffic or endurance credit; production identity validation remains fail-closed",
+    "profile": {
+      "cpu": 2,
+      "memory_mib": 4096,
+      "swap_mib": 0,
+      "tasks": 128,
+      "unit_timeout_seconds": 10,
+      "maximum_seconds": 240,
+      "external_runtime_max_seconds": 300,
+      "test_threads": 1
+    }
+  }
+}

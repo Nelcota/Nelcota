@@ -1,0 +1,429 @@
+{
+  "scope": "Complete original real-HTTP supplemental transport/admission/cancellation smoke, reconstructed losslessly from source-bound checksummed notices. Original verdict/report remain unchanged. This 20s-per-case smoke does not certify the full 120s/capacity matrix or later stronger export/deadline oracles; overlapping remote time earns zero local checkpoint credit.",
+  "workflow_run_id": 39006863297,
+  "job_id": 117320995991,
+  "job_conclusion": "success",
+  "notice_report_sha256": "06a6d3f419e818a548d0472306b6bcb00179f480fb966c6a7b00fa3fa57b5f09",
+  "notice_parts": 3,
+  "regression_summary": {
+    "source_commit": "6e6b51e666681b2d472cb886a0001e59fc0b6f51",
+    "tests": 9,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 0.12179752100000485,
+    "successful": true,
+    "failed_tests": []
+  },
+  "report": {
+    "identity": "native-matrix-39006863297-1",
+    "source": "6e6b51e666681b2d472cb886a0001e59fc0b6f51",
+    "binary_sha256": "010d0fc52f5cc5961f56baf6902294abfcc2c9d855ccbf7605e4b91e8a89a45c",
+    "scenario": "supplemental-backend-matrix",
+    "certifies_g05": false,
+    "status": "passed",
+    "cleanup_confirmed": true,
+    "resource_samples": 27,
+    "completed_effective_load_seconds": 130,
+    "checks": {
+      "product_artifact": {
+        "source_commit": "7e68fd21430ac93125149f60927f8676b077811d",
+        "binary_sha256": "010d0fc52f5cc5961f56baf6902294abfcc2c9d855ccbf7605e4b91e8a89a45c",
+        "size_bytes": 30452336,
+        "product_tree_objects": {
+          "crates": "982c1e0337e3ec82ebd269a1e4bef286554eb170",
+          "sdk": "864119c5aa5bfd0edc1799d9de018e096f39d67e",
+          "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+          "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+          "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+          "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
+        },
+        "artifact_workflow_run_id": 38990677734,
+        "scope": "The retained Actions ELF is distinct from the local performance ELF; current product trees must match its build source."
+      },
+      "controller_kernel_budget": {
+        "cpu_quota_usec": 100000,
+        "cpu_period_usec": 100000,
+        "memory_bytes": 536870912,
+        "swap_bytes": 0,
+        "pids": 128
+      },
+      "profile": {
+        "scenarios": [
+          "admin-budgets",
+          "admin-cancellation",
+          "catalog-recovery",
+          "hostile-backend"
+        ],
+        "maximum_requests": 4096,
+        "maximum_body_bytes": 2097152,
+        "maximum_read_bytes": 2097152,
+        "maximum_consumed_bytes": 67108864,
+        "maximum_unread_export_bytes": 268435456,
+        "request_timeout_seconds": 5,
+        "query_release_seconds": 3,
+        "export_release_seconds": 5,
+        "catalog_recovery_seconds": 5,
+        "sql_slots": 4,
+        "export_slots": 2,
+        "pressure_cycles": 5,
+        "slow_clients_each_cycle": 2,
+        "slow_client_hold_seconds": 2,
+        "export_rows": 8192,
+        "export_payload_bytes_each": 1024,
+        "scope": "Owned backend HTTP only; foreground ledger arrivals keep their unchanged SLOs. No public TLS/DNS/SMTP/OAuth or full matrix certification."
+      },
+      "full_profile": false,
+      "local_load_checkpoint_credit_seconds": 0,
+      "cases": {
+        "admin-budgets": {
+          "status": "passed",
+          "requests_so_far": 27,
+          "consumed_bytes_so_far": 12759,
+          "unread_export_upper_bound_bytes": 0,
+          "row_count": 10000,
+          "returned_rows": 1000,
+          "batch_results": 32,
+          "later_mutation_count": 1,
+          "sql_busy_rejections": 5
+        },
+        "admin-cancellation": {
+          "status": "passed",
+          "requests_so_far": 51,
+          "consumed_bytes_so_far": 63045,
+          "unread_export_upper_bound_bytes": 94371840,
+          "cancelled_queries": 5,
+          "intentionally_unconsumed_exports": 10,
+          "query_release_seconds": [
+            0.07461908400000539,
+            0.08862306999999703,
+            0.0860700050000105,
+            0.09157600400000376,
+            0.09081498000000465
+          ],
+          "export_release_seconds": [
+            0.0910905960000008,
+            0.09464446399999815,
+            0.09502963399999942,
+            0.0943021040000076,
+            0.09471091700000045
+          ],
+          "complete_export_rows": 1000,
+          "interrupted_exports_claimed_complete": 0
+        },
+        "catalog-recovery": {
+          "status": "passed",
+          "requests_so_far": 229,
+          "consumed_bytes_so_far": 441488,
+          "unread_export_upper_bound_bytes": 94371840,
+          "committed_tables": 20,
+          "mutation_retries": 0,
+          "catalog_discovery_seconds": [
+            0.20961625500001446,
+            0.20894101199999682,
+            0.20655209200000968,
+            0.2133557109999913,
+            0.21062064499997746,
+            0.20924718400002007,
+            0.10330439399999136,
+            0.20954919999999788,
+            0.22177785899998526,
+            0.21130908299997486,
+            0.22303966000001196,
+            0.20897858099999667,
+            0.2102339299999869,
+            0.20886958799999888,
+            0.20715990900001202,
+            0.20697059200000467,
+            0.2152780380000081,
+            0.2084696180000094,
+            0.21028464500000155,
+            0.10599051900001655
+          ],
+          "scope": "Concurrent introspection and committed DDL discovery; forced refresh failure remains covered only by its functional regression."
+        },
+        "hostile-backend": {
+          "status": "passed",
+          "requests_so_far": 255,
+          "consumed_bytes_so_far": 442678,
+          "unread_export_upper_bound_bytes": 94371840,
+          "rejections": {
+            "malformed": 400,
+            "nonfinite": 400,
+            "null": 422,
+            "deep": 422,
+            "missing-cookie": 401,
+            "wrong-origin": 403
+          },
+          "positive_negative_canary_pairs": 5,
+          "closed_slow_header_body_clients": 10,
+          "scope": "Bounded malformed JSON, nonfinite/null/deep bodies, two-second partial headers/bodies, admin cookie/origin and JWT rejection; no public-ingress or complete adversarial-matrix certification."
+        }
+      },
+      "foreground_phases": {
+        "admin-budgets": {
+          "counts": {
+            "200": 144,
+            "acknowledged": 144,
+            "deliberately-dropped-reply": 8,
+            "deliberately-lost-committed-reply": 8
+          },
+          "requested_seconds": 20,
+          "elapsed_seconds": 20.00008089900001,
+          "offered_iterations": 160,
+          "rate": 8,
+          "fault_injected": true,
+          "exploratory": false,
+          "success_latency": {
+            "p95_ms": 32.147471000001815,
+            "p99_ms": 39.981662000002416,
+            "successful_post_responses": 144,
+            "method": "nearest rank, successful POST only"
+          },
+          "nominal_qualified": true
+        },
+        "admin-cancellation": {
+          "counts": {
+            "200": 144,
+            "acknowledged": 144,
+            "deliberately-dropped-reply": 8,
+            "deliberately-lost-committed-reply": 8
+          },
+          "requested_seconds": 20,
+          "elapsed_seconds": 20.000076867000004,
+          "offered_iterations": 160,
+          "rate": 8,
+          "fault_injected": true,
+          "exploratory": false,
+          "success_latency": {
+            "p95_ms": 35.908560999999395,
+            "p99_ms": 53.81637699998976,
+            "successful_post_responses": 144,
+            "method": "nearest rank, successful POST only"
+          },
+          "nominal_qualified": true
+        },
+        "catalog-recovery": {
+          "counts": {
+            "200": 144,
+            "acknowledged": 144,
+            "deliberately-dropped-reply": 8,
+            "deliberately-lost-committed-reply": 8
+          },
+          "requested_seconds": 20,
+          "elapsed_seconds": 20.001123860000007,
+          "offered_iterations": 160,
+          "rate": 8,
+          "fault_injected": true,
+          "exploratory": false,
+          "success_latency": {
+            "p95_ms": 33.25387799998225,
+            "p99_ms": 44.612898000025325,
+            "successful_post_responses": 144,
+            "method": "nearest rank, successful POST only"
+          },
+          "nominal_qualified": true
+        },
+        "hostile-backend": {
+          "counts": {
+            "200": 144,
+            "acknowledged": 144,
+            "deliberately-dropped-reply": 8,
+            "deliberately-lost-committed-reply": 8
+          },
+          "requested_seconds": 20,
+          "elapsed_seconds": 20.000082709999987,
+          "offered_iterations": 160,
+          "rate": 8,
+          "fault_injected": true,
+          "exploratory": false,
+          "success_latency": {
+            "p95_ms": 25.00118899999393,
+            "p99_ms": 32.70381999999472,
+            "successful_post_responses": 144,
+            "method": "nearest rank, successful POST only"
+          },
+          "nominal_qualified": true
+        }
+      },
+      "scope": "Separate disposable backend diagnostic; overlapping remote time is excluded from the local eight-hour checkpoint.",
+      "images": {
+        "ubuntu:24.04": {
+          "id": "sha256:6277ab668b2ad3c3ab851d370faa1690d324b30db29d342527f61fed28f20f36",
+          "repo_digests": [
+            "ubuntu@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac"
+          ],
+          "size_bytes": 78177487
+        },
+        "postgres:17-alpine": {
+          "id": "sha256:79bd7c99e923138f136f8009d6bffa66e21e9d4fda5c0c561b00fc9c90cfe537",
+          "repo_digests": [
+            "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+          ],
+          "size_bytes": 297176980
+        }
+      },
+      "original_completion": {
+        "status": "passed",
+        "load_seconds": 130,
+        "resource_observations": 27,
+        "cleanup_confirmed": true,
+        "error_type": "NoneType"
+      },
+      "capacity": null,
+      "invariants.json": {
+        "attempted": 1040,
+        "acknowledged": 936,
+        "committed": 988,
+        "acknowledged_missing": 0,
+        "unknown_or_corrupt": 0,
+        "ambiguous_attempts": 104,
+        "ambiguous_committed": 52,
+        "automatic_mutation_retries": 0,
+        "explicit_primary_key_duplicate_status": 409,
+        "accounting": {
+          "accounts": 2,
+          "total": 2000000,
+          "first_balance": 1000052,
+          "committed": 988,
+          "delta": 52,
+          "counter": 988
+        }
+      },
+      "restore.json": {
+        "status": "passed",
+        "rto_seconds": 1.8811011559999997,
+        "rpo_upper_bound_seconds": 17.997836554000003,
+        "restored_rows": 852,
+        "source_rows": 988,
+        "restored_accounting": {
+          "accounts": 2,
+          "total": 2000000,
+          "first_balance": 1000046,
+          "committed": 852,
+          "delta": 46,
+          "counter": 852
+        },
+        "intentional_snapshot_rewind_rows": 136,
+        "cross_project_token_status": 401,
+        "restored_user_matches": true,
+        "physical_bytes_match": true,
+        "scope": "local DB snapshot plus immutable files, no off-host/PITR/systemd certification"
+      },
+      "lost-commit-replies.json": {
+        "confirmed_backend_commit_replies_discarded": 52,
+        "lost_commits_missing_or_corrupt": 0,
+        "downstream_transport": "owned HTTP socketpair",
+        "upstream": "real project HTTP",
+        "automatic_retries": 0
+      },
+      "launch-manifest.json": {
+        "run_id": "native-matrix-39006863297-1",
+        "git": "6e6b51e666681b2d472cb886a0001e59fc0b6f51",
+        "binary_sha256": "010d0fc52f5cc5961f56baf6902294abfcc2c9d855ccbf7605e4b91e8a89a45c",
+        "harness_sources": {
+          "bench/allocation.py": "4b98e093b86e9b9187812cd49e8d5710f54561f196bdd222573c0edd06cff34d",
+          "bench/arrival_check.py": "1b0973f2995a94390ebabcc76c2ab4843586d284980a6e5e65d6e3cb1ea60a1b",
+          "bench/arrival_counters.py": "dc94222d07dc40b7bbd5d376f5d8bac5ba8fec4d590cb6da625e487c01b16f35",
+          "bench/browser_campaign.py": "35b750c93b78cb29045cd17e3d82d81446bf783e7efe54fcba3a6279a65f5113",
+          "bench/browser_driver.py": "7a97e7f83cea534add1c75bd13d6764c2fb8ef94a0c2d4e4f1a7ee8ece9c244a",
+          "bench/browser_runtime.py": "1720ee9bab4b959260f366ca7c8767d2b810a1884f3940ff3735755ef6ba48ba",
+          "bench/campaign.py": "1303eba807b06f9b69bd7675ded297dc045c916183270e64d54cba428027c655",
+          "bench/compaction_check.py": "d64608d5e59d463b685c1310c925e29edee959fadab7d73a1a1e57a71384ab21",
+          "bench/compare.py": "7ae08619c14730906f4d565960616ca876aa6d61ff6ac17146cf692762b8e602",
+          "bench/cpu_policy.py": "04a227c9032905844ece265773013d7581351627f2a4ac71a8fee6c8a690d89d",
+          "bench/disk_usage.py": "502da50d95f979128c91d49b3037cb08885ddcbb941af0a9bd842e0d193da38e",
+          "bench/evidence.py": "214bcb18089fce8b33dc7a9613856c23f48f433767a7e97cdd95861dae3cb67d",
+          "bench/export_series.py": "7ee41df608b7920acd1a5ab581247add472e072e60aaa982571f0bd3c2ae0bec",
+          "bench/fault_campaign.py": "e03338324607a32ff36efeb6fd582cbb73dd3fdea67195f364384c3dad3bb824",
+          "bench/fixture_copy.py": "8c1421202b5543c16fa0fd0af4e47f7a8f9ef1bd9cd9423bfde28eda3dec6288",
+          "bench/fleet_observer.py": "3e51bb4b4229f0854c2e67c2fadef489feed0b28893ba3fe1baad67e1fe415b4",
+          "bench/fleet_webhooks.py": "ae5d21861ef3951a50a37fdfc84507685e87c2f8cc1698ae0d5972244d0b97ce",
+          "bench/guard_check.py": "2fa55b5e70154e7498ab79f627ef7623ae965cb4727a8318845bc5eb9baf481d",
+          "bench/host_campaign.py": "7f5f5e08be1b031209f159b4fc910ebc94a0421279d8db98c621d5c54e24db5d",
+          "bench/host_compare.py": "3e621b6fa3b80f389c7775ebd95774bcf1dc25b16ce9408d4a0e325558b0fc0f",
+          "bench/host_resources.py": "8efc29fce9b182aca6bdc2fa91e26ad9d526a4b1267f69a917d132270e4065e5",
+          "bench/http_boundary.py": "b69ff97c9e65f8ec94ccf36ac282a3b6b53c1a07aa01fbd33ac1fbe68a976db3",
+          "bench/http_check.py": "8879f62f1541f8321f799358cdd56035d3e189d46dc43fe91b106ba514788ab7",
+          "bench/http_counters.py": "c08c51ce7faf1f415476e77c80bd96dfd891b3292ceb15bd2dd781aed32f671a",
+          "bench/ingress.py": "4976738ec1c3e96862f87a02d81843087a72a665a2de829acc4c6804b6117ed2",
+          "bench/latency.py": "0483d0b22be2811669835446c17ec4c183a79bfb5477c43c2ea01cd0976aadd0",
+          "bench/launch.py": "915eb76ea3a712799777f27dfbe8bbffe4de8f5a48d9a5b541ee844f0391a498",
+          "bench/load_time.py": "23e9b43a24b7842259e94958cf2a0836a7b970cabdab2c908d5761dd688527c5",
+          "bench/lost_reply.py": "2048c95f21169fe46adddb28c4feffa60da365d369f4730ed6f7c6bcbfd348bb",
+          "bench/matrix_pressure.py": "208afd3193872e8c103eb681255c00c4fe6d87f52ccfe92e0a0aacf7a1e8fb3a",
+          "bench/matrix_probe.py": "94ea28cfd2b0b778f380d3dc47ad8133fa48aea4dcc415ee47ba8a4ed404086c",
+          "bench/metrics.py": "ef5d35ca1d1773bb5fd622b1653d2c8b8e5d0681c88c92ccab1daef45bf1bf26",
+          "bench/monitor.py": "bd869d88b833930602dc3770e5467040021cca6930f89fd298c269b6850c2e61",
+          "bench/native_artifact.py": "fb38df329250168071671162019acfff93f291283808eee2451b656cd7198c85",
+          "bench/native_cluster.py": "e018810cfc015846d3e878a001db2e3c19a815c7fa77305986c930cfce2d1c23",
+          "bench/native_contracts.py": "40932b429b44d7f6bb765b2f34ebf762cd8dad414efe6b155a2d43b64ff1c280",
+          "bench/native_evidence.py": "2f5da2b03a4abaeac7057c43b8c9e0d103cf22970a9b0c7d9eb15f696d00affd",
+          "bench/native_guest.py": "72830b74c7c58b027f600344bb4aef404948b29f35b43c630139e4518b6a7d13",
+          "bench/native_preflight.py": "69ca8ad6ee6bad336ae4ac1013e6867d663eb5e7a0900e3bf9e160ec65c6ad45",
+          "bench/native_vm.py": "5ce53f00579e3207e688063ad27b59bbd9bba3d10e386429a6f81afd2205de62",
+          "bench/objects.py": "a1612bc2e457481705044ce21a376d898544dbbff004a8920511218858a8210b",
+          "bench/observations.py": "a8acd10d4b28cc44e9619bd969d75d6a2d5543444c97daab63e549414238b988",
+          "bench/oracle_check.py": "2492f32547aa01ec75f179a002fc92c9eb432b2cc609320ff117ca62ce0bb79c",
+          "bench/otlp_metrics.py": "ed8b9e115916f02b3c4556ca06b6a15c927ecb595cd22f83187081635c46927e",
+          "bench/ownership.py": "ffd3e9343b7f8262d05ee0363ab01b1f7e77089bb8f09ca8d0a350532402fa06",
+          "bench/plot_series.py": "e1076161947003cb14b0137e4655b2ba3dedd911b6fb08daefe9335db4fadfe9",
+          "bench/ports.py": "edcb747bf4f29429d2abf5abf2741289c586cb64b0cf3484fa891edb5d798276",
+          "bench/postgres_evidence.py": "7152ea8c58232981c07b6c20d4a6a8cfba1046de1893d09c78de58607a95855a",
+          "bench/projects.py": "5e67a4918b87c43bc2d8ea769f4f843570e589db4d81bdd573e24ae6d979eb9a",
+          "bench/provider_capabilities.py": "fc1aa8c527c7a35e326903a4150c1d0ee65c7a27ab331879dab5a76ba81d0138",
+          "bench/provider_reclamation.py": "c1b2673e15f028832163a2f17eff695ee4f81da2b544547c4a992ebe00e75d64",
+          "bench/provider_runtime.py": "6c17b3d7d43a13c4e36a36c390f254dcafc68ef798517f4204bc8982871183e9",
+          "bench/receiver.py": "b4f172be66aee69649c826052951ff839272d7501ec0d0a2e648d65dedd4ee9d",
+          "bench/sqlite_evidence.py": "77b0da843ac1c0d5a29c97e2f6fa78b67fbbe96a68c5aeef05df9f0895c16215",
+          "bench/watchdog.py": "25ab3e86efdcec9c1da84942ef27fee285339adbda15b70791030e4863ff7bb3",
+          "bench/allocation_probe.c": "f833882f9c9697d7e838871dad3d398fb6427e78b21104d30ea8fcd7f13678f3",
+          "bench/campaign.js": "0ac01578bf19155302fe465884b480d792569086f23bb4ba3615ca5f0ce2547d",
+          "bench/setup.sql": "104496228668127c3a95a0defa6efe2d6c06a00c56bdc19999052043e700c798",
+          "scripts/upgrade/support.py": "97fd54c7d8fe80d70d0201e71454dd4f72fef760e161800ad503760d3f90feb8"
+        }
+      },
+      "private_resource_series_sha256": "f3b107b2aad022aaac3ba82cd1c81548cc471dd8dfb525ab49ca902a4ef3446b",
+      "resource_evidence": {
+        "samples": 27,
+        "maximum_gap_seconds": 5.09545177199999,
+        "component_peaks": {
+          "app-0": {
+            "memory_current_bytes": 25288704,
+            "memory_peak_bytes": 33988608,
+            "anonymous_bytes": 23527424,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 69243
+          },
+          "pg-0": {
+            "memory_current_bytes": 130744320,
+            "memory_peak_bytes": 141545472,
+            "anonymous_bytes": 20312064,
+            "tasks": 16,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 2303179
+          }
+        },
+        "public_file": "resources.jsonl.gz",
+        "compressed_bytes": 1266,
+        "sha256": "548ed11432073ad20ab528beac66cbf8ecbd71b9cc7796927c0687f658b7904a",
+        "scope": "Numeric cgroup projection only; private resource/log/SQL fields are excluded."
+      }
+    },
+    "elapsed_seconds_including_preparation": 151.794708697
+  },
+  "post_collection_deadline_validation": {
+    "maximum_query_release_seconds": 0.09157600400000376,
+    "maximum_export_release_seconds": 0.09502963399999942,
+    "maximum_catalog_discovery_seconds": 0.22303966000001196,
+    "all_within_original_unchanged_limits": true
+  },
+  "protocol_limits": [
+    "The original complete-export oracle checked 1,000 rows and project marker; a later exact-ID/field/uniqueness oracle still requires repetition.",
+    "The original census returned a ready result before checking elapsed time. Recorded elapsed values independently satisfy the unchanged limits; a late-positive guard regression was added before full profiles.",
+    "The complete numeric gzip series is retained in the public Actions artifact with its SHA256. A local binary-artifact download failed at transport; no test verdict is inferred from that transport failure."
+  ]
+}

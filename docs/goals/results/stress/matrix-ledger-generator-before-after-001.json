@@ -1,0 +1,240 @@
+{
+  "utc": "2026-10-17T16:20:07.442727+00:00",
+  "status": "one corrected full real pass passed; second independent full pass pending",
+  "certifies_g05": false,
+  "original_failed_evidence": "matrix-sdk007-capacity-publication-failure-001.json",
+  "corrected_pass_evidence": "matrix-sdk007-corrected-generator-pass-1-001.json",
+  "corrected_workflow_run_id": 39046455871,
+  "corrected_job_id": 117436042592,
+  "original_and_corrected_binary_identical": true,
+  "binary_sha256": "d0d1090c91da4435a0d27dcf1dddba1b8695f18f944b1dd8cc5e472089d17432",
+  "original_and_corrected_fixture_image_profiles_identical": true,
+  "unchanged_generator_cpu_quota": 1,
+  "unchanged_maximum_offered_iterations_per_second": 64,
+  "unchanged_step_seconds": 300,
+  "unchanged_five_foreground_windows_seconds": 120,
+  "unchanged_SLOs_and_delivery_gates": true,
+  "capacity_steps": [
+    {
+      "offered_iterations_per_second": 16,
+      "requested_seconds_each_side": 300,
+      "before_nominal_qualified": true,
+      "after_nominal_qualified": true,
+      "before_dropped_arrivals": 0,
+      "after_dropped_arrivals": 0,
+      "after_complete_offered_classification_verified": true,
+      "after_acknowledged_writes_per_second": 14.4,
+      "after_lost_backend_commit_replies_per_second": 0.8,
+      "after_successful_POST_latency": {
+        "p95_ms": 2.9962389999980132,
+        "p99_ms": 4.574417000014819,
+        "successful_post_responses": 4320,
+        "method": "nearest rank, successful POST only"
+      },
+      "before_generator_cpu": {
+        "self_one_cpu_fraction": 0.5486159660054767,
+        "current_cgroup_one_cpu_fraction": 0.5749939600436984,
+        "host_steal_tick_deltas": {
+          "cpu0": 0,
+          "cpu1": 0,
+          "cpu2": 0,
+          "cpu3": 0
+        }
+      },
+      "after_generator_cpu": {
+        "self_one_cpu_fraction": 0.028136496792064213,
+        "current_cgroup_one_cpu_fraction": 0.055903780292890316,
+        "host_steal_tick_deltas": {
+          "cpu0": 0,
+          "cpu1": 0,
+          "cpu2": 0,
+          "cpu3": 0
+        }
+      }
+    },
+    {
+      "offered_iterations_per_second": 32,
+      "requested_seconds_each_side": 300,
+      "before_nominal_qualified": false,
+      "after_nominal_qualified": true,
+      "before_dropped_arrivals": 1366,
+      "after_dropped_arrivals": 0,
+      "after_complete_offered_classification_verified": true,
+      "after_acknowledged_writes_per_second": 28.8,
+      "after_lost_backend_commit_replies_per_second": 1.6,
+      "after_successful_POST_latency": {
+        "p95_ms": 2.8178969999999026,
+        "p99_ms": 4.380451999963952,
+        "successful_post_responses": 8640,
+        "method": "nearest rank, successful POST only"
+      },
+      "before_generator_cpu": {
+        "self_one_cpu_fraction": 0.9705840847705793,
+        "current_cgroup_one_cpu_fraction": 0.9997735916404874,
+        "host_steal_tick_deltas": {
+          "cpu0": 0,
+          "cpu1": 0,
+          "cpu2": 0,
+          "cpu3": 0
+        }
+      },
+      "after_generator_cpu": {
+        "self_one_cpu_fraction": 0.04941737716778967,
+        "current_cgroup_one_cpu_fraction": 0.07697239334591195,
+        "host_steal_tick_deltas": {
+          "cpu0": 0,
+          "cpu1": 0,
+          "cpu2": 0,
+          "cpu3": 0
+        }
+      }
+    },
+    {
+      "offered_iterations_per_second": 48,
+      "requested_seconds_each_side": 300,
+      "before_nominal_qualified": false,
+      "after_nominal_qualified": true,
+      "before_dropped_arrivals": 5985,
+      "after_dropped_arrivals": 0,
+      "after_complete_offered_classification_verified": true,
+      "after_acknowledged_writes_per_second": 43.2,
+      "after_lost_backend_commit_replies_per_second": 2.4,
+      "after_successful_POST_latency": {
+        "p95_ms": 2.756842000053439,
+        "p99_ms": 4.4962510000914335,
+        "successful_post_responses": 12960,
+        "method": "nearest rank, successful POST only"
+      },
+      "before_generator_cpu": {
+        "self_one_cpu_fraction": 0.9707185522907062,
+        "current_cgroup_one_cpu_fraction": 0.9999536408721119,
+        "host_steal_tick_deltas": {
+          "cpu0": 0,
+          "cpu1": 0,
+          "cpu2": 0,
+          "cpu3": 0
+        }
+      },
+      "after_generator_cpu": {
+        "self_one_cpu_fraction": 0.07208943631941696,
+        "current_cgroup_one_cpu_fraction": 0.10042643439048532,
+        "host_steal_tick_deltas": {
+          "cpu0": 0,
+          "cpu1": 0,
+          "cpu2": 0,
+          "cpu3": 0
+        }
+      }
+    },
+    {
+      "offered_iterations_per_second": 64,
+      "requested_seconds_each_side": 300,
+      "before_nominal_qualified": false,
+      "after_nominal_qualified": true,
+      "before_dropped_arrivals": 10557,
+      "after_dropped_arrivals": 0,
+      "after_complete_offered_classification_verified": true,
+      "after_acknowledged_writes_per_second": 57.6,
+      "after_lost_backend_commit_replies_per_second": 3.2,
+      "after_successful_POST_latency": {
+        "p95_ms": 2.595190999954866,
+        "p99_ms": 4.3126890000166895,
+        "successful_post_responses": 17280,
+        "method": "nearest rank, successful POST only"
+      },
+      "before_generator_cpu": {
+        "self_one_cpu_fraction": 0.9711389796728197,
+        "current_cgroup_one_cpu_fraction": 0.9999787564540339,
+        "host_steal_tick_deltas": {
+          "cpu0": 0,
+          "cpu1": 0,
+          "cpu2": 0,
+          "cpu3": 0
+        }
+      },
+      "after_generator_cpu": {
+        "self_one_cpu_fraction": 0.09400286540885039,
+        "current_cgroup_one_cpu_fraction": 0.12232051466762,
+        "host_steal_tick_deltas": {
+          "cpu0": 0,
+          "cpu1": 0,
+          "cpu2": 0,
+          "cpu3": 0
+        }
+      }
+    }
+  ],
+  "current_qualified_lower_bound_iterations_per_second": 64,
+  "current_foreground_rate_iterations_per_second": 51,
+  "current_qualified_fraction": 0.796875,
+  "current_invariants": {
+    "attempted": 79860,
+    "acknowledged": 71874,
+    "committed": 75867,
+    "acknowledged_missing": 0,
+    "unknown_or_corrupt": 0,
+    "ambiguous_attempts": 7986,
+    "ambiguous_committed": 3993,
+    "automatic_mutation_retries": 0,
+    "explicit_primary_key_duplicate_status": 409,
+    "accounting": {
+      "accounts": 2,
+      "total": 2000000,
+      "first_balance": 1003993,
+      "committed": 75867,
+      "delta": 3993,
+      "counter": 75867
+    }
+  },
+  "current_restore": {
+    "status": "passed",
+    "rto_seconds": 2.596883700999797,
+    "rpo_upper_bound_seconds": 18.00143584700004,
+    "restored_rows": 74999,
+    "source_rows": 75867,
+    "restored_accounting": {
+      "accounts": 2,
+      "total": 2000000,
+      "first_balance": 1003947,
+      "committed": 74999,
+      "delta": 3947,
+      "counter": 74999
+    },
+    "intentional_snapshot_rewind_rows": 868,
+    "cross_project_token_status": 401,
+    "restored_user_matches": true,
+    "physical_bytes_match": true,
+    "scope": "local DB snapshot plus immutable files, no off-host/PITR/systemd certification"
+  },
+  "current_resource_evidence": {
+    "samples": 371,
+    "maximum_gap_seconds": 5.237308987999995,
+    "component_peaks": {
+      "app-0": {
+        "memory_current_bytes": 45555712,
+        "memory_peak_bytes": 54095872,
+        "anonymous_bytes": 43569152,
+        "tasks": 8,
+        "oom_events": 0,
+        "oom_kills": 0,
+        "cpu_throttled_usec": 448897
+      },
+      "pg-0": {
+        "memory_current_bytes": 157646848,
+        "memory_peak_bytes": 168755200,
+        "anonymous_bytes": 27852800,
+        "tasks": 21,
+        "oom_events": 0,
+        "oom_kills": 0,
+        "cpu_throttled_usec": 4673658
+      }
+    },
+    "public_file": "resources.jsonl.gz",
+    "compressed_bytes": 10249,
+    "sha256": "1743cb6540f50fbc6a8f21254f90e3dd8f43acbeadf6baf86c9197d6236842c6",
+    "scope": "Numeric cgroup projection only; private resource/log/SQL fields are excluded."
+  },
+  "local_effective_load_time_credit_seconds": 0,
+  "interpretation": "A fresh same-ELF/fixture-profile run now delivers all four offered rates and removes the observed generator-CPU limitation at the unchanged64/s ceiling. This validates the targeted client CA-initialization correction in one real repetition. Separate VMs are not identical hardware; this is not a fourfold server throughput gain, a maximum/breaking-point claim, closure of historical32versus16variation, or a before/after comparison of differently offered foreground rates. Original failed publication and missing invariant/restore exports remain unchanged.",
+  "units": "Arrival iterations, acknowledged POST writes and known lost backend commit replies are distinct. At64iterations/s the observed ACK rate is57.6writes/s; deliberately lost replies are not counted as client acknowledgements."
+}

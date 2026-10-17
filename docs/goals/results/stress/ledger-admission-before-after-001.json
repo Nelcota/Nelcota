@@ -1,0 +1,24 @@
+{
+  "scope": "Controlled scheduling regression using the actual AST-extracted traffic function from immutable old source and current corrected working tree. Nonlocal variables are lifted into globals only for extraction; HTTP workers and time are virtual, no network/backend load or G05 effective-time credit. Eight owners finish during pacing at the ninth scheduled arrival. No latency/capacity claim.",
+  "old_source_commit": "f385843e63e63c876c9c151c25e4697f2894484b",
+  "before": {
+    "offered_arrivals": 16,
+    "transport_submissions": 15,
+    "dropped_arrivals": 1,
+    "acknowledged": 15,
+    "source_sha256": "590145c689ff78016cc33fcecd017b261d6410cbee0f83f5a48d8e34268755f5",
+    "extracted_function_sha256": "6389ea31847806e0e4a26c51ca84cba92caeaa9f43a3a91ba539a204439f37d5"
+  },
+  "after": {
+    "offered_arrivals": 16,
+    "transport_submissions": 16,
+    "dropped_arrivals": 0,
+    "acknowledged": 16,
+    "source_sha256": "3f83b1dad46d117a97a4eba93a3e9ebb3ff472325e535841fd8a878113c38b36",
+    "extracted_function_sha256": "e7b1678f26ecaf90b72043fa595598e9ff48d3cde8c22dce951db5d788d195f6"
+  },
+  "passed": true,
+  "production_defect": false,
+  "explains_previous_remote_variation": false,
+  "effective_load_credit_seconds": 0
+}

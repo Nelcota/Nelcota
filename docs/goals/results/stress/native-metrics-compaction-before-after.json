@@ -1,0 +1,377 @@
+{
+  "scope": "Native compaction regression plus the retained real campaign budget failure. No BaaS load/endurance credit for the synthetic controls. The first control failed because it assumed a data path omitted from the command. The corrected common receiver explicitly selects the owned path and bounds block chunks; both original outcomes remain preserved. Control 003 validates the final common-profile argument builder; control 002 also passed. Observed disk maxima are sampled values, not a claim of absolute transient peaks.",
+  "certifies_g05": false,
+  "campaign_before": {
+    "run_id": "disk-final-pass-1-001",
+    "status": "failed",
+    "observed_metrics_disk_mib": 522,
+    "limit_mib": 512,
+    "maximum_completed_resource_row_mib": 10,
+    "scope": "Transient allocation was recorded by the guard before abort; completed resource rows do not capture that instantaneous peak. The original exact timestamp was not stored."
+  },
+  "cause": {
+    "prometheus_version": "3.5.0",
+    "default_compacted_block_chunk_segment_mib": 512,
+    "mechanism": "The block writer preallocates its chunk segment before truncating it to actual data size; WAL segment and retention size do not bound this separate reservation.",
+    "correction": "--storage.tsdb.max-block-chunk-segment-size=16MB, explicit --storage.tsdb.path=/prometheus; retain 512-MiB physical guard and original CPU/RAM/retention settings",
+    "source_url": "https://github.com/prometheus/prometheus/blob/v3.5.0/tsdb/chunks/chunks.go",
+    "source_files": [
+      {
+        "file": "cmd_prometheus_main.go",
+        "bytes": 71247,
+        "sha256": "4eb2cd90c2f2cb0552f4263ee5fa9edffd194dfa8248d7673ca44f36a8882a35"
+      },
+      {
+        "file": "tsdb_chunks_chunks.go",
+        "bytes": 22304,
+        "sha256": "93783a7fffdf4ac1da6631459a1bf162e7545b586cd8334fb6c888cc92607daa"
+      },
+      {
+        "file": "tsdb_chunks_head_chunks.go",
+        "bytes": 36249,
+        "sha256": "1cf05703ac8890aea26942a77d155b1e199d3624216e6f797b2178f71596c212"
+      },
+      {
+        "file": "tsdb_compact.go",
+        "bytes": 28213,
+        "sha256": "3653ef7844727336f02113a9f19656070baa300b372a94d254bd46a3d6f94c7c"
+      },
+      {
+        "file": "tsdb_wlog_wlog.go",
+        "bytes": 28909,
+        "sha256": "957d3719e6addb262c94988823ef9efe49cf1cfe45a4b92aa4d9812c174da3a2"
+      }
+    ]
+  },
+  "native_controls": [
+    {
+      "run_id": "metrics-compaction-native-control-001",
+      "proof": {
+        "scope": "Force real TSDB head snapshots inside the unchanged metrics disk budget. Synthetic counter traffic; no BaaS capacity or endurance credit. Admin snapshot API is enabled only on this owned loopback control.",
+        "certifies_g05": false,
+        "storage_profile": {
+          "retention_seconds": 3600,
+          "retention_size_mib": 128,
+          "wal_segment_mib": 16,
+          "block_chunk_segment_mib": 16,
+          "block_duration_seconds": 900,
+          "monitored_disk_limit_mib": 512
+        },
+        "receiver_cpus": 0.25,
+        "receiver_memory_mib": 256,
+        "generator_cpus": 0.25,
+        "generator_memory_mib": 128,
+        "maximum_seconds": 180,
+        "maximum_synthetic_series": 1000,
+        "synthetic_counter_total": 2000,
+        "snapshots_requested": 4,
+        "source_commit": "c7699345ade85312ac6ef037fc0ce38f7bedf279",
+        "metrics_source_sha256": "f54fc516bf5b37a436b542521b5da2ff3aafef4aca256f88655debd4859ee1c6",
+        "control_source_sha256": "179b68a9708e6ce06823b373128c9ff7480bf1745b8ebea3b00722675279a81e",
+        "effective_block_chunk_segment_flag": "16MiB",
+        "status": "failed",
+        "cleanup_confirmed": true,
+        "resource_errors": [],
+        "error_type": "RuntimeError"
+      }
+    },
+    {
+      "run_id": "metrics-compaction-native-control-002",
+      "proof": {
+        "scope": "Force real TSDB head snapshots inside the unchanged metrics disk budget. Synthetic counter traffic; no BaaS capacity or endurance credit. Admin snapshot API is enabled only on this owned loopback control.",
+        "certifies_g05": false,
+        "storage_profile": {
+          "data_path": "/prometheus",
+          "retention_seconds": 3600,
+          "retention_size_mib": 128,
+          "wal_segment_mib": 16,
+          "block_chunk_segment_mib": 16,
+          "block_duration_seconds": 900,
+          "monitored_disk_limit_mib": 512
+        },
+        "receiver_cpus": 0.25,
+        "receiver_memory_mib": 256,
+        "generator_cpus": 0.25,
+        "generator_memory_mib": 128,
+        "maximum_seconds": 180,
+        "maximum_synthetic_series": 1000,
+        "synthetic_counter_total": 2000,
+        "snapshots_requested": 4,
+        "source_commit": "c7699345ade85312ac6ef037fc0ce38f7bedf279",
+        "metrics_source_sha256": "8a96b3d2a384f06fd3b04bb2440c36e9bc2c3870c69a23173a9b1be51d10b533",
+        "control_source_sha256": "d0478619a05200f9e26a985c68a03633541d86782687e29b2fe15eda3b0207a2",
+        "effective_block_chunk_segment_flag": "16MiB",
+        "native_counter_total": 2000.0,
+        "snapshots": [
+          {
+            "numSamples": 1004,
+            "numSeries": 1004,
+            "numChunks": 1004
+          },
+          {
+            "numSamples": 1004,
+            "numSeries": 1004,
+            "numChunks": 1004
+          },
+          {
+            "numSamples": 1004,
+            "numSeries": 1004,
+            "numChunks": 1004
+          },
+          {
+            "numSamples": 1004,
+            "numSeries": 1004,
+            "numChunks": 1004
+          }
+        ],
+        "disk_observations": [
+          {
+            "elapsed_seconds": 1.0116555340064224,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 1.292331781995017,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 1.5657483800023329,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 1.8485997670213692,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 2.2438519750139676,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 2.5326935030170716,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 2.9501064690120984,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 3.232738132996019,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 3.551929775014287,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 3.83369430701714,
+            "disk_mib": 1
+          }
+        ],
+        "maximum_observed_disk_mib": 1,
+        "elapsed_seconds": 3.7621127419988625,
+        "status": "passed",
+        "cleanup_confirmed": true,
+        "resource_errors": []
+      }
+    },
+    {
+      "run_id": "metrics-compaction-native-control-003",
+      "proof": {
+        "scope": "Force real TSDB head snapshots inside the unchanged metrics disk budget. Synthetic counter traffic; no BaaS capacity or endurance credit. Admin snapshot API is enabled only on this owned loopback control.",
+        "certifies_g05": false,
+        "storage_profile": {
+          "data_path": "/prometheus",
+          "retention_seconds": 3600,
+          "retention_size_mib": 128,
+          "wal_segment_mib": 16,
+          "block_chunk_segment_mib": 16,
+          "block_duration_seconds": 900,
+          "monitored_disk_limit_mib": 512
+        },
+        "receiver_cpus": 0.25,
+        "receiver_memory_mib": 256,
+        "generator_cpus": 0.25,
+        "generator_memory_mib": 128,
+        "maximum_seconds": 180,
+        "maximum_synthetic_series": 1000,
+        "synthetic_counter_total": 2000,
+        "snapshots_requested": 4,
+        "source_commit": "c7699345ade85312ac6ef037fc0ce38f7bedf279",
+        "metrics_source_sha256": "ef5d35ca1d1773bb5fd622b1653d2c8b8e5d0681c88c92ccab1daef45bf1bf26",
+        "control_source_sha256": "d0478619a05200f9e26a985c68a03633541d86782687e29b2fe15eda3b0207a2",
+        "effective_block_chunk_segment_flag": "16MiB",
+        "native_counter_total": 2000.0,
+        "snapshots": [
+          {
+            "numSamples": 1004,
+            "numSeries": 1004,
+            "numChunks": 1004
+          },
+          {
+            "numSamples": 1004,
+            "numSeries": 1004,
+            "numChunks": 1004
+          },
+          {
+            "numSamples": 1004,
+            "numSeries": 1004,
+            "numChunks": 1004
+          },
+          {
+            "numSamples": 1004,
+            "numSeries": 1004,
+            "numChunks": 1004
+          }
+        ],
+        "disk_observations": [
+          {
+            "elapsed_seconds": 1.143465441011358,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 1.4248946820152923,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 1.7160124230140354,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 1.9948228700086474,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 2.2883110800175928,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 2.56361983800889,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 2.9567017140216194,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 3.2278366170066874,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 3.5580259340058547,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 3.8310613369976636,
+            "disk_mib": 1
+          }
+        ],
+        "maximum_observed_disk_mib": 1,
+        "elapsed_seconds": 3.8667239820060786,
+        "status": "passed",
+        "cleanup_confirmed": true,
+        "resource_errors": []
+      }
+    },
+    {
+      "run_id": "metrics-compaction-native-control-004",
+      "proof": {
+        "scope": "Force real TSDB head snapshots inside the unchanged metrics disk budget. Synthetic counter traffic; no BaaS capacity or endurance credit. Admin snapshot API is enabled only on this owned loopback control.",
+        "certifies_g05": false,
+        "storage_profile": {
+          "data_path": "/prometheus",
+          "retention_seconds": 3600,
+          "retention_size_mib": 128,
+          "wal_segment_mib": 16,
+          "block_chunk_segment_mib": 16,
+          "block_duration_seconds": 900,
+          "monitored_disk_limit_mib": 512
+        },
+        "receiver_cpus": 0.25,
+        "receiver_memory_mib": 256,
+        "generator_cpus": 0.25,
+        "generator_memory_mib": 128,
+        "maximum_seconds": 180,
+        "maximum_synthetic_series": 1000,
+        "synthetic_counter_total": 2000,
+        "snapshots_requested": 4,
+        "source_commit": "c7699345ade85312ac6ef037fc0ce38f7bedf279",
+        "metrics_source_sha256": "ef5d35ca1d1773bb5fd622b1653d2c8b8e5d0681c88c92ccab1daef45bf1bf26",
+        "control_source_sha256": "d64608d5e59d463b685c1310c925e29edee959fadab7d73a1a1e57a71384ab21",
+        "effective_block_chunk_segment_flag": "16MiB",
+        "native_counter_total": 2000.0,
+        "snapshots": [
+          {
+            "numSamples": 1004,
+            "numSeries": 1004,
+            "numChunks": 1004
+          },
+          {
+            "numSamples": 1004,
+            "numSeries": 1004,
+            "numChunks": 1004
+          },
+          {
+            "numSamples": 1004,
+            "numSeries": 1004,
+            "numChunks": 1004
+          },
+          {
+            "numSamples": 1004,
+            "numSeries": 1004,
+            "numChunks": 1004
+          }
+        ],
+        "disk_observations": [
+          {
+            "elapsed_seconds": 0.7205273500003386,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 1.006490299012512,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 1.4108488940109964,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 1.6914469970215578,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 2.107512974005658,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 2.384974187996704,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 2.6784192900231574,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 3.0225534650089685,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 3.302619490015786,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 3.7072954760224093,
+            "disk_mib": 1
+          },
+          {
+            "elapsed_seconds": 3.9946989480231423,
+            "disk_mib": 1
+          }
+        ],
+        "maximum_observed_disk_mib": 1,
+        "elapsed_seconds": 4.118927258998156,
+        "status": "passed",
+        "cleanup_confirmed": true,
+        "resource_errors": []
+      }
+    }
+  ]
+}

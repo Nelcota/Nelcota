@@ -1,0 +1,17 @@
+{
+  "workflow_run_id": 39003851274,
+  "job_id": 117312171786,
+  "status": "failed",
+  "stage": "focused regressions before any provider fixture or load",
+  "regressions": {
+    "source_commit": "d3d9d04226db4a5554e9c7bd83a74313cb40ee85",
+    "tests": 15,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 1.1365257129999975,
+    "successful": false
+  },
+  "provider_load_started": false,
+  "scope": "Original failed regression receipt. Bounded job-log transport was unavailable; no failing assertion is inferred. The next unchanged-test run will retain public test identities and source line numbers without assertion payloads."
+}

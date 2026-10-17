@@ -1,0 +1,81 @@
+{
+  "utc": "2026-10-17T17:38:06.793515+00:00",
+  "status": "prepared and focused guards passed; real disposable host-file preflight not run",
+  "certifies_g05": false,
+  "focused_result": {
+    "tests": 53,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "elapsed_seconds": 0.07406237500254065
+  },
+  "operator": {
+    "utc": "2026-10-17T17:37:11.372576+00:00",
+    "command": [
+      "timeout",
+      "--signal=TERM",
+      "--kill-after=3s",
+      "15s",
+      "taskset",
+      "-c",
+      "3",
+      "nice",
+      "-n",
+      "19",
+      "ionice",
+      "-c3",
+      "prlimit",
+      "--as=134217728:134217728",
+      "--cpu=3:3",
+      "--",
+      "python3",
+      "target/stress-g05/artifacts/run-host-private-focused-006.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.2663633649935946,
+    "log_sha256": "f66bfd6d57c80377b6eb873c0dee84ede9e9469f9a09c18a95d08cdd487241e6",
+    "source_sha256": {
+      "bench/host_file_probe.py": "f21bda4c1f5a85085032325f9bf7c1957e29f731d8a3a87abd91b978a8309fa7",
+      "scripts/review_tests/test_stress_host_file_probe.py": "15fa4b1362f9c692c0eeb2905a4b2a6fa81a8bd70a95797b047cca6497ed70c3",
+      ".github/workflows/stress.yml": "028257790f5461219549425902b003bd97e363384c62298c6e6e108cddf3b69a"
+    },
+    "scope": "Focused controls only on idle provider CPU3 during current DISK; low priority128MiB/3 CPU-seconds/15seconds. No real Docker/systemd/network/load credit."
+  },
+  "preflight_cases": [
+    {
+      "projects": 1,
+      "rate_per_project": 4,
+      "CPU_policy": "quota"
+    },
+    {
+      "projects": 5,
+      "rate_per_project": 1,
+      "CPU_policy": "shared"
+    }
+  ],
+  "seconds_per_phase": 60,
+  "aggregate_postgres_disk_ceiling_mib": 1536,
+  "case_maximum_seconds": 1200,
+  "combined_maximum_seconds": 2400,
+  "controller": {
+    "CPU_percent": 100,
+    "memory_mib": 512,
+    "swap_bytes": 0,
+    "tasks": 128,
+    "runtime_max_seconds": 2700
+  },
+  "independent_watchdog": {
+    "CPU_percent": 5,
+    "memory_mib": 128,
+    "swap_bytes": 0,
+    "tasks": 32,
+    "runtime_max_seconds": 1500,
+    "CPU_affinity": "telemetry/OS slot",
+    "outside_controller_cgroup": true,
+    "checks_live_every_seconds": 5
+  },
+  "artifact": "exact retained final007 Actions ELF after six-product-tree and twelve-case native proof",
+  "scope": "Fresh empty four-slot hosted Actions Docker VM, verified local ownership only; direct loopback HTTP without Caddy/webhooks. Same private-file protocol as future full host campaigns, with all original absolute SLO and short-profile relative gates retained. The functional preflight rates/durations differ explicitly from full300s capacity/fairness. A failed gate remains failed; no full G05 certificate, production dependency, deployment or merge. Remote overlap earns zero local load credit.",
+  "preconditions": "Remote005all11cases passed and queue empty, followed by both prepared EC native007 in-flight cases passed/cleanup and queue empty; ordinary CI on this preflight source must pass before dispatch."
+}

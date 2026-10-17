@@ -1,0 +1,22 @@
+{
+  "source": "ac242325ea91652f7f40b3baf0aa363d0b1f9438",
+  "workflow_run_id": 39023712456,
+  "job_id": 117370493301,
+  "status": "failed",
+  "phase": "readiness-probe-bootstrap",
+  "completed_backend_load_seconds": 0,
+  "matrix_campaign_started": false,
+  "regressions": {
+    "source_commit": "ac242325ea91652f7f40b3baf0aa363d0b1f9438",
+    "tests": 22,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 0.20008577300000496,
+    "successful": true,
+    "failed_tests": []
+  },
+  "original_annotations_sha256": "4ea71d50c261ad5965aa952155af0b148bfddb72851177700355ab1c449ad8c4",
+  "cause_evidence": "database-readiness-AS-before-001.json",
+  "scope": "The new readiness probe failed before producing its real SQL report; the supplemental matrix never started. The128MiB address-space guard also fails the actual local Docker Go CLI at virtual-memory reservation, before daemon mutation. Replace address-space restriction with a kernel memory cgroup; live corrected probe remains required. This is an executor/bootstrap failure, not evidence against the product."
+}

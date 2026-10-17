@@ -1,0 +1,79 @@
+{
+  "scope": "Complete original real browser/auth report reconstructed losslessly from checksummed public notices. Original source, verdict and cleanup are preserved; overlapping remote time earns no local checkpoint credit.",
+  "workflow_run_id": 39020821728,
+  "job_id": 117362104637,
+  "job_conclusion": "failure",
+  "notice_report_sha256": "cacdec7fc56d6b0c723bc1e5bb700f6f93b4e29ca9c625da3b1fdf821c6eb7b6",
+  "notice_parts": 1,
+  "regression_summary": {
+    "source_commit": "5f5657ac5e5dc6d0b7d8a2b68263663058bcb5cd",
+    "tests": 9,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 0.003914545000000658,
+    "successful": true,
+    "failed_tests": []
+  },
+  "report": {
+    "identity": "native-browser-auth-39020821728-1",
+    "source": "5f5657ac5e5dc6d0b7d8a2b68263663058bcb5cd",
+    "binary_sha256": "872c3b1efc71e0118386cdd3caf36bae0de26cb213307b91396fe30c0af83d75",
+    "scenario": "browser-auth-concurrency",
+    "certifies_g05": false,
+    "status": "failed",
+    "cleanup_confirmed": true,
+    "checks": {
+      "product_artifact": {
+        "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+        "binary_sha256": "872c3b1efc71e0118386cdd3caf36bae0de26cb213307b91396fe30c0af83d75",
+        "size_bytes": 30463736,
+        "product_tree_objects": {
+          "crates": "986c88ac9de6d4c117ed8027d329b3e7b566140c",
+          "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+          "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+          "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+          "sdk": "864119c5aa5bfd0edc1799d9de018e096f39d67e",
+          "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
+        },
+        "artifact_workflow_run_id": 39017663454,
+        "scope": "The retained Actions ELF is distinct from the local performance ELF; current product trees must match its build source."
+      },
+      "controller_kernel_budget": {
+        "cpu_quota_usec": 100000,
+        "cpu_period_usec": 100000,
+        "memory_bytes": 536870912,
+        "swap_bytes": 0,
+        "pids": 128
+      },
+      "auth_profile": {
+        "cycles": 5,
+        "accounts_per_cycle": 8,
+        "requests_per_cycle": 112,
+        "maximum_inflight": 8,
+        "maximum_arrivals_per_second": 16,
+        "maximum_response_bytes": 65536,
+        "maximum_cycle_seconds": 40,
+        "mutation_retries": 0,
+        "login_p95_ms": 750,
+        "login_p99_ms": 1500,
+        "read_refresh_p95_ms": 200,
+        "read_refresh_p99_ms": 500,
+        "scope": "Concurrent with existing navigation pressure, two real auth consumers, verified owned HTTPS. SMTP/OAuth and public ingress remain separate."
+      },
+      "local_load_checkpoint_credit_seconds": 0,
+      "observer_and_proxy_share_one_CPU_explicitly": true,
+      "configured_total_component_CPUs": 3.75,
+      "OS_CPU_headroom": 0.25,
+      "observer_plus_proxy_configured_quota_on_one_slot": 1.25,
+      "scope": "Separate VM with four CPU slots, distinct app/database/browser slots; observer and proxy share slot3. Existing local five-slot browser profile is separate. No SMTP/OAuth/public ingress or full G05 certification."
+    },
+    "failure": {
+      "checkpoint": "proxy-start",
+      "type": "RuntimeError",
+      "kind": "docker-operation"
+    },
+    "diagnostic_failure_type": "RuntimeError",
+    "elapsed_seconds_including_preparation": 26.360058566000006
+  }
+}

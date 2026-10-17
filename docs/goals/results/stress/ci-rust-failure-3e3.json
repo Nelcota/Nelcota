@@ -1,0 +1,103 @@
+{
+  "scope": "Preserve the original exact-SHA Rust CI failure even if a repeat passes; no root cause or production fix inferred",
+  "original_source": "3e3e92b5cec34c2a22bfe9f945a59356a8137692",
+  "original_job": {
+    "id": 116957494620,
+    "conclusion": "failure",
+    "url": "https://github.com/Nelcota/Nelcota/actions/runs/38896306807/job/116957494620",
+    "steps": [
+      {
+        "name": "Set up job",
+        "conclusion": "success"
+      },
+      {
+        "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Run dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d",
+        "conclusion": "success"
+      },
+      {
+        "name": "Run Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6",
+        "conclusion": "success"
+      },
+      {
+        "name": "Run cargo fmt --all --check",
+        "conclusion": "success"
+      },
+      {
+        "name": "Run python3 scripts/check-boundaries.py",
+        "conclusion": "success"
+      },
+      {
+        "name": "Run cargo clippy --all-targets -- -D warnings",
+        "conclusion": "success"
+      },
+      {
+        "name": "Run cargo test --all",
+        "conclusion": "failure"
+      },
+      {
+        "name": "documented Notes onboarding",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Notes acceptance report",
+        "conclusion": "success"
+      },
+      {
+        "name": "auth archive consumer",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "host project lifecycle and interrupted restore",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "storage on S3",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Post Run Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Complete job",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "rust_source_changed_from_preceding_passing_commit": false,
+  "preceding_passing_check": "https://github.com/Nelcota/Nelcota/actions/runs/38895446323/job/116954700055",
+  "raw_logs": {
+    "status": "blocked",
+    "http_status": 403,
+    "attempted_endpoints": [
+      "run archive",
+      "individual job log"
+    ],
+    "signed_download_urls_published": false
+  },
+  "repeat_observation": {
+    "run_attempt": 2,
+    "status": "in_progress",
+    "conclusion": null,
+    "head_sha": "3e3e92b5cec34c2a22bfe9f945a59356a8137692"
+  },
+  "observed_utc": "2026-10-16T12:37:16.401686+00:00",
+  "root_cause": "unknown; named failing test not available from the original annotations",
+  "diagnostic_change": "Retain the failed Rust command exit status through pipefail and emit only bounded validated failed-test identities as check annotations; do not publish assertion payloads.",
+  "later_repeat_observation": {
+    "observed_utc": "2026-10-16T14:52:49.372397+00:00",
+    "run_attempt": 2,
+    "status": "completed",
+    "conclusion": "success",
+    "head_sha": "3e3e92b5cec34c2a22bfe9f945a59356a8137692",
+    "scope": "The exact-SHA repeat succeeded; original failure and unknown root cause remain preserved."
+  }
+}

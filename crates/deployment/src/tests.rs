@@ -54,6 +54,96 @@ fn retry_is_idempotent_and_other_jobs_cannot_start() {
             .is_err()
     );
 }
+
+#[test]
+fn full_history_keeps_receipts_readable_and_retries_idempotent_under_contention() {
+    let (temp, journal) = fixture();
+    let mut receipts = Vec::with_capacity(255);
+    for _ in 0..255 {
+        let mut job = journal
+            .begin(
+                "app",
+                "0.4.0",
+                "0.5.0",
+                "owner",
+                &token().unwrap(),
+                &token().unwrap(),
+            )
+            .unwrap();
+        journal
+            .advance(
+                &mut job,
+                Phase::FailedBeforeChange,
+                Some("fixture_preparation"),
+            )
+            .unwrap();
+        receipts.push(job);
+    }
+    let before: Vec<_> = receipts
+        .iter()
+        .map(|job| {
+            let path = journal.directory(&job.public.id).unwrap().join("job.json");
+            (path.clone(), fs::read(path).unwrap())
+        })
+        .collect();
+    let first = &receipts[0];
+    std::thread::scope(|scope| {
+        for _ in 0..16 {
+            let root = temp.path();
+            scope.spawn(move || {
+                let journal = Journal::open(root).unwrap();
+                assert_eq!(journal.list().unwrap().len(), 255);
+                let retry = journal
+                    .begin(
+                        "app",
+                        "0.4.0",
+                        "0.5.0",
+                        "owner",
+                        &first.request_key,
+                        &first.fingerprint,
+                    )
+                    .unwrap();
+                assert_eq!(retry.public.id, first.public.id);
+                assert_eq!(retry.public.phase, Phase::FailedBeforeChange);
+                assert_eq!(retry.public.sequence, first.public.sequence);
+                let failure = journal
+                    .begin(
+                        "app",
+                        "0.4.0",
+                        "0.5.0",
+                        "owner",
+                        &token().unwrap(),
+                        &token().unwrap(),
+                    )
+                    .unwrap_err();
+                assert_eq!(failure.to_string(), "deployment_history_full");
+            });
+        }
+    });
+    let reopened = Journal::open(temp.path()).unwrap();
+    assert_eq!(reopened.list().unwrap().len(), 255);
+    assert_eq!(
+        reopened
+            .begin(
+                "app",
+                "0.4.0",
+                "0.5.0",
+                "another-operator",
+                &first.request_key,
+                &first.fingerprint,
+            )
+            .unwrap_err()
+            .to_string(),
+        "idempotency_conflict"
+    );
+    for (path, bytes) in before {
+        assert_eq!(
+            fs::read(path).unwrap(),
+            bytes,
+            "capacity must not evict or rewrite receipts"
+        );
+    }
+}
 #[test]
 fn committed_crash_cannot_restore_an_old_snapshot() {
     let (temp, journal) = fixture();

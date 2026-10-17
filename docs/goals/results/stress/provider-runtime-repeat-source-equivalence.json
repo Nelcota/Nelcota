@@ -1,0 +1,69 @@
+{
+  "observed_utc": "2026-10-17T05:35:00.520566+00:00",
+  "first_run_source": "a8fd8d0c9bd1909258f242958ab47731d0cb56d6",
+  "prepared_second_source": "6e6b51e666681b2d472cb886a0001e59fc0b6f51",
+  "status": "all runtime helpers unchanged",
+  "files": [
+    {
+      "path": "bench/provider_runtime.py",
+      "first_run_git_blob": "430b3ba21ab30d533074226041b078ff66102a5b",
+      "second_source_git_blob": "430b3ba21ab30d533074226041b078ff66102a5b",
+      "unchanged": true
+    },
+    {
+      "path": "bench/provider_capabilities.py",
+      "first_run_git_blob": "e4455e7b20fea50e4b81cf7f8a853ed83b4c3cf6",
+      "second_source_git_blob": "e4455e7b20fea50e4b81cf7f8a853ed83b4c3cf6",
+      "unchanged": true
+    },
+    {
+      "path": "bench/otlp_metrics.py",
+      "first_run_git_blob": "c1816d1cfca2e5f525222ea3ce80fddee1e59f45",
+      "second_source_git_blob": "c1816d1cfca2e5f525222ea3ce80fddee1e59f45",
+      "unchanged": true
+    },
+    {
+      "path": "bench/host_resources.py",
+      "first_run_git_blob": "a6925293121cc07f06d7839627d9ed2af89cb088",
+      "second_source_git_blob": "a6925293121cc07f06d7839627d9ed2af89cb088",
+      "unchanged": true
+    },
+    {
+      "path": "bench/ownership.py",
+      "first_run_git_blob": "161bb8fa0d941734b2a70518a9475f56dfe3f8f0",
+      "second_source_git_blob": "161bb8fa0d941734b2a70518a9475f56dfe3f8f0",
+      "unchanged": true
+    },
+    {
+      "path": "bench/campaign.py",
+      "first_run_git_blob": "8a2e57d4f739283262b79eea92e064c7cd5d9795",
+      "second_source_git_blob": "8a2e57d4f739283262b79eea92e064c7cd5d9795",
+      "unchanged": true
+    },
+    {
+      "path": "bench/watchdog.py",
+      "first_run_git_blob": "75bdb83b64d6389beb294f9f96647823d275842d",
+      "second_source_git_blob": "75bdb83b64d6389beb294f9f96647823d275842d",
+      "unchanged": true
+    },
+    {
+      "path": "bench/objects.py",
+      "first_run_git_blob": "551690e899818d6b8934207a27ec6b0c7717b748",
+      "second_source_git_blob": "551690e899818d6b8934207a27ec6b0c7717b748",
+      "unchanged": true
+    },
+    {
+      "path": "bench/ports.py",
+      "first_run_git_blob": "a44769615cf743231d4f7232743dc97b1107ddac",
+      "second_source_git_blob": "a44769615cf743231d4f7232743dc97b1107ddac",
+      "unchanged": true
+    },
+    {
+      "path": "bench/native_preflight.py",
+      "first_run_git_blob": "0d9a33e6265d225bcf52018e3074ccc6ec14ad2f",
+      "second_source_git_blob": "0d9a33e6265d225bcf52018e3074ccc6ec14ad2f",
+      "unchanged": true
+    }
+  ],
+  "scope": "Only fixture clock/control, diagnostic readers, unrelated matrix helpers and documentation changed after the first complete provider runtime pass. Runtime code/profile/image equality does not resolve live heap attribution or replace a second actual pass."
+}

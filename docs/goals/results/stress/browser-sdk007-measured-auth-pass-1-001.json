@@ -1,0 +1,696 @@
+{
+  "scope": "Complete first passing final007 browser/auth repetition, with five actual pre-SLO numeric bridge receipts, unchanged workload/budgets/thresholds and original checksummed report. This does not identify or fix the original first final007 refresh-SLO failure, whose numeric values are unavailable and verdict remains failed. A second independent final repetition and other G05 gates remain required. No overlapping local effective-time credit or wholeG05 approval.",
+  "workflow_run_id": 39040099470,
+  "job_id": 117417640973,
+  "job_conclusion": "success",
+  "notice_report_sha256": "50c258cfe605c6357d9f437857f4e8f619ba148e6038176dd8df7029d61bccf9",
+  "notice_parts": 2,
+  "regression_summary": {
+    "source_commit": "80d29c8880745ecafaf578460993f90e0fe7f57d",
+    "tests": 31,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 0.22764693999999963,
+    "successful": true,
+    "failed_tests": []
+  },
+  "report": {
+    "identity": "native-browser-auth-39040099470-1",
+    "source": "80d29c8880745ecafaf578460993f90e0fe7f57d",
+    "binary_sha256": "d0d1090c91da4435a0d27dcf1dddba1b8695f18f944b1dd8cc5e472089d17432",
+    "scenario": "browser-auth-concurrency",
+    "certifies_g05": false,
+    "status": "passed",
+    "cleanup_confirmed": true,
+    "checks": {
+      "product_artifact": {
+        "source_commit": "35f4a9725d7edcf571f91084c555c127e7323653",
+        "binary_sha256": "d0d1090c91da4435a0d27dcf1dddba1b8695f18f944b1dd8cc5e472089d17432",
+        "size_bytes": 30463736,
+        "product_tree_objects": {
+          "crates": "2162e23a35dfcc0f04b7605a7493161817513d23",
+          "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+          "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+          "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+          "sdk": "9bd7af8fc90a0a3cd5429ad40d8c3ec7b23efedd",
+          "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
+        },
+        "artifact_workflow_run_id": 39036557006,
+        "scope": "The retained Actions ELF is distinct from the local performance ELF; current product trees must match its build source."
+      },
+      "controller_kernel_budget": {
+        "cpu_quota_usec": 100000,
+        "cpu_period_usec": 100000,
+        "memory_bytes": 536870912,
+        "swap_bytes": 0,
+        "pids": 128
+      },
+      "auth_profile": {
+        "cycles": 5,
+        "accounts_per_cycle": 8,
+        "requests_per_cycle": 112,
+        "maximum_inflight": 8,
+        "maximum_arrivals_per_second": 16,
+        "maximum_response_bytes": 65536,
+        "maximum_cycle_seconds": 40,
+        "mutation_retries": 0,
+        "login_p95_ms": 750,
+        "login_p99_ms": 1500,
+        "read_refresh_p95_ms": 200,
+        "read_refresh_p99_ms": 500,
+        "scope": "Concurrent with existing navigation pressure, two real auth consumers, verified owned HTTPS. SMTP/OAuth and public ingress remain separate."
+      },
+      "local_load_checkpoint_credit_seconds": 0,
+      "observer_and_proxy_share_one_CPU_explicitly": true,
+      "configured_total_component_CPUs": 3.75,
+      "OS_CPU_headroom": 0.25,
+      "observer_plus_proxy_configured_quota_on_one_slot": 1.25,
+      "scope": "Separate VM with four CPU slots, distinct app/database/browser slots; observer and proxy share slot3. Existing local five-slot browser profile is separate. No SMTP/OAuth/public ingress or full G05 certification.",
+      "auth_measurement_cycles": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "auth_cycles": [
+        {
+          "cycle": 0,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 164.30000000004657,
+              "p95_ms": 378.6000000000349,
+              "p99_ms": 378.6000000000349
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 91.40000000002328,
+              "p95_ms": 247.5,
+              "p99_ms": 247.5
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 50.09999999997672,
+              "p95_ms": 77.20000000001164,
+              "p99_ms": 77.20000000001164
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 41.40000000002328,
+              "p95_ms": 83.5,
+              "p99_ms": 83.5
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 51.100000000034925,
+              "p95_ms": 183.09999999997672,
+              "p99_ms": 187.70000000001164
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 39.699999999953434,
+              "p95_ms": 81.20000000001164,
+              "p99_ms": 81.20000000001164
+            }
+          },
+          "elapsed_seconds": 6.7148999999999655,
+          "response_bytes_consumed": 44076,
+          "mutation_retries": 0
+        },
+        {
+          "cycle": 1,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 156.40000000002328,
+              "p95_ms": 386.0999999999767,
+              "p99_ms": 386.0999999999767
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 144.70000000001164,
+              "p95_ms": 290.0999999999767,
+              "p99_ms": 290.0999999999767
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 123.70000000001164,
+              "p95_ms": 159.5,
+              "p99_ms": 159.5
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 50.20000000001164,
+              "p95_ms": 123.39999999996508,
+              "p99_ms": 123.39999999996508
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 54,
+              "p95_ms": 126.10000000003492,
+              "p99_ms": 159.60000000003492
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 41.40000000002328,
+              "p95_ms": 83.19999999995343,
+              "p99_ms": 83.19999999995343
+            }
+          },
+          "elapsed_seconds": 6.656299999999988,
+          "response_bytes_consumed": 44070,
+          "mutation_retries": 0
+        },
+        {
+          "cycle": 2,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 248.90000000002328,
+              "p95_ms": 282.79999999998836,
+              "p99_ms": 282.79999999998836
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 110.09999999997672,
+              "p95_ms": 186.70000000001164,
+              "p99_ms": 186.70000000001164
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 62.20000000001164,
+              "p95_ms": 106.19999999995343,
+              "p99_ms": 106.19999999995343
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 56.899999999965075,
+              "p95_ms": 174.59999999997672,
+              "p99_ms": 174.59999999997672
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 64.39999999996508,
+              "p95_ms": 164.39999999996508,
+              "p99_ms": 167.29999999998836
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 69.89999999996508,
+              "p95_ms": 99.90000000002328,
+              "p99_ms": 99.90000000002328
+            }
+          },
+          "elapsed_seconds": 6.515,
+          "response_bytes_consumed": 44052,
+          "mutation_retries": 0
+        },
+        {
+          "cycle": 3,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 130.5,
+              "p95_ms": 255,
+              "p99_ms": 255
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 151.59999999997672,
+              "p95_ms": 210.29999999998836,
+              "p99_ms": 210.29999999998836
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 64,
+              "p95_ms": 148.09999999997672,
+              "p99_ms": 148.09999999997672
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 52.29999999998836,
+              "p95_ms": 106.5,
+              "p99_ms": 106.5
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 67.5,
+              "p95_ms": 106.60000000003492,
+              "p99_ms": 107.70000000001164
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 46.100000000034925,
+              "p95_ms": 70.70000000001164,
+              "p99_ms": 70.70000000001164
+            }
+          },
+          "elapsed_seconds": 6.429200000000011,
+          "response_bytes_consumed": 44074,
+          "mutation_retries": 0
+        },
+        {
+          "cycle": 4,
+          "status": "passed",
+          "requests_attempted": 112,
+          "requests_completed": 112,
+          "independent_browser_request_count": 112,
+          "maximum_inflight": 8,
+          "maximum_arrivals_per_second": 16,
+          "accounts_created": 8,
+          "counts": {
+            "signup": 8,
+            "login": 8,
+            "invalid_password": 8,
+            "user": 8,
+            "rls": 16,
+            "refresh": 32,
+            "reuse_rejected": 8,
+            "family_revoked": 8,
+            "logout": 8,
+            "logout_refresh_rejected": 8
+          },
+          "successful_latency": {
+            "signup": {
+              "samples": 8,
+              "p50_ms": 225.19999999995343,
+              "p95_ms": 298.1000000000349,
+              "p99_ms": 298.1000000000349
+            },
+            "login": {
+              "samples": 8,
+              "p50_ms": 100.70000000001164,
+              "p95_ms": 178.79999999998836,
+              "p99_ms": 178.79999999998836
+            },
+            "user": {
+              "samples": 8,
+              "p50_ms": 61.29999999998836,
+              "p95_ms": 107.70000000001164,
+              "p99_ms": 107.70000000001164
+            },
+            "rls": {
+              "samples": 16,
+              "p50_ms": 71.79999999998836,
+              "p95_ms": 107.70000000001164,
+              "p99_ms": 107.70000000001164
+            },
+            "refresh": {
+              "samples": 32,
+              "p50_ms": 46.600000000034925,
+              "p95_ms": 120.40000000002328,
+              "p99_ms": 127
+            },
+            "logout": {
+              "samples": 8,
+              "p50_ms": 34.300000000046566,
+              "p95_ms": 45.600000000034925,
+              "p99_ms": 45.600000000034925
+            }
+          },
+          "elapsed_seconds": 6.5175,
+          "response_bytes_consumed": 44074,
+          "mutation_retries": 0
+        }
+      ],
+      "auth_census": {
+        "created_users": 40,
+        "unrevoked_sessions": 0
+      },
+      "browser": {
+        "browser_version": "151.0.7922.34",
+        "tabs": 3,
+        "pressure_rest_cycles": 5,
+        "navigation_samples": 706,
+        "authoritative_visual_feedback_p95_ms": 308.3999999999651,
+        "feedback_SLO_ms": 1000,
+        "api_requests": 4579,
+        "decoded_network_bytes": 24939529,
+        "auth_grants": {
+          "password": 81,
+          "refresh_token": 283
+        },
+        "auth_consumers": {
+          "1": 1540,
+          "0": 1539
+        },
+        "sdk_RLS_reads": 2505,
+        "actual_expired_access_status": 401,
+        "actual_expires_in_seconds": 900,
+        "auth_observation_seconds": 1082.20131748,
+        "logout_refresh_status": 400,
+        "cross_tab_refresh_coalesced": true,
+        "actual_credential_renewal": true,
+        "disposed_clients_collected": true,
+        "page_errors": 0,
+        "external_requests_blocked": 0
+      },
+      "singleflight_control": {
+        "simultaneous_refresh_callers": 48,
+        "actual_refresh_requests": 1,
+        "shared_access_token_digest_matches": true,
+        "all_tabs_returned_session": true,
+        "callers_started_per_tab": [
+          16,
+          16,
+          16
+        ],
+        "first_real_response_held_until_late_callers_started": true,
+        "held_refresh_locks": 1,
+        "queued_refresh_locks": 2,
+        "real_auth_consumers": {
+          "1": 3,
+          "0": 2
+        }
+      },
+      "browser_owners": {
+        "scope": "Three real Chromium tabs after explicit garbage collection; baseline,fivepressure/rest cycles and final SDK disposal. Same existing8MiB/250node/32listener growth gates, not an absence-of-all-leaks claim.",
+        "plateaus": [
+          {
+            "phase": "baseline",
+            "seconds_since_auth": 15.722563636000018,
+            "pages": [
+              {
+                "documents": 2,
+                "nodes": 31228,
+                "listeners": 701,
+                "heap_bytes": 18748036
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 14216136
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 14205544
+              }
+            ]
+          },
+          {
+            "phase": "navigation-rest-1",
+            "seconds_since_auth": 61.279021083999965,
+            "pages": [
+              {
+                "documents": 2,
+                "nodes": 31228,
+                "listeners": 701,
+                "heap_bytes": 19881084
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 15500112
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 15493268
+              }
+            ]
+          },
+          {
+            "phase": "navigation-rest-2",
+            "seconds_since_auth": 107.056855563,
+            "pages": [
+              {
+                "documents": 2,
+                "nodes": 23990,
+                "listeners": 549,
+                "heap_bytes": 19240492
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16070044
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16058840
+              }
+            ]
+          },
+          {
+            "phase": "navigation-rest-3",
+            "seconds_since_auth": 152.873701714,
+            "pages": [
+              {
+                "documents": 2,
+                "nodes": 23990,
+                "listeners": 549,
+                "heap_bytes": 19461144
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16259652
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16242936
+              }
+            ]
+          },
+          {
+            "phase": "navigation-rest-4",
+            "seconds_since_auth": 198.705663613,
+            "pages": [
+              {
+                "documents": 2,
+                "nodes": 23990,
+                "listeners": 549,
+                "heap_bytes": 19605800
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16537984
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16513732
+              }
+            ]
+          },
+          {
+            "phase": "navigation-rest-5",
+            "seconds_since_auth": 244.44859092099995,
+            "pages": [
+              {
+                "documents": 2,
+                "nodes": 23990,
+                "listeners": 549,
+                "heap_bytes": 19840052
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16664840
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16658672
+              }
+            ]
+          },
+          {
+            "phase": "final-disposed",
+            "seconds_since_auth": 1082.200437984,
+            "pages": [
+              {
+                "documents": 2,
+                "nodes": 23990,
+                "listeners": 549,
+                "heap_bytes": 19538880
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16588584
+              },
+              {
+                "documents": 2,
+                "nodes": 21546,
+                "listeners": 518,
+                "heap_bytes": 16573420
+              }
+            ]
+          }
+        ],
+        "final_minus_baseline_per_tab": [
+          {
+            "documents": 0,
+            "heap_bytes": 790844,
+            "listeners": -152,
+            "nodes": -7238
+          },
+          {
+            "documents": 0,
+            "heap_bytes": 2372448,
+            "listeners": 0,
+            "nodes": 0
+          },
+          {
+            "documents": 0,
+            "heap_bytes": 2367876,
+            "listeners": 0,
+            "nodes": 0
+          }
+        ]
+      },
+      "resource_evidence": {
+        "samples": 219,
+        "maximum_gap_seconds": 5.388576992000026,
+        "component_peaks": {
+          "app-0": {
+            "memory_current_bytes": 49750016,
+            "memory_peak_bytes": 58343424,
+            "anonymous_bytes": 46751744,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 19988
+          },
+          "app-1": {
+            "memory_current_bytes": 45834240,
+            "memory_peak_bytes": 54272000,
+            "anonymous_bytes": 43704320,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 26384
+          },
+          "pg-0": {
+            "memory_current_bytes": 106795008,
+            "memory_peak_bytes": 115531776,
+            "anonymous_bytes": 32927744,
+            "tasks": 20,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 1237978
+          },
+          "proxy": {
+            "memory_current_bytes": 23740416,
+            "memory_peak_bytes": 32677888,
+            "anonymous_bytes": 20926464,
+            "tasks": 9,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 962989
+          },
+          "browser": {
+            "memory_current_bytes": 1203638272,
+            "memory_peak_bytes": 1213476864,
+            "anonymous_bytes": 1080299520,
+            "tasks": 169,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 13704
+          }
+        },
+        "public_file": "resources.jsonl.gz",
+        "compressed_bytes": 12560,
+        "sha256": "9723237de2200d6f2b0ee0fe5b6d53d5aab8afd5cd5feb4b099d92aa0135a6c4",
+        "scope": "Numeric cgroup projection only; private resource/log/SQL fields are excluded."
+      }
+    },
+    "resource_samples": 219,
+    "elapsed_seconds_including_preparation": 1108.875287867
+  }
+}

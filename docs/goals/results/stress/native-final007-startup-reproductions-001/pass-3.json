@@ -1,0 +1,495 @@
+{
+  "scope": "Complete original public native report reconstructed losslessly from bounded checksummed Actions notices; original verdict and source preserved",
+  "notice_report_sha256": "1c7c6c8863e311f06594bf92b6110ce0828bda93c13f9be98e2364a2f8eab871",
+  "notice_encoding": "gzip+base64",
+  "notice_parts": 2,
+  "report": {
+    "identity": "native-vm-39050020303-1",
+    "source": "9b2af6dccafd776196020bd1bf9a43a7351d7b71",
+    "binary_sha256": "15ed0ffa887fcc14b4da2c0823dd30bfe54c30d78024031ce9edbf74d285e0d4",
+    "scenario": "runtime",
+    "certifies_g05": false,
+    "checks": [
+      "verified native HTTPS and rejection of an untrusted CA",
+      "second native project refused",
+      "native signup, two-user RLS isolation and anonymous rejection",
+      "native backup and same-target restore of matching database and file bytes; one intentional row rewind",
+      "guest power cut: changed kernel boot, native boot activation and external acknowledgement reconciliation"
+    ],
+    "image": {
+      "bytes": 625612288,
+      "sha256": "6a81c37564db9b1ee84e141922625e1d7c5b389b99bb3c572e0243607d5bb4d2",
+      "url": "https://cloud-images.ubuntu.com/releases/noble/release/ubuntu-24.04-server-cloudimg-amd64.img"
+    },
+    "image_checksum_manifest": {
+      "bytes": 7843,
+      "sha256": "cd8934d937d1509d047798e6a5acfb839c0a2d29f3e5fc87b8ec7096ffe587ca",
+      "url": "https://cloud-images.ubuntu.com/releases/noble/release/SHA256SUMS"
+    },
+    "native_init": {
+      "checks": [
+        "native init",
+        "native systemd up",
+        "repeatable application migration",
+        "native unit budgets",
+        "actual running ELF identity"
+      ],
+      "units": {
+        "nelcota-stress.service": {
+          "MainPID": 5937,
+          "StatusErrno": 0,
+          "Result": "success",
+          "NRestarts": 0,
+          "ExecMainCode": 0,
+          "ExecMainStatus": 0,
+          "ControlGroup": "/g05native.slice/nelcota-stress.service",
+          "MemoryCurrent": 2711552,
+          "MemoryPeak": 22491136,
+          "CPUUsageNSec": 56466000,
+          "TasksCurrent": 3,
+          "MemoryMax": 134217728,
+          "TasksMax": 128,
+          "LoadState": "loaded",
+          "ActiveState": "active",
+          "SubState": "running",
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "kernel_budget": {
+            "cpu_quota_usec": 100000,
+            "cpu_period_usec": 100000,
+            "memory_bytes": 134217728,
+            "swap_bytes": 0,
+            "pids": 128
+          },
+          "cpu_stat": {
+            "usage_usec": 56466,
+            "user_usec": 39618,
+            "system_usec": 16847,
+            "core_sched.force_idle_usec": 0,
+            "nr_periods": 6,
+            "nr_throttled": 0,
+            "throttled_usec": 0,
+            "nr_bursts": 0,
+            "burst_usec": 0
+          },
+          "fd_count": 14,
+          "socket_count": 10,
+          "task_count": 3
+        },
+        "postgresql@17-main.service": {
+          "MainPID": 5810,
+          "StatusErrno": 0,
+          "Result": "success",
+          "NRestarts": 0,
+          "ExecMainCode": 0,
+          "ExecMainStatus": 0,
+          "ControlGroup": "/g05native.slice/postgresql@17-main.service",
+          "MemoryCurrent": 35717120,
+          "MemoryPeak": 38735872,
+          "CPUUsageNSec": 193511000,
+          "TasksCurrent": 10,
+          "MemoryMax": 536870912,
+          "TasksMax": 256,
+          "LoadState": "loaded",
+          "ActiveState": "active",
+          "SubState": "running",
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "kernel_budget": {
+            "cpu_quota_usec": 100000,
+            "cpu_period_usec": 100000,
+            "memory_bytes": 536870912,
+            "swap_bytes": 0,
+            "pids": 256
+          },
+          "cpu_stat": {
+            "usage_usec": 193511,
+            "user_usec": 114070,
+            "system_usec": 79441,
+            "core_sched.force_idle_usec": 0,
+            "nr_periods": 23,
+            "nr_throttled": 0,
+            "throttled_usec": 0,
+            "nr_bursts": 0,
+            "burst_usec": 0
+          },
+          "fd_count": 9,
+          "socket_count": 2,
+          "task_count": 1
+        },
+        "caddy.service": {
+          "MainPID": 3970,
+          "StatusErrno": 0,
+          "Result": "success",
+          "NRestarts": 0,
+          "ExecMainCode": 0,
+          "ExecMainStatus": 0,
+          "ControlGroup": "/g05native.slice/caddy.service",
+          "MemoryCurrent": 12972032,
+          "MemoryPeak": 24043520,
+          "CPUUsageNSec": 140508000,
+          "TasksCurrent": 8,
+          "MemoryMax": 134217728,
+          "TasksMax": 128,
+          "LoadState": "loaded",
+          "ActiveState": "active",
+          "SubState": "running",
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "kernel_budget": {
+            "cpu_quota_usec": 25000,
+            "cpu_period_usec": 100000,
+            "memory_bytes": 134217728,
+            "swap_bytes": 0,
+            "pids": 128
+          },
+          "cpu_stat": {
+            "usage_usec": 140508,
+            "user_usec": 99792,
+            "system_usec": 40716,
+            "core_sched.force_idle_usec": 0,
+            "nr_periods": 17,
+            "nr_throttled": 4,
+            "throttled_usec": 331901,
+            "nr_bursts": 0,
+            "burst_usec": 0
+          },
+          "fd_count": 10,
+          "socket_count": 6,
+          "task_count": 8
+        }
+      },
+      "target_slice": {
+        "ControlGroup": "/g05native.slice",
+        "MemoryCurrent": 51449856,
+        "MemoryPeak": 68743168,
+        "CPUUsageNSec": 515212000,
+        "TasksCurrent": 21,
+        "MemoryMax": 2147483648,
+        "TasksMax": 768,
+        "LoadState": "loaded",
+        "ActiveState": "active",
+        "SubState": "active",
+        "memory_events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "kernel_budget": {
+          "cpu_quota_usec": 150000,
+          "cpu_period_usec": 100000,
+          "memory_bytes": 2147483648,
+          "swap_bytes": 0,
+          "pids": 768
+        },
+        "cpu_stat": {
+          "usage_usec": 515212,
+          "user_usec": 322900,
+          "system_usec": 192312,
+          "core_sched.force_idle_usec": 0,
+          "nr_periods": 44,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        }
+      },
+      "versions": {
+        "kernel": "6.8.0-142-generic",
+        "architecture": "x86_64",
+        "libc": [
+          "glibc",
+          "2.39"
+        ],
+        "python": "3.12.3",
+        "postgres_server": "17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+        "postgres_client": "psql (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+        "caddy": "v2.11.7 h1:yj0Y4fYZGPkSvibBJ1sTWE33xC0fxztVyXEW5iIdUT4=",
+        "systemd": "systemd 255 (255.4-1ubuntu8.17)"
+      },
+      "binary_sha256": "15ed0ffa887fcc14b4da2c0823dd30bfe54c30d78024031ce9edbf74d285e0d4",
+      "running_binary_identity": {
+        "running_binary_sha256": "15ed0ffa887fcc14b4da2c0823dd30bfe54c30d78024031ce9edbf74d285e0d4",
+        "provided_binary_sha256": "15ed0ffa887fcc14b4da2c0823dd30bfe54c30d78024031ce9edbf74d285e0d4",
+        "same_deployed_inode": true
+      }
+    },
+    "tls_ca_sha256": "ab840275349c3f3a10711ed4cddf84088c1b4763845feeed43513a4863f3125e",
+    "backup": {
+      "bytes": 132636,
+      "sha256": "ca39ec1161d4231f68c3c7c907aef1c6b5cacd3df9f5f2ac59acac7c8d0bb528",
+      "manifest_sha256": "8fb1ba46d38b5ce7c0691961a63d7189e5ee5b1c9fb47d9bb1c1a354f932ee97"
+    },
+    "restore_elapsed_seconds": 1.7698092119999842,
+    "completed_effective_load_seconds": 30,
+    "power_cut_unit_state": {
+      "MainPID": "0",
+      "ControlGroup": "",
+      "Description": "native-vm-39050020303-1",
+      "LoadState": "loaded",
+      "ActiveState": "failed"
+    },
+    "guest_power_cut_recovery_seconds": 14.238796323999964,
+    "power_cut_reconciliation": {
+      "acknowledged": 30,
+      "missing": 0,
+      "duplicate": 0,
+      "extra": 0,
+      "file_sha256": "a0c6ec8647fbb3e57a625b1a89163ae8a4feef69ca5f8fdc910946b8dccf2b6e",
+      "running_binary_identity": {
+        "running_binary_sha256": "15ed0ffa887fcc14b4da2c0823dd30bfe54c30d78024031ce9edbf74d285e0d4",
+        "provided_binary_sha256": "15ed0ffa887fcc14b4da2c0823dd30bfe54c30d78024031ce9edbf74d285e0d4",
+        "same_deployed_inode": true
+      },
+      "fault_during_in_flight_write": false,
+      "scope": "loss of guest RAM after completed durable acknowledgements; no host power loss claim"
+    },
+    "idle_resources": {
+      "memory_bytes": {
+        "MemTotal": 3116003328,
+        "MemAvailable": 2766663680
+      },
+      "disk_bytes": {
+        "postgres": 42242048,
+        "storage": 20480
+      },
+      "free_filesystem_fraction": 0.7828963898314433,
+      "free_inode_fraction": 0.9378828568892046,
+      "boot_id": "02b6ddb0-1443-4e11-82bf-fae7107922b4",
+      "units": {
+        "nelcota-stress.service": {
+          "MainPID": 957,
+          "StatusErrno": 0,
+          "Result": "success",
+          "NRestarts": 0,
+          "ExecMainCode": 0,
+          "ExecMainStatus": 0,
+          "ControlGroup": "/g05native.slice/nelcota-stress.service",
+          "MemoryCurrent": 18071552,
+          "MemoryPeak": 33353728,
+          "CPUUsageNSec": 88800000,
+          "TasksCurrent": 3,
+          "MemoryMax": 134217728,
+          "TasksMax": 128,
+          "LoadState": "loaded",
+          "ActiveState": "active",
+          "SubState": "running",
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "kernel_budget": {
+            "cpu_quota_usec": 100000,
+            "cpu_period_usec": 100000,
+            "memory_bytes": 134217728,
+            "swap_bytes": 0,
+            "pids": 128
+          },
+          "cpu_stat": {
+            "usage_usec": 88800,
+            "user_usec": 43919,
+            "system_usec": 44881,
+            "core_sched.force_idle_usec": 0,
+            "nr_periods": 62,
+            "nr_throttled": 0,
+            "throttled_usec": 0,
+            "nr_bursts": 0,
+            "burst_usec": 0
+          },
+          "fd_count": 14,
+          "socket_count": 10,
+          "task_count": 3
+        },
+        "postgresql@17-main.service": {
+          "MainPID": 748,
+          "StatusErrno": 0,
+          "Result": "success",
+          "NRestarts": 0,
+          "ExecMainCode": 0,
+          "ExecMainStatus": 0,
+          "ControlGroup": "/g05native.slice/postgresql@17-main.service",
+          "MemoryCurrent": 66449408,
+          "MemoryPeak": 66969600,
+          "CPUUsageNSec": 412096000,
+          "TasksCurrent": 9,
+          "MemoryMax": 536870912,
+          "TasksMax": 256,
+          "LoadState": "loaded",
+          "ActiveState": "active",
+          "SubState": "running",
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "kernel_budget": {
+            "cpu_quota_usec": 100000,
+            "cpu_period_usec": 100000,
+            "memory_bytes": 536870912,
+            "swap_bytes": 0,
+            "pids": 256
+          },
+          "cpu_stat": {
+            "usage_usec": 412096,
+            "user_usec": 178073,
+            "system_usec": 234023,
+            "core_sched.force_idle_usec": 0,
+            "nr_periods": 150,
+            "nr_throttled": 0,
+            "throttled_usec": 0,
+            "nr_bursts": 0,
+            "burst_usec": 0
+          },
+          "fd_count": 9,
+          "socket_count": 2,
+          "task_count": 1
+        },
+        "postgresql@17-sentinel.service": {
+          "MainPID": 0,
+          "StatusErrno": 0,
+          "Result": "success",
+          "NRestarts": 0,
+          "ExecMainCode": 0,
+          "ExecMainStatus": 0,
+          "ControlGroup": "",
+          "MemoryCurrent": "[not set]",
+          "MemoryPeak": "[not set]",
+          "CPUUsageNSec": "[not set]",
+          "TasksCurrent": "[not set]",
+          "MemoryMax": "infinity",
+          "TasksMax": 3520,
+          "LoadState": "loaded",
+          "ActiveState": "inactive",
+          "SubState": "dead"
+        },
+        "caddy.service": {
+          "MainPID": 667,
+          "StatusErrno": 0,
+          "Result": "success",
+          "NRestarts": 0,
+          "ExecMainCode": 0,
+          "ExecMainStatus": 0,
+          "ControlGroup": "/g05native.slice/caddy.service",
+          "MemoryCurrent": 59875328,
+          "MemoryPeak": 61014016,
+          "CPUUsageNSec": 152673000,
+          "TasksCurrent": 8,
+          "MemoryMax": 134217728,
+          "TasksMax": 128,
+          "LoadState": "loaded",
+          "ActiveState": "active",
+          "SubState": "running",
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "kernel_budget": {
+            "cpu_quota_usec": 25000,
+            "cpu_period_usec": 100000,
+            "memory_bytes": 134217728,
+            "swap_bytes": 0,
+            "pids": 128
+          },
+          "cpu_stat": {
+            "usage_usec": 152673,
+            "user_usec": 57605,
+            "system_usec": 95068,
+            "core_sched.force_idle_usec": 0,
+            "nr_periods": 25,
+            "nr_throttled": 0,
+            "throttled_usec": 0,
+            "nr_bursts": 0,
+            "burst_usec": 0
+          },
+          "fd_count": 11,
+          "socket_count": 7,
+          "task_count": 8
+        }
+      },
+      "target_slice": {
+        "ControlGroup": "/g05native.slice",
+        "MemoryCurrent": 144420864,
+        "MemoryPeak": 156856320,
+        "CPUUsageNSec": 653571000,
+        "TasksCurrent": 20,
+        "MemoryMax": 2147483648,
+        "TasksMax": 768,
+        "LoadState": "loaded",
+        "ActiveState": "active",
+        "SubState": "active",
+        "memory_events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "kernel_budget": {
+          "cpu_quota_usec": 150000,
+          "cpu_period_usec": 100000,
+          "memory_bytes": 2147483648,
+          "swap_bytes": 0,
+          "pids": 768
+        },
+        "cpu_stat": {
+          "usage_usec": 653571,
+          "user_usec": 280435,
+          "system_usec": 373135,
+          "core_sched.force_idle_usec": 0,
+          "nr_periods": 160,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        }
+      }
+    },
+    "native_remove": {
+      "checks": [
+        "native remove",
+        "native unit and cluster teardown",
+        "machine ownership released after complete removal",
+        "empty old host cannot reclaim machine resources"
+      ]
+    },
+    "status": "passed",
+    "elapsed_seconds_including_preparation": 144.135751245,
+    "resource_samples": 28,
+    "cleanup_confirmed": true,
+    "cleanup_scope": "owned QEMU service stopped; private guest disk/keys remain only on the disposable runner until its destruction",
+    "safety_guard_failure": null
+  }
+}

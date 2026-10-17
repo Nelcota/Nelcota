@@ -1,0 +1,43 @@
+{
+  "status": "failed; cause under investigation",
+  "source_commit": "af01678ac773f932232d0f37e6d0a2fa02edc343",
+  "workflow_run_id": 39011610600,
+  "job_id": 117338453982,
+  "scenario": "runtime pass1 after guest RAM loss",
+  "original_report": "native-af-post-cut-runtime-failure.json",
+  "observed": {
+    "suite_passed_cases": 11,
+    "suite_failed_cases": 1,
+    "runtime_pass2": "passed; does not resolve the failed pass1",
+    "failed_phase": "guest-power-cut",
+    "health_deadline_seconds": 90,
+    "application_restarts": 40,
+    "application_active_state": "activating",
+    "application_substate": "auto-restart",
+    "application_main_pid": 0,
+    "postgres_active": true,
+    "caddy_active": true,
+    "critical_resource_guard_failure": false,
+    "cleanup_confirmed": true
+  },
+  "original_diagnostics_limit": "Error-category counters read only the private failed-CLI-command log. They did not read the service journal or capture ExecMainStatus/StatusErrno. The failed VM was cleaned; its application exit cause cannot be inferred from those zero counters.",
+  "next_control": "Extend numeric systemd exit fields, fixed journal-category hits and metadata/ELF hashes of fixed owned paths without publishing journal/env contents. Reproduce the same runtime/power-cut case on fresh VMs before attributing the cause.",
+  "scope": "No production root cause or correction is claimed. Post-cut data reconciliation was not reached in the failed original, so its ACK durability remains unverified. Keep the failed source/job/report and successful pass2 distinct.",
+  "subsequent_controls": [
+    {
+      "source": "e6fdfd7cca377edb0b36184a21a9a7b30a4d1d0c",
+      "run": 39014386580,
+      "passed_original_reports": 12,
+      "evidence": "native-suite-e6fdfd7/index.json"
+    },
+    {
+      "source": "8c5a8684b0471047b02d504c85f82a84978d95c7",
+      "run": 39015409930,
+      "job": 117348619355,
+      "status": "passed",
+      "cleanup_confirmed": true,
+      "evidence": "native-enhanced-runtime-reproduction-001.json"
+    }
+  ],
+  "remaining": "The failed original remains unresolved: later successes contain no failing service journal to establish a cause. Preserve it and perform bounded fresh final-artifact repetitions with the enhanced diagnostics."
+}

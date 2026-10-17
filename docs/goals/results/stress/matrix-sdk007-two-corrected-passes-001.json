@@ -1,0 +1,1019 @@
+{
+  "utc": "2026-10-17T17:28:45.119941+00:00",
+  "status": "two independent full corrected matrix passes passed",
+  "certifies_g05": false,
+  "local_effective_load_credit_seconds": 0,
+  "passes": [
+    {
+      "pass": 1,
+      "evidence": "matrix-sdk007-corrected-generator-pass-1-001.json",
+      "workflow_run_id": 39046455871,
+      "job_id": 117436042592,
+      "original_report_sha256": "995baa71edfcbca9ebde031f1749e3072227642b8c881286c1f8065f873c531f",
+      "source": "9b2af6dccafd776196020bd1bf9a43a7351d7b71",
+      "binary_sha256": "d0d1090c91da4435a0d27dcf1dddba1b8695f18f944b1dd8cc5e472089d17432",
+      "status": "passed",
+      "cleanup_confirmed": true,
+      "remote_completed_load_seconds": 1850,
+      "resource_samples": 371,
+      "resource_evidence": {
+        "samples": 371,
+        "maximum_gap_seconds": 5.237308987999995,
+        "component_peaks": {
+          "app-0": {
+            "memory_current_bytes": 45555712,
+            "memory_peak_bytes": 54095872,
+            "anonymous_bytes": 43569152,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 448897
+          },
+          "pg-0": {
+            "memory_current_bytes": 157646848,
+            "memory_peak_bytes": 168755200,
+            "anonymous_bytes": 27852800,
+            "tasks": 21,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 4673658
+          }
+        },
+        "public_file": "resources.jsonl.gz",
+        "compressed_bytes": 10249,
+        "sha256": "1743cb6540f50fbc6a8f21254f90e3dd8f43acbeadf6baf86c9197d6236842c6",
+        "scope": "Numeric cgroup projection only; private resource/log/SQL fields are excluded."
+      },
+      "capacity": {
+        "qualified_lower_bound_iterations_per_second": 64,
+        "fault_rate": 51,
+        "ratio": 0.796875,
+        "workload": "90% acknowledged atomic-transfer RPC plus negative JWT probe, 5% pre-response disconnects, 5% discarded real upstream commit replies; ambiguous outcomes reconciled without retries"
+      },
+      "capacity_steps": [
+        {
+          "rate": 16,
+          "requested_seconds": 300,
+          "offered_iterations": 4800,
+          "counts": {
+            "200": 4320,
+            "acknowledged": 4320,
+            "deliberately-dropped-reply": 240,
+            "deliberately-lost-committed-reply": 240
+          },
+          "nominal_qualified": true,
+          "success_latency": {
+            "p95_ms": 2.9962389999980132,
+            "p99_ms": 4.574417000014819,
+            "successful_post_responses": 4320,
+            "method": "nearest rank, successful POST only"
+          }
+        },
+        {
+          "rate": 32,
+          "requested_seconds": 300,
+          "offered_iterations": 9600,
+          "counts": {
+            "200": 8640,
+            "acknowledged": 8640,
+            "deliberately-dropped-reply": 480,
+            "deliberately-lost-committed-reply": 480
+          },
+          "nominal_qualified": true,
+          "success_latency": {
+            "p95_ms": 2.8178969999999026,
+            "p99_ms": 4.380451999963952,
+            "successful_post_responses": 8640,
+            "method": "nearest rank, successful POST only"
+          }
+        },
+        {
+          "rate": 48,
+          "requested_seconds": 300,
+          "offered_iterations": 14400,
+          "counts": {
+            "200": 12960,
+            "acknowledged": 12960,
+            "deliberately-dropped-reply": 720,
+            "deliberately-lost-committed-reply": 720
+          },
+          "nominal_qualified": true,
+          "success_latency": {
+            "p95_ms": 2.756842000053439,
+            "p99_ms": 4.4962510000914335,
+            "successful_post_responses": 12960,
+            "method": "nearest rank, successful POST only"
+          }
+        },
+        {
+          "rate": 64,
+          "requested_seconds": 300,
+          "offered_iterations": 19200,
+          "counts": {
+            "200": 17280,
+            "acknowledged": 17280,
+            "deliberately-dropped-reply": 960,
+            "deliberately-lost-committed-reply": 960
+          },
+          "nominal_qualified": true,
+          "success_latency": {
+            "p95_ms": 2.595190999954866,
+            "p99_ms": 4.3126890000166895,
+            "successful_post_responses": 17280,
+            "method": "nearest rank, successful POST only"
+          }
+        }
+      ],
+      "invariants": {
+        "attempted": 79860,
+        "acknowledged": 71874,
+        "committed": 75867,
+        "acknowledged_missing": 0,
+        "unknown_or_corrupt": 0,
+        "ambiguous_attempts": 7986,
+        "ambiguous_committed": 3993,
+        "automatic_mutation_retries": 0,
+        "explicit_primary_key_duplicate_status": 409,
+        "accounting": {
+          "accounts": 2,
+          "total": 2000000,
+          "first_balance": 1003993,
+          "committed": 75867,
+          "delta": 3993,
+          "counter": 75867
+        }
+      },
+      "restore": {
+        "status": "passed",
+        "rto_seconds": 2.596883700999797,
+        "rpo_upper_bound_seconds": 18.00143584700004,
+        "restored_rows": 74999,
+        "source_rows": 75867,
+        "restored_accounting": {
+          "accounts": 2,
+          "total": 2000000,
+          "first_balance": 1003947,
+          "committed": 74999,
+          "delta": 3947,
+          "counter": 74999
+        },
+        "intentional_snapshot_rewind_rows": 868,
+        "cross_project_token_status": 401,
+        "restored_user_matches": true,
+        "physical_bytes_match": true,
+        "scope": "local DB snapshot plus immutable files, no off-host/PITR/systemd certification"
+      },
+      "cases": {
+        "admin-budgets": {
+          "status": "passed",
+          "requests_so_far": 27,
+          "consumed_bytes_so_far": 12759,
+          "unread_export_upper_bound_bytes": 0,
+          "row_count": 10000,
+          "returned_rows": 1000,
+          "batch_results": 32,
+          "later_mutation_count": 1,
+          "sql_busy_rejections": 5
+        },
+        "admin-cancellation": {
+          "status": "passed",
+          "requests_so_far": 51,
+          "consumed_bytes_so_far": 63045,
+          "unread_export_upper_bound_bytes": 94371840,
+          "cancelled_queries": 5,
+          "intentionally_unconsumed_exports": 10,
+          "query_release_seconds": [
+            0.06931688000008762,
+            0.09047430300006454,
+            0.09227383300003567,
+            0.07111116000010043,
+            0.09479355799999212
+          ],
+          "export_release_seconds": [
+            0.09797257300010642,
+            0.10079178699993463,
+            0.1033621450001192,
+            0.10312966199990115,
+            0.13047254299999622
+          ],
+          "complete_export_rows": 1000,
+          "complete_export_exact_fixture_match": true,
+          "interrupted_exports_claimed_complete": 0
+        },
+        "catalog-recovery": {
+          "status": "passed",
+          "requests_so_far": 229,
+          "consumed_bytes_so_far": 443492,
+          "unread_export_upper_bound_bytes": 94371840,
+          "committed_tables": 20,
+          "mutation_retries": 0,
+          "catalog_discovery_seconds": [
+            0.21167450100006135,
+            0.2095330530000865,
+            0.2086554029999661,
+            0.11169700499999635,
+            0.20894075699993664,
+            0.208609547000151,
+            0.21064376600020296,
+            0.20955040500007271,
+            0.21000560400011636,
+            0.21258622400000604,
+            0.14959189700016395,
+            0.2118259249998573,
+            0.21257784900012666,
+            0.21231034900006307,
+            0.21057607000011558,
+            0.21186115999989852,
+            0.2084270769998966,
+            0.2085189580000133,
+            0.2114152770000146,
+            0.2159876160001204
+          ],
+          "scope": "Concurrent introspection and committed DDL discovery; forced refresh failure remains covered only by its functional regression."
+        },
+        "hostile-backend": {
+          "status": "passed",
+          "requests_so_far": 255,
+          "consumed_bytes_so_far": 444682,
+          "unread_export_upper_bound_bytes": 94371840,
+          "rejections": {
+            "malformed": 400,
+            "nonfinite": 400,
+            "null": 422,
+            "deep": 422,
+            "missing-cookie": 401,
+            "wrong-origin": 403
+          },
+          "positive_negative_canary_pairs": 5,
+          "closed_slow_header_body_clients": 10,
+          "scope": "Bounded malformed JSON, nonfinite/null/deep bodies, two-second partial headers/bodies, admin cookie/origin and JWT rejection; no public-ingress or complete adversarial-matrix certification."
+        },
+        "auth-links": {
+          "status": "passed",
+          "requests_so_far": 470,
+          "consumed_bytes_so_far": 495247,
+          "unread_export_upper_bound_bytes": 94371840,
+          "cycles": [
+            {
+              "cycle": 1,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 1,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 1,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 2,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 2,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 2,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 3,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 3,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 3,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 4,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 4,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 4,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 5,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 5,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 5,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            }
+          ],
+          "scope": "Real HTTP single-use verification during ledger traffic; generated private tokens are seeded directly in the owned fixture database. This does not exercise SMTP delivery, cooldown/issuance or external OAuth."
+        }
+      }
+    },
+    {
+      "pass": 2,
+      "evidence": "matrix-sdk007-corrected-generator-pass-2-001.json",
+      "workflow_run_id": 39051029930,
+      "job_id": 117449477031,
+      "original_report_sha256": "849e8b786115a6b2061ab8770f5868a7bac551afd7b1d6d31e0352dfb6623907",
+      "source": "9b2af6dccafd776196020bd1bf9a43a7351d7b71",
+      "binary_sha256": "d0d1090c91da4435a0d27dcf1dddba1b8695f18f944b1dd8cc5e472089d17432",
+      "status": "passed",
+      "cleanup_confirmed": true,
+      "remote_completed_load_seconds": 1850,
+      "resource_samples": 372,
+      "resource_evidence": {
+        "samples": 372,
+        "maximum_gap_seconds": 8.281883880999885,
+        "component_peaks": {
+          "app-0": {
+            "memory_current_bytes": 45486080,
+            "memory_peak_bytes": 54099968,
+            "anonymous_bytes": 43520000,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 457456
+          },
+          "pg-0": {
+            "memory_current_bytes": 162689024,
+            "memory_peak_bytes": 199340032,
+            "anonymous_bytes": 33837056,
+            "tasks": 24,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 4957479
+          },
+          "app-1": {
+            "memory_current_bytes": 24211456,
+            "memory_peak_bytes": 30912512,
+            "anonymous_bytes": 22675456,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 84645
+          },
+          "pg-1": {
+            "memory_current_bytes": 116662272,
+            "memory_peak_bytes": 159793152,
+            "anonymous_bytes": 12935168,
+            "tasks": 12,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 1860445
+          }
+        },
+        "public_file": "resources.jsonl.gz",
+        "compressed_bytes": 10731,
+        "sha256": "ad642fe7abfebbc23ecefacfb71559b0e4abdc14870412cf341f21b0b22aed0d",
+        "scope": "Numeric cgroup projection only; private resource/log/SQL fields are excluded."
+      },
+      "capacity": {
+        "qualified_lower_bound_iterations_per_second": 64,
+        "fault_rate": 51,
+        "ratio": 0.796875,
+        "workload": "90% acknowledged atomic-transfer RPC plus negative JWT probe, 5% pre-response disconnects, 5% discarded real upstream commit replies; ambiguous outcomes reconciled without retries"
+      },
+      "capacity_steps": [
+        {
+          "rate": 16,
+          "requested_seconds": 300,
+          "offered_iterations": 4800,
+          "counts": {
+            "200": 4320,
+            "acknowledged": 4320,
+            "deliberately-dropped-reply": 240,
+            "deliberately-lost-committed-reply": 240
+          },
+          "nominal_qualified": true,
+          "success_latency": {
+            "p95_ms": 3.488297999979295,
+            "p99_ms": 5.004028000030303,
+            "successful_post_responses": 4320,
+            "method": "nearest rank, successful POST only"
+          }
+        },
+        {
+          "rate": 32,
+          "requested_seconds": 300,
+          "offered_iterations": 9600,
+          "counts": {
+            "200": 8640,
+            "acknowledged": 8640,
+            "deliberately-dropped-reply": 480,
+            "deliberately-lost-committed-reply": 480
+          },
+          "nominal_qualified": true,
+          "success_latency": {
+            "p95_ms": 3.3502689999522772,
+            "p99_ms": 5.549595000047702,
+            "successful_post_responses": 8640,
+            "method": "nearest rank, successful POST only"
+          }
+        },
+        {
+          "rate": 48,
+          "requested_seconds": 300,
+          "offered_iterations": 14400,
+          "counts": {
+            "200": 12960,
+            "acknowledged": 12960,
+            "deliberately-dropped-reply": 720,
+            "deliberately-lost-committed-reply": 720
+          },
+          "nominal_qualified": true,
+          "success_latency": {
+            "p95_ms": 3.1469680000100198,
+            "p99_ms": 5.088790999934645,
+            "successful_post_responses": 12960,
+            "method": "nearest rank, successful POST only"
+          }
+        },
+        {
+          "rate": 64,
+          "requested_seconds": 300,
+          "offered_iterations": 19200,
+          "counts": {
+            "200": 17280,
+            "acknowledged": 17280,
+            "deliberately-dropped-reply": 960,
+            "deliberately-lost-committed-reply": 960
+          },
+          "nominal_qualified": true,
+          "success_latency": {
+            "p95_ms": 3.022251999936998,
+            "p99_ms": 4.693054999961532,
+            "successful_post_responses": 17280,
+            "method": "nearest rank, successful POST only"
+          }
+        }
+      ],
+      "invariants": {
+        "attempted": 79860,
+        "acknowledged": 71874,
+        "committed": 75867,
+        "acknowledged_missing": 0,
+        "unknown_or_corrupt": 0,
+        "ambiguous_attempts": 7986,
+        "ambiguous_committed": 3993,
+        "automatic_mutation_retries": 0,
+        "explicit_primary_key_duplicate_status": 409,
+        "accounting": {
+          "accounts": 2,
+          "total": 2000000,
+          "first_balance": 1003993,
+          "committed": 75867,
+          "delta": 3993,
+          "counter": 75867
+        }
+      },
+      "restore": {
+        "status": "passed",
+        "rto_seconds": 2.4997544200000448,
+        "rpo_upper_bound_seconds": 18.001303473999997,
+        "restored_rows": 74999,
+        "source_rows": 75867,
+        "restored_accounting": {
+          "accounts": 2,
+          "total": 2000000,
+          "first_balance": 1003947,
+          "committed": 74999,
+          "delta": 3947,
+          "counter": 74999
+        },
+        "intentional_snapshot_rewind_rows": 868,
+        "cross_project_token_status": 401,
+        "restored_user_matches": true,
+        "physical_bytes_match": true,
+        "scope": "local DB snapshot plus immutable files, no off-host/PITR/systemd certification"
+      },
+      "cases": {
+        "admin-budgets": {
+          "status": "passed",
+          "requests_so_far": 27,
+          "consumed_bytes_so_far": 12759,
+          "unread_export_upper_bound_bytes": 0,
+          "row_count": 10000,
+          "returned_rows": 1000,
+          "batch_results": 32,
+          "later_mutation_count": 1,
+          "sql_busy_rejections": 5
+        },
+        "admin-cancellation": {
+          "status": "passed",
+          "requests_so_far": 51,
+          "consumed_bytes_so_far": 63045,
+          "unread_export_upper_bound_bytes": 94371840,
+          "cancelled_queries": 5,
+          "intentionally_unconsumed_exports": 10,
+          "query_release_seconds": [
+            0.07479690600007416,
+            0.07465220400013095,
+            0.09306326899991291,
+            0.09279607600001327,
+            0.07730159700008699
+          ],
+          "export_release_seconds": [
+            0.10628378100000191,
+            0.10180987800004004,
+            0.10483350399999836,
+            0.10835827300002165,
+            0.19127761400000054
+          ],
+          "complete_export_rows": 1000,
+          "complete_export_exact_fixture_match": true,
+          "interrupted_exports_claimed_complete": 0
+        },
+        "catalog-recovery": {
+          "status": "passed",
+          "requests_so_far": 229,
+          "consumed_bytes_so_far": 442824,
+          "unread_export_upper_bound_bytes": 94371840,
+          "committed_tables": 20,
+          "mutation_retries": 0,
+          "catalog_discovery_seconds": [
+            0.11240023999994264,
+            0.21038990099987132,
+            0.20905206499992346,
+            0.2102056950000133,
+            0.2113386949999949,
+            0.2087079469999935,
+            0.20884334200013654,
+            0.21020629500003452,
+            0.21232315699990068,
+            0.21499450000010256,
+            0.21750061300008383,
+            0.20982334500013167,
+            0.20986000300013075,
+            0.21215820599991275,
+            0.21047157499992863,
+            0.21046991100001833,
+            0.21077287099979003,
+            0.11557642299999316,
+            0.2107309919999807,
+            0.21045776699997987
+          ],
+          "scope": "Concurrent introspection and committed DDL discovery; forced refresh failure remains covered only by its functional regression."
+        },
+        "hostile-backend": {
+          "status": "passed",
+          "requests_so_far": 255,
+          "consumed_bytes_so_far": 444014,
+          "unread_export_upper_bound_bytes": 94371840,
+          "rejections": {
+            "malformed": 400,
+            "nonfinite": 400,
+            "null": 422,
+            "deep": 422,
+            "missing-cookie": 401,
+            "wrong-origin": 403
+          },
+          "positive_negative_canary_pairs": 5,
+          "closed_slow_header_body_clients": 10,
+          "scope": "Bounded malformed JSON, nonfinite/null/deep bodies, two-second partial headers/bodies, admin cookie/origin and JWT rejection; no public-ingress or complete adversarial-matrix certification."
+        },
+        "auth-links": {
+          "status": "passed",
+          "requests_so_far": 470,
+          "consumed_bytes_so_far": 494578,
+          "unread_export_upper_bound_bytes": 94371840,
+          "cycles": [
+            {
+              "cycle": 1,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 1,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 1,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 2,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 2,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 2,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 3,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 3,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 3,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 4,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 4,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 4,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 5,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 5,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 5,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            }
+          ],
+          "scope": "Real HTTP single-use verification during ledger traffic; generated private tokens are seeded directly in the owned fixture database. This does not exercise SMTP delivery, cooldown/issuance or external OAuth."
+        }
+      }
+    }
+  ],
+  "preserved_failed_evidence": "matrix-sdk007-capacity-publication-failure-001.json",
+  "before_after_generator_analysis": "matrix-ledger-generator-before-after-001.json",
+  "scope": "Same retained Actions ELF, six product trees, fixture images, one CPU generator quota, rates 16/32/48/64 for 300 seconds and five 120-second scenario windows. Different disposable VMs. Qualified lower bound at the declared ceiling, not maximum capacity or a fourfold server gain. This does not explain historical 32 versus 16 variation or certify other G05 cells."
+}

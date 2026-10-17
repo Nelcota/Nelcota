@@ -1,0 +1,121 @@
+{
+  "observed_utc": "2026-10-17T15:36:55.350817+00:00",
+  "status": "verified local constructor cause/correction and43focused regressions; real repeated generator campaign pending",
+  "certifies_g05": false,
+  "original_remote_generator_evidence": "matrix-sdk007-capacity-publication-failure-001.json",
+  "original_generator_CPU_fractions": [
+    {
+      "offered_iterations_per_second": 16,
+      "self_cpu_fraction": 0.5486159660054768,
+      "cgroup_cpu_fraction": 0.5749939600436984,
+      "host_steal_ticks": {
+        "cpu0": 0,
+        "cpu1": 0,
+        "cpu2": 0,
+        "cpu3": 0
+      },
+      "dropped_arrivals": 0,
+      "qualified": true
+    },
+    {
+      "offered_iterations_per_second": 32,
+      "self_cpu_fraction": 0.9705840847705793,
+      "cgroup_cpu_fraction": 0.9997735916404874,
+      "host_steal_ticks": {
+        "cpu0": 0,
+        "cpu1": 0,
+        "cpu2": 0,
+        "cpu3": 0
+      },
+      "dropped_arrivals": 1366,
+      "qualified": false
+    },
+    {
+      "offered_iterations_per_second": 48,
+      "self_cpu_fraction": 0.9707185522907062,
+      "cgroup_cpu_fraction": 0.9999536408721119,
+      "host_steal_ticks": {
+        "cpu0": 0,
+        "cpu1": 0,
+        "cpu2": 0,
+        "cpu3": 0
+      },
+      "dropped_arrivals": 5985,
+      "qualified": false
+    },
+    {
+      "offered_iterations_per_second": 64,
+      "self_cpu_fraction": 0.9711389796728197,
+      "cgroup_cpu_fraction": 0.9999787564540339,
+      "host_steal_ticks": {
+        "cpu0": 0,
+        "cpu1": 0,
+        "cpu2": 0,
+        "cpu3": 0
+      },
+      "dropped_arrivals": 10557,
+      "qualified": false
+    }
+  ],
+  "local_construction_before_after": {
+    "observed_utc": "2026-10-17T15:30:08.544892+00:00",
+    "python_version": "3.12.14",
+    "status": "bounded construction cause/correction confirmed; real remote throughput repeat pending",
+    "before_default_opener": {
+      "construction_count": 5,
+      "process_cpu_seconds": 0.036898663,
+      "wall_seconds": 0.0369703319738619,
+      "create_default_context_calls": 5,
+      "load_default_certs_calls": 5
+    },
+    "after_ledger_cold": {
+      "construction_count": 5,
+      "process_cpu_seconds": 0.010397437999999995,
+      "wall_seconds": 0.010398547980003059,
+      "create_default_context_calls": 1,
+      "load_default_certs_calls": 1
+    },
+    "after_ledger_warm": {
+      "construction_count": 5,
+      "process_cpu_seconds": 0.002493363999999998,
+      "wall_seconds": 0.002493619977030903,
+      "create_default_context_calls": 0,
+      "load_default_certs_calls": 0
+    },
+    "verification": {
+      "verify_mode_CERT_REQUIRED": true,
+      "check_hostname": true
+    },
+    "ordinary_opener_AST_unchanged": true,
+    "redirect_policy_AST_unchanged": true,
+    "scope": "Actual five-construction controls only, no network/HTTP/data mutation/load or effective stress-time credit. Shared verifiedTLS store is restricted to the RPC ledger opener; ordinary campaign observer/default opener behavior unchanged. No remote CPU/capacity improvement claimed until repeated."
+  },
+  "focused_regressions": {
+    "tests": 43,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "elapsed_seconds": 0.22174300299957395,
+    "patterns": [
+      "test_stress_matrix_pressure.py",
+      "test_stress_project_diagnostics.py",
+      "test_stress_database_readiness.py",
+      "test_stress_generator_cpu.py",
+      "test_stress_auth_links.py",
+      "test_stress_ledger_arrivals.py",
+      "test_stress_matrix_capacity.py",
+      "test_stress_http.py"
+    ]
+  },
+  "operator_elapsed_seconds": 0.41516120097367093,
+  "log_sha256": "81fa7158faebbb2d2755bc3f65ba66d597cb6dd967acf5a1753b3711a1c7fdfd",
+  "tested_worktree_sources_sha256": {
+    "bench/http_boundary.py": "c1b386a57e6fd225ddf8333c52ed53c8c93d71bbf42ec2da08cc3132087d75b9",
+    "bench/fault_campaign.py": "f99178c0c2dc72be72dcec5c4059a84b58c43111cce6d8fcf6fabb21b9aa9991",
+    "scripts/review_tests/test_stress_http.py": "b621fc9f8e1d705b87407a7b3084b1d4d83b3562f2fbbdebd4054241c8e01699",
+    ".github/workflows/stress.yml": "d60fb05258816d6490d2b555cbbf32db311b85202ae81f2485377c8a725c6458"
+  },
+  "checkout_parent_commit": "47a96cf618e7c5531ea93cd3464f74e2f5254134",
+  "scope": "The actual old RPC driver saturated its1CPU at32..64/s, so drops there did not establish backend capacity. Local profiling shows default HTTPSHandler loads verified CA roots for each opener even when the request is HTTP. Reuse exactly one verifiedTLS configuration only for the ledger driver, with fresh per-request redirect/proxy handlers and fail-closed hostname/CERT_REQUIRED checks. The ordinary opener and redirect ASTs are unchanged. No product-code, CPU/rate/duration/SLO change, no network/load credit from constructor controls and no claimed remote throughput improvement before repetition."
+}

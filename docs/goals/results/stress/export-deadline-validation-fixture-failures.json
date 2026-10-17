@@ -1,0 +1,145 @@
+{
+  "status": "failed",
+  "scope": "Two original local regression-runner validation failures, separate from the confirmed export production defect; no stress-time credit.",
+  "observed_utc": "2026-10-17T08:28:26.178117+00:00",
+  "attempts": [
+    {
+      "attempt": 1,
+      "runner_result": {
+        "status": "failed",
+        "scope": "Related Rust regressions only, fresh owned shared Postgres; no production data or load-time credit",
+        "cases": [
+          {
+            "target": "sql_cancellation",
+            "exit_code": 0,
+            "elapsed_seconds_including_compilation": 56.60394352703588,
+            "log_sha256": "a75038206c1d829cbbf22e35f18816009aa3218de5074ae79b1c6f519b96c6cf"
+          },
+          {
+            "target": "admin",
+            "exit_code": 0,
+            "elapsed_seconds_including_compilation": 16.5251959169982,
+            "log_sha256": "cc8f998274a2f110cbf7df84874eb8b22c9f8ba047e5939ecbcc609237d21526"
+          },
+          {
+            "target": "architecture",
+            "exit_code": 101,
+            "elapsed_seconds_including_compilation": 8.370456581003964,
+            "log_sha256": "eb4e34ecd7d461ae43522d8ace29e5632ff10edda7833fb3b230f0b287cb07ab"
+          }
+        ],
+        "profile": {
+          "compiler_jobs": 4,
+          "test_threads": 2,
+          "compiler_affinity": [
+            0,
+            1,
+            2
+          ],
+          "postgres_cpus": 1,
+          "postgres_affinity": 3,
+          "postgres_memory_mib": 512,
+          "postgres_data_tmpfs_mib": 256,
+          "postgres_pids": 128,
+          "maximum_seconds": 1200,
+          "private_log_mib_each": 16
+        },
+        "source_commit": "7468c3ace27fc9a815f7eb8e844379a4c4bf7db8",
+        "source_files_sha256": {
+          "crates/admin/src/sql/executor.rs": "fe5638689356dd06a1d75819dd3683aab7af7ee26c7225d5b5de14b8b619c1d9",
+          "crates/admin/src/tables/export.rs": "c184d52e3606cecdc5049ba85dcaa95a4d031077fa906a58d6f55d2ecb0ad14e",
+          "crates/admin/src/tables/export/connection.rs": "4dc862b94bf10eff5aae6873bceaed5177321915fc09abf01d3b2bcc4dba8207",
+          "crates/server/tests/sql_cancellation.rs": "8f7e3b8b24d3272eceebf106b41c0fd53ec3b247801d73d802db862ce9d88d30",
+          "crates/server/tests/admin/performance.rs": "9e3e0b80ea69b81e70ebbac6af8a350e9f4e69cac21c6abe8f0f74e0eb21e459",
+          "Cargo.lock": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff"
+        },
+        "working_diff_sha256": "ddac87c11039de74aa42fbcae10ca491ecf6956e391b29ba77324d9b6cdea51e",
+        "failure_type": "RuntimeError",
+        "cleanup_confirmed": true,
+        "resource_observations": 16,
+        "resource_violations": [],
+        "elapsed_seconds_including_preparation": 86.08538389700698
+      },
+      "architecture_failed_test": "sql_stream_limits_rows_bytes_batches_and_concurrency",
+      "architecture_passed": 3,
+      "architecture_failed": 1,
+      "has_sqlstate_53100_diagnostic": false,
+      "sql_cancellation_passed": 3,
+      "admin_performance_passed": 10
+    },
+    {
+      "attempt": 2,
+      "runner_result": {
+        "status": "failed",
+        "scope": "Related Rust regressions only, fresh owned shared Postgres; no production data or load-time credit",
+        "cases": [
+          {
+            "target": "sql_cancellation",
+            "exit_code": 0,
+            "elapsed_seconds_including_compilation": 39.94258205103688,
+            "log_sha256": "697cb872f97807100a48e96e81bca30cf3d05cdadacf5a90a03768234099d519"
+          },
+          {
+            "target": "admin",
+            "exit_code": 0,
+            "elapsed_seconds_including_compilation": 12.172907169966493,
+            "log_sha256": "c8c6480ece302caa2f26d593cf5cb681fdb9c2c029e06d0b6ba4219027ebeb6c"
+          },
+          {
+            "target": "architecture",
+            "exit_code": 101,
+            "elapsed_seconds_including_compilation": 8.571366459014826,
+            "log_sha256": "c087c1aac93905d2cdc26af17d5387a35456f472c7e1aaa5dbe03aaff5c7ae3e"
+          }
+        ],
+        "profile": {
+          "compiler_jobs": 4,
+          "test_threads": 2,
+          "compiler_affinity": [
+            0,
+            1,
+            2
+          ],
+          "postgres_cpus": 1,
+          "postgres_affinity": 3,
+          "postgres_memory_mib": 512,
+          "postgres_data_tmpfs_mib": 256,
+          "postgres_pids": 128,
+          "maximum_seconds": 1200,
+          "private_log_mib_each": 16
+        },
+        "source_commit": "7468c3ace27fc9a815f7eb8e844379a4c4bf7db8",
+        "source_files_sha256": {
+          "crates/admin/src/sql/executor.rs": "fe5638689356dd06a1d75819dd3683aab7af7ee26c7225d5b5de14b8b619c1d9",
+          "crates/admin/src/tables/export.rs": "c184d52e3606cecdc5049ba85dcaa95a4d031077fa906a58d6f55d2ecb0ad14e",
+          "crates/admin/src/tables/export/connection.rs": "4dc862b94bf10eff5aae6873bceaed5177321915fc09abf01d3b2bcc4dba8207",
+          "crates/server/tests/sql_cancellation.rs": "8f7e3b8b24d3272eceebf106b41c0fd53ec3b247801d73d802db862ce9d88d30",
+          "crates/server/tests/admin/performance.rs": "9e3e0b80ea69b81e70ebbac6af8a350e9f4e69cac21c6abe8f0f74e0eb21e459",
+          "crates/server/tests/architecture.rs": "76eb4470cde8a307b0242fc7b6bf2d4892b63d75c44d6532598fe5c06ecad85f",
+          "Cargo.lock": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff"
+        },
+        "working_diff_sha256": "10f969daa8b82c4f08c6afed53978ac1d8600898df7223cea2c1f20ba67cd28d",
+        "failure_type": "RuntimeError",
+        "cleanup_confirmed": true,
+        "resource_observations": 12,
+        "resource_violations": [],
+        "elapsed_seconds_including_preparation": 64.06603617803194
+      },
+      "architecture_failed_test": "sql_stream_limits_rows_bytes_batches_and_concurrency",
+      "architecture_passed": 3,
+      "architecture_failed": 1,
+      "has_sqlstate_53100_diagnostic": true,
+      "sql_cancellation_passed": 3,
+      "admin_performance_passed": 10
+    }
+  ],
+  "root_cause": "The run-owned 256MiB PostgreSQL tmpfs retained generated databases after Tokio test runtimes ended. Sequential test binaries exhausted it; instrumented repeat returned SQLSTATE53100 (disk_full) for the fixed row-budget query. This is runner fixture cleanup, not evidence of a new SQL product defect.",
+  "observed_owned_database_filesystem": {
+    "total_bytes": 268435456,
+    "used_bytes_before_final_query": 256774144,
+    "available_bytes_before_final_query": 11661312,
+    "fixed_SQLSTATE": "53100"
+  },
+  "correction_under_validation": "Keep the same 256MiB quota. After each successful test binary exits, remove only exact nelcota_test_[a-f0-9]{32} databases from this unique labeled exclusive cluster, assert zero survivors, and add a 15% database-filesystem reserve stop guard. Never touch nelcota-test-postgres or external shared clusters.",
+  "certifies_g05": false
+}

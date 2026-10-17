@@ -1,0 +1,109 @@
+{
+  "scope": "Complete original public native report reconstructed losslessly from bounded checksummed Actions notices; original verdict and source preserved",
+  "notice_report_sha256": "f84716f79295da8f32adba6cd40ca3d4921aa3a92c73c25d47aea220ec69d567",
+  "notice_encoding": "gzip+base64",
+  "notice_parts": 1,
+  "report": {
+    "identity": "native-vm-39014386580-1-p2-default-root",
+    "source": "e6fdfd7cca377edb0b36184a21a9a7b30a4d1d0c",
+    "binary_sha256": "2a8500248309d08218508d21f759e94035f0e15a41cb802a9fc573d56d9d6442",
+    "scenario": "default-root",
+    "certifies_g05": false,
+    "checks": [
+      "native installation contract default-root"
+    ],
+    "image": {
+      "bytes": 625612288,
+      "sha256": "6a81c37564db9b1ee84e141922625e1d7c5b389b99bb3c572e0243607d5bb4d2",
+      "url": "https://cloud-images.ubuntu.com/releases/noble/release/ubuntu-24.04-server-cloudimg-amd64.img"
+    },
+    "image_checksum_manifest": {
+      "bytes": 7843,
+      "sha256": "cd8934d937d1509d047798e6a5acfb839c0a2d29f3e5fc87b8ec7096ffe587ca",
+      "url": "https://cloud-images.ubuntu.com/releases/noble/release/SHA256SUMS"
+    },
+    "native_contract": {
+      "case": "documented init from the application directory without -C or NELCOTA_ROOT",
+      "init_exit_code": 0,
+      "environment_file_absolute": true,
+      "versions": {
+        "kernel": "6.8.0-142-generic",
+        "architecture": "x86_64",
+        "libc": [
+          "glibc",
+          "2.39"
+        ],
+        "python": "3.12.3",
+        "postgres_server": "17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+        "postgres_client": "psql (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)",
+        "caddy": "v2.11.7 h1:yj0Y4fYZGPkSvibBJ1sTWE33xC0fxztVyXEW5iIdUT4=",
+        "systemd": "systemd 255 (255.4-1ubuntu8.17)"
+      },
+      "systemd_verify_exit_code": 0,
+      "up_exit_code": 0,
+      "up_timed_out": false,
+      "app_unit": {
+        "MainPID": 6126,
+        "Result": "success",
+        "NRestarts": 0,
+        "ControlGroup": "/g05native.slice/nelcota-stress.service",
+        "MemoryCurrent": 2711552,
+        "MemoryPeak": 22134784,
+        "CPUUsageNSec": 67697000,
+        "TasksCurrent": 3,
+        "MemoryMax": 134217728,
+        "TasksMax": 128,
+        "LoadState": "loaded",
+        "ActiveState": "active",
+        "SubState": "running",
+        "memory_events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "kernel_budget": {
+          "cpu_quota_usec": 100000,
+          "cpu_period_usec": 100000,
+          "memory_bytes": 134217728,
+          "swap_bytes": 0,
+          "pids": 128
+        },
+        "cpu_stat": {
+          "usage_usec": 67697,
+          "user_usec": 42194,
+          "system_usec": 25503,
+          "core_sched.force_idle_usec": 0,
+          "nr_periods": 12,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "fd_count": 14,
+        "socket_count": 10,
+        "task_count": 3
+      },
+      "running_binary_identity": {
+        "running_binary_sha256": "2a8500248309d08218508d21f759e94035f0e15a41cb802a9fc573d56d9d6442",
+        "provided_binary_sha256": "2a8500248309d08218508d21f759e94035f0e15a41cb802a9fc573d56d9d6442",
+        "same_deployed_inode": true
+      },
+      "cwd_migration_exit_code": 0,
+      "cwd_migration_lease_busy": false,
+      "root_environment_migration_exit_code": 0,
+      "root_environment_migration_lease_busy": false,
+      "fixture_table_created": true,
+      "migration_journal_present": true,
+      "applied_fixture_migrations": 1
+    },
+    "status": "passed",
+    "elapsed_seconds_including_preparation": 86.131015596,
+    "resource_samples": 17,
+    "cleanup_confirmed": true,
+    "cleanup_scope": "owned QEMU service stopped; private guest disk/keys remain only on the disposable runner until its destruction",
+    "safety_guard_failure": null
+  }
+}

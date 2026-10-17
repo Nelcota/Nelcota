@@ -1,0 +1,98 @@
+{
+  "observed_utc": "2026-10-16T15:08:01.135817+00:00",
+  "source_commit": "196e0e4",
+  "scope": "Exact-head CI status; successful CI does not certify G05 load or unexecuted matrix cells",
+  "certifies_g05": false,
+  "checks": [
+    {
+      "name": "CodeQL",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/runs/117035439906"
+    },
+    {
+      "name": "sdk / sdk-node (26)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919440257/job/117035236283"
+    },
+    {
+      "name": "upgrade",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919440257/job/117035236268"
+    },
+    {
+      "name": "sdk / sdk-node (22)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919440257/job/117035236150"
+    },
+    {
+      "name": "sdk-rust (ubuntu-latest)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919440264/job/117035236080"
+    },
+    {
+      "name": "sdk / sdk",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919440257/job/117035236057"
+    },
+    {
+      "name": "supply-chain",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919440257/job/117035236048"
+    },
+    {
+      "name": "admin-ui",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919440257/job/117035235902"
+    },
+    {
+      "name": "native-lint",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919440257/job/117035235828"
+    },
+    {
+      "name": "native-presets",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919440224/job/117035235743"
+    },
+    {
+      "name": "sdk-rust (windows-latest)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919440264/job/117035235708"
+    },
+    {
+      "name": "sdk-rust (macos-latest)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919440264/job/117035235691"
+    },
+    {
+      "name": "msrv",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919440264/job/117035235513"
+    },
+    {
+      "name": "check",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919440257/job/117035235482"
+    },
+    {
+      "name": "Analyze (rust)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919433763/job/117035221721"
+    },
+    {
+      "name": "Analyze (actions)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919433763/job/117035221716"
+    },
+    {
+      "name": "Analyze (python)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919433763/job/117035221669"
+    },
+    {
+      "name": "Analyze (javascript-typescript)",
+      "conclusion": "success",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38919433763/job/117035221494"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "scope": "Read-only bounded diagnostic attempts; no reconstructed original compiler-log claim",
+  "certifies_g05": false,
+  "runs": [
+    {
+      "workflow_run": "https://github.com/Nelcota/Nelcota/actions/runs/38969200170",
+      "status": "failed",
+      "scope": "Original diagnostic helper failed; no bounded failure detail was published"
+    },
+    {
+      "workflow_run": "https://github.com/Nelcota/Nelcota/actions/runs/38973148545",
+      "status": "failed",
+      "source": "77d2335e898830689babf4ef73107008f0fa873c",
+      "failure_type": "RuntimeError",
+      "reason": "GitHub diagnostic download failed: exit 1; HTTP codes ; URLs and raw stderr remain private"
+    }
+  ],
+  "limits": "Raw stderr and signed artifact URLs are not published. The empty HTTP-code extraction does not establish a specific network/authorization cause."
+}

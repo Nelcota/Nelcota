@@ -1,0 +1,124 @@
+{
+  "utc": "2026-10-17T15:48:48.731795+00:00",
+  "status": "prestart validation passed; all15cases remain not run",
+  "original_plan": "remaining-campaign-commands-004.json",
+  "original_plan_sha256": "7547e6cd2994ada5a6f0eb1366a21f6084c222c67e6f4df4cc3dad236aff6500",
+  "original_unique_case_predicate_failed_for": [
+    "host1-candidate-pass-1-002",
+    "host1-candidate-pass-2-002",
+    "host5-candidate-pass-1-002",
+    "host5-candidate-pass-2-002",
+    "host10-candidate-pass-1-002",
+    "host10-candidate-pass-2-002",
+    "host1-retained-baseline-002",
+    "host5-retained-baseline-002",
+    "host10-retained-baseline-002"
+  ],
+  "original_campaign_count": 75,
+  "corrected_campaign_count": 66,
+  "corrected_unique_count": 66,
+  "duplicate_arguments_kinds_binary_classes_identical": true,
+  "no_campaign_rewritten": true,
+  "minimum_steps_seconds": 300,
+  "postgres_disk_ceiling_mib": 1536,
+  "effective_seconds_credited": 0,
+  "new_plan": "remaining-campaign-commands-005.json",
+  "new_plan_sha256": "adb00f96061b5a19f1ff57c8363f404621847654df33dc025906b17c0caf8b79",
+  "wrapper": "run-planned-campaign-once-v8.py",
+  "wrapper_sha256": "9628a4b347b57fd361279649b0aff00e088d133616dd07a1cf39f4a4d3c4e292",
+  "chain": "run-post-endurance-qualification-chain-002.py",
+  "chain_sha256": "cf88478e40074193e63b4153d55b4a53f54a2fbd5a4d7fda2dfd77f8638561dd",
+  "selected_fifteen_cases": [
+    {
+      "run_id": "large-disk-candidate-pass-1-003",
+      "kind": "single",
+      "baseline": "large-disk-retained-baseline-001",
+      "argument_sha256": "ee25882b1aeb33a9cc80b916f1c7d46d36bda79bb820a223878ced28b3190a0e"
+    },
+    {
+      "run_id": "large-s3-candidate-pass-1-003",
+      "kind": "single",
+      "baseline": "large-s3-retained-baseline-001",
+      "argument_sha256": "4d92cd4c0665ff1cddfbbcecc8b604e86d497ddba0057238ad4867c80570e5a9"
+    },
+    {
+      "run_id": "large-disk-candidate-pass-2-003",
+      "kind": "single",
+      "baseline": "large-disk-retained-baseline-001",
+      "argument_sha256": "ee25882b1aeb33a9cc80b916f1c7d46d36bda79bb820a223878ced28b3190a0e"
+    },
+    {
+      "run_id": "large-s3-candidate-pass-2-003",
+      "kind": "single",
+      "baseline": "large-s3-retained-baseline-001",
+      "argument_sha256": "4d92cd4c0665ff1cddfbbcecc8b604e86d497ddba0057238ad4867c80570e5a9"
+    },
+    {
+      "run_id": "fault-final007-pass-1-001",
+      "kind": "fault",
+      "baseline": null,
+      "argument_sha256": "aee8127cd890e5e59ca2b3412b1627ff3a4e652efd6c498982fca914a52fbb76"
+    },
+    {
+      "run_id": "fault-final007-pass-2-001",
+      "kind": "fault",
+      "baseline": null,
+      "argument_sha256": "aee8127cd890e5e59ca2b3412b1627ff3a4e652efd6c498982fca914a52fbb76"
+    },
+    {
+      "run_id": "host1-retained-baseline-002",
+      "kind": "host",
+      "baseline": null,
+      "argument_sha256": "88ef4e830deb619af94678cc34bf6e8d04fb1ddb3612267dbaf76b7125768d78"
+    },
+    {
+      "run_id": "host1-candidate-pass-1-002",
+      "kind": "host",
+      "baseline": "host1-retained-baseline-002",
+      "argument_sha256": "88ef4e830deb619af94678cc34bf6e8d04fb1ddb3612267dbaf76b7125768d78"
+    },
+    {
+      "run_id": "host1-candidate-pass-2-002",
+      "kind": "host",
+      "baseline": "host1-retained-baseline-002",
+      "argument_sha256": "88ef4e830deb619af94678cc34bf6e8d04fb1ddb3612267dbaf76b7125768d78"
+    },
+    {
+      "run_id": "host5-retained-baseline-002",
+      "kind": "host",
+      "baseline": null,
+      "argument_sha256": "7d5a64ac1071c589a65aa547f0d345005322f52b61379a32f4feb38516c37a15"
+    },
+    {
+      "run_id": "host5-candidate-pass-1-002",
+      "kind": "host",
+      "baseline": "host5-retained-baseline-002",
+      "argument_sha256": "7d5a64ac1071c589a65aa547f0d345005322f52b61379a32f4feb38516c37a15"
+    },
+    {
+      "run_id": "host5-candidate-pass-2-002",
+      "kind": "host",
+      "baseline": "host5-retained-baseline-002",
+      "argument_sha256": "7d5a64ac1071c589a65aa547f0d345005322f52b61379a32f4feb38516c37a15"
+    },
+    {
+      "run_id": "host10-retained-baseline-002",
+      "kind": "host",
+      "baseline": null,
+      "argument_sha256": "3c57e5362374403966bac64f5ef66331e9d1d82a36dc8e49f2ddf783d7eadd76"
+    },
+    {
+      "run_id": "host10-candidate-pass-1-002",
+      "kind": "host",
+      "baseline": "host10-retained-baseline-002",
+      "argument_sha256": "3c57e5362374403966bac64f5ef66331e9d1d82a36dc8e49f2ddf783d7eadd76"
+    },
+    {
+      "run_id": "host10-candidate-pass-2-002",
+      "kind": "host",
+      "baseline": "host10-retained-baseline-002",
+      "argument_sha256": "3c57e5362374403966bac64f5ef66331e9d1d82a36dc8e49f2ddf783d7eadd76"
+    }
+  ],
+  "precondition": "All four ordinary final007 endurance workload,summary,comparison and cleanup gates pass; no overlapping local measurement. Do not launch original chain001/wrapperv7/plan004; preserve them as unstarted originals."
+}

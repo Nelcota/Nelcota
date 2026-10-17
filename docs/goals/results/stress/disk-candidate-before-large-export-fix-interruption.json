@@ -1,0 +1,25 @@
+{
+  "status": "interrupted; not approved",
+  "reason": "Confirmed large unpolled export deadline defect requires a new production artifact and affected repetitions",
+  "run_id": "disk-candidate-pass-1-003",
+  "source_evidence": "export-large-unpolled-deadline-before.json",
+  "completion": {
+    "status": "failed",
+    "load_seconds": 4305.0,
+    "resource_observations": 871,
+    "soak_seconds": 14400,
+    "binary_sha256": "acfb2c604a7376be95690852ef016bca90eba599a55bad4be27b6c071b59a6b2",
+    "cleanup_confirmed": true,
+    "error_type": "RuntimeError"
+  },
+  "cleanup": {
+    "containers": [],
+    "volumes": [],
+    "directory_removed": true
+  },
+  "owned_label_census_empty": true,
+  "closed_effective_prelude_seconds_excluding_warmup": 4290,
+  "continuous_four_hour_soak_passed": false,
+  "partial_soak_credited": false,
+  "certifies_g05": false
+}

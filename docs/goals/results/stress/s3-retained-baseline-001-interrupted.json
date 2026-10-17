@@ -1,0 +1,1151 @@
+{
+  "run_id": "s3-retained-baseline-001",
+  "status": "failed",
+  "certifies_g05": false,
+  "source_commit": "2a079e1494342fcf51eb63071173c49aa2cbcc0a",
+  "backend_source_commit": "2efede8c27ee12119142170e8bd9742ff7cb900e",
+  "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+  "classification": "External SIGTERM reached the campaign termination handler during calibrate-75. It coincided with environment access transition; sender is not independently identified. No watchdog-stop/resource-violation file exists; no application defect is inferred.",
+  "completion": {
+    "status": "failed",
+    "load_seconds": 2145.0,
+    "resource_observations": 387,
+    "soak_seconds": 600,
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "cleanup_confirmed": true,
+    "error_type": "RuntimeError"
+  },
+  "cleanup": {
+    "containers": [],
+    "volumes": [],
+    "directory_removed": true
+  },
+  "closed_effective_seconds_excluding_warmup": 2130,
+  "partial_phase_excluded": "calibrate-75",
+  "soak_executed": false,
+  "final_invariants_reached": false,
+  "comparison_approval": "rejected; failed campaign cannot certify the candidate even though prior steady phases closed",
+  "resources": {
+    "samples": 387,
+    "maximum_gap_seconds": 8.0,
+    "app_peak_rss_kib": 46868,
+    "pg_peak_disk_mib": 295,
+    "storage_peak_disk_mib": 295
+  },
+  "closed_counter_phases": [
+    {
+      "phase": "warmup",
+      "duration_seconds": 15,
+      "iterations": {
+        "count": 8686.0,
+        "rate": 579.0666666666667
+      },
+      "useful": {
+        "count": 8686.0,
+        "rate": 579.0666666666667
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 8853,
+        "expected_rejections": 8,
+        "status_counts": {
+          "200": 8682,
+          "201": 4,
+          "302": 159,
+          "401": 8
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 16512.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "fresh-read-1",
+      "duration_seconds": 10,
+      "iterations": {
+        "count": 15760.0,
+        "rate": 1576.0
+      },
+      "useful": {
+        "count": 15760.0,
+        "rate": 1576.0
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 15763,
+        "expected_rejections": 3,
+        "status_counts": {
+          "200": 15760,
+          "401": 3
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 31523.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "fresh-read-2",
+      "duration_seconds": 10,
+      "iterations": {
+        "count": 17978.0,
+        "rate": 1797.8
+      },
+      "useful": {
+        "count": 17978.0,
+        "rate": 1797.8
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 17994,
+        "expected_rejections": 16,
+        "status_counts": {
+          "200": 17978,
+          "401": 16
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 35972.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "fresh-read-3",
+      "duration_seconds": 10,
+      "iterations": {
+        "count": 17675.0,
+        "rate": 1767.5
+      },
+      "useful": {
+        "count": 17675.0,
+        "rate": 1767.5
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 17691,
+        "expected_rejections": 16,
+        "status_counts": {
+          "200": 17675,
+          "401": 16
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 35366.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "fresh-rls-1",
+      "duration_seconds": 10,
+      "iterations": {
+        "count": 16318.0,
+        "rate": 1631.8
+      },
+      "useful": {
+        "count": 16318.0,
+        "rate": 1631.8
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 16334,
+        "expected_rejections": 16,
+        "status_counts": {
+          "200": 16318,
+          "401": 16
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 32652.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "fresh-rls-2",
+      "duration_seconds": 10,
+      "iterations": {
+        "count": 15386.0,
+        "rate": 1538.6
+      },
+      "useful": {
+        "count": 15386.0,
+        "rate": 1538.6
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 15386,
+        "expected_rejections": 0,
+        "status_counts": {
+          "200": 15386
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 30772.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "fresh-rls-3",
+      "duration_seconds": 10,
+      "iterations": {
+        "count": 15790.0,
+        "rate": 1579.0
+      },
+      "useful": {
+        "count": 15790.0,
+        "rate": 1579.0
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 15795,
+        "expected_rejections": 5,
+        "status_counts": {
+          "200": 15790,
+          "401": 5
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 31585.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "fresh-storage-1",
+      "duration_seconds": 10,
+      "iterations": {
+        "count": 3345.0,
+        "rate": 334.5
+      },
+      "useful": {
+        "count": 3345.0,
+        "rate": 334.5
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 4462,
+        "expected_rejections": 0,
+        "status_counts": {
+          "201": 12,
+          "200": 3333,
+          "302": 1117
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 6690.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "fresh-storage-2",
+      "duration_seconds": 10,
+      "iterations": {
+        "count": 3281.0,
+        "rate": 328.1
+      },
+      "useful": {
+        "count": 3281.0,
+        "rate": 328.1
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 4376,
+        "expected_rejections": 0,
+        "status_counts": {
+          "200": 3281,
+          "302": 1095
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 6562.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "fresh-storage-3",
+      "duration_seconds": 10,
+      "iterations": {
+        "count": 3306.0,
+        "rate": 330.6
+      },
+      "useful": {
+        "count": 3306.0,
+        "rate": 330.6
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 4410,
+        "expected_rejections": 0,
+        "status_counts": {
+          "200": 3306,
+          "302": 1104
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 6612.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "read-1",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 105938.0,
+        "rate": 1765.6333333333334
+      },
+      "useful": {
+        "count": 105938.0,
+        "rate": 1765.6333333333334
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 106034,
+        "expected_rejections": 96,
+        "status_counts": {
+          "200": 105938,
+          "401": 96
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 211972.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "read-2",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 105922.0,
+        "rate": 1765.3666666666666
+      },
+      "useful": {
+        "count": 105922.0,
+        "rate": 1765.3666666666666
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 106018,
+        "expected_rejections": 96,
+        "status_counts": {
+          "200": 105922,
+          "401": 96
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 211940.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "read-3",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 102210.0,
+        "rate": 1703.5
+      },
+      "useful": {
+        "count": 102210.0,
+        "rate": 1703.5
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 102306,
+        "expected_rejections": 96,
+        "status_counts": {
+          "200": 102210,
+          "401": 96
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 204516.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "rls-1",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 82146.0,
+        "rate": 1369.1
+      },
+      "useful": {
+        "count": 82146.0,
+        "rate": 1369.1
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 82226,
+        "expected_rejections": 80,
+        "status_counts": {
+          "200": 82146,
+          "401": 80
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 164372.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "rls-2",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 85456.0,
+        "rate": 1424.2666666666667
+      },
+      "useful": {
+        "count": 85456.0,
+        "rate": 1424.2666666666667
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 85536,
+        "expected_rejections": 80,
+        "status_counts": {
+          "200": 85456,
+          "401": 80
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 170992.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "rls-3",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 83255.0,
+        "rate": 1387.5833333333333
+      },
+      "useful": {
+        "count": 83255.0,
+        "rate": 1387.5833333333333
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 83335,
+        "expected_rejections": 80,
+        "status_counts": {
+          "200": 83255,
+          "401": 80
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 166590.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "panel-1",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 48277.0,
+        "rate": 804.6166666666667
+      },
+      "useful": {
+        "count": 48277.0,
+        "rate": 804.6166666666667
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 48325,
+        "expected_rejections": 48,
+        "status_counts": {
+          "200": 48277,
+          "401": 48
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 96602.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "panel-2",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 49589.0,
+        "rate": 826.4833333333333
+      },
+      "useful": {
+        "count": 49589.0,
+        "rate": 826.4833333333333
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 49637,
+        "expected_rejections": 48,
+        "status_counts": {
+          "200": 49589,
+          "401": 48
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 99226.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "panel-3",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 50648.0,
+        "rate": 844.1333333333333
+      },
+      "useful": {
+        "count": 50648.0,
+        "rate": 844.1333333333333
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 50696,
+        "expected_rejections": 48,
+        "status_counts": {
+          "200": 50648,
+          "401": 48
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 101344.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "storage-1",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 18276.0,
+        "rate": 304.6
+      },
+      "useful": {
+        "count": 18276.0,
+        "rate": 304.6
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 24385,
+        "expected_rejections": 16,
+        "status_counts": {
+          "302": 6093,
+          "200": 18276,
+          "401": 16
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 36568.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "storage-2",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 18408.0,
+        "rate": 306.8
+      },
+      "useful": {
+        "count": 18408.0,
+        "rate": 306.8
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 24564,
+        "expected_rejections": 16,
+        "status_counts": {
+          "200": 18408,
+          "302": 6140,
+          "401": 16
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 36832.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "storage-3",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 17889.0,
+        "rate": 298.15
+      },
+      "useful": {
+        "count": 17889.0,
+        "rate": 298.15
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 23867,
+        "expected_rejections": 16,
+        "status_counts": {
+          "302": 5962,
+          "200": 17889,
+          "401": 16
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 35794.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "login-1",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 3499.0,
+        "rate": 58.31666666666667
+      },
+      "useful": {
+        "count": 3499.0,
+        "rate": 58.31666666666667
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 3499,
+        "expected_rejections": 0,
+        "status_counts": {
+          "200": 3499
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 3499.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "login-2",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 3487.0,
+        "rate": 58.11666666666667
+      },
+      "useful": {
+        "count": 3487.0,
+        "rate": 58.11666666666667
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 3487,
+        "expected_rejections": 0,
+        "status_counts": {
+          "200": 3487
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 3487.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "login-3",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 3368.0,
+        "rate": 56.13333333333333
+      },
+      "useful": {
+        "count": 3368.0,
+        "rate": 56.13333333333333
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 3368,
+        "expected_rejections": 0,
+        "status_counts": {
+          "200": 3368
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 3368.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "refresh-1",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 49867.0,
+        "rate": 831.1166666666667
+      },
+      "useful": {
+        "count": 49867.0,
+        "rate": 831.1166666666667
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 49915,
+        "expected_rejections": 48,
+        "status_counts": {
+          "200": 49867,
+          "401": 48
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 49915.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "refresh-2",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 47591.0,
+        "rate": 793.1833333333333
+      },
+      "useful": {
+        "count": 47591.0,
+        "rate": 793.1833333333333
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 47623,
+        "expected_rejections": 32,
+        "status_counts": {
+          "200": 47591,
+          "401": 32
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 47623.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "refresh-3",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 47293.0,
+        "rate": 788.2166666666667
+      },
+      "useful": {
+        "count": 47293.0,
+        "rate": 788.2166666666667
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 47325,
+        "expected_rejections": 32,
+        "status_counts": {
+          "200": 47293,
+          "401": 32
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 47325.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "write-1",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 3001.0,
+        "rate": 50.016666666666666
+      },
+      "useful": {
+        "count": 3001.0,
+        "rate": 50.016666666666666
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 3001,
+        "expected_rejections": 0,
+        "status_counts": {
+          "200": 3001
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 6002.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "write-2",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 3001.0,
+        "rate": 50.016666666666666
+      },
+      "useful": {
+        "count": 3001.0,
+        "rate": 50.016666666666666
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 3001,
+        "expected_rejections": 0,
+        "status_counts": {
+          "200": 3001
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 6002.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "write-3",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 3001.0,
+        "rate": 50.016666666666666
+      },
+      "useful": {
+        "count": 3001.0,
+        "rate": 50.016666666666666
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 3001,
+        "expected_rejections": 0,
+        "status_counts": {
+          "200": 3001
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 6002.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "mixed-1",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 43283.0,
+        "rate": 721.3833333333333
+      },
+      "useful": {
+        "count": 43283.0,
+        "rate": 721.3833333333333
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 44025,
+        "expected_rejections": 32,
+        "status_counts": {
+          "302": 710,
+          "200": 43283,
+          "401": 32
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 82270.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "mixed-2",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 45003.0,
+        "rate": 750.05
+      },
+      "useful": {
+        "count": 45003.0,
+        "rate": 750.05
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 45786,
+        "expected_rejections": 33,
+        "status_counts": {
+          "200": 45003,
+          "302": 750,
+          "401": 33
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 85539.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "mixed-3",
+      "duration_seconds": 60,
+      "iterations": {
+        "count": 44995.0,
+        "rate": 749.9166666666666
+      },
+      "useful": {
+        "count": 44995.0,
+        "rate": 749.9166666666666
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 45756,
+        "expected_rejections": 32,
+        "status_counts": {
+          "200": 44995,
+          "302": 729,
+          "401": 32
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 85524.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "calibrate-25",
+      "duration_seconds": 300,
+      "iterations": {
+        "count": 30001.0,
+        "rate": 100.00333333333333
+      },
+      "useful": {
+        "count": 30001.0,
+        "rate": 100.00333333333333
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 30499,
+        "expected_rejections": 0,
+        "status_counts": {
+          "200": 29905,
+          "302": 498,
+          "201": 96
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 57002.0,
+        "fails": 0.0
+      }
+    },
+    {
+      "phase": "calibrate-50",
+      "duration_seconds": 300,
+      "iterations": {
+        "count": 60001.0,
+        "rate": 200.00333333333333
+      },
+      "useful": {
+        "count": 60001.0,
+        "rate": 200.00333333333333
+      },
+      "http_counts": {
+        "project": "single",
+        "http_reqs": 61059,
+        "expected_rejections": 0,
+        "status_counts": {
+          "200": 59985,
+          "302": 1058,
+          "201": 16
+        }
+      },
+      "dropped": 0,
+      "unexpected": {
+        "value": 0.0
+      },
+      "checks": {
+        "passes": 114002.0,
+        "fails": 0.0
+      }
+    }
+  ],
+  "frozen_harness": {
+    "run_id": "s3-retained-baseline-001",
+    "git": "7e68fd21430ac93125149f60927f8676b077811d",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "harness_sources": {
+      "bench/allocation.py": "4b98e093b86e9b9187812cd49e8d5710f54561f196bdd222573c0edd06cff34d",
+      "bench/arrival_check.py": "1b0973f2995a94390ebabcc76c2ab4843586d284980a6e5e65d6e3cb1ea60a1b",
+      "bench/arrival_counters.py": "dc94222d07dc40b7bbd5d376f5d8bac5ba8fec4d590cb6da625e487c01b16f35",
+      "bench/browser_campaign.py": "35b750c93b78cb29045cd17e3d82d81446bf783e7efe54fcba3a6279a65f5113",
+      "bench/browser_driver.py": "7a97e7f83cea534add1c75bd13d6764c2fb8ef94a0c2d4e4f1a7ee8ece9c244a",
+      "bench/browser_runtime.py": "1720ee9bab4b959260f366ca7c8767d2b810a1884f3940ff3735755ef6ba48ba",
+      "bench/campaign.py": "1303eba807b06f9b69bd7675ded297dc045c916183270e64d54cba428027c655",
+      "bench/compaction_check.py": "d64608d5e59d463b685c1310c925e29edee959fadab7d73a1a1e57a71384ab21",
+      "bench/compare.py": "7ae08619c14730906f4d565960616ca876aa6d61ff6ac17146cf692762b8e602",
+      "bench/cpu_policy.py": "04a227c9032905844ece265773013d7581351627f2a4ac71a8fee6c8a690d89d",
+      "bench/disk_usage.py": "502da50d95f979128c91d49b3037cb08885ddcbb941af0a9bd842e0d193da38e",
+      "bench/evidence.py": "214bcb18089fce8b33dc7a9613856c23f48f433767a7e97cdd95861dae3cb67d",
+      "bench/export_series.py": "7ee41df608b7920acd1a5ab581247add472e072e60aaa982571f0bd3c2ae0bec",
+      "bench/fault_campaign.py": "33fca029d3414e5c03d8d8a9e7a90e38c978bc307c05f3b98eef1e3957be30f4",
+      "bench/fixture_copy.py": "8c1421202b5543c16fa0fd0af4e47f7a8f9ef1bd9cd9423bfde28eda3dec6288",
+      "bench/fleet_observer.py": "3e51bb4b4229f0854c2e67c2fadef489feed0b28893ba3fe1baad67e1fe415b4",
+      "bench/fleet_webhooks.py": "ae5d21861ef3951a50a37fdfc84507685e87c2f8cc1698ae0d5972244d0b97ce",
+      "bench/guard_check.py": "2fa55b5e70154e7498ab79f627ef7623ae965cb4727a8318845bc5eb9baf481d",
+      "bench/host_campaign.py": "7f5f5e08be1b031209f159b4fc910ebc94a0421279d8db98c621d5c54e24db5d",
+      "bench/host_compare.py": "3e621b6fa3b80f389c7775ebd95774bcf1dc25b16ce9408d4a0e325558b0fc0f",
+      "bench/host_resources.py": "8efc29fce9b182aca6bdc2fa91e26ad9d526a4b1267f69a917d132270e4065e5",
+      "bench/http_boundary.py": "b69ff97c9e65f8ec94ccf36ac282a3b6b53c1a07aa01fbd33ac1fbe68a976db3",
+      "bench/http_check.py": "8879f62f1541f8321f799358cdd56035d3e189d46dc43fe91b106ba514788ab7",
+      "bench/http_counters.py": "c08c51ce7faf1f415476e77c80bd96dfd891b3292ceb15bd2dd781aed32f671a",
+      "bench/ingress.py": "4976738ec1c3e96862f87a02d81843087a72a665a2de829acc4c6804b6117ed2",
+      "bench/latency.py": "0483d0b22be2811669835446c17ec4c183a79bfb5477c43c2ea01cd0976aadd0",
+      "bench/launch.py": "915eb76ea3a712799777f27dfbe8bbffe4de8f5a48d9a5b541ee844f0391a498",
+      "bench/load_time.py": "23e9b43a24b7842259e94958cf2a0836a7b970cabdab2c908d5761dd688527c5",
+      "bench/lost_reply.py": "2048c95f21169fe46adddb28c4feffa60da365d369f4730ed6f7c6bcbfd348bb",
+      "bench/metrics.py": "ef5d35ca1d1773bb5fd622b1653d2c8b8e5d0681c88c92ccab1daef45bf1bf26",
+      "bench/monitor.py": "bd869d88b833930602dc3770e5467040021cca6930f89fd298c269b6850c2e61",
+      "bench/native_artifact.py": "fb38df329250168071671162019acfff93f291283808eee2451b656cd7198c85",
+      "bench/native_cluster.py": "e018810cfc015846d3e878a001db2e3c19a815c7fa77305986c930cfce2d1c23",
+      "bench/native_contracts.py": "40932b429b44d7f6bb765b2f34ebf762cd8dad414efe6b155a2d43b64ff1c280",
+      "bench/native_evidence.py": "2f5da2b03a4abaeac7057c43b8c9e0d103cf22970a9b0c7d9eb15f696d00affd",
+      "bench/native_guest.py": "72830b74c7c58b027f600344bb4aef404948b29f35b43c630139e4518b6a7d13",
+      "bench/native_preflight.py": "69ca8ad6ee6bad336ae4ac1013e6867d663eb5e7a0900e3bf9e160ec65c6ad45",
+      "bench/native_vm.py": "5ce53f00579e3207e688063ad27b59bbd9bba3d10e386429a6f81afd2205de62",
+      "bench/objects.py": "a1612bc2e457481705044ce21a376d898544dbbff004a8920511218858a8210b",
+      "bench/observations.py": "a8acd10d4b28cc44e9619bd969d75d6a2d5543444c97daab63e549414238b988",
+      "bench/oracle_check.py": "2492f32547aa01ec75f179a002fc92c9eb432b2cc609320ff117ca62ce0bb79c",
+      "bench/otlp_metrics.py": "ed8b9e115916f02b3c4556ca06b6a15c927ecb595cd22f83187081635c46927e",
+      "bench/ownership.py": "ffd3e9343b7f8262d05ee0363ab01b1f7e77089bb8f09ca8d0a350532402fa06",
+      "bench/plot_series.py": "e1076161947003cb14b0137e4655b2ba3dedd911b6fb08daefe9335db4fadfe9",
+      "bench/ports.py": "edcb747bf4f29429d2abf5abf2741289c586cb64b0cf3484fa891edb5d798276",
+      "bench/postgres_evidence.py": "7152ea8c58232981c07b6c20d4a6a8cfba1046de1893d09c78de58607a95855a",
+      "bench/projects.py": "5e67a4918b87c43bc2d8ea769f4f843570e589db4d81bdd573e24ae6d979eb9a",
+      "bench/provider_capabilities.py": "fee800d3dc4ed4007fe3e23af0ab4b6ec7e6599fcdb68048a8d8c52b96f1c8c2",
+      "bench/provider_reclamation.py": "c1b2673e15f028832163a2f17eff695ee4f81da2b544547c4a992ebe00e75d64",
+      "bench/receiver.py": "b4f172be66aee69649c826052951ff839272d7501ec0d0a2e648d65dedd4ee9d",
+      "bench/sqlite_evidence.py": "77b0da843ac1c0d5a29c97e2f6fa78b67fbbe96a68c5aeef05df9f0895c16215",
+      "bench/watchdog.py": "25ab3e86efdcec9c1da84942ef27fee285339adbda15b70791030e4863ff7bb3",
+      "bench/allocation_probe.c": "f833882f9c9697d7e838871dad3d398fb6427e78b21104d30ea8fcd7f13678f3",
+      "bench/campaign.js": "0ac01578bf19155302fe465884b480d792569086f23bb4ba3615ca5f0ce2547d",
+      "bench/setup.sql": "104496228668127c3a95a0defa6efe2d6c06a00c56bdc19999052043e700c798",
+      "scripts/upgrade/support.py": "97fd54c7d8fe80d70d0201e71454dd4f72fef760e161800ad503760d3f90feb8"
+    }
+  },
+  "retry": "Fresh s3-retained-baseline-002 with unchanged traffic/SLOs/limits. No final candidate run started before the interruption.",
+  "raw_evidence": "target/stress-g05/s3-retained-baseline-001",
+  "original_traceback_sha256": "c311dc4c57f3eedcb59ee77579dcd18355e7449eb5528b64314e079a9858971d"
+}

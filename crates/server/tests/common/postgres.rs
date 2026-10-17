@@ -21,7 +21,7 @@ impl ExternalDatabase {
             .batch_execute("SELECT pg_advisory_lock(hashtext('nelcota.tests.bootstrap'))")
             .await
             .unwrap();
-        db::bootstrap(&root, super::AUTHENTICATOR_PASSWORD, 10)
+        db::bootstrap(&root, super::authenticator_password(), 10)
             .await
             .unwrap();
         let name = format!("nelcota_test_{}", Uuid::new_v4().simple());
@@ -30,7 +30,7 @@ impl ExternalDatabase {
             .await
             .unwrap();
         let database = Self { root, name };
-        db::bootstrap(&database.config(), super::AUTHENTICATOR_PASSWORD, 10)
+        db::bootstrap(&database.config(), super::authenticator_password(), 10)
             .await
             .unwrap();
         client

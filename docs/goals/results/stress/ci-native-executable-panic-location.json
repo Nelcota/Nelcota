@@ -1,0 +1,25 @@
+{
+  "workflow_run": "https://github.com/Nelcota/Nelcota/actions/runs/38982596272",
+  "diagnostic_source": "a9bb8c250f485c7c1c2dcf72ae639195ba09a531",
+  "certifies_g05": false,
+  "diagnostic": {
+    "job_id": "117231644395",
+    "source": "14725d64cb3f3ec93f91c8d4bad26715473c68a1",
+    "failed_steps": [
+      "Run set -o pipefail"
+    ],
+    "headers": [],
+    "raw_log_bytes": 82897,
+    "panic_locations": [
+      {
+        "test": "updates::runtime::tests::running_native_identity_rejects_replacement_even_with_the_same_hash",
+        "file": "crates/cli/src/updates/runtime.rs",
+        "line": 863,
+        "column": 64,
+        "category": "running_executable_identity_mismatch"
+      }
+    ],
+    "scope": "Selected public compiler/lint/guide diagnostics and Rust panic source locations/categories only; no assertion payloads, runtime logs or test-result certification"
+  },
+  "scope": "Location/category recovered from original failed Rust job. No raw assertion payloads, access tokens, runtime logs or signed URLs published. A later pass does not erase this original failure."
+}

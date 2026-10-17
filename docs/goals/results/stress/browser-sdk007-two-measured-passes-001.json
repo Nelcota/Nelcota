@@ -1,0 +1,318 @@
+{
+  "utc": "2026-10-17T18:13:52.290128+00:00",
+  "status": "two independent full measured final007 browser/auth passes passed",
+  "certifies_g05": false,
+  "passes": [
+    {
+      "pass": 1,
+      "evidence": "browser-sdk007-measured-auth-pass-1-001.json",
+      "workflow_run_id": 39040099470,
+      "job_id": 117417640973,
+      "original_report_sha256": "50c258cfe605c6357d9f437857f4e8f619ba148e6038176dd8df7029d61bccf9",
+      "source": "80d29c8880745ecafaf578460993f90e0fe7f57d",
+      "binary_sha256": "d0d1090c91da4435a0d27dcf1dddba1b8695f18f944b1dd8cc5e472089d17432",
+      "status": "passed",
+      "cleanup_confirmed": true,
+      "resource_samples": 219,
+      "resource_evidence": {
+        "samples": 219,
+        "maximum_gap_seconds": 5.388576992000026,
+        "component_peaks": {
+          "app-0": {
+            "memory_current_bytes": 49750016,
+            "memory_peak_bytes": 58343424,
+            "anonymous_bytes": 46751744,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 19988
+          },
+          "app-1": {
+            "memory_current_bytes": 45834240,
+            "memory_peak_bytes": 54272000,
+            "anonymous_bytes": 43704320,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 26384
+          },
+          "pg-0": {
+            "memory_current_bytes": 106795008,
+            "memory_peak_bytes": 115531776,
+            "anonymous_bytes": 32927744,
+            "tasks": 20,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 1237978
+          },
+          "proxy": {
+            "memory_current_bytes": 23740416,
+            "memory_peak_bytes": 32677888,
+            "anonymous_bytes": 20926464,
+            "tasks": 9,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 962989
+          },
+          "browser": {
+            "memory_current_bytes": 1203638272,
+            "memory_peak_bytes": 1213476864,
+            "anonymous_bytes": 1080299520,
+            "tasks": 169,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 13704
+          }
+        },
+        "public_file": "resources.jsonl.gz",
+        "compressed_bytes": 12560,
+        "sha256": "9723237de2200d6f2b0ee0fe5b6d53d5aab8afd5cd5feb4b099d92aa0135a6c4",
+        "scope": "Numeric cgroup projection only; private resource/log/SQL fields are excluded."
+      },
+      "auth_request_count": 560,
+      "positive_auth_responses": 400,
+      "expected_negative_auth_responses": 160,
+      "refresh_p95_ms_per_cycle": [
+        183.09999999997672,
+        126.10000000003492,
+        164.39999999996508,
+        106.60000000003492,
+        120.40000000002328
+      ],
+      "refresh_p99_ms_per_cycle": [
+        187.70000000001164,
+        159.60000000003492,
+        167.29999999998836,
+        107.70000000001164,
+        127
+      ],
+      "browser": {
+        "browser_version": "151.0.7922.34",
+        "tabs": 3,
+        "pressure_rest_cycles": 5,
+        "navigation_samples": 706,
+        "authoritative_visual_feedback_p95_ms": 308.3999999999651,
+        "feedback_SLO_ms": 1000,
+        "api_requests": 4579,
+        "decoded_network_bytes": 24939529,
+        "auth_grants": {
+          "password": 81,
+          "refresh_token": 283
+        },
+        "auth_consumers": {
+          "1": 1540,
+          "0": 1539
+        },
+        "sdk_RLS_reads": 2505,
+        "actual_expired_access_status": 401,
+        "actual_expires_in_seconds": 900,
+        "auth_observation_seconds": 1082.20131748,
+        "logout_refresh_status": 400,
+        "cross_tab_refresh_coalesced": true,
+        "actual_credential_renewal": true,
+        "disposed_clients_collected": true,
+        "page_errors": 0,
+        "external_requests_blocked": 0
+      },
+      "singleflight_control": {
+        "simultaneous_refresh_callers": 48,
+        "actual_refresh_requests": 1,
+        "shared_access_token_digest_matches": true,
+        "all_tabs_returned_session": true,
+        "callers_started_per_tab": [
+          16,
+          16,
+          16
+        ],
+        "first_real_response_held_until_late_callers_started": true,
+        "held_refresh_locks": 1,
+        "queued_refresh_locks": 2,
+        "real_auth_consumers": {
+          "1": 3,
+          "0": 2
+        }
+      },
+      "auth_census": {
+        "created_users": 40,
+        "unrevoked_sessions": 0
+      },
+      "final_owner_deltas": [
+        {
+          "documents": 0,
+          "heap_bytes": 790844,
+          "listeners": -152,
+          "nodes": -7238
+        },
+        {
+          "documents": 0,
+          "heap_bytes": 2372448,
+          "listeners": 0,
+          "nodes": 0
+        },
+        {
+          "documents": 0,
+          "heap_bytes": 2367876,
+          "listeners": 0,
+          "nodes": 0
+        }
+      ]
+    },
+    {
+      "pass": 2,
+      "evidence": "browser-sdk007-measured-auth-pass-2-001.json",
+      "workflow_run_id": 39055648776,
+      "job_id": 117462952642,
+      "original_report_sha256": "f57f180290c751f4828882dc34cba34c61cceff6eba2eb9a96bd7a0f5b9b5f0b",
+      "source": "9b2af6dccafd776196020bd1bf9a43a7351d7b71",
+      "binary_sha256": "d0d1090c91da4435a0d27dcf1dddba1b8695f18f944b1dd8cc5e472089d17432",
+      "status": "passed",
+      "cleanup_confirmed": true,
+      "resource_samples": 219,
+      "resource_evidence": {
+        "samples": 219,
+        "maximum_gap_seconds": 5.313925014000006,
+        "component_peaks": {
+          "app-0": {
+            "memory_current_bytes": 49397760,
+            "memory_peak_bytes": 57917440,
+            "anonymous_bytes": 46362624,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 61475
+          },
+          "app-1": {
+            "memory_current_bytes": 25538560,
+            "memory_peak_bytes": 34095104,
+            "anonymous_bytes": 23736320,
+            "tasks": 8,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 38798
+          },
+          "pg-0": {
+            "memory_current_bytes": 109039616,
+            "memory_peak_bytes": 118341632,
+            "anonymous_bytes": 35069952,
+            "tasks": 21,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 655893
+          },
+          "proxy": {
+            "memory_current_bytes": 24190976,
+            "memory_peak_bytes": 32649216,
+            "anonymous_bytes": 21020672,
+            "tasks": 10,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 1205531
+          },
+          "browser": {
+            "memory_current_bytes": 1283338240,
+            "memory_peak_bytes": 1299107840,
+            "anonymous_bytes": 1159417856,
+            "tasks": 159,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 21958
+          }
+        },
+        "public_file": "resources.jsonl.gz",
+        "compressed_bytes": 12181,
+        "sha256": "ecdce7baa56c84d7c0f8df73ed5a8b48e8df40d9de5b2169475c36c72d273b51",
+        "scope": "Numeric cgroup projection only; private resource/log/SQL fields are excluded."
+      },
+      "auth_request_count": 560,
+      "positive_auth_responses": 400,
+      "expected_negative_auth_responses": 160,
+      "refresh_p95_ms_per_cycle": [
+        145.30000000001746,
+        89.5,
+        89.5,
+        108.70000000001164,
+        119.70000000001164
+      ],
+      "refresh_p99_ms_per_cycle": [
+        145.5,
+        97.29999999998836,
+        92.89999999996508,
+        111.79999999998836,
+        121.40000000002328
+      ],
+      "browser": {
+        "browser_version": "151.0.7922.34",
+        "tabs": 3,
+        "pressure_rest_cycles": 5,
+        "navigation_samples": 766,
+        "authoritative_visual_feedback_p95_ms": 285.0,
+        "feedback_SLO_ms": 1000,
+        "api_requests": 4703,
+        "decoded_network_bytes": 25781885,
+        "auth_grants": {
+          "password": 81,
+          "refresh_token": 283
+        },
+        "auth_consumers": {
+          "1": 1542,
+          "0": 1540
+        },
+        "sdk_RLS_reads": 2508,
+        "actual_expired_access_status": 401,
+        "actual_expires_in_seconds": 900,
+        "auth_observation_seconds": 1082.2098942500002,
+        "logout_refresh_status": 400,
+        "cross_tab_refresh_coalesced": true,
+        "actual_credential_renewal": true,
+        "disposed_clients_collected": true,
+        "page_errors": 0,
+        "external_requests_blocked": 0
+      },
+      "singleflight_control": {
+        "simultaneous_refresh_callers": 48,
+        "actual_refresh_requests": 1,
+        "shared_access_token_digest_matches": true,
+        "all_tabs_returned_session": true,
+        "callers_started_per_tab": [
+          16,
+          16,
+          16
+        ],
+        "first_real_response_held_until_late_callers_started": true,
+        "held_refresh_locks": 1,
+        "queued_refresh_locks": 2,
+        "real_auth_consumers": {
+          "1": 3,
+          "0": 2
+        }
+      },
+      "auth_census": {
+        "created_users": 40,
+        "unrevoked_sessions": 0
+      },
+      "final_owner_deltas": [
+        {
+          "documents": 0,
+          "heap_bytes": 900632,
+          "listeners": -152,
+          "nodes": -7238
+        },
+        {
+          "documents": 0,
+          "heap_bytes": 2604988,
+          "listeners": 0,
+          "nodes": 0
+        },
+        {
+          "documents": 0,
+          "heap_bytes": 2500336,
+          "listeners": 0,
+          "nodes": 0
+        }
+      ]
+    }
+  ],
+  "local_effective_load_credit_seconds": 0,
+  "preserved_original_failed_evidence": "browser-sdk007-refresh-slo-first-failure-001.json",
+  "scope": "Same retained final007 Actions ELF, product trees, browser/auth code and declared budgets/SLOs, separate disposable VMs. Between sources80d29c8 and9b2af6d only fault_campaign/http_boundary/ledger_capacity/matrix_probe changed under bench; ordinary opener semantics were separately verified unchanged. Two real receipts pass the existing owner, expiry and latency gates; they do not explain the original lost numeric SLO failure, certify zero leaks or prove improvement against different hardware/profile."
+}

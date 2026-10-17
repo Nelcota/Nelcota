@@ -1,0 +1,500 @@
+{
+  "run_id": "browser-pass-1-009",
+  "scope": "first complete local live-browser/SDK pass; a second independent pass and remaining G05 cells are still required",
+  "certifies_g05": false,
+  "backend_source": "2efede8c27ee12119142170e8bd9742ff7cb900e",
+  "completion": {
+    "status": "passed",
+    "cleanup_confirmed": true,
+    "resource_observations": 219,
+    "scope": "live browser correctness and lifecycle only; not G05 endurance certification",
+    "certifies_g05": false
+  },
+  "manifest": {
+    "scope": "owned live browser panel and built SDK, shared database with two real auth consumers; no public WAN/controller certification",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "runtime": {
+      "kind": "owned development browser tooling, not a production dependency",
+      "bytes": 787220075,
+      "maximum_bytes": 1610612736,
+      "files": 1332,
+      "python_version": "3.12.14",
+      "playwright_version": "1.62.0",
+      "excluded_optional_Python_GUI_modules": [
+        "tkinter",
+        "_tkinter"
+      ],
+      "sdk_assets": 20,
+      "manifest_sha256": "ee69b2e2cac0268696a0e848fdcafdb643d9643854cacc74ddd360051d5c4a77"
+    },
+    "proxy": {
+      "kind": "real Caddy with verified internal CA on loopback",
+      "cpus": 0.25,
+      "cpu_affinity": 3,
+      "memory_mib": 128,
+      "pids_limit": 64,
+      "fixture_disk_mib": 128,
+      "binary_sha256": "678ade3bfc088749c81a681adc603333ee0bb023b6a6cfe3c0f58bef8ff854e9",
+      "image_file_capabilities_removed_for_unprivileged_ports": true,
+      "image_digests": [
+        "caddy@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f"
+      ],
+      "public_dns_acme_certified": false,
+      "reload_fault": "valid configuration rejected by an occupied owned backend listener; restore and probe without process replacement"
+    },
+    "proxy_config_sha256": "91fd2755f53b692867fcd14b6ff92752277c7d91decd3582914661c2694a4122",
+    "auth_consumers": 2,
+    "app_aggregate_cpus": 1,
+    "postgres_cpus": 0.5,
+    "browser_cpus": 1,
+    "app_memory_mib_each": 128,
+    "postgres_memory_mib": 256,
+    "browser_memory_mib": 1536,
+    "browser_pids_limit": 256,
+    "browser_home_disk_mib_each": 256,
+    "database_disk_mib": 512,
+    "browser_fixture_disk_mib": 3072,
+    "session_seconds": 1080,
+    "tabs": 3,
+    "pressure_rest_cycles": 5,
+    "navigation_interval_minimum_ms": 100,
+    "maximum_API_requests": 12000,
+    "maximum_API_requests_per_second": 64,
+    "SDK_additional_read_retries": 2,
+    "SDK_mutation_retries": 0,
+    "maximum_decoded_network_mib": 128,
+    "feedback_p95_ms": 1000,
+    "maximum_heap_growth_per_page_mib": 8,
+    "maximum_node_growth_per_page": 250,
+    "maximum_listener_growth_per_page": 32,
+    "private_PID_namespace": true,
+    "browser_OS_sandbox": "outer owned nonroot container, all capabilities dropped, read-only root, no-new-privileges; Chromium sandbox disabled inside it",
+    "maximum_private_driver_log_bytes": 16777216,
+    "TLS_verification": true,
+    "real_home_mounted": false,
+    "container_log_profile": {
+      "driver": "local",
+      "max_size_bytes": 8388608,
+      "max_files": 2
+    },
+    "image_digests": [
+      "ubuntu@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55"
+    ],
+    "certifies_g05": false
+  },
+  "frozen_harness": {
+    "run_id": "browser-pass-1-009",
+    "git": "f46ab4b1df3bca4f661001b77901827b4fbede49",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "harness_sources": {
+      "bench/browser_campaign.py": "35b750c93b78cb29045cd17e3d82d81446bf783e7efe54fcba3a6279a65f5113",
+      "bench/browser_driver.py": "7a97e7f83cea534add1c75bd13d6764c2fb8ef94a0c2d4e4f1a7ee8ece9c244a",
+      "bench/browser_runtime.py": "1720ee9bab4b959260f366ca7c8767d2b810a1884f3940ff3735755ef6ba48ba",
+      "bench/campaign.py": "956cc20d6d1490015f0826c5960837256b4c19ea6bef62f33709845554eb318d",
+      "bench/compare.py": "d2682a63b4b1bc1c5eeaba538713aa8430e24458e5ea87ec0fe573aabe911394",
+      "bench/disk_usage.py": "502da50d95f979128c91d49b3037cb08885ddcbb941af0a9bd842e0d193da38e",
+      "bench/evidence.py": "61803fb6b3d6463984244f76f5e17f822fd865d19d55bf619a879d7b7886260d",
+      "bench/fault_campaign.py": "33fca029d3414e5c03d8d8a9e7a90e38c978bc307c05f3b98eef1e3957be30f4",
+      "bench/fixture_copy.py": "8c1421202b5543c16fa0fd0af4e47f7a8f9ef1bd9cd9423bfde28eda3dec6288",
+      "bench/fleet_webhooks.py": "ae5d21861ef3951a50a37fdfc84507685e87c2f8cc1698ae0d5972244d0b97ce",
+      "bench/guard_check.py": "2fa55b5e70154e7498ab79f627ef7623ae965cb4727a8318845bc5eb9baf481d",
+      "bench/host_campaign.py": "44e558cdb849829a5f16f8c148ae983872829b1ff18c56d7c5c854c2932f087d",
+      "bench/host_compare.py": "186f3378bff16247e248a9481a7fdab26a0227a5a515fdcaaa153e434612d02d",
+      "bench/host_resources.py": "1205842ab861a036ff526b85d237c08de437e8b7a52455e6fe7e56410dcb0a31",
+      "bench/http_boundary.py": "b69ff97c9e65f8ec94ccf36ac282a3b6b53c1a07aa01fbd33ac1fbe68a976db3",
+      "bench/ingress.py": "4976738ec1c3e96862f87a02d81843087a72a665a2de829acc4c6804b6117ed2",
+      "bench/launch.py": "c7b0bf59c58995014bb68805bf41eb777703976d8bc03a060720fd8cae922874",
+      "bench/load_time.py": "23e9b43a24b7842259e94958cf2a0836a7b970cabdab2c908d5761dd688527c5",
+      "bench/lost_reply.py": "2048c95f21169fe46adddb28c4feffa60da365d369f4730ed6f7c6bcbfd348bb",
+      "bench/metrics.py": "ad692683d6fe95428c98ca922593d36c01d4bb4bb41078bc04f8c25d9a025a91",
+      "bench/monitor.py": "bd869d88b833930602dc3770e5467040021cca6930f89fd298c269b6850c2e61",
+      "bench/objects.py": "a1612bc2e457481705044ce21a376d898544dbbff004a8920511218858a8210b",
+      "bench/observations.py": "8f88a60899928c2b30da0f888127034ec5c7117e34630121297f8bf11f64379b",
+      "bench/oracle_check.py": "690eb5a17c735f40b666ad313b56ed09301285c79da75835cee563021b5725ce",
+      "bench/ownership.py": "ffd3e9343b7f8262d05ee0363ab01b1f7e77089bb8f09ca8d0a350532402fa06",
+      "bench/ports.py": "edcb747bf4f29429d2abf5abf2741289c586cb64b0cf3484fa891edb5d798276",
+      "bench/postgres_evidence.py": "7152ea8c58232981c07b6c20d4a6a8cfba1046de1893d09c78de58607a95855a",
+      "bench/projects.py": "53b097879fead2517ea1522f6c89f3fb3155b017bda2cd85bdcbc59d85d639f2",
+      "bench/receiver.py": "b4f172be66aee69649c826052951ff839272d7501ec0d0a2e648d65dedd4ee9d",
+      "bench/watchdog.py": "25ab3e86efdcec9c1da84942ef27fee285339adbda15b70791030e4863ff7bb3",
+      "bench/campaign.js": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+      "bench/setup.sql": "104496228668127c3a95a0defa6efe2d6c06a00c56bdc19999052043e700c798",
+      "scripts/upgrade/support.py": "97fd54c7d8fe80d70d0201e71454dd4f72fef760e161800ad503760d3f90feb8"
+    }
+  },
+  "browser_invariants": {
+    "untrusted_control": {
+      "status": "passed",
+      "scope": "untrusted CA negative control only",
+      "untrusted_CA_rejected": true
+    },
+    "live": {
+      "status": "passed",
+      "scope": "real local HTTPS panel and built TypeScript SDK, not public WAN capacity",
+      "browser_version": "154.0.8037.57",
+      "tabs": 3,
+      "pressure_rest_cycles": 5,
+      "navigation_samples": 511,
+      "temporary_clients_checked_per_tab_per_cycle": 20,
+      "navigation_requires_different_table": true,
+      "authoritative_visual_feedback_p95_ms": 399.40000000596046,
+      "feedback_SLO_ms": 1000,
+      "api_requests": 3625,
+      "decoded_network_bytes": 21987375,
+      "auth_grants": {
+        "password": 1,
+        "refresh_token": 3
+      },
+      "auth_consumers": {
+        "1": 1257,
+        "0": 1256
+      },
+      "sdk_RLS_reads": 2499,
+      "cross_tab_refresh_coalesced": true,
+      "actual_credential_renewal": true,
+      "offline_reconnect": true,
+      "offline_read_error": "network_error",
+      "offline_read_attempts": 3,
+      "configured_additional_read_retries": 2,
+      "offline_mutation_attempts": 1,
+      "offline_mutation_not_replayed": true,
+      "actual_server_response_controls": [
+        {
+          "server_status": 200,
+          "cancelled": true,
+          "continued": false,
+          "error": false
+        },
+        {
+          "server_status": 200,
+          "cancelled": true,
+          "continued": false,
+          "error": false
+        }
+      ],
+      "late_response_view_preserved": true,
+      "inflight_SDK_cancellation": true,
+      "upload_conflict_File_ownership_cycles": 6,
+      "real_upload_HTTP_status_counts": {
+        "409-false": 6,
+        "200-true": 3
+      },
+      "uploaded_file_integrity": {
+        "valid": true,
+        "size": 1048576,
+        "sha256": "2997f978066e4d67f558179fb9351d61eab2a2624d4fa9f6f16cefcc294dbcbf"
+      },
+      "real_file_preview_cycles": 5,
+      "file_preview_completion_seconds": [
+        0.5573117290041409,
+        0.2057273740065284,
+        0.13108563199057244,
+        0.34240744399721734,
+        0.1229680760006886
+      ],
+      "actual_expired_access_status": 401,
+      "actual_expires_in_seconds": 900,
+      "auth_observation_seconds": 1082.068911846989,
+      "logout_refresh_status": 400,
+      "access_logout_contract": "Existing access remains valid until its expiry; no immediate access revocation claim",
+      "disposed_clients_collected": true,
+      "external_requests_blocked": 0,
+      "page_errors": 0
+    }
+  },
+  "memory_and_owner_plateaus": [
+    {
+      "phase": "baseline",
+      "seconds_since_auth": 17.098812120995717,
+      "pages": [
+        {
+          "documents": 2,
+          "nodes": 31228,
+          "listeners": 701,
+          "heap_bytes": 18692756
+        },
+        {
+          "documents": 2,
+          "nodes": 21546,
+          "listeners": 518,
+          "heap_bytes": 14124928
+        },
+        {
+          "documents": 2,
+          "nodes": 21546,
+          "listeners": 518,
+          "heap_bytes": 14114276
+        }
+      ]
+    },
+    {
+      "phase": "navigation-rest-1",
+      "seconds_since_auth": 62.71106958499877,
+      "pages": [
+        {
+          "documents": 2,
+          "nodes": 31228,
+          "listeners": 701,
+          "heap_bytes": 19861228
+        },
+        {
+          "documents": 2,
+          "nodes": 21546,
+          "listeners": 518,
+          "heap_bytes": 15384644
+        },
+        {
+          "documents": 2,
+          "nodes": 21546,
+          "listeners": 518,
+          "heap_bytes": 15357632
+        }
+      ]
+    },
+    {
+      "phase": "navigation-rest-2",
+      "seconds_since_auth": 108.47404594198451,
+      "pages": [
+        {
+          "documents": 2,
+          "nodes": 23990,
+          "listeners": 549,
+          "heap_bytes": 18893936
+        },
+        {
+          "documents": 2,
+          "nodes": 21546,
+          "listeners": 518,
+          "heap_bytes": 15618564
+        },
+        {
+          "documents": 2,
+          "nodes": 21546,
+          "listeners": 518,
+          "heap_bytes": 15640256
+        }
+      ]
+    },
+    {
+      "phase": "navigation-rest-3",
+      "seconds_since_auth": 154.13357329700375,
+      "pages": [
+        {
+          "documents": 2,
+          "nodes": 23990,
+          "listeners": 549,
+          "heap_bytes": 19242636
+        },
+        {
+          "documents": 2,
+          "nodes": 21546,
+          "listeners": 518,
+          "heap_bytes": 16030264
+        },
+        {
+          "documents": 2,
+          "nodes": 21546,
+          "listeners": 518,
+          "heap_bytes": 16017184
+        }
+      ]
+    },
+    {
+      "phase": "navigation-rest-4",
+      "seconds_since_auth": 199.9350366370054,
+      "pages": [
+        {
+          "documents": 2,
+          "nodes": 23990,
+          "listeners": 549,
+          "heap_bytes": 19417344
+        },
+        {
+          "documents": 2,
+          "nodes": 21546,
+          "listeners": 518,
+          "heap_bytes": 16223596
+        },
+        {
+          "documents": 2,
+          "nodes": 21546,
+          "listeners": 518,
+          "heap_bytes": 16188644
+        }
+      ]
+    },
+    {
+      "phase": "navigation-rest-5",
+      "seconds_since_auth": 245.6790187479928,
+      "pages": [
+        {
+          "documents": 2,
+          "nodes": 23990,
+          "listeners": 549,
+          "heap_bytes": 19672628
+        },
+        {
+          "documents": 2,
+          "nodes": 21546,
+          "listeners": 518,
+          "heap_bytes": 16470436
+        },
+        {
+          "documents": 2,
+          "nodes": 21546,
+          "listeners": 518,
+          "heap_bytes": 16433376
+        }
+      ]
+    },
+    {
+      "phase": "final-disposed",
+      "seconds_since_auth": 1082.068380556011,
+      "pages": [
+        {
+          "documents": 2,
+          "nodes": 23990,
+          "listeners": 549,
+          "heap_bytes": 19364076
+        },
+        {
+          "documents": 2,
+          "nodes": 21546,
+          "listeners": 518,
+          "heap_bytes": 16429068
+        },
+        {
+          "documents": 2,
+          "nodes": 21546,
+          "listeners": 518,
+          "heap_bytes": 16391896
+        }
+      ]
+    }
+  ],
+  "untrusted_CA_control": {
+    "status": "passed",
+    "scope": "untrusted CA negative control only",
+    "untrusted_CA_rejected": true
+  },
+  "visual_feedback": {
+    "samples": 511,
+    "p95_ms": 399.40000000596046,
+    "SLO_ms": 1000,
+    "foreground_tabs_required": true,
+    "passed": true
+  },
+  "initial_manual_refresh_control": {
+    "simultaneous_refresh_callers": 48,
+    "actual_refresh_requests": 1,
+    "shared_access_token_digest_matches": true,
+    "real_auth_consumers": {
+      "1": 3,
+      "0": 2
+    }
+  },
+  "offline_read_control": {
+    "actual_attempts": 3,
+    "maximum_attempts": 3,
+    "configured_additional_read_retries": 2,
+    "code": "network_error",
+    "has_data": false
+  },
+  "browser_after_close_cgroup": {
+    "memory.events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "memory.stat": {
+      "anon": 163274752,
+      "file": 45056,
+      "kernel": 1220608,
+      "kernel_stack": 32768,
+      "pagetables": 765952,
+      "sec_pagetables": 0,
+      "percpu": 840,
+      "sock": 0,
+      "vmalloc": 24576,
+      "shmem": 0,
+      "file_mapped": 0,
+      "file_dirty": 4096,
+      "file_writeback": 0,
+      "swapcached": 0,
+      "anon_thp": 0,
+      "file_thp": 0,
+      "shmem_thp": 0,
+      "inactive_anon": 163196928,
+      "active_anon": 12288,
+      "inactive_file": 40960,
+      "active_file": 4096,
+      "unevictable": 0,
+      "slab_reclaimable": 176848,
+      "slab_unreclaimable": 206704,
+      "slab": 383552,
+      "workingset_refault_anon": 0,
+      "workingset_refault_file": 0,
+      "workingset_activate_anon": 0,
+      "workingset_activate_file": 0,
+      "workingset_restore_anon": 0,
+      "workingset_restore_file": 0,
+      "workingset_nodereclaim": 0,
+      "pgdemote_kswapd": 0,
+      "pgdemote_direct": 0,
+      "pgdemote_khugepaged": 0,
+      "pgdemote_proactive": 0,
+      "pgscan": 0,
+      "pgsteal": 0,
+      "pswpin": 0,
+      "pswpout": 0,
+      "pgscan_kswapd": 0,
+      "pgscan_direct": 0,
+      "pgscan_khugepaged": 0,
+      "pgscan_proactive": 0,
+      "pgsteal_kswapd": 0,
+      "pgsteal_direct": 0,
+      "pgsteal_khugepaged": 0,
+      "pgsteal_proactive": 0,
+      "pgfault": 5986850,
+      "pgmajfault": 0,
+      "pgrefill": 0,
+      "pgactivate": 126211,
+      "pgdeactivate": 0,
+      "pglazyfree": 0,
+      "pglazyfreed": 0,
+      "swpin_zero": 0,
+      "swpout_zero": 0,
+      "thp_fault_alloc": 0,
+      "thp_collapse_alloc": 0,
+      "thp_swpout": 0,
+      "thp_swpout_fallback": 0
+    },
+    "cpu.stat": {
+      "usage_usec": 218579695,
+      "user_usec": 196689691,
+      "system_usec": 21890004,
+      "nice_usec": 0,
+      "nr_periods": 6708,
+      "nr_throttled": 254,
+      "throttled_usec": 330800,
+      "nr_bursts": 0,
+      "burst_usec": 0
+    },
+    "memory.current": 164757504,
+    "memory.max": 1610612736,
+    "memory.peak": 1279897600,
+    "pids.current": 7,
+    "pids.max": 256,
+    "cpu.max": {
+      "quota_usec": 100000,
+      "period_usec": 100000
+    }
+  },
+  "resource_violations": [],
+  "auth_grants_scope": "Three refresh attempts include one manual rotation, one actual renewal and the expected final revoked-token rejection; the final 400 is not useful work.",
+  "duration_scope": "1082-second real session observation includes pressure/rest/control stages and is not credited as a separate continuous eight-hour load interval.",
+  "raw_evidence_location": "target/stress-g05/browser-pass-1-009"
+}

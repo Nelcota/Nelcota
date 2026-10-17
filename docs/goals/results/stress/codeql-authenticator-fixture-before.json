@@ -1,0 +1,27 @@
+{
+  "source_commit": "af01678ac773f932232d0f37e6d0a2fa02edc343",
+  "status": "failed",
+  "certifies_g05": false,
+  "ordinary_checks_passed": 17,
+  "ordinary_checks_failed": 1,
+  "failed_check": {
+    "id": 117335114360,
+    "name": "CodeQL",
+    "head_sha": "af01678ac773f932232d0f37e6d0a2fa02edc343",
+    "status": "completed",
+    "conclusion": "failure",
+    "html_url": "https://github.com/Nelcota/Nelcota/runs/117335114360"
+  },
+  "annotations": [
+    {
+      "path": "crates/server/tests/common/mod.rs",
+      "start_line": 36,
+      "title": "Hard-coded cryptographic value",
+      "message": "This hard-coded value is used as [a password](1).\nThis hard-coded value is used as [a password](2).\nThis hard-coded value is used as [a password](3).\nThis hard-coded value is used as [a password](4).\nThis hard-coded value is used as [a password](5)."
+    }
+  ],
+  "annotation_bytes_sha256": "10403f534138012277f2bc8d71da352d0a503b57695943efc5f6aab17248bcc9",
+  "cause": "A fixed authenticator password in the shared server integration harness reaches five password sinks. It is a real test-fixture rule finding; the rule is retained. No production credentials or backend source are changed by its correction.",
+  "correction_under_validation": "Generate one CSPRNG UUID-derived64-character secret per integration-test process with OnceLock; all isolated databases, repeated RLS bootstraps and the Rust SDK child consume that same generated secret.",
+  "scope": "Original failed aggregate CodeQL verdict is preserved. The ordinary Rust/service check passed, but17of18 checks does not approve source CI. Final correction CI and release-byte/source equivalence still require evidence."
+}

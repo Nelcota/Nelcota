@@ -1,0 +1,96 @@
+{
+  "utc": "2026-10-17T17:29:21.205113+00:00",
+  "status": "focused controls passed; real private-file host campaigns not run",
+  "certifies_g05": false,
+  "profile": {
+    "enabled": true,
+    "protocol": "g05-private-project-files-v1",
+    "maximum_requests": 8192,
+    "maximum_requests_per_second": 64,
+    "request_timeout_seconds": 2,
+    "maximum_body_bytes": 128,
+    "maximum_read_bytes": 2048,
+    "maximum_header_bytes": 16384,
+    "maximum_logical_HTTP_bytes": 134217728,
+    "maximum_graph_seconds": 20,
+    "extra_controller_threads_during_graph": 1,
+    "minimum_foreground_seconds": 60,
+    "controller_affinity_policy": "one telemetry/OS slot, disjoint from app/PostgreSQL/k6",
+    "transport": "owned direct loopback HTTP; main k6 ingress unchanged",
+    "units": "auxiliary requests excluded from k6 useful throughput and latency"
+  },
+  "source_sha256": {
+    "bench/fleet_private_files.py": "8059590e30f1fdf42cc2b0473321744c670f2deaa4bc7126965d51e1bcbb0940",
+    "bench/host_campaign.py": "390fbbe870fe1c1f0893e510478af6f63712268791905dbd7a769a7f67bbf172",
+    "bench/host_compare.py": "36cf853e81d7ff3e2ecbb5e4c3988bb0ced091f92535b0d53a7697876b2b76e5",
+    "scripts/review_tests/test_stress_fleet_private_files.py": "1172ec6899d51aeba715b40b7a956980613cd0080b6afffcb5c1dae684297590",
+    "scripts/review_tests/test_stress_host_compare.py": "47abb70d795575c97c7d817380433a1406b67eda7c59ab74820d7c7b197237f6"
+  },
+  "focused_result": {
+    "tests": 40,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "elapsed_seconds": 0.054587255988735706
+  },
+  "operator": {
+    "command": [
+      "timeout",
+      "--signal=TERM",
+      "--kill-after=3s",
+      "15s",
+      "taskset",
+      "-c",
+      "3",
+      "nice",
+      "-n",
+      "19",
+      "ionice",
+      "-c3",
+      "prlimit",
+      "--as=134217728:134217728",
+      "--cpu=3:3",
+      "--",
+      "python3",
+      "target/stress-g05/artifacts/run-host-private-focused-003.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.26495765801519156,
+    "log_sha256": "531c17ab047200b823585134b9548f22626038e83280bb39ef5b16838c2aae7b",
+    "scope": "Focused optional host-file isolation guards; unused provider CPU3 during DISK only; 128MiB/3 CPU seconds/15 seconds low priority. No actual network, BaaS or effective load credit."
+  },
+  "expected_graph_counts": {
+    "1": {
+      "projects": 1,
+      "directed_pairs": 0,
+      "foreign_reads_rejected": 0,
+      "foreign_writes_rejected": 0,
+      "owner_bytes_verified": 1,
+      "anonymous_private_reads_rejected": 1,
+      "metadata_objects_unchanged": 1,
+      "requests": 2
+    },
+    "5": {
+      "projects": 5,
+      "directed_pairs": 20,
+      "foreign_reads_rejected": 20,
+      "foreign_writes_rejected": 20,
+      "owner_bytes_verified": 25,
+      "anonymous_private_reads_rejected": 25,
+      "metadata_objects_unchanged": 5,
+      "requests": 90
+    },
+    "10": {
+      "projects": 10,
+      "directed_pairs": 90,
+      "foreign_reads_rejected": 90,
+      "foreign_writes_rejected": 90,
+      "owner_bytes_verified": 100,
+      "anonymous_private_reads_rejected": 100,
+      "metadata_objects_unchanged": 10,
+      "requests": 380
+    }
+  },
+  "scope": "Optional benchmark extension only. No product or ordinary campaign JS changes. Every directed foreign GET/PUT must reject; owner bytes, anonymous rejection and immutable metadata are rechecked. Before/after graphs cannot replace graphs after positive foreground iterations in each required phase. Original absolute SLO, CPU/RAM/disk/relative fairness gates remain. Preflight against real disposable services is required before full campaigns."
+}

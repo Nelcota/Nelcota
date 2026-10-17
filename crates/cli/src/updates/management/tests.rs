@@ -13,6 +13,48 @@ fn log_metadata_omits_free_form_messages_and_sql() {
     assert!(!serialized.contains("credential"));
     assert!(!serialized.contains("secret"));
 }
+
+fn full_identity_inventory_keeps_existing_state_readable(policy: &Policy) {
+    let directory = tempfile::tempdir_in(&policy.root).unwrap();
+    let mut bounded = policy.clone();
+    bounded.root = directory.path().to_path_buf();
+    bounded.project_ids.clear();
+    for index in 0..256 {
+        let name = format!("retired-{index:03}");
+        let id = nelcota_deployment::token().unwrap();
+        bounded.record_identity(&name, &id, true).unwrap();
+        bounded.project_ids.insert(name, id);
+    }
+    assert!(
+        bounded.identities_valid(),
+        "retired identities stay readable at capacity"
+    );
+    let path = bounded.root.join("updates/host-identities.json");
+    let before = fs::read(&path).unwrap();
+    let records: serde_json::Value = serde_json::from_slice(&before).unwrap();
+    assert_eq!(records.as_object().unwrap().len(), 256);
+    let failure = bounded
+        .record_identity("one-too-many", &nelcota_deployment::token().unwrap(), true)
+        .unwrap_err();
+    assert_eq!(failure.to_string(), "host identity inventory full");
+    assert_eq!(
+        fs::read(&path).unwrap(),
+        before,
+        "rejection cannot evict identities"
+    );
+
+    // Reusing an existing name at the cap is permitted. Recording its identity
+    // alone must never authorize a project whose matching runtime is absent.
+    let name = "retired-000";
+    let original = bounded.project_ids[name].clone();
+    let replacement = nelcota_deployment::token().unwrap();
+    bounded.record_identity(name, &replacement, false).unwrap();
+    assert!(!bounded.project_enrolled(name));
+    assert!(!bounded.identities_valid());
+    bounded.record_identity(name, &original, true).unwrap();
+    assert!(bounded.identities_valid());
+    assert_eq!(fs::read(path).unwrap(), before);
+}
 struct FixtureEffects {
     image: String,
     fail_finish: Cell<bool>,
@@ -243,6 +285,7 @@ fn docker_lifecycle_preserves_other_projects_and_verified_restore_writes() {
             addresses: vec!["203.0.113.7".into()],
         }),
     };
+    full_identity_inventory_keeps_existing_state_readable(&policy);
     let effects = FixtureEffects {
         image: std::env::var("NELCOTA_HOST_TEST_IMAGE").unwrap(),
         fail_finish: Cell::new(false),

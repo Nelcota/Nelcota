@@ -1,0 +1,97 @@
+{
+  "observed_utc": "2026-10-17T14:58:31.374113+00:00",
+  "status": "passed focused controls; real corrected full matrix repetitions pending",
+  "certifies_g05": false,
+  "before": {
+    "observed_utc": "2026-10-17T14:50:26.078738+00:00",
+    "status": "confirmed harness inconsistency",
+    "fault_parser_provisional_default": 64,
+    "actual_offered_rates": [
+      16,
+      32,
+      48,
+      64
+    ],
+    "old_validator_expected_rates": [
+      8,
+      16,
+      24,
+      32
+    ],
+    "old_validator_accepts_actual_complete_probe_set": false,
+    "old_probe_source_sha256": "b080af109d859a6cd8a08130b8893e82e7bc5a0f272d2077a073940f760a8988",
+    "old_fault_source_sha256": "3f83b1dad46d117a97a4eba93a3e9ebb3ff472325e535841fd8a878113c38b36",
+    "scope": "Actual parser AST default and actual old validation condition, evaluated with bounded complete synthetic probe receipts. No HTTP/fixture/load or effective-time credit; no claim about the final verdict of the active remote run."
+  },
+  "after": {
+    "shared_capacity_profile": {
+      "provisional_rate": 64,
+      "step_seconds": 300,
+      "rates": [
+        16,
+        32,
+        48,
+        64
+      ]
+    },
+    "explicit_full_workload_command": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+      "/workspace/Nelcota/bench/launch.py",
+      "--kind",
+      "fault",
+      "--run-id",
+      "owned-matrix",
+      "--binary",
+      "/owned/nelcota",
+      "--focus",
+      "matrix",
+      "--rate",
+      "8",
+      "--capacity",
+      "--provisional-rate",
+      "64",
+      "--matrix-step-seconds",
+      "120"
+    ],
+    "actual_declared_complete_steps_accepted": true,
+    "unsuccessful_capacity_steps_preserved": [
+      48,
+      64
+    ],
+    "actual_fault_CLI_parser_round_trip_test_passed": true
+  },
+  "focused_regressions": {
+    "tests": 36,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "elapsed_seconds": 0.018669818004127592,
+    "patterns": [
+      "test_stress_matrix_pressure.py",
+      "test_stress_project_diagnostics.py",
+      "test_stress_database_readiness.py",
+      "test_stress_generator_cpu.py",
+      "test_stress_auth_links.py",
+      "test_stress_ledger_arrivals.py",
+      "test_stress_matrix_capacity.py"
+    ]
+  },
+  "operator_elapsed_seconds": 0.2647862359881401,
+  "log_sha256": "bb2433506c6730844467a46f2c5f79880a4a8a0a5d011e6d59af682492efeac3",
+  "tested_worktree_harness_sources_sha256": {
+    "bench/ledger_capacity.py": "43fb6d0a6e864c97f565c2694fbd354cad00517cfe1a2f2b916131b2989520b2",
+    "bench/fault_campaign.py": "6ddeb0da096f7b40c105530c447f81105691641f666c73c5a09b4a0842218e70",
+    "bench/matrix_probe.py": "3f5287a8dface2301d3e661aae2d1b909ecceee8643a4fc06d5cf9849ab4a907",
+    "scripts/review_tests/test_stress_matrix_capacity.py": "a3cae2617b1669394ce14cdbad7939c06cfabf08c8664a92e9081a51e542f9b9",
+    ".github/workflows/stress.yml": "d9158f06c32a75daf35b6c418bfe8c44f69f31479b697ea45122ee1462c17e55"
+  },
+  "checkout_parent_commit": "2bdc741d61e56edc5b3bb225d09d39e03df94ed2",
+  "previous_private_control_attempt": {
+    "status": "failed before tests",
+    "cause": "Private discovery guard expected8patterns but workflow has7; corrected, no tests claimed from first attempt",
+    "original_exit": 1,
+    "original_log_sha256": "eb1317b78132842975c3085210b57743844204848bda03aeda516e704f38c517"
+  },
+  "scope": "Harness-only declaration/validation correction: the real driver already offered16/32/48/64from its64default. Preserve that same maximum and300second steps; do not lower offered traffic or hide unqualified steps. Driver, command factory and validator now share ledger_capacity.py. No backend/SDK/product change, rate or SLO reduction, network load or effective-time credit from these controlled receipts. The active immutable old-source run retains its original result; repeat both real matrices on the corrected harness."
+}

@@ -1,0 +1,113 @@
+{
+  "scope": "Native sparse-expiry controller regression; no BaaS traffic or credited endurance time",
+  "certifies_g05": false,
+  "before": {
+    "run_id": "sparse-drop-native-control-001",
+    "result": {
+      "scope": "Native counter expiry/retention control with artificial sleep iterations; no application traffic, capacity or endurance certification",
+      "certifies_g05": false,
+      "maximum_seconds": 240,
+      "cpu_each": 0.25,
+      "memory_mib_each": 128,
+      "traffic_schedule_seconds": 136,
+      "counter_protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+      "generator_cpu_affinity": 0,
+      "metrics_cpu_affinity": 4,
+      "startup_disk_mib": 2048,
+      "metrics_volume_limit_mib": 128,
+      "metrics_retention_mib": 16,
+      "metrics_wal_segment_mib": 16,
+      "generator_usage_reporting": false,
+      "source_commit": "c49470b4ab0a472132c754583c3c53a22d4877f6",
+      "metrics_source_sha256": "da9c506a1f28423a59bc0d157c9d59829a31b28aaac09e3843cf555f5966b869",
+      "counter_source_sha256": "dc94222d07dc40b7bbd5d376f5d8bac5ba8fec4d590cb6da625e487c01b16f35",
+      "resource_sample_seconds": 5,
+      "maximum_resource_gap_seconds": 30,
+      "control_source_sha256": "afde13bc50f63ed08836e5136fac40b70e094b0310ce129c21ddcf97492ea31f",
+      "cleanup_confirmed": true,
+      "status": "failed",
+      "error_type": "ValueError"
+    },
+    "last_progress": {
+      "phase": "scheduler-sparse",
+      "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+      "began_monotonic": 225599.71295488,
+      "last_monotonic": 225606.372151764,
+      "maximum_poll_gap_seconds": 6.346043412981089,
+      "observations": 3,
+      "closed": false,
+      "dropped_by_scenario": {
+        "traffic": 484
+      }
+    },
+    "reproduced_failure": "k6 exited when the ramp reached zero; the idle tail did not keep the process alive and closed_count rejected incomplete 136-second coverage",
+    "cleanup_confirmed": true
+  },
+  "after": {
+    "run_id": "sparse-drop-native-control-002",
+    "result": {
+      "scope": "Native counter expiry/retention control with artificial sleep iterations; no application traffic, capacity or endurance certification",
+      "certifies_g05": false,
+      "maximum_seconds": 240,
+      "cpu_each": 0.25,
+      "memory_mib_each": 128,
+      "traffic_schedule_seconds": 6,
+      "post_generator_idle_observation_seconds": 130,
+      "minimum_counter_observation_seconds": 136,
+      "counter_protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+      "generator_cpu_affinity": 0,
+      "metrics_cpu_affinity": 4,
+      "startup_disk_mib": 2048,
+      "metrics_volume_limit_mib": 128,
+      "metrics_retention_mib": 16,
+      "metrics_wal_segment_mib": 16,
+      "generator_usage_reporting": false,
+      "source_commit": "d4ea5bca36a792c37a8e0581034257fdf80f6dfe",
+      "metrics_source_sha256": "da9c506a1f28423a59bc0d157c9d59829a31b28aaac09e3843cf555f5966b869",
+      "counter_source_sha256": "dc94222d07dc40b7bbd5d376f5d8bac5ba8fec4d590cb6da625e487c01b16f35",
+      "resource_sample_seconds": 5,
+      "maximum_resource_gap_seconds": 30,
+      "control_source_sha256": "1b0973f2995a94390ebabcc76c2ab4843586d284980a6e5e65d6e3cb1ea60a1b",
+      "generator_elapsed_before_idle_seconds": 10.00088798700017,
+      "post_generator_observed_idle_seconds": 130.012020811002,
+      "status": "passed",
+      "retained_dropped_iterations": 538,
+      "end_instant_dropped_iterations": 0.0,
+      "end_120s_range_dropped_iterations": 0.0,
+      "closed_evidence": {
+        "phase": "scheduler-sparse",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 225745.046349476,
+        "last_monotonic": 225885.058421992,
+        "maximum_poll_gap_seconds": 6.4906487749831285,
+        "observations": 30,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 538
+        }
+      },
+      "early_positive_snapshot_sha256": "df86e8154e171d031082a189ab2cd545866b8c5d540bf1efcdcf8c397bf330cd",
+      "control_js_sha256": "cfe5377516e682075df712d439636641ca36d7728c97dfc4fa555ec889d634b8",
+      "k6_image": "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+      "prometheus_image": "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996",
+      "elapsed_seconds": 140.86174340700381,
+      "cleanup_confirmed": true
+    }
+  },
+  "regression": {
+    "name": "ArrivalControlPreflight.test_generator_exit_does_not_skip_sparse_counter_expiry",
+    "old_source": "c49470b4ab0a472132c754583c3c53a22d4877f6",
+    "old_result": "failed: incomplete or inconsistent arrival polling coverage",
+    "candidate_focused_tests": 15,
+    "candidate_focused_seconds": 0.207
+  },
+  "original_ci": {
+    "status": "failed",
+    "source": "c49470b4ab0a472132c754583c3c53a22d4877f6",
+    "url": "https://github.com/Nelcota/Nelcota/actions/runs/38912699508/job/117012238636",
+    "failed_step": "bounded native sparse arrival counters",
+    "approximate_failed_step_seconds": 14,
+    "raw_logs_and_artifact_download": "blocked: signed download returned HTTP 403",
+    "exact_original_ci_exception": "unavailable; local deterministic reproduction establishes the control defect without inventing CI log contents"
+  }
+}

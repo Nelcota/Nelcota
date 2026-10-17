@@ -1,0 +1,213 @@
+{
+  "observed_utc": "2026-10-17T12:41:34.985252+00:00",
+  "scope": "Complete successful SDK CI job after tenth production correction, including all unit/type/build/unchanged-size/package/runtime/memory/browser contracts and Notes example steps. Counts and fixed regression identities are from the original public notice; payloads are excluded. No backend stress, final Rust ELF or G05 approval.",
+  "status": "passed",
+  "certifies_g05": false,
+  "workflow_head_commit": "9bca03bc689c425a7660c5da9305180450aeaa7c",
+  "actual_checkout_commit": "847ac93452a86519786a9b77a20b167f1cd28096",
+  "job_id": 117397431550,
+  "job_url": "https://github.com/Nelcota/Nelcota/actions/runs/39033108203/job/117397431550",
+  "unit_summary": {
+    "source_commit": "847ac93452a86519786a9b77a20b167f1cd28096",
+    "tests": 204,
+    "passed": 204,
+    "failed": 0,
+    "pending": 0,
+    "independent_server_clients": [
+      {
+        "web_locks": false,
+        "status": "passed"
+      },
+      {
+        "web_locks": true,
+        "status": "passed"
+      }
+    ],
+    "successful": true,
+    "scope": "SDK unit regressions only; no backend load or G05 effective-time credit.",
+    "original_report_sha256": "57a030484d963790e3630511c5c33c327af61e448e732f4d4f5c2e6d8d265922"
+  },
+  "actual_checkout_source_files": [
+    {
+      "path": "sdk/typescript/src/auth/manager.ts",
+      "sha256": "ad8f05920a1bb76ec225e833a035b8c87b7442bab30051c73e67ff3fdcfefa4e",
+      "checkout_blob_sha": "60f1a2344bf33e0c1dca1bd25e06dc7fb5b2bca7"
+    },
+    {
+      "path": "sdk/typescript/src/auth/coordination.ts",
+      "sha256": "4dea62dd484966907e14b0a3a3f89081bfc81a10da52b3148e8d69a6e7576d3d",
+      "checkout_blob_sha": "f19d8f01e2f0e968fe3b6eb34ea803865457a43b"
+    }
+  ],
+  "steps": [
+    {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run npm ci",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run npm audit --audit-level=high",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run npm run check",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Check public SDK unit evidence privacy",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "SDK unit regressions",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Public SDK unit counts and independent-client controls",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run npm run test:types",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run npm run build",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run npm run size",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run npm run test:package",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run node test/runtime/smoke.mjs",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run npm run test:memory",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run bun test/runtime/smoke.mjs",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run deno run --allow-net --allow-read --allow-env test/runtime/smoke.mjs",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run cargo build -p nelcota-server",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run npx playwright-core install --with-deps chromium firefox webkit",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "SDK server and browser contracts",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Annotate contract failure diagnostics",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "documented Notes browser example",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Notes browser acceptance report",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "node22_job": 117397431508,
+  "node26_job": 117397431601,
+  "local_effective_load_credit_seconds": 0,
+  "embedded_assets_and_final_candidate": "Still pending after current measured retained S3 baseline closes. Successful SDK checks do not approve stale generated guide assets or old candidate006 endurance."
+}

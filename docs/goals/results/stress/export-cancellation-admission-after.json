@@ -1,0 +1,140 @@
+{
+  "status": "passed",
+  "scope": "Final local real owned-PostgreSQL validation of SQL and export cleanup ownership. Base commit plus exact file hashes/working diff identify the tested correction. No stress-time credit; final build, full CI and affected campaigns remain pending.",
+  "source_base_commit": "cb916d04fa43679152b2a463870c466a17bd9e91",
+  "tested_source_files_sha256": {
+    "crates/admin/src/sql/executor.rs": "fe5638689356dd06a1d75819dd3683aab7af7ee26c7225d5b5de14b8b619c1d9",
+    "crates/server/tests/sql_cancellation.rs": "8f7e3b8b24d3272eceebf106b41c0fd53ec3b247801d73d802db862ce9d88d30",
+    "crates/server/tests/common/mod.rs": "29287cd61c5219f25a9aa77a91408ee3eb0ba7229c51e80089cad01803882b80",
+    "crates/admin/src/tables/export.rs": "8d10147d354da38371cfe3e182c12eff7198486ecf581ede774ea41e30b1d6d2",
+    "crates/admin/src/tables/export/connection.rs": "7c1563a73f11f9facc388adf9b0d18c5a06e2a408ab472863a9cf54fb42b16da",
+    "Cargo.lock": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff"
+  },
+  "tested_working_diff_sha256": "1fcda5e84ec00f17115094f36c0aca81a1f4b98d3480d01b560a77fb85922a17",
+  "controls": [
+    {
+      "authorized_api_status": 200,
+      "backend_queries_after_release": 0,
+      "backend_queries_before_releasing_cancellation": 4,
+      "case": "cancelled_sql_keeps_admission_until_postgres_finishes_cleanup",
+      "fifth_rejected_while_cleanup_pending": true,
+      "held_cancellation_packets": 4,
+      "recovered_parallel_read_queries": 4,
+      "scope": "Real owned PostgreSQL and bounded loopback CancelRequest gate; no load-time credit",
+      "unauthorized_api_status": 401
+    },
+    {
+      "authorized_api_status": 200,
+      "backend_queries_after_release": 0,
+      "backend_queries_before_releasing_cancellation": 2,
+      "case": "cancelled_exports_keep_admission_until_postgres_finishes_cleanup",
+      "held_cancellation_packets": 2,
+      "recovered_exact_product_ids": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "recovered_parallel_exports": 2,
+      "recovery_seconds": 0.219264843,
+      "scope": "Real owned PostgreSQL, two bounded export queries, delayed CancelRequest only; no load-time credit",
+      "third_export_busy_code": "export_busy",
+      "third_export_status_while_cleanup_pending": 503,
+      "unauthorized_api_status": 401
+    },
+    {
+      "admission_blocked_during_uncertain_cleanup": true,
+      "authorized_api_status": 200,
+      "backend_queries_before_termination": 4,
+      "case": "lost_sql_transport_has_bounded_cleanup_admission_and_recovers",
+      "owned_sql_sessions_terminated": 4,
+      "recovered_parallel_read_queries": 4,
+      "recovery_budget_seconds": 40,
+      "recovery_seconds": 35.23009478,
+      "scope": "Owned database sessions only; bounded degraded cleanup, no load-time credit"
+    }
+  ],
+  "regression_summaries": [
+    {
+      "target": "sql_cancellation",
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 0,
+      "execution_seconds": 39.3
+    },
+    {
+      "target": "admin performance::",
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 34,
+      "execution_seconds": 11.25
+    },
+    {
+      "target": "architecture",
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 0,
+      "execution_seconds": 6.93
+    }
+  ],
+  "runner_result": {
+    "status": "passed",
+    "scope": "Related Rust regressions only, fresh owned shared Postgres; no production data or load-time credit",
+    "cases": [
+      {
+        "target": "sql_cancellation",
+        "exit_code": 0,
+        "elapsed_seconds_including_compilation": 54.35034024203196,
+        "log_sha256": "b9d37f29e744339cd4d8226fb49bef0887bd699a43103a65e7cb26d66e0552ac"
+      },
+      {
+        "target": "admin",
+        "exit_code": 0,
+        "elapsed_seconds_including_compilation": 15.62712823000038,
+        "log_sha256": "f9878ae9ab5f18e28f263389402d584121bfb2f48d587150b0b82746086810b9"
+      },
+      {
+        "target": "architecture",
+        "exit_code": 0,
+        "elapsed_seconds_including_compilation": 10.325631248997524,
+        "log_sha256": "6a0328cbd87b43305ea86efd1c1722f00d3c84127adf49603f34715a3ba69c70"
+      }
+    ],
+    "profile": {
+      "compiler_jobs": 4,
+      "test_threads": 2,
+      "compiler_affinity": [
+        0,
+        1,
+        2
+      ],
+      "postgres_cpus": 1,
+      "postgres_affinity": 3,
+      "postgres_memory_mib": 512,
+      "postgres_data_tmpfs_mib": 256,
+      "postgres_pids": 128,
+      "maximum_seconds": 1200,
+      "private_log_mib_each": 16
+    },
+    "source_commit": "cb916d04fa43679152b2a463870c466a17bd9e91",
+    "source_files_sha256": {
+      "crates/admin/src/sql/executor.rs": "fe5638689356dd06a1d75819dd3683aab7af7ee26c7225d5b5de14b8b619c1d9",
+      "crates/server/tests/sql_cancellation.rs": "8f7e3b8b24d3272eceebf106b41c0fd53ec3b247801d73d802db862ce9d88d30",
+      "crates/server/tests/common/mod.rs": "29287cd61c5219f25a9aa77a91408ee3eb0ba7229c51e80089cad01803882b80",
+      "crates/admin/src/tables/export.rs": "8d10147d354da38371cfe3e182c12eff7198486ecf581ede774ea41e30b1d6d2",
+      "crates/admin/src/tables/export/connection.rs": "7c1563a73f11f9facc388adf9b0d18c5a06e2a408ab472863a9cf54fb42b16da",
+      "Cargo.lock": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff"
+    },
+    "working_diff_sha256": "1fcda5e84ec00f17115094f36c0aca81a1f4b98d3480d01b560a77fb85922a17",
+    "cleanup_confirmed": true,
+    "resource_observations": 16,
+    "resource_violations": [],
+    "elapsed_seconds_including_preparation": 84.06779266701778
+  },
+  "before_evidence": "export-cancellation-admission-before.json",
+  "failed_correction_attempt": "export-cancellation-fix-first-validation-failure.json",
+  "final_artifact_status": "fresh build and affected repetitions required"
+}

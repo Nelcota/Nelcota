@@ -1,0 +1,54 @@
+{
+  "status": "35 focused controls passed; both actual VM cases not run",
+  "certifies_g05": false,
+  "previous_scoped_guard_evidence": "native-inflight-cut-guards-001.json",
+  "framework": {
+    "tests": 35,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "elapsed_seconds": 0.019073984993156046
+  },
+  "operator": {
+    "utc": "2026-10-17T16:29:37.450909+00:00",
+    "command": [
+      "timeout",
+      "--signal=TERM",
+      "--kill-after=3s",
+      "15s",
+      "taskset",
+      "-c",
+      "3",
+      "nice",
+      "-n",
+      "19",
+      "ionice",
+      "-c3",
+      "prlimit",
+      "--as=134217728:134217728",
+      "--cpu=3:3",
+      "--",
+      "python3",
+      "target/stress-g05/artifacts/run-native-inflight-focused-004.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.1647070930339396,
+    "log_sha256": "f05d64fba73afed4fb24295fa4f0d5da8811bdbf122a495ad50057fe16d455d8",
+    "source_sha256": {
+      "bench/native_vm.py": "6f74c4e74a8d7b30042e900df1d85821e8e1ab382cf2bd962da6ccf5c0ec14a6",
+      "bench/native_guest.py": "f0313f05b2fab7913a0487dfef842831af3f27d2c791b45e1ad18704f82d464f",
+      "bench/native_inflight.py": "e8741a77f6de21e19ae85ba280d65df2a4799bbc5c2cdd97df9387a80d14a79a",
+      "bench/native_cut.py": "13e637bdb527e7768ea52a37d54971781f35dd11e1a3dbe9350b1633c275aa9c",
+      "bench/native_evidence.py": "7550dec3d08035fa58bd8a64598140ebc79210367c47da622c3b9b01c9e6459c",
+      "scripts/review_tests/test_stress_native_vm.py": "87bd97e7e49c7007ec3c20ec8f201bf00a1955dc5a2621cb2575ece40514ffcb"
+    },
+    "scope": "Focused native controls after explicit post-cut authorization canaries were added. Currently unused provider CPU3 during disk soak, low priority,128MiB/3CPU-seconds/15s; no VM/network/load credit or ordinary/product changes."
+  },
+  "additional_actual_VM_oracles": [
+    "After recovery anonymous REST returns401.",
+    "The second real user sees zero rows owned by the first.",
+    "Anonymous access to the private verified file returns404."
+  ],
+  "scope": "These are newly explicit actual recovery assertions on the additional runtime-inflight case. Existing focused controls validate API/ownership/witness/row boundaries; they do not substitute for the two unrun real VM authorization probes. Original runtime cases remain scoped to their actual assertions, and the ten production corrections are unchanged."
+}

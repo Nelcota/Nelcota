@@ -1,0 +1,4803 @@
+{
+  "run_id": "fleet-caddy-10-bounded-pass-2-001",
+  "status": "failed",
+  "certifies_g05": false,
+  "scope": "Complete local fleet attempt; retain every failed gate. Scheduler drop totals are recovered independently from native raw counters; historical reports are unchanged. No production capacity certification.",
+  "frozen_harness": {
+    "run_id": "fleet-caddy-10-bounded-pass-2-001",
+    "git": "9d552f424c9439e78f645c698a39a2fab9ad9dc8",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "harness_sources": {
+      "bench/allocation.py": "4b98e093b86e9b9187812cd49e8d5710f54561f196bdd222573c0edd06cff34d",
+      "bench/browser_campaign.py": "35b750c93b78cb29045cd17e3d82d81446bf783e7efe54fcba3a6279a65f5113",
+      "bench/browser_driver.py": "7a97e7f83cea534add1c75bd13d6764c2fb8ef94a0c2d4e4f1a7ee8ece9c244a",
+      "bench/browser_runtime.py": "1720ee9bab4b959260f366ca7c8767d2b810a1884f3940ff3735755ef6ba48ba",
+      "bench/campaign.py": "bdee44f7731f2d6bcfb037335d7407edb2faa1ec2019aaacdf61645d0d8815a1",
+      "bench/compare.py": "95791d04b968c5e57892f767205d1f44de1c16d17a370a6d0ec49ac373524fd0",
+      "bench/disk_usage.py": "502da50d95f979128c91d49b3037cb08885ddcbb941af0a9bd842e0d193da38e",
+      "bench/evidence.py": "60dcb6a796e128e5b25547bff769f2057d1b45a591165644b96c4d6a6ae076a5",
+      "bench/fault_campaign.py": "33fca029d3414e5c03d8d8a9e7a90e38c978bc307c05f3b98eef1e3957be30f4",
+      "bench/fixture_copy.py": "8c1421202b5543c16fa0fd0af4e47f7a8f9ef1bd9cd9423bfde28eda3dec6288",
+      "bench/fleet_observer.py": "3e51bb4b4229f0854c2e67c2fadef489feed0b28893ba3fe1baad67e1fe415b4",
+      "bench/fleet_webhooks.py": "ae5d21861ef3951a50a37fdfc84507685e87c2f8cc1698ae0d5972244d0b97ce",
+      "bench/guard_check.py": "2fa55b5e70154e7498ab79f627ef7623ae965cb4727a8318845bc5eb9baf481d",
+      "bench/host_campaign.py": "e25cfd55177e128fb65435376102ee8b8a5bdf16db56b5acbc715609fb621dab",
+      "bench/host_compare.py": "0837f15d124672ec8c6d45453a0733dcbf67467cf8f831a82bfceb2af3c1cbe2",
+      "bench/host_resources.py": "8efc29fce9b182aca6bdc2fa91e26ad9d526a4b1267f69a917d132270e4065e5",
+      "bench/http_boundary.py": "b69ff97c9e65f8ec94ccf36ac282a3b6b53c1a07aa01fbd33ac1fbe68a976db3",
+      "bench/ingress.py": "4976738ec1c3e96862f87a02d81843087a72a665a2de829acc4c6804b6117ed2",
+      "bench/launch.py": "915eb76ea3a712799777f27dfbe8bbffe4de8f5a48d9a5b541ee844f0391a498",
+      "bench/load_time.py": "23e9b43a24b7842259e94958cf2a0836a7b970cabdab2c908d5761dd688527c5",
+      "bench/lost_reply.py": "2048c95f21169fe46adddb28c4feffa60da365d369f4730ed6f7c6bcbfd348bb",
+      "bench/metrics.py": "ad692683d6fe95428c98ca922593d36c01d4bb4bb41078bc04f8c25d9a025a91",
+      "bench/monitor.py": "bd869d88b833930602dc3770e5467040021cca6930f89fd298c269b6850c2e61",
+      "bench/objects.py": "a1612bc2e457481705044ce21a376d898544dbbff004a8920511218858a8210b",
+      "bench/observations.py": "8f88a60899928c2b30da0f888127034ec5c7117e34630121297f8bf11f64379b",
+      "bench/oracle_check.py": "690eb5a17c735f40b666ad313b56ed09301285c79da75835cee563021b5725ce",
+      "bench/ownership.py": "ffd3e9343b7f8262d05ee0363ab01b1f7e77089bb8f09ca8d0a350532402fa06",
+      "bench/ports.py": "edcb747bf4f29429d2abf5abf2741289c586cb64b0cf3484fa891edb5d798276",
+      "bench/postgres_evidence.py": "7152ea8c58232981c07b6c20d4a6a8cfba1046de1893d09c78de58607a95855a",
+      "bench/projects.py": "3a96324abebab46e14c7a45b9fb0f79daeaa7cccb0d61ff1e48e0bd3c80e0342",
+      "bench/receiver.py": "b4f172be66aee69649c826052951ff839272d7501ec0d0a2e648d65dedd4ee9d",
+      "bench/sqlite_evidence.py": "77b0da843ac1c0d5a29c97e2f6fa78b67fbbe96a68c5aeef05df9f0895c16215",
+      "bench/watchdog.py": "25ab3e86efdcec9c1da84942ef27fee285339adbda15b70791030e4863ff7bb3",
+      "bench/allocation_probe.c": "f833882f9c9697d7e838871dad3d398fb6427e78b21104d30ea8fcd7f13678f3",
+      "bench/campaign.js": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+      "bench/setup.sql": "104496228668127c3a95a0defa6efe2d6c06a00c56bdc19999052043e700c798",
+      "scripts/upgrade/support.py": "97fd54c7d8fe80d70d0201e71454dd4f72fef760e161800ad503760d3f90feb8"
+    }
+  },
+  "profile": {
+    "schema": 2,
+    "scope": "local independent app/PG clusters with verified local Caddy, no public DNS/controller",
+    "projects": 10,
+    "rows_per_project": 1000,
+    "shared_user_id": "00000000-0000-4000-8000-000000000001",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "cpu_effective": 4.0,
+    "app_aggregate_cpus": 1,
+    "postgres_aggregate_cpus": 1,
+    "generator_cpus": 1,
+    "metrics_cpus": 0.25,
+    "app_memory_mib_each": 128,
+    "postgres_memory_mib_each": 256,
+    "max_arrival_rate": 10000,
+    "fixture_disk_mib": 2048,
+    "storage_filesystem": "overlayfs",
+    "seconds_per_step": 300,
+    "project_cpu_period_micros": 100000,
+    "certifies_five_minute_steps": true,
+    "base_rate_per_project": 6,
+    "SLOs": "G05 unchanged",
+    "startup_disk_budget": {
+      "per_project_mib": 780,
+      "container_layer_copy_factor": 2,
+      "total_startup_mib": 8440,
+      "image_storage_drivers": [
+        "vfs",
+        "vfs"
+      ],
+      "separate_database_data_mib": 2048
+    },
+    "ingress": {
+      "kind": "real Caddy with verified internal CA on loopback",
+      "cpus": 0.25,
+      "cpu_affinity": 3,
+      "memory_mib": 128,
+      "pids_limit": 64,
+      "fixture_disk_mib": 128,
+      "binary_sha256": "678ade3bfc088749c81a681adc603333ee0bb023b6a6cfe3c0f58bef8ff854e9",
+      "image_file_capabilities_removed_for_unprivileged_ports": true,
+      "image_digests": [
+        "caddy@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f"
+      ],
+      "public_dns_acme_certified": false,
+      "reload_fault": "valid configuration rejected by an occupied owned backend listener; restore and probe without process replacement"
+    },
+    "webhooks": {
+      "enabled": true,
+      "receiver": "owned loopback, verified signatures and durable event identities",
+      "evidence_limit_mib": 128,
+      "drain_seconds": 30
+    },
+    "resource_protocol": "component cgroup v2 via shell builtins and bounded parallel owned probes; allocated du totals count only disappearing child entries",
+    "resource_probe_workers": 4,
+    "container_log_profile": {
+      "driver": "local",
+      "max_size_bytes": 8388608,
+      "max_files": 2
+    },
+    "harness_js_sha256": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+    "client_initialization": {
+      "maximum_sessions_per_project": 128,
+      "bootstrap_concurrency": 4,
+      "setup_timeout_seconds": 120,
+      "fully_preallocated_arrival_VUs": true,
+      "mix_schedule": "global scenario arrival ordinal",
+      "bootstrap_excluded_from_nominal_metrics": true
+    },
+    "cpu_affinity": [
+      0,
+      1,
+      2
+    ],
+    "metrics_cpu_affinity": 4,
+    "capacity_qualification": true,
+    "provisional_rate_per_project": 8,
+    "max_connections_each": 32,
+    "pool_each": 4,
+    "generator_memory_mib": 512,
+    "metrics_memory_mib": 512,
+    "images": {
+      "ubuntu:24.04": [
+        "ubuntu@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55"
+      ],
+      "postgres:17-alpine": [
+        "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+      ],
+      "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1": [
+        "grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1"
+      ],
+      "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996": [
+        "prom/prometheus@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+      ]
+    },
+    "nominal_rate_per_project": 4
+  },
+  "completion": {
+    "status": "failed",
+    "projects": 10,
+    "load_seconds": 3990,
+    "resource_observations": 1039,
+    "cleanup_confirmed": true,
+    "error_type": "RuntimeError"
+  },
+  "capacity": {
+    "qualified_lower_bound_per_project": 6,
+    "nominal_rate_per_project": 4,
+    "provisional_per_project": 8
+  },
+  "capacity_probes": [
+    {
+      "percent": 25,
+      "per_project_iterations_per_second": 2,
+      "qualified": true,
+      "failures": []
+    },
+    {
+      "percent": 50,
+      "per_project_iterations_per_second": 4,
+      "qualified": true,
+      "failures": []
+    },
+    {
+      "percent": 75,
+      "per_project_iterations_per_second": 6,
+      "qualified": true,
+      "failures": []
+    },
+    {
+      "percent": 100,
+      "per_project_iterations_per_second": 8,
+      "qualified": false,
+      "failures": [
+        {
+          "project": "project-7",
+          "workload": "refresh",
+          "metric": "p(95)",
+          "observed": "225.0339045983026",
+          "maximum_ms": 200
+        },
+        {
+          "project": "project-8",
+          "workload": "refresh",
+          "metric": "p(95)",
+          "observed": "280.6155120773432",
+          "maximum_ms": 200
+        },
+        {
+          "project": "project-9",
+          "workload": "refresh",
+          "metric": "p(95)",
+          "observed": "301.6261327001304",
+          "maximum_ms": 200
+        }
+      ]
+    }
+  ],
+  "cross_project_preflight": {
+    "distinct_keys": true,
+    "directed_rejections": 90,
+    "status": "passed"
+  },
+  "acceptance_failures": [
+    {
+      "phase": "noisy-mixed",
+      "failures": [
+        {
+          "project": "project-1",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    },
+    {
+      "phase": "noisy-login",
+      "failures": [
+        {
+          "project": "project-1",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    },
+    {
+      "phase": "noisy-read",
+      "failures": [
+        {
+          "project": "project-1",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    },
+    {
+      "phase": "noisy-storage",
+      "failures": [
+        {
+          "project": "project-1",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    },
+    {
+      "phase": "noisy-write",
+      "failures": [
+        {
+          "project": "project-1",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-1",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-1",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "login",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "login",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "login",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "login",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    }
+  ],
+  "proxy_reload": {
+    "expected_bind_rejection": true,
+    "good_configuration_restored": true,
+    "projects_with_positive_and_401_probes": 10,
+    "same_proxy_process": true,
+    "elapsed_seconds": 0.772549738001544,
+    "recovery_seconds_after_restore": 0.13967356100329198,
+    "tls_verification": true,
+    "public_dns_acme_certified": false
+  },
+  "resource_violations": [],
+  "cleanup": {
+    "confirmed": true,
+    "containers": [],
+    "volumes": [],
+    "directory_removed": true
+  },
+  "webhook_cleanup": {
+    "errors": []
+  },
+  "resources": {
+    "samples": 1039,
+    "median_observation_gap_seconds": 4.999567486520391,
+    "maximum_observation_gap_seconds": 5.886655113979941,
+    "maximum_collection_seconds": 4.9343462949909735,
+    "oom_kills": 0
+  },
+  "phases": [
+    {
+      "phase": "capacity-25",
+      "interval": {
+        "phase": "capacity-25",
+        "requested_seconds": 300,
+        "elapsed_seconds": 368.38626253200346,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 201760.907104471,
+        "ended_monotonic": 202129.293659003
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 601.0,
+          "successful_operations_per_second": 2.0033333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 9.696761732415752,
+            "rls": 8.51959166144732,
+            "panel": 7.8125,
+            "storage": 103.60508129800542,
+            "login": 318.24599987669274,
+            "refresh": 110.96103078290757,
+            "write": 42.320485841777895
+          }
+        },
+        "project-1": {
+          "completed_iterations": 601.0,
+          "successful_operations_per_second": 2.0033333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 22.66916402892545,
+            "rls": 6.382482239223045,
+            "panel": 9.290680585958759,
+            "storage": 50.3278228734142,
+            "login": 338.56388673422316,
+            "refresh": 122.3215077609625,
+            "write": 47.16138836229446
+          }
+        },
+        "project-2": {
+          "completed_iterations": 601.0,
+          "successful_operations_per_second": 2.0033333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 61.41564396680637,
+            "rls": 8.896786209036653,
+            "panel": 72.20954355451704,
+            "storage": 155.2322265091855,
+            "login": 290.9312146943944,
+            "refresh": 67.78864763833182,
+            "write": 63.86857179088229
+          }
+        },
+        "project-3": {
+          "completed_iterations": 601.0,
+          "successful_operations_per_second": 2.0033333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 90.5196615091256,
+            "rls": 8.51959166144732,
+            "panel": 72.20954355451707,
+            "storage": 90.32380043606541,
+            "login": 271.1545905533273,
+            "refresh": 25.7149293461557,
+            "write": 95.65409802438138
+          }
+        },
+        "project-4": {
+          "completed_iterations": 601.0,
+          "successful_operations_per_second": 2.0033333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 21.797227626103165,
+            "rls": 10.131559020711007,
+            "panel": 62.5,
+            "storage": 35.587144836146614,
+            "login": 271.64448579710995,
+            "refresh": 25.1639114367071,
+            "write": 119.70041008732171
+          }
+        },
+        "project-5": {
+          "completed_iterations": 601.0,
+          "successful_operations_per_second": 2.0033333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 90.29934761867221,
+            "rls": 10.131559020711007,
+            "panel": 99.78729829458122,
+            "storage": 42.320485841777895,
+            "login": 313.8451892561728,
+            "refresh": 27.441440005832803,
+            "write": 98.49880281924291
+          }
+        },
+        "project-6": {
+          "completed_iterations": 601.0,
+          "successful_operations_per_second": 2.0033333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 52.09134506421521,
+            "rls": 51.95236850892424,
+            "panel": 11.048543456039804,
+            "storage": 36.3664018367993,
+            "login": 268.7183349801741,
+            "refresh": 25.1639114367071,
+            "write": 30.580376940240626
+          }
+        },
+        "project-7": {
+          "completed_iterations": 601.0,
+          "successful_operations_per_second": 2.0033333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 13.082209196784406,
+            "rls": 81.05247216568806,
+            "panel": 14.328188175072988,
+            "storage": 31.934285895441146,
+            "login": 319.56175589010763,
+            "refresh": 19.404028313648187,
+            "write": 32.63355570085668
+          }
+        },
+        "project-8": {
+          "completed_iterations": 601.0,
+          "successful_operations_per_second": 2.0033333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 70.13940720166354,
+            "rls": 73.1976517508637,
+            "panel": 9.290680585958759,
+            "storage": 50.3278228734142,
+            "login": 369.20653648487485,
+            "refresh": 17.793572418073307,
+            "write": 27.441440005832803
+          }
+        },
+        "project-9": {
+          "completed_iterations": 601.0,
+          "successful_operations_per_second": 2.0033333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 90.7896641467922,
+            "rls": 97.58864776946376,
+            "panel": 7.164094087536494,
+            "storage": 50.3278228734142,
+            "login": 261.06844560685346,
+            "refresh": 12.58195571835355,
+            "write": 38.808056627296374
+          }
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "capacity-50",
+      "interval": {
+        "phase": "capacity-50",
+        "requested_seconds": 300,
+        "elapsed_seconds": 373.142785086995,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 202130.201971692,
+        "ended_monotonic": 202503.344882217
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 63.767199507493984,
+            "rls": 33.34813752115074,
+            "panel": 15.625,
+            "storage": 71.17428967229323,
+            "login": 290.9312146943944,
+            "refresh": 66.21644339745595,
+            "write": 52.556025953357164
+          }
+        },
+        "project-1": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 77.09819576296655,
+            "rls": 66.69627504230148,
+            "panel": 29.92510252183043,
+            "storage": 80.58564427747369,
+            "login": 288.8381742180682,
+            "refresh": 74.32544468767006,
+            "write": 62.5
+          }
+        },
+        "project-2": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 50.581372690765136,
+            "rls": 63.492380194096945,
+            "panel": 28.65637635014596,
+            "storage": 105.11205190671429,
+            "login": 284.6971586891729,
+            "refresh": 48.194088293998156,
+            "write": 57.31275270029195
+          }
+        },
+        "project-3": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 83.9367508529703,
+            "rls": 60.429167990883876,
+            "panel": 17.03918332289465,
+            "storage": 44.194173824159215,
+            "login": 297.3017787506803,
+            "refresh": 44.194173824159215,
+            "write": 28.656376350145976
+          }
+        },
+        "project-4": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 63.58329830511178,
+            "rls": 9.290680585958759,
+            "panel": 16.082847447554556,
+            "storage": 66.21644339745596,
+            "login": 324.2098886627524,
+            "refresh": 88.3883476483184,
+            "write": 29.92510252183043
+          }
+        },
+        "project-5": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 80.15766952633568,
+            "rls": 6.713356633290929,
+            "panel": 40.52623608284405,
+            "storage": 45.48916196381837,
+            "login": 310.464453018371,
+            "refresh": 52.556025953357164,
+            "write": 26.278012976678582
+          }
+        },
+        "project-6": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 85.7002693218735,
+            "rls": 5.768852132576166,
+            "panel": 78.09795442642196,
+            "storage": 46.150817060609356,
+            "login": 350.5033164153463,
+            "refresh": 105.11205190671426,
+            "write": 24.097044146999078
+          }
+        },
+        "project-7": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 84.74103416605676,
+            "rls": 6.0242610367497695,
+            "panel": 44.194173824159215,
+            "storage": 37.162722343835036,
+            "login": 296.27319273539547,
+            "refresh": 57.31275270029195,
+            "write": 26.278012976678582
+          }
+        },
+        "project-8": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 58.19738800551326,
+            "rls": 6.801176275750969,
+            "panel": 48.194088293998156,
+            "storage": 24.097044146999078,
+            "login": 363.91329571054683,
+            "refresh": 110.72093988779505,
+            "write": 18.581361171917518
+          }
+        },
+        "project-9": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 58.74198036837942,
+            "rls": 8.519591661447315,
+            "panel": 51.4298586923114,
+            "storage": 13.139006488339291,
+            "login": 225.3126156527075,
+            "refresh": 105.11205190671426,
+            "write": 16.554110849363987
+          }
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "capacity-75",
+      "interval": {
+        "phase": "capacity-75",
+        "requested_seconds": 300,
+        "elapsed_seconds": 373.8922821180022,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 202504.402726713,
+        "ended_monotonic": 202878.295294679
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 1801.0,
+          "successful_operations_per_second": 6.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 45.64132152258692,
+            "rls": 74.72902450248921,
+            "panel": 16.17601443502152,
+            "storage": 29.92510252183043,
+            "login": 294.0992479125703,
+            "refresh": 109.76576002333114,
+            "write": 79.60254316310858
+          }
+        },
+        "project-1": {
+          "completed_iterations": 1801.0,
+          "successful_operations_per_second": 6.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 59.316748736494354,
+            "rls": 60.13898980588408,
+            "panel": 35.587144836146614,
+            "storage": 40.878894732322856,
+            "login": 332.7475618059358,
+            "refresh": 87.62582910383657,
+            "write": 91.30736213629044
+          }
+        },
+        "project-2": {
+          "completed_iterations": 1801.0,
+          "successful_operations_per_second": 6.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 57.90548211888984,
+            "rls": 90.20878606437228,
+            "panel": 85.87210296613054,
+            "storage": 46.150817060609356,
+            "login": 290.9312146943943,
+            "refresh": 92.30163412121867,
+            "write": 23.075408530304678
+          }
+        },
+        "project-3": {
+          "completed_iterations": 1801.0,
+          "successful_operations_per_second": 6.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 50.30602472758838,
+            "rls": 77.31103604457397,
+            "panel": 51.65314488463822,
+            "storage": 49.249401409621456,
+            "login": 278.5966856489731,
+            "refresh": 83.72922025333143,
+            "write": 9.986304871565858
+          }
+        },
+        "project-4": {
+          "completed_iterations": 1801.0,
+          "successful_operations_per_second": 6.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 45.42352044450801,
+            "rls": 40.526236082844,
+            "panel": 77.61611325459275,
+            "storage": 75.13479571579394,
+            "login": 300.53918286317577,
+            "refresh": 85.25431505538968,
+            "write": 9.091600459199825
+          }
+        },
+        "project-5": {
+          "completed_iterations": 1801.0,
+          "successful_operations_per_second": 6.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 43.98306962856155,
+            "rls": 71.6161399750431,
+            "panel": 46.61451532785631,
+            "storage": 84.03204087537368,
+            "login": 295.1629066559049,
+            "refresh": 73.86687877991922,
+            "write": 12.58195571835355
+          }
+        },
+        "project-6": {
+          "completed_iterations": 1801.0,
+          "successful_operations_per_second": 6.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 59.17344706873546,
+            "rls": 13.139006488339282,
+            "panel": 101.28051643751591,
+            "storage": 134.84509971964,
+            "login": 334.91688101332574,
+            "refresh": 100.65564574682834,
+            "write": 12.58195571835355
+          }
+        },
+        "project-7": {
+          "completed_iterations": 1801.0,
+          "successful_operations_per_second": 6.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 47.87808498944186,
+            "rls": 14.748036135651454,
+            "panel": 48.718887507432406,
+            "storage": 188.64555344917784,
+            "login": 319.56175589010763,
+            "refresh": 139.29834282448655,
+            "write": 54.882880011665605
+          }
+        },
+        "project-8": {
+          "completed_iterations": 1801.0,
+          "successful_operations_per_second": 6.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 53.599575484174515,
+            "rls": 22.097086912079583,
+            "panel": 18.581361171917518,
+            "storage": 155.2322265091855,
+            "login": 319.5617558901076,
+            "refresh": 130.5342228034267,
+            "write": 54.29168235230332
+          }
+        },
+        "project-9": {
+          "completed_iterations": 1801.0,
+          "successful_operations_per_second": 6.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 63.767199507493984,
+            "rls": 10.734012870766318,
+            "panel": 37.162722343835014,
+            "storage": 103.979786270421,
+            "login": 350.6931728050512,
+            "refresh": 174.4940804155068,
+            "write": 102.85971738462277
+          }
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "capacity-100",
+      "interval": {
+        "phase": "capacity-100",
+        "requested_seconds": 300,
+        "elapsed_seconds": 370.17935351197957,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 202879.677198301,
+        "ended_monotonic": 203249.856816073
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 2401.0,
+          "successful_operations_per_second": 8.003333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 64.76179415459839,
+            "rls": 73.04857803507784,
+            "panel": 23.683071351724966,
+            "storage": 44.83699288471875,
+            "login": 314.98026247371826,
+            "refresh": 142.34857934458643,
+            "write": 88.38834764831837
+          }
+        },
+        "project-1": {
+          "completed_iterations": 2401.0,
+          "successful_operations_per_second": 8.003333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 59.82428253355092,
+            "rls": 64.86443271863288,
+            "panel": 29.283869282973438,
+            "storage": 42.320485841777895,
+            "login": 294.0992479125703,
+            "refresh": 108.19207012576784,
+            "write": 35.587144836146614
+          }
+        },
+        "project-2": {
+          "completed_iterations": 2401.0,
+          "successful_operations_per_second": 8.003333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 69.97487278686975,
+            "rls": 71.49397698245141,
+            "panel": 80.23047326181363,
+            "storage": 41.41364509874192,
+            "login": 301.00453805397905,
+            "refresh": 105.11205190671429,
+            "write": 44.194173824159186
+          }
+        },
+        "project-3": {
+          "completed_iterations": 2401.0,
+          "successful_operations_per_second": 8.003333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 21.11445764268962,
+            "rls": 69.86502810170029,
+            "panel": 101.14132188949517,
+            "storage": 55.36046994389755,
+            "login": 297.3017787506803,
+            "refresh": 99.21256574801244,
+            "write": 44.194173824159215
+          }
+        },
+        "project-4": {
+          "completed_iterations": 2401.0,
+          "successful_operations_per_second": 8.003333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 30.467033747444624,
+            "rls": 76.84402634189046,
+            "panel": 103.81903276951905,
+            "storage": 119.70041008732167,
+            "login": 306.01338582616376,
+            "refresh": 119.70041008732171,
+            "write": 48.19408829399812
+          }
+        },
+        "project-5": {
+          "completed_iterations": 2401.0,
+          "successful_operations_per_second": 8.003333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 29.310589402064657,
+            "rls": 59.61495835572275,
+            "panel": 89.4891845754748,
+            "storage": 165.65458039496767,
+            "login": 332.3359540336282,
+            "refresh": 120.74204111560567,
+            "write": 83.42749088562714
+          }
+        },
+        "project-6": {
+          "completed_iterations": 2401.0,
+          "successful_operations_per_second": 8.003333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 14.72675450598419,
+            "rls": 86.63860633066423,
+            "panel": 134.35916749008703,
+            "storage": 119.70041008732171,
+            "login": 380.02511378727866,
+            "refresh": 162.10494433137615,
+            "write": 44.194173824159215
+          }
+        },
+        "project-7": {
+          "completed_iterations": 2401.0,
+          "successful_operations_per_second": 8.003333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 59.714545032900375,
+            "rls": 9.957504900931733,
+            "panel": 85.5626514359119,
+            "storage": 114.62550540058383,
+            "login": 454.7341437371409,
+            "refresh": 225.0339045983026,
+            "write": 104.35584642556114
+          }
+        },
+        "project-8": {
+          "completed_iterations": 2401.0,
+          "successful_operations_per_second": 8.003333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 63.7994368599494,
+            "rls": 8.31127607616736,
+            "panel": 65.26711140171336,
+            "storage": 81.0524721656881,
+            "login": 446.7377268478255,
+            "refresh": 280.6155120773432,
+            "write": 171.74420593226108
+          }
+        },
+        "project-9": {
+          "completed_iterations": 2401.0,
+          "successful_operations_per_second": 8.003333333333334,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 55.85871269897484,
+            "rls": 15.89812018910447,
+            "panel": 29.496072271302907,
+            "storage": 155.23222650918544,
+            "login": 445.4493590701696,
+            "refresh": 301.6261327001304,
+            "write": 183.71681153444985
+          }
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "overload-125",
+      "interval": {
+        "phase": "overload-125",
+        "requested_seconds": 30,
+        "elapsed_seconds": 100.36586388500291,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 203251.327542449,
+        "ended_monotonic": 203351.693557691
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 211.0,
+          "successful_operations_per_second": 7.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 79.3156848244833,
+            "rls": 88.00626253740154,
+            "panel": 57.31275270029195,
+            "storage": 77.61611325459275,
+            "login": 338.56388673422316,
+            "refresh": 201.31129149365674,
+            "write": 54.882880011665605
+          }
+        },
+        "project-1": {
+          "completed_iterations": 211.0,
+          "successful_operations_per_second": 7.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 63.86857179088228,
+            "rls": 26.16441839356883,
+            "panel": 68.1567332915786,
+            "storage": 13.720720002916401,
+            "login": 290.9312146943944,
+            "refresh": 109.76576002333118,
+            "write": 65.26711140171336
+          }
+        },
+        "project-2": {
+          "completed_iterations": 211.0,
+          "successful_operations_per_second": 7.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 46.15081706060933,
+            "rls": 80.70209857412901,
+            "panel": 57.31275270029195,
+            "storage": 46.150817060609356,
+            "login": 402.62258298731354,
+            "refresh": 239.40082017464343,
+            "write": 119.70041008732171
+          }
+        },
+        "project-3": {
+          "completed_iterations": 211.0,
+          "successful_operations_per_second": 7.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 36.62992777560159,
+            "rls": 47.98575491000256,
+            "panel": 24.097044146999078,
+            "storage": 54.882880011665605,
+            "login": 402.62258298731354,
+            "refresh": 155.2322265091855,
+            "write": 12.58195571835355
+          }
+        },
+        "project-4": {
+          "completed_iterations": 211.0,
+          "successful_operations_per_second": 7.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 59.850205043660814,
+            "rls": 67.862105394437,
+            "panel": 40.52623608284405,
+            "storage": 71.17428967229323,
+            "login": 290.9312146943944,
+            "refresh": 119.70041008732171,
+            "write": 77.61611325459275
+          }
+        },
+        "project-5": {
+          "completed_iterations": 211.0,
+          "successful_operations_per_second": 7.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 29.925102521830407,
+            "rls": 57.06500115775181,
+            "panel": 88.38834764831843,
+            "storage": 92.30163412121871,
+            "login": 310.464453018371,
+            "refresh": 155.2322265091855,
+            "write": 42.320485841777895
+          }
+        },
+        "project-6": {
+          "completed_iterations": 211.0,
+          "successful_operations_per_second": 7.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 50.87585693304212,
+            "rls": 54.76412769208657,
+            "panel": 71.17428967229323,
+            "storage": 71.17428967229323,
+            "login": 439.0630400933248,
+            "refresh": 219.53152004666237,
+            "write": 169.28194336711158
+          }
+        },
+        "project-7": {
+          "completed_iterations": 211.0,
+          "successful_operations_per_second": 7.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 50.32782287341417,
+            "rls": 80.70209857412901,
+            "panel": 74.32544468767007,
+            "storage": 71.17428967229323,
+            "login": 439.0630400933248,
+            "refresh": 155.2322265091855,
+            "write": 59.85020504366086
+          }
+        },
+        "project-8": {
+          "completed_iterations": 211.0,
+          "successful_operations_per_second": 7.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 50.32782287341417,
+            "rls": 44.003131268700756,
+            "panel": 68.1567332915786,
+            "storage": 100.65564574682837,
+            "login": 439.0630400933248,
+            "refresh": 130.53422280342673,
+            "write": 84.64097168355579
+          }
+        },
+        "project-9": {
+          "completed_iterations": 211.0,
+          "successful_operations_per_second": 7.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 66.69627504230145,
+            "rls": 44.003131268700756,
+            "panel": 24.097044146999078,
+            "storage": 42.320485841777895,
+            "login": 310.464453018371,
+            "refresh": 169.28194336711158,
+            "write": 29.92510252183043
+          }
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "overload-150",
+      "interval": {
+        "phase": "overload-150",
+        "requested_seconds": 30,
+        "elapsed_seconds": 102.38608614899567,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 203352.587508305,
+        "ended_monotonic": 203454.973747133
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 271.0,
+          "successful_operations_per_second": 9.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 71.17428967229321,
+            "rls": 97.8608076718672,
+            "panel": 86.12046980785654,
+            "storage": 54.17420923114397,
+            "login": 472.6191526207045,
+            "refresh": 216.69683692457582,
+            "write": 91.10979668334727
+          }
+        },
+        "project-1": {
+          "completed_iterations": 271.0,
+          "successful_operations_per_second": 9.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 68.15673329157856,
+            "rls": 32.212177533661226,
+            "panel": 102.41507544288,
+            "storage": 76.61390142552149,
+            "login": 449.9749725724453,
+            "refresh": 306.455605702086,
+            "write": 198.7118756094993
+          }
+        },
+        "project-2": {
+          "completed_iterations": 271.0,
+          "successful_operations_per_second": 9.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 48.194088293998156,
+            "rls": 59.59148460323027,
+            "panel": 59.077394077588075,
+            "storage": 46.855915239196094,
+            "login": 472.6191526207045,
+            "refresh": 364.43918673338914,
+            "write": 236.30957631035224
+          }
+        },
+        "project-3": {
+          "completed_iterations": 271.0,
+          "successful_operations_per_second": 9.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 46.822096152396284,
+            "rls": 53.35898374551938,
+            "panel": 25.60376886072,
+            "storage": 49.677968902374836,
+            "login": 343.73650977918555,
+            "refresh": 216.69683692457582,
+            "write": 108.34841846228791
+          }
+        },
+        "project-4": {
+          "completed_iterations": 271.0,
+          "successful_operations_per_second": 9.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 65.26711140171335,
+            "rls": 78.80194231614378,
+            "panel": 21.530117451964127,
+            "storage": 41.77402596709251,
+            "login": 486.1168340125162,
+            "refresh": 364.43918673338914,
+            "write": 167.09610386837
+          }
+        },
+        "project-5": {
+          "completed_iterations": 271.0,
+          "successful_operations_per_second": 9.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 62.5,
+            "rls": 46.855915239196094,
+            "panel": 46.95751913311619,
+            "storage": 41.77402596709251,
+            "login": 433.39367384915164,
+            "refresh": 216.69683692457582,
+            "write": 70.25525737288733
+          }
+        },
+        "project-6": {
+          "completed_iterations": 271.0,
+          "successful_operations_per_second": 9.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 68.15673329157858,
+            "rls": 64.42435506732247,
+            "panel": 78.97281901649026,
+            "storage": 54.17420923114397,
+            "login": 433.39367384915164,
+            "refresh": 257.6974202692899,
+            "write": 182.21959336669454
+          }
+        },
+        "project-7": {
+          "completed_iterations": 271.0,
+          "successful_operations_per_second": 9.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 71.17428967229321,
+            "rls": 45.55489834167362,
+            "panel": 38.30695071276076,
+            "storage": 70.25525737288733,
+            "login": 364.43918673338914,
+            "refresh": 140.51051474577466,
+            "write": 64.42435506732247
+          }
+        },
+        "project-8": {
+          "completed_iterations": 271.0,
+          "successful_operations_per_second": 9.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 49.60628287400622,
+            "rls": 64.42435506732247,
+            "panel": 21.530117451964127,
+            "storage": 167.09610386837,
+            "login": 293.971866716102,
+            "refresh": 99.35593780474964,
+            "write": 60.76460425156452
+          }
+        },
+        "project-9": {
+          "completed_iterations": 271.0,
+          "successful_operations_per_second": 9.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 46.822096152396284,
+            "rls": 70.25525737288733,
+            "panel": 39.48640950824512,
+            "storage": 91.10979668334727,
+            "login": 306.455605702086,
+            "refresh": 171.86825488959278,
+            "write": 64.42435506732247
+          }
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "overload-200",
+      "interval": {
+        "phase": "overload-200",
+        "requested_seconds": 30,
+        "elapsed_seconds": 100.61297103599645,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 203455.889457398,
+        "ended_monotonic": 203556.502627132
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 361.0,
+          "successful_operations_per_second": 12.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 72.98531367634436,
+            "rls": 36.52428901753892,
+            "panel": 69.3480920042403,
+            "storage": 20.439447366161428,
+            "login": 356.6300064672571,
+            "refresh": 187.83007653246483,
+            "write": 178.3150032336285
+          }
+        },
+        "project-1": {
+          "completed_iterations": 361.0,
+          "successful_operations_per_second": 12.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 74.21819199489471,
+            "rls": 35.48451340846492,
+            "panel": 22.483337187669054,
+            "storage": 53.01336763929107,
+            "login": 379.5863450518973,
+            "refresh": 212.05347055716413,
+            "write": 126.08774797379985
+          }
+        },
+        "project-2": {
+          "completed_iterations": 361.0,
+          "successful_operations_per_second": 12.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 74.26107448742485,
+            "rls": 81.75778946464568,
+            "panel": 20.617311105826467,
+            "storage": 48.61347246912559,
+            "login": 299.88889401022544,
+            "refresh": 149.94444700511272,
+            "write": 89.15750161681424
+          }
+        },
+        "project-3": {
+          "completed_iterations": 361.0,
+          "successful_operations_per_second": 12.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 48.0898087850931,
+            "rls": 83.04286338103198,
+            "panel": 74.97222350255636,
+            "storage": 53.01336763929107,
+            "login": 299.88889401022544,
+            "refresh": 131.10094591562685,
+            "write": 81.75778946464568
+          }
+        },
+        "project-4": {
+          "completed_iterations": 361.0,
+          "successful_operations_per_second": 12.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 47.985754910002534,
+            "rls": 58.314561971050445,
+            "panel": 94.186667592161,
+            "storage": 115.62297469054606,
+            "login": 340.0337846310952,
+            "refresh": 137.4996641597769,
+            "write": 74.97222350255636
+          }
+        },
+        "project-5": {
+          "completed_iterations": 361.0,
+          "successful_operations_per_second": 12.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 19.36204302842019,
+            "rls": 97.22694493825114,
+            "panel": 66.60003135178027,
+            "storage": 97.22694493825114,
+            "login": 289.6735773655693,
+            "refresh": 115.62297469054606,
+            "write": 68.74983207988845
+          }
+        },
+        "project-6": {
+          "completed_iterations": 361.0,
+          "successful_operations_per_second": 12.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 22.001565634350364,
+            "rls": 83.548051934185,
+            "panel": 101.53154954452943,
+            "storage": 149.94444700511272,
+            "login": 311.8123553329007,
+            "refresh": 149.94444700511272,
+            "write": 137.4996641597769
+          }
+        },
+        "project-7": {
+          "completed_iterations": 361.0,
+          "successful_operations_per_second": 12.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 61.37308863660588,
+            "rls": 12.259126529636726,
+            "panel": 63.043873986899925,
+            "storage": 194.45388987650227,
+            "login": 404.37059602460135,
+            "refresh": 194.45388987650227,
+            "write": 133.68180283827002
+          }
+        },
+        "project-8": {
+          "completed_iterations": 361.0,
+          "successful_operations_per_second": 12.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 62.36476620811235,
+            "rls": 8.8200344125479,
+            "panel": 12.259126529636726,
+            "storage": 424.10694111432844,
+            "login": 440.9692618272868,
+            "refresh": 274.99932831955385,
+            "write": 289.6735773655693
+          }
+        },
+        "project-9": {
+          "completed_iterations": 361.0,
+          "successful_operations_per_second": 12.033333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 88.31179814819268,
+            "rls": 35.2801376501916,
+            "panel": 9.45307882202572,
+            "storage": 53.01336763929107,
+            "login": 424.10694111432844,
+            "refresh": 356.6300064672571,
+            "write": 231.24594938109212
+          }
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "balanced-1",
+      "interval": {
+        "phase": "balanced-1",
+        "requested_seconds": 300,
+        "elapsed_seconds": 368.897177737992,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 203557.51593627,
+        "ended_monotonic": 203926.413286195
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 86.79465431461409,
+            "rls": 10.42843636070339,
+            "panel": 7.8125,
+            "storage": 20.263118041422025,
+            "login": 250.0,
+            "refresh": 22.097086912079607,
+            "write": 7.481275630457607
+          }
+        },
+        "project-1": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 92.82368565294378,
+            "rls": 8.15838892521417,
+            "panel": 7.16409408753649,
+            "storage": 41.41364509874192,
+            "login": 250.0,
+            "refresh": 26.278012976678582,
+            "write": 9.290680585958759
+          }
+        },
+        "project-2": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 77.68995849993047,
+            "rls": 10.131559020711007,
+            "panel": 13.720720002916401,
+            "storage": 22.097086912079607,
+            "login": 247.60478686670655,
+            "refresh": 17.03918332289465,
+            "write": 6.5695032441696455
+          }
+        },
+        "project-3": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 58.21512649091212,
+            "rls": 15.625,
+            "panel": 14.962551260915214,
+            "storage": 15.967142947720573,
+            "login": 246.92466488442548,
+            "refresh": 17.03918332289465,
+            "write": 7.164094087536494
+          }
+        },
+        "project-4": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 85.26280596498556,
+            "rls": 86.49436762273946,
+            "panel": 15.62499999999999,
+            "storage": 20.263118041422025,
+            "login": 246.92466488442548,
+            "refresh": 22.097086912079607,
+            "write": 7.481275630457607
+          }
+        },
+        "project-5": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 63.05329251009728,
+            "rls": 62.5,
+            "panel": 12.76496447844609,
+            "storage": 24.097044146999078,
+            "login": 245.7051496363128,
+            "refresh": 22.097086912079607,
+            "write": 7.164094087536494
+          }
+        },
+        "project-6": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 53.45924723933594,
+            "rls": 71.72050276099571,
+            "panel": 11.705524038099071,
+            "storage": 41.71374544281358,
+            "login": 241.48408223121135,
+            "refresh": 15.625,
+            "write": 5.7688521325761695
+          }
+        },
+        "project-7": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 23.175591969227636,
+            "rls": 71.69004791498797,
+            "panel": 14.32818817507298,
+            "storage": 20.263118041422025,
+            "login": 239.40082017464343,
+            "refresh": 22.097086912079607,
+            "write": 7.8125
+          }
+        },
+        "project-8": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 69.09818694255895,
+            "rls": 90.81424974056578,
+            "panel": 9.02619294431463,
+            "storage": 17.03918332289465,
+            "login": 229.2510108011678,
+            "refresh": 20.263118041422025,
+            "write": 7.8125
+          }
+        },
+        "project-9": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 16.40791478262029,
+            "rls": 71.17428967229323,
+            "panel": 25.1639114367071,
+            "storage": 11.705524038099071,
+            "login": 234.2709542637875,
+            "refresh": 17.03918332289465,
+            "write": 9.290680585958759
+          }
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "balanced-2",
+      "interval": {
+        "phase": "balanced-2",
+        "requested_seconds": 300,
+        "elapsed_seconds": 370.41155174499727,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 203927.812435815,
+        "ended_monotonic": 204298.224242877
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 64.36992007746083,
+            "rls": 79.2012311429414,
+            "panel": 18.581361171917518,
+            "storage": 81.0524721656881,
+            "login": 297.3017787506803,
+            "refresh": 44.194173824159215,
+            "write": 37.162722343835036
+          }
+        },
+        "project-1": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 77.68995849993047,
+            "rls": 16.925996872217507,
+            "panel": 16.746460352129578,
+            "storage": 88.38834764831843,
+            "login": 310.464453018371,
+            "refresh": 52.556025953357164,
+            "write": 38.808056627296374
+          }
+        },
+        "project-2": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 65.82555847742512,
+            "rls": 77.61611325459275,
+            "panel": 37.162722343835036,
+            "storage": 109.76576002333118,
+            "login": 375.66015306492966,
+            "refresh": 114.6255054005839,
+            "write": 68.1567332915786
+          }
+        },
+        "project-3": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 51.17861027527534,
+            "rls": 5.524271728019898,
+            "panel": 40.52623608284405,
+            "storage": 46.150817060609356,
+            "login": 363.91329571054683,
+            "refresh": 57.31275270029195,
+            "write": 32.63355570085668
+          }
+        },
+        "project-4": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 77.52595326886102,
+            "rls": 8.08800721751076,
+            "panel": 27.8405849418856,
+            "storage": 34.0783666457893,
+            "login": 349.20420996398605,
+            "refresh": 85.87210296613057,
+            "write": 32.63355570085668
+          }
+        },
+        "project-5": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 53.34391021095181,
+            "rls": 7.8125,
+            "panel": 61.93256916691199,
+            "storage": 48.194088293998156,
+            "login": 321.6662245023579,
+            "refresh": 65.26711140171336,
+            "write": 31.25
+          }
+        },
+        "project-6": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 59.97998617915483,
+            "rls": 7.164094087536494,
+            "panel": 57.31275270029192,
+            "storage": 48.194088293998156,
+            "login": 361.29520174426165,
+            "refresh": 109.76576002333118,
+            "write": 62.5
+          }
+        },
+        "project-7": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 58.60533957796774,
+            "rls": 5.8527620190495355,
+            "panel": 24.09704414699906,
+            "storage": 34.0783666457893,
+            "login": 315.89127606596105,
+            "refresh": 63.86857179088229,
+            "write": 25.1639114367071
+          }
+        },
+        "project-8": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 77.86654562073169,
+            "rls": 6.569503244169637,
+            "panel": 21.78028536639062,
+            "storage": 71.17428967229323,
+            "login": 290.0323465400407,
+            "refresh": 36.10477177725852,
+            "write": 86.12046980785654
+          }
+        },
+        "project-9": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 53.78745213429828,
+            "rls": 6.0242610367497695,
+            "panel": 18.581361171917507,
+            "storage": 103.60508129800542,
+            "login": 303.8118399951172,
+            "refresh": 59.85020504366086,
+            "write": 101.53154954452943
+          }
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "balanced-3",
+      "interval": {
+        "phase": "balanced-3",
+        "requested_seconds": 300,
+        "elapsed_seconds": 376.1956264990149,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 204299.494654057,
+        "ended_monotonic": 204675.690507774
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 69.57679335505907,
+            "rls": 60.790934213267846,
+            "panel": 20.263118041422025,
+            "storage": 46.150817060609356,
+            "login": 284.6971586891729,
+            "refresh": 34.0783666457893,
+            "write": 6.0242610367497695
+          }
+        },
+        "project-1": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 15.55745625677003,
+            "rls": 73.47174414272554,
+            "panel": 18.581361171917507,
+            "storage": 48.194088293998156,
+            "login": 272.6269331663144,
+            "refresh": 31.25,
+            "write": 7.374018067825732
+          }
+        },
+        "project-2": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 55.600821149471486,
+            "rls": 62.06246739196465,
+            "panel": 23.58069418114723,
+            "storage": 45.48916196381837,
+            "login": 280.6155120773432,
+            "refresh": 37.162722343835036,
+            "write": 6.5695032441696455
+          }
+        },
+        "project-3": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 37.00207534378904,
+            "rls": 94.64592556223302,
+            "panel": 48.194088293998156,
+            "storage": 42.320485841777895,
+            "login": 280.6155120773432,
+            "refresh": 34.0783666457893,
+            "write": 6.0242610367497695
+          }
+        },
+        "project-4": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 53.648717750737205,
+            "rls": 72.35351401808269,
+            "panel": 119.70041008732167,
+            "storage": 40.52623608284405,
+            "login": 272.6269331663144,
+            "refresh": 24.097044146999078,
+            "write": 6.290977859176775
+          }
+        },
+        "project-5": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 24.044904392546535,
+            "rls": 95.79349018041056,
+            "panel": 100.65564574682837,
+            "storage": 48.194088293998156,
+            "login": 261.06844560685346,
+            "refresh": 22.097086912079607,
+            "write": 6.5695032441696455
+          }
+        },
+        "project-6": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 22.049274546434933,
+            "rls": 12.76496447844609,
+            "panel": 103.39157074017538,
+            "storage": 44.194173824159215,
+            "login": 257.32555916087296,
+            "refresh": 17.03918332289465,
+            "write": 6.5695032441696455
+          }
+        },
+        "project-7": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 14.143176595955198,
+            "rls": 10.42843636070339,
+            "panel": 142.34857934458645,
+            "storage": 62.5,
+            "login": 263.34025898870897,
+            "refresh": 26.278012976678582,
+            "write": 7.164094087536494
+          }
+        },
+        "project-8": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 58.90701802393679,
+            "rls": 15.625,
+            "panel": 79.66003920745389,
+            "storage": 122.3215077609625,
+            "login": 272.6269331663143,
+            "refresh": 57.31275270029195,
+            "write": 6.5695032441696455
+          }
+        },
+        "project-9": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 14.726754505984198,
+            "rls": 48.194088293998156,
+            "panel": 104.77528641609383,
+            "storage": 151.9059199975586,
+            "login": 338.56388673422316,
+            "refresh": 88.38834764831843,
+            "write": 6.860360001458201
+          }
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "proxy-reload",
+      "interval": {
+        "phase": "proxy-reload",
+        "requested_seconds": 300,
+        "elapsed_seconds": 374.59437063499354,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 204677.093921485,
+        "ended_monotonic": 205051.688601019
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 83.35263523168943,
+            "rls": 12.312350352405364,
+            "panel": 8.519591661447325,
+            "storage": 40.52623608284405,
+            "login": 280.6155120773432,
+            "refresh": 31.25,
+            "write": 17.03918332289465
+          }
+        },
+        "project-1": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 93.5470479499267,
+            "rls": 11.537704265152339,
+            "panel": 8.519591661447325,
+            "storage": 24.097044146999078,
+            "login": 264.86577358982385,
+            "refresh": 37.162722343835036,
+            "write": 14.328188175072988
+          }
+        },
+        "project-2": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 87.2107046031278,
+            "rls": 10.131559020711013,
+            "panel": 8.519591661447325,
+            "storage": 40.52623608284405,
+            "login": 288.8381742180682,
+            "refresh": 48.194088293998156,
+            "write": 18.581361171917518
+          }
+        },
+        "project-3": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 64.55531482877076,
+            "rls": 26.853426533163717,
+            "panel": 9.290680585958759,
+            "storage": 34.0783666457893,
+            "login": 288.8381742180682,
+            "refresh": 46.150817060609356,
+            "write": 24.097044146999078
+          }
+        },
+        "project-4": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 91.1214063381647,
+            "rls": 50.01731516131035,
+            "panel": 12.048522073499539,
+            "storage": 31.25,
+            "login": 278.5966856489731,
+            "refresh": 42.320485841777895,
+            "write": 24.097044146999078
+          }
+        },
+        "project-5": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 72.99403653624948,
+            "rls": 69.64917141224328,
+            "panel": 13.720720002916401,
+            "storage": 37.162722343835036,
+            "login": 264.86577358982385,
+            "refresh": 34.0783666457893,
+            "write": 19.404028313648187
+          }
+        },
+        "project-6": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 28.62535707815976,
+            "rls": 80.25835821667607,
+            "panel": 12.58195571835355,
+            "storage": 45.48916196381837,
+            "login": 250.0,
+            "refresh": 29.49607227130293,
+            "write": 17.03918332289465
+          }
+        },
+        "project-7": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 30.268841574071768,
+            "rls": 79.31568482448333,
+            "panel": 13.139006488339282,
+            "storage": 34.0783666457893,
+            "login": 261.06844560685346,
+            "refresh": 31.25,
+            "write": 19.404028313648187
+          }
+        },
+        "project-8": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 34.48145076858912,
+            "rls": 93.39864658142157,
+            "panel": 10.131559020711007,
+            "storage": 23.411048076198142,
+            "login": 250.0,
+            "refresh": 32.165694895109134,
+            "write": 17.03918332289465
+          }
+        },
+        "project-9": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 19.81818633106802,
+            "rls": 72.81576960474624,
+            "panel": 21.468025741532635,
+            "storage": 11.048543456039804,
+            "login": 235.96857817042334,
+            "refresh": 31.25,
+            "write": 10.811795952842436
+          }
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "noisy-mixed",
+      "interval": {
+        "phase": "noisy-mixed",
+        "requested_seconds": 300,
+        "elapsed_seconds": 368.9377668139932,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 205053.19844305,
+        "ended_monotonic": 205422.136405247
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 15534.0,
+          "successful_operations_per_second": 51.78,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 27667.0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 334.61701373745296,
+            "rls": 296.3758909947298,
+            "panel": 326.91783713418965,
+            "storage": 657.9272625145039,
+            "login": 989.5075420585283,
+            "refresh": 416.7234415977971,
+            "write": 381.3244410989567
+          }
+        },
+        "project-1": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 59.920959903579664,
+            "rls": 16.216108179658224,
+            "panel": 14.328188175072988,
+            "storage": 15.625,
+            "login": 239.40082017464343,
+            "refresh": 16.554110849363987,
+            "write": 144.41908710903414
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.7712832013371882,
+            "rls": 0.9580592683598742,
+            "panel": 0.8555950256826024,
+            "storage": 0.32420988866275235,
+            "login": 0.8781260801866498,
+            "refresh": 0.5297315471796475,
+            "write": 15.544511058457694
+          }
+        },
+        "project-2": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 92.37222575305348,
+            "rls": 13.139006488339291,
+            "panel": 10.131559020711013,
+            "storage": 41.71374544281358,
+            "login": 250.0,
+            "refresh": 24.097044146999078,
+            "write": 12.048522073499539
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.4032881435367168,
+            "rls": 0.21170615736815554,
+            "panel": 0.4296548245306195,
+            "storage": 0.9170040432046711,
+            "login": 0.8908987181403394,
+            "refresh": 0.6484197773255048,
+            "write": 1.8340080864093424
+          }
+        },
+        "project-3": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 46.05095866077222,
+            "rls": 73.21387373546679,
+            "panel": 7.8125,
+            "storage": 15.625,
+            "login": 243.88716051314333,
+            "refresh": 15.625,
+            "write": 7.04101923914711
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.899808697678133,
+            "rls": 4.685687919069875,
+            "panel": 0.19277635317599262,
+            "storage": 0.36920653648487484,
+            "login": 0.8691150346881863,
+            "refresh": 0.4585020216023356,
+            "write": 0.9828205985452508
+          }
+        },
+        "project-4": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 49.5919580863895,
+            "rls": 96.38817658799631,
+            "panel": 7.8125,
+            "storage": 6.860360001458201,
+            "login": 242.8829852884015,
+            "refresh": 14.328188175072988,
+            "write": 8.15838892521417
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.6396820160908431,
+            "rls": 1.3321837632365283,
+            "panel": 0.2806155120773433,
+            "storage": 0.20131129149365679,
+            "login": 0.8908987181403394,
+            "refresh": 0.5946035575013605,
+            "write": 1.0905077326652577
+          }
+        },
+        "project-5": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 33.565547845249526,
+            "rls": 76.84402634189046,
+            "panel": 7.16409408753649,
+            "storage": 7.164094087536494,
+            "login": 249.99999999999991,
+            "refresh": 10.131559020711013,
+            "write": 6.860360001458201
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.6292292355868266,
+            "rls": 1.2295044214702473,
+            "panel": 0.11567571285842876,
+            "storage": 0.14865088937534013,
+            "login": 0.9576032806985734,
+            "refresh": 0.45850202160233566,
+            "write": 0.9576032806985736
+          }
+        },
+        "project-6": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 38.724086056840356,
+            "rls": 76.10267150191213,
+            "panel": 9.290680585958754,
+            "storage": 22.097086912079607,
+            "login": 235.96857817042334,
+            "refresh": 5.7688521325761695,
+            "write": 9.290680585958759
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.7243664671048103,
+            "rls": 5.9618396612394084,
+            "panel": 0.16210494433137623,
+            "storage": 0.5,
+            "login": 0.9170040432046713,
+            "refresh": 0.3385638867342232,
+            "write": 1.414213562373095
+          }
+        },
+        "project-7": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 57.0650011577517,
+            "rls": 63.278409256172814,
+            "panel": 13.139006488339291,
+            "storage": 45.48916196381837,
+            "login": 242.88298528840141,
+            "refresh": 14.748036135651464,
+            "write": 10.428436360703396
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 2.4622888266898273,
+            "rls": 6.0678712577294505,
+            "panel": 0.5452538663326292,
+            "storage": 1.3348398541700348,
+            "login": 0.922316193585939,
+            "refresh": 0.5612310241546866,
+            "write": 1.3348398541700346
+          }
+        },
+        "project-8": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 59.534143223589034,
+            "rls": 81.0524721656881,
+            "panel": 29.92510252183043,
+            "storage": 37.162722343835036,
+            "login": 229.2510108011678,
+            "refresh": 12.048522073499539,
+            "write": 10.131559020711013
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.8615876314248234,
+            "rls": 5.187358218604039,
+            "panel": 1.373953647458089,
+            "storage": 0.522136891213707,
+            "login": 0.840896415253715,
+            "refresh": 0.33370996354250876,
+            "write": 1.2968395546510096
+          }
+        },
+        "project-9": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 18.34143083804912,
+            "rls": 69.0713278616721,
+            "panel": 21.34437901178743,
+            "storage": 37.162722343835036,
+            "login": 229.2510108011678,
+            "refresh": 11.537704265152339,
+            "write": 11.372290490954592
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.1178404496272045,
+            "rls": 1.4331908810125555,
+            "panel": 0.848213882228657,
+            "storage": 0.3586959430777502,
+            "login": 0.7545822137967113,
+            "refresh": 0.1927763531759926,
+            "write": 1.2240535433046555
+          }
+        }
+      },
+      "gates": [
+        {
+          "project": "project-1",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    },
+    {
+      "phase": "noisy-login",
+      "interval": {
+        "phase": "noisy-login",
+        "requested_seconds": 300,
+        "elapsed_seconds": 380.9411332150048,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 205423.787879784,
+        "ended_monotonic": 205804.729168851
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 1253.0,
+          "successful_operations_per_second": 4.176666666666667,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 41948.0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "login": 3438.6866082541337
+          }
+        },
+        "project-1": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 70.03933569763755,
+            "rls": 7.8125,
+            "panel": 5.524271728019902,
+            "storage": 48.194088293998156,
+            "login": 201.31129149365674,
+            "refresh": 7.164094087536494,
+            "write": 11.372290490954592
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.9015236595563407,
+            "rls": 0.4615680871844844,
+            "panel": 0.3298769776932236,
+            "storage": 1.0,
+            "login": 0.7384130729697495,
+            "refresh": 0.2292510108011678,
+            "write": 1.2240535433046555
+          }
+        },
+        "project-2": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 94.48636734099392,
+            "rls": 11.790347090573615,
+            "panel": 10.580121460444474,
+            "storage": 13.139006488339291,
+            "login": 227.53027621678004,
+            "refresh": 9.702014156824093,
+            "write": 31.25
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.435405479672429,
+            "rls": 0.18997548093133232,
+            "panel": 0.4486772687507768,
+            "storage": 0.2888381742180682,
+            "login": 0.8108257256785867,
+            "refresh": 0.26106844560685344,
+            "write": 4.756828460010884
+          }
+        },
+        "project-3": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 30.966990650480813,
+            "rls": 77.89682481054832,
+            "panel": 11.048543456039804,
+            "storage": 11.048543456039804,
+            "login": 223.3688634239128,
+            "refresh": 10.131559020711013,
+            "write": 24.097044146999078
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.6050768179111955,
+            "rls": 4.985396787875093,
+            "panel": 0.27262693316631437,
+            "storage": 0.26106844560685344,
+            "login": 0.7959961363873138,
+            "refresh": 0.29730177875068026,
+            "write": 3.3635856610148585
+          }
+        },
+        "project-4": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 54.875887458346625,
+            "rls": 54.58648081872403,
+            "panel": 8.519591661447325,
+            "storage": 9.702014156824093,
+            "login": 220.89437268688366,
+            "refresh": 9.290680585958759,
+            "write": 27.441440005832803
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.7078389254761736,
+            "rls": 0.754441322712836,
+            "panel": 0.3060133858261639,
+            "storage": 0.2846971586891729,
+            "login": 0.8102441315001272,
+            "refresh": 0.3855527063519852,
+            "write": 3.6680161728186844
+          }
+        },
+        "project-5": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 37.00207534378904,
+            "rls": 76.94652583405725,
+            "panel": 10.131559020711007,
+            "storage": 10.131559020711013,
+            "login": 210.22410381342857,
+            "refresh": 7.8125,
+            "write": 20.263118041422025
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.6936513502190227,
+            "rls": 1.231144413344916,
+            "panel": 0.16359016196156578,
+            "storage": 0.2102241038134286,
+            "login": 0.8052451659746269,
+            "refresh": 0.3535533905932738,
+            "write": 2.82842712474619
+          }
+        },
+        "project-6": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 26.919985229087597,
+            "rls": 86.41294764365203,
+            "panel": 13.139006488339291,
+            "storage": 28.656376350145976,
+            "login": 201.31129149365674,
+            "refresh": 6.0242610367497695,
+            "write": 17.03918332289465
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.5035608733614857,
+            "rls": 6.769540784039164,
+            "panel": 0.22925101080116797,
+            "storage": 0.6484197773255049,
+            "login": 0.782321399203887,
+            "refresh": 0.3535533905932738,
+            "write": 2.5936791093020193
+          }
+        },
+        "project-7": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 35.51014348352824,
+            "rls": 79.83277663307,
+            "panel": 12.048522073499539,
+            "storage": 13.139006488339291,
+            "login": 244.643015521925,
+            "refresh": 6.290977859176775,
+            "write": 14.962551260915214
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.5322216377764297,
+            "rls": 7.655296908546828,
+            "panel": 0.5000000000000003,
+            "storage": 0.38555270635198524,
+            "login": 0.9289996769252603,
+            "refresh": 0.2394008201746434,
+            "write": 1.9152065613971474
+          }
+        },
+        "project-8": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 46.00443204581052,
+            "rls": 96.38817658799631,
+            "panel": 11.048543456039797,
+            "storage": 9.843133202303695,
+            "login": 244.1617462988884,
+            "refresh": 5.524271728019902,
+            "write": 15.625
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.6657834898628211,
+            "rls": 6.168843301631764,
+            "panel": 0.5072726674687613,
+            "storage": 0.13829619161110415,
+            "login": 0.8955892342079758,
+            "refresh": 0.15300669291308194,
+            "write": 2.0
+          }
+        },
+        "project-9": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 11.746647315844548,
+            "rls": 57.16247214392415,
+            "panel": 9.290680585958759,
+            "storage": 7.8125,
+            "login": 225.3126156527075,
+            "refresh": 11.048543456039804,
+            "write": 10.580121460444474
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.7159134766037984,
+            "rls": 1.1860888786860373,
+            "panel": 0.36920653648487484,
+            "storage": 0.07540653317503265,
+            "login": 0.7416189430152843,
+            "refresh": 0.1846032682424374,
+            "write": 1.1387886347566916
+          }
+        }
+      },
+      "gates": [
+        {
+          "project": "project-1",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    },
+    {
+      "phase": "noisy-read",
+      "interval": {
+        "phase": "noisy-read",
+        "requested_seconds": 300,
+        "elapsed_seconds": 372.6613888719876,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 205805.699352177,
+        "ended_monotonic": 206178.360940186
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 35594.0,
+          "successful_operations_per_second": 118.64666666666666,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 7607.0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 157.1622484134379
+          }
+        },
+        "project-1": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 92.0919428328947,
+            "rls": 6.76200438286049,
+            "panel": 16.082847447554556,
+            "storage": 49.60628287400625,
+            "login": 314.98026247371826,
+            "refresh": 48.194088293998156,
+            "write": 11.048543456039804
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.1853776808617695,
+            "rls": 0.3995040548518421,
+            "panel": 0.960372945051004,
+            "storage": 1.0293022366434923,
+            "login": 1.155352696872273,
+            "refresh": 1.542210825407941,
+            "write": 1.1892071150027208
+          }
+        },
+        "project-2": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 76.96780614348111,
+            "rls": 40.52623608284405,
+            "panel": 14.962551260915214,
+            "storage": 84.64097168355579,
+            "login": 248.86255075224153,
+            "refresh": 82.82729019748383,
+            "write": 11.048543456039804
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.169269322187023,
+            "rls": 0.6529910553973731,
+            "panel": 0.6345254785958666,
+            "storage": 1.8606843483042925,
+            "login": 0.8868453098332285,
+            "refresh": 2.228773485191785,
+            "write": 1.6817928305074288
+          }
+        },
+        "project-3": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 55.331926000274976,
+            "rls": 7.320967320743359,
+            "panel": 14.748036135651454,
+            "storage": 27.441440005832803,
+            "login": 324.2098886627523,
+            "refresh": 96.38817658799627,
+            "write": 10.734012870766318
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.0811533510320057,
+            "rls": 0.468541908527575,
+            "panel": 0.36391329571054665,
+            "storage": 0.6484197773255048,
+            "login": 1.1553526968722727,
+            "refresh": 2.828427124746189,
+            "write": 1.498307076876681
+          }
+        },
+        "project-4": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 82.08136478685913,
+            "rls": 8.277055424681993,
+            "panel": 73.04857803507785,
+            "storage": 34.0783666457893,
+            "login": 297.3017787506803,
+            "refresh": 127.73714358176458,
+            "write": 8.337034380287685
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.0587598259153277,
+            "rls": 0.11439742128645446,
+            "panel": 2.6238162088748984,
+            "storage": 1.0,
+            "login": 1.0905077326652577,
+            "refresh": 5.300946572638964,
+            "write": 1.1143867425958924
+          }
+        },
+        "project-5": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 58.10273960337387,
+            "rls": 8.519591661447315,
+            "panel": 15.62499999999999,
+            "storage": 48.194088293998156,
+            "login": 257.32555916087296,
+            "refresh": 99.78729829458122,
+            "write": 57.31275270029195
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.0892103592256919,
+            "rls": 0.13631346658315704,
+            "panel": 0.2522905187073651,
+            "storage": 1.0,
+            "login": 0.9856631986401874,
+            "refresh": 4.5158576192245246,
+            "write": 8.0
+          }
+        },
+        "project-6": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 52.11875488341341,
+            "rls": 14.506639283867585,
+            "panel": 90.60373192908929,
+            "storage": 48.194088293998156,
+            "login": 219.53152004666237,
+            "refresh": 48.194088293998156,
+            "write": 104.28737083247736
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.9749249676127841,
+            "rls": 1.1364418058790802,
+            "panel": 1.5808651244320326,
+            "storage": 1.090507732665258,
+            "login": 0.8531275352613427,
+            "refresh": 2.8284271247461903,
+            "write": 15.874468275060392
+          }
+        },
+        "project-7": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 52.35718163742743,
+            "rls": 13.52400876572098,
+            "panel": 52.556025953357164,
+            "storage": 37.162722343835036,
+            "login": 272.6269331663143,
+            "refresh": 26.278012976678582,
+            "write": 56.0846585938471
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 2.259151857132576,
+            "rls": 1.2968395546510096,
+            "panel": 2.1810154653305167,
+            "storage": 1.0905077326652577,
+            "login": 1.0352649238413771,
+            "refresh": 1.0,
+            "write": 7.178836300012429
+          }
+        },
+        "project-8": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 63.03021962718297,
+            "rls": 8.896786209036648,
+            "panel": 53.47468910516262,
+            "storage": 29.92510252183043,
+            "login": 261.06844560685346,
+            "refresh": 22.097086912079607,
+            "write": 27.441440005832803
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.9121834076425152,
+            "rls": 0.5693943173783454,
+            "panel": 2.4551877170388208,
+            "storage": 0.4204482076268573,
+            "login": 0.957603280698574,
+            "refresh": 0.6120267716523278,
+            "write": 3.512504320746599
+          }
+        },
+        "project-9": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 70.68945791939234,
+            "rls": 6.860360001458201,
+            "panel": 18.581361171917507,
+            "storage": 74.32544468767007,
+            "login": 216.38414025153568,
+            "refresh": 20.263118041422025,
+            "write": 14.328188175072988
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 4.308253599309801,
+            "rls": 0.14234857934458642,
+            "panel": 0.7384130729697492,
+            "storage": 0.7173918861555004,
+            "login": 0.7122307684092014,
+            "refresh": 0.33856388673422316,
+            "write": 1.5422108254079407
+          }
+        }
+      },
+      "gates": [
+        {
+          "project": "project-1",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    },
+    {
+      "phase": "noisy-storage",
+      "interval": {
+        "phase": "noisy-storage",
+        "requested_seconds": 300,
+        "elapsed_seconds": 368.6908891159983,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 206179.597427412,
+        "ended_monotonic": 206548.288428797
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 13801.0,
+          "successful_operations_per_second": 46.00333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 29400.0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "storage": 530.8391081842469
+          }
+        },
+        "project-1": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 78.18633780486712,
+            "rls": 4.448393104518324,
+            "panel": 26.278012976678582,
+            "storage": 17.03918332289465,
+            "login": 290.9312146943944,
+            "refresh": 37.162722343835036,
+            "write": 10.580121460444474
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.0063892337506797,
+            "rls": 0.26281424592603814,
+            "panel": 1.569168195793502,
+            "storage": 0.35355339059327373,
+            "login": 1.0671404006768237,
+            "refresh": 1.1892071150027212,
+            "write": 1.1387886347566916
+          }
+        },
+        "project-2": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 57.9931318677884,
+            "rls": 5.768852132576166,
+            "panel": 88.3883476483184,
+            "storage": 22.097086912079607,
+            "login": 225.96428459777525,
+            "refresh": 65.26711140171336,
+            "write": 11.048543456039804
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.8810123789177899,
+            "rls": 0.09295234906053816,
+            "panel": 3.748335268220598,
+            "storage": 0.4857659705768027,
+            "login": 0.8052451659746271,
+            "refresh": 1.7562521603732995,
+            "write": 1.6817928305074288
+          }
+        },
+        "project-3": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 72.33021185284247,
+            "rls": 4.138527712340997,
+            "panel": 10.580121460444474,
+            "storage": 17.538469504833955,
+            "login": 242.0077241865368,
+            "refresh": 79.50680862727071,
+            "write": 35.587144836146614
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.4132898776226752,
+            "rls": 0.26486577358982377,
+            "panel": 0.26106844560685344,
+            "storage": 0.41442032519202193,
+            "login": 0.8624174850313857,
+            "refresh": 2.333058079152233,
+            "write": 4.967431248293936
+          }
+        },
+        "project-4": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 90.31293169982978,
+            "rls": 6.382482239223045,
+            "panel": 79.15965258326581,
+            "storage": 12.76496447844609,
+            "login": 216.38414025153568,
+            "refresh": 93.64419230479257,
+            "write": 50.3278228734142
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.164938035481142,
+            "rls": 0.08821247075336143,
+            "panel": 2.8433185850262688,
+            "storage": 0.3745767692191703,
+            "login": 0.7937005259840995,
+            "refresh": 3.886127764614422,
+            "write": 6.727171322029716
+          }
+        },
+        "project-5": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 66.61268705626239,
+            "rls": 9.290680585958759,
+            "panel": 26.278012976678582,
+            "storage": 48.194088293998156,
+            "login": 227.72816151109265,
+            "refresh": 6.9601462354714,
+            "write": 28.656376350145976
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.2487402365675553,
+            "rls": 0.14865088937534016,
+            "panel": 0.4243003855670473,
+            "storage": 1.0,
+            "login": 0.8722929382819079,
+            "refresh": 0.3149802624737183,
+            "write": 4.0
+          }
+        },
+        "project-6": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 65.12589029834686,
+            "rls": 9.843133202303695,
+            "panel": 17.03918332289465,
+            "storage": 44.194173824159215,
+            "login": 196.99760563848582,
+            "refresh": 7.164094087536494,
+            "write": 72.20954355451707
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.2182343310368664,
+            "rls": 0.7711054127039705,
+            "panel": 0.2973017787506805,
+            "storage": 1.0,
+            "login": 0.7655578648342828,
+            "refresh": 0.42044820762685725,
+            "write": 10.991629179664713
+          }
+        },
+        "project-7": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 89.77410540647988,
+            "rls": 6.860360001458201,
+            "panel": 13.720720002916401,
+            "storage": 54.09603506288395,
+            "login": 214.82741226530965,
+            "refresh": 8.519591661447325,
+            "write": 100.65564574682837
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 3.873648859786676,
+            "rls": 0.6578512601668189,
+            "panel": 0.5693943173783461,
+            "storage": 1.5874010519681998,
+            "login": 0.8157788447930425,
+            "refresh": 0.3242098886627524,
+            "write": 12.88392265559403
+          }
+        },
+        "project-8": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 65.75451161389717,
+            "rls": 6.5695032441696455,
+            "panel": 12.048522073499539,
+            "storage": 61.73116622110635,
+            "login": 219.53152004666237,
+            "refresh": 10.131559020711013,
+            "write": 34.0783666457893
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.951609796485089,
+            "rls": 0.4204482076268573,
+            "panel": 0.5531847664444166,
+            "storage": 0.8673239523054502,
+            "login": 0.8052451659746273,
+            "refresh": 0.2806155120773433,
+            "write": 4.362030930661031
+          }
+        },
+        "project-9": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 54.5969146646587,
+            "rls": 4.957230301530208,
+            "panel": 11.048543456039804,
+            "storage": 14.962551260915214,
+            "login": 324.2098886627524,
+            "refresh": 57.31275270029195,
+            "write": 11.048543456039804
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 3.3274742944477773,
+            "rls": 0.1028597173846228,
+            "panel": 0.4390630400933248,
+            "storage": 0.1444190871090342,
+            "login": 1.0671404006768235,
+            "refresh": 0.9576032806985736,
+            "write": 1.1892071150027208
+          }
+        }
+      },
+      "gates": [
+        {
+          "project": "project-1",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    },
+    {
+      "phase": "noisy-write",
+      "interval": {
+        "phase": "noisy-write",
+        "requested_seconds": 300,
+        "elapsed_seconds": 371.209610490012,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 206549.385081199,
+        "ended_monotonic": 206920.594843897
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 9204.0,
+          "successful_operations_per_second": 30.68,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 33997.0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "write": 634.9453959894671
+          }
+        },
+        "project-1": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 7.523062098110248,
+            "rls": 96.38817658799627,
+            "panel": 98.49880281924288,
+            "storage": 46.822096152396284,
+            "login": 248.20143012281727,
+            "refresh": 20.263118041422025,
+            "write": 11.537704265152339
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.09683442034683261,
+            "rls": 5.694682405749982,
+            "panel": 5.881768490062869,
+            "storage": 0.9715319411536055,
+            "login": 0.9104068598072205,
+            "refresh": 0.6484197773255048,
+            "write": 1.241857812073484
+          }
+        },
+        "project-2": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 44.155899074096325,
+            "rls": 86.36955499798601,
+            "panel": 95.63194070856667,
+            "storage": 24.097044146999078,
+            "login": 257.32555916087296,
+            "refresh": 17.03918332289465,
+            "write": 13.139006488339291
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.6708017386474525,
+            "rls": 1.3916551923807086,
+            "panel": 4.055518466671114,
+            "storage": 0.5297315471796475,
+            "login": 0.9170040432046711,
+            "refresh": 0.4585020216023356,
+            "write": 2.0
+          }
+        },
+        "project-3": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 12.554731629055054,
+            "rls": 20.85687272140678,
+            "panel": 88.3883476483184,
+            "storage": 121.44149264420071,
+            "login": 250.0,
+            "refresh": 15.625,
+            "write": 12.048522073499539
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.24531208568436474,
+            "rls": 1.334839854170034,
+            "panel": 2.1810154653305145,
+            "storage": 2.869567544622,
+            "login": 0.8908987181403394,
+            "refresh": 0.4585020216023356,
+            "write": 1.6817928305074292
+          }
+        },
+        "project-4": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 10.12059205192655,
+            "rls": 49.34647730914592,
+            "panel": 103.51711183993415,
+            "storage": 151.9059199975586,
+            "login": 272.62693316631436,
+            "refresh": 57.31275270029195,
+            "write": 10.131559020711013
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.13054456766017705,
+            "rls": 0.6820190833690977,
+            "panel": 3.7182089405095344,
+            "storage": 4.457546970383571,
+            "login": 0.9999999999999998,
+            "refresh": 2.378414230005442,
+            "write": 1.3542555469368927
+          }
+        },
+        "project-5": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 24.429898277389604,
+            "rls": 37.162722343835014,
+            "panel": 86.86988874014607,
+            "storage": 124.10071506140864,
+            "login": 369.2065364848748,
+            "refresh": 128.66277958043648,
+            "write": 9.091600459199825
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.4579697697596605,
+            "rls": 0.5946035575013602,
+            "panel": 1.4026527545793637,
+            "storage": 2.575019456833744,
+            "login": 1.414213562373095,
+            "refresh": 5.822612731368749,
+            "write": 1.2690509571917332
+          }
+        },
+        "project-6": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 10.420909452037355,
+            "rls": 31.25,
+            "panel": 15.62499999999999,
+            "storage": 172.45426504317564,
+            "login": 347.47955496058427,
+            "refresh": 180.64760087213082,
+            "write": 31.25
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.1949318404238496,
+            "rls": 2.4481070866093106,
+            "panel": 0.2726269331663144,
+            "storage": 3.9021945682102936,
+            "login": 1.3503499461681903,
+            "refresh": 10.60189314527793,
+            "write": 4.756828460010884
+          }
+        },
+        "project-7": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 16.96552634860921,
+            "rls": 69.0713278616721,
+            "panel": 16.746460352129578,
+            "storage": 117.13547713189375,
+            "login": 468.5419085275749,
+            "refresh": 128.66277958043648,
+            "write": 75.9529599987793
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.7320428479728112,
+            "rls": 6.623363798042422,
+            "panel": 0.6949591099211688,
+            "storage": 3.437238596244956,
+            "login": 1.7792262767830884,
+            "refresh": 4.8962141732186195,
+            "write": 9.721978879843752
+          }
+        },
+        "project-8": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 23.5551691127474,
+            "rls": 40.25703181790973,
+            "panel": 17.03918332289464,
+            "storage": 34.0783666457893,
+            "login": 344.9085300863512,
+            "refresh": 105.11205190671429,
+            "write": 51.65314488463822
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 0.3408941703829178,
+            "rls": 2.5764500363462224,
+            "panel": 0.7823213992038864,
+            "storage": 0.47880164034928685,
+            "login": 1.2651300664998568,
+            "refresh": 2.9113063656843745,
+            "write": 6.611602545233692
+          }
+        },
+        "project-9": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 4.003333333333333,
+          "recorded_dropped_iterations": 0.0,
+          "scheduler_scenario_dropped_iterations_from_raw": 0,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 28.594371383176522,
+            "rls": 28.04232929692355,
+            "panel": 17.03918332289464,
+            "storage": 16.31677785042834,
+            "login": 292.19431214031135,
+            "refresh": 122.3215077609625,
+            "write": 80.38639916839766
+          },
+          "p95_ratio_to_three_balanced_medians": {
+            "read": 1.7427181797326532,
+            "rls": 0.5818624293887887,
+            "panel": 0.6771277734684459,
+            "storage": 0.1574901312368592,
+            "login": 0.961760779780694,
+            "refresh": 2.043794297308233,
+            "write": 8.65236926667005
+          }
+        }
+      },
+      "gates": [
+        {
+          "project": "project-1",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-1",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-1",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "login",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "login",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "login",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "login",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    }
+  ],
+  "raw_evidence_location": "target/stress-g05/fleet-caddy-10-bounded-pass-2-001",
+  "webhook_drain_observations": {
+    "limit_seconds": 30,
+    "sample_span_seconds": 24.8949072539981,
+    "last": {
+      "project-0": {
+        "queue": {
+          "outstanding": 7010,
+          "retained": 10561
+        },
+        "work": {
+          "processing": 2,
+          "oldest_pending_seconds": 263.097088
+        }
+      },
+      "project-1": {
+        "queue": {
+          "outstanding": 0,
+          "retained": 881
+        },
+        "work": {
+          "processing": 0,
+          "oldest_pending_seconds": 0
+        }
+      },
+      "project-2": {
+        "queue": {
+          "outstanding": 0,
+          "retained": 881
+        },
+        "work": {
+          "processing": 0,
+          "oldest_pending_seconds": 0
+        }
+      },
+      "project-3": {
+        "queue": {
+          "outstanding": 0,
+          "retained": 881
+        },
+        "work": {
+          "processing": 0,
+          "oldest_pending_seconds": 0
+        }
+      },
+      "project-4": {
+        "queue": {
+          "outstanding": 0,
+          "retained": 881
+        },
+        "work": {
+          "processing": 0,
+          "oldest_pending_seconds": 0
+        }
+      },
+      "project-5": {
+        "queue": {
+          "outstanding": 0,
+          "retained": 881
+        },
+        "work": {
+          "processing": 0,
+          "oldest_pending_seconds": 0
+        }
+      },
+      "project-6": {
+        "queue": {
+          "outstanding": 0,
+          "retained": 881
+        },
+        "work": {
+          "processing": 0,
+          "oldest_pending_seconds": 0
+        }
+      },
+      "project-7": {
+        "queue": {
+          "outstanding": 0,
+          "retained": 881
+        },
+        "work": {
+          "processing": 0,
+          "oldest_pending_seconds": 0
+        }
+      },
+      "project-8": {
+        "queue": {
+          "outstanding": 0,
+          "retained": 881
+        },
+        "work": {
+          "processing": 0,
+          "oldest_pending_seconds": 0
+        }
+      },
+      "project-9": {
+        "queue": {
+          "outstanding": 0,
+          "retained": 881
+        },
+        "work": {
+          "processing": 0,
+          "oldest_pending_seconds": 0
+        }
+      }
+    }
+  },
+  "final_identity_and_marker_reconciliation": "not completed after webhook drain timeout"
+}

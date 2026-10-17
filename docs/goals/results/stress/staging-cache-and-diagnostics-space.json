@@ -1,0 +1,32 @@
+{
+  "scope": "Rebuildable target/debug compiler cache only; no data, source, Git state or benchmark evidence removed",
+  "status": "passed",
+  "archive": "/tmp/nelcota-g05-compiler-cache-f3a60eb010d88f78ecf85071/compiler-cache.tar.gz",
+  "maximum_archive_bytes": 1073741824,
+  "workspace_free_before_bytes": 12603437056,
+  "archive_sha256": "9824802547ec9c7e56d8620b5e0c9da66835bd136b5fc51bde002d8a907d9f86",
+  "archive_bytes": 1068449450,
+  "archive_verified_before_any_unlink": true,
+  "workspace_free_after_bytes": 16336773120,
+  "actual_released_bytes": 3733336064,
+  "restore_required_before_rust_checks": true,
+  "elapsed_seconds": 54.11850342398975,
+  "paths_archived": 121,
+  "original_unique_logical_bytes": 3739769451,
+  "restore_state": "pending; required after disk-intensive campaigns and before Rust checks",
+  "archive_location_scope": "Private owned tmpfs stores only rebuildable compiler cache, not database/object fixtures or irreproducible raw evidence.",
+  "private_raw_diagnostic_compression": {
+    "scope": "Lossless private diagnostic compression only; retain all failures and phase summaries unchanged",
+    "status": "passed",
+    "workspace_free_before_bytes": 16336687104,
+    "workspace_free_after_bytes": 16666759168,
+    "actual_released_bytes": 330072064,
+    "elapsed_seconds": 4.880006321996916,
+    "files": 577,
+    "original_bytes": 369730418,
+    "compressed_bytes": 39381536,
+    "raw_failure_phase_summaries_unchanged": true,
+    "original_uncompressed_hashes_retained": true
+  },
+  "ten_project_preflight_scope": "A fresh ten-project run passed the unchanged headroom check and created its ownership manifest. Functional/capacity/fairness results remain pending."
+}

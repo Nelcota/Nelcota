@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "source_commit": "e6fdfd7cca377edb0b36184a21a9a7b30a4d1d0c",
+  "previous_build_source": "af01678ac773f932232d0f37e6d0a2fa02edc343",
+  "changed_product_paths": [
+    "crates/server/tests/common/mod.rs",
+    "crates/server/tests/common/postgres.rs",
+    "crates/server/tests/rls.rs",
+    "crates/server/tests/sdk_rust.rs"
+  ],
+  "previous_binary_sha256": "acfb2c604a7376be95690852ef016bca90eba599a55bad4be27b6c071b59a6b2",
+  "source_product_trees": {
+    "crates": "d51047366b0c38a027261c1a2de8e33fb2df1dc4",
+    "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+    "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+    "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+    "sdk": "864119c5aa5bfd0edc1799d9de018e096f39d67e",
+    "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
+  },
+  "maximum_seconds": 30,
+  "CPU_affinity": [
+    4
+  ],
+  "compiler_invocation_permitted": false,
+  "scope": "Controller-slot cache-only release verification during ongoing load. Abort on any compilation; no Rust tests or product compiler work is allowed. Test-only fixture changes must preserve the actual retained ELF bytes.",
+  "binary_sha256": "acfb2c604a7376be95690852ef016bca90eba599a55bad4be27b6c071b59a6b2",
+  "size": 30477344,
+  "all_compiler_artifacts_fresh": true,
+  "compiler_artifacts": 433,
+  "compiler_invoked": false,
+  "build_exit": 0,
+  "elapsed_seconds": 0.4183550580055453,
+  "observed_utc": "2026-10-17T07:36:29.389848+00:00",
+  "stdout_sha256": "0562c2070f48af9e32b3bcea73e4a03b37691685b2db9df9f73d40fdc0294e81",
+  "stderr_sha256": "a58a7822e22f5f9a949095cf5e2189dcdded99435193789598a16b73f325b4b1"
+}

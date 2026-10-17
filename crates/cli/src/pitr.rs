@@ -62,6 +62,9 @@ pub fn disable(project: &Project) -> anyhow::Result<()> {
     if !enabled(project) {
         bail!("PITR is not enabled for {}", project.name);
     }
+    if project.runtime == crate::host::Runtime::Systemd {
+        crate::native::check_backup_configuration()?;
+    }
     step(&format!(
         "Disabling point-in-time recovery for {}",
         project.name

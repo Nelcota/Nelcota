@@ -1,0 +1,748 @@
+{
+  "run_id": "fleet-caddy-1-final-pass-1-001",
+  "status": "passed",
+  "certifies_g05": false,
+  "scope": "Complete local fleet attempt; retain every failed gate. New protocol totals require closed continuous per-scenario evidence. Optional final raw snapshots can miss sparse series; absence is null rather than an invented zero. Historical reports are unchanged. No production capacity certification.",
+  "frozen_harness": {
+    "run_id": "fleet-caddy-1-final-pass-1-001",
+    "git": "196e0e499b46ab4b98d5774cc275507dc001c424",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "harness_sources": {
+      "bench/allocation.py": "4b98e093b86e9b9187812cd49e8d5710f54561f196bdd222573c0edd06cff34d",
+      "bench/arrival_check.py": "1b0973f2995a94390ebabcc76c2ab4843586d284980a6e5e65d6e3cb1ea60a1b",
+      "bench/arrival_counters.py": "dc94222d07dc40b7bbd5d376f5d8bac5ba8fec4d590cb6da625e487c01b16f35",
+      "bench/browser_campaign.py": "35b750c93b78cb29045cd17e3d82d81446bf783e7efe54fcba3a6279a65f5113",
+      "bench/browser_driver.py": "7a97e7f83cea534add1c75bd13d6764c2fb8ef94a0c2d4e4f1a7ee8ece9c244a",
+      "bench/browser_runtime.py": "1720ee9bab4b959260f366ca7c8767d2b810a1884f3940ff3735755ef6ba48ba",
+      "bench/campaign.py": "ace85558949925294f81789eeec865edf45984905c310ed95f7dde2e71132013",
+      "bench/compare.py": "60249d48c3d92330c525360e1b177f69074507e3e83dd680c68f9c07b495cb48",
+      "bench/disk_usage.py": "502da50d95f979128c91d49b3037cb08885ddcbb941af0a9bd842e0d193da38e",
+      "bench/evidence.py": "49f12f7921bdf34446c35e3348fc41af055f5fc0f79ced087ab1de1cfd30c6c2",
+      "bench/fault_campaign.py": "33fca029d3414e5c03d8d8a9e7a90e38c978bc307c05f3b98eef1e3957be30f4",
+      "bench/fixture_copy.py": "8c1421202b5543c16fa0fd0af4e47f7a8f9ef1bd9cd9423bfde28eda3dec6288",
+      "bench/fleet_observer.py": "3e51bb4b4229f0854c2e67c2fadef489feed0b28893ba3fe1baad67e1fe415b4",
+      "bench/fleet_webhooks.py": "ae5d21861ef3951a50a37fdfc84507685e87c2f8cc1698ae0d5972244d0b97ce",
+      "bench/guard_check.py": "2fa55b5e70154e7498ab79f627ef7623ae965cb4727a8318845bc5eb9baf481d",
+      "bench/host_campaign.py": "4fef817f5c786d0c937477c6a878f7c23d5d3c5db4967501c283b84d4656a628",
+      "bench/host_compare.py": "6a283eb8f50e9be60504f7e38123d28284ad4f02e1408a24e77759603a040965",
+      "bench/host_resources.py": "8efc29fce9b182aca6bdc2fa91e26ad9d526a4b1267f69a917d132270e4065e5",
+      "bench/http_boundary.py": "b69ff97c9e65f8ec94ccf36ac282a3b6b53c1a07aa01fbd33ac1fbe68a976db3",
+      "bench/ingress.py": "4976738ec1c3e96862f87a02d81843087a72a665a2de829acc4c6804b6117ed2",
+      "bench/launch.py": "915eb76ea3a712799777f27dfbe8bbffe4de8f5a48d9a5b541ee844f0391a498",
+      "bench/load_time.py": "23e9b43a24b7842259e94958cf2a0836a7b970cabdab2c908d5761dd688527c5",
+      "bench/lost_reply.py": "2048c95f21169fe46adddb28c4feffa60da365d369f4730ed6f7c6bcbfd348bb",
+      "bench/metrics.py": "da9c506a1f28423a59bc0d157c9d59829a31b28aaac09e3843cf555f5966b869",
+      "bench/monitor.py": "bd869d88b833930602dc3770e5467040021cca6930f89fd298c269b6850c2e61",
+      "bench/objects.py": "a1612bc2e457481705044ce21a376d898544dbbff004a8920511218858a8210b",
+      "bench/observations.py": "8f88a60899928c2b30da0f888127034ec5c7117e34630121297f8bf11f64379b",
+      "bench/oracle_check.py": "d5dfc94495321fdd08c8457ef8e2c7ea1d2a39813c80a6751cd687fcf0ca345e",
+      "bench/ownership.py": "ffd3e9343b7f8262d05ee0363ab01b1f7e77089bb8f09ca8d0a350532402fa06",
+      "bench/ports.py": "edcb747bf4f29429d2abf5abf2741289c586cb64b0cf3484fa891edb5d798276",
+      "bench/postgres_evidence.py": "7152ea8c58232981c07b6c20d4a6a8cfba1046de1893d09c78de58607a95855a",
+      "bench/projects.py": "3a96324abebab46e14c7a45b9fb0f79daeaa7cccb0d61ff1e48e0bd3c80e0342",
+      "bench/receiver.py": "b4f172be66aee69649c826052951ff839272d7501ec0d0a2e648d65dedd4ee9d",
+      "bench/sqlite_evidence.py": "77b0da843ac1c0d5a29c97e2f6fa78b67fbbe96a68c5aeef05df9f0895c16215",
+      "bench/watchdog.py": "25ab3e86efdcec9c1da84942ef27fee285339adbda15b70791030e4863ff7bb3",
+      "bench/allocation_probe.c": "f833882f9c9697d7e838871dad3d398fb6427e78b21104d30ea8fcd7f13678f3",
+      "bench/campaign.js": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+      "bench/setup.sql": "104496228668127c3a95a0defa6efe2d6c06a00c56bdc19999052043e700c798",
+      "scripts/upgrade/support.py": "97fd54c7d8fe80d70d0201e71454dd4f72fef760e161800ad503760d3f90feb8"
+    }
+  },
+  "profile": {
+    "schema": 2,
+    "scope": "local independent app/PG clusters with verified local Caddy, no public DNS/controller",
+    "projects": 1,
+    "rows_per_project": 1000,
+    "shared_user_id": "00000000-0000-4000-8000-000000000001",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "cpu_effective": 4.0,
+    "app_aggregate_cpus": 1,
+    "postgres_aggregate_cpus": 1,
+    "generator_cpus": 1,
+    "metrics_cpus": 0.25,
+    "app_memory_mib_each": 128,
+    "postgres_memory_mib_each": 256,
+    "max_arrival_rate": 10000,
+    "fixture_disk_mib": 2048,
+    "storage_filesystem": "overlayfs",
+    "seconds_per_step": 300,
+    "project_cpu_period_micros": 100000,
+    "certifies_five_minute_steps": true,
+    "base_rate_per_project": 8,
+    "SLOs": "G05 unchanged",
+    "startup_disk_budget": {
+      "per_project_mib": 780,
+      "container_layer_copy_factor": 2,
+      "total_startup_mib": 1420,
+      "image_storage_drivers": [
+        "vfs",
+        "vfs"
+      ],
+      "separate_database_data_mib": 2048
+    },
+    "ingress": {
+      "kind": "real Caddy with verified internal CA on loopback",
+      "cpus": 0.25,
+      "cpu_affinity": 3,
+      "memory_mib": 128,
+      "pids_limit": 64,
+      "fixture_disk_mib": 128,
+      "binary_sha256": "678ade3bfc088749c81a681adc603333ee0bb023b6a6cfe3c0f58bef8ff854e9",
+      "image_file_capabilities_removed_for_unprivileged_ports": true,
+      "image_digests": [
+        "caddy@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f"
+      ],
+      "public_dns_acme_certified": false,
+      "reload_fault": "valid configuration rejected by an occupied owned backend listener; restore and probe without process replacement"
+    },
+    "webhooks": {
+      "enabled": true,
+      "receiver": "owned loopback, verified signatures and durable event identities",
+      "evidence_limit_mib": 128,
+      "drain_seconds": 30
+    },
+    "resource_protocol": "component cgroup v2 via shell builtins and bounded parallel owned probes; allocated du totals count only disappearing child entries",
+    "resource_probe_workers": 4,
+    "arrival_counter_protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+    "generator_usage_reporting": false,
+    "container_log_profile": {
+      "driver": "local",
+      "max_size_bytes": 8388608,
+      "max_files": 2
+    },
+    "harness_js_sha256": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+    "client_initialization": {
+      "maximum_sessions_per_project": 128,
+      "bootstrap_concurrency": 4,
+      "setup_timeout_seconds": 120,
+      "fully_preallocated_arrival_VUs": true,
+      "mix_schedule": "global scenario arrival ordinal",
+      "bootstrap_excluded_from_nominal_metrics": true
+    },
+    "cpu_affinity": [
+      0,
+      1,
+      2
+    ],
+    "metrics_cpu_affinity": 4,
+    "capacity_qualification": true,
+    "provisional_rate_per_project": 32,
+    "max_connections_each": 32,
+    "pool_each": 4,
+    "generator_memory_mib": 512,
+    "metrics_memory_mib": 512,
+    "images": {
+      "ubuntu:24.04": [
+        "ubuntu@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55"
+      ],
+      "postgres:17-alpine": [
+        "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+      ],
+      "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1": [
+        "grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1"
+      ],
+      "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996": [
+        "prom/prometheus@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+      ]
+    },
+    "nominal_rate_per_project": 25
+  },
+  "completion": {
+    "status": "passed",
+    "projects": 1,
+    "load_seconds": 2490,
+    "resource_observations": 506,
+    "cleanup_confirmed": true,
+    "error_type": "NoneType"
+  },
+  "capacity": {
+    "qualified_lower_bound_per_project": 32,
+    "nominal_rate_per_project": 25,
+    "provisional_per_project": 32
+  },
+  "capacity_probes": [
+    {
+      "percent": 25,
+      "per_project_iterations_per_second": 8,
+      "qualified": true,
+      "failures": []
+    },
+    {
+      "percent": 50,
+      "per_project_iterations_per_second": 16,
+      "qualified": true,
+      "failures": []
+    },
+    {
+      "percent": 75,
+      "per_project_iterations_per_second": 24,
+      "qualified": true,
+      "failures": []
+    },
+    {
+      "percent": 100,
+      "per_project_iterations_per_second": 32,
+      "qualified": true,
+      "failures": []
+    }
+  ],
+  "cross_project_preflight": {
+    "distinct_keys": true,
+    "directed_rejections": 0,
+    "status": "passed"
+  },
+  "acceptance_failures": [],
+  "proxy_reload": {
+    "expected_bind_rejection": true,
+    "good_configuration_restored": true,
+    "projects_with_positive_and_401_probes": 1,
+    "same_proxy_process": true,
+    "elapsed_seconds": 0.44932545500341803,
+    "recovery_seconds_after_restore": 0.043330495012924075,
+    "tls_verification": true,
+    "public_dns_acme_certified": false
+  },
+  "resource_violations": [],
+  "cleanup": {
+    "confirmed": true,
+    "containers": [],
+    "volumes": [],
+    "directory_removed": true
+  },
+  "webhook_cleanup": {
+    "errors": []
+  },
+  "resources": {
+    "samples": 506,
+    "median_observation_gap_seconds": 5.000369140994735,
+    "maximum_observation_gap_seconds": 5.119014489988331,
+    "maximum_collection_seconds": 2.7252862390014343,
+    "oom_kills": 0
+  },
+  "phases": [
+    {
+      "phase": "capacity-25",
+      "interval": {
+        "phase": "capacity-25",
+        "requested_seconds": 300,
+        "elapsed_seconds": 303.2542916139937,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 226526.674452775,
+        "ended_monotonic": 226829.92895825
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 2401.0,
+          "successful_operations_per_second": 8.003333333333334,
+          "recorded_dropped_iterations": 0,
+          "scheduler_scenario_dropped_iterations_from_raw": null,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 4.424901669192694,
+            "rls": 4.881122151651373,
+            "panel": 6.4753175811253385,
+            "storage": 11.048543456039797,
+            "login": 54.882880011665605,
+            "refresh": 9.290680585958754,
+            "write": 10.131559020711013
+          },
+          "arrival_counter_evidence": {
+            "phase": "capacity-25",
+            "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+            "began_monotonic": 226526.672402938,
+            "last_monotonic": 226829.950567737,
+            "maximum_poll_gap_seconds": 5.033582219009986,
+            "observations": 63,
+            "closed": true,
+            "dropped_by_scenario": {
+              "project-0": 0
+            }
+          },
+          "retained_dropped_iterations": 0
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "capacity-50",
+      "interval": {
+        "phase": "capacity-50",
+        "requested_seconds": 300,
+        "elapsed_seconds": 303.2771268860088,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 226830.040063943,
+        "ended_monotonic": 227133.317379296
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 4801.0,
+          "successful_operations_per_second": 16.003333333333334,
+          "recorded_dropped_iterations": 0,
+          "scheduler_scenario_dropped_iterations_from_raw": null,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 5.9293239382194205,
+            "rls": 5.065779510355506,
+            "panel": 7.621473766035725,
+            "storage": 47.55593563603027,
+            "login": 36.10477177725852,
+            "refresh": 10.580121460444474,
+            "write": 14.021164648461776
+          },
+          "arrival_counter_evidence": {
+            "phase": "capacity-50",
+            "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+            "began_monotonic": 226830.039000799,
+            "last_monotonic": 227133.343429635,
+            "maximum_poll_gap_seconds": 5.070166054007132,
+            "observations": 63,
+            "closed": true,
+            "dropped_by_scenario": {
+              "project-0": 0
+            }
+          },
+          "retained_dropped_iterations": 0
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "capacity-75",
+      "interval": {
+        "phase": "capacity-75",
+        "requested_seconds": 300,
+        "elapsed_seconds": 303.05119171499973,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 227133.386720573,
+        "ended_monotonic": 227436.43808622
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 7201.0,
+          "successful_operations_per_second": 24.003333333333334,
+          "recorded_dropped_iterations": 0,
+          "scheduler_scenario_dropped_iterations_from_raw": null,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 5.4945290259895145,
+            "rls": 6.156175176202682,
+            "panel": 12.540096911057342,
+            "storage": 51.63280614463198,
+            "login": 42.117264745440266,
+            "refresh": 13.139006488339273,
+            "write": 9.45307882202572
+          },
+          "arrival_counter_evidence": {
+            "phase": "capacity-75",
+            "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+            "began_monotonic": 227133.385633964,
+            "last_monotonic": 227436.458932599,
+            "maximum_poll_gap_seconds": 5.017201671988005,
+            "observations": 62,
+            "closed": true,
+            "dropped_by_scenario": {
+              "project-0": 0
+            }
+          },
+          "retained_dropped_iterations": 0
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "capacity-100",
+      "interval": {
+        "phase": "capacity-100",
+        "requested_seconds": 300,
+        "elapsed_seconds": 303.31234571899404,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 227436.554550548,
+        "ended_monotonic": 227739.867135286
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 9601.0,
+          "successful_operations_per_second": 32.00333333333333,
+          "recorded_dropped_iterations": 0,
+          "scheduler_scenario_dropped_iterations_from_raw": null,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 5.59938965410356,
+            "rls": 7.306565289903386,
+            "panel": 9.445281593159237,
+            "storage": 47.8270490121907,
+            "login": 44.83699288471875,
+            "refresh": 12.223771862560733,
+            "write": 8.519591661447325
+          },
+          "arrival_counter_evidence": {
+            "phase": "capacity-100",
+            "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+            "began_monotonic": 227436.553435304,
+            "last_monotonic": 227739.885373848,
+            "maximum_poll_gap_seconds": 5.046336499013705,
+            "observations": 63,
+            "closed": true,
+            "dropped_by_scenario": {
+              "project-0": 0
+            }
+          },
+          "retained_dropped_iterations": 0
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "overload-125",
+      "interval": {
+        "phase": "overload-125",
+        "requested_seconds": 30,
+        "elapsed_seconds": 33.783080530003645,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 227739.958440022,
+        "ended_monotonic": 227773.741706331
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 1201.0,
+          "successful_operations_per_second": 40.03333333333333,
+          "recorded_dropped_iterations": 0,
+          "scheduler_scenario_dropped_iterations_from_raw": null,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 6.152842379091189,
+            "rls": 6.236706143411326,
+            "panel": 12.048522073499539,
+            "storage": 51.4298586923114,
+            "login": 57.31275270029195,
+            "refresh": 14.962551260915214,
+            "write": 8.519591661447325
+          },
+          "arrival_counter_evidence": {
+            "phase": "overload-125",
+            "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+            "began_monotonic": 227739.957324368,
+            "last_monotonic": 227773.754721738,
+            "maximum_poll_gap_seconds": 5.00458769800025,
+            "observations": 9,
+            "closed": true,
+            "dropped_by_scenario": {
+              "project-0": 0
+            }
+          },
+          "retained_dropped_iterations": 0
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "overload-150",
+      "interval": {
+        "phase": "overload-150",
+        "requested_seconds": 30,
+        "elapsed_seconds": 33.03014620699105,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 227773.852613905,
+        "ended_monotonic": 227806.882850628
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 1441.0,
+          "successful_operations_per_second": 48.03333333333333,
+          "recorded_dropped_iterations": 0,
+          "scheduler_scenario_dropped_iterations_from_raw": null,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 6.288707137017205,
+            "rls": 5.994508325750379,
+            "panel": 10.858736092518255,
+            "storage": 48.75407662583584,
+            "login": 43.060234903928254,
+            "refresh": 12.473412286822652,
+            "write": 8.300995051680879
+          },
+          "arrival_counter_evidence": {
+            "phase": "overload-150",
+            "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+            "began_monotonic": 227773.85165115,
+            "last_monotonic": 227806.942513156,
+            "maximum_poll_gap_seconds": 5.009006881999085,
+            "observations": 9,
+            "closed": true,
+            "dropped_by_scenario": {
+              "project-0": 0
+            }
+          },
+          "retained_dropped_iterations": 0
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "overload-200",
+      "interval": {
+        "phase": "overload-200",
+        "requested_seconds": 30,
+        "elapsed_seconds": 33.550669179996476,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 227806.993863893,
+        "ended_monotonic": 227840.544713022
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 1921.0,
+          "successful_operations_per_second": 64.03333333333333,
+          "recorded_dropped_iterations": 0,
+          "scheduler_scenario_dropped_iterations_from_raw": null,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 6.693995670814633,
+            "rls": 6.556866433999392,
+            "panel": 9.68521640577333,
+            "storage": 47.69560028001749,
+            "login": 51.3556446616119,
+            "refresh": 15.89812018910447,
+            "write": 13.368672276290654
+          },
+          "arrival_counter_evidence": {
+            "phase": "overload-200",
+            "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+            "began_monotonic": 227806.99252889,
+            "last_monotonic": 227840.556530531,
+            "maximum_poll_gap_seconds": 5.028699977992801,
+            "observations": 8,
+            "closed": true,
+            "dropped_by_scenario": {
+              "project-0": 0
+            }
+          },
+          "retained_dropped_iterations": 0
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "balanced-1",
+      "interval": {
+        "phase": "balanced-1",
+        "requested_seconds": 300,
+        "elapsed_seconds": 303.7607068720099,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 227840.58868942,
+        "ended_monotonic": 228144.349557357
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 7501.0,
+          "successful_operations_per_second": 25.003333333333334,
+          "recorded_dropped_iterations": 0,
+          "scheduler_scenario_dropped_iterations_from_raw": null,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 4.867104317308699,
+            "rls": 5.085769591444296,
+            "panel": 7.320967320743359,
+            "storage": 50.60109797483949,
+            "login": 36.17000230105472,
+            "refresh": 9.545672132599663,
+            "write": 7.4489355754037785
+          },
+          "arrival_counter_evidence": {
+            "phase": "balanced-1",
+            "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+            "began_monotonic": 227840.58750252,
+            "last_monotonic": 228144.363255945,
+            "maximum_poll_gap_seconds": 5.017108735017246,
+            "observations": 63,
+            "closed": true,
+            "dropped_by_scenario": {
+              "project-0": 0
+            }
+          },
+          "retained_dropped_iterations": 0
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "balanced-2",
+      "interval": {
+        "phase": "balanced-2",
+        "requested_seconds": 300,
+        "elapsed_seconds": 302.9917292369937,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 228144.453418952,
+        "ended_monotonic": 228447.445320209
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 7501.0,
+          "successful_operations_per_second": 25.003333333333334,
+          "recorded_dropped_iterations": 0,
+          "scheduler_scenario_dropped_iterations_from_raw": null,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 4.623554420855744,
+            "rls": 4.593137385906663,
+            "panel": 7.202994409994629,
+            "storage": 49.04978507084656,
+            "login": 31.33472734531883,
+            "refresh": 7.833681836329707,
+            "write": 6.713356633290929
+          },
+          "arrival_counter_evidence": {
+            "phase": "balanced-2",
+            "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+            "began_monotonic": 228144.452203223,
+            "last_monotonic": 228447.459903424,
+            "maximum_poll_gap_seconds": 5.0148334029945545,
+            "observations": 63,
+            "closed": true,
+            "dropped_by_scenario": {
+              "project-0": 0
+            }
+          },
+          "retained_dropped_iterations": 0
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "balanced-3",
+      "interval": {
+        "phase": "balanced-3",
+        "requested_seconds": 300,
+        "elapsed_seconds": 303.2755211039912,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 228447.545842791,
+        "ended_monotonic": 228750.821555363
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 7501.0,
+          "successful_operations_per_second": 25.003333333333334,
+          "recorded_dropped_iterations": 0,
+          "scheduler_scenario_dropped_iterations_from_raw": null,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 4.837453610331477,
+            "rls": 5.19274928177544,
+            "panel": 7.764299196501842,
+            "storage": 50.90341475080896,
+            "login": 35.97466343603069,
+            "refresh": 8.026921477490337,
+            "write": 7.320967320743359
+          },
+          "arrival_counter_evidence": {
+            "phase": "balanced-3",
+            "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+            "began_monotonic": 228447.544802872,
+            "last_monotonic": 228750.83670418,
+            "maximum_poll_gap_seconds": 5.021108220011229,
+            "observations": 62,
+            "closed": true,
+            "dropped_by_scenario": {
+              "project-0": 0
+            }
+          },
+          "retained_dropped_iterations": 0
+        }
+      },
+      "gates": []
+    },
+    {
+      "phase": "proxy-reload",
+      "interval": {
+        "phase": "proxy-reload",
+        "requested_seconds": 300,
+        "elapsed_seconds": 303.0992905049934,
+        "completed": true,
+        "exit_code": 0,
+        "started_monotonic": 228750.941565141,
+        "ended_monotonic": 229054.04103196
+      },
+      "projects": {
+        "project-0": {
+          "completed_iterations": 7501.0,
+          "successful_operations_per_second": 25.003333333333334,
+          "recorded_dropped_iterations": 0,
+          "scheduler_scenario_dropped_iterations_from_raw": null,
+          "unexpected_rate": 0.0,
+          "overload_rejections": 0.0,
+          "p95_ms": {
+            "read": 5.683719751473894,
+            "rls": 5.863336209478222,
+            "panel": 7.764299196501842,
+            "storage": 49.93689743327008,
+            "login": 36.60348947639029,
+            "refresh": 10.000736078518791,
+            "write": 9.391849464474237
+          },
+          "arrival_counter_evidence": {
+            "phase": "proxy-reload",
+            "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+            "began_monotonic": 228750.939618466,
+            "last_monotonic": 229054.059584222,
+            "maximum_poll_gap_seconds": 5.032611407979857,
+            "observations": 63,
+            "closed": true,
+            "dropped_by_scenario": {
+              "project-0": 0
+            }
+          },
+          "retained_dropped_iterations": 0
+        }
+      },
+      "gates": []
+    }
+  ],
+  "raw_evidence_location": "target/stress-g05/fleet-caddy-1-final-pass-1-001",
+  "webhook_drain_observations": {
+    "limit_seconds": 30,
+    "sample_span_seconds": 0.0,
+    "last": {
+      "project-0": {
+        "queue": {
+          "outstanding": 0,
+          "retained": 2925
+        },
+        "work": {
+          "processing": 0,
+          "oldest_pending_seconds": 0
+        }
+      }
+    }
+  },
+  "webhook_invariants": {
+    "project-0": {
+      "unique_events": 2928,
+      "deliveries": 2928,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0,
+      "outstanding": 0,
+      "signature_errors": 0
+    }
+  }
+}

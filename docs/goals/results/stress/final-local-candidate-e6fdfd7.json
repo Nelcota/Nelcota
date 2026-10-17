@@ -1,0 +1,51 @@
+{
+  "source_commit": "e6fdfd7cca377edb0b36184a21a9a7b30a4d1d0c",
+  "status": "frozen; same bytes as the ongoing candidate003; updated fixture CI/native acceptance pending",
+  "build_command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "nelcota-server",
+    "--message-format=json"
+  ],
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+  "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+  "cargo_lock_sha256": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff",
+  "workspace_manifest_sha256": "2527746af359ef502f1bd6a836fda5a161456fcf7d11766a1b1d4da64a86de09",
+  "build_jobs": 4,
+  "incremental": "0",
+  "release_profile": {
+    "lto": "thin",
+    "codegen_units": 1
+  },
+  "compiler_overrides": [],
+  "tmpdir": "/workspace/nelcota-g05-tmp-f3a60e",
+  "build_exit": 0,
+  "build_seconds": 0.4183550580055453,
+  "completed_utc": "2026-10-17T07:36:29.389848+00:00",
+  "cpu_affinity": [
+    4
+  ],
+  "binary_sha256": "acfb2c604a7376be95690852ef016bca90eba599a55bad4be27b6c071b59a6b2",
+  "size": 30477344,
+  "compiler_invoked": false,
+  "all_compiler_artifacts_fresh": true,
+  "compiler_artifacts": 433,
+  "certifies_g05": false,
+  "architecture": "x86_64-unknown-linux-gnu",
+  "scope": "Clean-source cache-only release verification after integration-fixture security correction and benchmark extensions. Exact ELF bytes match the ongoing immutable AF-built artifact; no compiler invoked and no service restart. New fixture CI/native-source proof still pending.",
+  "product_tree_objects": {
+    "crates": "d51047366b0c38a027261c1a2de8e33fb2df1dc4",
+    "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+    "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+    "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+    "sdk": "864119c5aa5bfd0edc1799d9de018e096f39d67e",
+    "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
+  },
+  "previous_build": "final-local-candidate-af01678.json",
+  "byte_equivalence_evidence": "release-test-fixture-byte-equivalence.json",
+  "ongoing_campaign_binary_manifest": "candidate-final-003.json",
+  "same_binary_bytes_as_ongoing_campaign": true
+}

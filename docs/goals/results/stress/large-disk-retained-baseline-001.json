@@ -1,0 +1,543 @@
+{
+  "run_id": "large-disk-retained-baseline-001",
+  "status": "passed",
+  "certifies_g05": false,
+  "scope": "One completed current-protocol disk single-project campaign on the explicitly named source/ELF: three steady samples per workload, full prelude and600s soak. Baseline/candidate role is established by the immutable artifact and comparison plan, never this text. NOT four-hour endurance, whole-G05 approval or production/cloud capacity certification.",
+  "backend_source": "2efede8c27ee12119142170e8bd9742ff7cb900e",
+  "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+  "completion": {
+    "status": "passed",
+    "load_seconds": 4185.0,
+    "resource_observations": 836,
+    "soak_seconds": 600,
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "cleanup_confirmed": true,
+    "error_type": "NoneType"
+  },
+  "cleanup": {
+    "containers": [],
+    "volumes": [],
+    "directory_removed": true
+  },
+  "profile": {
+    "storage_backend": "disk",
+    "workloads": [
+      "read",
+      "rls",
+      "panel",
+      "storage",
+      "login",
+      "refresh",
+      "write",
+      "mixed"
+    ],
+    "dataset": {
+      "products": 1000000,
+      "private": 1000000,
+      "objects": 10000
+    },
+    "object_payload_bytes": 1048576,
+    "physical_seeded_objects": 10000,
+    "steady_duration": "30s",
+    "steady_rate": 20,
+    "write_steady_rate": 10,
+    "final_idle_seconds": 180,
+    "soak_seconds": 600,
+    "soak_fraction": 0.7,
+    "calibration_ceiling_iterations_per_second": 20,
+    "cpu_affinity": [
+      0,
+      1,
+      2
+    ],
+    "effective_cpu_quota": 4.0,
+    "app_cpus": 1,
+    "app_memory_mb": 128,
+    "pg_cpus": 1,
+    "pg_memory_mb": 384,
+    "generator_memory_mb": 512,
+    "generator_go_memory_limit_mib": 448,
+    "metrics_cpus": 0.25,
+    "metrics_memory_mb": 512,
+    "pool": 8,
+    "max_connections": 40,
+    "max_fixture_disk_mb": 2048,
+    "max_storage_fixture_disk_mib": 1024,
+    "max_wal_mb": 256,
+    "images": {
+      "ubuntu:24.04": [
+        "ubuntu@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55"
+      ],
+      "postgres:17-alpine": [
+        "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+      ],
+      "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1": [
+        "grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1"
+      ],
+      "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996": [
+        "prom/prometheus@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+      ]
+    },
+    "k6": "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+    "arrival_counter_protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+    "http_counter_protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+    "successful_latency_protocol": "monotonic logical request including DNS, connections, redirects and final response",
+    "metrics_storage_profile": {
+      "data_path": "/prometheus",
+      "retention_seconds": 3600,
+      "retention_size_mib": 128,
+      "wal_segment_mib": 16,
+      "block_chunk_segment_mib": 16,
+      "block_duration_seconds": 900,
+      "monitored_disk_limit_mib": 512
+    },
+    "generator_observation_protocol": "owned Docker stats with verified cgroup-v2 fallback on 10s stream timeout; unchanged 30s observation gate",
+    "generator_usage_reporting": false,
+    "postgres_version": "PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "storage_filesystem": "overlayfs",
+    "nominal_slos_ms": {
+      "read": [
+        200,
+        500
+      ],
+      "rls": [
+        200,
+        500
+      ],
+      "refresh": [
+        200,
+        500
+      ],
+      "login": [
+        750,
+        1500
+      ],
+      "storage": [
+        500,
+        2000
+      ],
+      "panel": [
+        500,
+        2000
+      ],
+      "write": [
+        500,
+        1500
+      ]
+    },
+    "offered_rate_unit": "iterations_per_second",
+    "resource_protocol": "component cgroup v2, PostgreSQL IO/WAL/checkpointer/locks, process owners; allocated du totals count only disappearing child entries",
+    "client_initialization": {
+      "maximum_sessions_per_project": 128,
+      "bootstrap_concurrency": 4,
+      "setup_timeout_seconds": 120,
+      "fully_preallocated_arrival_VUs": true,
+      "mix_schedule": "global scenario arrival ordinal",
+      "bootstrap_excluded_from_nominal_metrics": true
+    },
+    "webhook_history_maintenance": "explicit admin clear at 5000 terminal records; committed identities retained by fixture audit trigger",
+    "container_log_profile": {
+      "driver": "local",
+      "max_size_bytes": 8388608,
+      "max_files": 2
+    }
+  },
+  "capacity": {
+    "provisional_median_iterations_per_second": 20,
+    "measured_closed_loop_median_iterations_per_second": 20.033333333333335,
+    "calibration_ceiling_iterations_per_second": 20,
+    "provisional_workload": "mixed",
+    "qualified_lower_bound_iterations_per_second": 20,
+    "qualification_step_seconds": 300,
+    "five_minute_qualification": true,
+    "soak_iterations_per_second": 14,
+    "soak_fraction": 0.7,
+    "soak_rps": 14,
+    "p95_regression_gate": 1.1,
+    "throughput_regression_gate": 0.9
+  },
+  "invariants": {
+    "auth": {
+      "users": 1,
+      "password_hashes": 1
+    },
+    "outstanding": 0,
+    "database": {
+      "connections": 10,
+      "idle_in_transaction": 0,
+      "waiting_locks": 0
+    },
+    "signature_errors": 0,
+    "file_integrity": {
+      "verified_objects": 129,
+      "maximum_object_bytes": 1048578,
+      "physical_inventory": {
+        "physical_objects": 10129,
+        "physical_bytes": 135266304,
+        "multipart_uploads": null,
+        "unreferenced_keys": [],
+        "gc_grace_seconds": 86400,
+        "collector_period_seconds": 3600
+      }
+    },
+    "event_identities": {
+      "unique_events": 7811,
+      "deliveries": 7811,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0
+    }
+  },
+  "resources": {
+    "sample_count": 836,
+    "soak_sample_count": 111,
+    "maximum_observation_gap_seconds": 10.900000000000091,
+    "app_peak_rss_kib": 112820,
+    "soak_app_peak_rss_kib": 66068,
+    "pg_peak_disk_mib": 632,
+    "storage_peak_disk_mib": 135,
+    "component_peaks": {
+      "app": {
+        "memory_current_bytes": 134217728,
+        "memory_peak_bytes": 136228864,
+        "anonymous_bytes": 97701888,
+        "file_cache_including_shmem_bytes": 82051072,
+        "shmem_bytes": 0,
+        "pids_current": 88,
+        "oom_events": 0,
+        "oom_kill_events": 0
+      },
+      "pg": {
+        "memory_current_bytes": 399949824,
+        "memory_peak_bytes": 402653184,
+        "anonymous_bytes": 51163136,
+        "file_cache_including_shmem_bytes": 342224896,
+        "shmem_bytes": 76660736,
+        "pids_current": 23,
+        "oom_events": 0,
+        "oom_kill_events": 0
+      },
+      "metrics": {
+        "memory_current_bytes": 97271808,
+        "memory_peak_bytes": 97939456,
+        "anonymous_bytes": 92172288,
+        "file_cache_including_shmem_bytes": 5435392,
+        "shmem_bytes": 0,
+        "pids_current": 9,
+        "oom_events": 0,
+        "oom_kill_events": 0
+      }
+    },
+    "idle_plateaus": [
+      {
+        "phase": "spike-idle-1",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.07909983099671081,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 24,
+          "tasks": 4,
+          "sockets": 18
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 131772416,
+            "memory_peak_bytes": 136228864,
+            "anonymous_bytes": 98037760,
+            "file_cache_including_shmem_bytes": 30670848,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 396189696,
+            "memory_peak_bytes": 402653184,
+            "anonymous_bytes": 50348032,
+            "file_cache_including_shmem_bytes": 328548352,
+            "shmem_bytes": 76640256,
+            "pids_current": 24,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 44572672,
+            "memory_peak_bytes": 97939456,
+            "anonymous_bytes": 39321600,
+            "file_cache_including_shmem_bytes": 3670016,
+            "shmem_bytes": 0,
+            "pids_current": 9,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "spike-idle-2",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.07579079299466684,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 24,
+          "tasks": 4,
+          "sockets": 18
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 131346432,
+            "memory_peak_bytes": 136228864,
+            "anonymous_bytes": 97550336,
+            "file_cache_including_shmem_bytes": 30670848,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 395567104,
+            "memory_peak_bytes": 402653184,
+            "anonymous_bytes": 49999872,
+            "file_cache_including_shmem_bytes": 327270400,
+            "shmem_bytes": 76640256,
+            "pids_current": 22,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 44638208,
+            "memory_peak_bytes": 97939456,
+            "anonymous_bytes": 39346176,
+            "file_cache_including_shmem_bytes": 3710976,
+            "shmem_bytes": 0,
+            "pids_current": 9,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "spike-idle-3",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.07527511799708009,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 24,
+          "tasks": 4,
+          "sockets": 18
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 131670016,
+            "memory_peak_bytes": 136228864,
+            "anonymous_bytes": 97656832,
+            "file_cache_including_shmem_bytes": 30670848,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 397164544,
+            "memory_peak_bytes": 402653184,
+            "anonymous_bytes": 49967104,
+            "file_cache_including_shmem_bytes": 328876032,
+            "shmem_bytes": 76640256,
+            "pids_current": 22,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 44666880,
+            "memory_peak_bytes": 97939456,
+            "anonymous_bytes": 39391232,
+            "file_cache_including_shmem_bytes": 3751936,
+            "shmem_bytes": 0,
+            "pids_current": 9,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "spike-idle-4",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.6822946019819938,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 24,
+          "tasks": 4,
+          "sockets": 18
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 131575808,
+            "memory_peak_bytes": 136228864,
+            "anonymous_bytes": 97599488,
+            "file_cache_including_shmem_bytes": 30670848,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 397144064,
+            "memory_peak_bytes": 402653184,
+            "anonymous_bytes": 49983488,
+            "file_cache_including_shmem_bytes": 328794112,
+            "shmem_bytes": 76640256,
+            "pids_current": 22,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 45813760,
+            "memory_peak_bytes": 97939456,
+            "anonymous_bytes": 40361984,
+            "file_cache_including_shmem_bytes": 3792896,
+            "shmem_bytes": 0,
+            "pids_current": 9,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "spike-idle-5",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.08533125399844721,
+        "database": {
+          "connections": 16,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 24,
+          "tasks": 4,
+          "sockets": 18
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 131284992,
+            "memory_peak_bytes": 136228864,
+            "anonymous_bytes": 95883264,
+            "file_cache_including_shmem_bytes": 30670848,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 398487552,
+            "memory_peak_bytes": 402653184,
+            "anonymous_bytes": 49983488,
+            "file_cache_including_shmem_bytes": 329711616,
+            "shmem_bytes": 76648448,
+            "pids_current": 22,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 45862912,
+            "memory_peak_bytes": 97939456,
+            "anonymous_bytes": 40468480,
+            "file_cache_including_shmem_bytes": 3833856,
+            "shmem_bytes": 0,
+            "pids_current": 9,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "post-load-idle",
+        "idle_seconds": 180,
+        "queue_drain_seconds": 0.6632635620189831,
+        "database": {
+          "connections": 10,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 19,
+          "tasks": 4,
+          "sockets": 13
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 88109056,
+            "memory_peak_bytes": 91570176,
+            "anonymous_bytes": 48578560,
+            "file_cache_including_shmem_bytes": 36700160,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 377782272,
+            "memory_peak_bytes": 402653184,
+            "anonymous_bytes": 32149504,
+            "file_cache_including_shmem_bytes": 329322496,
+            "shmem_bytes": 76660736,
+            "pids_current": 17,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 42639360,
+            "memory_peak_bytes": 97939456,
+            "anonymous_bytes": 34988032,
+            "file_cache_including_shmem_bytes": 5435392,
+            "shmem_bytes": 0,
+            "pids_current": 9,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      }
+    ],
+    "ownership_scope": "Observed OS owner censuses are listed for each pressure/rest plateau and final idle; their equality is reported explicitly rather than assumed. RSS/anonymous retention alone does not establish allocation ownership or absolute absence of a leak. PostgreSQL memory includes reclaimable cache; kernel memory.peak may transiently exceed memory.max by a charge batch.",
+    "idle_owner_comparison": {
+      "observed_plateaus": 6,
+      "all_observed_censuses_equal": false
+    },
+    "task_scope": "Observed OS threads/tasks; not an exact count of Tokio futures or live heap objects."
+  },
+  "fixture_census": {
+    "status": "passed",
+    "scope": "Read-only post-load census for an owned single-project fixture. Counts are taken after measured traffic, with a fresh read-only connection; preparation/load durations and performance samples are unchanged. This does not certify every integrity or ownership gate.",
+    "phase": "post-load-idle",
+    "run_id": "large-disk-retained-baseline-001",
+    "container_id": "91af53fb7190e1638aa2ceede0ffc5b5c65f3ce27b5b734b3d724e4656e94c0b",
+    "database_host_pid": 1014162,
+    "counts": {
+      "products": 1000000,
+      "private": 1000000,
+      "storage_objects": 10129,
+      "idle_transactions": 0
+    },
+    "elapsed_seconds": 0.20779601397225633,
+    "statement_timeout_seconds": 5,
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "source_sha256": "e3b61342dcb090212c9061aa31a063641b1d76305b2ef16ed55fe77d68c8d257"
+  },
+  "closed_summary_sha256": "ac956a96bbb5e344b49a3edbad82d506a5078c30c82c57370e225cccac986196",
+  "final_candidate_certified": false,
+  "effective_load_excluding_warmup_seconds": 4170
+}

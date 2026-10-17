@@ -1,0 +1,11 @@
+{
+  "scope": "Original baseline artifact identity recovered separately; original failed report remains unchanged",
+  "replayed_by": "https://github.com/Nelcota/Nelcota/actions/runs/38969205271",
+  "profile": {
+    "source": "6767e15be6d151680ba5d5849dd284c4f58eb097",
+    "binary_sha256": "b424257b6c82b7e9051d29897ee3eedc7c2460355db88e248fbfa119a6065b02",
+    "profile_file_sha256": "fb3bc0837df7dc7fa905cbf16c78de6e4947ed126485c41f242ac7eb49243c3c",
+    "scenario": "cluster-routing",
+    "scope": "Artifact identity from the original public predeclared native profile; no verdict is changed"
+  }
+}

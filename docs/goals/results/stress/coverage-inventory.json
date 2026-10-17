@@ -1,0 +1,1567 @@
+{
+  "status": "in progress",
+  "backend_source": "2efede8c27ee12119142170e8bd9742ff7cb900e",
+  "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+  "rows": [
+    {
+      "id": "auth",
+      "area": "Authentication and independent consumers",
+      "entrypoints": "crates/server/tests/auth.rs; concurrency.rs; scripts/test-auth-package.py",
+      "status": "not run",
+      "scope_or_limit": "Two final007 measured full browser/auth passes each passed400positive/160expectednegative responses,40users/zero remaining sessions, five actual numeric cycles and expiry. Original refresh-SLO failure remains unexplained. Final endurance and SMTP/OAuth stress remain pending.",
+      "functional_subset": {
+        "status": "passed",
+        "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+        "check_names": [
+          "check"
+        ],
+        "evidence": [
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551527"
+        ],
+        "scope": "Existing real-PostgreSQL auth, independent consumers, rotation/revocation, recovery links and bounded password-worker cancellation; release-load endurance still pending.",
+        "test_count": null,
+        "latest_confirmed_ci": {
+          "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+          "evidence": "ci-f40774e-final-product-source.json",
+          "scope": "Existing functional subset repeated in exact final product-source CI; this does not pass unrun sustained matrix clauses."
+        }
+      },
+      "native_diagnostics": [
+        {
+          "run_id": "semantic-disk-smoke-001",
+          "status": "passed",
+          "scope": "150 seconds effective real-backend mixed diagnostic, not capacity or endurance certification",
+          "evidence": "semantic-real-backend-smokes.json"
+        },
+        {
+          "run_id": "semantic-s3-smoke-001",
+          "status": "passed",
+          "scope": "150 seconds effective real-backend mixed diagnostic, not capacity or endurance certification",
+          "evidence": "semantic-real-backend-smokes.json"
+        },
+        {
+          "run_id": "disk-pass-1-005",
+          "status": "failed",
+          "scope": "Physical four-hour continuity and independently reconciled bytes/events remain observed, but sparse dropped-arrival totals expired before the final query. Recorded zero is unsupported; corrected-protocol approval is withdrawn and fresh replacement campaigns are required.",
+          "evidence": "disk-pass-1.json",
+          "recorded_status": "passed",
+          "historical_scope": "First complete 14400-second continuous disk pass plus 3585 completed prelude seconds; same processes, 3094 samples, 248381 events reconciled and cleanup confirmed. Second independent pass and remaining row scenarios are still pending.",
+          "counter_erratum_evidence": "sparse-drop-staleness-finding.json"
+        },
+        {
+          "run_id": "browser-pass-1-009",
+          "status": "passed",
+          "scope": "First full local live-browser/SDK lifecycle pass: three tabs, foreground p95 399.4ms, all 300 disposed test clients collected, actual credential expiry/renewal, byte-verified uploads, real response cancellation and cleanup; independent second pass still pending.",
+          "evidence": "browser-pass-1.json"
+        },
+        {
+          "run_id": "s3-pass-1-004",
+          "status": "failed",
+          "scope": "Physical four-hour continuity and independently reconciled bytes/events remain observed, but sparse dropped-arrival totals expired before the final query. Recorded zero is unsupported; corrected-protocol approval is withdrawn and fresh replacement campaigns are required.",
+          "evidence": "s3-pass-1.json",
+          "recorded_status": "passed",
+          "historical_scope": "First complete local real-S3 14400-second continuous pass plus prelude: 2934 samples, 249824 signed event identities reconciled, 16 session renewals, two pruning cohorts, byte/multipart invariants and cleanup. Separate provider allocation attribution and independent second pass still pending.",
+          "counter_erratum_evidence": "sparse-drop-staleness-finding.json"
+        },
+        {
+          "run_id": "disk-pass-2-001",
+          "status": "failed",
+          "recorded_status": "passed",
+          "scope": "Completed physical four-hour disk investigation with unchanged application/database processes and final data/resource reconciliation. The frozen original counter protocol fails corrected arrival-evidence requirements; this is not a corrected-harness certification or a maximum-capacity claim.",
+          "evidence": "disk-pass-2-diagnostic.json"
+        },
+        {
+          "run_id": "large-disk-counter-smoke-001",
+          "status": "passed",
+          "scope": "Million-row products/private tables and 1-MiB payload functional smoke: 330 completed seconds excluding warmup, 41 closed counter phases, verified bytes/events and cleanup; short calibration is not capacity/endurance certification.",
+          "evidence": "large-disk-smoke.json"
+        },
+        {
+          "run_id": "disk-http-counter-smoke-001",
+          "status": "passed",
+          "scope": "590 completed real-backend load seconds, 58 closed HTTP/arrival phases and final identity/file/queue checks. This predates whole-logical-request timing and is not final-protocol endurance.",
+          "evidence": "disk-http-counter-smoke.json"
+        },
+        {
+          "run_id": "disk-final-pass-1-001",
+          "status": "failed",
+          "scope": "4290 completed load seconds and 833 samples. Stopped safely on 522-MiB transient metrics disk reservation against unchanged 512-MiB guard. Partial soak/final invariants not approved; cleanup confirmed.",
+          "evidence": "disk-final-pass-1-failed.json"
+        },
+        {
+          "run_id": "disk-final-pass-1-002",
+          "status": "passed",
+          "evidence": "disk-current-protocol-baseline.json",
+          "scope": "Retained baseline only: current counter/logical-latency/TSDB protocol, 62 closed phases, 14400s continuous at280/s, zero drops/unexpected, 3937 negatives, 257500 events reconciled, same app/PG, two pruning cohorts,16 renewals,3283 samples/gap11s, six identical idle owner censuses and owned cleanup. Final candidate and remaining row clauses still separate."
+        },
+        {
+          "run_id": "s3-retained-baseline-002",
+          "status": "passed",
+          "evidence": "s3-current-protocol-baseline.json",
+          "scope": "Retained old binary comparison baseline only:62 closed phases, three steady per workload, qualified400/s ceiling and600s soak at280/s;168001 useful/171036 physical HTTP/128 negatives, zero drops/unexpected,64248 events reconciled,843 samples/gap11.5s, final idle/census/cleanup. No four-hour or final-candidate approval."
+        },
+        {
+          "run_id": "disk-candidate-pass-1-001",
+          "status": "failed",
+          "evidence": "disk-candidate-before-sql-fix-interruption.json",
+          "scope": "Intentionally interrupted after confirmed SQL admission bug;1559samples,4290closed effective seconds outside checkpoint014, partial soak uncredited,cleanup confirmed. New artifact and fresh replacements required."
+        },
+        {
+          "run_id": "native-browser-auth-39023157250-1",
+          "status": "failed",
+          "evidence": "browser-auth-driver-diagnostic-failure-004.json",
+          "scope": "MissingPlaywright import atdriverline12,before anydriver-ready marker. Both apps/PG active,noOOM/restarts;18focusedguards passed,cleanup. Explicitownedpackageentry fix passed28localbrowser tests; realcorrected lifecycle pending."
+        },
+        {
+          "run_id": "native-browser-auth-39024051590-1",
+          "status": "passed",
+          "evidence": "browser-auth-full-final-pass-1-005.json",
+          "scope": "First final-ELF full real browser/auth pass:560requests/40users/0unrevokedgeneratedsessions,5cycles,3tabs,823navigations/p95feedback267.2ms,2511SDKRLSreads,actual900sTTL/1082.087sobservation,expired401/logoutrefresh400,bothrealconsumers,219resourcesamples/gap5.297s,noOOM/restarts,cleanup. Existingheap/node/listenerguards applied but detailedplateauvalues were not exported; subsequent strengthened receipts retain them. Other pass/SMTP/OAuth/endurance clauses remain separate;0overlappinglocaltimecredit."
+        },
+        {
+          "status": "failed",
+          "evidence": "browser-auth-owner-pass-2-failure-006.json",
+          "scope": "Previous real browser owner pass failed because late overlapping native-browser refreshes rotated more than once. The original failure and cleanup remain visible."
+        },
+        {
+          "status": "passed",
+          "evidence": "sdk-native-overlapping-refresh-before-after-001.json",
+          "scope": "Focused ninth-defect correction only: deterministic SDK two-to-one rotations, 202 unit and 15 type tests, 37 guide tests and rebuilt assets. Full repaired browser repetitions remain pending."
+        },
+        {
+          "status": "passed",
+          "evidence": "sdk-independent-server-clients-built-before-after-001.json",
+          "scope": "Tenth confirmed defect fixed: independent default-memory server clients no longer wait behind another client sign-in;204units pass, Node22/24/26 full SDK jobs pass. Does not complete backend endurance, SMTP/OAuth or every SDK stress clause."
+        },
+        {
+          "status": "passed",
+          "evidence": "browser-sdk006-genuine-overlap-pass-1-007.json",
+          "scope": "Complete historical candidate006 genuine-overlap browser pass, one refresh for48callers,sevenownerplateaus,cleanup. NewSDKisolation correction requires final-source repetitions."
+        },
+        {
+          "status": "passed",
+          "evidence": "browser-sdk006-genuine-overlap-pass-2-008.json",
+          "scope": "Complete historical candidate006 genuine-overlap browser pass, one refresh for48callers,sevenownerplateaus,cleanup. NewSDKisolation correction requires final-source repetitions."
+        },
+        {
+          "run_id": "native-matrix-39046455871-1",
+          "status": "passed",
+          "evidence": "matrix-sdk007-corrected-generator-pass-1-001.json",
+          "scope": "First corrected full final007 remote matrix only: four300s rates16/32/48/64 qualified, five120s foreground scenarios at51/s,71874ACKs zero loss/corruption,3993lost real commit replies reconciled without mutation retry,371samples/gap5.237s,cleanup; second pass and all other row clauses remain separate."
+        }
+      ],
+      "current_final007_measured_browser_subset": {
+        "status": "passed",
+        "independent_passes": 2,
+        "evidence": "browser-sdk007-two-measured-passes-001.json",
+        "scope": "Both final007 measured full browser passes completed with same-ELF/budgets; original refresh SLO failure remains unexplained. Whole row includes further mandatory clauses."
+      }
+    },
+    {
+      "id": "rest",
+      "area": "REST, RPC, RLS and statistics",
+      "entrypoints": "bench/campaign.py; crates/server/tests/api.rs; rls.rs; hardening.rs",
+      "status": "not run",
+      "scope_or_limit": "Strict 100k-row and million-row read/filter/order/RLS diagnostics passed. Full larger-fixture and corrected-protocol continuous campaigns remain pending.",
+      "functional_subset": {
+        "status": "passed",
+        "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+        "check_names": [
+          "check"
+        ],
+        "evidence": [
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551527"
+        ],
+        "scope": "Existing REST/RPC/RLS, paging, admission and catalog regressions on real PostgreSQL; native million-row load profile still pending.",
+        "test_count": null,
+        "latest_confirmed_ci": {
+          "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+          "evidence": "ci-f40774e-final-product-source.json",
+          "scope": "Existing functional subset repeated in exact final product-source CI; this does not pass unrun sustained matrix clauses."
+        }
+      },
+      "native_diagnostics": [
+        {
+          "run_id": "semantic-disk-smoke-001",
+          "status": "passed",
+          "scope": "150 seconds effective real-backend mixed diagnostic, not capacity or endurance certification",
+          "evidence": "semantic-real-backend-smokes.json"
+        },
+        {
+          "run_id": "semantic-s3-smoke-001",
+          "status": "passed",
+          "scope": "150 seconds effective real-backend mixed diagnostic, not capacity or endurance certification",
+          "evidence": "semantic-real-backend-smokes.json"
+        },
+        {
+          "run_id": "disk-pass-1-005",
+          "status": "failed",
+          "scope": "Physical four-hour continuity and independently reconciled bytes/events remain observed, but sparse dropped-arrival totals expired before the final query. Recorded zero is unsupported; corrected-protocol approval is withdrawn and fresh replacement campaigns are required.",
+          "evidence": "disk-pass-1.json",
+          "recorded_status": "passed",
+          "historical_scope": "First complete 14400-second continuous disk pass plus 3585 completed prelude seconds; same processes, 3094 samples, 248381 events reconciled and cleanup confirmed. Second independent pass and remaining row scenarios are still pending.",
+          "counter_erratum_evidence": "sparse-drop-staleness-finding.json"
+        },
+        {
+          "run_id": "s3-pass-1-004",
+          "status": "failed",
+          "scope": "Physical four-hour continuity and independently reconciled bytes/events remain observed, but sparse dropped-arrival totals expired before the final query. Recorded zero is unsupported; corrected-protocol approval is withdrawn and fresh replacement campaigns are required.",
+          "evidence": "s3-pass-1.json",
+          "recorded_status": "passed",
+          "historical_scope": "First complete local real-S3 14400-second continuous pass plus prelude: 2934 samples, 249824 signed event identities reconciled, 16 session renewals, two pruning cohorts, byte/multipart invariants and cleanup. Separate provider allocation attribution and independent second pass still pending.",
+          "counter_erratum_evidence": "sparse-drop-staleness-finding.json"
+        },
+        {
+          "run_id": "disk-pass-2-001",
+          "status": "failed",
+          "recorded_status": "passed",
+          "scope": "Completed physical four-hour disk investigation with unchanged application/database processes and final data/resource reconciliation. The frozen original counter protocol fails corrected arrival-evidence requirements; this is not a corrected-harness certification or a maximum-capacity claim.",
+          "evidence": "disk-pass-2-diagnostic.json"
+        },
+        {
+          "run_id": "large-disk-counter-smoke-001",
+          "status": "passed",
+          "scope": "Million-row products/private tables and 1-MiB payload functional smoke: 330 completed seconds excluding warmup, 41 closed counter phases, verified bytes/events and cleanup; short calibration is not capacity/endurance certification.",
+          "evidence": "large-disk-smoke.json"
+        },
+        {
+          "run_id": "disk-http-counter-smoke-001",
+          "status": "passed",
+          "scope": "590 completed real-backend load seconds, 58 closed HTTP/arrival phases and final identity/file/queue checks. This predates whole-logical-request timing and is not final-protocol endurance.",
+          "evidence": "disk-http-counter-smoke.json"
+        },
+        {
+          "run_id": "disk-final-pass-1-001",
+          "status": "failed",
+          "scope": "4290 completed load seconds and 833 samples. Stopped safely on 522-MiB transient metrics disk reservation against unchanged 512-MiB guard. Partial soak/final invariants not approved; cleanup confirmed.",
+          "evidence": "disk-final-pass-1-failed.json"
+        },
+        {
+          "run_id": "s3-http-latency-smoke-001",
+          "status": "failed",
+          "scope": "80 completed seconds in larger million-row/one-MiB profile before physical S3 storage exceeded original 1024-MiB budget. Final integrity not reached; cleanup confirmed.",
+          "evidence": "s3-http-latency-smoke-failed.json"
+        },
+        {
+          "run_id": "disk-final-pass-1-002",
+          "status": "passed",
+          "evidence": "disk-current-protocol-baseline.json",
+          "scope": "Retained baseline only: current counter/logical-latency/TSDB protocol, 62 closed phases, 14400s continuous at280/s, zero drops/unexpected, 3937 negatives, 257500 events reconciled, same app/PG, two pruning cohorts,16 renewals,3283 samples/gap11s, six identical idle owner censuses and owned cleanup. Final candidate and remaining row clauses still separate."
+        },
+        {
+          "run_id": "s3-retained-baseline-002",
+          "status": "passed",
+          "evidence": "s3-current-protocol-baseline.json",
+          "scope": "Retained old binary comparison baseline only:62 closed phases, three steady per workload, qualified400/s ceiling and600s soak at280/s;168001 useful/171036 physical HTTP/128 negatives, zero drops/unexpected,64248 events reconciled,843 samples/gap11.5s, final idle/census/cleanup. No four-hour or final-candidate approval."
+        },
+        {
+          "run_id": "disk-candidate-pass-1-001",
+          "status": "failed",
+          "evidence": "disk-candidate-before-sql-fix-interruption.json",
+          "scope": "Intentionally interrupted after confirmed SQL admission bug;1559samples,4290closed effective seconds outside checkpoint014, partial soak uncredited,cleanup confirmed. New artifact and fresh replacements required."
+        },
+        {
+          "run_id": "native-matrix-39021737154-1",
+          "status": "passed",
+          "evidence": "matrix-full-final-pass-1-002.json",
+          "scope": "First full retained final-ELF backend subset:1730effective seconds,4x300sledgercapacity,4x120sadmin/cancellation/catalog/hostile scenarios,347samples/gap6.045s,44092ACKs0missing,2279ambiguouscommitsreconciled,restoreRTO1.850366s/RPOupper17.998048s,cleanup. Second full pass and broader area clauses remain separate; remote overlap adds0localcheckpointcredit."
+        },
+        {
+          "status": "passed",
+          "evidence": "large-s3-retained-baseline-001.json",
+          "scope": "Retained-source baseline only:1Mrows/table,1MiBobjects,7612signedevents0missing/extra/duplicate,4170effective seconds,786samples,maxgap11.6s,cleanup.600ssoak does not satisfy4h; separate postprocessing duplicate-compression refusal preserved."
+        }
+      ]
+    },
+    {
+      "id": "mutations",
+      "area": "Concurrent mutations and ambiguous replies",
+      "entrypoints": "bench/fault_campaign.py; crates/server/tests/concurrency.rs",
+      "status": "not run",
+      "scope_or_limit": "Two final007 full supplemental matrices passed: each 71,874 ACKs, 75,867 commits, 7,986 ambiguous replies/3,993 committed, zero missing/corrupt and no automatic mutation retry. Final full fault passes and broader mutation clauses remain unrun.",
+      "functional_subset": {
+        "status": "passed",
+        "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+        "check_names": [
+          "check"
+        ],
+        "evidence": [
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551527"
+        ],
+        "scope": "Existing concurrent password/account/storage mutations and rollback regressions. The new native discarded post-COMMIT reply campaign is not certified by this subset.",
+        "test_count": null,
+        "latest_confirmed_ci": {
+          "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+          "evidence": "ci-f40774e-final-product-source.json",
+          "scope": "Existing functional subset repeated in exact final product-source CI; this does not pass unrun sustained matrix clauses."
+        }
+      },
+      "native_diagnostics": [
+        {
+          "run_id": "fault-pass-1-001",
+          "status": "passed",
+          "scope": "complete local fault pass at 79.167% of qualified RPC rate, 1580 effective load seconds; second independent pass and external deployment targets remain pending",
+          "evidence": "fault-pass-1.json"
+        },
+        {
+          "run_id": "disk-final-pass-1-002",
+          "status": "passed",
+          "evidence": "disk-current-protocol-baseline.json",
+          "scope": "Retained baseline only: current counter/logical-latency/TSDB protocol, 62 closed phases, 14400s continuous at280/s, zero drops/unexpected, 3937 negatives, 257500 events reconciled, same app/PG, two pruning cohorts,16 renewals,3283 samples/gap11s, six identical idle owner censuses and owned cleanup. Final candidate and remaining row clauses still separate."
+        },
+        {
+          "run_id": "s3-retained-baseline-002",
+          "status": "passed",
+          "evidence": "s3-current-protocol-baseline.json",
+          "scope": "Retained old binary comparison baseline only:62 closed phases, three steady per workload, qualified400/s ceiling and600s soak at280/s;168001 useful/171036 physical HTTP/128 negatives, zero drops/unexpected,64248 events reconciled,843 samples/gap11.5s, final idle/census/cleanup. No four-hour or final-candidate approval."
+        },
+        {
+          "run_id": "native-matrix-39021737154-1",
+          "status": "passed",
+          "evidence": "matrix-full-final-pass-1-002.json",
+          "scope": "First full retained final-ELF backend subset:1730effective seconds,4x300sledgercapacity,4x120sadmin/cancellation/catalog/hostile scenarios,347samples/gap6.045s,44092ACKs0missing,2279ambiguouscommitsreconciled,restoreRTO1.850366s/RPOupper17.998048s,cleanup. Second full pass and broader area clauses remain separate; remote overlap adds0localcheckpointcredit."
+        },
+        {
+          "status": "passed",
+          "evidence": "matrix-full-final-pass-2-003.json",
+          "scope": "Second complete supplemental matrix on previous f40774e ELF. Acknowledged mutation reconciliation and restore passed. Qualification varied 32 to16iterations/s without a proven cause; complete final006 matrix and other clauses remain separate."
+        },
+        {
+          "run_id": "native-matrix-39046455871-1",
+          "status": "passed",
+          "evidence": "matrix-sdk007-corrected-generator-pass-1-001.json",
+          "scope": "First corrected full final007 remote matrix only: four300s rates16/32/48/64 qualified, five120s foreground scenarios at51/s,71874ACKs zero loss/corruption,3993lost real commit replies reconciled without mutation retry,371samples/gap5.237s,cleanup; second pass and all other row clauses remain separate."
+        }
+      ],
+      "current_final007_subset": {
+        "status": "passed",
+        "independent_passes": 2,
+        "evidence": "matrix-sdk007-two-corrected-passes-001.json",
+        "scope": "Only the named five-scenario supplemental subset; whole row status unchanged."
+      }
+    },
+    {
+      "id": "catalog",
+      "area": "Catalog, DDL and refresh recovery",
+      "entrypoints": "crates/server/tests/architecture.rs; admin/migrations.rs",
+      "status": "not run",
+      "scope_or_limit": "Two final007 full supplemental DDL/introspection scenarios passed in120-second positive-traffic windows. Forced-refresh-failure stress and broader catalog clauses remain separate, unrun requirements.",
+      "functional_subset": {
+        "status": "passed",
+        "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+        "check_names": [
+          "check"
+        ],
+        "evidence": [
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551527"
+        ],
+        "scope": "Existing committed DDL, failed catalog refresh, concurrent migration export and cancellation regressions.",
+        "test_count": null,
+        "latest_confirmed_ci": {
+          "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+          "evidence": "ci-f40774e-final-product-source.json",
+          "scope": "Existing functional subset repeated in exact final product-source CI; this does not pass unrun sustained matrix clauses."
+        }
+      },
+      "native_diagnostics": [
+        {
+          "run_id": "disk-final-pass-1-002",
+          "status": "passed",
+          "evidence": "disk-current-protocol-baseline.json",
+          "scope": "Retained baseline only: current counter/logical-latency/TSDB protocol, 62 closed phases, 14400s continuous at280/s, zero drops/unexpected, 3937 negatives, 257500 events reconciled, same app/PG, two pruning cohorts,16 renewals,3283 samples/gap11s, six identical idle owner censuses and owned cleanup. Final candidate and remaining row clauses still separate."
+        },
+        {
+          "run_id": "native-matrix-39006863297-1",
+          "status": "passed",
+          "evidence": "matrix-backend-smoke-001.json",
+          "scope": "First20s-per-case real-HTTP transport/admission subset at8ledgeriterations/s; no full capacity/matrix approval. Query/export release,20committedtables,malformed/origin/JWT/partialclients and ledgerrestore reconciled. Fresh smoke and two full runs with stronger exact-export/deadline oracles pending."
+        },
+        {
+          "run_id": "matrix-backend-smoke-002",
+          "status": "passed",
+          "evidence": "matrix-backend-smoke-002.json",
+          "scope": "Pre-SQL-fix ELF only;11 focused guards and four bounded real-HTTP scenarios, exact1000-row export, late-positive deadlines,130srequested load,cleanup. Two full new-artifact passes pending."
+        },
+        {
+          "run_id": "native-matrix-39021737154-1",
+          "status": "passed",
+          "evidence": "matrix-full-final-pass-1-002.json",
+          "scope": "First full retained final-ELF backend subset:1730effective seconds,4x300sledgercapacity,4x120sadmin/cancellation/catalog/hostile scenarios,347samples/gap6.045s,44092ACKs0missing,2279ambiguouscommitsreconciled,restoreRTO1.850366s/RPOupper17.998048s,cleanup. Second full pass and broader area clauses remain separate; remote overlap adds0localcheckpointcredit."
+        },
+        {
+          "status": "passed",
+          "evidence": "matrix-full-final-pass-2-003.json",
+          "scope": "Second complete supplemental matrix on previous f40774e ELF. Acknowledged mutation reconciliation and restore passed. Qualification varied 32 to16iterations/s without a proven cause; complete final006 matrix and other clauses remain separate."
+        },
+        {
+          "run_id": "native-matrix-39046455871-1",
+          "status": "passed",
+          "evidence": "matrix-sdk007-corrected-generator-pass-1-001.json",
+          "scope": "First corrected full final007 remote matrix only: four300s rates16/32/48/64 qualified, five120s foreground scenarios at51/s,71874ACKs zero loss/corruption,3993lost real commit replies reconciled without mutation retry,371samples/gap5.237s,cleanup; second pass and all other row clauses remain separate."
+        }
+      ],
+      "current_final007_subset": {
+        "status": "passed",
+        "independent_passes": 2,
+        "evidence": "matrix-sdk007-two-corrected-passes-001.json",
+        "scope": "Only the named five-scenario supplemental subset; whole row status unchanged."
+      }
+    },
+    {
+      "id": "disk",
+      "area": "Disk bytes, quotas, collisions and paths",
+      "entrypoints": "bench/campaign.py; bench/fault_campaign.py; crates/server/tests/storage.rs; concurrency.rs",
+      "status": "not run",
+      "scope_or_limit": "Historical continuous four-hour disk workload and final byte/event reconciliation are preserved. Sparse arrival accounting failed audit; final-protocol replacements, comparable regressions and the broader storage matrix remain pending.",
+      "functional_subset": {
+        "status": "passed",
+        "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+        "check_names": [
+          "check"
+        ],
+        "evidence": [
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551527"
+        ],
+        "scope": "Existing real-file storage API, paths, listings, quotas, concurrent replacements and cancellation cases; continuous disk endurance still pending.",
+        "test_count": null,
+        "latest_confirmed_ci": {
+          "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+          "evidence": "ci-f40774e-final-product-source.json",
+          "scope": "Existing functional subset repeated in exact final product-source CI; this does not pass unrun sustained matrix clauses."
+        }
+      },
+      "native_diagnostics": [
+        {
+          "run_id": "semantic-disk-smoke-001",
+          "status": "passed",
+          "scope": "150 seconds effective real-backend mixed diagnostic, not capacity or endurance certification",
+          "evidence": "semantic-real-backend-smokes.json"
+        },
+        {
+          "run_id": "semantic-s3-smoke-001",
+          "status": "passed",
+          "scope": "150 seconds effective real-backend mixed diagnostic, not capacity or endurance certification",
+          "evidence": "semantic-real-backend-smokes.json"
+        },
+        {
+          "run_id": "disk-pass-1-005",
+          "status": "failed",
+          "scope": "Physical four-hour continuity and independently reconciled bytes/events remain observed, but sparse dropped-arrival totals expired before the final query. Recorded zero is unsupported; corrected-protocol approval is withdrawn and fresh replacement campaigns are required.",
+          "evidence": "disk-pass-1.json",
+          "recorded_status": "passed",
+          "historical_scope": "First complete 14400-second continuous disk pass plus 3585 completed prelude seconds; same processes, 3094 samples, 248381 events reconciled and cleanup confirmed. Second independent pass and remaining row scenarios are still pending.",
+          "counter_erratum_evidence": "sparse-drop-staleness-finding.json"
+        },
+        {
+          "run_id": "allocation-disk-hour-001",
+          "status": "passed",
+          "scope": "Separate optional instrumented 3600-second allocation diagnostic, 770 samples, all numeric allocation/load coverage, idle glibc in-use 2067920 bytes versus 25166384 free-arena bytes; not ordinary performance or four-hour certification.",
+          "evidence": "allocation-disk-hour.json"
+        },
+        {
+          "run_id": "disk-pass-2-001",
+          "status": "failed",
+          "recorded_status": "passed",
+          "scope": "Completed physical four-hour disk investigation with unchanged application/database processes and final data/resource reconciliation. The frozen original counter protocol fails corrected arrival-evidence requirements; this is not a corrected-harness certification or a maximum-capacity claim.",
+          "evidence": "disk-pass-2-diagnostic.json"
+        },
+        {
+          "run_id": "large-disk-counter-smoke-001",
+          "status": "passed",
+          "scope": "Million-row products/private tables and 1-MiB payload functional smoke: 330 completed seconds excluding warmup, 41 closed counter phases, verified bytes/events and cleanup; short calibration is not capacity/endurance certification.",
+          "evidence": "large-disk-smoke.json"
+        },
+        {
+          "run_id": "disk-http-counter-smoke-001",
+          "status": "passed",
+          "scope": "590 completed real-backend load seconds, 58 closed HTTP/arrival phases and final identity/file/queue checks. This predates whole-logical-request timing and is not final-protocol endurance.",
+          "evidence": "disk-http-counter-smoke.json"
+        },
+        {
+          "run_id": "disk-final-pass-1-001",
+          "status": "failed",
+          "scope": "4290 completed load seconds and 833 samples. Stopped safely on 522-MiB transient metrics disk reservation against unchanged 512-MiB guard. Partial soak/final invariants not approved; cleanup confirmed.",
+          "evidence": "disk-final-pass-1-failed.json"
+        },
+        {
+          "run_id": "disk-final-pass-1-002",
+          "status": "passed",
+          "evidence": "disk-current-protocol-baseline.json",
+          "scope": "Retained baseline only: current counter/logical-latency/TSDB protocol, 62 closed phases, 14400s continuous at280/s, zero drops/unexpected, 3937 negatives, 257500 events reconciled, same app/PG, two pruning cohorts,16 renewals,3283 samples/gap11s, six identical idle owner censuses and owned cleanup. Final candidate and remaining row clauses still separate."
+        },
+        {
+          "run_id": "disk-candidate-pass-1-001",
+          "status": "failed",
+          "evidence": "disk-candidate-before-sql-fix-interruption.json",
+          "scope": "Intentionally interrupted after confirmed SQL admission bug;1559samples,4290closed effective seconds outside checkpoint014, partial soak uncredited,cleanup confirmed. New artifact and fresh replacements required."
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "area": "Real S3-compatible storage and multipart",
+      "entrypoints": "bench/campaign.py; crates/server/tests/storage_s3.rs",
+      "status": "not run",
+      "scope_or_limit": "Historical continuous four-hour local RustFS workload and final byte/event reconciliation are preserved. Sparse arrival accounting failed audit; corrected-protocol replacements, provider allocation attribution and the broader S3 matrix remain pending.",
+      "functional_subset": {
+        "status": "passed",
+        "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+        "check_names": [
+          "check"
+        ],
+        "evidence": [
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551527"
+        ],
+        "scope": "Explicit storage_s3 ignored tests were run against real RustFS, including multipart, grant expiry, timeout/cancel cleanup. A continuous four-hour release campaign is a separate gate.",
+        "test_count": null,
+        "latest_confirmed_ci": {
+          "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+          "evidence": "ci-f40774e-final-product-source.json",
+          "scope": "Existing functional subset repeated in exact final product-source CI; this does not pass unrun sustained matrix clauses."
+        }
+      },
+      "native_diagnostics": [
+        {
+          "run_id": "semantic-disk-smoke-001",
+          "status": "passed",
+          "scope": "150 seconds effective real-backend mixed diagnostic, not capacity or endurance certification",
+          "evidence": "semantic-real-backend-smokes.json"
+        },
+        {
+          "run_id": "semantic-s3-smoke-001",
+          "status": "passed",
+          "scope": "150 seconds effective real-backend mixed diagnostic, not capacity or endurance certification",
+          "evidence": "semantic-real-backend-smokes.json"
+        },
+        {
+          "run_id": "s3-pass-1-004",
+          "status": "failed",
+          "scope": "Physical four-hour continuity and independently reconciled bytes/events remain observed, but sparse dropped-arrival totals expired before the final query. Recorded zero is unsupported; corrected-protocol approval is withdrawn and fresh replacement campaigns are required.",
+          "evidence": "s3-pass-1.json",
+          "recorded_status": "passed",
+          "historical_scope": "First complete local real-S3 14400-second continuous pass plus prelude: 2934 samples, 249824 signed event identities reconciled, 16 session renewals, two pruning cohorts, byte/multipart invariants and cleanup. Separate provider allocation attribution and independent second pass still pending.",
+          "counter_erratum_evidence": "sparse-drop-staleness-finding.json"
+        },
+        {
+          "run_id": "s3-http-latency-smoke-001",
+          "status": "failed",
+          "scope": "80 completed seconds in larger million-row/one-MiB profile before physical S3 storage exceeded original 1024-MiB budget. Final integrity not reached; cleanup confirmed.",
+          "evidence": "s3-http-latency-smoke-failed.json"
+        },
+        {
+          "run_id": "s3-retained-baseline-002",
+          "status": "passed",
+          "evidence": "s3-current-protocol-baseline.json",
+          "scope": "Retained old binary comparison baseline only:62 closed phases, three steady per workload, qualified400/s ceiling and600s soak at280/s;168001 useful/171036 physical HTTP/128 negatives, zero drops/unexpected,64248 events reconciled,843 samples/gap11.5s, final idle/census/cleanup. No four-hour or final-candidate approval."
+        },
+        {
+          "run_id": "provider-runtime-corrected-pass-2",
+          "status": "passed",
+          "evidence": "provider-runtime-corrected-pass-2.json",
+          "scope": "Second complete direct-provider diagnostic, all three profiles; stable FD/socket owners but anonymous memory still rises during idle. No exact heap/cache attribution or BaaS load credit."
+        },
+        {
+          "status": "passed",
+          "evidence": "large-s3-retained-baseline-001.json",
+          "scope": "Retained-source baseline only:1Mrows/table,1MiBobjects,7612signedevents0missing/extra/duplicate,4170effective seconds,786samples,maxgap11.6s,cleanup.600ssoak does not satisfy4h; separate postprocessing duplicate-compression refusal preserved."
+        }
+      ]
+    },
+    {
+      "id": "webhooks",
+      "area": "Signatures, committed identities, queue and retries",
+      "entrypoints": "bench/campaign.py; crates/server/tests/webhooks",
+      "status": "not run",
+      "scope_or_limit": "Real signatures, retries/leases/workers and full retained-history admission passed their functional subsets. Historical event ledgers reconcile, but corrected endurance and final concentrated-load drain remain incomplete or failed.",
+      "functional_subset": {
+        "status": "passed",
+        "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+        "check_names": [
+          "check"
+        ],
+        "evidence": [
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551527"
+        ],
+        "scope": "Existing real HTTP receivers, signatures/retries/leases/workers and the full 100000-event retained-history boundary. 99999 history fixtures are explicitly cancelled, not claimed network deliveries.",
+        "test_count": null,
+        "latest_confirmed_ci": {
+          "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+          "evidence": "ci-f40774e-final-product-source.json",
+          "scope": "Existing functional subset repeated in exact final product-source CI; this does not pass unrun sustained matrix clauses."
+        }
+      },
+      "native_diagnostics": [
+        {
+          "run_id": "disk-pass-1-005",
+          "status": "failed",
+          "scope": "Physical four-hour continuity and independently reconciled bytes/events remain observed, but sparse dropped-arrival totals expired before the final query. Recorded zero is unsupported; corrected-protocol approval is withdrawn and fresh replacement campaigns are required.",
+          "evidence": "disk-pass-1.json",
+          "recorded_status": "passed",
+          "historical_scope": "First complete 14400-second continuous disk pass plus 3585 completed prelude seconds; same processes, 3094 samples, 248381 events reconciled and cleanup confirmed. Second independent pass and remaining row scenarios are still pending.",
+          "counter_erratum_evidence": "sparse-drop-staleness-finding.json"
+        },
+        {
+          "run_id": "s3-pass-1-004",
+          "status": "failed",
+          "scope": "Physical four-hour continuity and independently reconciled bytes/events remain observed, but sparse dropped-arrival totals expired before the final query. Recorded zero is unsupported; corrected-protocol approval is withdrawn and fresh replacement campaigns are required.",
+          "evidence": "s3-pass-1.json",
+          "recorded_status": "passed",
+          "historical_scope": "First complete local real-S3 14400-second continuous pass plus prelude: 2934 samples, 249824 signed event identities reconciled, 16 session renewals, two pruning cohorts, byte/multipart invariants and cleanup. Separate provider allocation attribution and independent second pass still pending.",
+          "counter_erratum_evidence": "sparse-drop-staleness-finding.json"
+        },
+        {
+          "run_id": "disk-pass-2-001",
+          "status": "failed",
+          "recorded_status": "passed",
+          "scope": "Completed physical four-hour disk investigation with unchanged application/database processes and final data/resource reconciliation. The frozen original counter protocol fails corrected arrival-evidence requirements; this is not a corrected-harness certification or a maximum-capacity claim.",
+          "evidence": "disk-pass-2-diagnostic.json"
+        },
+        {
+          "run_id": "large-disk-counter-smoke-001",
+          "status": "passed",
+          "scope": "Million-row products/private tables and 1-MiB payload functional smoke: 330 completed seconds excluding warmup, 41 closed counter phases, verified bytes/events and cleanup; short calibration is not capacity/endurance certification.",
+          "evidence": "large-disk-smoke.json"
+        },
+        {
+          "run_id": "disk-http-counter-smoke-001",
+          "status": "passed",
+          "scope": "590 completed real-backend load seconds, 58 closed HTTP/arrival phases and final identity/file/queue checks. This predates whole-logical-request timing and is not final-protocol endurance.",
+          "evidence": "disk-http-counter-smoke.json"
+        },
+        {
+          "run_id": "disk-final-pass-1-001",
+          "status": "failed",
+          "scope": "4290 completed load seconds and 833 samples. Stopped safely on 522-MiB transient metrics disk reservation against unchanged 512-MiB guard. Partial soak/final invariants not approved; cleanup confirmed.",
+          "evidence": "disk-final-pass-1-failed.json"
+        },
+        {
+          "run_id": "disk-final-pass-1-002",
+          "status": "passed",
+          "evidence": "disk-current-protocol-baseline.json",
+          "scope": "Retained baseline only: current counter/logical-latency/TSDB protocol, 62 closed phases, 14400s continuous at280/s, zero drops/unexpected, 3937 negatives, 257500 events reconciled, same app/PG, two pruning cohorts,16 renewals,3283 samples/gap11s, six identical idle owner censuses and owned cleanup. Final candidate and remaining row clauses still separate."
+        },
+        {
+          "run_id": "s3-retained-baseline-002",
+          "status": "passed",
+          "evidence": "s3-current-protocol-baseline.json",
+          "scope": "Retained old binary comparison baseline only:62 closed phases, three steady per workload, qualified400/s ceiling and600s soak at280/s;168001 useful/171036 physical HTTP/128 negatives, zero drops/unexpected,64248 events reconciled,843 samples/gap11.5s, final idle/census/cleanup. No four-hour or final-candidate approval."
+        },
+        {
+          "run_id": "disk-candidate-pass-1-001",
+          "status": "failed",
+          "evidence": "disk-candidate-before-sql-fix-interruption.json",
+          "scope": "Intentionally interrupted after confirmed SQL admission bug;1559samples,4290closed effective seconds outside checkpoint014, partial soak uncredited,cleanup confirmed. New artifact and fresh replacements required."
+        },
+        {
+          "status": "passed",
+          "evidence": "large-s3-retained-baseline-001.json",
+          "scope": "Retained-source baseline only:1Mrows/table,1MiBobjects,7612signedevents0missing/extra/duplicate,4170effective seconds,786samples,maxgap11.6s,cleanup.600ssoak does not satisfy4h; separate postprocessing duplicate-compression refusal preserved."
+        }
+      ]
+    },
+    {
+      "id": "admin",
+      "area": "SQL/export admission and cancellation",
+      "entrypoints": "crates/server/tests/architecture.rs; admin/sql.rs; hardening.rs",
+      "status": "not run",
+      "scope_or_limit": "Two corrected full final007 backend-pressure matrices passed admin budgets and cancellation/export ownership, retaining original failures. Final ordinary performance/endurance and broader admin clauses remain pending.",
+      "functional_subset": {
+        "status": "passed",
+        "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+        "check_names": [
+          "check"
+        ],
+        "evidence": [
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551527"
+        ],
+        "scope": "Existing real-PostgreSQL SQL/export limits, slow/unpolled consumer cancellation, deadlines and role/connection recovery.",
+        "test_count": null,
+        "latest_confirmed_ci": {
+          "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+          "evidence": "ci-f40774e-final-product-source.json",
+          "scope": "Existing functional subset repeated in exact final product-source CI; this does not pass unrun sustained matrix clauses."
+        }
+      },
+      "native_diagnostics": [
+        {
+          "run_id": "disk-http-counter-smoke-001",
+          "status": "passed",
+          "scope": "590 completed real-backend load seconds, 58 closed HTTP/arrival phases and final identity/file/queue checks. This predates whole-logical-request timing and is not final-protocol endurance.",
+          "evidence": "disk-http-counter-smoke.json"
+        },
+        {
+          "run_id": "disk-final-pass-1-001",
+          "status": "failed",
+          "scope": "4290 completed load seconds and 833 samples. Stopped safely on 522-MiB transient metrics disk reservation against unchanged 512-MiB guard. Partial soak/final invariants not approved; cleanup confirmed.",
+          "evidence": "disk-final-pass-1-failed.json"
+        },
+        {
+          "run_id": "disk-final-pass-1-002",
+          "status": "passed",
+          "evidence": "disk-current-protocol-baseline.json",
+          "scope": "Retained baseline only: current counter/logical-latency/TSDB protocol, 62 closed phases, 14400s continuous at280/s, zero drops/unexpected, 3937 negatives, 257500 events reconciled, same app/PG, two pruning cohorts,16 renewals,3283 samples/gap11s, six identical idle owner censuses and owned cleanup. Final candidate and remaining row clauses still separate."
+        },
+        {
+          "run_id": "s3-retained-baseline-002",
+          "status": "passed",
+          "evidence": "s3-current-protocol-baseline.json",
+          "scope": "Retained old binary comparison baseline only:62 closed phases, three steady per workload, qualified400/s ceiling and600s soak at280/s;168001 useful/171036 physical HTTP/128 negatives, zero drops/unexpected,64248 events reconciled,843 samples/gap11.5s, final idle/census/cleanup. No four-hour or final-candidate approval."
+        },
+        {
+          "run_id": "native-matrix-39006863297-1",
+          "status": "passed",
+          "evidence": "matrix-backend-smoke-001.json",
+          "scope": "First20s-per-case real-HTTP transport/admission subset at8ledgeriterations/s; no full capacity/matrix approval. Query/export release,20committedtables,malformed/origin/JWT/partialclients and ledgerrestore reconciled. Fresh smoke and two full runs with stronger exact-export/deadline oracles pending."
+        },
+        {
+          "run_id": "sql-cancellation-before",
+          "status": "failed",
+          "evidence": "sql-cancellation-admission-before.json",
+          "scope": "Four backend queries active behind held CancelRequests; fifth wrongly accepted. Original failing CI preserved."
+        },
+        {
+          "run_id": "sql-cancellation-after-local",
+          "status": "passed",
+          "evidence": "sql-cancellation-admission-after.json",
+          "scope": "Two real owned-PostgreSQL regressions passed plus four related architecture checks; source hashes retained. Full final-artifact load and CI pending."
+        },
+        {
+          "run_id": "matrix-backend-smoke-002",
+          "status": "passed",
+          "evidence": "matrix-backend-smoke-002.json",
+          "scope": "Pre-SQL-fix ELF only;11 focused guards and four bounded real-HTTP scenarios, exact1000-row export, late-positive deadlines,130srequested load,cleanup. Two full new-artifact passes pending."
+        },
+        {
+          "run_id": "disk-candidate-pass-1-001",
+          "status": "failed",
+          "evidence": "disk-candidate-before-sql-fix-interruption.json",
+          "scope": "Intentionally interrupted after confirmed SQL admission bug;1559samples,4290closed effective seconds outside checkpoint014, partial soak uncredited,cleanup confirmed. New artifact and fresh replacements required."
+        },
+        {
+          "run_id": "export-cancellation-before",
+          "status": "failed",
+          "evidence": "export-cancellation-admission-before.json",
+          "scope": "Two real backend queries active behind held CancelRequests; third export wrongly accepted200."
+        },
+        {
+          "run_id": "export-cancellation-first-fix-validation",
+          "status": "failed",
+          "evidence": "export-cancellation-fix-first-validation-failure.json",
+          "scope": "New reproduction passed, existing unpolled-response lifetime test failed; original assertions retained."
+        },
+        {
+          "run_id": "export-cancellation-after-local",
+          "status": "passed",
+          "evidence": "export-cancellation-admission-after.json",
+          "scope": "16related real-service checks passed:3cancellation,9admin-performance,4architecture;34admincases filtered. New production artifact and load/CI repetitions pending."
+        },
+        {
+          "run_id": "native-matrix-39021737154-1",
+          "status": "passed",
+          "evidence": "matrix-full-final-pass-1-002.json",
+          "scope": "First full retained final-ELF backend subset:1730effective seconds,4x300sledgercapacity,4x120sadmin/cancellation/catalog/hostile scenarios,347samples/gap6.045s,44092ACKs0missing,2279ambiguouscommitsreconciled,restoreRTO1.850366s/RPOupper17.998048s,cleanup. Second full pass and broader area clauses remain separate; remote overlap adds0localcheckpointcredit."
+        },
+        {
+          "status": "passed",
+          "evidence": "matrix-full-final-pass-2-003.json",
+          "scope": "Second complete supplemental matrix on previous f40774e ELF. Acknowledged mutation reconciliation and restore passed. Qualification varied 32 to16iterations/s without a proven cause; complete final006 matrix and other clauses remain separate."
+        },
+        {
+          "run_id": "native-matrix-39046455871-1",
+          "status": "passed",
+          "evidence": "matrix-sdk007-corrected-generator-pass-1-001.json",
+          "scope": "First corrected full final007 remote matrix only: four300s rates16/32/48/64 qualified, five120s foreground scenarios at51/s,71874ACKs zero loss/corruption,3993lost real commit replies reconciled without mutation retry,371samples/gap5.237s,cleanup; second pass and all other row clauses remain separate."
+        }
+      ],
+      "current_final007_subset": {
+        "status": "passed",
+        "independent_passes": 2,
+        "evidence": "matrix-sdk007-two-corrected-passes-001.json",
+        "scope": "Only the named five-scenario supplemental subset; whole row status unchanged."
+      }
+    },
+    {
+      "id": "browser",
+      "area": "Panel tabs, request lifetime and retained resources",
+      "entrypoints": "crates/admin/ui/e2e; src/lib/query-client.test.ts",
+      "status": "not run",
+      "scope_or_limit": "Two final007 measured browser passes passed706/766navigations with p95visual308.4/285.0ms, five numeric auth cycles, seven heap/DOM/listener plateaus and actual900second expiry. Original SLO failure remains failed/unexplained; other browser clauses and final ordinary comparisons pending. Historical different-profile results are preserved without cross-profile performance claims.",
+      "functional_subset": {
+        "status": "passed",
+        "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+        "check_names": [
+          "admin-ui"
+        ],
+        "evidence": [
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534550866"
+        ],
+        "scope": "Existing Vite browser suites and memory regressions with explicit endpoint/response doubles. This is not a measured release-panel visual p95 under native traffic.",
+        "test_count": null,
+        "latest_confirmed_ci": {
+          "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+          "evidence": "ci-f40774e-final-product-source.json",
+          "scope": "Existing functional subset repeated in exact final product-source CI; this does not pass unrun sustained matrix clauses."
+        }
+      },
+      "native_diagnostics": [
+        {
+          "run_id": "browser-pass-1-001",
+          "status": "failed",
+          "scope": "ELF loader alias rejected during preparation; zero traffic, cleanup confirmed"
+        },
+        {
+          "run_id": "browser-pass-1-002",
+          "status": "failed",
+          "scope": "Unused Tcl/Tk extension has unavailable libraries; zero traffic, cleanup confirmed"
+        },
+        {
+          "run_id": "browser-pass-1-003",
+          "status": "failed",
+          "scope": "Managed Playwright Node symlink was omitted; driver never started, cleanup confirmed"
+        },
+        {
+          "run_id": "browser-pass-1-004",
+          "status": "failed",
+          "scope": "Chromium closed during the untrusted TLS control; no approved browser result, cleanup confirmed"
+        },
+        {
+          "run_id": "browser-pass-1-009",
+          "status": "passed",
+          "scope": "First full local live-browser/SDK lifecycle pass: three tabs, foreground p95 399.4ms, all 300 disposed test clients collected, actual credential expiry/renewal, byte-verified uploads, real response cancellation and cleanup; independent second pass still pending.",
+          "evidence": "browser-pass-1.json"
+        },
+        {
+          "run_id": "native-browser-auth-39023157250-1",
+          "status": "failed",
+          "evidence": "browser-auth-driver-diagnostic-failure-004.json",
+          "scope": "MissingPlaywright import atdriverline12,before anydriver-ready marker. Both apps/PG active,noOOM/restarts;18focusedguards passed,cleanup. Explicitownedpackageentry fix passed28localbrowser tests; realcorrected lifecycle pending."
+        },
+        {
+          "run_id": "native-browser-auth-39024051590-1",
+          "status": "passed",
+          "evidence": "browser-auth-full-final-pass-1-005.json",
+          "scope": "First final-ELF full real browser/auth pass:560requests/40users/0unrevokedgeneratedsessions,5cycles,3tabs,823navigations/p95feedback267.2ms,2511SDKRLSreads,actual900sTTL/1082.087sobservation,expired401/logoutrefresh400,bothrealconsumers,219resourcesamples/gap5.297s,noOOM/restarts,cleanup. Existingheap/node/listenerguards applied but detailedplateauvalues were not exported; subsequent strengthened receipts retain them. Other pass/SMTP/OAuth/endurance clauses remain separate;0overlappinglocaltimecredit."
+        },
+        {
+          "status": "failed",
+          "evidence": "browser-auth-owner-pass-2-failure-006.json",
+          "scope": "Previous real browser owner pass failed because late overlapping native-browser refreshes rotated more than once. The original failure and cleanup remain visible."
+        },
+        {
+          "status": "passed",
+          "evidence": "sdk-native-overlapping-refresh-before-after-001.json",
+          "scope": "Focused ninth-defect correction only: deterministic SDK two-to-one rotations, 202 unit and 15 type tests, 37 guide tests and rebuilt assets. Full repaired browser repetitions remain pending."
+        },
+        {
+          "status": "passed",
+          "evidence": "browser-sdk006-genuine-overlap-pass-1-007.json",
+          "scope": "Complete historical candidate006 genuine-overlap browser pass, one refresh for48callers,sevenownerplateaus,cleanup. NewSDKisolation correction requires final-source repetitions."
+        },
+        {
+          "status": "passed",
+          "evidence": "browser-sdk006-genuine-overlap-pass-2-008.json",
+          "scope": "Complete historical candidate006 genuine-overlap browser pass, one refresh for48callers,sevenownerplateaus,cleanup. NewSDKisolation correction requires final-source repetitions."
+        }
+      ],
+      "current_final007_measured_browser_subset": {
+        "status": "passed",
+        "independent_passes": 2,
+        "evidence": "browser-sdk007-two-measured-passes-001.json",
+        "scope": "Both final007 measured full browser passes completed with same-ELF/budgets; original refresh SLO failure remains unexplained. Whole row includes further mandatory clauses."
+      }
+    },
+    {
+      "id": "sdks",
+      "area": "TypeScript/Rust SDK runtime, cancellation and refresh",
+      "entrypoints": "sdk/typescript; sdk/rust; crates/server/tests/sdk_rust.rs",
+      "status": "not run",
+      "scope_or_limit": "All204SDK units passed at proved EC merge source. Final007 browser control verified48overlapping refresh callers produce one real request, five live auth cycles and disposal; independent second full browser pass now passed; remaining SDK/native load clauses stay pending.",
+      "functional_subset": {
+        "status": "passed",
+        "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+        "check_names": [
+          "sdk / sdk",
+          "sdk / sdk-node (22)",
+          "sdk / sdk-node (26)",
+          "sdk-rust (ubuntu-latest)",
+          "sdk-rust (macos-latest)",
+          "sdk-rust (windows-latest)"
+        ],
+        "evidence": [
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551241",
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551552",
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551196",
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539228/job/116534551417",
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539228/job/116534551568",
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539228/job/116534551357"
+        ],
+        "scope": "Existing TypeScript/Rust package, runtime, memory and server/browser contracts on documented CI runtimes; no VPS load envelope follows from these functional checks.",
+        "test_count": null,
+        "latest_confirmed_ci": {
+          "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+          "evidence": "ci-f40774e-final-product-source.json",
+          "scope": "Existing functional subset repeated in exact final product-source CI; this does not pass unrun sustained matrix clauses."
+        }
+      },
+      "native_diagnostics": [
+        {
+          "run_id": "browser-pass-1-009",
+          "status": "passed",
+          "scope": "First full local live-browser/SDK lifecycle pass: three tabs, foreground p95 399.4ms, all 300 disposed test clients collected, actual credential expiry/renewal, byte-verified uploads, real response cancellation and cleanup; independent second pass still pending.",
+          "evidence": "browser-pass-1.json"
+        },
+        {
+          "run_id": "native-browser-auth-39023157250-1",
+          "status": "failed",
+          "evidence": "browser-auth-driver-diagnostic-failure-004.json",
+          "scope": "MissingPlaywright import atdriverline12,before anydriver-ready marker. Both apps/PG active,noOOM/restarts;18focusedguards passed,cleanup. Explicitownedpackageentry fix passed28localbrowser tests; realcorrected lifecycle pending."
+        },
+        {
+          "run_id": "native-browser-auth-39024051590-1",
+          "status": "passed",
+          "evidence": "browser-auth-full-final-pass-1-005.json",
+          "scope": "First final-ELF full real browser/auth pass:560requests/40users/0unrevokedgeneratedsessions,5cycles,3tabs,823navigations/p95feedback267.2ms,2511SDKRLSreads,actual900sTTL/1082.087sobservation,expired401/logoutrefresh400,bothrealconsumers,219resourcesamples/gap5.297s,noOOM/restarts,cleanup. Existingheap/node/listenerguards applied but detailedplateauvalues were not exported; subsequent strengthened receipts retain them. Other pass/SMTP/OAuth/endurance clauses remain separate;0overlappinglocaltimecredit."
+        },
+        {
+          "status": "failed",
+          "evidence": "browser-auth-owner-pass-2-failure-006.json",
+          "scope": "Previous real browser owner pass failed because late overlapping native-browser refreshes rotated more than once. The original failure and cleanup remain visible."
+        },
+        {
+          "status": "passed",
+          "evidence": "sdk-native-overlapping-refresh-before-after-001.json",
+          "scope": "Focused ninth-defect correction only: deterministic SDK two-to-one rotations, 202 unit and 15 type tests, 37 guide tests and rebuilt assets. Full repaired browser repetitions remain pending."
+        },
+        {
+          "status": "passed",
+          "evidence": "sdk-independent-server-clients-built-before-after-001.json",
+          "scope": "Tenth confirmed defect fixed: independent default-memory server clients no longer wait behind another client sign-in;204units pass, Node22/24/26 full SDK jobs pass. Does not complete backend endurance, SMTP/OAuth or every SDK stress clause."
+        },
+        {
+          "status": "passed",
+          "evidence": "browser-sdk006-genuine-overlap-pass-1-007.json",
+          "scope": "Complete historical candidate006 genuine-overlap browser pass, one refresh for48callers,sevenownerplateaus,cleanup. NewSDKisolation correction requires final-source repetitions."
+        },
+        {
+          "status": "passed",
+          "evidence": "browser-sdk006-genuine-overlap-pass-2-008.json",
+          "scope": "Complete historical candidate006 genuine-overlap browser pass, one refresh for48callers,sevenownerplateaus,cleanup. NewSDKisolation correction requires final-source repetitions."
+        }
+      ],
+      "current_final007_measured_browser_subset": {
+        "status": "passed",
+        "independent_passes": 2,
+        "evidence": "browser-sdk007-two-measured-passes-001.json",
+        "scope": "Both final007 measured full browser passes completed with same-ELF/budgets; original refresh SLO failure remains unexplained. Whole row includes further mandatory clauses."
+      }
+    },
+    {
+      "id": "topologies",
+      "area": "Independent 1/5/10-project capacity and fairness",
+      "entrypoints": "bench/host_campaign.py",
+      "status": "failed",
+      "scope_or_limit": "Earlier fractional quota and shared five-project fairness/drain failures remain. Final005 ten-project shared and10msquota diagnostic smokes also fail relativefairness; only the sharedrepeat has8absoluteSLOfailures. Alloriginals preserved; full300s1/5/10two-passprofiles remain pending.",
+      "native_diagnostics": [
+        {
+          "run_id": "fleet-caddy-1-smoke-003",
+          "status": "passed",
+          "scope": "single-project verified HTTPS/reload and signed webhooks, 120 effective seconds",
+          "evidence": "caddy-before-after.json"
+        },
+        {
+          "run_id": "fleet-caddy-5-smoke-001",
+          "status": "failed",
+          "scope": "150 effective seconds; project-3 RLS p95 exceeded 120% of the balanced median in noisy-mixed; cleanup confirmed"
+        },
+        {
+          "run_id": "fleet-caddy-10-smoke-002",
+          "status": "failed",
+          "scope": "automatic disk-reserve stop during preparation, zero load; cleanup confirmed",
+          "evidence": "fleet-vfs-headroom-before-after.json"
+        },
+        {
+          "run_id": "fleet-caddy-10-preflight-003",
+          "status": "blocked",
+          "scope": "updated size-based VFS guard refused preparation before resource creation",
+          "evidence": "fleet-vfs-headroom-before-after.json"
+        },
+        {
+          "run_id": "fleet-caddy-10-pass-1-001",
+          "status": "failed",
+          "scope": "1590 completed load seconds, 124 observations, no resource violation/OOM/drop/unexpected error, first nominal refresh SLO failed in two projects, owned cleanup confirmed. Later phases and final event identities were not run.",
+          "evidence": "fleet-10-default-cpu-period.json"
+        },
+        {
+          "run_id": "fleet-caddy-1-final-pass-1-001",
+          "status": "passed",
+          "scope": "First complete fixed-counter one-project profile: 2490 load seconds, five-minute steps, three balanced samples, verified local HTTPS proxy reload, signed event reconciliation and cleanup; second pass and 5/10-project gates remain pending.",
+          "evidence": "fleet-1-final-pass-1.json"
+        },
+        {
+          "run_id": "fleet-caddy-5-sharing-smoke-001",
+          "status": "failed",
+          "scope": "Short CPU-sharing profile failed absolute and relative latency gates, including 217.638-ms healthy RLS p95; kernel limits, event identities, drain and owned cleanup passed. Fresh full-duration campaign remains pending.",
+          "evidence": "fleet-5-sharing-smoke.json"
+        },
+        {
+          "run_id": "fleet-caddy-5-sharing-final-pass-1-001",
+          "status": "failed",
+          "scope": "2790 completed load seconds, 604 samples, 24 prior noisy-mixed latency failures, then 10-second Docker stats timeout. Final invariants not reached; cleanup confirmed.",
+          "evidence": "fleet-5-sharing-final-pass-1.json"
+        },
+        {
+          "run_id": "host10-shared-candidate-smoke-002",
+          "status": "failed",
+          "evidence": "host10-shared-smoke-failure-002.json",
+          "scope": "480closedload seconds,101relative/absolute failure records incl8absoluteSLOviolations;90cross-projectrejections,7828signeduniqueevents reconciled,cleanup. Thirty-seconddiagnostic only, never five-minutecertification; no productioncause inferred."
+        },
+        {
+          "run_id": "host10-quota10ms-candidate-smoke-001",
+          "status": "failed",
+          "evidence": "host10-quota10ms-smoke-failure-001.json",
+          "scope": "480closedload seconds,106relativefairnessfailures and0absoluteSLOfailures;414samples,90cross-projectrejections,1381signeduniqueevents reconciled,cleanup. Thirty-seconddiagnostic only, never five-minutecertification; no productioncause inferred."
+        }
+      ],
+      "private_file_extension": {
+        "status": "not run",
+        "focused_guards": "host-private-file-guards-001.json",
+        "real_preflight_declaration": "host-private-file-preflight-guards-002.json",
+        "full_host_predeclaration": "post-endurance-private-files-predeclaration-001.json",
+        "scope": "Existing failed fairness results remain failed. New full1/5/10 baselines and two candidate passes add identical bounded private-file pressure; short real-service preflight is prepared only."
+      }
+    },
+    {
+      "id": "management",
+      "area": "Concurrent host management, durable receipts and limits",
+      "entrypoints": "scripts/test-host-management.py; crates/cli/src/updates/management",
+      "status": "not run",
+      "scope_or_limit": "Owned Docker acceptance and a real native machine-ownership fix have scoped evidence. New first-init/stale-registry/empty-host ownership regressions and remaining sustained host-operation combinations still need final verification; no whole management-matrix pass is inferred.",
+      "functional_subset": {
+        "status": "passed",
+        "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+        "check_names": [
+          "check"
+        ],
+        "evidence": [
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551527"
+        ],
+        "scope": "Isolated root Docker lifecycle, paired backup/restore and recovery with explicit provenance/DNS/TLS/proxy doubles, plus actual 255-receipt and 256-identity boundaries.",
+        "test_count": null,
+        "latest_confirmed_ci": {
+          "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+          "evidence": "ci-f40774e-final-product-source.json",
+          "scope": "Existing functional subset repeated in exact final product-source CI; this does not pass unrun sustained matrix clauses."
+        }
+      },
+      "native_diagnostics": [
+        {
+          "run_id": "native-vm-38973642284-1",
+          "status": "failed",
+          "evidence": "native-host-root-before.json",
+          "scope": "Second init in another generated directory with --skip-checks altered the first database password/Caddy and created a second host/unit. Owned cleanup confirmed."
+        },
+        {
+          "run_id": "native-vm-38976428540-1",
+          "status": "passed",
+          "evidence": "native-host-root-after.json",
+          "scope": "Durable machine owner candidate: specific second-directory rejection, unchanged first credential/Caddy/sentinel, no second host/unit, strict HTTPS readiness and owned cleanup. 72.176555455s including preparation, fourteen samples."
+        },
+        {
+          "run_id": "native-suite-38990677734",
+          "status": "passed",
+          "evidence": "native-final-suite-7e68fd2/index.json",
+          "scope": "Two fresh independent passes of all six native cases using one common ELF; actual runtime inode/digest, provisioning rejection boundaries, clock restore, backup/restore,30 ACKs per runtime after guest RAM loss and cleanup. No full combined management/update stress, in-flight power cut, physical host power loss or off-host certification."
+        },
+        {
+          "run_id": "native-suite-39017663454",
+          "status": "passed",
+          "evidence": "native-final-suite-f40774e/index.json",
+          "scope": "Final product-source common ELF; all six native cases twice, fresh VMs, verified runtime inode/digest, same-target restore,30ACKs per runtime after guest RAM loss, cleanup. Original af01678startup failure still unresolved; no combined controller/update stress or off-host certification."
+        }
+      ]
+    },
+    {
+      "id": "updates",
+      "area": "Update activation, interruption and compatibility",
+      "entrypoints": "scripts/test-upgrade.py; crates/cli/src/updates",
+      "status": "not run",
+      "scope_or_limit": "Existing upgrade/rollback acceptance passed confirmed CI. Native/public deployment, loss of guest/host state during activation and remaining operation combinations are not certified.",
+      "functional_subset": {
+        "status": "passed",
+        "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+        "check_names": [
+          "upgrade"
+        ],
+        "evidence": [
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551290"
+        ],
+        "scope": "Existing upgrade/rollback acceptance against published v0.3.1 and v0.4.0 and the checkout. Public deployment/power-loss acceptance remains separate.",
+        "test_count": null,
+        "latest_confirmed_ci": {
+          "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+          "evidence": "ci-f40774e-final-product-source.json",
+          "scope": "Existing functional subset repeated in exact final product-source CI; this does not pass unrun sustained matrix clauses."
+        }
+      },
+      "native_diagnostics": [
+        {
+          "run_id": "native-suite-39017663454",
+          "status": "passed",
+          "evidence": "native-final-suite-f40774e/index.json",
+          "scope": "Final product-source common ELF; all six native cases twice, fresh VMs, verified runtime inode/digest, same-target restore,30ACKs per runtime after guest RAM loss, cleanup. Original af01678startup failure still unresolved; no combined controller/update stress or off-host certification."
+        }
+      ]
+    },
+    {
+      "id": "backup",
+      "area": "Local paired snapshots and restored integrity",
+      "entrypoints": "bench/fault_campaign.py; scripts/test-host-management.py",
+      "status": "not run",
+      "scope_or_limit": "Two final007 supplemental fresh local restores passed with identical physical bytes/user and foreign JWT401: RTO2.596884/2.499754seconds, RPO upper about18seconds, intentional snapshot rewind868rows. Full final fault passes and off-host/PITR remain incomplete.",
+      "functional_subset": {
+        "status": "passed",
+        "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+        "check_names": [
+          "check"
+        ],
+        "evidence": [
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551527"
+        ],
+        "scope": "Existing owned Docker paired snapshots and restored files/database integrity. Off-host/PITR and power loss are not established.",
+        "test_count": null,
+        "latest_confirmed_ci": {
+          "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+          "evidence": "ci-f40774e-final-product-source.json",
+          "scope": "Existing functional subset repeated in exact final product-source CI; this does not pass unrun sustained matrix clauses."
+        }
+      },
+      "native_diagnostics": [
+        {
+          "run_id": "fault-pass-1-001",
+          "status": "passed",
+          "scope": "complete local fault pass at 79.167% of qualified RPC rate, 1580 effective load seconds; second independent pass and external deployment targets remain pending",
+          "evidence": "fault-pass-1.json"
+        },
+        {
+          "run_id": "native-vm-38963816198-1",
+          "status": "passed",
+          "evidence": "native-vm-runtime-pass-1.json",
+          "scope": "First complete owned native lifecycle: real systemd and verified TLS/RLS, same-target backup/restore, guest RAM loss and 30 external ACKs reconciled; no physical host power loss, concurrent cut write or off-host certification."
+        },
+        {
+          "run_id": "native-vm-38970590208-1",
+          "status": "passed",
+          "evidence": "native-vm-runtime-candidate-pass-1.json",
+          "scope": "Native PostgreSQL candidate: exact guest binary SHA verified; normal init/migrate, RLS/file bytes, same-target restore and restart of the same guest disk preserve 30 externally recorded ACKs. 168.203009496s including preparation, 32 samples, owned cleanup confirmed."
+        },
+        {
+          "run_id": "native-suite-38990677734",
+          "status": "passed",
+          "evidence": "native-final-suite-7e68fd2/index.json",
+          "scope": "Two fresh independent passes of all six native cases using one common ELF; actual runtime inode/digest, provisioning rejection boundaries, clock restore, backup/restore,30 ACKs per runtime after guest RAM loss and cleanup. No full combined management/update stress, in-flight power cut, physical host power loss or off-host certification."
+        },
+        {
+          "run_id": "native-suite-39017663454",
+          "status": "passed",
+          "evidence": "native-final-suite-f40774e/index.json",
+          "scope": "Final product-source common ELF; all six native cases twice, fresh VMs, verified runtime inode/digest, same-target restore,30ACKs per runtime after guest RAM loss, cleanup. Original af01678startup failure still unresolved; no combined controller/update stress or off-host certification."
+        },
+        {
+          "run_id": "native-matrix-39021737154-1",
+          "status": "passed",
+          "evidence": "matrix-full-final-pass-1-002.json",
+          "scope": "First full retained final-ELF backend subset:1730effective seconds,4x300sledgercapacity,4x120sadmin/cancellation/catalog/hostile scenarios,347samples/gap6.045s,44092ACKs0missing,2279ambiguouscommitsreconciled,restoreRTO1.850366s/RPOupper17.998048s,cleanup. Second full pass and broader area clauses remain separate; remote overlap adds0localcheckpointcredit."
+        },
+        {
+          "status": "passed",
+          "evidence": "matrix-full-final-pass-2-003.json",
+          "scope": "Second complete supplemental matrix on previous f40774e ELF. Acknowledged mutation reconciliation and restore passed. Qualification varied 32 to16iterations/s without a proven cause; complete final006 matrix and other clauses remain separate."
+        },
+        {
+          "run_id": "native-matrix-39046455871-1",
+          "status": "passed",
+          "evidence": "matrix-sdk007-corrected-generator-pass-1-001.json",
+          "scope": "First corrected full final007 remote matrix only: four300s rates16/32/48/64 qualified, five120s foreground scenarios at51/s,71874ACKs zero loss/corruption,3993lost real commit replies reconciled without mutation retry,371samples/gap5.237s,cleanup; second pass and all other row clauses remain separate."
+        }
+      ],
+      "current_final007_subset": {
+        "status": "passed",
+        "independent_passes": 2,
+        "evidence": "matrix-sdk007-two-corrected-passes-001.json",
+        "scope": "Only the named five-scenario supplemental subset; whole row status unchanged."
+      }
+    },
+    {
+      "id": "hostile",
+      "area": "Malformed inputs, churn and ingress policy",
+      "entrypoints": "crates/server/tests/hardening.rs; storage.rs; webhooks",
+      "status": "not run",
+      "scope_or_limit": "Two corrected final007 full supplemental hostile-backend windows passed explicit malformed/nonfinite/null/deep/cookie/origin/slow-client boundaries with positive/negative canaries. Broader security and public-ingress stress remain separate.",
+      "functional_subset": {
+        "status": "passed",
+        "source_commit": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+        "check_names": [
+          "check"
+        ],
+        "evidence": [
+          "https://github.com/Nelcota/Nelcota/actions/runs/38767539229/job/116534551527"
+        ],
+        "scope": "Existing malformed input, bounded API/storage/admin admission, peer identity, webhook destination/redirect and signature regressions; public ingress stress remains separate.",
+        "test_count": null,
+        "latest_confirmed_ci": {
+          "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+          "evidence": "ci-f40774e-final-product-source.json",
+          "scope": "Existing functional subset repeated in exact final product-source CI; this does not pass unrun sustained matrix clauses."
+        }
+      },
+      "native_diagnostics": [
+        {
+          "run_id": "fleet-caddy-1-smoke-003",
+          "status": "passed",
+          "scope": "verified local HTTPS, untrusted CA rejection, actual reload failure with positive data and 401 probes; no slow-client/public-ingress certification",
+          "evidence": "caddy-before-after.json"
+        },
+        {
+          "run_id": "native-matrix-39006863297-1",
+          "status": "passed",
+          "evidence": "matrix-backend-smoke-001.json",
+          "scope": "First20s-per-case real-HTTP transport/admission subset at8ledgeriterations/s; no full capacity/matrix approval. Query/export release,20committedtables,malformed/origin/JWT/partialclients and ledgerrestore reconciled. Fresh smoke and two full runs with stronger exact-export/deadline oracles pending."
+        },
+        {
+          "run_id": "matrix-backend-smoke-002",
+          "status": "passed",
+          "evidence": "matrix-backend-smoke-002.json",
+          "scope": "Pre-SQL-fix ELF only;11 focused guards and four bounded real-HTTP scenarios, exact1000-row export, late-positive deadlines,130srequested load,cleanup. Two full new-artifact passes pending."
+        },
+        {
+          "run_id": "native-matrix-39021737154-1",
+          "status": "passed",
+          "evidence": "matrix-full-final-pass-1-002.json",
+          "scope": "First full retained final-ELF backend subset:1730effective seconds,4x300sledgercapacity,4x120sadmin/cancellation/catalog/hostile scenarios,347samples/gap6.045s,44092ACKs0missing,2279ambiguouscommitsreconciled,restoreRTO1.850366s/RPOupper17.998048s,cleanup. Second full pass and broader area clauses remain separate; remote overlap adds0localcheckpointcredit."
+        },
+        {
+          "run_id": "native-browser-auth-39024051590-1",
+          "status": "passed",
+          "evidence": "browser-auth-full-final-pass-1-005.json",
+          "scope": "First final-ELF full real browser/auth pass:560requests/40users/0unrevokedgeneratedsessions,5cycles,3tabs,823navigations/p95feedback267.2ms,2511SDKRLSreads,actual900sTTL/1082.087sobservation,expired401/logoutrefresh400,bothrealconsumers,219resourcesamples/gap5.297s,noOOM/restarts,cleanup. Existingheap/node/listenerguards applied but detailedplateauvalues were not exported; subsequent strengthened receipts retain them. Other pass/SMTP/OAuth/endurance clauses remain separate;0overlappinglocaltimecredit."
+        },
+        {
+          "status": "passed",
+          "evidence": "matrix-full-final-pass-2-003.json",
+          "scope": "Second complete supplemental matrix on previous f40774e ELF. Acknowledged mutation reconciliation and restore passed. Qualification varied 32 to16iterations/s without a proven cause; complete final006 matrix and other clauses remain separate."
+        },
+        {
+          "run_id": "native-matrix-39046455871-1",
+          "status": "passed",
+          "evidence": "matrix-sdk007-corrected-generator-pass-1-001.json",
+          "scope": "First corrected full final007 remote matrix only: four300s rates16/32/48/64 qualified, five120s foreground scenarios at51/s,71874ACKs zero loss/corruption,3993lost real commit replies reconciled without mutation retry,371samples/gap5.237s,cleanup; second pass and all other row clauses remain separate."
+        }
+      ],
+      "current_final007_subset": {
+        "status": "passed",
+        "independent_passes": 2,
+        "evidence": "matrix-sdk007-two-corrected-passes-001.json",
+        "scope": "Only the named five-scenario supplemental subset; whole row status unchanged."
+      }
+    },
+    {
+      "id": "deployment",
+      "area": "Public DNS/ACME/TLS, native systemd and power loss",
+      "entrypoints": "docs/host-management.md; scripts/acceptance-systemd.sh",
+      "status": "not run",
+      "scope_or_limit": "Five provisioning faults have scoped before/after regressions. Final common-ELF suite passed all six cases twice on fresh disposable VMs. Public DNS/ACME, physical host power loss, operational updates and broader combined stress remain unverified.",
+      "native_diagnostics": [
+        {
+          "run_id": "native-vm-38963816198-1",
+          "status": "passed",
+          "evidence": "native-vm-runtime-pass-1.json",
+          "scope": "First complete owned native lifecycle: real systemd and verified TLS/RLS, same-target backup/restore, guest RAM loss and 30 external ACKs reconciled; no physical host power loss, concurrent cut write or off-host certification."
+        },
+        {
+          "run_id": "native-vm-38970590208-1",
+          "status": "passed",
+          "evidence": "native-vm-runtime-candidate-pass-1.json",
+          "scope": "Native PostgreSQL candidate: exact guest binary SHA verified; normal init/migrate, RLS/file bytes, same-target restore and restart of the same guest disk preserve 30 externally recorded ACKs. 168.203009496s including preparation, 32 samples, owned cleanup confirmed."
+        },
+        {
+          "run_id": "native-vm-38965444222-1",
+          "status": "failed",
+          "evidence": "native-postgres-collision-before.json",
+          "scope": "Confirmed production bug: named native cluster on 5433 while unrelated owned sentinel uses 5432; init exit 0 altered the unrelated cluster password."
+        },
+        {
+          "run_id": "native-vm-38969205271-1",
+          "status": "passed",
+          "evidence": "native-postgres-collision-after.json",
+          "scope": "Fixed native PostgreSQL layout is rejected specifically before host/config writes; unrelated owned password and one-row sentinel unchanged. Exact guest artifact verified, cleanup confirmed."
+        },
+        {
+          "run_id": "native-vm-38973154487-1",
+          "status": "failed",
+          "evidence": "native-default-root-before.json",
+          "scope": "Documented cwd init returned 0 with a relative systemd environment file; actual up timed out and the unit restarted fourteen times. Cleanup confirmed."
+        },
+        {
+          "run_id": "native-vm-38974387655-1",
+          "status": "passed",
+          "evidence": "native-default-root-after.json",
+          "scope": "Absolute host path correction: init/up/verify 0 and verified HTTPS on a fresh guest. This older protocol did not test nested migrations from host cwd."
+        },
+        {
+          "run_id": "native-vm-38973642284-1",
+          "status": "failed",
+          "evidence": "native-host-root-before.json",
+          "scope": "Second init in another generated directory with --skip-checks altered the first database password/Caddy and created a second host/unit. Owned cleanup confirmed."
+        },
+        {
+          "run_id": "native-vm-38976428540-1",
+          "status": "passed",
+          "evidence": "native-host-root-after.json",
+          "scope": "Durable machine owner candidate: specific second-directory rejection, unchanged first credential/Caddy/sentinel, no second host/unit, strict HTTPS readiness and owned cleanup. 72.176555455s including preparation, fourteen samples."
+        },
+        {
+          "run_id": "native-suite-38990677734",
+          "status": "passed",
+          "evidence": "native-final-suite-7e68fd2/index.json",
+          "scope": "Two fresh independent passes of all six native cases using one common ELF; actual runtime inode/digest, provisioning rejection boundaries, clock restore, backup/restore,30 ACKs per runtime after guest RAM loss and cleanup. No full combined management/update stress, in-flight power cut, physical host power loss or off-host certification."
+        },
+        {
+          "run_id": "native-suite-39017663454",
+          "status": "passed",
+          "evidence": "native-final-suite-f40774e/index.json",
+          "scope": "Final product-source common ELF; all six native cases twice, fresh VMs, verified runtime inode/digest, same-target restore,30ACKs per runtime after guest RAM loss, cleanup. Original af01678startup failure still unresolved; no combined controller/update stress or off-host certification."
+        }
+      ]
+    },
+    {
+      "id": "offhost",
+      "area": "Off-host restore, external cloud provider and PITR",
+      "entrypoints": "docs/backup.md; scripts/acceptance-pitr.sh",
+      "status": "blocked",
+      "scope_or_limit": "Read-only GitHub repository secret public-key metadata returned403; no established private staging-key transport is available in this integration. No secret, permission, workflow or backup was changed/exposed. No configured separate recovery host/WAL archive/PITR target; local RustFS does not certify off-host durability.",
+      "private_transport_evidence": "offhost-private-transport-capability-001.json"
+    },
+    {
+      "id": "arm64",
+      "area": "Separate ARM64 operating envelope",
+      "entrypoints": "G05 execution boundaries",
+      "status": "blocked",
+      "scope_or_limit": "This measured host is x86_64; no isolated ARM64 load target is configured."
+    }
+  ],
+  "scope_note": "Each whole-row stress verdict remains incomplete until all required scenarios and repetitions have evidence. Passed functional subsets do not promote rows or G05. Historical arrival, HTTP-negative and final-hop latency defects invalidate final-protocol performance approval; raw originals remain unchanged.",
+  "certifies_g05": false,
+  "cpu_policy_native_control": {
+    "status": "passed",
+    "scope": "Only real Linux cgroup affinity/quota/memory/PID census of inert owned helpers for 1/5/10 groups; no application traffic, effective load credit or host performance certification.",
+    "evidence": "cpu-sharing-native-controls.json"
+  },
+  "current_counter_latency_and_metrics_evidence": [
+    "native-arrival-control-before-after.json",
+    "native-http-control-before-after.json",
+    "native-logical-latency-before-after.json",
+    "native-metrics-compaction-before-after.json"
+  ],
+  "native_vm_capacity": {
+    "status": "passed",
+    "evidence": "native-vm-capacity-001.json",
+    "scope": "Read-only capacity inventory only; independent structured reports document real native lifecycle, guest restart and three reproduced fixes. Their passed scopes do not certify final G05 deployment/endurance."
+  },
+  "current_native_probes": {
+    "extended_cwd_migrations": {
+      "status": "not run",
+      "source": "f3c8d49f0536ebbf0ef1d49c57426f1b547b0625",
+      "workflow_run": "https://github.com/Nelcota/Nelcota/actions/runs/38976562183",
+      "scope": "Queued/active; require real migration from cwd and NELCOTA_ROOT, one fixture migration and strict HTTPS. No verdict yet."
+    },
+    "final_runtime_and_empty_host_release": {
+      "status": "not run",
+      "source": "76af3a45b8b8cd057711148dd9352595c34947b7",
+      "scope": "Production guard and regression added after reviewing complete removal; new runtime VM and final-artifact repetition remain pending."
+    },
+    "cwd_migration": {
+      "status": "passed",
+      "source": "3b56b250407c8c1074ff256e05d589cec713c546",
+      "evidence": "native-cwd-migration-after.json",
+      "scope": "Both cwd and NELCOTA_ROOT migrations exit zero; typed read-only SQL proves table, journal and COUNT 1. Intermediate census failure and before-census erratum retained; not complete runtime or endurance."
+    },
+    "clock_drift": {
+      "status": "passed",
+      "evidence": "native-clock-drift-pass-1.json",
+      "scope": "Owned guest clock only; 1018.326s observed advance, expired access denied, service/anonymous canaries correct, original clock/NTP restored within 0.471s. External host unchanged; no load-time credit."
+    },
+    "remove_boundary": {
+      "status": "passed",
+      "evidence": "native-remove-boundary-after.json",
+      "before_evidence": "native-remove-boundary-before.json",
+      "scope": "Fresh VM source85 rejects malformed backup config before mutation: exit1 specific, owner/manifest/cluster/COUNT1 retained. Fault removed in finally; normal backup/removal and empty-host guard then passed. 16 samples/80.168s prep-inclusive, cleanup confirmed. Remote PITR is not certified."
+    }
+  },
+  "provider_allocator_discovery": {
+    "status": "passed",
+    "evidence": "provider-memory-discovery-after.json",
+    "original_failed_evidence": "provider-memory-discovery-first-failure.json",
+    "scope": "Capability/publication only: 17 exports, 18 samples, three real memory gauges, owned cleanup. Requested bytes explicitly unavailable; live-owner release and historical retention attribution remain unverified."
+  },
+  "current_ci_failure": {
+    "status": "fixture corrected; original failure retained",
+    "evidence": "ci-native-executable-identity-failure.json",
+    "test": "updates::runtime::tests::running_native_identity_rejects_replacement_even_with_the_same_hash",
+    "scope": "Original first-validation identity panic at line 863 preserved. Bounded real child I/O added only to fixture; 1000/1000 real repetitions passed in 9.064s on c98aaaf. Production fail-closed validation unchanged; final whole-CI gates remain separate.",
+    "diagnostic_evidence": "ci-native-executable-panic-location.json",
+    "regression_evidence": "ci-native-executable-identity-after.json"
+  },
+  "native_final_same_artifact_suite": {
+    "workflow_run_id": 39036557006,
+    "source_commit": "35f4a9725d7edcf571f91084c555c127e7323653",
+    "binary_sha256": "d0d1090c91da4435a0d27dcf1dddba1b8695f18f944b1dd8cc5e472089d17432",
+    "status": "passed",
+    "scope": "Two fresh independent passes of all six native/KVM scenarios on the common SDK/assets-corrected product source and ELF. This does not explain the original af01678 startup failure or certify endurance/capacity, physical host power loss, public DNS/ACME, PITR or off-host restore. Remote windows earn no overlapping local effective-time credit.",
+    "cases": 12,
+    "evidence": "native-final-suite/index.json",
+    "previous_suite": "native-final-suite-860d2f9/index.json"
+  },
+  "completed_current_protocol_disk_baseline": {
+    "run_id": "disk-final-pass-1-002",
+    "status": "passed",
+    "evidence": "disk-current-protocol-baseline.json",
+    "scope": "Retained baseline only: current counter/logical-latency/TSDB protocol, 62 closed phases, 14400s continuous at280/s, zero drops/unexpected, 3937 negatives, 257500 events reconciled, same app/PG, two pruning cohorts,16 renewals,3283 samples/gap11s, six identical idle owner censuses and owned cleanup. Final candidate and remaining row clauses still separate."
+  },
+  "latest_local_python_regressions": {
+    "status": "passed",
+    "stress_tests": 308,
+    "SDK_projection_tests": 3,
+    "stress_elapsed_seconds": 13.611865555052646,
+    "skipped": 0,
+    "scope": "Last complete stress suite308 passed before the four new browser failure-publication cases. All38affected browser controls passed after those changes; remote focused31 passed and the real numeric bridge completed all five cycles. No repeated full Rust/UI/Python suite beside the local ordinary load; SDK projection3unchanged.",
+    "focused_browser_tests_after_numeric_publication": 38,
+    "focused_browser_evidence": "browser-auth-failed-slo-publication-regressions-001.json",
+    "focused_matrix_tests_after_capacity_declaration": 36,
+    "focused_matrix_evidence": "matrix-capacity-declaration-before-after-001.json",
+    "focused_matrix_tests_after_generatorTLS": 43,
+    "focused_matrix_TLS_evidence": "ledger-generator-tls-construction-before-after-001.json",
+    "focused_native_inflight_guards": 35,
+    "focused_native_inflight_evidence": "native-inflight-cut-guards-001.json",
+    "focused_native_scope": "Ten additional ownership, freshness, cleanup and row-value boundaries; two actual native VM repetitions remain not run. No overlapping full local regression suite or effective load credit."
+  },
+  "unattributed_app_anonymous_growth": {
+    "status": "under investigation",
+    "baseline_evidence": "disk-current-protocol-baseline.json",
+    "first_last_15m_medians_mib": [
+      26.66796875,
+      29.2421875
+    ],
+    "scope": "OS owner counts recover identically; ordinary final repeats and conditional four-hour allocator diagnostic must distinguish live use from allocator retention. No absolute leak absence claim."
+  },
+  "frozen_final_candidate": {
+    "source_commit": "7e68fd21430ac93125149f60927f8676b077811d",
+    "binary_sha256": "b047fb880feb10e41e7d0308e6037b8cd3bc770b0452a30cab59c3e2d20514a0",
+    "build_evidence": "final-local-candidate-7e68fd2.json",
+    "status": "historical 7e68fd2 source only; superseded after confirmed defects, not current approval",
+    "native_suite": {
+      "workflow_run_id": 38990677734,
+      "source_commit": "7e68fd21430ac93125149f60927f8676b077811d",
+      "status": "passed;12/12 cases with cleanup",
+      "url": "https://github.com/Nelcota/Nelcota/actions/runs/38990677734",
+      "scope": "One distinct Actions-built ELF reused in twelve fresh serial native cases",
+      "evidence": "native-final-suite-7e68fd2/index.json",
+      "binary_sha256": "010d0fc52f5cc5961f56baf6902294abfcc2c9d855ccbf7605e4b91e8a89a45c"
+    },
+    "ci": {
+      "status": "passed",
+      "ordinary_checks": 18,
+      "source_commit": "7e68fd21430ac93125149f60927f8676b077811d",
+      "evidence": "ci-final-artifact-source.json"
+    },
+    "local_campaign_status": {
+      "active": "disk-candidate-pass-1-001",
+      "status": "first final run started; no four-hour result yet",
+      "retained_s3_baseline": "s3-current-protocol-baseline.json",
+      "retained_s3_scope": "62 current-protocol closed phases and600s soak, not four hours"
+    }
+  },
+  "provider_runtime_diagnostic": {
+    "status": "passed scoped diagnostic twice; live heap ownership not verified",
+    "scope": "Both independent controlled RustFS diagnostics completed with cleanup: default/runtime-workers/fsync-workers; each verified960PUT/GET/DELETE byte cycles,157resource samples and bounded private telemetry per profile. No requested-live-byte measurement or exact heap-owner attribution. Changing worker defaults is not justified by these OS/gauge results.",
+    "failed_evidence": [
+      "provider-runtime-first-failure.json",
+      "provider-runtime-reproduced-budget-failure.json",
+      "provider-runtime-regression-first-failure.json"
+    ],
+    "completed_independent_passes": 2,
+    "first_pass_evidence": "provider-runtime-corrected-pass-1.json",
+    "clock_fixture_before_after": "provider-fixture-clock-before-after.json",
+    "second_pass_evidence": "provider-runtime-corrected-pass-2.json"
+  },
+  "current_final_candidate": {
+    "status": "frozen final007; CI18/18 and native12/12 passed, first ordinary disk campaign active, no completed final007 endurance approval",
+    "latest_fix_commit": "9bca03bc689c425a7660c5da9305180450aeaa7c",
+    "generated_asset_commit": "df77883b1d149938979ba7a76bde2b125b7dbf44",
+    "last_frozen_artifact_evidence": "final-local-candidate.json",
+    "last_frozen_scope": "final007 includes all ten confirmed production corrections and regenerated assets; no complete final endurance result yet",
+    "SDK_before_after": [
+      "sdk-independent-server-clients-before-001.json",
+      "sdk-independent-server-clients-after-ci-001.json",
+      "sdk-independent-server-clients-built-before-after-001.json"
+    ],
+    "SDK_unit_passed": 204,
+    "latest_harness_passed": 308,
+    "SDK_projection_regressions_passed": 3,
+    "source_commit": "35f4a9725d7edcf571f91084c555c127e7323653",
+    "binary_sha256": "96811748f1f45ad4894114188642f9343df661c750ad22768eaf2275659081b1",
+    "functional_smoke": "matrix-sdk007-auth-links-functional-smoke-001.json",
+    "CI_evidence": "ci-host-private-files-product-trees.json",
+    "ordinary_CI_checks_passed": 18,
+    "native_evidence": "native-final-suite/index.json",
+    "native_cases_passed": 12,
+    "browser_final007_status": "Both measured full final007 browser passes completed with same retained ELF/profiles; original refresh-SLO failure still unexplained.",
+    "browser_final007_failure": "browser-sdk007-refresh-slo-first-failure-001.json",
+    "browser_final007_passed_evidence": "browser-sdk007-two-measured-passes-001.json",
+    "browser_final007_full_passes": 2,
+    "matrix_capacity_oracle": "Old half-rate publication mismatch corrected using shared unchanged64maximum/300second steps. Two real independent full matrices now passed with the ledger-only verified CA reuse; original failed report preserved.",
+    "matrix_final007_status": "Two corrected full five-case matrices passed on exact common final007 Actions ELF, all four300second steps qualified to the unchanged64/s ceiling; no maximum/server-gain claim.",
+    "matrix_final007_original_failure": "matrix-sdk007-capacity-publication-failure-001.json",
+    "matrix_final007_full_passes": 2,
+    "matrix_final007_passed_evidence": "matrix-sdk007-two-corrected-passes-001.json",
+    "harness_head_CI_status": "All18ordinary source3cc1b83 checks and whole Python discovery passed; actual private-file preflight not run."
+  },
+  "current_campaign_checkpoint": {
+    "checkpoint": "load-time-checkpoint-019.json",
+    "effective_local_load_seconds": 143634,
+    "active_local_at_recording": "disk-candidate-pass-1-006",
+    "recorded_utc": "2026-10-17T14:45:04.319630+00:00",
+    "scope": "019conservative completed local load floor; current final007 disk soak is incomplete/uncredited. Two corrected remote matrices, eight native startup reproductions and both measured browser passes now passed. Two additional in-flight guest controls active. Remote overlap earns zero local time credit."
+  },
+  "native_inflight_cut": {
+    "status": "running; first actual fresh VM dispatched, no passing result yet",
+    "scenario": "runtime-inflight",
+    "required_independent_passes": 2,
+    "scope": "Separate additional interrupted-write guest control after existing native startup reproductions; blocked before COMMIT, no physical host power loss, commit-flush, off-host or ordinary performance claim. No local overlapping effective load credit.",
+    "focused_guards": "native-inflight-cut-guards-002.json",
+    "recovery_negatives": "planned actual anonymous REST401/second-user empty RLS/private-file404; not run",
+    "first_workflow_run_id": 39057126426,
+    "source_commit": "ec9701225176c497c580bdb099ff06021e272981"
+  },
+  "private_file_host_preflight": {
+    "status": "not run",
+    "evidence": "host-private-file-preflight-guards-002.json",
+    "source_CI": "all18ordinarychecks passed; actual preflight not run",
+    "focused_guards_passed": 55,
+    "actual_Docker_systemd_functionality": "not run",
+    "previous_preflight_source_commit": "d4bfc60dc8e87bfe2c5f3786251134a4bba9870b",
+    "source_file_sha256": {
+      "bench/host_file_probe.py": "1931df7cdb596715f4a971fbd8770384fe16232377420e71ad6ccf70e44cdfbd",
+      "scripts/review_tests/test_stress_host_file_probe.py": "db4bf9fa2ce6001987228bbec21cae411ef0c7a12ff4c29e669c281685879b6f",
+      ".github/workflows/stress.yml": "f9e99ea373017503b319dca1ba95868fd419d829b1c90ba29e5a92e504b3de5a"
+    },
+    "source_commit": "3cc1b83bfb83a7daa4747cfbd8119d95d2615550",
+    "CI_evidence": "ci-host-private-files-product-trees.json"
+  },
+  "latest_inventory_update_utc": "2026-10-17T18:14:34.893203+00:00",
+  "native_startup_reproductions": {
+    "status": "passed scoped repetitions; original failure unresolved",
+    "count": 8,
+    "evidence": "native-final007-startup-reproductions-001/index.json",
+    "scope": "Separate actual ELFs on the same final007product trees, same guest image, completedACKcuts only. Additional in-flight controls not run."
+  }
+}

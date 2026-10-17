@@ -1,0 +1,94 @@
+{
+  "scope": "Actual kernel CPU enforcement controls, not backend throughput or latency evidence",
+  "source_sha256": "3a96324abebab46e14c7a45b9fb0f79daeaa7cccb0d61ff1e48e0bd3c80e0342",
+  "image_id": "sha256:69f919497cada9a8611f3de61df902d9f94bf20f84552ef5bd93125c38608ef9",
+  "budgets": {
+    "memory_mib": 32,
+    "pids": 16,
+    "affinity": [
+      4
+    ],
+    "max_concurrent_containers": 1,
+    "maximum_seconds": 60,
+    "network": "none",
+    "capabilities": "none",
+    "root_read_only": true
+  },
+  "controls": [
+    {
+      "projects": 1,
+      "period_micros": 100000,
+      "cpu_max": {
+        "quota_usec": 100000,
+        "period_usec": 100000
+      },
+      "aggregate_declared_bandwidth": 1.0,
+      "memory_max_bytes": 33554432,
+      "oom_kill": 0,
+      "status": "passed"
+    },
+    {
+      "projects": 1,
+      "period_micros": 10000,
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 10000
+      },
+      "aggregate_declared_bandwidth": 1.0,
+      "memory_max_bytes": 33554432,
+      "oom_kill": 0,
+      "status": "passed"
+    },
+    {
+      "projects": 5,
+      "period_micros": 100000,
+      "cpu_max": {
+        "quota_usec": 20000,
+        "period_usec": 100000
+      },
+      "aggregate_declared_bandwidth": 1.0,
+      "memory_max_bytes": 33554432,
+      "oom_kill": 0,
+      "status": "passed"
+    },
+    {
+      "projects": 5,
+      "period_micros": 10000,
+      "cpu_max": {
+        "quota_usec": 2000,
+        "period_usec": 10000
+      },
+      "aggregate_declared_bandwidth": 1.0,
+      "memory_max_bytes": 33554432,
+      "oom_kill": 0,
+      "status": "passed"
+    },
+    {
+      "projects": 10,
+      "period_micros": 100000,
+      "cpu_max": {
+        "quota_usec": 10000,
+        "period_usec": 100000
+      },
+      "aggregate_declared_bandwidth": 1.0,
+      "memory_max_bytes": 33554432,
+      "oom_kill": 0,
+      "status": "passed"
+    },
+    {
+      "projects": 10,
+      "period_micros": 10000,
+      "cpu_max": {
+        "quota_usec": 1000,
+        "period_usec": 10000
+      },
+      "aggregate_declared_bandwidth": 1.0,
+      "memory_max_bytes": 33554432,
+      "oom_kill": 0,
+      "status": "passed"
+    }
+  ],
+  "status": "passed",
+  "cleanup_confirmed": true,
+  "elapsed_seconds": 5.752315657999134
+}

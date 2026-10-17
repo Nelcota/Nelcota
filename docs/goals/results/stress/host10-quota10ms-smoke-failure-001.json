@@ -1,0 +1,804 @@
+{
+  "run_id": "host10-quota10ms-candidate-smoke-001",
+  "status": "failed",
+  "certifies_g05": false,
+  "binary_sha256": "9cc6cbf0be68d38ba1c9e138cbeee7c4fac0324e91c406fae977eba591c76f44",
+  "profile": {
+    "schema": 2,
+    "scope": "local independent app/PG clusters with verified local Caddy, no public DNS/controller",
+    "projects": 10,
+    "rows_per_project": 1000,
+    "shared_user_id": "00000000-0000-4000-8000-000000000001",
+    "binary_sha256": "9cc6cbf0be68d38ba1c9e138cbeee7c4fac0324e91c406fae977eba591c76f44",
+    "cpu_effective": 4.0,
+    "app_aggregate_cpus": 1,
+    "postgres_aggregate_cpus": 1,
+    "generator_cpus": 1,
+    "metrics_cpus": 0.25,
+    "app_memory_mib_each": 128,
+    "postgres_memory_mib_each": 256,
+    "max_arrival_rate": 10000,
+    "fixture_disk_mib": 1536,
+    "storage_filesystem": "overlayfs",
+    "seconds_per_step": 30,
+    "project_cpu_period_micros": 10000,
+    "certifies_five_minute_steps": false,
+    "base_rate_per_project": 4,
+    "SLOs": "G05 unchanged",
+    "project_cpu_allocation": {
+      "policy": "quota",
+      "projects": 10,
+      "affinity_slots": {
+        "app": 0,
+        "postgres": 1,
+        "generator": 2
+      },
+      "quota_usec_each": 1000,
+      "period_usec": 10000,
+      "configured_quota_sum_per_role": 1.0,
+      "hard_cpu_ceiling_per_role": 1,
+      "quota_oversubscription_within_one_slot": false
+    },
+    "startup_disk_budget": {
+      "per_project_mib": 780,
+      "container_layer_copy_factor": 2,
+      "total_startup_mib": 8440,
+      "image_storage_drivers": [
+        "vfs",
+        "vfs"
+      ],
+      "separate_database_data_mib": 1536
+    },
+    "ingress": {
+      "kind": "real Caddy with verified internal CA on loopback",
+      "cpus": 0.25,
+      "cpu_affinity": 3,
+      "memory_mib": 128,
+      "pids_limit": 64,
+      "fixture_disk_mib": 128,
+      "binary_sha256": "678ade3bfc088749c81a681adc603333ee0bb023b6a6cfe3c0f58bef8ff854e9",
+      "image_file_capabilities_removed_for_unprivileged_ports": true,
+      "image_digests": [
+        "caddy@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f"
+      ],
+      "public_dns_acme_certified": false,
+      "reload_fault": "valid configuration rejected by an occupied owned backend listener; restore and probe without process replacement"
+    },
+    "webhooks": {
+      "enabled": true,
+      "receiver": "owned loopback, verified signatures and durable event identities",
+      "evidence_limit_mib": 128,
+      "drain_seconds": 30
+    },
+    "resource_protocol": "component cgroup v2 via shell builtins, metrics disk and bounded parallel owned probes; allocated du totals count only disappearing child entries",
+    "resource_probe_workers": 4,
+    "arrival_counter_protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+    "generator_usage_reporting": false,
+    "generator_observation_protocol": "owned Docker stats with verified cgroup-v2 fallback on 10s stream timeout; unchanged 30s observation gate",
+    "successful_latency_protocol": "monotonic logical request including DNS, connections, redirects and final response",
+    "metrics_storage_profile": {
+      "data_path": "/prometheus",
+      "retention_seconds": 3600,
+      "retention_size_mib": 128,
+      "wal_segment_mib": 16,
+      "block_chunk_segment_mib": 16,
+      "block_duration_seconds": 900,
+      "monitored_disk_limit_mib": 512
+    },
+    "container_log_profile": {
+      "driver": "local",
+      "max_size_bytes": 8388608,
+      "max_files": 2
+    },
+    "harness_js_sha256": "0ac01578bf19155302fe465884b480d792569086f23bb4ba3615ca5f0ce2547d",
+    "client_initialization": {
+      "maximum_sessions_per_project": 128,
+      "bootstrap_concurrency": 4,
+      "setup_timeout_seconds": 120,
+      "fully_preallocated_arrival_VUs": true,
+      "mix_schedule": "global scenario arrival ordinal",
+      "bootstrap_excluded_from_nominal_metrics": true
+    },
+    "cpu_affinity": [
+      0,
+      1,
+      2
+    ],
+    "metrics_cpu_affinity": 4,
+    "capacity_qualification": true,
+    "provisional_rate_per_project": 8,
+    "max_connections_each": 32,
+    "pool_each": 4,
+    "generator_memory_mib": 512,
+    "metrics_memory_mib": 512,
+    "images": {
+      "ubuntu:24.04": [
+        "ubuntu@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55"
+      ],
+      "postgres:17-alpine": [
+        "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+      ],
+      "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1": [
+        "grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1"
+      ],
+      "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996": [
+        "prom/prometheus@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+      ]
+    },
+    "nominal_rate_per_project": 1
+  },
+  "completion": {
+    "status": "failed",
+    "projects": 10,
+    "load_seconds": 480,
+    "resource_observations": 414,
+    "cleanup_confirmed": true,
+    "error_type": "NoneType"
+  },
+  "cleanup": {
+    "confirmed": true,
+    "containers": [],
+    "volumes": [],
+    "directory_removed": true
+  },
+  "acceptance_failures": [
+    {
+      "phase": "noisy-mixed",
+      "failures": [
+        {
+          "project": "project-1",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-1",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    },
+    {
+      "phase": "noisy-login",
+      "failures": [
+        {
+          "project": "project-1",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-1",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-1",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "login",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    },
+    {
+      "phase": "noisy-read",
+      "failures": [
+        {
+          "project": "project-1",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-1",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "login",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    },
+    {
+      "phase": "noisy-storage",
+      "failures": [
+        {
+          "project": "project-1",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-1",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-1",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-1",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-1",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "login",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "login",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    },
+    {
+      "phase": "noisy-write",
+      "failures": [
+        {
+          "project": "project-1",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-1",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-1",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-2",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-3",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-4",
+          "workload": "login",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-5",
+          "workload": "login",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-6",
+          "workload": "write",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "read",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "rls",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-7",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "panel",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "storage",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-8",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        },
+        {
+          "project": "project-9",
+          "workload": "refresh",
+          "p95": "missing or more than 20% worse"
+        }
+      ]
+    }
+  ],
+  "cross_project_preflight": {
+    "distinct_keys": true,
+    "directed_rejections": 90,
+    "status": "passed"
+  },
+  "webhook_reconciliation": {
+    "project-0": {
+      "unique_events": 913,
+      "deliveries": 913,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0,
+      "outstanding": 0,
+      "signature_errors": 0
+    },
+    "project-1": {
+      "unique_events": 52,
+      "deliveries": 52,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0,
+      "outstanding": 0,
+      "signature_errors": 0
+    },
+    "project-2": {
+      "unique_events": 52,
+      "deliveries": 52,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0,
+      "outstanding": 0,
+      "signature_errors": 0
+    },
+    "project-3": {
+      "unique_events": 52,
+      "deliveries": 52,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0,
+      "outstanding": 0,
+      "signature_errors": 0
+    },
+    "project-4": {
+      "unique_events": 52,
+      "deliveries": 52,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0,
+      "outstanding": 0,
+      "signature_errors": 0
+    },
+    "project-5": {
+      "unique_events": 52,
+      "deliveries": 52,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0,
+      "outstanding": 0,
+      "signature_errors": 0
+    },
+    "project-6": {
+      "unique_events": 52,
+      "deliveries": 52,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0,
+      "outstanding": 0,
+      "signature_errors": 0
+    },
+    "project-7": {
+      "unique_events": 52,
+      "deliveries": 52,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0,
+      "outstanding": 0,
+      "signature_errors": 0
+    },
+    "project-8": {
+      "unique_events": 52,
+      "deliveries": 52,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0,
+      "outstanding": 0,
+      "signature_errors": 0
+    },
+    "project-9": {
+      "unique_events": 52,
+      "deliveries": 52,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0,
+      "outstanding": 0,
+      "signature_errors": 0
+    }
+  },
+  "resource_violations": [],
+  "scope": "Thirty-second strict0.1CPU/project,10msperiod diagnostic, never five-minute certification. All five noisy phases still fail relative fairness; no production cause or corrected isolation is inferred. All original failure records and successful integrity/cleanup evidence retained.",
+  "resource_summary": {
+    "samples": 414,
+    "maximum_gap_seconds": 5.771049123024568
+  }
+}

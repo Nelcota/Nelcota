@@ -1,0 +1,889 @@
+{
+  "run_id": "disk-pass-1-005",
+  "status": "passed",
+  "certifies_g05": false,
+  "scope": "One complete local single-project disk campaign; second independent pass, real S3 endurance, fleet and other matrix gates remain separate. No maximum-capacity or production/VPS certification.",
+  "backend_source": "2efede8c27ee12119142170e8bd9742ff7cb900e",
+  "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+  "frozen_harness": {
+    "run_id": "disk-pass-1-005",
+    "git": "3203330cf3df2b9b7dd68efebc79412a8564e9fd",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "harness_sources": {
+      "bench/campaign.py": "956cc20d6d1490015f0826c5960837256b4c19ea6bef62f33709845554eb318d",
+      "bench/compare.py": "d2682a63b4b1bc1c5eeaba538713aa8430e24458e5ea87ec0fe573aabe911394",
+      "bench/disk_usage.py": "502da50d95f979128c91d49b3037cb08885ddcbb941af0a9bd842e0d193da38e",
+      "bench/evidence.py": "61803fb6b3d6463984244f76f5e17f822fd865d19d55bf619a879d7b7886260d",
+      "bench/fault_campaign.py": "33fca029d3414e5c03d8d8a9e7a90e38c978bc307c05f3b98eef1e3957be30f4",
+      "bench/fixture_copy.py": "8c1421202b5543c16fa0fd0af4e47f7a8f9ef1bd9cd9423bfde28eda3dec6288",
+      "bench/fleet_webhooks.py": "ae5d21861ef3951a50a37fdfc84507685e87c2f8cc1698ae0d5972244d0b97ce",
+      "bench/guard_check.py": "2fa55b5e70154e7498ab79f627ef7623ae965cb4727a8318845bc5eb9baf481d",
+      "bench/host_campaign.py": "44e558cdb849829a5f16f8c148ae983872829b1ff18c56d7c5c854c2932f087d",
+      "bench/host_compare.py": "186f3378bff16247e248a9481a7fdab26a0227a5a515fdcaaa153e434612d02d",
+      "bench/host_resources.py": "1205842ab861a036ff526b85d237c08de437e8b7a52455e6fe7e56410dcb0a31",
+      "bench/http_boundary.py": "b69ff97c9e65f8ec94ccf36ac282a3b6b53c1a07aa01fbd33ac1fbe68a976db3",
+      "bench/ingress.py": "4976738ec1c3e96862f87a02d81843087a72a665a2de829acc4c6804b6117ed2",
+      "bench/launch.py": "eb17e66a8ca882f63e348c9183ff1df321ac0b63ddff2c48054f959de83ead60",
+      "bench/lost_reply.py": "2048c95f21169fe46adddb28c4feffa60da365d369f4730ed6f7c6bcbfd348bb",
+      "bench/metrics.py": "ad692683d6fe95428c98ca922593d36c01d4bb4bb41078bc04f8c25d9a025a91",
+      "bench/monitor.py": "bd869d88b833930602dc3770e5467040021cca6930f89fd298c269b6850c2e61",
+      "bench/objects.py": "a1612bc2e457481705044ce21a376d898544dbbff004a8920511218858a8210b",
+      "bench/observations.py": "8f88a60899928c2b30da0f888127034ec5c7117e34630121297f8bf11f64379b",
+      "bench/oracle_check.py": "690eb5a17c735f40b666ad313b56ed09301285c79da75835cee563021b5725ce",
+      "bench/ownership.py": "ffd3e9343b7f8262d05ee0363ab01b1f7e77089bb8f09ca8d0a350532402fa06",
+      "bench/ports.py": "edcb747bf4f29429d2abf5abf2741289c586cb64b0cf3484fa891edb5d798276",
+      "bench/postgres_evidence.py": "7152ea8c58232981c07b6c20d4a6a8cfba1046de1893d09c78de58607a95855a",
+      "bench/projects.py": "53b097879fead2517ea1522f6c89f3fb3155b017bda2cd85bdcbc59d85d639f2",
+      "bench/receiver.py": "b4f172be66aee69649c826052951ff839272d7501ec0d0a2e648d65dedd4ee9d",
+      "bench/watchdog.py": "25ab3e86efdcec9c1da84942ef27fee285339adbda15b70791030e4863ff7bb3",
+      "bench/campaign.js": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+      "bench/setup.sql": "104496228668127c3a95a0defa6efe2d6c06a00c56bdc19999052043e700c798",
+      "scripts/upgrade/support.py": "97fd54c7d8fe80d70d0201e71454dd4f72fef760e161800ad503760d3f90feb8"
+    }
+  },
+  "completion": {
+    "status": "passed",
+    "load_seconds": 17985.0,
+    "resource_observations": 3094,
+    "soak_seconds": 14400,
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "cleanup_confirmed": true,
+    "error_type": "NoneType"
+  },
+  "cleanup": {
+    "containers": [],
+    "volumes": [],
+    "directory_removed": true
+  },
+  "profile": {
+    "storage_backend": "disk",
+    "workloads": [
+      "read",
+      "rls",
+      "panel",
+      "storage",
+      "login",
+      "refresh",
+      "write",
+      "mixed"
+    ],
+    "dataset": {
+      "products": 100000,
+      "private": 100000,
+      "objects": 10000
+    },
+    "object_payload_bytes": 17,
+    "physical_seeded_objects": 10000,
+    "steady_duration": "30s",
+    "steady_rate": 0,
+    "write_steady_rate": 50,
+    "final_idle_seconds": 180,
+    "soak_seconds": 14400,
+    "soak_fraction": 0.7,
+    "calibration_ceiling_iterations_per_second": 400,
+    "cpu_affinity": [
+      0,
+      1,
+      2
+    ],
+    "effective_cpu_quota": 4.0,
+    "app_cpus": 1,
+    "app_memory_mb": 128,
+    "pg_cpus": 1,
+    "pg_memory_mb": 384,
+    "generator_memory_mb": 512,
+    "generator_go_memory_limit_mib": 448,
+    "metrics_cpus": 0.25,
+    "metrics_memory_mb": 512,
+    "pool": 8,
+    "max_connections": 40,
+    "max_fixture_disk_mb": 1024,
+    "max_storage_fixture_disk_mib": 1024,
+    "max_wal_mb": 256,
+    "images": {
+      "ubuntu:24.04": [
+        "ubuntu@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55"
+      ],
+      "postgres:17-alpine": [
+        "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+      ],
+      "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1": [
+        "grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1"
+      ],
+      "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996": [
+        "prom/prometheus@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+      ]
+    },
+    "k6": "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+    "postgres_version": "PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "storage_filesystem": "overlayfs",
+    "nominal_slos_ms": {
+      "read": [
+        200,
+        500
+      ],
+      "rls": [
+        200,
+        500
+      ],
+      "refresh": [
+        200,
+        500
+      ],
+      "login": [
+        750,
+        1500
+      ],
+      "storage": [
+        500,
+        2000
+      ],
+      "panel": [
+        500,
+        2000
+      ],
+      "write": [
+        500,
+        1500
+      ]
+    },
+    "offered_rate_unit": "iterations_per_second",
+    "resource_protocol": "component cgroup v2, PostgreSQL IO/WAL/checkpointer/locks, process owners; allocated du totals count only disappearing child entries",
+    "client_initialization": {
+      "maximum_sessions_per_project": 128,
+      "bootstrap_concurrency": 4,
+      "setup_timeout_seconds": 120,
+      "fully_preallocated_arrival_VUs": true,
+      "mix_schedule": "global scenario arrival ordinal",
+      "bootstrap_excluded_from_nominal_metrics": true
+    },
+    "webhook_history_maintenance": "explicit admin clear at 5000 terminal records; committed identities retained by fixture audit trigger",
+    "container_log_profile": {
+      "driver": "local",
+      "max_size_bytes": 8388608,
+      "max_files": 2
+    }
+  },
+  "capacity": {
+    "provisional_median_iterations_per_second": 400,
+    "measured_closed_loop_median_iterations_per_second": 646.5333333333333,
+    "calibration_ceiling_iterations_per_second": 400,
+    "provisional_workload": "mixed",
+    "qualified_lower_bound_iterations_per_second": 400,
+    "qualification_step_seconds": 300,
+    "five_minute_qualification": true,
+    "soak_iterations_per_second": 280,
+    "soak_fraction": 0.7,
+    "soak_rps": 280,
+    "p95_regression_gate": 1.1,
+    "throughput_regression_gate": 0.9
+  },
+  "continuous_load_interval": {
+    "phase": "soak",
+    "workload": "mixed",
+    "requested_seconds": 14400,
+    "elapsed_seconds": 14403.596428435005,
+    "completed": true,
+    "exit_code": 0,
+    "started_monotonic": 148205.63934716,
+    "ended_monotonic": 162609.235921585
+  },
+  "processes_unchanged": true,
+  "continuous_processes": {
+    "nelcota-bench-3b5b3da9e9c56595e0cb5344d045ab9f-app": {
+      "container_id": "f3c44883e5d1fd59c7a763ca3eddb44a3c7f9ef10572c29d2fece413b6010249",
+      "pid": 4104044,
+      "started_at": "2026-10-15T17:16:59.071747816Z"
+    },
+    "nelcota-bench-3b5b3da9e9c56595e0cb5344d045ab9f-pg": {
+      "container_id": "f27d67483ef8be5bbc5dc57f05b4684dcd51532ffe37a335a676c73235287eec",
+      "pid": 3724623,
+      "started_at": "2026-10-15T16:14:06.454857345Z"
+    }
+  },
+  "session_canary": {
+    "access_renewals": 16.0,
+    "iterations": 14330.0,
+    "minimum_renewals": 3,
+    "counter_observation": "last regular sample within retained 3600 seconds, no observed reset",
+    "scope": "one continuous VU reuses its session and renews near actual access-token expiry"
+  },
+  "retention_cohorts": [
+    {
+      "cohort": 1,
+      "seeded_elapsed": 63.63954285799991,
+      "auth_pruned": true,
+      "events_pruned": true,
+      "storage_pruned": true,
+      "observed_elapsed": 3585.534703334997
+    },
+    {
+      "cohort": 2,
+      "seeded_elapsed": 3664.185016028001,
+      "auth_pruned": true,
+      "events_pruned": true,
+      "storage_pruned": true,
+      "observed_elapsed": 7180.413882428984
+    }
+  ],
+  "soak_metrics": {
+    "http_reqs": {
+      "count": 4031806.0,
+      "rate": 279.9865277777778
+    },
+    "iterations": {
+      "count": 4031806.0,
+      "rate": 279.9865277777778
+    },
+    "successful_operations": {
+      "count": 4031806.0,
+      "rate": 279.9865277777778
+    },
+    "data_received": {
+      "bytes": 11197794951.0,
+      "bytes_per_second": 777624.649375
+    },
+    "data_sent": {
+      "bytes": 1072685411.0,
+      "bytes_per_second": 74492.04243055555
+    },
+    "dropped_iterations": {
+      "count": 0.0
+    },
+    "unexpected": {
+      "value": 0.0
+    },
+    "checks": {
+      "passes": 7664369.0,
+      "fails": 0.0
+    },
+    "expected_rejections": {
+      "count": 0.0
+    },
+    "overload_rejections": {
+      "count": 0.0
+    },
+    "http_req_duration": {
+      "p(50)": 2.0361305823438096,
+      "p(95)": 24.56432510177528,
+      "p(99)": 40.108272369608116,
+      "min": 0.8211879055212057,
+      "max": 1834.0080864093422
+    },
+    "latency_read": {
+      "p(50)": 1.632026843646297,
+      "p(95)": 7.686751477869985,
+      "p(99)": 16.340616409981834,
+      "min": 0.8211879055212057,
+      "max": 771.1054127039704
+    },
+    "throughput_read": {
+      "count": 2015906.0,
+      "rate": 139.9934722222222
+    },
+    "latency_rls": {
+      "p(50)": 1.6765246561723344,
+      "p(95)": 6.403401502487239,
+      "p(99)": 14.656552525012865,
+      "min": 0.9765625,
+      "max": 707.1067811865474
+    },
+    "throughput_rls": {
+      "count": 806360.0,
+      "rate": 55.99722222222222
+    },
+    "latency_panel": {
+      "p(50)": 2.3204201365844277,
+      "p(95)": 6.342329689259586,
+      "p(99)": 14.035571390476017,
+      "min": 1.3810679320049755,
+      "max": 707.1067811865474
+    },
+    "throughput_panel": {
+      "count": 403180.0,
+      "rate": 27.99861111111111
+    },
+    "latency_storage": {
+      "p(50)": 2.8143901294275313,
+      "p(95)": 17.960279298991757,
+      "p(99)": 31.66280604189755,
+      "min": 1.2664448775888766,
+      "max": 1296.8395546510096
+    },
+    "throughput_storage": {
+      "count": 201590.0,
+      "rate": 13.999305555555555
+    },
+    "latency_login": {
+      "p(50)": 29.97228247775645,
+      "p(95)": 50.202051413016626,
+      "p(99)": 76.00657837496172,
+      "min": 18.581361171917518,
+      "max": 1834.0080864093422
+    },
+    "throughput_login": {
+      "count": 201590.0,
+      "rate": 13.999305555555555
+    },
+    "latency_refresh": {
+      "p(50)": 8.450706082753783,
+      "p(95)": 19.08817596192673,
+      "p(99)": 33.64634841162673,
+      "min": 2.1298979153618314,
+      "max": 840.8964152537144
+    },
+    "throughput_refresh": {
+      "count": 201590.0,
+      "rate": 13.999305555555555
+    },
+    "latency_write": {
+      "p(50)": 5.343656540456651,
+      "p(95)": 15.034343605952214,
+      "p(99)": 28.288640721764576,
+      "min": 1.6423758110424114,
+      "max": 771.1054127039704
+    },
+    "throughput_write": {
+      "count": 201590.0,
+      "rate": 13.999305555555555
+    }
+  },
+  "invariants": {
+    "auth": {
+      "users": 1,
+      "password_hashes": 1
+    },
+    "outstanding": 0,
+    "database": {
+      "connections": 15,
+      "idle_in_transaction": 0,
+      "waiting_locks": 0
+    },
+    "signature_errors": 0,
+    "file_integrity": {
+      "verified_objects": 129,
+      "maximum_object_bytes": 64,
+      "physical_inventory": {
+        "physical_objects": 10129,
+        "physical_bytes": 2195,
+        "multipart_uploads": null,
+        "unreferenced_keys": [],
+        "gc_grace_seconds": 86400,
+        "collector_period_seconds": 3600
+      }
+    },
+    "event_identities": {
+      "unique_events": 248381,
+      "deliveries": 248381,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0
+    }
+  },
+  "resources": {
+    "sample_count": 3094,
+    "soak_sample_count": 2421,
+    "maximum_observation_gap_seconds": 12.0,
+    "app_peak_rss_kib": 50468,
+    "soak_app_peak_rss_kib": 49884,
+    "pg_peak_disk_mib": 429,
+    "storage_peak_disk_mib": 2,
+    "component_peaks": {
+      "app": {
+        "memory_current_bytes": 38154240,
+        "memory_peak_bytes": 38670336,
+        "anonymous_bytes": 34627584,
+        "file_cache_including_shmem_bytes": 544768,
+        "shmem_bytes": 0,
+        "pids_current": 15,
+        "oom_events": 0,
+        "oom_kill_events": 0
+      },
+      "pg": {
+        "memory_current_bytes": 401408000,
+        "memory_peak_bytes": 402661376,
+        "anonymous_bytes": 57163776,
+        "file_cache_including_shmem_bytes": 332713984,
+        "shmem_bytes": 76881920,
+        "pids_current": 23,
+        "oom_events": 0,
+        "oom_kill_events": 0
+      },
+      "metrics": {
+        "memory_current_bytes": 109256704,
+        "memory_peak_bytes": 114769920,
+        "anonymous_bytes": 98668544,
+        "file_cache_including_shmem_bytes": 20946944,
+        "shmem_bytes": 0,
+        "pids_current": 10,
+        "oom_events": 0,
+        "oom_kill_events": 0
+      }
+    },
+    "steady_15_minute_windows": [
+      {
+        "minute_start": 0,
+        "samples": 147,
+        "median_app_rss_mib": 45.21484375,
+        "median_app_anonymous_mib": 26.91796875,
+        "median_app_owners": {
+          "fds": 156,
+          "tasks": 7,
+          "sockets": 150
+        }
+      },
+      {
+        "minute_start": 15,
+        "samples": 147,
+        "median_app_rss_mib": 46.02734375,
+        "median_app_anonymous_mib": 27.73046875,
+        "median_app_owners": {
+          "fds": 156,
+          "tasks": 7,
+          "sockets": 150
+        }
+      },
+      {
+        "minute_start": 30,
+        "samples": 148,
+        "median_app_rss_mib": 46.03515625,
+        "median_app_anonymous_mib": 27.73828125,
+        "median_app_owners": {
+          "fds": 156.0,
+          "tasks": 7.0,
+          "sockets": 150.0
+        }
+      },
+      {
+        "minute_start": 45,
+        "samples": 147,
+        "median_app_rss_mib": 46.0703125,
+        "median_app_anonymous_mib": 27.7734375,
+        "median_app_owners": {
+          "fds": 156,
+          "tasks": 7,
+          "sockets": 150
+        }
+      },
+      {
+        "minute_start": 60,
+        "samples": 147,
+        "median_app_rss_mib": 46.19921875,
+        "median_app_anonymous_mib": 27.8984375,
+        "median_app_owners": {
+          "fds": 156,
+          "tasks": 7,
+          "sockets": 150
+        }
+      },
+      {
+        "minute_start": 75,
+        "samples": 147,
+        "median_app_rss_mib": 46.19921875,
+        "median_app_anonymous_mib": 27.90234375,
+        "median_app_owners": {
+          "fds": 156,
+          "tasks": 7,
+          "sockets": 150
+        }
+      },
+      {
+        "minute_start": 90,
+        "samples": 146,
+        "median_app_rss_mib": 46.21484375,
+        "median_app_anonymous_mib": 27.921875,
+        "median_app_owners": {
+          "fds": 156.0,
+          "tasks": 7.0,
+          "sockets": 150.0
+        }
+      },
+      {
+        "minute_start": 105,
+        "samples": 146,
+        "median_app_rss_mib": 46.2578125,
+        "median_app_anonymous_mib": 27.95703125,
+        "median_app_owners": {
+          "fds": 156.0,
+          "tasks": 7.0,
+          "sockets": 150.0
+        }
+      },
+      {
+        "minute_start": 120,
+        "samples": 154,
+        "median_app_rss_mib": 46.50390625,
+        "median_app_anonymous_mib": 28.203125,
+        "median_app_owners": {
+          "fds": 156.0,
+          "tasks": 8.0,
+          "sockets": 150.0
+        }
+      },
+      {
+        "minute_start": 135,
+        "samples": 156,
+        "median_app_rss_mib": 48.07421875,
+        "median_app_anonymous_mib": 29.8671875,
+        "median_app_owners": {
+          "fds": 156.0,
+          "tasks": 8.0,
+          "sockets": 150.0
+        }
+      },
+      {
+        "minute_start": 150,
+        "samples": 156,
+        "median_app_rss_mib": 48.16796875,
+        "median_app_anonymous_mib": 29.8671875,
+        "median_app_owners": {
+          "fds": 156.0,
+          "tasks": 8.0,
+          "sockets": 150.0
+        }
+      },
+      {
+        "minute_start": 165,
+        "samples": 156,
+        "median_app_rss_mib": 48.16796875,
+        "median_app_anonymous_mib": 29.87109375,
+        "median_app_owners": {
+          "fds": 156.0,
+          "tasks": 8.0,
+          "sockets": 150.0
+        }
+      },
+      {
+        "minute_start": 180,
+        "samples": 156,
+        "median_app_rss_mib": 48.22265625,
+        "median_app_anonymous_mib": 29.92578125,
+        "median_app_owners": {
+          "fds": 156.0,
+          "tasks": 8.0,
+          "sockets": 150.0
+        }
+      },
+      {
+        "minute_start": 195,
+        "samples": 156,
+        "median_app_rss_mib": 48.53515625,
+        "median_app_anonymous_mib": 30.234375,
+        "median_app_owners": {
+          "fds": 156.0,
+          "tasks": 8.0,
+          "sockets": 150.0
+        }
+      },
+      {
+        "minute_start": 210,
+        "samples": 155,
+        "median_app_rss_mib": 48.53515625,
+        "median_app_anonymous_mib": 30.234375,
+        "median_app_owners": {
+          "fds": 156,
+          "tasks": 8,
+          "sockets": 150
+        }
+      },
+      {
+        "minute_start": 225,
+        "samples": 156,
+        "median_app_rss_mib": 48.53515625,
+        "median_app_anonymous_mib": 30.23828125,
+        "median_app_owners": {
+          "fds": 156.0,
+          "tasks": 8.0,
+          "sockets": 150.0
+        }
+      }
+    ],
+    "idle_plateaus": [
+      {
+        "phase": "spike-idle-1",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.6982145780057181,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 24,
+          "tasks": 4,
+          "sockets": 18
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 33964032,
+            "memory_peak_bytes": 36585472,
+            "anonymous_bytes": 31416320,
+            "file_cache_including_shmem_bytes": 528384,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 380252160,
+            "memory_peak_bytes": 392581120,
+            "anonymous_bytes": 49700864,
+            "file_cache_including_shmem_bytes": 313278464,
+            "shmem_bytes": 76730368,
+            "pids_current": 22,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 46690304,
+            "memory_peak_bytes": 101060608,
+            "anonymous_bytes": 37556224,
+            "file_cache_including_shmem_bytes": 7450624,
+            "shmem_bytes": 0,
+            "pids_current": 10,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "spike-idle-2",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.11696174499229528,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 24,
+          "tasks": 4,
+          "sockets": 18
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 36978688,
+            "memory_peak_bytes": 37203968,
+            "anonymous_bytes": 34320384,
+            "file_cache_including_shmem_bytes": 528384,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 383262720,
+            "memory_peak_bytes": 392581120,
+            "anonymous_bytes": 51978240,
+            "file_cache_including_shmem_bytes": 313901056,
+            "shmem_bytes": 76730368,
+            "pids_current": 28,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 45404160,
+            "memory_peak_bytes": 101060608,
+            "anonymous_bytes": 36130816,
+            "file_cache_including_shmem_bytes": 7516160,
+            "shmem_bytes": 0,
+            "pids_current": 10,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "spike-idle-3",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.7075906549871434,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 24,
+          "tasks": 4,
+          "sockets": 18
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 36327424,
+            "memory_peak_bytes": 38432768,
+            "anonymous_bytes": 32366592,
+            "file_cache_including_shmem_bytes": 528384,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 383266816,
+            "memory_peak_bytes": 392581120,
+            "anonymous_bytes": 50655232,
+            "file_cache_including_shmem_bytes": 314359808,
+            "shmem_bytes": 76746752,
+            "pids_current": 22,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 46104576,
+            "memory_peak_bytes": 101060608,
+            "anonymous_bytes": 36737024,
+            "file_cache_including_shmem_bytes": 7577600,
+            "shmem_bytes": 0,
+            "pids_current": 10,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "spike-idle-4",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.08250521300942637,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 24,
+          "tasks": 4,
+          "sockets": 18
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 34807808,
+            "memory_peak_bytes": 38432768,
+            "anonymous_bytes": 32370688,
+            "file_cache_including_shmem_bytes": 528384,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 383397888,
+            "memory_peak_bytes": 392581120,
+            "anonymous_bytes": 49696768,
+            "file_cache_including_shmem_bytes": 314929152,
+            "shmem_bytes": 76750848,
+            "pids_current": 22,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 49000448,
+            "memory_peak_bytes": 101060608,
+            "anonymous_bytes": 39624704,
+            "file_cache_including_shmem_bytes": 7643136,
+            "shmem_bytes": 0,
+            "pids_current": 10,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "spike-idle-5",
+        "idle_seconds": 15,
+        "queue_drain_seconds": 0.08398597800987773,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 24,
+          "tasks": 4,
+          "sockets": 18
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 36638720,
+            "memory_peak_bytes": 38432768,
+            "anonymous_bytes": 32370688,
+            "file_cache_including_shmem_bytes": 528384,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 383631360,
+            "memory_peak_bytes": 392581120,
+            "anonymous_bytes": 51396608,
+            "file_cache_including_shmem_bytes": 314707968,
+            "shmem_bytes": 76750848,
+            "pids_current": 22,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 50507776,
+            "memory_peak_bytes": 101060608,
+            "anonymous_bytes": 41082880,
+            "file_cache_including_shmem_bytes": 7704576,
+            "shmem_bytes": 0,
+            "pids_current": 10,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      },
+      {
+        "phase": "post-load-idle",
+        "idle_seconds": 180,
+        "queue_drain_seconds": 0.07801547198323533,
+        "database": {
+          "connections": 15,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        },
+        "app_owners": {
+          "fds": 24,
+          "tasks": 4,
+          "sockets": 18
+        },
+        "component_memory": {
+          "app": {
+            "memory_current_bytes": 36216832,
+            "memory_peak_bytes": 38670336,
+            "anonymous_bytes": 33615872,
+            "file_cache_including_shmem_bytes": 520192,
+            "shmem_bytes": 0,
+            "pids_current": 6,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "pg": {
+            "memory_current_bytes": 396943360,
+            "memory_peak_bytes": 402661376,
+            "anonymous_bytes": 49311744,
+            "file_cache_including_shmem_bytes": 328814592,
+            "shmem_bytes": 76881920,
+            "pids_current": 22,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          },
+          "metrics": {
+            "memory_current_bytes": 56553472,
+            "memory_peak_bytes": 114769920,
+            "anonymous_bytes": 38322176,
+            "file_cache_including_shmem_bytes": 16072704,
+            "shmem_bytes": 0,
+            "pids_current": 10,
+            "oom_events": 0,
+            "oom_kill_events": 0
+          }
+        }
+      }
+    ],
+    "ownership_scope": "OS live-owner counts recovered to the same pressure/rest plateau. RSS/anonymous retention alone does not establish allocation ownership or absolute absence of a leak. PostgreSQL memory includes reclaimable cache; kernel memory.peak may transiently exceed memory.max by a charge batch."
+  },
+  "baseline_candidate_regression": "not yet established; requires final independent comparable run",
+  "raw_evidence_location": "target/stress-g05/disk-pass-1-005"
+}

@@ -1,0 +1,29 @@
+{
+  "status": "failed",
+  "scope": "Original public job metadata only; assertion payloads and exact unittest counts have not yet been recovered. No passing count is inferred. Product-source CI18 and native12 remain their separate frozen-source scopes.",
+  "jobs": [
+    {
+      "job_id": 117313068979,
+      "source_commit": "3da98cbe19b7c3e8fdb2c9ee9e4e60840d11ba6a",
+      "name": "native-presets",
+      "conclusion": "failure",
+      "failed_step": "Validate configs, JSON contracts, ignores and fix boundaries"
+    },
+    {
+      "workflow_run_id": 39005151006,
+      "job_id": 117315982042,
+      "source_commit": "ed963add5026f2177156413c4013e9b9b41f32cc",
+      "name": "native-presets",
+      "conclusion": "failure",
+      "failed_step": "Validate configs, JSON contracts, ignores and fix boundaries"
+    }
+  ],
+  "contrast": {
+    "job_id": 117313069077,
+    "source_commit": "3da98cbe19b7c3e8fdb2c9ee9e4e60840d11ba6a",
+    "name": "check",
+    "conclusion": "success",
+    "scope": "Ordinary CI check passed; this does not resolve the separate native-presets failure."
+  },
+  "test_count": null
+}

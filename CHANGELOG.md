@@ -10,6 +10,9 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Added
 
+- Allow disposable independent-project benchmarks to declare a shorter CPU
+  bandwidth period while preserving aggregate CPU caps; comparison evidence
+  must use the same policy on both sides.
 - Add explicitly enrolled host project management with visual operation review,
   typed confirmation and reauthentication, durable idempotent jobs, bounded
   project status/logs, Docker namespace collision checks, paired backups and
@@ -27,6 +30,11 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Bind native app subprocesses to their project directory so migrations from
+  the host's cwd or `NELCOTA_ROOT` do not reacquire their parent's host lease.
+- Resolve the host directory before generating native systemd configuration,
+  allowing the documented installation from the current application directory
+  without a relative `EnvironmentFile` and repeated application startup failure.
 - Release catalog retry/listener owners and cancelled client/read waiters; clear
   closed upload/preview resources while accepted shared operations finish.
 
@@ -43,6 +51,13 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Security
 
+- Serialize native initialization/removal with a machine-wide lease and a
+  durable host-directory owner, preventing a second native host from replacing
+  the first project's database credentials, Caddy configuration or units.
+- Reject native PostgreSQL cluster/port collisions before provisioning and pin
+  administrative clients to local `17/main:5432`, preventing initialization or
+  ambient libpq settings from changing another cluster. Send the generated
+  database password through bounded private stdin instead of command arguments.
 - Update rustls to 0.23.46 for RUSTSEC-2026-0346, 0347, 0348 and 0349.
   Published 0.4.0 predates this source correction.
 

@@ -1,4 +1,6 @@
 //! Real Postgres and HTTP receivers exercise the complete event delivery path.
+#[path = "webhooks/boundaries.rs"]
+mod boundaries;
 #[path = "webhooks/capture.rs"]
 mod capture;
 mod common;

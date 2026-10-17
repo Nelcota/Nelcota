@@ -1,0 +1,3401 @@
+{
+  "run_id": "disk-http-counter-smoke-001",
+  "status": "passed",
+  "certifies_g05": false,
+  "scope": "Real-backend million-row/one-MiB functional smoke with short calibration; no five-minute capacity or four-hour endurance certification. Maximum object bytes in invariants is the read bound, not measured content length.",
+  "backend_source": "2efede8c27ee12119142170e8bd9742ff7cb900e",
+  "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+  "frozen_harness": {
+    "run_id": "disk-http-counter-smoke-001",
+    "git": "c276cc3cb951c6df36c0eb6f7a2861d98f353492",
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "harness_sources": {
+      "bench/allocation.py": "4b98e093b86e9b9187812cd49e8d5710f54561f196bdd222573c0edd06cff34d",
+      "bench/arrival_check.py": "1b0973f2995a94390ebabcc76c2ab4843586d284980a6e5e65d6e3cb1ea60a1b",
+      "bench/arrival_counters.py": "dc94222d07dc40b7bbd5d376f5d8bac5ba8fec4d590cb6da625e487c01b16f35",
+      "bench/browser_campaign.py": "35b750c93b78cb29045cd17e3d82d81446bf783e7efe54fcba3a6279a65f5113",
+      "bench/browser_driver.py": "7a97e7f83cea534add1c75bd13d6764c2fb8ef94a0c2d4e4f1a7ee8ece9c244a",
+      "bench/browser_runtime.py": "1720ee9bab4b959260f366ca7c8767d2b810a1884f3940ff3735755ef6ba48ba",
+      "bench/campaign.py": "161497aa1c8baa8e2c59f60fc678b838bc878403e57583a5b9d782f909a31d53",
+      "bench/compare.py": "47ec62a261ac511897322f65e21565bccafbffbccc0530b89c71cc2085b53368",
+      "bench/cpu_policy.py": "04a227c9032905844ece265773013d7581351627f2a4ac71a8fee6c8a690d89d",
+      "bench/disk_usage.py": "502da50d95f979128c91d49b3037cb08885ddcbb941af0a9bd842e0d193da38e",
+      "bench/evidence.py": "214bcb18089fce8b33dc7a9613856c23f48f433767a7e97cdd95861dae3cb67d",
+      "bench/fault_campaign.py": "33fca029d3414e5c03d8d8a9e7a90e38c978bc307c05f3b98eef1e3957be30f4",
+      "bench/fixture_copy.py": "8c1421202b5543c16fa0fd0af4e47f7a8f9ef1bd9cd9423bfde28eda3dec6288",
+      "bench/fleet_observer.py": "3e51bb4b4229f0854c2e67c2fadef489feed0b28893ba3fe1baad67e1fe415b4",
+      "bench/fleet_webhooks.py": "ae5d21861ef3951a50a37fdfc84507685e87c2f8cc1698ae0d5972244d0b97ce",
+      "bench/guard_check.py": "2fa55b5e70154e7498ab79f627ef7623ae965cb4727a8318845bc5eb9baf481d",
+      "bench/host_campaign.py": "3366b7022517eb8849375563bf0acaca1c4442d1e07cad5508b7c4d37ea3e317",
+      "bench/host_compare.py": "becacc06ec7c68f493e5fa854877b65c348ed782c24f30ebca258decf373a0a1",
+      "bench/host_resources.py": "8efc29fce9b182aca6bdc2fa91e26ad9d526a4b1267f69a917d132270e4065e5",
+      "bench/http_boundary.py": "b69ff97c9e65f8ec94ccf36ac282a3b6b53c1a07aa01fbd33ac1fbe68a976db3",
+      "bench/http_check.py": "8879f62f1541f8321f799358cdd56035d3e189d46dc43fe91b106ba514788ab7",
+      "bench/http_counters.py": "c08c51ce7faf1f415476e77c80bd96dfd891b3292ceb15bd2dd781aed32f671a",
+      "bench/ingress.py": "4976738ec1c3e96862f87a02d81843087a72a665a2de829acc4c6804b6117ed2",
+      "bench/launch.py": "915eb76ea3a712799777f27dfbe8bbffe4de8f5a48d9a5b541ee844f0391a498",
+      "bench/load_time.py": "23e9b43a24b7842259e94958cf2a0836a7b970cabdab2c908d5761dd688527c5",
+      "bench/lost_reply.py": "2048c95f21169fe46adddb28c4feffa60da365d369f4730ed6f7c6bcbfd348bb",
+      "bench/metrics.py": "08a4dad4eb11f281148b6a1d707d36b952fd1a80e0263dc075cd1c101056e0dc",
+      "bench/monitor.py": "bd869d88b833930602dc3770e5467040021cca6930f89fd298c269b6850c2e61",
+      "bench/objects.py": "a1612bc2e457481705044ce21a376d898544dbbff004a8920511218858a8210b",
+      "bench/observations.py": "a8acd10d4b28cc44e9619bd969d75d6a2d5543444c97daab63e549414238b988",
+      "bench/oracle_check.py": "d5dfc94495321fdd08c8457ef8e2c7ea1d2a39813c80a6751cd687fcf0ca345e",
+      "bench/ownership.py": "ffd3e9343b7f8262d05ee0363ab01b1f7e77089bb8f09ca8d0a350532402fa06",
+      "bench/ports.py": "edcb747bf4f29429d2abf5abf2741289c586cb64b0cf3484fa891edb5d798276",
+      "bench/postgres_evidence.py": "7152ea8c58232981c07b6c20d4a6a8cfba1046de1893d09c78de58607a95855a",
+      "bench/projects.py": "5e67a4918b87c43bc2d8ea769f4f843570e589db4d81bdd573e24ae6d979eb9a",
+      "bench/receiver.py": "b4f172be66aee69649c826052951ff839272d7501ec0d0a2e648d65dedd4ee9d",
+      "bench/sqlite_evidence.py": "77b0da843ac1c0d5a29c97e2f6fa78b67fbbe96a68c5aeef05df9f0895c16215",
+      "bench/watchdog.py": "25ab3e86efdcec9c1da84942ef27fee285339adbda15b70791030e4863ff7bb3",
+      "bench/allocation_probe.c": "f833882f9c9697d7e838871dad3d398fb6427e78b21104d30ea8fcd7f13678f3",
+      "bench/campaign.js": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+      "bench/setup.sql": "104496228668127c3a95a0defa6efe2d6c06a00c56bdc19999052043e700c798",
+      "scripts/upgrade/support.py": "97fd54c7d8fe80d70d0201e71454dd4f72fef760e161800ad503760d3f90feb8"
+    }
+  },
+  "profile": {
+    "storage_backend": "disk",
+    "dataset": {
+      "products": 1000000,
+      "private": 1000000,
+      "objects": 10000
+    },
+    "object_payload_bytes": 1048576,
+    "physical_seeded_objects": 10000,
+    "steady_duration": "5s",
+    "steady_rate": 20,
+    "write_steady_rate": 10,
+    "soak_seconds": 60,
+    "soak_fraction": 0.8,
+    "final_idle_seconds": 30,
+    "cpu_affinity": [
+      0,
+      1,
+      2
+    ],
+    "effective_cpu_quota": 4.0,
+    "app_cpus": 1,
+    "app_memory_mb": 128,
+    "pg_cpus": 1,
+    "pg_memory_mb": 384,
+    "generator_memory_mb": 512,
+    "metrics_cpus": 0.25,
+    "metrics_memory_mb": 512,
+    "pool": 8,
+    "max_connections": 40,
+    "max_fixture_disk_mb": 2048,
+    "max_storage_fixture_disk_mib": 1024,
+    "max_wal_mb": 256,
+    "images": {
+      "ubuntu:24.04": [
+        "ubuntu@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55"
+      ],
+      "postgres:17-alpine": [
+        "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+      ],
+      "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1": [
+        "grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1"
+      ],
+      "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996": [
+        "prom/prometheus@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+      ]
+    },
+    "storage_filesystem": "overlayfs",
+    "nominal_slos_ms": {
+      "read": [
+        200,
+        500
+      ],
+      "rls": [
+        200,
+        500
+      ],
+      "refresh": [
+        200,
+        500
+      ],
+      "login": [
+        750,
+        1500
+      ],
+      "storage": [
+        500,
+        2000
+      ],
+      "panel": [
+        500,
+        2000
+      ],
+      "write": [
+        500,
+        1500
+      ]
+    },
+    "resource_protocol": "component cgroup v2, PostgreSQL IO/WAL/checkpointer/locks, process owners; allocated du totals count only disappearing child entries",
+    "arrival_counter_protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+    "generator_usage_reporting": false,
+    "http_counter_protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+    "generator_observation_protocol": "owned Docker stats with verified cgroup-v2 fallback on 10s stream timeout; unchanged 30s observation gate"
+  },
+  "completion": {
+    "status": "passed",
+    "load_seconds": 605.0,
+    "resource_observations": 151,
+    "soak_seconds": 60,
+    "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "cleanup_confirmed": true,
+    "error_type": "NoneType"
+  },
+  "cleanup": {
+    "containers": [],
+    "volumes": [],
+    "directory_removed": true
+  },
+  "completed_load_excluding_warmup_seconds": 590,
+  "arrival_counter_protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+  "continuous_arrival_coverage": [
+    {
+      "phase": "warmup",
+      "observations": 4,
+      "covered_seconds": 15.801314134994755,
+      "maximum_poll_gap_seconds": 6.206358138995711,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "fresh-read-1",
+      "observations": 4,
+      "covered_seconds": 10.537451637996128,
+      "maximum_poll_gap_seconds": 7.229716166999424,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "fresh-read-2",
+      "observations": 4,
+      "covered_seconds": 10.522354021988576,
+      "maximum_poll_gap_seconds": 6.309878214000491,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "fresh-read-3",
+      "observations": 3,
+      "covered_seconds": 10.528863879007986,
+      "maximum_poll_gap_seconds": 6.2402107960078865,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "fresh-rls-1",
+      "observations": 4,
+      "covered_seconds": 11.029870589001803,
+      "maximum_poll_gap_seconds": 6.905775004008319,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "fresh-rls-2",
+      "observations": 4,
+      "covered_seconds": 10.769141997006955,
+      "maximum_poll_gap_seconds": 7.573383640003158,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "fresh-rls-3",
+      "observations": 3,
+      "covered_seconds": 10.770438831998035,
+      "maximum_poll_gap_seconds": 6.494506760995137,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "fresh-storage-1",
+      "observations": 3,
+      "covered_seconds": 10.523110111011192,
+      "maximum_poll_gap_seconds": 6.096219066996127,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "fresh-storage-2",
+      "observations": 4,
+      "covered_seconds": 10.52122587300255,
+      "maximum_poll_gap_seconds": 5.897477735998109,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "fresh-storage-3",
+      "observations": 4,
+      "covered_seconds": 10.52499103199807,
+      "maximum_poll_gap_seconds": 6.980500956997275,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "read-1",
+      "observations": 3,
+      "covered_seconds": 5.762753829010762,
+      "maximum_poll_gap_seconds": 5.430585983005585,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "read-2",
+      "observations": 3,
+      "covered_seconds": 5.768067994999001,
+      "maximum_poll_gap_seconds": 5.078823588992236,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "read-3",
+      "observations": 3,
+      "covered_seconds": 5.766739205981139,
+      "maximum_poll_gap_seconds": 5.144121620978694,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "rls-1",
+      "observations": 4,
+      "covered_seconds": 8.015621878992533,
+      "maximum_poll_gap_seconds": 5.674027211003704,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "rls-2",
+      "observations": 3,
+      "covered_seconds": 8.016568819992244,
+      "maximum_poll_gap_seconds": 4.231385512975976,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "rls-3",
+      "observations": 4,
+      "covered_seconds": 8.267287672002567,
+      "maximum_poll_gap_seconds": 5.712480237009004,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "panel-1",
+      "observations": 3,
+      "covered_seconds": 5.511330216017086,
+      "maximum_poll_gap_seconds": 3.726847103011096,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "panel-2",
+      "observations": 3,
+      "covered_seconds": 5.512408486014465,
+      "maximum_poll_gap_seconds": 3.80530685101985,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "panel-3",
+      "observations": 3,
+      "covered_seconds": 5.510386500012828,
+      "maximum_poll_gap_seconds": 3.804697240004316,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "storage-1",
+      "observations": 3,
+      "covered_seconds": 5.762403633998474,
+      "maximum_poll_gap_seconds": 3.7953055409889203,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "storage-2",
+      "observations": 3,
+      "covered_seconds": 5.510223563003819,
+      "maximum_poll_gap_seconds": 3.5713550749933347,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "storage-3",
+      "observations": 3,
+      "covered_seconds": 5.51137639398803,
+      "maximum_poll_gap_seconds": 3.499529952008743,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "login-1",
+      "observations": 3,
+      "covered_seconds": 5.51078762600082,
+      "maximum_poll_gap_seconds": 3.5432316859951243,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "login-2",
+      "observations": 3,
+      "covered_seconds": 5.76182639200124,
+      "maximum_poll_gap_seconds": 3.560404722986277,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "login-3",
+      "observations": 3,
+      "covered_seconds": 5.762504582002293,
+      "maximum_poll_gap_seconds": 3.3412728880066425,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "refresh-1",
+      "observations": 4,
+      "covered_seconds": 8.516129515017383,
+      "maximum_poll_gap_seconds": 6.917887473013252,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "refresh-2",
+      "observations": 3,
+      "covered_seconds": 8.016869380982826,
+      "maximum_poll_gap_seconds": 5.092615866014967,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "refresh-3",
+      "observations": 4,
+      "covered_seconds": 8.017040473001543,
+      "maximum_poll_gap_seconds": 6.8921313419996295,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "write-1",
+      "observations": 3,
+      "covered_seconds": 5.5127591650234535,
+      "maximum_poll_gap_seconds": 5.017655117000686,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "write-2",
+      "observations": 3,
+      "covered_seconds": 5.511243169021327,
+      "maximum_poll_gap_seconds": 4.968068204994779,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "write-3",
+      "observations": 3,
+      "covered_seconds": 5.51078506198246,
+      "maximum_poll_gap_seconds": 4.890052654984174,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "mixed-1",
+      "observations": 3,
+      "covered_seconds": 8.016717516002245,
+      "maximum_poll_gap_seconds": 4.934466391016031,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "mixed-2",
+      "observations": 4,
+      "covered_seconds": 8.020345450000605,
+      "maximum_poll_gap_seconds": 6.757388174009975,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "mixed-3",
+      "observations": 3,
+      "covered_seconds": 7.7658068489981815,
+      "maximum_poll_gap_seconds": 4.870789238018915,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "calibrate-25",
+      "observations": 4,
+      "covered_seconds": 8.269438372983132,
+      "maximum_poll_gap_seconds": 6.634439936984563,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "calibrate-50",
+      "observations": 3,
+      "covered_seconds": 8.015276539023034,
+      "maximum_poll_gap_seconds": 4.708289921982214,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "calibrate-75",
+      "observations": 4,
+      "covered_seconds": 8.020171751006274,
+      "maximum_poll_gap_seconds": 6.401477439008886,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "calibrate-100",
+      "observations": 3,
+      "covered_seconds": 8.017396759008989,
+      "maximum_poll_gap_seconds": 4.581372553977417,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "capacity-25",
+      "observations": 4,
+      "covered_seconds": 8.01723927501007,
+      "maximum_poll_gap_seconds": 6.161595746001694,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "capacity-50",
+      "observations": 3,
+      "covered_seconds": 8.269833918020595,
+      "maximum_poll_gap_seconds": 4.516035912994994,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "capacity-75",
+      "observations": 4,
+      "covered_seconds": 8.272211448987946,
+      "maximum_poll_gap_seconds": 6.1723754389968235,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "capacity-100",
+      "observations": 3,
+      "covered_seconds": 8.075484934000997,
+      "maximum_poll_gap_seconds": 4.114131254027598,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "overload-125",
+      "observations": 8,
+      "covered_seconds": 33.29629119898891,
+      "maximum_poll_gap_seconds": 5.674398891016608,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "overload-150",
+      "observations": 8,
+      "covered_seconds": 33.295641546021216,
+      "maximum_poll_gap_seconds": 5.6170830560149625,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "overload-200",
+      "observations": 8,
+      "covered_seconds": 33.046634878002806,
+      "maximum_poll_gap_seconds": 5.639164171996526,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "spike-1",
+      "observations": 5,
+      "covered_seconds": 13.276236589998007,
+      "maximum_poll_gap_seconds": 6.510071016004076,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "spike-recovery-1",
+      "observations": 6,
+      "covered_seconds": 23.03660179299186,
+      "maximum_poll_gap_seconds": 5.716715642018244,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "spike-2",
+      "observations": 4,
+      "covered_seconds": 13.027373846998671,
+      "maximum_poll_gap_seconds": 5.722551627986832,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "spike-recovery-2",
+      "observations": 6,
+      "covered_seconds": 23.537912380008493,
+      "maximum_poll_gap_seconds": 6.34787814799347,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "spike-3",
+      "observations": 4,
+      "covered_seconds": 13.271225363976555,
+      "maximum_poll_gap_seconds": 5.508739473007154,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "spike-recovery-3",
+      "observations": 6,
+      "covered_seconds": 23.030260640982306,
+      "maximum_poll_gap_seconds": 5.56165281200083,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "spike-4",
+      "observations": 4,
+      "covered_seconds": 12.776124035008252,
+      "maximum_poll_gap_seconds": 6.747484432009514,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "spike-recovery-4",
+      "observations": 6,
+      "covered_seconds": 23.336024582997197,
+      "maximum_poll_gap_seconds": 5.515161836985499,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "spike-5",
+      "observations": 4,
+      "covered_seconds": 13.028307141998084,
+      "maximum_poll_gap_seconds": 5.628585911006667,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "spike-recovery-5",
+      "observations": 7,
+      "covered_seconds": 23.03477175300941,
+      "maximum_poll_gap_seconds": 5.609662925009616,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "recovery-before-restart",
+      "observations": 5,
+      "covered_seconds": 20.796729658002732,
+      "maximum_poll_gap_seconds": 6.342469471012009,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "recovery-after-restart",
+      "observations": 5,
+      "covered_seconds": 20.55510547599988,
+      "maximum_poll_gap_seconds": 6.774191864999011,
+      "retained_dropped_iterations": 0
+    },
+    {
+      "phase": "soak",
+      "observations": 13,
+      "covered_seconds": 63.12212714701309,
+      "maximum_poll_gap_seconds": 5.5392689110012725,
+      "retained_dropped_iterations": 0
+    }
+  ],
+  "steady_and_short_soak_reports": {
+    "read-1": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 248359.0,
+          "bytes_per_second": 49671.8
+        },
+        "data_sent": {
+          "bytes": 15554.0,
+          "bytes_per_second": 3110.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 202.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.5736406003480092,
+          "p(95)": 5.054818477202672,
+          "p(99)": 6.2882530909485475,
+          "min": 1.7910235218841235,
+          "max": 6.5695032441696455
+        },
+        "latency_read": {
+          "p(50)": 2.5736406003480092,
+          "p(95)": 5.054818477202672,
+          "p(99)": 6.2882530909485475,
+          "min": 1.7910235218841235,
+          "max": 6.5695032441696455
+        },
+        "throughput_read": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "read-1",
+        "closed": true,
+        "began_monotonic": 234841.945122366,
+        "last_monotonic": 234847.710901868,
+        "maximum_poll_gap_seconds": 5.431032846012386,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "read-1",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234841.945105461,
+        "last_monotonic": 234847.70785929,
+        "maximum_poll_gap_seconds": 5.430585983005585,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "read-2": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 248359.0,
+          "bytes_per_second": 49671.8
+        },
+        "data_sent": {
+          "bytes": 15554.0,
+          "bytes_per_second": 3110.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 202.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.109030178704732,
+          "p(95)": 4.4387679354410325,
+          "p(99)": 6.56381366853218,
+          "min": 1.3810679320049755,
+          "max": 7.164094087536494
+        },
+        "latency_read": {
+          "p(50)": 2.109030178704732,
+          "p(95)": 4.4387679354410325,
+          "p(99)": 6.56381366853218,
+          "min": 1.3810679320049755,
+          "max": 7.164094087536494
+        },
+        "throughput_read": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "read-2",
+        "closed": true,
+        "began_monotonic": 234847.728719699,
+        "last_monotonic": 234853.498024716,
+        "maximum_poll_gap_seconds": 5.078447817009874,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "read-2",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234847.728710956,
+        "last_monotonic": 234853.496778951,
+        "maximum_poll_gap_seconds": 5.078823588992236,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "read-3": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 248359.0,
+          "bytes_per_second": 49671.8
+        },
+        "data_sent": {
+          "bytes": 15554.0,
+          "bytes_per_second": 3110.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 202.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 1.986516541177397,
+          "p(95)": 4.63528898126053,
+          "p(99)": 6.56381366853218,
+          "min": 1.5060652591874424,
+          "max": 8.519591661447325
+        },
+        "latency_read": {
+          "p(50)": 1.986516541177397,
+          "p(95)": 4.63528898126053,
+          "p(99)": 6.56381366853218,
+          "min": 1.5060652591874424,
+          "max": 8.519591661447325
+        },
+        "throughput_read": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "read-3",
+        "closed": true,
+        "began_monotonic": 234853.513447965,
+        "last_monotonic": 234859.282002249,
+        "maximum_poll_gap_seconds": 5.144742623000639,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "read-3",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234853.513439672,
+        "last_monotonic": 234859.280178878,
+        "maximum_poll_gap_seconds": 5.144121620978694,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "rls-1": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 434502.0,
+          "bytes_per_second": 86900.4
+        },
+        "data_sent": {
+          "bytes": 56257.0,
+          "bytes_per_second": 11251.4
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 202.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.4806044267393843,
+          "p(95)": 5.6779400555635045,
+          "p(99)": 7.160991152445842,
+          "min": 1.7910235218841235,
+          "max": 7.8125
+        },
+        "latency_rls": {
+          "p(50)": 2.4806044267393843,
+          "p(95)": 5.6779400555635045,
+          "p(99)": 7.160991152445842,
+          "min": 1.7910235218841235,
+          "max": 7.8125
+        },
+        "throughput_rls": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "rls-1",
+        "closed": true,
+        "began_monotonic": 234859.305150126,
+        "last_monotonic": 234867.322547025,
+        "maximum_poll_gap_seconds": 5.673886164993746,
+        "observations": 4,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "rls-1",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234859.305140231,
+        "last_monotonic": 234867.32076211,
+        "maximum_poll_gap_seconds": 5.674027211003704,
+        "observations": 4,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "rls-2": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 434502.0,
+          "bytes_per_second": 86900.4
+        },
+        "data_sent": {
+          "bytes": 56257.0,
+          "bytes_per_second": 11251.4
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 202.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.4589137424780905,
+          "p(95)": 5.99821936375032,
+          "p(99)": 7.160991152445842,
+          "min": 1.7910235218841235,
+          "max": 9.290680585958759
+        },
+        "latency_rls": {
+          "p(50)": 2.4589137424780905,
+          "p(95)": 5.99821936375032,
+          "p(99)": 7.160991152445842,
+          "min": 1.7910235218841235,
+          "max": 9.290680585958759
+        },
+        "throughput_rls": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "rls-2",
+        "closed": true,
+        "began_monotonic": 234867.338983268,
+        "last_monotonic": 234875.357764796,
+        "maximum_poll_gap_seconds": 4.231115506001515,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "rls-2",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234867.338975717,
+        "last_monotonic": 234875.355544537,
+        "maximum_poll_gap_seconds": 4.231385512975976,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "rls-3": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 434502.0,
+          "bytes_per_second": 86900.4
+        },
+        "data_sent": {
+          "bytes": 56257.0,
+          "bytes_per_second": 11251.4
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 202.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.5250640774078037,
+          "p(95)": 5.516300123935427,
+          "p(99)": 7.809116225289686,
+          "min": 1.7910235218841235,
+          "max": 9.290680585958759
+        },
+        "latency_rls": {
+          "p(50)": 2.5250640774078037,
+          "p(95)": 5.516300123935427,
+          "p(99)": 7.809116225289686,
+          "min": 1.7910235218841235,
+          "max": 9.290680585958759
+        },
+        "throughput_rls": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "rls-3",
+        "closed": true,
+        "began_monotonic": 234875.372863963,
+        "last_monotonic": 234883.642266195,
+        "maximum_poll_gap_seconds": 5.712356550997356,
+        "observations": 4,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "rls-3",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234875.372855861,
+        "last_monotonic": 234883.640143533,
+        "maximum_poll_gap_seconds": 5.712480237009004,
+        "observations": 4,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "panel-1": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 416625.0,
+          "bytes_per_second": 83325.0
+        },
+        "data_sent": {
+          "bytes": 21109.0,
+          "bytes_per_second": 4221.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 202.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.676061381346634,
+          "p(95)": 4.914464709291464,
+          "p(99)": 6.56381366853218,
+          "min": 1.7910235218841235,
+          "max": 9.290680585958759
+        },
+        "latency_panel": {
+          "p(50)": 2.676061381346634,
+          "p(95)": 4.914464709291464,
+          "p(99)": 6.56381366853218,
+          "min": 1.7910235218841235,
+          "max": 9.290680585958759
+        },
+        "throughput_panel": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "panel-1",
+        "closed": true,
+        "began_monotonic": 234883.663539086,
+        "last_monotonic": 234889.176569042,
+        "maximum_poll_gap_seconds": 3.72743331399397,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "panel-1",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234883.663529972,
+        "last_monotonic": 234889.174860188,
+        "maximum_poll_gap_seconds": 3.726847103011096,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "panel-2": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 416625.0,
+          "bytes_per_second": 83325.0
+        },
+        "data_sent": {
+          "bytes": 21109.0,
+          "bytes_per_second": 4221.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 202.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 3.0186621203743376,
+          "p(95)": 5.915640105255917,
+          "p(99)": 10.122784495570938,
+          "min": 2.1298979153618314,
+          "max": 11.048543456039804
+        },
+        "latency_panel": {
+          "p(50)": 3.0186621203743376,
+          "p(95)": 5.915640105255917,
+          "p(99)": 10.122784495570938,
+          "min": 2.1298979153618314,
+          "max": 11.048543456039804
+        },
+        "throughput_panel": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "panel-2",
+        "closed": true,
+        "began_monotonic": 234889.190451272,
+        "last_monotonic": 234894.704621601,
+        "maximum_poll_gap_seconds": 3.8055331550131086,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "panel-2",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234889.190442458,
+        "last_monotonic": 234894.702850944,
+        "maximum_poll_gap_seconds": 3.80530685101985,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "panel-3": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 416625.0,
+          "bytes_per_second": 83325.0
+        },
+        "data_sent": {
+          "bytes": 21109.0,
+          "bytes_per_second": 4221.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 202.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.729096055063035,
+          "p(95)": 4.640311915620853,
+          "p(99)": 6.566657840145715,
+          "min": 1.953125,
+          "max": 14.328188175072988
+        },
+        "latency_panel": {
+          "p(50)": 2.729096055063035,
+          "p(95)": 4.640311915620853,
+          "p(99)": 6.566657840145715,
+          "min": 1.953125,
+          "max": 14.328188175072988
+        },
+        "throughput_panel": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "panel-3",
+        "closed": true,
+        "began_monotonic": 234894.717367452,
+        "last_monotonic": 234900.229200796,
+        "maximum_poll_gap_seconds": 3.8049951560096815,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "panel-3",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234894.71735907,
+        "last_monotonic": 234900.22774557,
+        "maximum_poll_gap_seconds": 3.804697240004316,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "storage-1": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 639229.0,
+          "bytes_per_second": 127845.8
+        },
+        "data_sent": {
+          "bytes": 35350.0,
+          "bytes_per_second": 7070.0
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 202.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.8118498905402785,
+          "p(95)": 5.84431639871919,
+          "p(99)": 11.038974768524088,
+          "min": 1.953125,
+          "max": 57.31275270029195
+        },
+        "latency_storage": {
+          "p(50)": 2.8118498905402785,
+          "p(95)": 5.84431639871919,
+          "p(99)": 11.038974768524088,
+          "min": 1.953125,
+          "max": 57.31275270029195
+        },
+        "throughput_storage": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "storage-1",
+        "closed": true,
+        "began_monotonic": 234900.242108739,
+        "last_monotonic": 234906.005871964,
+        "maximum_poll_gap_seconds": 3.845945966982981,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "storage-1",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234900.242099986,
+        "last_monotonic": 234906.00450362,
+        "maximum_poll_gap_seconds": 3.7953055409889203,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "storage-2": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 639229.0,
+          "bytes_per_second": 127845.8
+        },
+        "data_sent": {
+          "bytes": 35350.0,
+          "bytes_per_second": 7070.0
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 202.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.6608828125955553,
+          "p(95)": 4.2505787372379675,
+          "p(99)": 7.160991152445842,
+          "min": 2.1298979153618314,
+          "max": 10.131559020711013
+        },
+        "latency_storage": {
+          "p(50)": 2.6608828125955553,
+          "p(95)": 4.2505787372379675,
+          "p(99)": 7.160991152445842,
+          "min": 2.1298979153618314,
+          "max": 10.131559020711013
+        },
+        "throughput_storage": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "storage-2",
+        "closed": true,
+        "began_monotonic": 234906.016136895,
+        "last_monotonic": 234911.527608935,
+        "maximum_poll_gap_seconds": 3.5716118619893678,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "storage-2",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234906.016127391,
+        "last_monotonic": 234911.526350954,
+        "maximum_poll_gap_seconds": 3.5713550749933347,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "storage-3": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 639229.0,
+          "bytes_per_second": 127845.8
+        },
+        "data_sent": {
+          "bytes": 35350.0,
+          "bytes_per_second": 7070.0
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 202.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.57636653218984,
+          "p(95)": 3.5794616378642994,
+          "p(99)": 4.641317155464054,
+          "min": 1.953125,
+          "max": 5.065779510355506
+        },
+        "latency_storage": {
+          "p(50)": 2.57636653218984,
+          "p(95)": 3.5794616378642994,
+          "p(99)": 4.641317155464054,
+          "min": 1.953125,
+          "max": 5.065779510355506
+        },
+        "throughput_storage": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "storage-3",
+        "closed": true,
+        "began_monotonic": 234911.537985557,
+        "last_monotonic": 234917.05115851,
+        "maximum_poll_gap_seconds": 3.4997177040204406,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "storage-3",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234911.537976633,
+        "last_monotonic": 234917.049353027,
+        "maximum_poll_gap_seconds": 3.499529952008743,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "login-1": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 112900.0,
+          "bytes_per_second": 22580.0
+        },
+        "data_sent": {
+          "bytes": 25654.0,
+          "bytes_per_second": 5130.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 101.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 22.248755047637278,
+          "p(95)": 34.02919106932952,
+          "p(99)": 44.155899074096354,
+          "min": 18.581361171917518,
+          "max": 74.32544468767007
+        },
+        "latency_login": {
+          "p(50)": 22.248755047637278,
+          "p(95)": 34.02919106932952,
+          "p(99)": 44.155899074096354,
+          "min": 18.581361171917518,
+          "max": 74.32544468767007
+        },
+        "throughput_login": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "login-1",
+        "closed": true,
+        "began_monotonic": 234917.064947861,
+        "last_monotonic": 234922.577153477,
+        "maximum_poll_gap_seconds": 3.543950916005997,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "login-1",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234917.06494026,
+        "last_monotonic": 234922.575727886,
+        "maximum_poll_gap_seconds": 3.5432316859951243,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "login-2": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 112906.0,
+          "bytes_per_second": 22581.2
+        },
+        "data_sent": {
+          "bytes": 25654.0,
+          "bytes_per_second": 5130.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 101.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 21.13161550101734,
+          "p(95)": 30.09224839244101,
+          "p(99)": 37.13053724371243,
+          "min": 17.03918332289465,
+          "max": 40.52623608284405
+        },
+        "latency_login": {
+          "p(50)": 21.13161550101734,
+          "p(95)": 30.09224839244101,
+          "p(99)": 37.13053724371243,
+          "min": 17.03918332289465,
+          "max": 40.52623608284405
+        },
+        "throughput_login": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "login-2",
+        "closed": true,
+        "began_monotonic": 234922.59657922,
+        "last_monotonic": 234928.359727266,
+        "maximum_poll_gap_seconds": 3.5602717229921836,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "login-2",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234922.596571067,
+        "last_monotonic": 234928.358397459,
+        "maximum_poll_gap_seconds": 3.560404722986277,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "login-3": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 112908.0,
+          "bytes_per_second": 22581.6
+        },
+        "data_sent": {
+          "bytes": 25654.0,
+          "bytes_per_second": 5130.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 101.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 23.467460733360003,
+          "p(95)": 34.04885277884593,
+          "p(99)": 48.1732143180422,
+          "min": 18.581361171917518,
+          "max": 62.5
+        },
+        "latency_login": {
+          "p(50)": 23.467460733360003,
+          "p(95)": 34.04885277884593,
+          "p(99)": 48.1732143180422,
+          "min": 18.581361171917518,
+          "max": 62.5
+        },
+        "throughput_login": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "login-3",
+        "closed": true,
+        "began_monotonic": 234928.372527302,
+        "last_monotonic": 234934.137956111,
+        "maximum_poll_gap_seconds": 3.34102697801427,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "login-3",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234928.372516666,
+        "last_monotonic": 234934.135021248,
+        "maximum_poll_gap_seconds": 3.3412728880066425,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "refresh-1": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 112918.0,
+          "bytes_per_second": 22583.6
+        },
+        "data_sent": {
+          "bytes": 22725.0,
+          "bytes_per_second": 4545.0
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 101.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 4.418843693776288,
+          "p(95)": 10.413387976050977,
+          "p(99)": 22.077949537048177,
+          "min": 3.0121305183748848,
+          "max": 31.25
+        },
+        "latency_refresh": {
+          "p(50)": 4.418843693776288,
+          "p(95)": 10.413387976050977,
+          "p(99)": 22.077949537048177,
+          "min": 3.0121305183748848,
+          "max": 31.25
+        },
+        "throughput_refresh": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "refresh-1",
+        "closed": true,
+        "began_monotonic": 234934.154184442,
+        "last_monotonic": 234942.671849287,
+        "maximum_poll_gap_seconds": 6.916960161004681,
+        "observations": 4,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "refresh-1",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234934.154175087,
+        "last_monotonic": 234942.670304602,
+        "maximum_poll_gap_seconds": 6.917887473013252,
+        "observations": 4,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "refresh-2": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 112918.0,
+          "bytes_per_second": 22583.6
+        },
+        "data_sent": {
+          "bytes": 22725.0,
+          "bytes_per_second": 4545.0
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 101.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 3.670840351652257,
+          "p(95)": 7.148592845794135,
+          "p(99)": 10.122784495570938,
+          "min": 2.762135864009951,
+          "max": 11.048543456039804
+        },
+        "latency_refresh": {
+          "p(50)": 3.670840351652257,
+          "p(95)": 7.148592845794135,
+          "p(99)": 10.122784495570938,
+          "min": 2.762135864009951,
+          "max": 11.048543456039804
+        },
+        "throughput_refresh": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "refresh-2",
+        "closed": true,
+        "began_monotonic": 234942.682314015,
+        "last_monotonic": 234950.700349527,
+        "maximum_poll_gap_seconds": 5.092766451998614,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "refresh-2",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234942.682306133,
+        "last_monotonic": 234950.699175514,
+        "maximum_poll_gap_seconds": 5.092615866014967,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "refresh-3": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 112918.0,
+          "bytes_per_second": 22583.6
+        },
+        "data_sent": {
+          "bytes": 22725.0,
+          "bytes_per_second": 4545.0
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 101.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 3.5484705381483677,
+          "p(95)": 7.465088090110991,
+          "p(99)": 11.038974768524088,
+          "min": 2.532889755177753,
+          "max": 26.278012976678582
+        },
+        "latency_refresh": {
+          "p(50)": 3.5484705381483677,
+          "p(95)": 7.465088090110991,
+          "p(99)": 11.038974768524088,
+          "min": 2.532889755177753,
+          "max": 26.278012976678582
+        },
+        "throughput_refresh": {
+          "count": 101.0,
+          "rate": 20.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "refresh-3",
+        "closed": true,
+        "began_monotonic": 234950.727702413,
+        "last_monotonic": 234958.747068507,
+        "maximum_poll_gap_seconds": 6.894348789996002,
+        "observations": 4,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "refresh-3",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234950.727666989,
+        "last_monotonic": 234958.744707462,
+        "maximum_poll_gap_seconds": 6.8921313419996295,
+        "observations": 4,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "write-1": {
+      "metrics": {
+        "http_reqs": {
+          "count": 51,
+          "rate": 10.2
+        },
+        "iterations": {
+          "count": 51.0,
+          "rate": 10.2
+        },
+        "successful_operations": {
+          "count": 51.0,
+          "rate": 10.2
+        },
+        "data_received": {
+          "bytes": 22695.0,
+          "bytes_per_second": 4539.0
+        },
+        "data_sent": {
+          "bytes": 18819.0,
+          "bytes_per_second": 3763.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 102.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 4.223046944665092,
+          "p(95)": 9.473577186275968,
+          "p(99)": 11.527711935647433,
+          "min": 2.762135864009951,
+          "max": 12.048522073499539
+        },
+        "latency_write": {
+          "p(50)": 4.223046944665092,
+          "p(95)": 9.473577186275968,
+          "p(99)": 11.527711935647433,
+          "min": 2.762135864009951,
+          "max": 12.048522073499539
+        },
+        "throughput_write": {
+          "count": 51.0,
+          "rate": 10.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "write-1",
+        "closed": true,
+        "began_monotonic": 234958.761165574,
+        "last_monotonic": 234964.275249026,
+        "maximum_poll_gap_seconds": 5.017986273014685,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 51,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 51
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "write-1",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234958.761157752,
+        "last_monotonic": 234964.273916917,
+        "maximum_poll_gap_seconds": 5.017655117000686,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "write-2": {
+      "metrics": {
+        "http_reqs": {
+          "count": 51,
+          "rate": 10.2
+        },
+        "iterations": {
+          "count": 51.0,
+          "rate": 10.2
+        },
+        "successful_operations": {
+          "count": 51.0,
+          "rate": 10.2
+        },
+        "data_received": {
+          "bytes": 22695.0,
+          "bytes_per_second": 4539.0
+        },
+        "data_sent": {
+          "bytes": 18819.0,
+          "bytes_per_second": 3763.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 102.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 3.263475672172311,
+          "p(95)": 5.437214024817453,
+          "p(99)": 6.425947903655755,
+          "min": 2.1298979153618314,
+          "max": 6.5695032441696455
+        },
+        "latency_write": {
+          "p(50)": 3.263475672172311,
+          "p(95)": 5.437214024817453,
+          "p(99)": 6.425947903655755,
+          "min": 2.1298979153618314,
+          "max": 6.5695032441696455
+        },
+        "throughput_write": {
+          "count": 51.0,
+          "rate": 10.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "write-2",
+        "closed": true,
+        "began_monotonic": 234964.288879307,
+        "last_monotonic": 234969.801527444,
+        "maximum_poll_gap_seconds": 4.96789756801445,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 51,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 51
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "write-2",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234964.288871165,
+        "last_monotonic": 234969.800114334,
+        "maximum_poll_gap_seconds": 4.968068204994779,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "write-3": {
+      "metrics": {
+        "http_reqs": {
+          "count": 51,
+          "rate": 10.2
+        },
+        "iterations": {
+          "count": 51.0,
+          "rate": 10.2
+        },
+        "successful_operations": {
+          "count": 51.0,
+          "rate": 10.2
+        },
+        "data_received": {
+          "bytes": 22695.0,
+          "bytes_per_second": 4539.0
+        },
+        "data_sent": {
+          "bytes": 18819.0,
+          "bytes_per_second": 3763.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 102.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 3.2056747024297,
+          "p(95)": 6.698830670509909,
+          "p(99)": 10.570958453887444,
+          "min": 2.1298979153618314,
+          "max": 11.048543456039804
+        },
+        "latency_write": {
+          "p(50)": 3.2056747024297,
+          "p(95)": 6.698830670509909,
+          "p(99)": 10.570958453887444,
+          "min": 2.1298979153618314,
+          "max": 11.048543456039804
+        },
+        "throughput_write": {
+          "count": 51.0,
+          "rate": 10.2
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "write-3",
+        "closed": true,
+        "began_monotonic": 234969.812257324,
+        "last_monotonic": 234975.324390189,
+        "maximum_poll_gap_seconds": 4.890766086988151,
+        "observations": 3,
+        "tracked_series_count": 1,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 51,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 51
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "write-3",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234969.812250604,
+        "last_monotonic": 234975.323035666,
+        "maximum_poll_gap_seconds": 4.890052654984174,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "mixed-1": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 297747.0,
+          "bytes_per_second": 59549.4
+        },
+        "data_sent": {
+          "bytes": 27074.0,
+          "bytes_per_second": 5414.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 192.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.12222254528992,
+          "p(95)": 9.250518835947275,
+          "p(99)": 34.04885277884593,
+          "min": 1.3810679320049755,
+          "max": 37.162722343835036
+        },
+        "latency_read": {
+          "p(50)": 1.8346520900150232,
+          "p(95)": 4.572133782436217,
+          "p(99)": 4.955083210262685,
+          "min": 1.3810679320049755,
+          "max": 5.065779510355506
+        },
+        "throughput_read": {
+          "count": 51.0,
+          "rate": 10.2
+        },
+        "latency_rls": {
+          "p(50)": 2.057345773349288,
+          "p(95)": 3.90625,
+          "p(99)": 5.429368046259127,
+          "min": 1.6423758110424114,
+          "max": 5.524271728019902
+        },
+        "throughput_rls": {
+          "count": 20.0,
+          "rate": 4.0
+        },
+        "latency_panel": {
+          "p(50)": 2.762135864009951,
+          "p(95)": 5.290060730222237,
+          "p(99)": 5.476614318989785,
+          "min": 2.3226701464896897,
+          "max": 5.524271728019902
+        },
+        "throughput_panel": {
+          "count": 10.0,
+          "rate": 2.0
+        },
+        "latency_storage": {
+          "p(50)": 2.8844260662880847,
+          "p(95)": 3.505291162115444,
+          "p(99)": 3.5665625723594903,
+          "min": 2.1298979153618314,
+          "max": 3.582047043768247
+        },
+        "throughput_storage": {
+          "count": 5.0,
+          "rate": 1.0
+        },
+        "latency_login": {
+          "p(50)": 23.075408530304678,
+          "p(95)": 36.3664018367993,
+          "p(99)": 37.00207534378912,
+          "min": 18.581361171917518,
+          "max": 37.162722343835036
+        },
+        "throughput_login": {
+          "count": 5.0,
+          "rate": 1.0
+        },
+        "latency_refresh": {
+          "p(50)": 3.505291162115444,
+          "p(95)": 8.337034380287685,
+          "p(99)": 8.482763174304628,
+          "min": 3.0121305183748848,
+          "max": 8.519591661447325
+        },
+        "throughput_refresh": {
+          "count": 5.0,
+          "rate": 1.0
+        },
+        "latency_write": {
+          "p(50)": 3.1454889295883874,
+          "p(95)": 9.091600459199825,
+          "p(99)": 9.25051883594728,
+          "min": 2.532889755177753,
+          "max": 9.290680585958759
+        },
+        "throughput_write": {
+          "count": 5.0,
+          "rate": 1.0
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "mixed-1",
+        "closed": true,
+        "began_monotonic": 234975.333878059,
+        "last_monotonic": 234983.353387254,
+        "maximum_poll_gap_seconds": 4.936081383988494,
+        "observations": 3,
+        "tracked_series_count": 7,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "mixed-1",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234975.333870768,
+        "last_monotonic": 234983.350588284,
+        "maximum_poll_gap_seconds": 4.934466391016031,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "mixed-2": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 297749.0,
+          "bytes_per_second": 59549.8
+        },
+        "data_sent": {
+          "bytes": 27074.0,
+          "bytes_per_second": 5414.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 192.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.188354985175013,
+          "p(95)": 10.087762321766123,
+          "p(99)": 22.092301013715286,
+          "min": 1.2664448775888766,
+          "max": 40.52623608284405
+        },
+        "latency_read": {
+          "p(50)": 1.9320859632694833,
+          "p(95)": 3.0714274048005206,
+          "p(99)": 5.285479226943722,
+          "min": 1.2664448775888766,
+          "max": 5.524271728019902
+        },
+        "throughput_read": {
+          "count": 51.0,
+          "rate": 10.2
+        },
+        "latency_rls": {
+          "p(50)": 2.1036973159550274,
+          "p(95)": 3.2847516220848227,
+          "p(99)": 3.520509619573555,
+          "min": 1.6423758110424114,
+          "max": 3.582047043768247
+        },
+        "throughput_rls": {
+          "count": 20.0,
+          "rate": 4.0
+        },
+        "latency_panel": {
+          "p(50)": 2.532889755177753,
+          "p(95)": 3.7406378152288036,
+          "p(99)": 3.872551122901026,
+          "min": 2.1298979153618314,
+          "max": 3.90625
+        },
+        "throughput_panel": {
+          "count": 10.0,
+          "rate": 2.0
+        },
+        "latency_storage": {
+          "p(50)": 2.702948988210609,
+          "p(95)": 2.979683888172926,
+          "p(99)": 3.0056130490683186,
+          "min": 2.3226701464896897,
+          "max": 3.0121305183748848
+        },
+        "throughput_storage": {
+          "count": 5.0,
+          "rate": 1.0
+        },
+        "latency_login": {
+          "p(50)": 21.390662858977976,
+          "p(95)": 39.65784241224166,
+          "p(99)": 40.35104928706451,
+          "min": 20.263118041422025,
+          "max": 40.52623608284405
+        },
+        "throughput_login": {
+          "count": 5.0,
+          "rate": 1.0
+        },
+        "latency_refresh": {
+          "p(50)": 3.505291162115444,
+          "p(95)": 6.428732336538925,
+          "p(99)": 6.54110459839221,
+          "min": 3.0121305183748848,
+          "max": 6.5695032441696455
+        },
+        "throughput_refresh": {
+          "count": 5.0,
+          "rate": 1.0
+        },
+        "latency_write": {
+          "p(50)": 3.078087588101341,
+          "p(95)": 9.914460603060416,
+          "p(99)": 10.087762321766128,
+          "min": 2.762135864009951,
+          "max": 10.131559020711013
+        },
+        "throughput_write": {
+          "count": 5.0,
+          "rate": 1.0
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "mixed-2",
+        "closed": true,
+        "began_monotonic": 234983.392079664,
+        "last_monotonic": 234991.413691445,
+        "maximum_poll_gap_seconds": 6.756853121012682,
+        "observations": 4,
+        "tracked_series_count": 7,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "mixed-2",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234983.392070821,
+        "last_monotonic": 234991.412416271,
+        "maximum_poll_gap_seconds": 6.757388174009975,
+        "observations": 4,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "mixed-3": {
+      "metrics": {
+        "http_reqs": {
+          "count": 101,
+          "rate": 20.2
+        },
+        "iterations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "successful_operations": {
+          "count": 101.0,
+          "rate": 20.2
+        },
+        "data_received": {
+          "bytes": 297749.0,
+          "bytes_per_second": 59549.8
+        },
+        "data_sent": {
+          "bytes": 27074.0,
+          "bytes_per_second": 5414.8
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 192.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.291437656569604,
+          "p(95)": 9.250518835947275,
+          "p(99)": 24.0866071590211,
+          "min": 1.5060652591874424,
+          "max": 31.25
+        },
+        "latency_read": {
+          "p(50)": 2.027850015668331,
+          "p(95)": 3.724467787701892,
+          "p(99)": 5.285479226943722,
+          "min": 1.5060652591874424,
+          "max": 5.524271728019902
+        },
+        "throughput_read": {
+          "count": 51.0,
+          "rate": 10.2
+        },
+        "latency_rls": {
+          "p(50)": 2.2976503743169556,
+          "p(95)": 3.90625,
+          "p(99)": 4.1866150880323945,
+          "min": 1.953125,
+          "max": 4.259795830723663
+        },
+        "throughput_rls": {
+          "count": 20.0,
+          "rate": 4.0
+        },
+        "latency_panel": {
+          "p(50)": 2.762135864009951,
+          "p(95)": 4.079194462607085,
+          "p(99)": 4.223046944665092,
+          "min": 2.3226701464896897,
+          "max": 4.259795830723663
+        },
+        "throughput_panel": {
+          "count": 10.0,
+          "rate": 2.0
+        },
+        "latency_storage": {
+          "p(50)": 3.1454889295883874,
+          "p(95)": 6.428732336538925,
+          "p(99)": 6.54110459839221,
+          "min": 2.762135864009951,
+          "max": 6.5695032441696455
+        },
+        "throughput_storage": {
+          "count": 5.0,
+          "rate": 1.0
+        },
+        "latency_login": {
+          "p(50)": 22.580950109016353,
+          "p(95)": 30.580376940240626,
+          "p(99)": 31.114912513540137,
+          "min": 20.263118041422025,
+          "max": 31.25
+        },
+        "throughput_login": {
+          "count": 5.0,
+          "rate": 1.0
+        },
+        "latency_refresh": {
+          "p(50)": 3.9917857369301433,
+          "p(95)": 4.957230301530208,
+          "p(99)": 5.043881160883064,
+          "min": 3.2847516220848227,
+          "max": 5.065779510355506
+        },
+        "throughput_refresh": {
+          "count": 5.0,
+          "rate": 1.0
+        },
+        "latency_write": {
+          "p(50)": 3.078087588101341,
+          "p(95)": 9.091600459199825,
+          "p(99)": 9.25051883594728,
+          "min": 2.762135864009951,
+          "max": 9.290680585958759
+        },
+        "throughput_write": {
+          "count": 5.0,
+          "rate": 1.0
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 5,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "mixed-3",
+        "closed": true,
+        "began_monotonic": 234991.445464524,
+        "last_monotonic": 234999.212854839,
+        "maximum_poll_gap_seconds": 4.870894366002176,
+        "observations": 3,
+        "tracked_series_count": 7,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 101,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 101
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "mixed-3",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 234991.4454552,
+        "last_monotonic": 234999.211262049,
+        "maximum_poll_gap_seconds": 4.870789238018915,
+        "observations": 3,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    },
+    "soak": {
+      "metrics": {
+        "http_reqs": {
+          "count": 961,
+          "rate": 16.016666666666666
+        },
+        "iterations": {
+          "count": 961.0,
+          "rate": 16.016666666666666
+        },
+        "successful_operations": {
+          "count": 961.0,
+          "rate": 16.016666666666666
+        },
+        "data_received": {
+          "bytes": 20490767.0,
+          "bytes_per_second": 341512.7833333333
+        },
+        "data_sent": {
+          "bytes": 13886292.0,
+          "bytes_per_second": 231438.2
+        },
+        "dropped_iterations": {
+          "count": 0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 1826.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.330423212735041,
+          "p(95)": 20.374615820465362,
+          "p(99)": 28.899483121102598,
+          "min": 1.2664448775888766,
+          "max": 48.194088293998156
+        },
+        "latency_read": {
+          "p(50)": 2.0325662837495457,
+          "p(95)": 4.483216854524852,
+          "p(99)": 7.8770710280994996,
+          "min": 1.2664448775888766,
+          "max": 11.048543456039804
+        },
+        "throughput_read": {
+          "count": 481.0,
+          "rate": 8.016666666666667
+        },
+        "latency_rls": {
+          "p(50)": 2.318392302818809,
+          "p(95)": 4.364402883094609,
+          "p(99)": 7.213924302573396,
+          "min": 1.5060652591874424,
+          "max": 12.048522073499539
+        },
+        "throughput_rls": {
+          "count": 192.0,
+          "rate": 3.2
+        },
+        "latency_panel": {
+          "p(50)": 3.0258977388020627,
+          "p(95)": 5.6208342969172636,
+          "p(99)": 11.086901220315488,
+          "min": 2.1298979153618314,
+          "max": 12.048522073499539
+        },
+        "throughput_panel": {
+          "count": 96.0,
+          "rate": 1.6
+        },
+        "latency_storage": {
+          "p(50)": 5.290060730222237,
+          "p(95)": 44.96667437533814,
+          "p(99)": 47.53058603878156,
+          "min": 2.532889755177753,
+          "max": 48.194088293998156
+        },
+        "throughput_storage": {
+          "count": 48.0,
+          "rate": 0.8
+        },
+        "latency_login": {
+          "p(50)": 23.075408530304678,
+          "p(95)": 30.980408983208186,
+          "p(99)": 35.64886612088822,
+          "min": 18.581361171917518,
+          "max": 37.162722343835036
+        },
+        "throughput_login": {
+          "count": 48.0,
+          "rate": 0.8
+        },
+        "latency_refresh": {
+          "p(50)": 3.90625,
+          "p(95)": 5.920767837931241,
+          "p(99)": 7.651721074897865,
+          "min": 3.0121305183748848,
+          "max": 7.8125
+        },
+        "throughput_refresh": {
+          "count": 48.0,
+          "rate": 0.8
+        },
+        "latency_write": {
+          "p(50)": 3.3165267760484656,
+          "p(95)": 6.920058742987189,
+          "p(99)": 42.39388523273973,
+          "min": 2.762135864009951,
+          "max": 44.194173824159215
+        },
+        "throughput_write": {
+          "count": 48.0,
+          "rate": 0.8
+        }
+      },
+      "schema": 2,
+      "latency_estimator": "Prometheus native histogram",
+      "duration_seconds": 60,
+      "http_counter_evidence": {
+        "protocol": "continuous per-series HTTP and expected-rejection counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "phase": "soak",
+        "closed": true,
+        "began_monotonic": 235466.988691987,
+        "last_monotonic": 235530.112107674,
+        "maximum_poll_gap_seconds": 5.539434072008589,
+        "observations": 13,
+        "tracked_series_count": 9,
+        "scenarios": {
+          "traffic": {
+            "project": "single",
+            "http_reqs": 961,
+            "expected_rejections": 0,
+            "status_counts": {
+              "200": 961
+            }
+          },
+          "session-canary": {
+            "project": "single",
+            "http_reqs": 0,
+            "expected_rejections": 0,
+            "status_counts": {}
+          }
+        }
+      },
+      "arrival_counter_evidence": {
+        "phase": "soak",
+        "protocol": "continuous sparse scheduler counters; 120s lookback; maximum 30s polling gap; bounded phase state",
+        "began_monotonic": 235466.988682042,
+        "last_monotonic": 235530.110809189,
+        "maximum_poll_gap_seconds": 5.5392689110012725,
+        "observations": 13,
+        "closed": true,
+        "dropped_by_scenario": {
+          "traffic": 0,
+          "session-canary": 0
+        }
+      }
+    }
+  },
+  "capacity": {
+    "provisional_median_iterations_per_second": 20,
+    "measured_closed_loop_median_iterations_per_second": 20.2,
+    "calibration_ceiling_iterations_per_second": 20,
+    "provisional_workload": "mixed",
+    "qualified_lower_bound_iterations_per_second": 20,
+    "qualification_step_seconds": 5,
+    "five_minute_qualification": false,
+    "soak_iterations_per_second": 16,
+    "soak_fraction": 0.8,
+    "soak_rps": 16,
+    "p95_regression_gate": 1.1,
+    "throughput_regression_gate": 0.9
+  },
+  "invariants": {
+    "auth": {
+      "users": 1,
+      "password_hashes": 1
+    },
+    "outstanding": 0,
+    "database": {
+      "connections": 10,
+      "idle_in_transaction": 0,
+      "waiting_locks": 0
+    },
+    "signature_errors": 0,
+    "file_integrity": {
+      "verified_objects": 34,
+      "maximum_object_bytes": 1048578,
+      "physical_inventory": {
+        "physical_objects": 10034,
+        "physical_bytes": 35651584,
+        "multipart_uploads": null,
+        "unreferenced_keys": [],
+        "gc_grace_seconds": 86400,
+        "collector_period_seconds": 3600
+      }
+    },
+    "event_identities": {
+      "unique_events": 2035,
+      "deliveries": 2035,
+      "duplicates": 0,
+      "missing": 0,
+      "extra": 0
+    }
+  },
+  "resources": {
+    "samples": 151,
+    "maximum_observation_gap_seconds": 11.200000000000045,
+    "component_peaks": {
+      "app": {
+        "memory_current_peak_bytes": 105824256,
+        "anonymous_peak_bytes": 66408448,
+        "oom_kill_max": 0
+      },
+      "pg": {
+        "memory_current_peak_bytes": 399724544,
+        "anonymous_peak_bytes": 47501312,
+        "oom_kill_max": 0
+      },
+      "metrics": {
+        "memory_current_peak_bytes": 39231488,
+        "anonymous_peak_bytes": 36904960,
+        "oom_kill_max": 0
+      }
+    },
+    "pg_peak_disk_mib": 633,
+    "storage_peak_disk_mib": 35
+  },
+  "raw_evidence_location": "target/stress-g05/disk-http-counter-smoke-001"
+}

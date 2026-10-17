@@ -1,0 +1,109 @@
+{
+  "workflow_run_id": 39006750283,
+  "job_id": 117320667369,
+  "status": "passed",
+  "control": {
+    "source_commit": "6e6b51e666681b2d472cb886a0001e59fc0b6f51",
+    "source_test_sha256": "8c2ac46627fbbeb2fcb278df479bdc199a7f32fd20f65af05572ded390a10217",
+    "before": {
+      "uptime_seconds": 5,
+      "synthetic_stale_timestamp": -55,
+      "status": "failed as expected",
+      "category": "negative_synthetic_timestamp"
+    },
+    "unchanged_body_at_uptime120": "passed",
+    "fixed_repetitions": 1000,
+    "fixed_failures": 0,
+    "elapsed_seconds": 0.10198244700001169,
+    "production_timestamp_validation_changed": false,
+    "completed_effective_baas_seconds": 0,
+    "scope": "Pure assertion control of the exact unwrapped test body versus its fixed-clock wrapper; not a load campaign."
+  },
+  "original_failed_jobs": [
+    {
+      "job_id": "117315982042",
+      "source": "ed963add5026f2177156413c4013e9b9b41f32cc",
+      "failed_steps": [
+        "Validate configs, JSON contracts, ignores and fix boundaries"
+      ],
+      "headers": [],
+      "raw_log_bytes": 80671,
+      "panic_locations": [],
+      "python_failure_locations": [
+        {
+          "test": "test_stress_provider_runtime.RuntimePublication.test_missing_stale_or_partial_allocator_evidence_cannot_certify_a_case",
+          "locations": [],
+          "category": "invalid_allocator_observation_time"
+        }
+      ],
+      "python_unit_summaries": [
+        {
+          "tests": 315,
+          "elapsed_seconds": 17.099
+        }
+      ],
+      "scope": "Selected public compiler/lint/guide diagnostics and Rust/Python failure source locations/categories only; no assertion payloads, runtime logs or test-result certification"
+    },
+    {
+      "job_id": "117313068979",
+      "source": "3da98cbe19b7c3e8fdb2c9ee9e4e60840d11ba6a",
+      "failed_steps": [
+        "Validate configs, JSON contracts, ignores and fix boundaries"
+      ],
+      "headers": [],
+      "raw_log_bytes": 78712,
+      "panic_locations": [],
+      "python_failure_locations": [
+        {
+          "test": "test_stress_provider_runtime.RuntimePublication.test_missing_stale_or_partial_allocator_evidence_cannot_certify_a_case",
+          "locations": [],
+          "category": "invalid_allocator_observation_time"
+        }
+      ],
+      "python_unit_summaries": [
+        {
+          "tests": 306,
+          "elapsed_seconds": 17.944
+        }
+      ],
+      "scope": "Selected public compiler/lint/guide diagnostics and Rust/Python failure source locations/categories only; no assertion payloads, runtime logs or test-result certification"
+    },
+    {
+      "job_id": "117312171786",
+      "source": "d3d9d04226db4a5554e9c7bd83a74313cb40ee85",
+      "failed_steps": [
+        "Check the bounded runtime diagnostic regressions"
+      ],
+      "headers": [],
+      "raw_log_bytes": 25032,
+      "panic_locations": [],
+      "python_failure_locations": [
+        {
+          "test": "test_stress_provider_runtime.RuntimePublication.test_missing_stale_or_partial_allocator_evidence_cannot_certify_a_case",
+          "locations": [],
+          "category": "invalid_allocator_observation_time"
+        }
+      ],
+      "python_unit_summaries": [
+        {
+          "tests": 15,
+          "elapsed_seconds": 1.019
+        }
+      ],
+      "scope": "Selected public compiler/lint/guide diagnostics and Rust/Python failure source locations/categories only; no assertion payloads, runtime logs or test-result certification"
+    }
+  ],
+  "source_link": {
+    "original_source_commit": "d3d9d04226db4a5554e9c7bd83a74313cb40ee85",
+    "file": "scripts/review_tests/test_stress_provider_runtime.py",
+    "original_test_method_line": 183,
+    "original_relative_time_expression_line": [
+      189
+    ],
+    "fixture_body_unchanged_verified_by_AST": true,
+    "scope": "Original traceback source lines were not recovered; expression locations are statically resolved from the exact original committed method. The invalid-time category and same method came from original job logs."
+  },
+  "cause": "The stale fixture subtracted 60 seconds from VM monotonic uptime. Uptime below 60 produced a negative synthetic timestamp, correctly rejected by unchanged production validation before the expected stale-gauge assertion.",
+  "after": "Fixed clock 120s; fresh observations separately cover 0/1/59/1000s. The exact unchanged method body is reproduced unwrapped at 5s and passes at 120s; its fixed wrapper passed 1000 repetitions.",
+  "completed_effective_baas_seconds": 0
+}

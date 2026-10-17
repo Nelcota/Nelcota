@@ -1,0 +1,1452 @@
+{
+  "scope": "Original complete failed final007 matrix publication, reconstructed from checksummed public notices. Its workload completion and all five120second case receipts passed, but the old half-rate validation rejected the actual16/32/48/64capacity steps. Original verdict remains FAILED; missing post-guard integrity/restore receipts are not inferred passed. The generator saturated one CPU above16/s, so higher-step drops do not establish server maximum capacity. No overlapping local effective-time credit.",
+  "workflow_run_id": 39041951068,
+  "job_id": 117423061373,
+  "job_conclusion": "failure",
+  "notice_report_sha256": "e9b247ff52b0d4a9b59eba28a4fc16bb599bc565cded85217988dbc7d870bbc9",
+  "notice_parts": 3,
+  "regression_summary": {
+    "source_commit": "80d29c8880745ecafaf578460993f90e0fe7f57d",
+    "tests": 33,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 0.14146858799999507,
+    "successful": true,
+    "failed_tests": []
+  },
+  "report": {
+    "identity": "native-matrix-39041951068-1",
+    "source": "80d29c8880745ecafaf578460993f90e0fe7f57d",
+    "binary_sha256": "d0d1090c91da4435a0d27dcf1dddba1b8695f18f944b1dd8cc5e472089d17432",
+    "scenario": "supplemental-backend-matrix",
+    "certifies_g05": false,
+    "status": "failed",
+    "cleanup_confirmed": true,
+    "resource_samples": 371,
+    "completed_effective_load_seconds": 1850,
+    "checks": {
+      "product_artifact": {
+        "source_commit": "35f4a9725d7edcf571f91084c555c127e7323653",
+        "binary_sha256": "d0d1090c91da4435a0d27dcf1dddba1b8695f18f944b1dd8cc5e472089d17432",
+        "size_bytes": 30463736,
+        "product_tree_objects": {
+          "crates": "2162e23a35dfcc0f04b7605a7493161817513d23",
+          "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+          "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+          "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+          "sdk": "9bd7af8fc90a0a3cd5429ad40d8c3ec7b23efedd",
+          "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
+        },
+        "artifact_workflow_run_id": 39036557006,
+        "scope": "The retained Actions ELF is distinct from the local performance ELF; current product trees must match its build source."
+      },
+      "controller_kernel_budget": {
+        "cpu_quota_usec": 100000,
+        "cpu_period_usec": 100000,
+        "memory_bytes": 536870912,
+        "swap_bytes": 0,
+        "pids": 128
+      },
+      "profile": {
+        "scenarios": [
+          "admin-budgets",
+          "admin-cancellation",
+          "catalog-recovery",
+          "hostile-backend",
+          "auth-links"
+        ],
+        "maximum_requests": 4096,
+        "maximum_body_bytes": 2097152,
+        "maximum_read_bytes": 2097152,
+        "maximum_consumed_bytes": 67108864,
+        "maximum_unread_export_bytes": 268435456,
+        "request_timeout_seconds": 5,
+        "query_release_seconds": 3,
+        "export_release_seconds": 5,
+        "catalog_recovery_seconds": 5,
+        "sql_slots": 4,
+        "export_slots": 2,
+        "pressure_cycles": 5,
+        "slow_clients_each_cycle": 2,
+        "slow_client_hold_seconds": 2,
+        "export_rows": 8192,
+        "export_payload_bytes_each": 1024,
+        "scope": "Owned backend HTTP only; foreground ledger arrivals keep their unchanged SLOs. No public TLS/DNS/SMTP/OAuth or full matrix certification."
+      },
+      "full_profile": true,
+      "local_load_checkpoint_credit_seconds": 0,
+      "cases": {
+        "admin-budgets": {
+          "status": "passed",
+          "requests_so_far": 27,
+          "consumed_bytes_so_far": 12759,
+          "unread_export_upper_bound_bytes": 0,
+          "row_count": 10000,
+          "returned_rows": 1000,
+          "batch_results": 32,
+          "later_mutation_count": 1,
+          "sql_busy_rejections": 5
+        },
+        "admin-cancellation": {
+          "status": "passed",
+          "requests_so_far": 52,
+          "consumed_bytes_so_far": 63980,
+          "unread_export_upper_bound_bytes": 94371840,
+          "cancelled_queries": 5,
+          "intentionally_unconsumed_exports": 10,
+          "query_release_seconds": [
+            0.07662990700009686,
+            0.06806597199988573,
+            0.059307928999942305,
+            0.06951195099986762,
+            0.07509387400000378
+          ],
+          "export_release_seconds": [
+            0.0899707840001156,
+            0.08881164099989292,
+            0.07634163200009425,
+            0.08164608299989595,
+            0.08616964499992719
+          ],
+          "complete_export_rows": 1000,
+          "complete_export_exact_fixture_match": true,
+          "interrupted_exports_claimed_complete": 0
+        },
+        "catalog-recovery": {
+          "status": "passed",
+          "requests_so_far": 226,
+          "consumed_bytes_so_far": 432174,
+          "unread_export_upper_bound_bytes": 94371840,
+          "committed_tables": 20,
+          "mutation_retries": 0,
+          "catalog_discovery_seconds": [
+            0.11617649400000118,
+            0.2086034199999176,
+            0.20975275500018142,
+            0.2087946430001466,
+            0.21894087299983767,
+            0.21051648200000272,
+            0.1260171829999308,
+            0.2097799150001265,
+            0.21646801700012475,
+            0.2112587409999378,
+            0.1039336280000498,
+            0.21093323299987787,
+            0.10472399700006463,
+            0.21057881999990968,
+            0.2118424060001871,
+            0.10363493099998777,
+            0.20728357500001948,
+            0.10503795500017077,
+            0.21557152599984875,
+            0.20994863900000382
+          ],
+          "scope": "Concurrent introspection and committed DDL discovery; forced refresh failure remains covered only by its functional regression."
+        },
+        "hostile-backend": {
+          "status": "passed",
+          "requests_so_far": 252,
+          "consumed_bytes_so_far": 433364,
+          "unread_export_upper_bound_bytes": 94371840,
+          "rejections": {
+            "malformed": 400,
+            "nonfinite": 400,
+            "null": 422,
+            "deep": 422,
+            "missing-cookie": 401,
+            "wrong-origin": 403
+          },
+          "positive_negative_canary_pairs": 5,
+          "closed_slow_header_body_clients": 10,
+          "scope": "Bounded malformed JSON, nonfinite/null/deep bodies, two-second partial headers/bodies, admin cookie/origin and JWT rejection; no public-ingress or complete adversarial-matrix certification."
+        },
+        "auth-links": {
+          "status": "passed",
+          "requests_so_far": 467,
+          "consumed_bytes_so_far": 483928,
+          "unread_export_upper_bound_bytes": 94371840,
+          "cycles": [
+            {
+              "cycle": 1,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 1,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 1,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 2,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 2,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 2,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 3,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 3,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 3,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 4,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 4,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 4,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 5,
+              "kind": "recovery",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 5,
+              "kind": "signup",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 1,
+              "pending_signup_state_retired": false,
+              "created_sessions": 3,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 200,
+              "unrevoked_sessions_after_cleanup": 0
+            },
+            {
+              "cycle": 5,
+              "kind": "magiclink",
+              "concurrent_consumers": 4,
+              "accepted": 1,
+              "rejected": 3,
+              "expired_rejected": true,
+              "wrong_kind_rejected": true,
+              "replay_rejected": true,
+              "database_used_receipts": 0,
+              "pending_signup_state_retired": true,
+              "created_sessions": 2,
+              "unexpected_sessions": 0,
+              "prior_refresh_status": 400,
+              "unrevoked_sessions_after_cleanup": 0
+            }
+          ],
+          "scope": "Real HTTP single-use verification during ledger traffic; generated private tokens are seeded directly in the owned fixture database. This does not exercise SMTP delivery, cooldown/issuance or external OAuth."
+        }
+      },
+      "foreground_phases": {
+        "admin-budgets": {
+          "counts": {
+            "200": 1296,
+            "acknowledged": 1296,
+            "deliberately-dropped-reply": 72,
+            "deliberately-lost-committed-reply": 72
+          },
+          "requested_seconds": 120,
+          "elapsed_seconds": 120.00007718200004,
+          "offered_iterations": 1440,
+          "rate": 12,
+          "fault_injected": true,
+          "exploratory": false,
+          "success_latency": {
+            "p95_ms": 27.004820999991352,
+            "p99_ms": 39.04340899998715,
+            "successful_post_responses": 1296,
+            "method": "nearest rank, successful POST only"
+          },
+          "nominal_qualified": true,
+          "supplemental_action": {
+            "started_after_seconds": 2.000178412999958,
+            "ended_after_seconds": 7.537379395000016,
+            "duration_seconds": 5.5372009820000585,
+            "entire_action_within_offered_window": true
+          },
+          "generator_cpu": {
+            "before": {
+              "process_user_usec": 1036373069,
+              "process_system_usec": 10753985,
+              "terminated_children_cpu_usec": 33934984,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 1083029272,
+                "user_usec": 1059863469,
+                "system_usec": 23165803,
+                "nr_periods": 12363,
+                "nr_throttled": 3021,
+                "throttled_usec": 651526
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 130093,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 130171,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 130513,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 129739,
+                  "steal": 0
+                }
+              }
+            },
+            "after": {
+              "process_user_usec": 1081142396,
+              "process_system_usec": 11499856,
+              "terminated_children_cpu_usec": 36821068,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 1131568638,
+                "user_usec": 1106455512,
+                "system_usec": 25113125,
+                "nr_periods": 13563,
+                "nr_throttled": 3021,
+                "throttled_usec": 651526
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 142058,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 142141,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 142478,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 141703,
+                  "steal": 0
+                }
+              }
+            },
+            "scope": "Ledger generator process (all threads), its current cgroup and terminated children; host CPU steal is cumulative. The sampler shares the generator cgroup. This is diagnostic evidence, not an assertion that generator saturation caused a failure."
+          }
+        },
+        "admin-cancellation": {
+          "counts": {
+            "200": 1296,
+            "acknowledged": 1296,
+            "deliberately-dropped-reply": 72,
+            "deliberately-lost-committed-reply": 72
+          },
+          "requested_seconds": 120,
+          "elapsed_seconds": 120.00009508099993,
+          "offered_iterations": 1440,
+          "rate": 12,
+          "fault_injected": true,
+          "exploratory": false,
+          "success_latency": {
+            "p95_ms": 32.24958099985997,
+            "p99_ms": 41.173077999928864,
+            "successful_post_responses": 1296,
+            "method": "nearest rank, successful POST only"
+          },
+          "nominal_qualified": true,
+          "supplemental_action": {
+            "started_after_seconds": 2.0126422429998456,
+            "ended_after_seconds": 4.343628808999938,
+            "duration_seconds": 2.3309865660000924,
+            "entire_action_within_offered_window": true
+          },
+          "generator_cpu": {
+            "before": {
+              "process_user_usec": 1081143203,
+              "process_system_usec": 11499864,
+              "terminated_children_cpu_usec": 36821068,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 1131568807,
+                "user_usec": 1106455678,
+                "system_usec": 25113128,
+                "nr_periods": 13563,
+                "nr_throttled": 3021,
+                "throttled_usec": 651526
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 142058,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 142141,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 142478,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 141703,
+                  "steal": 0
+                }
+              }
+            },
+            "after": {
+              "process_user_usec": 1125919591,
+              "process_system_usec": 12221826,
+              "terminated_children_cpu_usec": 39820077,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 1180189718,
+                "user_usec": 1153136126,
+                "system_usec": 27053591,
+                "nr_periods": 14763,
+                "nr_throttled": 3021,
+                "throttled_usec": 651526
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 154024,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 154107,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 154466,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 153658,
+                  "steal": 0
+                }
+              }
+            },
+            "scope": "Ledger generator process (all threads), its current cgroup and terminated children; host CPU steal is cumulative. The sampler shares the generator cgroup. This is diagnostic evidence, not an assertion that generator saturation caused a failure."
+          }
+        },
+        "catalog-recovery": {
+          "counts": {
+            "200": 1296,
+            "acknowledged": 1296,
+            "deliberately-dropped-reply": 72,
+            "deliberately-lost-committed-reply": 72
+          },
+          "requested_seconds": 120,
+          "elapsed_seconds": 120.00009011499992,
+          "offered_iterations": 1440,
+          "rate": 12,
+          "fault_injected": true,
+          "exploratory": false,
+          "success_latency": {
+            "p95_ms": 33.95946700015884,
+            "p99_ms": 41.80175400006192,
+            "successful_post_responses": 1296,
+            "method": "nearest rank, successful POST only"
+          },
+          "nominal_qualified": true,
+          "supplemental_action": {
+            "started_after_seconds": 2.0067260799999076,
+            "ended_after_seconds": 7.34727999200004,
+            "duration_seconds": 5.340553912000132,
+            "entire_action_within_offered_window": true
+          },
+          "generator_cpu": {
+            "before": {
+              "process_user_usec": 1125920479,
+              "process_system_usec": 12221835,
+              "terminated_children_cpu_usec": 39820077,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 1180189805,
+                "user_usec": 1153136211,
+                "system_usec": 27053593,
+                "nr_periods": 14763,
+                "nr_throttled": 3021,
+                "throttled_usec": 651526
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 154024,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 154107,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 154466,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 153658,
+                  "steal": 0
+                }
+              }
+            },
+            "after": {
+              "process_user_usec": 1173221005,
+              "process_system_usec": 12956595,
+              "terminated_children_cpu_usec": 42995596,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 1231538958,
+                "user_usec": 1202487596,
+                "system_usec": 29051362,
+                "nr_periods": 15963,
+                "nr_throttled": 3021,
+                "throttled_usec": 651526
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 165978,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 166082,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 166453,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 165610,
+                  "steal": 0
+                }
+              }
+            },
+            "scope": "Ledger generator process (all threads), its current cgroup and terminated children; host CPU steal is cumulative. The sampler shares the generator cgroup. This is diagnostic evidence, not an assertion that generator saturation caused a failure."
+          }
+        },
+        "hostile-backend": {
+          "counts": {
+            "200": 1296,
+            "acknowledged": 1296,
+            "deliberately-dropped-reply": 72,
+            "deliberately-lost-committed-reply": 72
+          },
+          "requested_seconds": 120,
+          "elapsed_seconds": 120.00015248299997,
+          "offered_iterations": 1440,
+          "rate": 12,
+          "fault_injected": true,
+          "exploratory": false,
+          "success_latency": {
+            "p95_ms": 34.23975800001244,
+            "p99_ms": 41.22484799995618,
+            "successful_post_responses": 1296,
+            "method": "nearest rank, successful POST only"
+          },
+          "nominal_qualified": true,
+          "supplemental_action": {
+            "started_after_seconds": 2.0029078799998388,
+            "ended_after_seconds": 12.04585218499983,
+            "duration_seconds": 10.042944304999992,
+            "entire_action_within_offered_window": true
+          },
+          "generator_cpu": {
+            "before": {
+              "process_user_usec": 1173221843,
+              "process_system_usec": 12956605,
+              "terminated_children_cpu_usec": 42995596,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 1231539685,
+                "user_usec": 1202487596,
+                "system_usec": 29052088,
+                "nr_periods": 15963,
+                "nr_throttled": 3021,
+                "throttled_usec": 651526
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 165979,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 166082,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 166453,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 165610,
+                  "steal": 0
+                }
+              }
+            },
+            "after": {
+              "process_user_usec": 1221173255,
+              "process_system_usec": 13728380,
+              "terminated_children_cpu_usec": 45861160,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 1283271801,
+                "user_usec": 1252270924,
+                "system_usec": 31000876,
+                "nr_periods": 17163,
+                "nr_throttled": 3021,
+                "throttled_usec": 651526
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 177942,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 178051,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 178426,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 177569,
+                  "steal": 0
+                }
+              }
+            },
+            "scope": "Ledger generator process (all threads), its current cgroup and terminated children; host CPU steal is cumulative. The sampler shares the generator cgroup. This is diagnostic evidence, not an assertion that generator saturation caused a failure."
+          }
+        },
+        "auth-links": {
+          "counts": {
+            "200": 1296,
+            "acknowledged": 1296,
+            "deliberately-dropped-reply": 72,
+            "deliberately-lost-committed-reply": 72
+          },
+          "requested_seconds": 120,
+          "elapsed_seconds": 120.00009368100018,
+          "offered_iterations": 1440,
+          "rate": 12,
+          "fault_injected": true,
+          "exploratory": false,
+          "success_latency": {
+            "p95_ms": 36.69144800005597,
+            "p99_ms": 43.11124499986363,
+            "successful_post_responses": 1296,
+            "method": "nearest rank, successful POST only"
+          },
+          "nominal_qualified": true,
+          "supplemental_action": {
+            "started_after_seconds": 2.0001754450001954,
+            "ended_after_seconds": 11.349034460000212,
+            "duration_seconds": 9.348859015000016,
+            "entire_action_within_offered_window": true
+          },
+          "generator_cpu": {
+            "before": {
+              "process_user_usec": 1221174165,
+              "process_system_usec": 13728380,
+              "terminated_children_cpu_usec": 45861160,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 1283272586,
+                "user_usec": 1252271709,
+                "system_usec": 31000876,
+                "nr_periods": 17163,
+                "nr_throttled": 3021,
+                "throttled_usec": 651526
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 177942,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 178051,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 178426,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 177569,
+                  "steal": 0
+                }
+              }
+            },
+            "after": {
+              "process_user_usec": 1269625104,
+              "process_system_usec": 14450687,
+              "terminated_children_cpu_usec": 50948730,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 1337674782,
+                "user_usec": 1303920248,
+                "system_usec": 33754533,
+                "nr_periods": 18363,
+                "nr_throttled": 3021,
+                "throttled_usec": 651526
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 189877,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 190017,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 190402,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 189500,
+                  "steal": 0
+                }
+              }
+            },
+            "scope": "Ledger generator process (all threads), its current cgroup and terminated children; host CPU steal is cumulative. The sampler shares the generator cgroup. This is diagnostic evidence, not an assertion that generator saturation caused a failure."
+          }
+        }
+      },
+      "scope": "Separate disposable backend diagnostic; overlapping remote time is excluded from the local eight-hour checkpoint.",
+      "images": {
+        "ubuntu:24.04": {
+          "id": "sha256:6277ab668b2ad3c3ab851d370faa1690d324b30db29d342527f61fed28f20f36",
+          "repo_digests": [
+            "ubuntu@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac"
+          ],
+          "size_bytes": 78177487
+        },
+        "postgres:17-alpine": {
+          "id": "sha256:79bd7c99e923138f136f8009d6bffa66e21e9d4fda5c0c561b00fc9c90cfe537",
+          "repo_digests": [
+            "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+          ],
+          "size_bytes": 297176980
+        }
+      },
+      "original_completion": {
+        "status": "passed",
+        "load_seconds": 1850,
+        "resource_observations": 371,
+        "cleanup_confirmed": true,
+        "error_type": "NoneType"
+      },
+      "capacity": {
+        "qualified_lower_bound_iterations_per_second": 16,
+        "fault_rate": 12,
+        "ratio": 0.75,
+        "workload": "90% acknowledged atomic-transfer RPC plus negative JWT probe, 5% pre-response disconnects, 5% discarded real upstream commit replies; ambiguous outcomes reconciled without retries"
+      },
+      "capacity_probes": [
+        {
+          "counts": {
+            "200": 4320,
+            "acknowledged": 4320,
+            "deliberately-dropped-reply": 240,
+            "deliberately-lost-committed-reply": 240
+          },
+          "requested_seconds": 300,
+          "elapsed_seconds": 300.000067804,
+          "offered_iterations": 4800,
+          "rate": 16,
+          "fault_injected": false,
+          "exploratory": true,
+          "success_latency": {
+            "p95_ms": 29.818959000010636,
+            "p99_ms": 40.85036300000411,
+            "successful_post_responses": 4320,
+            "method": "nearest rank, successful POST only"
+          },
+          "nominal_qualified": true,
+          "generator_cpu": {
+            "before": {
+              "process_user_usec": 8222788,
+              "process_system_usec": 245425,
+              "terminated_children_cpu_usec": 1200996,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 10266923,
+                "user_usec": 9392019,
+                "system_usec": 874903,
+                "nr_periods": 359,
+                "nr_throttled": 2,
+                "throttled_usec": 2329
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 10418,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 10403,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 10458,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 10439,
+                  "steal": 0
+                }
+              }
+            },
+            "after": {
+              "process_user_usec": 170209905,
+              "process_system_usec": 2843135,
+              "terminated_children_cpu_usec": 8748960,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 182765150,
+                "user_usec": 176224619,
+                "system_usec": 6540531,
+                "nr_periods": 3359,
+                "nr_throttled": 2,
+                "throttled_usec": 2329
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 40292,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 40324,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 40459,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 40312,
+                  "steal": 0
+                }
+              }
+            },
+            "scope": "Ledger generator process (all threads), its current cgroup and terminated children; host CPU steal is cumulative. The sampler shares the generator cgroup. This is diagnostic evidence, not an assertion that generator saturation caused a failure."
+          }
+        },
+        {
+          "counts": {
+            "200": 7523,
+            "acknowledged": 7523,
+            "deliberately-dropped-reply": 362,
+            "dropped_arrivals": 1366,
+            "deliberately-lost-committed-reply": 349,
+            "late_arrivals": 179
+          },
+          "requested_seconds": 300,
+          "elapsed_seconds": 300.086296046,
+          "offered_iterations": 9600,
+          "rate": 32,
+          "fault_injected": false,
+          "exploratory": true,
+          "success_latency": {
+            "p95_ms": 178.16853599998694,
+            "p99_ms": 245.31489700007114,
+            "successful_post_responses": 7523,
+            "method": "nearest rank, successful POST only"
+          },
+          "nominal_qualified": false,
+          "generator_cpu": {
+            "before": {
+              "process_user_usec": 170211077,
+              "process_system_usec": 2843137,
+              "terminated_children_cpu_usec": 8748960,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 182766154,
+                "user_usec": 176225623,
+                "system_usec": 6540531,
+                "nr_periods": 3359,
+                "nr_throttled": 2,
+                "throttled_usec": 2329
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 40292,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 40324,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 40459,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 40312,
+                  "steal": 0
+                }
+              }
+            },
+            "after": {
+              "process_user_usec": 458751027,
+              "process_system_usec": 5562170,
+              "terminated_children_cpu_usec": 17173130,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 482784508,
+                "user_usec": 470621685,
+                "system_usec": 12162823,
+                "nr_periods": 6360,
+                "nr_throttled": 1066,
+                "throttled_usec": 223510
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 70218,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 70256,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 70476,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 70114,
+                  "steal": 0
+                }
+              }
+            },
+            "scope": "Ledger generator process (all threads), its current cgroup and terminated children; host CPU steal is cumulative. The sampler shares the generator cgroup. This is diagnostic evidence, not an assertion that generator saturation caused a failure."
+          }
+        },
+        {
+          "counts": {
+            "200": 7563,
+            "acknowledged": 7563,
+            "late_arrivals": 475,
+            "dropped_arrivals": 5985,
+            "deliberately-dropped-reply": 444,
+            "deliberately-lost-committed-reply": 408
+          },
+          "requested_seconds": 300,
+          "elapsed_seconds": 300.093156057,
+          "offered_iterations": 14400,
+          "rate": 48,
+          "fault_injected": false,
+          "exploratory": true,
+          "success_latency": {
+            "p95_ms": 186.02754399989863,
+            "p99_ms": 263.72746200001984,
+            "successful_post_responses": 7563,
+            "method": "nearest rank, successful POST only"
+          },
+          "nominal_qualified": false,
+          "generator_cpu": {
+            "before": {
+              "process_user_usec": 458758062,
+              "process_system_usec": 5563164,
+              "terminated_children_cpu_usec": 17173130,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 482792900,
+                "user_usec": 470629068,
+                "system_usec": 12163832,
+                "nr_periods": 6360,
+                "nr_throttled": 1066,
+                "throttled_usec": 223510
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 70218,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 70256,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 70477,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 70115,
+                  "steal": 0
+                }
+              }
+            },
+            "after": {
+              "process_user_usec": 747383256,
+              "process_system_usec": 8243964,
+              "terminated_children_cpu_usec": 25603974,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 782872144,
+                "user_usec": 765060023,
+                "system_usec": 17812121,
+                "nr_periods": 9361,
+                "nr_throttled": 1972,
+                "throttled_usec": 446260
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 100136,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 100208,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 100487,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 99918,
+                  "steal": 0
+                }
+              }
+            },
+            "scope": "Ledger generator process (all threads), its current cgroup and terminated children; host CPU steal is cumulative. The sampler shares the generator cgroup. This is diagnostic evidence, not an assertion that generator saturation caused a failure."
+          }
+        },
+        {
+          "counts": {
+            "200": 7775,
+            "acknowledged": 7775,
+            "dropped_arrivals": 10557,
+            "deliberately-dropped-reply": 558,
+            "deliberately-lost-committed-reply": 310,
+            "late_arrivals": 779
+          },
+          "requested_seconds": 300,
+          "elapsed_seconds": 300.1430651029999,
+          "offered_iterations": 19200,
+          "rate": 64,
+          "fault_injected": false,
+          "exploratory": true,
+          "success_latency": {
+            "p95_ms": 189.5956920000117,
+            "p99_ms": 263.7637120000136,
+            "successful_post_responses": 7775,
+            "method": "nearest rank, successful POST only"
+          },
+          "nominal_qualified": false,
+          "generator_cpu": {
+            "before": {
+              "process_user_usec": 747384707,
+              "process_system_usec": 8243964,
+              "terminated_children_cpu_usec": 25603974,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 782874041,
+                "user_usec": 765061920,
+                "system_usec": 17812121,
+                "nr_periods": 9361,
+                "nr_throttled": 1972,
+                "throttled_usec": 446260
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 100136,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 100208,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 100487,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 99918,
+                  "steal": 0
+                }
+              }
+            },
+            "after": {
+              "process_user_usec": 1036356297,
+              "process_system_usec": 10753004,
+              "terminated_children_cpu_usec": 33934984,
+              "current_process_cgroup_cpu": {
+                "usage_usec": 1083010730,
+                "user_usec": 1059845917,
+                "system_usec": 23164813,
+                "nr_periods": 12363,
+                "nr_throttled": 3021,
+                "throttled_usec": 651526
+              },
+              "cpu_quota_usec": 100000,
+              "cpu_period_usec": 100000,
+              "affinity": [
+                2
+              ],
+              "host_cpu_ticks": {
+                "cpu0": {
+                  "total_without_guests": 130091,
+                  "steal": 0
+                },
+                "cpu1": {
+                  "total_without_guests": 130169,
+                  "steal": 0
+                },
+                "cpu2": {
+                  "total_without_guests": 130510,
+                  "steal": 0
+                },
+                "cpu3": {
+                  "total_without_guests": 129737,
+                  "steal": 0
+                }
+              }
+            },
+            "scope": "Ledger generator process (all threads), its current cgroup and terminated children; host CPU steal is cumulative. The sampler shares the generator cgroup. This is diagnostic evidence, not an assertion that generator saturation caused a failure."
+          }
+        }
+      ],
+      "resource_evidence": {
+        "samples": 371,
+        "maximum_gap_seconds": 5.817261931000019,
+        "component_peaks": {
+          "app-0": {
+            "memory_current_bytes": 45486080,
+            "memory_peak_bytes": 53882880,
+            "anonymous_bytes": 43589632,
+            "tasks": 7,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 351997
+          },
+          "pg-0": {
+            "memory_current_bytes": 150577152,
+            "memory_peak_bytes": 159334400,
+            "anonymous_bytes": 33726464,
+            "tasks": 23,
+            "oom_events": 0,
+            "oom_kills": 0,
+            "cpu_throttled_usec": 1675497
+          }
+        },
+        "public_file": "resources.jsonl.gz",
+        "compressed_bytes": 9838,
+        "sha256": "8abbfa4a703cfdef2259e0cc54e4686752ad8531bd89504be68a80dd801d78cc",
+        "scope": "Numeric cgroup projection only; private resource/log/SQL fields are excluded."
+      }
+    },
+    "failure": {
+      "type": "RuntimeError"
+    },
+    "elapsed_seconds_including_preparation": 1869.2125928819999
+  },
+  "diagnostic_reconciliation": {
+    "old_assertion_evaluated_on_actual_exported_capacity_probes": false,
+    "old_expected_rates": [
+      8,
+      16,
+      24,
+      32
+    ],
+    "actual_rates": [
+      16,
+      32,
+      48,
+      64
+    ],
+    "integrity_and_restore_public_receipts_present": false,
+    "generator_cpu": [
+      {
+        "offered_iterations_per_second": 16,
+        "self_cpu_fraction": 0.5486159660054768,
+        "cgroup_cpu_fraction": 0.5749939600436984,
+        "host_steal_ticks": {
+          "cpu0": 0,
+          "cpu1": 0,
+          "cpu2": 0,
+          "cpu3": 0
+        },
+        "dropped_arrivals": 0,
+        "qualified": true
+      },
+      {
+        "offered_iterations_per_second": 32,
+        "self_cpu_fraction": 0.9705840847705793,
+        "cgroup_cpu_fraction": 0.9997735916404874,
+        "host_steal_ticks": {
+          "cpu0": 0,
+          "cpu1": 0,
+          "cpu2": 0,
+          "cpu3": 0
+        },
+        "dropped_arrivals": 1366,
+        "qualified": false
+      },
+      {
+        "offered_iterations_per_second": 48,
+        "self_cpu_fraction": 0.9707185522907062,
+        "cgroup_cpu_fraction": 0.9999536408721119,
+        "host_steal_ticks": {
+          "cpu0": 0,
+          "cpu1": 0,
+          "cpu2": 0,
+          "cpu3": 0
+        },
+        "dropped_arrivals": 5985,
+        "qualified": false
+      },
+      {
+        "offered_iterations_per_second": 64,
+        "self_cpu_fraction": 0.9711389796728197,
+        "cgroup_cpu_fraction": 0.9999787564540339,
+        "host_steal_ticks": {
+          "cpu0": 0,
+          "cpu1": 0,
+          "cpu2": 0,
+          "cpu3": 0
+        },
+        "dropped_arrivals": 10557,
+        "qualified": false
+      }
+    ]
+  }
+}

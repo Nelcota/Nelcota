@@ -1,0 +1,50 @@
+{
+  "source_commit": "860d2f990949bfc5c8c612de3341c65a39e8d259",
+  "build_command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "nelcota-server"
+  ],
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+  "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+  "cargo_lock_sha256": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff",
+  "workspace_manifest_sha256": "2527746af359ef502f1bd6a836fda5a161456fcf7d11766a1b1d4da64a86de09",
+  "build_jobs": 4,
+  "incremental": "0",
+  "release_profile": {
+    "lto": "thin",
+    "codegen_units": 1
+  },
+  "compiler_overrides": [],
+  "build_exit": 0,
+  "build_seconds": 90.04832498799078,
+  "completed_utc": "2026-10-17T11:41:11.148392+00:00",
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "binary_sha256": "c7e3d25467823c9d44157aca762761c23a49cd81f8ee96915b468f7bc3d119a4",
+  "size": 30480704,
+  "scope": "Fresh frozen local staging candidate after native-browser SDK late-overlap refresh correction and rebuilt embedded guide assets, retaining SQL/export ownership corrections; no production release or deployment",
+  "status": "frozen; ordinary CI18/18 and native common-ELF12/12 passed on matching product trees; affected live campaigns pending",
+  "certifies_g05": false,
+  "product_tree_objects": {
+    "crates": "edcd9d9f13b82a7062fb2738031ff7b5abd1b35f",
+    "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+    "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+    "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+    "sdk": "273cc4331f10fb509e1b77590d970854d4a73a2e",
+    "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
+  },
+  "previous_build": "final-local-candidate-f40774e.json",
+  "build_receipt": "candidate-final-006.json",
+  "architecture": "x86_64-unknown-linux-gnu",
+  "ordinary_ci_evidence": "ci-sdk006-final-product-trees.json",
+  "native_suite_evidence": "native-final-suite/index.json"
+}

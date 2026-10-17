@@ -27,7 +27,17 @@ jobs:
       - run: python3 scripts/check-boundaries.py
       - run: cargo clippy --all-targets -- -D warnings
       # Integration tests start Postgres 17 via testcontainers (the runner's Docker).
-      - run: cargo test --all
+      - id: rust-tests
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo test --all 2>&1 | tee "$RUNNER_TEMP/nelcota-rust-test.log"
+      - name: expose failed Rust test identities
+        if: ${{ failure() && steps.rust-tests.outcome == 'failure' }}
+        run: python3 scripts/report-rust-test-failures.py "$RUNNER_TEMP/nelcota-rust-test.log"
+      - name: Dedicated SQL and export cancellation ownership controls
+        timeout-minutes: 2
+        run: nice -n19 ionice -c3 cargo test --locked -p nelcota-server --test sql_cancellation -- --nocapture
       - name: documented Notes onboarding
         timeout-minutes: 5
         run: |
@@ -80,6 +90,62 @@ jobs:
       - run: python3 scripts/run-preset.py base
       - run: python3 scripts/run-preset.py performance/imports
       - run: python3 -m unittest discover -s scripts/review_tests -v
+      - name: bounded native benchmark byte oracle
+        timeout-minutes: 3
+        run: python3 bench/oracle_check.py --output target/stress-oracles/bytes
+      - name: native byte oracle results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-benchmark-byte-oracle
+          path: target/stress-oracles/bytes/*.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: bounded native sparse arrival counters
+        timeout-minutes: 5
+        run: python3 bench/arrival_check.py --output target/stress-oracles/arrivals
+      - name: native sparse counter results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-sparse-arrival-oracle
+          path: |
+            target/stress-oracles/arrivals/native-arrivals.json
+            target/stress-oracles/arrivals/completion.json
+            target/stress-oracles/arrivals/profile.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: bounded native sparse HTTP counters and generator fallback
+        timeout-minutes: 6
+        run: python3 bench/http_check.py --output target/stress-oracles/http
+      - name: native HTTP counter results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-sparse-http-oracle
+          path: |
+            target/stress-oracles/http/native-http.json
+            target/stress-oracles/http/completion.json
+            target/stress-oracles/http/profile.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: bounded native TSDB compaction
+        timeout-minutes: 3
+        run: python3 bench/compaction_check.py --output target/stress-oracles/compaction
+      - name: native compaction results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-tsdb-compaction-oracle
+          path: |
+            target/stress-oracles/compaction/native-compaction.json
+            target/stress-oracles/compaction/completion.json
+            target/stress-oracles/compaction/profile.json
+          if-no-files-found: ignore
+          retention-days: 7
 
   supply-chain:
     runs-on: ubuntu-latest

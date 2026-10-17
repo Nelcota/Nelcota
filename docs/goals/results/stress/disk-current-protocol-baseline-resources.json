@@ -1,0 +1,15 @@
+{
+  "run_id": "disk-final-pass-1-002",
+  "harness_source_commit": "1f391594dd8db6cccac54d6720d90c33d461d1f1",
+  "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+  "source_recorded_status": "passed",
+  "certifies_g05": false,
+  "samples": 3283,
+  "csv_sha256": "528cb3cf65600bfe15f8626cadcc52d097f2783abd41609c3a90dc91bdda26e0",
+  "source_index_sha256": "9fcfc58d9bc26b080831c82064f832641ba6fa5dc4da98cb8a490ef81f2d95f1",
+  "matplotlib_version": "3.10.8",
+  "plotter_sha256": "e1076161947003cb14b0137e4655b2ba3dedd911b6fb08daefe9335db4fadfe9",
+  "svg_sha256": "285c1ff24788cfaa9732510259e51606b91d02771acba73e8098e73038321f07",
+  "png_sha256": "5569c46e43690f0a7d35835d3de29e749bfa5f8196db1626d108f33065df5b4e",
+  "scope": "Scientific visualization of the allowlisted closed resource CSV; no heap attribution, inferred zeros or independent G05 approval"
+}

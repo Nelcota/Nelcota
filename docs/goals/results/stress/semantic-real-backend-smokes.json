@@ -1,0 +1,421 @@
+{
+  "certifies_g05": false,
+  "certifies_four_hour_endurance": false,
+  "qualification_seconds": 5,
+  "absolute_SLOs_unchanged": true,
+  "runs": [
+    {
+      "run_id": "semantic-disk-smoke-001",
+      "scope": "real-backend functional diagnostic, not capacity/endurance certification",
+      "completion": {
+        "status": "passed",
+        "load_seconds": 150.0,
+        "resource_observations": 39,
+        "soak_seconds": 60,
+        "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+        "cleanup_confirmed": true,
+        "error_type": "NoneType"
+      },
+      "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+      "harness_js_sha256": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+      "invariants": {
+        "auth": {
+          "users": 1,
+          "password_hashes": 1
+        },
+        "outstanding": 0,
+        "database": {
+          "connections": 10,
+          "idle_in_transaction": 0,
+          "waiting_locks": 0
+        },
+        "signature_errors": 0,
+        "file_integrity": {
+          "verified_objects": 17,
+          "maximum_object_bytes": 64,
+          "physical_inventory": {
+            "physical_objects": 10017,
+            "physical_bytes": 291,
+            "multipart_uploads": null,
+            "unreferenced_keys": [],
+            "gc_grace_seconds": 86400,
+            "collector_period_seconds": 3600
+          }
+        },
+        "event_identities": {
+          "unique_events": 1553,
+          "deliveries": 1553,
+          "duplicates": 0,
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      "completed_60_second_mixed_metrics": {
+        "http_reqs": {
+          "count": 841.0,
+          "rate": 14.016666666666667
+        },
+        "iterations": {
+          "count": 841.0,
+          "rate": 14.016666666666667
+        },
+        "successful_operations": {
+          "count": 841.0,
+          "rate": 14.016666666666667
+        },
+        "data_received": {
+          "bytes": 2333630.0,
+          "bytes_per_second": 38893.833333333336
+        },
+        "data_sent": {
+          "bytes": 223476.0,
+          "bytes_per_second": 3724.6
+        },
+        "dropped_iterations": {
+          "count": 0.0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 1598.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0.0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.8752525790680217,
+          "p(95)": 21.437047069571413,
+          "p(99)": 31.517385375899043,
+          "min": 1.5060652591874424,
+          "max": 57.31275270029195
+        },
+        "latency_read": {
+          "p(50)": 2.4386737835726655,
+          "p(95)": 6.08656404216407,
+          "p(99)": 7.777043372273318,
+          "min": 1.5060652591874424,
+          "max": 18.581361171917518
+        },
+        "throughput_read": {
+          "count": 421.0,
+          "rate": 7.016666666666667
+        },
+        "latency_rls": {
+          "p(50)": 2.704723757615239,
+          "p(95)": 5.819052590323053,
+          "p(99)": 10.41639591477499,
+          "min": 1.5060652591874424,
+          "max": 17.03918332289465
+        },
+        "throughput_rls": {
+          "count": 168.0,
+          "rate": 2.8
+        },
+        "latency_panel": {
+          "p(50)": 3.6060006811287844,
+          "p(95)": 5.972290263683636,
+          "p(99)": 8.638520729064597,
+          "min": 2.532889755177753,
+          "max": 9.290680585958759
+        },
+        "throughput_panel": {
+          "count": 84.0,
+          "rate": 1.4
+        },
+        "latency_storage": {
+          "p(50)": 3.90625,
+          "p(95)": 14.204580148868112,
+          "p(99)": 23.235910689416446,
+          "min": 2.3226701464896897,
+          "max": 24.097044146999078
+        },
+        "throughput_storage": {
+          "count": 42.0,
+          "rate": 0.7
+        },
+        "latency_login": {
+          "p(50)": 27.14584117615166,
+          "p(95)": 36.84212278852539,
+          "p(99)": 55.26462063084364,
+          "min": 20.263118041422025,
+          "max": 57.31275270029195
+        },
+        "throughput_login": {
+          "count": 42.0,
+          "rate": 0.7
+        },
+        "latency_refresh": {
+          "p(50)": 4.712908323439537,
+          "p(95)": 8.018232686643936,
+          "p(99)": 8.416872624341952,
+          "min": 3.2847516220848227,
+          "max": 8.519591661447325
+        },
+        "throughput_refresh": {
+          "count": 42.0,
+          "rate": 0.7
+        },
+        "latency_write": {
+          "p(50)": 4.138527712340997,
+          "p(95)": 8.14073628729336,
+          "p(99)": 8.442435690430521,
+          "min": 3.0121305183748848,
+          "max": 8.519591661447325
+        },
+        "throughput_write": {
+          "count": 42.0,
+          "rate": 0.7
+        }
+      },
+      "component_resource_peaks": {
+        "app": {
+          "memory_current_peak_bytes": 30486528,
+          "anonymous_peak_bytes": 28323840,
+          "oom_kill_max": 0
+        },
+        "pg": {
+          "memory_current_peak_bytes": 253059072,
+          "anonymous_peak_bytes": 32722944,
+          "oom_kill_max": 0
+        },
+        "metrics": {
+          "memory_current_peak_bytes": 30691328,
+          "anonymous_peak_bytes": 29134848,
+          "oom_kill_max": 0
+        }
+      },
+      "final_idle": {
+        "phase": "post-load-idle",
+        "idle_seconds": 30,
+        "app_owners": "fds 19\ntasks 4\nsockets 13",
+        "database": {
+          "connections": 10,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        }
+      },
+      "raw_evidence_sha256": {
+        "completion.json": "eee0073fee31cb4abd8453c9d37c2c8a4a16ba7347900bda80bae48c398e3401",
+        "invariants.json": "3ee30245e9fb7c0abb4e008f7cc341f7d6c8c7af7a7c46a2f1530886ad5a66fa",
+        "soak.json": "4f6b243cc3fd200521917362f7f18a305eacf97799b95a828ddc07fa127ef1e3",
+        "cleanup.json": "6815ca629f91d3fb5809f1bfa5ee9ce96535da961ea80579a9f3b5730675790f",
+        "resources.jsonl": "7df34151ac63947f6d7b0fc314b1c8b4d3318ec6d1418ca0046b64cbb7c77971",
+        "traffic-ledger.jsonl": "dbd4d22c61482dc8a660926b4900762cb498ba25e173f46a92f47a00591d44fe"
+      }
+    },
+    {
+      "run_id": "semantic-s3-smoke-001",
+      "scope": "real-backend functional diagnostic, not capacity/endurance certification",
+      "completion": {
+        "status": "passed",
+        "load_seconds": 150.0,
+        "resource_observations": 36,
+        "soak_seconds": 60,
+        "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+        "cleanup_confirmed": true,
+        "error_type": "NoneType"
+      },
+      "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+      "harness_js_sha256": "bed38a65df01623f8d3ccb1b3b3870aee5435ba75a6d39845b556329891d9d81",
+      "invariants": {
+        "auth": {
+          "users": 1,
+          "password_hashes": 1
+        },
+        "outstanding": 0,
+        "database": {
+          "connections": 10,
+          "idle_in_transaction": 0,
+          "waiting_locks": 0
+        },
+        "signature_errors": 0,
+        "file_integrity": {
+          "verified_objects": 17,
+          "maximum_object_bytes": 64,
+          "physical_inventory": {
+            "physical_objects": 10017,
+            "physical_bytes": 291,
+            "multipart_uploads": 0,
+            "unreferenced_keys": [],
+            "gc_grace_seconds": 86400,
+            "collector_period_seconds": 3600
+          }
+        },
+        "event_identities": {
+          "unique_events": 1549,
+          "deliveries": 1549,
+          "duplicates": 0,
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      "completed_60_second_mixed_metrics": {
+        "http_reqs": {
+          "count": 854.0,
+          "rate": 14.233333333333333
+        },
+        "iterations": {
+          "count": 841.0,
+          "rate": 14.016666666666667
+        },
+        "successful_operations": {
+          "count": 841.0,
+          "rate": 14.016666666666667
+        },
+        "data_received": {
+          "bytes": 2339997.0,
+          "bytes_per_second": 38999.95
+        },
+        "data_sent": {
+          "bytes": 231913.0,
+          "bytes_per_second": 3865.2166666666667
+        },
+        "dropped_iterations": {
+          "count": 0.0
+        },
+        "unexpected": {
+          "value": 0.0
+        },
+        "checks": {
+          "passes": 1598.0,
+          "fails": 0.0
+        },
+        "expected_rejections": {
+          "count": 0.0
+        },
+        "overload_rejections": {
+          "count": 0.0
+        },
+        "http_req_duration": {
+          "p(50)": 2.6036887783081486,
+          "p(95)": 22.300107026923353,
+          "p(99)": 34.66403319091931,
+          "min": 0.8955117609420618,
+          "max": 62.5
+        },
+        "latency_read": {
+          "p(50)": 2.262266388253973,
+          "p(95)": 5.400046328689788,
+          "p(99)": 8.971614420358016,
+          "min": 1.2664448775888766,
+          "max": 22.097086912079607
+        },
+        "throughput_read": {
+          "count": 421.0,
+          "rate": 7.016666666666667
+        },
+        "latency_rls": {
+          "p(50)": 2.5213656209910247,
+          "p(95)": 5.199180653217746,
+          "p(99)": 6.193626067267847,
+          "min": 1.6423758110424114,
+          "max": 13.139006488339291
+        },
+        "throughput_rls": {
+          "count": 168.0,
+          "rate": 2.8
+        },
+        "latency_panel": {
+          "p(50)": 3.162568623427468,
+          "p(95)": 5.476614318989785,
+          "p(99)": 10.272990314102111,
+          "min": 2.3226701464896897,
+          "max": 11.048543456039804
+        },
+        "throughput_panel": {
+          "count": 84.0,
+          "rate": 1.4
+        },
+        "latency_storage": {
+          "p(50)": 3.90625,
+          "p(95)": 16.96552634860924,
+          "p(99)": 60.26649614074691,
+          "min": 0.8955117609420618,
+          "max": 62.5
+        },
+        "throughput_storage": {
+          "count": 42.0,
+          "rate": 0.7
+        },
+        "latency_login": {
+          "p(50)": 28.347690242193732,
+          "p(95)": 43.81291455191828,
+          "p(99)": 60.26649614074691,
+          "min": 20.263118041422025,
+          "max": 62.5
+        },
+        "throughput_login": {
+          "count": 42.0,
+          "rate": 0.7
+        },
+        "latency_refresh": {
+          "p(50)": 4.496832929503839,
+          "p(95)": 7.143433222282055,
+          "p(99)": 9.769497001942877,
+          "min": 3.2847516220848227,
+          "max": 10.131559020711013
+        },
+        "throughput_refresh": {
+          "count": 42.0,
+          "rate": 0.7
+        },
+        "latency_write": {
+          "p(50)": 4.079194462607085,
+          "p(95)": 6.277365814527535,
+          "p(99)": 6.5100078572961575,
+          "min": 2.762135864009951,
+          "max": 6.5695032441696455
+        },
+        "throughput_write": {
+          "count": 42.0,
+          "rate": 0.7
+        }
+      },
+      "component_resource_peaks": {
+        "app": {
+          "memory_current_peak_bytes": 31809536,
+          "anonymous_peak_bytes": 29437952,
+          "oom_kill_max": 0
+        },
+        "pg": {
+          "memory_current_peak_bytes": 253190144,
+          "anonymous_peak_bytes": 32567296,
+          "oom_kill_max": 0
+        },
+        "metrics": {
+          "memory_current_peak_bytes": 30855168,
+          "anonymous_peak_bytes": 29102080,
+          "oom_kill_max": 0
+        },
+        "s3": {
+          "memory_current_peak_bytes": 234094592,
+          "anonymous_peak_bytes": 123346944,
+          "oom_kill_max": 0
+        }
+      },
+      "final_idle": {
+        "phase": "post-load-idle",
+        "idle_seconds": 30,
+        "app_owners": "fds 21\ntasks 4\nsockets 15",
+        "database": {
+          "connections": 10,
+          "stuck_idle_transactions": 0,
+          "waiting_locks": 0
+        }
+      },
+      "raw_evidence_sha256": {
+        "completion.json": "e364b450fe2af3079e08fe915584e99e45450f67a812e14b39aecdd185ecd14a",
+        "invariants.json": "31db69a98621837729f99ebe079e00df6ec973572bafe5ce5fef54c84931edc8",
+        "soak.json": "da937ba13851c876b33887b69e773d963ae27e19977e2029a5aff703073cce91",
+        "cleanup.json": "6815ca629f91d3fb5809f1bfa5ee9ce96535da961ea80579a9f3b5730675790f",
+        "resources.jsonl": "f2a3a4e490d8160a03b26a000adc138807e3ad0f7c969f504e413abac5b52200",
+        "traffic-ledger.jsonl": "a6115c1cf4e8bd078dda37938f02eef074ef8527cf2e85dc50e53a1b0ea1155e"
+      }
+    }
+  ]
+}

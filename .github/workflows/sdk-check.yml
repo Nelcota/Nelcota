@@ -32,7 +32,17 @@ jobs:
       - run: npm ci
       - run: npm audit --audit-level=high
       - run: npm run check
-      - run: npm test
+      - name: Check public SDK unit evidence privacy
+        run: python3 -m unittest discover -s scripts/review_tests -p test_sdk_unit_evidence.py -v
+        working-directory: .
+      - name: SDK unit regressions
+        id: sdk_unit
+        run: |
+          mkdir -p ../../target
+          npm test -- --reporter=default --reporter=json --outputFile=../../target/sdk-unit-results.json
+      - name: Public SDK unit counts and independent-client controls
+        if: always() && (steps.sdk_unit.conclusion == 'success' || steps.sdk_unit.conclusion == 'failure')
+        run: python3 ../../bench/sdk_unit_evidence.py ../../target/sdk-unit-results.json
       - run: npm run test:types
       - run: npm run build
       - run: npm run size

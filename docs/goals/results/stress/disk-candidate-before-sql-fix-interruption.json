@@ -1,0 +1,27 @@
+{
+  "run_id": "disk-candidate-pass-1-001",
+  "requested_utc": "2026-10-17T06:15:32.770309+00:00",
+  "pid": 2468298,
+  "process_identity": "27211452",
+  "signal": "SIGTERM once to verified campaign owner only",
+  "reason": "Confirmed production SQL admission defect117325955308 requires fresh final build and affected repetitions. Preserve this interrupted candidate and stop the serial chain on its failed closure; no production or foreign resource is touched.",
+  "source_evidence": "sql-cancellation-admission-before.json",
+  "status": "interrupted; closure and owned cleanup confirmed",
+  "completion": {
+    "status": "failed",
+    "load_seconds": 4305.0,
+    "resource_observations": 1559,
+    "soak_seconds": 14400,
+    "binary_sha256": "b047fb880feb10e41e7d0308e6037b8cd3bc770b0452a30cab59c3e2d20514a0",
+    "cleanup_confirmed": true,
+    "error_type": "RuntimeError"
+  },
+  "cleanup": {
+    "containers": [],
+    "volumes": [],
+    "directory_removed": true
+  },
+  "closed_effective_seconds_excluding_warmup_and_partial_soak": 4290,
+  "partial_soak_credit_seconds": 0,
+  "scope": "Original interrupted verdict retained. Excluded from checkpoint014. The prior binary cannot certify the SQL correction."
+}

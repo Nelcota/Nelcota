@@ -1,0 +1,21 @@
+{
+  "scope": "native staging guard acceptance only",
+  "certifies_g05": false,
+  "cpu_quota_each": 0.02,
+  "memory_mib_each": 32,
+  "maximum_seconds": 180,
+  "foreign_operations_rejected": [
+    "stop",
+    "rm",
+    "kill",
+    "foreign_volume_create"
+  ],
+  "resource_gap_stopped_traffic": true,
+  "actual_container_pidfd_kill": true,
+  "owner_pidfd_SIGTERM": true,
+  "foreign_sentinel_preserved": true,
+  "stop_reason": "resource_observation_gap",
+  "elapsed_seconds": 5.418396251014201,
+  "run_id": "native-guards-002",
+  "cleanup_confirmed": true
+}
