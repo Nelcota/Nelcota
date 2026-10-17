@@ -7,6 +7,11 @@ Dates refer to published releases; Unreleased describes source changes.
 
 ### Fixed
 
+- Coalesce native browser refresh calls that arrive while another tab is
+  rotating, preserving the original comparison snapshot before waiting on
+  Web Locks. Authoritative journal checks still guard every accepted rotation;
+  later explicit refreshes remain independent.
+
 - Release cancelled shared-operation waiters immediately while accepted rotation
   finishes and persists its result; prevent retained AbortSignal/listener graphs.
 

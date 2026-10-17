@@ -206,12 +206,20 @@ export class SessionManager {
     const result = await this.get();
     return result.data?.access_token ?? this.#session?.access_token ?? null;
   }
+  #refreshSnapshot(): Session | null {
+    if (!this.#native || this.#dirty) return this.#session ?? null;
+    // This is only a comparison hint. Read before waiting on the Web Lock:
+    // current() could wait for another rotation and observe its replacement.
+    // The locked journal read below remains the authority for every mutation.
+    try { return parseSession(this.#nativeValue(this.key)) ?? this.#session ?? null; }
+    catch { return this.#session ?? null; }
+  }
   refresh(options: AuthRequestOptions = {}, snapshot?: Session): Promise<Result<Session>> {
     if (options.signal?.aborted) return Promise.resolve(fail(clientError('aborted', 'The request was aborted')));
     this.#refreshing ??= (async () => {
       // A broadcast can reload a replacement after get() observed expiry.
       // Compare with that original session instead of rotating its replacement.
-      const known = snapshot ?? await this.current();
+      const known = snapshot ?? this.#refreshSnapshot() ?? await this.current();
       if (!known) return fail(clientError('session_missing', 'Not signed in'));
       return this.#locked(async () => {
         const current = await this.#read(true);
