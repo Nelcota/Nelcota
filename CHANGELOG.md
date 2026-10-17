@@ -27,6 +27,9 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Resolve the host directory before generating native systemd configuration,
+  allowing the documented installation from the current application directory
+  without a relative `EnvironmentFile` and repeated application startup failure.
 - Release catalog retry/listener owners and cancelled client/read waiters; clear
   closed upload/preview resources while accepted shared operations finish.
 

@@ -34,7 +34,7 @@ mod util;
 
 use std::path::PathBuf;
 
-use anyhow::bail;
+use anyhow::{Context, bail};
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use nelcota_core::Config;
 
@@ -364,7 +364,8 @@ pub enum Outcome {
     UpdatesServe(nelcota_deployment::protocol::ControllerConfig),
 }
 
-pub fn run(cli: Cli) -> anyhow::Result<Outcome> {
+pub fn run(mut cli: Cli) -> anyhow::Result<Outcome> {
+    cli.dir = std::path::absolute(&cli.dir).context("could not resolve the host directory")?;
     let host = host::Host::new(&cli.dir);
     // Every enrolled host mutation participates in the same deployment lease.
     let _deployment = match cli.command.as_ref() {
