@@ -58,6 +58,16 @@
         "disk-final007-pass-1-001.json"
       ],
       "action": "Report final endurance observations; no additional allocation campaign."
+    },
+    {
+      "id": "O5",
+      "status": "open",
+      "classification": "unexplained pre-convergence installation/fixture durability observation",
+      "finding": "The pre-convergence guest-cut diagnostic018 observed a zero-byte deployed executable and unit after reboot/recovery failed. The exact cause and whether it is a product installation-durability defect are unconfirmed.",
+      "evidence": [
+        "native-reboot-preconvergence-fixture-diagnostic.json"
+      ],
+      "action": "Preserve the original observation. The final fencing probe established a synced disposable installation baseline to avoid masking boot reopening; it does not prove the installation-durability issue fixed. No extra experiment, product fix or campaign restart in this narrowed schedule."
     }
   ],
   "harness_ledger": [

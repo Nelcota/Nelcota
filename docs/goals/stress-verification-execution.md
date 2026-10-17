@@ -4017,3 +4017,18 @@ No authorization/RLS escape, acknowledged-data loss or corruption was observed
 in this controlled fixture, so the critical-stop exception was not triggered.
 No product fix, rebuild, refreeze or campaign restart was performed. Proceed
 to the continuous disk campaign on the exact same frozen file.
+
+
+### Disk continuous-endurance start checkpoint
+
+The pre-soak process receipt was written at 2026-10-17T23:15:46.077536+00:00;
+this is a start checkpoint, not a completed-duration verdict. Four uninterrupted
+hours are requested at280iterations/s (70% of the qualified400/s ceiling).
+The runner has recorded4,305completed load seconds before the active soak;
+preparation and incomplete intervals do not receive endurance approval.
+Calibration, overload, VU saturation, spikes and the planned pre-soak restart
+remain separate from the four-hour interval. The final monotonic traffic ledger
+and before/after process identities must establish completion. No product change,
+rebuild or refreeze has occurred. The original zero-byte installation observation
+from diagnostic018also remains open asO5; syncing the owned fixture baseline for
+the fencing probe did not establish that installation durability is fixed.

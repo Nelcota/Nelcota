@@ -1,0 +1,23 @@
+{
+  "run_id": "disk-converged-final-001",
+  "observed_at_utc": "2026-10-17T23:17:10.928173+00:00",
+  "pre_soak_process_receipt_mtime_utc": "2026-10-17T23:15:46.077536+00:00",
+  "planned_continuous_seconds": 14400,
+  "soak_iterations_per_second": 280,
+  "already_completed_load_seconds_excluding_active_soak": 4305.0,
+  "source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+  "binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+  "initial_soak_processes": {
+    "nelcota-bench-7cfb7d60361f382e5b0719f1f131b13d-app": {
+      "container_id": "b587bfe4eea991f759229de341f6e942071dd35bd1966ecee28b16475676e7f9",
+      "pid": 804003,
+      "started_at": "2026-10-17T23:15:24.531286346Z"
+    },
+    "nelcota-bench-7cfb7d60361f382e5b0719f1f131b13d-pg": {
+      "container_id": "02983a2f9042b1a35d6d79118412f3c6a1fee53b7f8b5a8b7f2c6efbb450ee2c",
+      "pid": 342871,
+      "started_at": "2026-10-17T22:01:03.276353589Z"
+    }
+  },
+  "scope": "Start checkpoint only; not a completed endurance verdict. The final traffic ledger supplies exact monotonic continuity and duration."
+}

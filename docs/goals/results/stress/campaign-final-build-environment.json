@@ -1,0 +1,29 @@
+{
+  "observed_at_utc": "2026-10-17T22:12:24.517804+00:00",
+  "source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+  "binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+  "frozen_at_utc": "2026-10-17T21:51:46.427860+00:00",
+  "method": "Ancillary read-only toolchain/configuration observation using the same pinned tools after freeze; frozen manifest and bytes unchanged. Build command/cache timings are in the original freeze evidence.",
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+  "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+  "libc": "ldd (Debian GLIBC 2.41-12+deb13u4) 2.41",
+  "cargo_lock_sha256": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff",
+  "workspace_manifest_sha256": "2527746af359ef502f1bd6a836fda5a161456fcf7d11766a1b1d4da64a86de09",
+  "release_profile": {
+    "lto": "thin",
+    "codegen-units": 1,
+    "strip": true
+  },
+  "compiler_override_names_currently_present": [],
+  "build_jobs": 4,
+  "incremental": "0",
+  "architecture": "x86_64",
+  "observed_controller_cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "scope": "Provenance only, no new build or freeze and no runtime/performance approval."
+}
