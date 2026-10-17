@@ -11,6 +11,7 @@
 //! /etc/pgbackrest/pgbackrest.conf           with PITR on
 //! ```
 
+mod backup_config;
 mod binary;
 mod ownership;
 mod postgres;
@@ -18,6 +19,9 @@ mod provisioning;
 mod units;
 pub(crate) use units::render_unit;
 
+pub(crate) use backup_config::{
+    check as check_backup_configuration, remove as remove_backup_configuration,
+};
 pub use binary::{deploy_binary, deployed_binary, rollback_binary};
 pub(crate) use ownership::{MachineLease, acquire as acquire_machine};
 pub(crate) use postgres::postgres_command;
@@ -30,10 +34,10 @@ pub const PGBACKREST_CONF: &str = "/etc/pgbackrest/pgbackrest.conf";
 
 /// Removing a native project tears down its unit before its database cluster.
 pub fn remove(project: &crate::project::Project) -> anyhow::Result<()> {
-    units::remove_unit(project)?;
-    postgres::remove_cluster()?;
-    let _ = std::fs::remove_file(PGBACKREST_CONF);
-    Ok(())
+    backup_config::remove_after(std::path::Path::new(PGBACKREST_CONF), || {
+        units::remove_unit(project)?;
+        postgres::remove_cluster()
+    })
 }
 
 #[cfg(test)]
