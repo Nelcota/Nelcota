@@ -168,6 +168,8 @@ impl Default for Options {
 
 pub struct TestApp {
     pub router: Router,
+    /// Shared panel dependencies for dedicated-connection transport controls.
+    pub panel: nelcota_admin::AdminState,
     pub pool: deadpool_postgres::Pool,
     pub admin_pool: deadpool_postgres::Pool,
     pub admin: tokio_postgres::Config,
@@ -377,6 +379,7 @@ impl TestApp {
             ..panel
         };
         TestApp {
+            panel: panel.clone(),
             router: app(
                 state,
                 auth,

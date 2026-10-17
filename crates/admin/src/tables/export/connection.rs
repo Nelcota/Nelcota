@@ -13,6 +13,7 @@ use tokio::time::Instant;
 use tokio_postgres::{Client, NoTls};
 
 const MAX_LIFETIME: Duration = Duration::from_secs(120);
+const CLEANUP_TIMEOUT: Duration = Duration::from_secs(35);
 const RUNNING: u8 = 0;
 const COMPLETED: u8 = 1;
 const INTERRUPTED: u8 = 2;
@@ -68,7 +69,7 @@ impl ExportExecutor {
     pub(crate) async fn connect(
         &self,
         config: &tokio_postgres::Config,
-    ) -> Result<ExportConnection, ApiError> {
+    ) -> Result<(Arc<Client>, ExportConnection), ApiError> {
         let slot = self.slots.clone().try_acquire_owned().map_err(|_| {
             ApiError::new(
                 StatusCode::SERVICE_UNAVAILABLE,
@@ -91,7 +92,9 @@ impl ExportExecutor {
                     )
                 })??;
         let cancel = client.cancel_token();
-        let (done, finished) = oneshot::channel();
+        let client = Arc::new(client);
+        let cleanup_client = client.clone();
+        let (done, mut finished) = oneshot::channel();
         let completion = Arc::new(Completion {
             state: AtomicU8::new(RUNNING),
             deadline: Instant::now() + self.lifetime,
@@ -101,28 +104,64 @@ impl ExportExecutor {
             // Keep admission occupied through cancellation, so abandoned queries
             // cannot accumulate while new exports are accepted.
             let _slot = slot;
+            tokio::pin!(connection);
+            let mut connection_result = None;
             let cancel_query = tokio::select! {
-                result = connection => {
-                    stopped.interrupt() && result.is_err()
+                result = &mut connection => {
+                    connection_result = Some(result.is_ok());
+                    match result {
+                        Ok(()) => response_interrupted(&mut finished, &stopped).await,
+                        Err(_) => {
+                            stopped.interrupt();
+                            true
+                        }
+                    }
                 }
-                completed = finished => completed != Ok(true),
-                _ = tokio::time::sleep_until(stopped.deadline) => stopped.interrupt(),
+                interrupted = response_interrupted(&mut finished, &stopped) => interrupted,
             };
-            if cancel_query {
-                let _ =
-                    tokio::time::timeout(Duration::from_secs(2), cancel.cancel_query(NoTls)).await;
+            // Preserve the response lifetime boundary even when PostgreSQL has
+            // already buffered every row of a small, unpolled export.
+            drop(cleanup_client);
+            if !cancel_query || connection_result == Some(true) {
+                return;
+            }
+            let deadline = Instant::now() + CLEANUP_TIMEOUT;
+            // CancelRequest acknowledges only its network write. Preserve the
+            // driver until PostgreSQL has drained the abandoned query.
+            let _ = tokio::time::timeout(Duration::from_secs(2), cancel.cancel_query(NoTls)).await;
+            let confirmed = match connection_result {
+                Some(_) => false,
+                None => matches!(
+                    tokio::time::timeout_at(deadline, &mut connection).await,
+                    Ok(Ok(()))
+                ),
+            };
+            if !confirmed {
+                tracing::warn!("Export cancellation cleanup was not confirmed");
+                tokio::time::sleep_until(deadline).await;
             }
         });
-        Ok(ExportConnection {
+        Ok((
             client,
-            done: Some(done),
-            completion,
-        })
+            ExportConnection {
+                done: Some(done),
+                completion,
+            },
+        ))
+    }
+}
+
+async fn response_interrupted(
+    finished: &mut oneshot::Receiver<bool>,
+    completion: &Completion,
+) -> bool {
+    tokio::select! {
+        completed = finished => completed != Ok(true),
+        _ = tokio::time::sleep_until(completion.deadline) => completion.interrupt(),
     }
 }
 
 pub(crate) struct ExportConnection {
-    pub client: Client,
     done: Option<oneshot::Sender<bool>>,
     completion: Arc<Completion>,
 }

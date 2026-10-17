@@ -181,12 +181,14 @@ pub async fn export(
     let sql = query::select_rows(&schema, &table, &request);
 
     // Filter errors show up here, before the first byte: they become a 400.
-    let connection = state.exports.connect(&state.db_config).await?;
-    let rows = connection
-        .client
+    let (client, connection) = state.exports.connect(&state.db_config).await?;
+    let rows = client
         .query_raw(sql.text.as_str(), sql.param_refs())
         .await
         .map_err(user_query_error)?;
+    // The supervisor retains the client through the response lifetime. This
+    // request handle must not keep it alive after cancellation or expiry.
+    drop(client);
 
     let encoder = Encoder {
         format: params.format,
