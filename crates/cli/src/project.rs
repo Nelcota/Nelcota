@@ -235,7 +235,11 @@ impl Project {
             }
             Runtime::Systemd => {
                 let mut command = Command::new(std::env::current_exe()?);
-                command.envs(self.env().read()?).args(args);
+                command
+                    .arg("--dir")
+                    .arg(&self.dir)
+                    .envs(self.env().read()?)
+                    .args(args);
                 Ok(command)
             }
         }

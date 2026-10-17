@@ -27,6 +27,8 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Bind native app subprocesses to their project directory so migrations from
+  the host's cwd or `NELCOTA_ROOT` do not reacquire their parent's host lease.
 - Resolve the host directory before generating native systemd configuration,
   allowing the documented installation from the current application directory
   without a relative `EnvironmentFile` and repeated application startup failure.
