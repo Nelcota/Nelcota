@@ -12,12 +12,14 @@
 //! ```
 
 mod binary;
+mod ownership;
 mod postgres;
 mod provisioning;
 mod units;
 pub(crate) use units::render_unit;
 
 pub use binary::{deploy_binary, deployed_binary, rollback_binary};
+pub(crate) use ownership::{MachineLease, acquire as acquire_machine};
 pub(crate) use postgres::postgres_command;
 pub use postgres::{PG_DATA, POSTGRES_UNIT, configure_postgres};
 pub use provisioning::{check_machine, install_packages};

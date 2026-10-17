@@ -19,6 +19,13 @@ struct S3 {
     region: String,
 }
 
+struct CreatedHost {
+    manifest: Manifest,
+    password: Option<panel_login::NewPassword>,
+    native_lease: Option<native::MachineLease>,
+    host_lease: Option<nelcota_deployment::HostLock>,
+}
+
 pub fn run(host: &Host, args: InitArgs) -> anyhow::Result<()> {
     // Validate every argument before writing anything: a rejected first call
     // must not leave a half-created host behind.
@@ -62,14 +69,29 @@ pub fn run(host: &Host, args: InitArgs) -> anyhow::Result<()> {
         validate_s3_flags(&args)?;
     }
 
-    let mut host_password = None;
-    let mut manifest = match existing {
-        Some(manifest) => manifest,
-        None => {
-            let (manifest, password) = create_host(host, &args)?;
-            host_password = password;
-            manifest
+    let CreatedHost {
+        mut manifest,
+        password: host_password,
+        native_lease: _native_lease,
+        host_lease: _host_lease,
+    } = match existing {
+        Some(manifest) => {
+            let host_lease = lock_existing_host(host, &manifest)?;
+            let lease = match manifest.runtime {
+                Runtime::Systemd => {
+                    native::check_machine()?;
+                    Some(native::acquire_machine(host)?)
+                }
+                Runtime::Docker => None,
+            };
+            CreatedHost {
+                manifest,
+                password: None,
+                native_lease: lease,
+                host_lease: Some(host_lease),
+            }
         }
+        None => create_host(host, &args)?,
     };
     manifest.base_domain = base_domain;
 
@@ -156,10 +178,7 @@ fn validate_s3_flags(args: &InitArgs) -> anyhow::Result<()> {
 }
 
 /// First time: checks, host secrets, Caddy and machine setup.
-fn create_host(
-    host: &Host,
-    args: &InitArgs,
-) -> anyhow::Result<(Manifest, Option<panel_login::NewPassword>)> {
+fn create_host(host: &Host, args: &InitArgs) -> anyhow::Result<CreatedHost> {
     step(&format!("Creating the host at {}", host.root().display()));
     if args.runtime == Runtime::Systemd {
         native::check_machine()?;
@@ -180,11 +199,17 @@ fn create_host(
         }
     }
 
+    let host_lease = lock_new_host(host)?;
+    // Hold the machine lease through the caller's final Caddy/unit writes.
+    // A partial init keeps its durable owner for explicit same-host recovery.
+    let native_lease = match args.runtime {
+        Runtime::Systemd => Some(native::acquire_machine(host)?),
+        Runtime::Docker => None,
+    };
     if args.runtime == Runtime::Systemd {
         native::install_packages()?;
     }
     let s3 = backup_destination(args);
-    std::fs::create_dir_all(host.root())?;
     let mut secrets = format!(
         "# nelcota host secrets (generated at {}). Mode 600, kept out of git.\n",
         util::timestamp()
@@ -230,7 +255,32 @@ fn create_host(
         machine::setup(host, args.firewall);
     }
     let shown = (manifest.panel_login == crate::host::PanelLogin::Shared).then_some(shared);
-    Ok((manifest, shown))
+    Ok(CreatedHost {
+        manifest,
+        password: shown,
+        native_lease,
+        host_lease: Some(host_lease),
+    })
+}
+
+fn lock_new_host(host: &Host) -> anyhow::Result<nelcota_deployment::HostLock> {
+    std::fs::create_dir_all(host.root())?;
+    let lease = crate::host::acquire_host_lease(host.root())?;
+    if host.exists() {
+        bail!("host was created by another initializer; retry using its current registry");
+    }
+    Ok(lease)
+}
+
+fn lock_existing_host(
+    host: &Host,
+    expected: &Manifest,
+) -> anyhow::Result<nelcota_deployment::HostLock> {
+    let lease = crate::host::acquire_host_lease(host.root())?;
+    if host.require()? != *expected {
+        bail!("host registry changed during initialization; retry using its current registry");
+    }
+    Ok(lease)
 }
 
 fn backup_destination(args: &InitArgs) -> Option<S3> {
@@ -283,6 +333,65 @@ mod tests {
             Some(crate::Command::Init(args)) => *args,
             _ => unreachable!(),
         }
+    }
+
+    fn fixture_manifest() -> Manifest {
+        Manifest {
+            version: 1,
+            panel_login: crate::host::PanelLogin::Shared,
+            base_domain: None,
+            local: true,
+            runtime: Runtime::Docker,
+            image: "owned fixture".into(),
+            projects: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn concurrent_new_hosts_cannot_overwrite_the_first_accepted_registry() {
+        let temporary = tempfile::tempdir().unwrap();
+        let host = Host::new(&temporary.path().join("host"));
+        let lease = lock_new_host(&host).unwrap();
+        assert!(lock_new_host(&host).is_err());
+        let manifest = host.root().join(crate::host::MANIFEST);
+        host.save(&fixture_manifest()).unwrap();
+        let accepted = std::fs::read(&manifest).unwrap();
+        drop(lease);
+        let error = lock_new_host(&host).err().unwrap();
+        assert!(error.to_string().contains("another initializer"));
+        assert_eq!(std::fs::read(&manifest).unwrap(), accepted);
+    }
+
+    #[test]
+    fn changed_existing_registry_is_rejected_before_initialization_writes() {
+        let temporary = tempfile::tempdir().unwrap();
+        let host = Host::new(&temporary.path().join("host"));
+        let expected = fixture_manifest();
+        host.save(&expected).unwrap();
+        let mut current = expected.clone();
+        current.projects.push(ProjectEntry {
+            name: "accepted".into(),
+            domain: "accepted.localhost".into(),
+        });
+        host.save(&current).unwrap();
+        let error = lock_existing_host(&host, &expected).err().unwrap();
+        assert!(error.to_string().contains("registry changed"));
+        assert_eq!(host.require().unwrap(), current);
+        drop(lock_existing_host(&host, &current).unwrap());
+    }
+
+    #[test]
+    fn an_empty_native_host_cannot_reclaim_machine_ownership_through_up() {
+        let temporary = tempfile::tempdir().unwrap();
+        let host = Host::new(&temporary.path().join("host"));
+        let mut manifest = fixture_manifest();
+        manifest.runtime = Runtime::Systemd;
+        host.save(&manifest).unwrap();
+        let error = crate::host::acquire_mutation_lease(host.root())
+            .err()
+            .unwrap();
+        assert!(error.to_string().contains("no single native project"));
+        drop(lock_existing_host(&host, &manifest).unwrap());
     }
 
     #[test]

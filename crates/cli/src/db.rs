@@ -22,20 +22,27 @@ use crate::{
 pub const USER_MIGRATIONS_TABLE: &str = "nelcota.user_migrations";
 
 enum Target {
-    Direct(Box<Config>),
-    Container(Project),
+    Direct(Box<Config>, Option<nelcota_deployment::HostLock>),
+    Container(Project, Option<nelcota_deployment::HostLock>),
 }
 
-fn target(host: &Host, selection: Option<&str>) -> anyhow::Result<Target> {
+fn target(host: &Host, selection: Option<&str>, mutation: bool) -> anyhow::Result<Target> {
+    // Freeze the target decision: a newly published host must not be selected
+    // after skipping its lease. Direct env/dev database operation stays valid.
+    let configured_host = host.exists();
+    let lease = match mutation && configured_host {
+        true => Some(crate::host::acquire_mutation_lease(host.root())?),
+        false => None,
+    };
     if std::env::var_os("NELCOTA_DATABASE_URL").is_some() {
-        return Ok(Target::Direct(Box::new(Config::load()?)));
+        return Ok(Target::Direct(Box::new(Config::load()?), lease));
     }
-    if host.exists() {
+    if configured_host {
         let manifest = host.manifest()?;
-        return Ok(Target::Container(host.select(&manifest, selection)?));
+        return Ok(Target::Container(host.select(&manifest, selection)?, lease));
     }
     if let Some(config) = dev::saved_config(host.root())? {
-        return Ok(Target::Direct(Box::new(config)));
+        return Ok(Target::Direct(Box::new(config), lease));
     }
     bail!(
         "no database configured: set NELCOTA_DATABASE_URL, run inside a `nelcota init` project \
@@ -86,14 +93,14 @@ fn load_migrations(dir: &Path) -> anyhow::Result<Vec<Migration>> {
 }
 
 pub fn migrate(host: &Host, selection: Option<&str>, dir: &Path) -> anyhow::Result<()> {
-    match target(host, selection)? {
-        Target::Container(project) => {
+    match target(host, selection, true)? {
+        Target::Container(project, _lease) => {
             if dir != Path::new("migrations") {
                 bail!("in a `nelcota init` project, migrations live in ./migrations");
             }
             project.in_app(&["migrate", "--path", &project.app_migrations_dir()])
         }
-        Target::Direct(config) => {
+        Target::Direct(config, _lease) => {
             let migrations = load_migrations(dir)?;
             if migrations.is_empty() {
                 println!("No migrations in {}.", dir.display());
@@ -130,15 +137,15 @@ pub fn types(
     out: Option<&Path>,
     lang: crate::TypesLanguage,
 ) -> anyhow::Result<()> {
-    let code = match target(host, selection)? {
-        Target::Container(project) => match lang {
+    let code = match target(host, selection, false)? {
+        Target::Container(project, _lease) => match lang {
             // Existing deployed binaries understand the original TypeScript command.
             crate::TypesLanguage::Typescript => project.in_app_output(&["types"])?,
             crate::TypesLanguage::Rust => {
                 project.in_app_output(&["types", "--lang", lang.as_str()])?
             }
         },
-        Target::Direct(config) => runtime()?.block_on(async {
+        Target::Direct(config, _lease) => runtime()?.block_on(async {
             let client = connect(&config).await?;
             let catalog = nelcota_api::Catalog::load(&client, &config.db_schema).await?;
             Ok::<_, anyhow::Error>(match lang {
@@ -158,13 +165,13 @@ pub fn types(
 }
 
 pub fn service_role_token(host: &Host, selection: Option<&str>, days: u64) -> anyhow::Result<()> {
-    match target(host, selection)? {
-        Target::Container(project) => {
+    match target(host, selection, false)? {
+        Target::Container(project, _lease) => {
             let token =
                 project.in_app_output(&["token", "service-role", "--days", &days.to_string()])?;
             print!("{token}");
         }
-        Target::Direct(config) => {
+        Target::Direct(config, _lease) => {
             let keys = nelcota_auth::Keys::new(
                 config.jwt_private_key(),
                 config.jwt_secret().map(str::as_bytes),

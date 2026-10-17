@@ -46,6 +46,9 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Security
 
+- Serialize native initialization/removal with a machine-wide lease and a
+  durable host-directory owner, preventing a second native host from replacing
+  the first project's database credentials, Caddy configuration or units.
 - Reject native PostgreSQL cluster/port collisions before provisioning and pin
   administrative clients to local `17/main:5432`, preventing initialization or
   ambient libpq settings from changing another cluster. Send the generated
