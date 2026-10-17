@@ -181,7 +181,10 @@ nelcota -p shop pitr disable                                   # stops archiving
   early, but an unreachable target can be detected during WAL replay after
   files were restored. PostgreSQL may remain stopped or in recovery; inspect
   status/logs and retry with a covered target. Do not assume the old database
-  is unchanged or automatically restored.
+  is unchanged or automatically restored. If pgBackRest's file-restore command
+  fails, the CLI keeps PostgreSQL and the app stopped: a nonzero exit does not
+  prove that the data directory is untouched. Verify recovery before starting
+  services.
 - Projects created before PITR are updated by `enable`: Postgres switches to
   the image built from `postgres/Dockerfile` and gets an `egress` network to
   reach S3 (the `internal` network has no way out). If `docker-compose.yml`

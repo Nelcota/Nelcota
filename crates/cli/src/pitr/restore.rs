@@ -12,6 +12,9 @@ use anyhow::bail;
 use std::time::{Duration, Instant};
 const RECOVERY_TIMEOUT: Duration = Duration::from_secs(3600);
 
+#[cfg(all(test, unix))]
+mod tests;
+
 /// Restores the database to `time` (or to the last archived write) and
 /// starts a new timeline from there.
 pub fn restore(project: &Project, time: Option<&str>, yes: bool) -> anyhow::Result<()> {
@@ -36,13 +39,14 @@ pub fn restore(project: &Project, time: Option<&str>, yes: bool) -> anyhow::Resu
     step(&format!("Restoring {} to {moment}", project.name));
     // --delta only rewrites files that differ from the backup.
     if let Err(err) = commands::restore(project, time) {
-        // pgBackRest refuses most problems (no backup for that moment, S3
-        // unreachable) before touching the data: bring the project back.
-        step("Restore refused; starting the project again");
-        let _ = project.start(&[Service::Postgres, Service::App]);
-        return Err(err.context(
-            "the restore did not run; if Postgres does not start, run the restore again",
-        ));
+        // A nonzero exit does not prove that --delta left every file untouched.
+        // Keep the stopped services fenced until recovery is verified.
+        return Err(err.context(format!(
+            "the data directory may have changed; Postgres and the app remain stopped. \
+             Inspect `nelcota -p {0} pitr status` and the restore error before retrying \
+             with a covered target; do not start the services until recovery is verified",
+            project.name
+        )));
     }
 
     step("Replaying WAL (Postgres starts once it reaches the target)");
