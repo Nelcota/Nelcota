@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+  "binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+  "size_bytes": 30484800,
+  "build": {
+    "status": "built; awaiting 18 exact-SHA CI checks; no freeze yet",
+    "source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+    "command": [
+      "nice",
+      "-n19",
+      "ionice",
+      "-c3",
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "nelcota-server"
+    ],
+    "elapsed_seconds": 0.3148936610086821,
+    "cache_reused": true,
+    "binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+    "binary_bytes": 30484800,
+    "build_log_sha256": "79ebf1c9ff5e05f48fb0c6ea52b184a87bded725e977ad03d405ba503c7f18b6",
+    "observed_at_utc": "2026-10-17T21:40:10.258778+00:00"
+  },
+  "scope": "Transport manifest for the single already-frozen campaign ELF. No rebuild or second freeze. Production source5b2b2a49f60274456e84fc027fd3e401fd64e417 passed eighteen ordinary CI checks."
+}

@@ -2,16 +2,679 @@ name: Release stress campaign
 
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: Dedicated benchmark, disposable VM inventory or native acceptance
+        type: choice
+        options: [benchmark, native-preflight, native-vm, provider-preflight, native-identity, native-suite, provider-runtime, matrix, browser-auth, host-files, public-evidence]
+        default: benchmark
+      evidence_run:
+        description: Optional earlier native workflow artifact to republish before native-vm
+        type: string
+        default: ''
+      evidence_kind:
+        description: Existing public numeric resource artifact to republish
+        type: choice
+        options: [matrix, browser-auth]
+        default: matrix
+      native_case:
+        description: Native lifecycle, cluster routing, installation contracts or guest clock
+        type: choice
+        options: [runtime, runtime-inflight, runtime-pitr-error, runtime-pitr-reboot, cluster-routing, default-root, host-root, clock-drift, remove-boundary]
+        default: runtime
+      diagnostic_jobs:
+        description: Optional failed public lint/panel job IDs for native-preflight (comma separated)
+        type: string
+        default: ''
+      backend:
+        description: Owned storage fixture
+        type: choice
+        options: [disk, s3]
+        default: disk
+      endurance:
+        description: Four uninterrupted hours after capacity qualification
+        type: boolean
+        default: false
+      matrix_full:
+        description: Qualify four five-minute ledger rates and hold each supplemental matrix scenario for 120 seconds
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
+concurrency:
+  group: release-stress-${{ github.repository }}
+  cancel-in-progress: false
+
 jobs:
+  public-evidence:
+    if: inputs.target == 'public-evidence'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check resource publication privacy and select the fixed artifact
+        id: selection
+        env:
+          EVIDENCE_RUN: ${{ inputs.evidence_run }}
+          EVIDENCE_KIND: ${{ inputs.evidence_kind }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          nice -n19 ionice -c3 python3 -m unittest discover -s scripts/review_tests -p test_stress_resource_republish.py -v
+          python3 - <<'PY'
+          import json, os, re, urllib.request
+          kind=os.environ['EVIDENCE_KIND']
+          names={'matrix':'supplemental-backend-matrix','browser-auth':'browser-auth-pressure'}
+          assert kind in names and re.fullmatch('[1-9][0-9]{0,19}',os.environ['EVIDENCE_RUN'])
+          request=urllib.request.Request('https://api.github.com/repos/Nelcota/Nelcota/actions/runs/'+os.environ['EVIDENCE_RUN']+'/artifacts?per_page=100',
+              headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+          with urllib.request.urlopen(request,timeout=20) as response:
+              raw=response.read(2*1024**2+1)
+          assert len(raw)<=2*1024**2
+          inventory=json.loads(raw)
+          assert inventory['total_count']==len(inventory['artifacts'])<=100
+          selected=[row for row in inventory['artifacts'] if row['name']==names[kind]]
+          assert len(selected)==1 and selected[0]['expired'] is False and 0<selected[0]['size_in_bytes']<=2*1024**2
+          with open(os.environ['GITHUB_OUTPUT'],'a') as stream:
+              stream.write('artifact='+names[kind]+'\n')
+          PY
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ steps.selection.outputs.artifact }}
+          run-id: ${{ inputs.evidence_run }}
+          github-token: ${{ github.token }}
+          path: target/public-resource-recovery
+      - name: Republish only the original checksummed numeric series
+        env:
+          EVIDENCE_RUN: ${{ inputs.evidence_run }}
+          EVIDENCE_KIND: ${{ inputs.evidence_kind }}
+        run: |
+          timeout --kill-after=10s 30s nice -n19 ionice -c3 \
+            prlimit --as=134217728:134217728 --cpu=20:20 -- \
+            python3 bench/resource_republish.py target/public-resource-recovery \
+              --kind "$EVIDENCE_KIND" --run "$EVIDENCE_RUN"
+
+  native-suite-build:
+    if: inputs.target == 'native-suite'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d
+        with:
+          toolchain: '1.99.0'
+      - name: Build and freeze the single native suite ELF
+        timeout-minutes: 25
+        run: |
+          nice -n19 ionice -c3 cargo build --locked --release -p nelcota-server
+          python3 bench/native_artifact.py freeze target/native-suite-input --binary target/release/nelcota
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-suite-candidate
+          path: target/native-suite-input
+          if-no-files-found: error
+          retention-days: 14
+
+  native-suite:
+    if: inputs.target == 'native-suite'
+    needs: native-suite-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        pass: [1, 2]
+        case: [cluster-routing, default-root, host-root, remove-boundary, clock-drift, runtime]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: native-suite-candidate
+          path: target/native-suite-input
+      - name: Verify the common immutable native artifact
+        run: |
+          python3 bench/native_artifact.py verify target/native-suite-input
+          chmod 555 target/native-suite-input/nelcota
+      - name: Inventory the disposable native suite VM
+        run: python3 bench/native_preflight.py
+      - name: Prepare bounded KVM tooling
+        timeout-minutes: 10
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils
+      - name: Bounded native case with the same suite ELF
+        timeout-minutes: 35
+        env:
+          NATIVE_CASE: ${{ matrix.case }}
+          NATIVE_PASS: ${{ matrix.pass }}
+        run: |
+          sudo env GITHUB_ACTIONS="$GITHUB_ACTIONS" RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" \
+            GITHUB_SHA="$GITHUB_SHA" GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" \
+            python3 bench/native_vm.py --binary target/native-suite-input/nelcota \
+              --output "target/stress-g05/native-vm-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-p${NATIVE_PASS}-${NATIVE_CASE}" \
+              --scenario "$NATIVE_CASE" --pass-index "$NATIVE_PASS"
+      - name: Public native suite case evidence only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-suite-evidence-${{ matrix.pass }}-${{ matrix.case }}
+          path: target/stress-g05/native-vm-*-public
+          if-no-files-found: ignore
+          retention-days: 14
+
+  native-identity:
+    if: inputs.target == 'native-identity'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: 2
+      RUST_TEST_THREADS: 1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d
+        with:
+          toolchain: '1.99.0'
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Build the exact filtered CLI unit artifact
+        timeout-minutes: 24
+        run: |
+          mkdir -p target
+          nice -n19 ionice -c3 cargo test --locked -p nelcota-cli --lib --no-run --message-format=json > target/native-identity-build.jsonl
+      - name: Repeat real native executable identity checks
+        timeout-minutes: 5
+        run: |
+          sudo -n systemd-run --wait --pipe --collect \
+            --unit="g05-identity-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --uid="$(id -u)" --working-directory="$GITHUB_WORKSPACE" \
+            --property=CPUQuota=200% --property=MemoryMax=4G --property=MemorySwapMax=0 \
+            --property=TasksMax=128 --property=RuntimeMaxSec=300 --property=KillMode=control-group \
+            env GITHUB_ACTIONS="$GITHUB_ACTIONS" RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" GITHUB_SHA="$GITHUB_SHA" \
+              python3 scripts/repeat-native-identity.py
+      - name: Public identity repetition evidence only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-identity-repetitions
+          path: target/native-identity-public.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  provider-preflight:
+    if: inputs.target == 'provider-preflight'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Inventory the disposable provider VM
+        run: python3 bench/native_preflight.py
+      - name: Bounded provider allocator capability discovery
+        run: |
+          sudo -n systemd-run --wait --pipe --collect \
+            --unit="g05-provider-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --working-directory="$GITHUB_WORKSPACE" \
+            --property=CPUQuota=50% --property=MemoryMax=256M --property=MemorySwapMax=0 \
+            --property=TasksMax=128 --property=RuntimeMaxSec=360 --property=KillMode=control-group \
+            env GITHUB_ACTIONS="$GITHUB_ACTIONS" RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" \
+              GITHUB_SHA="$GITHUB_SHA" GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" \
+              python3 bench/provider_capabilities.py
+      - name: Public provider capability evidence only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: provider-memory-capabilities
+          path: target/stress-g05/native-provider-*-public
+          if-no-files-found: ignore
+          retention-days: 14
+
+  provider-runtime:
+    if: inputs.target == 'provider-runtime'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Inventory the disposable provider runtime VM
+        run: python3 bench/native_preflight.py
+      - name: Check the bounded runtime diagnostic regressions
+        run: |
+          nice -n19 ionice -c3 python3 - <<'PY'
+          import json, os, pathlib, re, time, unittest
+          began = time.monotonic()
+          suite = unittest.defaultTestLoader.discover('scripts/review_tests', pattern='test_stress_provider_runtime.py')
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          report = {'source_commit': os.environ['GITHUB_SHA'], 'tests': result.testsRun,
+                    'failures': len(result.failures), 'errors': len(result.errors), 'skipped': len(result.skipped),
+                    'elapsed_seconds': time.monotonic() - began, 'successful': result.wasSuccessful()}
+          report['failure_locations'] = [
+              {'test': test.id(), 'locations': re.findall(r'File "[^"\n]*/scripts/review_tests/([a-z0-9_]+\.py)", line ([0-9]+)', trace)}
+              for test, trace in [*result.failures, *result.errors]]
+          target = pathlib.Path('target/provider-runtime-regressions-public.json')
+          target.parent.mkdir(exist_ok=True)
+          with target.open('x') as stream:
+              stream.write(json.dumps(report, indent=2, allow_nan=False) + '\n')
+          print('::notice title=Provider runtime regression summary::' + json.dumps(report, separators=(',', ':'), allow_nan=False))
+          if not result.wasSuccessful() or result.testsRun < 16 or result.skipped:
+              raise SystemExit(1)
+          PY
+      - name: Compare provider runtime owners on fresh fixtures
+        timeout-minutes: 70
+        run: |
+          sudo -n systemd-run --wait --pipe --collect \
+            --unit="g05-provider-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --working-directory="$GITHUB_WORKSPACE" \
+            --property=CPUQuota=50% --property=MemoryMax=256M --property=MemorySwapMax=0 \
+            --property=Nice=19 --property=IOSchedulingClass=idle \
+            --property=TasksMax=128 --property=RuntimeMaxSec=3900 --property=KillMode=control-group \
+            env GITHUB_ACTIONS="$GITHUB_ACTIONS" RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" \
+              GITHUB_SHA="$GITHUB_SHA" GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" \
+              python3 bench/provider_runtime.py
+      - name: Public provider runtime evidence only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: provider-runtime-owners
+          path: |
+            target/stress-g05/native-provider-runtime-*-public
+            target/provider-runtime-regressions-public.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  browser-auth:
+    if: inputs.target == 'browser-auth'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Inventory the disposable browser auth VM
+        run: python3 bench/native_preflight.py
+      - name: Check bounded raw auth publication oracles
+        run: |
+          nice -n19 ionice -c3 python3 - <<'PYTEST'
+          import json, os, pathlib, time, unittest
+          began = time.monotonic()
+          suite = unittest.defaultTestLoader.discover('scripts/review_tests', pattern='test_stress_browser_auth.py')
+          suite.addTests(unittest.defaultTestLoader.discover('scripts/review_tests', pattern='test_stress_browser_images.py'))
+          suite.addTests(unittest.defaultTestLoader.discover('scripts/review_tests', pattern='test_stress_browser_diagnostics.py'))
+          suite.addTests(unittest.defaultTestLoader.discover('scripts/review_tests', pattern='test_stress_browser_entry.py'))
+          suite.addTests(unittest.defaultTestLoader.discover('scripts/review_tests', pattern='test_stress_browser_owners.py'))
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          report = {'source_commit': os.environ['GITHUB_SHA'], 'tests': result.testsRun,
+                    'failures': len(result.failures), 'errors': len(result.errors), 'skipped': len(result.skipped),
+                    'elapsed_seconds': time.monotonic() - began, 'successful': result.wasSuccessful(),
+                    'failed_tests': [test.id() for test, _ in [*result.failures, *result.errors]]}
+          target = pathlib.Path('target/browser-auth-regressions-public.json')
+          target.parent.mkdir(exist_ok=True)
+          with target.open('x') as stream:
+              stream.write(json.dumps(report, indent=2, allow_nan=False) + '\n')
+          print('::notice title=Browser auth regression summary::' + json.dumps(report, separators=(',', ':'), allow_nan=False))
+          if not result.wasSuccessful() or result.testsRun < 31 or result.skipped:
+              raise SystemExit(1)
+          PYTEST
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+      - name: Build the checked-in SDK sources for real browser consumers
+        timeout-minutes: 10
+        working-directory: sdk/typescript
+        run: |
+          nice -n19 ionice -c3 npm ci
+          nice -n19 ionice -c3 npm run build
+      - name: Prepare bounded public browser tooling
+        timeout-minutes: 12
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends python3-venv libnss3-tools
+          python3 -m venv target/browser-auth-tooling
+          target/browser-auth-tooling/bin/python -m pip install 'playwright==1.62.0'
+          target/browser-auth-tooling/bin/python -m playwright install --with-deps chromium
+      - name: Prepare and inventory cold-cache browser fixture images
+        timeout-minutes: 5
+        run: nice -n19 ionice -c3 python3 bench/browser_images.py
+      - name: Locate the retained final native ELF
+        id: retained
+        run: |
+          python3 - <<'PYINPUT'
+          import json, os, pathlib
+          index = json.loads(pathlib.Path('docs/goals/results/stress/native-final-suite/index.json').read_text())
+          assert type(index['workflow_run_id']) is int and index['status'] == 'passed'
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
+              stream.write('run=' + str(index['workflow_run_id']) + '\n')
+          PYINPUT
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: native-suite-candidate
+          path: target/browser-auth-retained-input
+          run-id: ${{ steps.retained.outputs.run }}
+          github-token: ${{ github.token }}
+      - name: Real two-consumer auth during bounded browser navigation
+        timeout-minutes: 48
+        run: |
+          chrome=$(target/browser-auth-tooling/bin/python - <<'PYCHROME'
+          from playwright.sync_api import sync_playwright
+          with sync_playwright() as playwright:
+              print(playwright.chromium.executable_path)
+          PYCHROME
+          )
+          sudo -n systemd-run --wait --pipe --collect \
+            --unit="g05-browser-auth-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --uid="$(id -u)" --gid="$(id -g)" --working-directory="$GITHUB_WORKSPACE" \
+            --property=CPUQuota=100% --property=MemoryMax=512M --property=MemorySwapMax=0 \
+            --property=Nice=19 --property=IOSchedulingClass=idle \
+            --property=TasksMax=128 --property=RuntimeMaxSec=3000 --property=KillMode=control-group \
+            env GITHUB_ACTIONS="$GITHUB_ACTIONS" RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" \
+              GITHUB_SHA="$GITHUB_SHA" GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" \
+              target/browser-auth-tooling/bin/python bench/browser_auth_probe.py \
+                --artifact target/browser-auth-retained-input --sdk sdk/typescript/dist --chrome-executable "$chrome"
+      - name: Public browser auth evidence only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-auth-pressure
+          path: |
+            target/stress-g05/native-browser-auth-*-public
+            target/browser-auth-regressions-public.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  host-files:
+    if: inputs.target == 'host-files'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check private-file ownership and publication boundaries
+        run: |
+          nice -n19 ionice -c3 python3 -m unittest discover -s scripts/review_tests -p test_stress_fleet_private_files.py -v
+          nice -n19 ionice -c3 python3 -m unittest discover -s scripts/review_tests -p test_stress_host_file_probe.py -v
+      - name: Locate the retained final native ELF
+        id: retained
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          index = json.loads(pathlib.Path('docs/goals/results/stress/native-final-suite/index.json').read_text())
+          assert type(index['workflow_run_id']) is int and index['status'] == 'passed'
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
+              stream.write('run=' + str(index['workflow_run_id']) + '\n')
+          PY
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: native-suite-candidate
+          path: target/host-files-retained-input
+          run-id: ${{ steps.retained.outputs.run }}
+          github-token: ${{ github.token }}
+      - name: Probe private-file fences during real project traffic
+        timeout-minutes: 48
+        run: |
+          sudo -n systemd-run --wait --pipe --collect \
+            --unit="g05-host-files-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --uid="$(id -u)" --gid="$(id -g)" --working-directory="$GITHUB_WORKSPACE" \
+            --property=CPUQuota=50% --property=MemoryMax=512M --property=MemorySwapMax=0 \
+            --property=Nice=19 --property=IOSchedulingClass=idle \
+            --property=TasksMax=128 --property=RuntimeMaxSec=2700 --property=KillMode=control-group \
+            env GITHUB_ACTIONS="$GITHUB_ACTIONS" RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" \
+              GITHUB_SHA="$GITHUB_SHA" GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" \
+              python3 bench/host_file_probe.py --artifact target/host-files-retained-input
+      - name: Public host-file evidence only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: host-private-file-preflight
+          path: target/stress-g05/host-files-*-public
+          if-no-files-found: ignore
+          retention-days: 14
+
+  matrix:
+    if: inputs.target == 'matrix'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Inventory the disposable supplemental VM
+        run: python3 bench/native_preflight.py
+      - name: Check supplemental artifact and request guards
+        run: |
+          nice -n19 ionice -c3 python3 - <<'PY'
+          import json, os, pathlib, time, unittest
+          began = time.monotonic()
+          suite = unittest.defaultTestLoader.discover('scripts/review_tests', pattern='test_stress_matrix_pressure.py')
+          suite.addTests(unittest.defaultTestLoader.discover('scripts/review_tests', pattern='test_stress_project_diagnostics.py'))
+          suite.addTests(unittest.defaultTestLoader.discover('scripts/review_tests', pattern='test_stress_database_readiness.py'))
+          suite.addTests(unittest.defaultTestLoader.discover('scripts/review_tests', pattern='test_stress_generator_cpu.py'))
+          suite.addTests(unittest.defaultTestLoader.discover('scripts/review_tests', pattern='test_stress_auth_links.py'))
+          suite.addTests(unittest.defaultTestLoader.discover('scripts/review_tests', pattern='test_stress_ledger_arrivals.py'))
+          suite.addTests(unittest.defaultTestLoader.discover('scripts/review_tests', pattern='test_stress_matrix_capacity.py'))
+          suite.addTests(unittest.defaultTestLoader.discover('scripts/review_tests', pattern='test_stress_http.py'))
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          report = {'source_commit': os.environ['GITHUB_SHA'], 'tests': result.testsRun,
+                    'failures': len(result.failures), 'errors': len(result.errors), 'skipped': len(result.skipped),
+                    'elapsed_seconds': time.monotonic() - began, 'successful': result.wasSuccessful(),
+                    'failed_tests': [test.id() for test, _ in [*result.failures, *result.errors]]}
+          target = pathlib.Path('target/matrix-regressions-public.json')
+          target.parent.mkdir(exist_ok=True)
+          with target.open('x') as stream:
+              stream.write(json.dumps(report, indent=2, allow_nan=False) + '\n')
+          print('::notice title=Supplemental matrix regression summary::' + json.dumps(report, separators=(',', ':'), allow_nan=False))
+          if not result.wasSuccessful() or result.testsRun < 43 or result.skipped:
+              raise SystemExit(1)
+          PY
+      - name: Reproduce temporary PostgreSQL readiness and verify the TCP guard
+        timeout-minutes: 3
+        run: |
+          docker pull postgres:17-alpine
+          sudo -n systemd-run --wait --pipe --collect \
+            --unit="g05-readiness-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --uid="$(id -u)" --gid="$(id -g)" --working-directory="$GITHUB_WORKSPACE" \
+            --property=CPUQuota=100% --property=MemoryMax=256M --property=MemorySwapMax=0 \
+            --property=Nice=19 --property=IOSchedulingClass=idle --property=TasksMax=64 \
+            --property=RuntimeMaxSec=150 --property=KillMode=control-group \
+            env GITHUB_ACTIONS="$GITHUB_ACTIONS" RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" \
+              GITHUB_SHA="$GITHUB_SHA" python3 bench/database_readiness_probe.py
+      - name: Locate the retained final native ELF
+        id: retained
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          index = json.loads(pathlib.Path('docs/goals/results/stress/native-final-suite/index.json').read_text())
+          assert type(index['workflow_run_id']) is int and index['status'] == 'passed'
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
+              stream.write('run=' + str(index['workflow_run_id']) + '\n')
+          PY
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: native-suite-candidate
+          path: target/matrix-retained-input
+          run-id: ${{ steps.retained.outputs.run }}
+          github-token: ${{ github.token }}
+      - name: Probe real backend HTTP during ledger traffic
+        timeout-minutes: 55
+        env:
+          MATRIX_FULL: ${{ inputs.matrix_full }}
+        run: |
+          arguments=()
+          if [ "$MATRIX_FULL" = true ]; then arguments+=(--full); fi
+          sudo -n systemd-run --wait --pipe --collect \
+            --unit="g05-matrix-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --uid="$(id -u)" --gid="$(id -g)" --working-directory="$GITHUB_WORKSPACE" \
+            --property=CPUQuota=100% --property=MemoryMax=512M --property=MemorySwapMax=0 \
+            --property=Nice=19 --property=IOSchedulingClass=idle \
+            --property=TasksMax=128 --property=RuntimeMaxSec=3000 --property=KillMode=control-group \
+            env GITHUB_ACTIONS="$GITHUB_ACTIONS" RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" \
+              GITHUB_SHA="$GITHUB_SHA" GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" \
+              python3 bench/matrix_probe.py --artifact target/matrix-retained-input "${arguments[@]}"
+      - name: Public supplemental evidence only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: supplemental-backend-matrix
+          path: |
+            target/stress-g05/native-matrix-*-public
+            target/matrix-regressions-public.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  native-preflight:
+    if: inputs.target == 'native-preflight'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Inventory disposable GitHub-hosted VM without starting services
+        run: python3 bench/native_preflight.py
+      - name: Read bounded public compiler and guide diagnostics
+        if: inputs.diagnostic_jobs != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIAGNOSTIC_JOBS: ${{ inputs.diagnostic_jobs }}
+        run: |
+          python3 -m unittest discover -s scripts/review_tests -p test_ci_diagnostics.py
+          python3 scripts/check-provider-fixture-clock.py
+          python3 scripts/report-ci-diagnostics.py "$DIAGNOSTIC_JOBS"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-vm-preflight
+          path: target/stress-g05/native-preflight.json
+          retention-days: 14
+
+  native-vm:
+    if: inputs.target == 'native-vm'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: read
+      actions: read
+    env:
+      CARGO_BUILD_JOBS: 2
+      RUST_TEST_THREADS: 2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check native diagnostic redaction and exit-status evidence
+        timeout-minutes: 2
+        run: |
+          nice -n19 ionice -c3 python3 -m unittest discover -s scripts/review_tests -p test_stress_native_vm.py -v
+          nice -n19 ionice -c3 python3 -m unittest discover -s scripts/review_tests -p test_stress_native_pitr_error.py -v
+          nice -n19 ionice -c3 python3 -m unittest discover -s scripts/review_tests -p test_stress_native_pitr_reboot.py -v
+      - name: Inventory the disposable outer VM
+        run: python3 bench/native_preflight.py
+      - name: Read earlier structured native evidence
+        if: inputs.evidence_run != ''
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: native-vm-acceptance
+          run-id: ${{ inputs.evidence_run }}
+          github-token: ${{ github.token }}
+          path: target/native-evidence-download
+      - name: Republish earlier structured native evidence
+        if: inputs.evidence_run != ''
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          reports = list(Path('target/native-evidence-download').rglob('native-vm.json'))
+          if len(reports) != 1:
+              raise SystemExit('Expected one earlier public native report')
+          subprocess.run(['python3', 'bench/native_evidence.py', str(reports[0])], check=True)
+          PY
+      - name: Publish earlier native artifact identity separately
+        if: inputs.evidence_run != ''
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          profiles = list(Path('target/native-evidence-download').rglob('predeclared-profile.json'))
+          if len(profiles) != 1:
+              raise SystemExit('Expected one earlier public native profile')
+          subprocess.run(['python3', 'bench/native_evidence.py', str(profiles[0]), '--profile'], check=True)
+          PY
+      - name: Prepare KVM tooling
+        timeout-minutes: 10
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d
+        with:
+          toolchain: '1.99.0'
+      - name: Verify the supplied frozen extraction artifact
+        id: native_build
+        timeout-minutes: 25
+        run: GITHUB_SHA=5b2b2a49f60274456e84fc027fd3e401fd64e417 python3 bench/native_artifact.py verify target/g05-frozen-input
+      - name: Bounded native VM acceptance with an external observer
+        timeout-minutes: 35
+        env:
+          NATIVE_CASE: ${{ inputs.native_case }}
+        run: |
+          sudo env GITHUB_ACTIONS="$GITHUB_ACTIONS" RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" \
+            GITHUB_SHA="$GITHUB_SHA" GITHUB_RUN_ID="$GITHUB_RUN_ID" GITHUB_RUN_ATTEMPT="$GITHUB_RUN_ATTEMPT" \
+            python3 bench/native_vm.py --binary target/g05-frozen-input/nelcota \
+              --output "target/stress-g05/native-vm-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+              --scenario "$NATIVE_CASE"
+      - name: Structured native VM evidence only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-vm-acceptance
+          path: target/stress-g05/native-vm-*-public
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Retain the native candidate binary for reproducibility
+        if: always() && steps.native_build.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-candidate-binary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/g05-frozen-input/nelcota
+          if-no-files-found: error
+          retention-days: 14
+
   stress:
-    # Dedicated host with at least three CPUs and Docker. Heavy load is kept
+    if: inputs.target == 'benchmark' || inputs.target == ''
+    # Dedicated host with at least four affinity slots and Docker. Heavy load is kept
     # off pull-request runners and uses explicit per-container budgets.
     runs-on: [self-hosted, linux, x64, nelcota-benchmark]
-    timeout-minutes: 90
+    timeout-minutes: ${{ inputs.endurance && 420 || 150 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -20,12 +683,29 @@ jobs:
         with:
           toolchain: '1.99.0'
       - run: nice -n19 ionice -c3 cargo build --locked --release -p nelcota-server
-      - run: nice -n19 ionice -c3 python3 bench/campaign.py --binary target/release/nelcota --output target/stress-report
+      - name: Bounded frozen campaign
+        env:
+          STRESS_BACKEND: ${{ inputs.backend }}
+          STRESS_ENDURANCE: ${{ inputs.endurance }}
+        run: |
+          soak=1800
+          extra=()
+          if [ "$STRESS_ENDURANCE" = true ]; then
+            soak=14400
+            extra=(--capacity --spikes)
+          fi
+          nice -n19 ionice -c3 python3 bench/launch.py \
+            --run-id "ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --binary target/release/nelcota --backend "$STRESS_BACKEND" \
+            --soak-seconds "$soak" --fixture-disk-mib 2048 "${extra[@]}"
+      - name: Prepare structured diagnostics
+        if: always()
+        run: python3 bench/evidence.py "target/stress-g05/ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" --output target/stress-public
       - name: Campaign diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-stress-report
-          path: target/stress-report
+          path: target/stress-public
           if-no-files-found: ignore
           retention-days: 14
