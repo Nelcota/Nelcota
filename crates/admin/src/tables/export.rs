@@ -197,7 +197,7 @@ pub async fn export(
     let header = encoder.header();
     let footer = encoder.footer();
     let table_name = table.name.clone();
-    let body = rows.enumerate().map(move |(index, row)| {
+    let body = connection.rows(rows).enumerate().map(move |(index, row)| {
         let json: String = row?.try_get(0)?;
         encoder.row(index, &json)
     });
