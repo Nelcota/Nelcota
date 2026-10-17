@@ -1,0 +1,46 @@
+{
+  "cell": "a: restore-fencing guest reboot",
+  "verdict": "failed",
+  "workflow": 39073029665,
+  "job": 117514404641,
+  "production_source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+  "harness_wrapper_commit": "13351ed896f86312c680c52ac30bc258d638be8b",
+  "binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+  "exact_same_frozen_ELF": true,
+  "boot_observation": {
+    "profile": {
+      "minimum_observation_seconds": 20,
+      "maximum_observation_seconds": 50,
+      "minimum_sample_gap_seconds": 1,
+      "maximum_samples": 22,
+      "maximum_guest_resource_request_seconds": 12,
+      "maximum_authenticated_HTTP_seconds": 5,
+      "scope": "Owned guest RAM loss after marker-only restore failure; no physical host, real PITR or corruption claim"
+    },
+    "samples": [
+      {
+        "units": {
+          "app": {
+            "MainPID": 1090,
+            "ActiveState": "active"
+          },
+          "postgres": {
+            "MainPID": 728,
+            "ActiveState": "active"
+          }
+        },
+        "authenticated_API_reopened": true
+      }
+    ],
+    "elapsed_seconds": 0.4051668369999959,
+    "unknown_state_kept_stopped_after_boot": false
+  },
+  "fixture_rows_preserved": true,
+  "explicit_fixture_recovery_successful": true,
+  "unauthorized_API_status": 401,
+  "other_user_visible_rows": 0,
+  "private_file_status": 404,
+  "cleanup_confirmed": true,
+  "critical_stop_exception_observed": false,
+  "scope": "First post-boot sample shows app/PG active and authenticated API reopened. This fails the boot fence; no claim of a full twenty-second closed window, real WAL/PITR or physical power loss. Existing findingP12 stays open; no product correction, refreeze or restart."
+}

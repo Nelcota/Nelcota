@@ -3990,3 +3990,30 @@ files listed in the artifact manifest; no new product implementation differs.
 All remaining local runs receive the frozen file by explicit path and digest.
 The native probe must also deploy these exact frozen bytes, rather than rebuild
 a different executable on its runner.
+
+
+Native-control count correction: the three probe files ran55tests, all passed.
+An operator assertion incorrectly reused an earlier selection's62count and
+returned1; the original JSON/log are preserved. The separate existing artifact
+verifier then ran5tests with zero failures/errors. This execution therefore
+covers60unique existing controls across four files; repeated executions are
+not added. The prior commit body's62count and the commentary's estimated seven
+verifier tests were incorrect for this selection; use the actual55+5receipts.
+No test or acceptance threshold was removed or lowered. This reporting correction
+does not change the frozen source, ELF or workload.
+
+
+### Final campaign a: guest reboot failed, frozen artifact retained
+
+Workflow39073029665deployed the exact frozen ELF b59d2c15…c630e, with
+all six production trees equal to extraction5b2b2a4. The first post-boot sample
+at0.405166837seconds showed applicationPID1090andPostgreSQLPID728active;
+the authenticated API reopened before explicit recovery. The verdict is failed,
+not a twenty-second closure claim. Explicit fixture recovery later succeeded,
+rows were preserved, unauthorizedAPI401/other-user rows0/private file404passed,
+safety guard was null and owned cleanup confirmed. The same open findingP12now
+has direct application/API evidence as well as PostgreSQL autostart evidence.
+No authorization/RLS escape, acknowledged-data loss or corruption was observed
+in this controlled fixture, so the critical-stop exception was not triggered.
+No product fix, rebuild, refreeze or campaign restart was performed. Proceed
+to the continuous disk campaign on the exact same frozen file.

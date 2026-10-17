@@ -10,7 +10,7 @@ final está [congelado](results/stress/campaign-final-artifact.json), SHA-256
 `b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e`, 30.484.800 bytes.
 O PR #90 permanece como rascunho.
 
-Após CI18/18, haverá um único congelamento e somente quatro campanhas:
+Com CI18/18, o único congelamento foi realizado. Restam somente quatro campanhas:
 reboot da convidada, quatro horas contínuas em disco, quatro horas contínuas
 em S3 real e falhas simples sob carga. Novos defeitos ficam no
 [ledger](results/stress/campaign-convergence-findings.json), sem correção automática,
@@ -32,6 +32,22 @@ Atualização da investigação: 17/10/2026, 21:15 UTC.
 Não houve merge nem deploy de produção. O trabalho está na branch
 `test/g05-stress-verification`, no [PR #90](https://github.com/Nelcota/Nelcota/pull/90),
 mantido como rascunho para revisão.
+
+## Campanhas finais: estado atual
+
+| Célula | Veredicto/estado | Evidência |
+|---|---|---|
+| a — fence de restore após reboot | **failed** | [Probe final](results/stress/native-reboot-converged-verdict.json): os mesmos bytes congelados; PostgreSQL, aplicação e API autenticada reabriram na primeira amostra, antes da recuperação explícita. Linhas preservadas, canários401/RLS0/arquivo404 e limpeza confirmados. P12 fica aberto, sem correção automática. |
+| b — disco contínuo, quatro horas | Em execução desde17/10,22:01UTC | Mesmo ELF; preparação/capacidade não substituem as quatro horas de endurance. |
+| c — S3 real contínuo, quatro horas | **not run**, aguardando disco | Provedor RustFS real, compatível com S3, no staging local; sem alegação de AWS ou WAL/PITR. |
+| d — falhas simples sob carga | **not run**, aguardando S3 | Somente o perfil existente, uma falha por vez. |
+| Oito células operacionais declaradas | **blocked (environment)** | [Perfis necessários e proibição de retry/workaround](results/stress/campaign-convergence-policy.json). |
+
+O G05 permanece sem aprovação integral. Controles locais deste escopo:
+**55 do probe e cinco do verificador de artefatos,60 testes únicos aprovados**.
+A reutilização incorreta da contagem62 produziu uma falha de assert do operador;
+[recibos e correção](results/stress/converged-native-control-validation.json)
+preservam esse erro, sem apresentá-lo como falha de produto ou esconder seu exit1.
 
 ## Tempo efetivo e artefatos
 

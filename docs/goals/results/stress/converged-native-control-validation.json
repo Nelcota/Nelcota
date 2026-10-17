@@ -1,0 +1,34 @@
+{
+  "probe_controls": {
+    "observed_at_utc": "2026-10-17T21:52:27.595333+00:00",
+    "tests": 55,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "patterns": [
+      "test_stress_native_vm",
+      "test_stress_native_pitr_error",
+      "test_stress_native_pitr_reboot"
+    ],
+    "log_sha256": "2a86a867d01c1d2dc140b3d2d3a64c177202897d6ec8c122fc09257e6d49d583",
+    "scope": "Existing focused native controls after the minimal guest fixture sync; no product or workload change"
+  },
+  "artifact_controls": {
+    "observed_at_utc": "2026-10-17T21:53:02.349541+00:00",
+    "tests": 5,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "log_sha256": "e6b4799d0f12b0e24d4c152ed9cd90594b65858b6191e0c72abaa48c314841da"
+  },
+  "unique_existing_controls_total": 60,
+  "reporting_correction": {
+    "expected_count_in_operator_assertion": 62,
+    "actual_probe_only_count": 55,
+    "operator_assertion_exit_code": 1,
+    "test_failures": 0,
+    "explanation": "The three probe files ran55controls and the separate artifact verifier ran5, all passed:60unique controls in this execution. Reusing the earlier62-count for a different selection was incorrect. Preserve the original operator assertion exit1; it was a reporting error, not a product/control test failure."
+  }
+}

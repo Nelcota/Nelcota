@@ -1,0 +1,1757 @@
+{
+  "declared_utc": "2026-10-16T15:39:26.204776+00:00",
+  "status": "predeclared; new profiles require local regressions and native controls before execution",
+  "certifies_g05": false,
+  "scope": "Fresh controlled replacements and experimental CPU allocation; all earlier failures remain retained. No production deployment or maximum-capacity certification.",
+  "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+  "backend_source": "2efede8c27ee12119142170e8bd9742ff7cb900e",
+  "sequential_execution": true,
+  "minimum_free_filesystem_fraction": 0.15,
+  "minimum_available_host_memory_fraction": 0.1,
+  "maximum_resource_observation_gap_seconds": 30,
+  "ordinary_endurance": {
+    "fresh_passes_each_backend": 2,
+    "backends": [
+      "disk",
+      "real local RustFS S3"
+    ],
+    "continuous_soak_seconds": 14400,
+    "steady_seconds_each_sample": 60,
+    "steady_samples_each_workload": 3,
+    "steady_duration_reason": "Predeclare longer equivalent nominal samples before replacement measurements to improve run-to-run characterization; all p95/throughput regression thresholds remain unchanged.",
+    "workloads": [
+      "read",
+      "rls",
+      "panel",
+      "storage",
+      "login",
+      "refresh",
+      "write",
+      "mixed"
+    ],
+    "write_steady_iterations_per_second": 50,
+    "capacity_step_seconds": 300,
+    "capacity_and_spikes": true,
+    "soak_fraction": 0.7,
+    "calibration_ceiling_iterations_per_second": 400,
+    "calibration_ceiling_is_maximum_capacity_claim": false,
+    "fixture_disk_mib": 1024,
+    "wal_mib": 256,
+    "s3_memory_mib": 1024,
+    "final_idle_seconds": 180
+  },
+  "host_profiles": [
+    {
+      "projects": 1,
+      "policy": "quota",
+      "seconds_per_step": 300,
+      "provisional_rate_per_project": 32,
+      "fallback_rate_per_project": 8,
+      "fresh_passes": 2,
+      "scope": "First current fixed-counter run already active; the new optional sharing capability leaves its default CPU limits unchanged.",
+      "aggregate_database_disk_ceiling_mib": 1536,
+      "replacement_run_suffix": "002"
+    },
+    {
+      "projects": 5,
+      "policy": "shared",
+      "seconds_per_step": 300,
+      "provisional_rate_per_project": 32,
+      "fallback_rate_per_project": 8,
+      "fresh_passes": 2,
+      "aggregate_database_disk_ceiling_mib": 1536,
+      "replacement_run_suffix": "002"
+    },
+    {
+      "projects": 10,
+      "policy": "shared",
+      "seconds_per_step": 300,
+      "provisional_rate_per_project": 8,
+      "fallback_rate_per_project": 4,
+      "fresh_passes": 2,
+      "scope": "Conservative predeclared operating band for a distinct sharing allocation; not a comparison against failed fractional-quota campaigns or an absolute capacity maximum.",
+      "aggregate_database_disk_ceiling_mib": 1536,
+      "replacement_run_suffix": "002"
+    }
+  ],
+  "host_cpu_sharing": {
+    "app_logical_cpu_slots": 1,
+    "postgres_logical_cpu_slots": 1,
+    "per_container_ceiling_cpu": 1,
+    "sum_of_configured_quotas_per_role_equals_projects": true,
+    "oversubscription_is_explicit": true,
+    "generator_distinct_slot": true,
+    "native_single_slot_census_required": true,
+    "memory_disk_and_slos_unchanged": true,
+    "healthy_throughput_minimum_ratio": 0.9,
+    "healthy_p95_maximum_ratio": 1.2,
+    "webhook_drain_deadline_seconds": 30,
+    "new_baseline_and_candidate_must_use_same_policy": true
+  },
+  "larger_fixture": {
+    "products_rows": 1000000,
+    "private_rows": 1000000,
+    "object_payload_bytes": 1048576,
+    "fresh_full_passes_each_backend": 2,
+    "steady_seconds_each_sample": 30,
+    "steady_samples_each_workload": 3,
+    "steady_iterations_per_second": 20,
+    "write_steady_iterations_per_second": 10,
+    "capacity_step_seconds": 300,
+    "calibration_ceiling_iterations_per_second": 20,
+    "capacity_and_spikes": true,
+    "soak_seconds": 600,
+    "final_idle_seconds": 180,
+    "fixture_disk_mib": 2048,
+    "wal_mib": 256,
+    "scope": "Additional larger-payload/data cell; its ten-minute soak does not replace mandatory ordinary four-hour disk/S3 endurance.",
+    "storage_fixture_disk_mib_by_backend": {
+      "disk": 1024,
+      "s3": 4096
+    }
+  },
+  "other_required_repetitions": [
+    "second complete browser/SDK pass",
+    "second complete fault/recovery pass",
+    "final-protocol comparable regression checks",
+    "remaining functional/stress matrix mapping and actual deployment blockers"
+  ],
+  "approval_thresholds_reduced": false,
+  "amendments": [
+    {
+      "declared_utc": "2026-10-16T17:54:41.168450+00:00",
+      "trigger": "s3-http-latency-smoke-001 failed the original 1024-MiB physical store bound during one-MiB overwrites; original failure retained",
+      "change": "Only the larger real-S3 profile receives a predeclared 4096-MiB physical storage budget; disk remains 1024 MiB and ordinary 17-byte endurance remains 1024 MiB",
+      "reason": "A provider-only diagnostic observed zero logical API objects while deleted payloads remained physically in its internal trash. Associated source uses a five-minute automatic cleanup interval; completion/namespace proof is pending. Physical capacity must account for this retention instead of treating logical live bytes as total disk use.",
+      "conditions": [
+        "Confirm automatic cleanup without forcing it",
+        "Pass host-reserve preflight with the larger physical quota",
+        "Relocate only verified rebuildable compiler caches if additional disk headroom is needed",
+        "Retain default provider cleanup policy and one-MiB request sizes",
+        "Run both larger-S3 passes with the same declared profile"
+      ],
+      "approval_slos_or_integrity_thresholds_reduced": false,
+      "ordinary_four_hour_disk_and_s3_criteria_unchanged": true
+    },
+    {
+      "declared_utc": "2026-10-17T00:11:37.793706+00:00",
+      "trigger": "Five CLI/runtime management defects were fixed while the local retained-binary disk campaign remained frozen; old S3 counter/latency approval is withdrawn",
+      "change": "Keep disk-final-pass-1-002 as retained baseline only. Rebuild tracked panel assets, freeze the new local release and repeat both four-hour final passes per backend. Add one fresh retained-binary ordinary S3 capacity/steady baseline with a 600-second diagnostic soak for equivalent steady before/after comparisons.",
+      "reason": "The fresh S3 baseline supplies current closed-counter/logical-latency/TSDB evidence for the three steady samples; its short diagnostic soak has no four-hour endurance claim. It does not replace either final four-hour S3 pass.",
+      "conditions": [
+        "Use the same ordinary S3 CPU/RAM/disk/WAL/metrics/steady/write/capacity/spike profile; only the baseline diagnostic soak duration differs",
+        "Compare the three equivalent steady samples; do not claim equivalence of the short and four-hour endurance windows",
+        "Identify retained baseline and new candidate by explicit build-source and binary hashes, independent of the harness checkout SHA",
+        "Keep two fresh final-candidate 14400-second continuous runs for each backend",
+        "Use the final native source in the single-ELF twelve-case native suite; identify the native-runner and local-performance builds separately"
+      ],
+      "approval_slos_or_integrity_thresholds_reduced": false,
+      "ordinary_four_hour_disk_and_s3_criteria_unchanged": true
+    },
+    {
+      "declared_utc": "2026-10-17T06:43:37.667383+00:00",
+      "trigger": "Confirmed real-PostgreSQL SQL admission bug; previous final disk candidate intentionally stopped with cleanup",
+      "change": "Fresh candidate002 disk/S3 passes1/2 using source cb916d04 and new48aec40e ELF; all existing workload arguments, limits, SLOs and comparison thresholds unchanged",
+      "previous_artifact_evidence": "final-local-candidate-7e68fd2.json",
+      "replacement_run_ids": [
+        "disk-candidate-pass-1-002",
+        "s3-candidate-pass-1-002",
+        "disk-candidate-pass-2-002",
+        "s3-candidate-pass-2-002"
+      ],
+      "conditions": [
+        "Preserve original failed/interrupted evidence",
+        "No partial-soak approval",
+        "Source/ELF pinning and full owned cleanup",
+        "Two independent 14400-second continuous runs per backend",
+        "Native-suite and full supplemental matrix must use new product trees"
+      ]
+    },
+    {
+      "declared_utc": "2026-10-17T06:53:58.529114+00:00",
+      "trigger": "Confirmed export cancellation admission defect, fixed af01678 after16passing real-service regressions; no candidate002 load started",
+      "change": "Fresh candidate003 disk/S3 passes1/2; identical workload arguments, budgets, SLOs and comparison thresholds. Retain candidate002 as unmeasured historical build.",
+      "replacement_run_ids": [
+        "disk-candidate-pass-1-003",
+        "s3-candidate-pass-1-003",
+        "disk-candidate-pass-2-003",
+        "s3-candidate-pass-2-003"
+      ],
+      "binary_sha256": "acfb2c604a7376be95690852ef016bca90eba599a55bad4be27b6c071b59a6b2",
+      "source_commit": "af01678ac773f932232d0f37e6d0a2fa02edc343",
+      "previous_artifact_evidence": "final-local-candidate-cb916d0.json",
+      "conditions": [
+        "Two independent14400s continuous runs per backend",
+        "Keep all original failed or unrun verdicts",
+        "Source/artifact identity and owned cleanup/comparison gates unchanged",
+        "Stop on any failed evidence, cleanup or regression gate"
+      ]
+    },
+    {
+      "declared_utc": "2026-10-17T07:33:16.721015+00:00",
+      "change": "Predeclare two additional bounded browser/auth passes on fresh four-slot Actions VMs; keep the existing local five-slot profile and all SLOs unchanged",
+      "conditions": [
+        "Retained final ELF and exact source/tree identity, including a clean product working tree",
+        "Focused six auth-publication and fourteen shared resource/artifact regressions must pass remotely",
+        "No bypass of TLS, RLS, expiry, signatures or cleanup",
+        "Four-slot observer/proxy sharing is explicit; this is a distinct operating profile",
+        "Do not queue over another pending manual workflow and lose its evidence",
+        "Use strict independent browser request counts, final user/session census, and successful-only latency distributions",
+        "No claim that this completes SMTP/OAuth/public-ingress or all remaining G05 cells"
+      ]
+    },
+    {
+      "kind": "superseded artifact provenance",
+      "preserved_artifact": {
+        "source_commit": "e6fdfd7cca377edb0b36184a21a9a7b30a4d1d0c",
+        "binary_sha256": "acfb2c604a7376be95690852ef016bca90eba599a55bad4be27b6c071b59a6b2",
+        "evidence": "final-local-candidate-e6fdfd7.json",
+        "byte_equivalence_evidence": "release-test-fixture-byte-equivalence.json",
+        "status": "same exact retained ELF as the ongoing disk003 campaign; no workload, process or approval-threshold change; updated test/native CI pending"
+      },
+      "reason": "Confirmed large unpolled export deadline retention defect; new product build required"
+    },
+    {
+      "declared_utc": "2026-10-17T08:50:51.988312+00:00",
+      "kind": "stricter topology data ceiling before any replacement measurement",
+      "old_aggregate_database_disk_ceiling_mib": 2048,
+      "new_aggregate_database_disk_ceiling_mib": 1536,
+      "reason": "Original ten-project worst-case startup plus2048MiB database ceiling cannot fit above the unchanged15% filesystem reserve. A stricter1536MiB owned-data stop ceiling admits the identical1000-row/project fixture without reducing traffic, duration, SLO, fairness, integrity or isolation requirements. If actual growth breaches it, stop and retain the failure; no pass is inferred.",
+      "changes_to_dataset_or_offered_work": false,
+      "all_1_5_10_baseline_candidate_profiles_match": true,
+      "fresh_topology_run_suffix": "002",
+      "new_endurance_or_larger_fixture_limits_changed": false
+    },
+    {
+      "declared_utc": "2026-10-17T09:18:35.531965+00:00",
+      "kind": "stricter per-project CPU isolation diagnostic",
+      "run_id": "host10-quota10ms-candidate-smoke-001",
+      "prior_failed_evidence": "host10-shared-smoke-failure-002.json",
+      "difference": "Same single CPU per app role/database role; replace shared1CPU ceiling per project with0.1CPU hard quotas replenished every10ms. No offered load, memory, disk, duration or SLO/fairness reduction.",
+      "certifies_g05": false
+    },
+    {
+      "declared_utc": "2026-10-17T11:43:21.772858+00:00",
+      "change": "Freeze candidate006 after ninth confirmed production defect (SDK late overlapping browser refresh) and rebuild bundled guide assets. Use fresh disk/S3 candidate pass suffix005 and larger candidate suffix002; do not reuse prior output IDs. Existing rates, SLOs, datasets, safety reserves and durations are unchanged.",
+      "approval_thresholds_reduced": false,
+      "new_local_binary_sha256": "c7e3d25467823c9d44157aca762761c23a49cd81f8ee96915b468f7bc3d119a4",
+      "harness_regressions": {
+        "executed": 300,
+        "passed": 300,
+        "skipped": 0,
+        "seconds": 12.586,
+        "log_sha256": "ae2d867b42024637e0779e90b3a3e9c5b6b4730d8d3a559a242e68f637a93b5f"
+      },
+      "next_order": "Run the still-unstarted retained million-row S3 baseline while new CI/native checks execute remotely; prioritize the four final disk/S3 continuous endurance runs after candidate006 verification before remaining larger/topology profiles. Stop and diagnose every failed workload or comparison."
+    },
+    {
+      "declared_utc": "2026-10-17T13:20:21.799734+00:00",
+      "approval_thresholds_reduced": false,
+      "reason": "Tenth confirmed production defect: independent default server SDK clients share a global lock, causing unrelated cached reads to wait for sign-in HTTP. Before202pass2fail, after204pass0fail; actual built-SDK beforeaborted/afterownreadpassed.",
+      "fix_commit": "9bca03bc689c425a7660c5da9305180450aeaa7c",
+      "generated_asset_commit": "df77883b1d149938979ba7a76bde2b125b7dbf44",
+      "next_artifact": "candidate007, not yet built",
+      "future_fresh_endurance_ids": [
+        "disk-candidate-pass-1-006",
+        "s3-candidate-pass-1-006",
+        "disk-candidate-pass-2-006",
+        "s3-candidate-pass-2-006"
+      ],
+      "future_larger_candidate_suffix": "003",
+      "unchanged": "All predeclared workloads, rows, sizes, CPU/RAM/disk budgets, SLO/delivery/fairness/regression thresholds, reserves and14400scontinuoussoaks remain unchanged.",
+      "new_harness": "Auth-link consumption case, corrected post-pacing ledger admission, all4capacitysteps/CPU endpoints and full auxiliary-action overlap timing.308stress+3projection regressions pass; real network smoke must close before full new matrix evidence.",
+      "retained_baselines_closed": "Both million-row disk/S3 retained baselines passed; short summarizer performs verified compression exactly once. Explicit extra S3compression correctly refused; original failed operator state retained with passing source/summary/checksum/cleanup reconciliation."
+    },
+    {
+      "declared_utc": "2026-10-17T13:34:36.586956+00:00",
+      "trigger": "Tenth confirmed production SDK defect fixed; fresh complete local artifact007; controlled fixture-only HTTP auth-link smoke passed",
+      "source_commit": "35f4a9725d7edcf571f91084c555c127e7323653",
+      "binary_sha256": "96811748f1f45ad4894114188642f9343df661c750ad22768eaf2275659081b1",
+      "thresholds_changed": false,
+      "replacements": [
+        {
+          "previous_run_id": "large-disk-candidate-pass-1-002",
+          "replacement_run_id": "large-disk-candidate-pass-1-003"
+        },
+        {
+          "previous_run_id": "large-disk-candidate-pass-2-002",
+          "replacement_run_id": "large-disk-candidate-pass-2-003"
+        },
+        {
+          "previous_run_id": "large-s3-candidate-pass-1-002",
+          "replacement_run_id": "large-s3-candidate-pass-1-003"
+        },
+        {
+          "previous_run_id": "large-s3-candidate-pass-2-002",
+          "replacement_run_id": "large-s3-candidate-pass-2-003"
+        },
+        {
+          "previous_run_id": "disk-candidate-pass-1-005",
+          "replacement_run_id": "disk-candidate-pass-1-006"
+        },
+        {
+          "previous_run_id": "disk-candidate-pass-2-005",
+          "replacement_run_id": "disk-candidate-pass-2-006"
+        },
+        {
+          "previous_run_id": "s3-candidate-pass-1-005",
+          "replacement_run_id": "s3-candidate-pass-1-006"
+        },
+        {
+          "previous_run_id": "s3-candidate-pass-2-005",
+          "replacement_run_id": "s3-candidate-pass-2-006"
+        }
+      ]
+    }
+  ],
+  "native_same_artifact_suite": {
+    "workflow_run_id": 39064489119,
+    "source_commit": "da262d77f4d2557ff5cbd9007b9a3a6273a92221",
+    "binary_sha256": "e03125c940dd6e533ce6c0f98aab296ec04d9fa7e5eea3ebf0fadf11a38c590d",
+    "status": "passed",
+    "cases": 12,
+    "evidence": "native-final-suite/index.json",
+    "scope": "Two fresh independent passes of all six native/KVM scenarios on the common008 product source and ELF after the uncertainPITR-error stopped-service fix and rebuilt guide assets. This does not explain the original af01678 startup failure or certify endurance/capacity, physical host power loss, public DNS/ACME, PITR or off-host restore. Remote windows earn no overlapping local effective-time credit."
+  },
+  "allocator_follow_up": {
+    "declared_utc": "2026-10-17T01:19:02.464282+00:00",
+    "trigger": "Ordinary final repetitions retain unexplained late anonymous growth like the retained baseline first/last15m median26.668->29.242MiB",
+    "action": "Separate four-hour glibc allocation diagnostic on the same frozen candidate, with the validated probe, two pruning cohorts and final idle census",
+    "continuous_soak_seconds": 14400,
+    "performance_comparisons_must_reject_instrumented_runs": true,
+    "expected_extra_threads": 1,
+    "expected_extra_descriptors": 1,
+    "scope": "App allocation accounting only; does not attribute RustFS MiMalloc live owners or replace any ordinary final pass.",
+    "final008_predeclaration": {
+      "declared_utc": "2026-10-17T19:51:30.685316+00:00",
+      "status": "conditional predeclared; not started",
+      "source_commit": "da262d77f4d2557ff5cbd9007b9a3a6273a92221",
+      "campaigns": [
+        {
+          "run_id": "allocation-final008-disk-four-hours-001",
+          "binary": "frozen final008 with eleven corrections and rebuilt guide assets",
+          "kind": "single",
+          "arguments": [
+            "--backend",
+            "disk",
+            "--steady",
+            "60s",
+            "--workloads",
+            "read,rls,panel,storage,login,refresh,write,mixed",
+            "--soak-seconds",
+            "14400",
+            "--capacity",
+            "--capacity-step-seconds",
+            "300",
+            "--spikes",
+            "--fixture-disk-mib",
+            "1024",
+            "--wal-mib",
+            "256",
+            "--soak-fraction",
+            "0.7",
+            "--calibration-ceiling",
+            "400",
+            "--s3-memory-mib",
+            "1024",
+            "--storage-fixture-disk-mib",
+            "1024",
+            "--final-idle-seconds",
+            "180",
+            "--write-steady-rate",
+            "50",
+            "--allocation-probe",
+            "/workspace/Nelcota/target/stress-g05/artifacts/allocation-probe-001/libg05alloc.so"
+          ],
+          "scope": "Conditional separate instrumented ownership diagnostic if late post-warm anonymous-memory growth persists in final ordinary campaigns. Same four-hour mixed disk load and original quotas/SLOs; one additional observer thread/descriptor, no forced trimming. No ordinary performance or regression certification from LD_PRELOAD instrumentation.",
+          "previous_unstarted_or_superseded_plan_run_id": "allocation-final007-disk-four-hours-001"
+        }
+      ],
+      "probe_profile": {
+        "kind": "owned glibc mallinfo2 diagnostic",
+        "library_sha256": "a5396ed7b8ed580f27dbfe7358444c734b1a486e9566e41114fa6ef5636f9ec3",
+        "source_sha256": "f833882f9c9697d7e838871dad3d398fb6427e78b21104d30ea8fcd7f13678f3",
+        "sample_period_ms": 5000,
+        "expected_extra_threads": 1,
+        "expected_extra_descriptors": 1,
+        "maximum_bytes_per_process": 1048576,
+        "scope": "instrumented ownership diagnostic; cannot certify ordinary performance or G05",
+        "in_use_scope": "glibc accounting includes allocator thread caches, not an exact application-object census"
+      },
+      "trigger": "Unexplained lateanonymousgrowth persists on new008ordinary disk/S3 repetitions, like confirmed007disk26.81to28.60MiB; conditionalcase has no performancecertificate and does not replace anyordinarycase.",
+      "scope": "Same priorfourhour14400sG05disk mixedprofile and argumentvector; oneextraobserverthread/FD, noforcedmalloc_trim. Existingvalidatedglibcprobe reused, not rebuilt during live load. Manualserializedlaunchonlyafterordinary008closes andbeforepostload; neverrunconcurrently.",
+      "runner_sha256": "5b777f20faa1d02cd3b95574b5889e2a34ddcd4b7ea0179d010f3d68d70a9a40",
+      "plan_sha256": "15bf76de5c20647c6086cffaced07ed901effc1fac7dfc00c07dac6a21686618",
+      "runner": "run-planned-campaign-once-v11-allocation.py"
+    }
+  },
+  "retained_s3_baseline_retry": {
+    "declared_utc": "2026-10-17T02:13:19.494144+00:00",
+    "failed_run": "s3-retained-baseline-001",
+    "failure_evidence": "s3-retained-baseline-001-interrupted.json",
+    "retry_run": "s3-retained-baseline-002",
+    "traffic_limits_and_slos": "unchanged; same predeclared baseline profile and600s soak",
+    "operator": "Bounded detached controller with independent per-campaign watchdogs and generation receipts; serialize the retry and all four final endurance runs, stop on failed workload/evidence/cleanup/comparison. It changes no test or approval criterion.",
+    "final_candidates_started_before_interruption": false
+  },
+  "provider_owner_follow_up": {
+    "declared_utc": "2026-10-17T03:47:43.729685+00:00",
+    "trigger": "Current S3 baseline observed provider cgroup peak225 tasks,617418752 memory.current bytes and297971712 anonymous bytes without OOM. Task count is not an attribution of anonymous bytes.",
+    "action": "Inspect exact provider runtime/allocator ownership options; if supported, perform a separate bounded default-versus-explicit-worker diagnostic without changing any ordinary baseline/final profile.",
+    "ordinary_profiles_unchanged": true,
+    "performance_comparison_scope": "Alternative provider runtime settings cannot certify equivalence with the default profile. Requested-live-byte accounting remains unavailable until observed; cumulative allocation is never treated as live bytes.",
+    "production_deployment": false,
+    "manual_target": "provider-runtime",
+    "status": "First corrected three-case pass passed; independent second source6e6b51e active or queued; exact live allocation remains unattributed",
+    "profiles": [
+      {},
+      {
+        "RUSTFS_RUNTIME_WORKER_THREADS": "4"
+      },
+      {
+        "RUSTFS_RUNTIME_FSYNC_BLOCKING_THREADS": "4"
+      }
+    ],
+    "independent_passes": 2,
+    "provider": {
+      "cpus": 0.5,
+      "memory_mib": 1024,
+      "pids": 256,
+      "data_and_writable_layer_mib_each": 512
+    },
+    "controller": {
+      "cpus": 0.5,
+      "memory_mib": 256,
+      "pids": 128,
+      "systemd_seconds": 3900
+    },
+    "load": {
+      "seconds": 180,
+      "bursts": 60,
+      "concurrency": 16,
+      "burst_interval_seconds": 3,
+      "payload_bytes": 64,
+      "maximum_signed_requests_per_case": 4096
+    },
+    "idle_seconds": 600,
+    "maximum_case_seconds": 1080,
+    "maximum_total_seconds": 3600,
+    "maximum_network_bytes": 4294967296,
+    "sample_seconds": 5,
+    "maximum_observation_gap_seconds": 30,
+    "scope": "Two independent disposable Actions runs, three fresh sequential providers each. Container environment only shows passed settings; actual process owner counts/gauges determine observations. No assumption that a setting was honored or that anonymous memory is cache/live allocation. Direct provider diagnostics have zero BaaS load-time credit.",
+    "collector_window_correction": {
+      "declared_utc": "2026-10-17T04:37:53.910960+00:00",
+      "reproduction": "provider-runtime-reproduced-budget-failure.json",
+      "original_discovery_defaults": {
+        "maximum_exports": 128,
+        "maximum_wire_bytes": 16777216
+      },
+      "long_probe_explicit_limits": {
+        "maximum_exports": 256,
+        "maximum_wire_bytes": 16777216
+      },
+      "reason": "Per-case1080s/5s can require216 exports; fixed128-export discovery window cannot cover pressure plus idle. Count256 remains bounded and all per-request parser/nonce/peer/process/traffic/host reserve and approval limits remain unchanged.",
+      "prior_failures_preserved": true,
+      "regressions": "Actual authorized HTTP admission at128/129 and256/257, wire budget, and reject invalid limits before binding; remote execution pending",
+      "pre_dispatch_review": {
+        "observed_utc": "2026-10-17T04:39:55.951973+00:00",
+        "change": "Retain the original16-MiB byte ceiling. Only the exhausted export-count window changes; the initially prepared32-MiB allowance was never used in a provider campaign.",
+        "evidence": "Unchanged-limit reproduction received3151161 bytes, below the original byte ceiling."
+      }
+    },
+    "first_pass_evidence": "provider-runtime-corrected-pass-1.json",
+    "second_workflow_run_id": 39006884440
+  },
+  "supplemental_backend_matrix": {
+    "declared_utc": "2026-10-17T05:05:43.723694+00:00",
+    "status": "First20s-per-case transport/admission smoke passed; deadline and exact-export oracles strengthened before full campaigns, requiring fresh smoke and two full passes",
+    "manual_target": "matrix",
+    "smoke_first": true,
+    "full_independent_passes": 2,
+    "artifact_source": "7e68fd21430ac93125149f60927f8676b077811d",
+    "artifact_sha256": "010d0fc52f5cc5961f56baf6902294abfcc2c9d855ccbf7605e4b91e8a89a45c",
+    "product_tree_equality_required": true,
+    "controller": {
+      "cpus": 1,
+      "memory_mib": 512,
+      "swap": 0,
+      "pids": 128,
+      "systemd_maximum_seconds": 3000
+    },
+    "scenarios": [
+      "admin-budgets",
+      "admin-cancellation",
+      "catalog-recovery",
+      "hostile-backend"
+    ],
+    "full_seconds_each": 120,
+    "smoke_seconds_each": 20,
+    "foreground": "Existing atomic-transfer ledger plus positive/negative work, four300s qualification steps and80% qualified rate in full mode; unchanged delivery/p95/p99 gates",
+    "bounds": {
+      "requests": 4096,
+      "request_or_consumed_response_mib_each": 2,
+      "consumed_responses_mib": 64,
+      "unread_exports_upper_bound_mib": 256,
+      "partial_header_body_clients_each_cycle": 2,
+      "partial_client_seconds": 2,
+      "pressure_cycles": 5,
+      "SQL_connection_release_seconds": 3,
+      "export_connection_release_seconds": 5,
+      "sampler_gap_seconds": 30,
+      "disk_mib_each_database": 512
+    },
+    "scope": "Supplemental real-backend HTTP admin/catalog/security subset only. Forced catalog-refresh failure, SMTP/OAuth, public ingress and full management/update matrix remain separate. No BaaS overlap time credit and no ordinary profile changes.",
+    "approval_thresholds_reduced": false,
+    "first_smoke_evidence": "matrix-backend-smoke-001.json",
+    "focused_guard_count": 11
+  },
+  "comparable_remaining_fixture_baselines": {
+    "declared_utc": "2026-10-17T05:45:45.285601+00:00",
+    "status": "not run",
+    "baseline_source": "2efede8c27ee12119142170e8bd9742ff7cb900e",
+    "baseline_binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "rows": [
+      {
+        "baseline_run_id": "large-disk-retained-baseline-001",
+        "candidate_profile_reference": "large-disk-candidate-pass-1-001",
+        "kind": "single",
+        "arguments": [
+          "--backend",
+          "disk",
+          "--steady",
+          "30s",
+          "--steady-rate",
+          "20",
+          "--workloads",
+          "read,rls,panel,storage,login,refresh,write,mixed",
+          "--soak-seconds",
+          "600",
+          "--capacity",
+          "--capacity-step-seconds",
+          "300",
+          "--spikes",
+          "--fixture-disk-mib",
+          "2048",
+          "--wal-mib",
+          "256",
+          "--soak-fraction",
+          "0.7",
+          "--calibration-ceiling",
+          "20",
+          "--s3-memory-mib",
+          "1024",
+          "--final-idle-seconds",
+          "180",
+          "--write-steady-rate",
+          "10",
+          "--rows",
+          "1000000",
+          "--object-bytes",
+          "1048576",
+          "--storage-fixture-disk-mib",
+          "1024"
+        ]
+      },
+      {
+        "baseline_run_id": "large-s3-retained-baseline-001",
+        "candidate_profile_reference": "large-s3-candidate-pass-1-001",
+        "kind": "single",
+        "arguments": [
+          "--backend",
+          "s3",
+          "--steady",
+          "30s",
+          "--steady-rate",
+          "20",
+          "--workloads",
+          "read,rls,panel,storage,login,refresh,write,mixed",
+          "--soak-seconds",
+          "600",
+          "--capacity",
+          "--capacity-step-seconds",
+          "300",
+          "--spikes",
+          "--fixture-disk-mib",
+          "2048",
+          "--wal-mib",
+          "256",
+          "--soak-fraction",
+          "0.7",
+          "--calibration-ceiling",
+          "20",
+          "--s3-memory-mib",
+          "1024",
+          "--final-idle-seconds",
+          "180",
+          "--write-steady-rate",
+          "10",
+          "--rows",
+          "1000000",
+          "--object-bytes",
+          "1048576",
+          "--storage-fixture-disk-mib",
+          "4096"
+        ]
+      },
+      {
+        "baseline_run_id": "host1-retained-baseline-001",
+        "candidate_profile_reference": "host1-candidate-pass-1-001",
+        "kind": "host",
+        "arguments": [
+          "--projects",
+          "1",
+          "--seconds",
+          "300",
+          "--rate",
+          "8",
+          "--capacity",
+          "--provisional-rate",
+          "32",
+          "--webhooks",
+          "--caddy",
+          "--disk-mib",
+          "2048",
+          "--cpu-period-micros",
+          "100000",
+          "--project-cpu-policy",
+          "quota"
+        ]
+      },
+      {
+        "baseline_run_id": "host5-retained-baseline-001",
+        "candidate_profile_reference": "host5-candidate-pass-1-001",
+        "kind": "host",
+        "arguments": [
+          "--projects",
+          "5",
+          "--seconds",
+          "300",
+          "--rate",
+          "8",
+          "--capacity",
+          "--provisional-rate",
+          "32",
+          "--webhooks",
+          "--caddy",
+          "--disk-mib",
+          "2048",
+          "--cpu-period-micros",
+          "100000",
+          "--project-cpu-policy",
+          "shared"
+        ]
+      },
+      {
+        "baseline_run_id": "host10-retained-baseline-001",
+        "candidate_profile_reference": "host10-candidate-pass-1-001",
+        "kind": "host",
+        "arguments": [
+          "--projects",
+          "10",
+          "--seconds",
+          "300",
+          "--rate",
+          "4",
+          "--capacity",
+          "--provisional-rate",
+          "8",
+          "--webhooks",
+          "--caddy",
+          "--disk-mib",
+          "2048",
+          "--cpu-period-micros",
+          "100000",
+          "--project-cpu-policy",
+          "shared"
+        ]
+      }
+    ],
+    "scope": "Three comparable steady samples on each side require a fresh retained baseline for each larger dataset and1/5/10 topology. Candidate repetitions alone cannot establish before/after regression. Run serially only with unchanged declared reserves; failed baselines cannot certify candidates.",
+    "approval_thresholds_reduced": false
+  },
+  "current_final_artifact": {
+    "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
+    "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
+    "status": "Source-pinned build verified with releasecache; byte-identical008localELF. Only export cancellation testchanged inproducttrees. No longcampaign until criticalbootprobe/anyconfirmedfix and exactsourceCI close."
+  },
+  "additional_browser_auth_pressure": {
+    "status": "First corrected full pass005 passed; two further fresh owner-metric receipts are predeclared before execution. No full G05 approval.",
+    "fresh_passes": 2,
+    "profile": {
+      "cycles": 5,
+      "accounts_per_cycle": 8,
+      "requests_per_cycle": 112,
+      "maximum_inflight": 8,
+      "maximum_arrivals_per_second": 16,
+      "maximum_response_bytes": 65536,
+      "maximum_cycle_seconds": 40,
+      "mutation_retries": 0,
+      "login_p95_ms": 750,
+      "login_p99_ms": 1500,
+      "read_refresh_p95_ms": 200,
+      "read_refresh_p99_ms": 500,
+      "scope": "Concurrent with existing navigation pressure, two real auth consumers, verified owned HTTPS. SMTP/OAuth and public ingress remain separate."
+    },
+    "real_auth_consumers": 2,
+    "created_users_per_pass": 40,
+    "raw_requests_per_pass": 560,
+    "expected_positive_responses": 400,
+    "expected_negative_invalid_grant_responses": 160,
+    "real_credential_observation_seconds": 1080,
+    "browser_feedback_p95_ms": 1000,
+    "four_slot_actions_profile": {
+      "app_cpus_sum": 1,
+      "postgres_cpus": 0.5,
+      "browser_cpus": 1,
+      "proxy_cpus": 0.25,
+      "controller_cpus": 1,
+      "controller_memory_mib": 512,
+      "controller_pids": 128,
+      "controller_seconds": 3000,
+      "configured_total_cpus": 3.75,
+      "OS_CPU_headroom": 0.25,
+      "observer_proxy_one_slot_configured_quota": 1.25,
+      "observer_proxy_sharing_and_oversubscription_explicit": true,
+      "nonroot_disposable_Actions_VM_only": true
+    },
+    "boundaries": {
+      "browser_memory_mib": 1536,
+      "app_memory_mib_each": 128,
+      "postgres_memory_mib": 256,
+      "fixture_disk_mib": 3072,
+      "database_disk_mib": 512,
+      "private_log_bytes": 16777216,
+      "maximum_browser_API_requests": 12000,
+      "maximum_browser_API_arrivals_per_second": 64,
+      "maximum_decoded_network_mib": 128,
+      "sampler_seconds": 5,
+      "maximum_observation_gap_seconds": 30,
+      "minimum_host_memory_reserve_fraction": 0.1,
+      "minimum_filesystem_reserve_fraction": 0.15
+    },
+    "scope": "Raw signup/login/password-worker concurrency, grace retry versus stale-token family revocation, independent-session survival, logout and cross-user RLS during the five existing UI pressure/rest cycles. Verified owned TLS, 48SDK-caller singleflight and real expiry remain enabled. SMTP/OAuth not exercised. No local endurance overlap credited and no new production runtime dependency.",
+    "completed_corrected_passes": [
+      {
+        "workflow_run_id": 39024051590,
+        "source": "df51f80b29bcd0edaacd91270cd19d610381afff",
+        "evidence": "browser-auth-full-final-pass-1-005.json",
+        "status": "passed"
+      }
+    ],
+    "owner_metric_repetitions": {
+      "declared_utc": "2026-10-17T10:39:28.740303+00:00",
+      "fresh_additional_passes": 2,
+      "profile_unchanged": true,
+      "driver_workload_unchanged": true,
+      "existing_measured_plateaus_exported": 7,
+      "tabs": 3,
+      "heap_growth_bytes_maximum": 8388608,
+      "nodes_growth_maximum": 250,
+      "listeners_growth_maximum": 32,
+      "reason": "The first corrected full pass applied existing owner gates but did not publish detailed plateau values. Preserve its passed control; retain and independently validate all already measured numeric values in two further fresh receipts. No reduced SLO, input, resource, arrival or duration criterion."
+    }
+  },
+  "current_final_candidate": {
+    "identity": "009diagnostic",
+    "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
+    "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
+    "build_evidence": "final-local-candidate-615a0a0.json",
+    "status": "Source009CI18passed; actual017bootprobe FAILED. PGautorestarts beforeexplicitrecovery. Persistentfencecorrectionpending; no longcampaign.",
+    "certifies_g05": false,
+    "CI_evidence": "ci-candidate009-source615a0a0.json",
+    "ordinary_CI_checks_passed": 18,
+    "boot_evidence": "native-pitr-boot-persistence-confirmed-001.json"
+  },
+  "historical_candidate006": {
+    "source_commit": "860d2f990949bfc5c8c612de3341c65a39e8d259",
+    "binary_sha256": "c7e3d25467823c9d44157aca762761c23a49cd81f8ee96915b468f7bc3d119a4",
+    "build_seconds": 90.04832498799078,
+    "status": "historical candidate006; superseded after tenth confirmed SDK defect, next007freeze required",
+    "previous_candidate_source": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+    "previous_candidate_approval": "Historical f40774e checks and backend matrix remain preserved; browser coalescence approval does not cover the confirmed late-overlap defect. No final endurance had started.",
+    "before_after_evidence": "sdk-native-overlapping-refresh-before-after-001.json"
+  },
+  "active_campaign_checkpoint": {
+    "checkpoint": "load-time-checkpoint-020.json",
+    "effective_completed_local_seconds": 162324,
+    "active_local": null,
+    "pending": "008all18CI andtwo correctedPITRactualVMs before S3/disk/S3/diskordinary"
+  },
+  "post_endurance_final007_predeclaration": {
+    "declared_utc": "2026-10-17T13:51:54.695537+00:00",
+    "status": "prepared; not run; ordinary final007 endurance still active",
+    "precondition": "No overlap with local load. Every prior case must pass workload/resource/integrity/evidence/owned-cleanup/comparison gates before automatic advancement; preserve failures and stop for investigation.",
+    "source_commit": "35f4a9725d7edcf571f91084c555c127e7323653",
+    "binary_sha256": "96811748f1f45ad4894114188642f9343df661c750ad22768eaf2275659081b1",
+    "retained_baseline_binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+    "topology_profile": {
+      "projects": [
+        1,
+        5,
+        10
+      ],
+      "fresh_baseline_cases": 3,
+      "fresh_candidate_passes_per_topology": 2,
+      "seconds_each_step": 300,
+      "rows_each_project": 1000,
+      "aggregate_postgres_disk_ceiling_mib": 1536,
+      "disk_ceiling_reason": "A stricter aggregate fixture cap protects unchanged host reserves on this bounded workspace. Same declared dataset, rates, memory/CPU and gates on baseline/candidate. It is not a smaller workload or waiver of any previous failed latency/fairness result.",
+      "CPU_period_microseconds": 100000,
+      "one_project_CPU_policy": "quota",
+      "five_and_ten_CPU_policy": "shared target CPU; explicit aggregate pinning/CPU-sharing manifest and kernel proof retained",
+      "nominal_iterations_per_second_each_project": {
+        "1": 8,
+        "5": 8,
+        "10": 4
+      },
+      "provisional_capacity_iterations_per_second_each_project": {
+        "1": 32,
+        "5": 32,
+        "10": 8
+      },
+      "absolute_SLOs_and_relative_fairness_unchanged": true,
+      "minimum_available_host_memory_fraction": 0.1,
+      "minimum_filesystem_and_inode_fraction": 0.15,
+      "host10_startup_preflight_minimum_free_bytes": 16062994022.4,
+      "insufficient_headroom_behavior": "Refuse preparation before owned resource creation. Do not lower reserves or delete unrelated resources."
+    },
+    "full_fault_profile": {
+      "fresh_final_passes": 2,
+      "capacity_qualification_steps": 4,
+      "capacity_step_seconds": 300,
+      "provisional_rate": 64,
+      "real_local_RustFS": true,
+      "recovery_deadline_seconds": 35,
+      "focus": "all",
+      "separate_supplemental_full_matrix_required": true
+    },
+    "conditional_allocator_profile": {
+      "run_id": "allocation-final007-disk-four-hours-001",
+      "status": "predeclared; conditional, not run",
+      "trigger": "Investigate persistent unexplained late post-warm anonymous-memory growth in final ordinary campaigns",
+      "continuous_mixed_load_seconds": 14400,
+      "observer_library_sha256": "a5396ed7b8ed580f27dbfe7358444c734b1a486e9566e41114fa6ef5636f9ec3",
+      "one_extra_thread": true,
+      "one_extra_descriptor": true,
+      "forced_trim": false,
+      "ordinary_performance_certification": false,
+      "scope": "glibc in-use including thread caches versus free arena, correlated with load/idle; exact application object ownership is not inferred."
+    },
+    "new_cases": [
+      {
+        "run_id": "host1-retained-baseline-003",
+        "kind": "host",
+        "artifact_role": "retained baseline"
+      },
+      {
+        "run_id": "host1-candidate-pass-1-003",
+        "kind": "host",
+        "artifact_role": "frozen final007"
+      },
+      {
+        "run_id": "host1-candidate-pass-2-003",
+        "kind": "host",
+        "artifact_role": "frozen final007"
+      },
+      {
+        "run_id": "host5-retained-baseline-003",
+        "kind": "host",
+        "artifact_role": "retained baseline"
+      },
+      {
+        "run_id": "host5-candidate-pass-1-003",
+        "kind": "host",
+        "artifact_role": "frozen final007"
+      },
+      {
+        "run_id": "host5-candidate-pass-2-003",
+        "kind": "host",
+        "artifact_role": "frozen final007"
+      },
+      {
+        "run_id": "host10-retained-baseline-003",
+        "kind": "host",
+        "artifact_role": "retained baseline"
+      },
+      {
+        "run_id": "host10-candidate-pass-1-003",
+        "kind": "host",
+        "artifact_role": "frozen final007"
+      },
+      {
+        "run_id": "host10-candidate-pass-2-003",
+        "kind": "host",
+        "artifact_role": "frozen final007"
+      },
+      {
+        "run_id": "fault-final007-pass-1-001",
+        "kind": "fault",
+        "artifact_role": "frozen final007"
+      },
+      {
+        "run_id": "fault-final007-pass-2-001",
+        "kind": "fault",
+        "artifact_role": "frozen final007"
+      },
+      {
+        "run_id": "allocation-final007-disk-four-hours-001",
+        "kind": "single",
+        "artifact_role": "conditional allocation diagnostic, final007"
+      }
+    ],
+    "approval_thresholds_reduced": false,
+    "private_executor_uniqueness_preflight": {
+      "status": "passed before any case started",
+      "evidence": "post-endurance-plan-prestart-uniqueness-001.json",
+      "original_unstarted_plan_preserved": true,
+      "duplicate_IDs_removed": 9,
+      "selected_cases_unchanged": 15,
+      "all_arguments_kinds_and_baseline_candidate_selections_unchanged": true,
+      "scope": "Historical normalization of original unstarted duplicate002 IDs, preserved in the linked immutable declaration; private-file003 amendment adds the same auxiliary traffic to all nine fresh host cases."
+    },
+    "previous_unstarted_declaration": "https://github.com/Nelcota/Nelcota/blob/ec9701225176c497c580bdb099ff06021e272981/docs/goals/results/stress/final-campaign-plan.json",
+    "amended_utc": "2026-10-17T17:29:21.205113+00:00",
+    "private_file_isolation": {
+      "enabled": true,
+      "protocol": "g05-private-project-files-v1",
+      "maximum_requests": 8192,
+      "maximum_requests_per_second": 64,
+      "request_timeout_seconds": 2,
+      "maximum_body_bytes": 128,
+      "maximum_read_bytes": 2048,
+      "maximum_header_bytes": 16384,
+      "maximum_logical_HTTP_bytes": 134217728,
+      "maximum_graph_seconds": 20,
+      "extra_controller_threads_during_graph": 1,
+      "minimum_foreground_seconds": 60,
+      "controller_affinity_policy": "one telemetry/OS slot, disjoint from app/PostgreSQL/k6",
+      "transport": "owned direct loopback HTTP; main k6 ingress unchanged",
+      "units": "auxiliary requests excluded from k6 useful throughput and latency"
+    },
+    "selected_post_endurance_cases": [
+      {
+        "run_id": "large-disk-candidate-pass-1-003",
+        "baseline": "large-disk-retained-baseline-001"
+      },
+      {
+        "run_id": "large-s3-candidate-pass-1-003",
+        "baseline": "large-s3-retained-baseline-001"
+      },
+      {
+        "run_id": "large-disk-candidate-pass-2-003",
+        "baseline": "large-disk-retained-baseline-001"
+      },
+      {
+        "run_id": "large-s3-candidate-pass-2-003",
+        "baseline": "large-s3-retained-baseline-001"
+      },
+      {
+        "run_id": "fault-final007-pass-1-001",
+        "baseline": null
+      },
+      {
+        "run_id": "fault-final007-pass-2-001",
+        "baseline": null
+      },
+      {
+        "run_id": "host1-retained-baseline-003",
+        "baseline": null
+      },
+      {
+        "run_id": "host1-candidate-pass-1-003",
+        "baseline": "host1-retained-baseline-003"
+      },
+      {
+        "run_id": "host1-candidate-pass-2-003",
+        "baseline": "host1-retained-baseline-003"
+      },
+      {
+        "run_id": "host5-retained-baseline-003",
+        "baseline": null
+      },
+      {
+        "run_id": "host5-candidate-pass-1-003",
+        "baseline": "host5-retained-baseline-003"
+      },
+      {
+        "run_id": "host5-candidate-pass-2-003",
+        "baseline": "host5-retained-baseline-003"
+      },
+      {
+        "run_id": "host10-retained-baseline-003",
+        "baseline": null
+      },
+      {
+        "run_id": "host10-candidate-pass-1-003",
+        "baseline": "host10-retained-baseline-003"
+      },
+      {
+        "run_id": "host10-candidate-pass-2-003",
+        "baseline": "host10-retained-baseline-003"
+      }
+    ],
+    "private_file_predeclaration_evidence": "post-endurance-private-files-predeclaration-001.json"
+  },
+  "final007_browser_auth": {
+    "same_profile_passed": 1,
+    "same_profile_failed": 1,
+    "passing_evidence": "browser-sdk007-measured-auth-pass-1-001.json",
+    "original_failed_evidence": "browser-sdk007-refresh-slo-first-failure-001.json",
+    "actual_numeric_measurement_cycles": 5,
+    "completed_requests": 560,
+    "positive_responses": 400,
+    "expected_negative_responses": 160,
+    "scope": "Only the metric publication changed before the passing repetition. Original failed percentiles were not exported; no causal or before/after performance claim. Second independent final pass still required.",
+    "latest_ordinary_CI": "ci-sdk007-auth-metrics-product-trees.json"
+  },
+  "supplemental_matrix_capacity_contract": {
+    "declared_utc": "2026-10-17T15:00:06.662760+00:00",
+    "provisional_rate": 64,
+    "offered_rates": [
+      16,
+      32,
+      48,
+      64
+    ],
+    "seconds_each_step": 300,
+    "full_foreground_seconds_each_case": 120,
+    "scenarios": 5,
+    "maximum_offer_unchanged": true,
+    "scope": "Actual full driver already used its64default. A wrong half-rate publication guard is corrected by sharing ledger_capacity.py between the actual driver, command factory and validator. Keep failed saturation steps, never reduce traffic to fit the old validator.36focused guards passed; both corrected full matrix repetitions pending.",
+    "evidence": "matrix-capacity-declaration-before-after-001.json",
+    "current_status": "first real corrected64/300s declaration accepted with43guards and full final007 receipts; second full pass pending"
+  },
+  "ledger_generator_TLS_predeclaration": {
+    "declared_utc": "2026-10-17T15:36:55.350817+00:00",
+    "status": "one fresh full corrected real matrix passed; second independent pass pending",
+    "maximum_offered_rate": 64,
+    "step_seconds": 300,
+    "full_cases": 5,
+    "case_seconds": 120,
+    "CPU_memory_disk_SLO_limits_changed": false,
+    "TLS_certificate_verification": "CERT_REQUIRED and check_hostnameTrue, failclosed before cache/reuse",
+    "CA_contexts_each_ledger_process": 1,
+    "private_handlers_each_request": true,
+    "ordinary_opener_and_redirect_policy_AST_unchanged": true,
+    "scope": "Remove repeatedly loadingCAroots from the RPC generator. Keep every original failed/uncertain result and repeat both final realmatrices. Do not reinterpret generator drops as serverbreakingpoints or micro-constructor savings as product throughput improvement.",
+    "evidence": "ledger-generator-tls-construction-before-after-001.json",
+    "completed_pass_1_evidence": "matrix-sdk007-corrected-generator-pass-1-001.json",
+    "observed_generator_before_after": "matrix-ledger-generator-before-after-001.json"
+  },
+  "native_inflight_cut_predeclaration": {
+    "declared_utc": "2026-10-17T16:17:26.779351+00:00",
+    "status": "prepared; real VM cases not run",
+    "native_case": "runtime-inflight",
+    "fresh_independent_passes": 2,
+    "parent_ordinary_and_native_artifacts_unchanged": true,
+    "original_twelve_case_native_suite_scope_unchanged": true,
+    "profile": {
+      "maximum_seconds": 1800,
+      "vm_vcpus": 2,
+      "vm_memory_mib": 3072,
+      "same_guest_parent_cpu_ceiling": 1.5,
+      "same_guest_parent_memory_mib": 2048,
+      "helper_cpu_quota": 0.05,
+      "helper_memory_mib": 48,
+      "helper_pids": 16,
+      "helper_swap_bytes": 0,
+      "maximum_table_lock_seconds": 30,
+      "helper_systemd_runtime_seconds": 40,
+      "maximum_witness_age_before_signal_request_seconds": 2,
+      "external_acknowledgements": 30,
+      "additional_blocked_unacknowledged_writes": 1
+    },
+    "oracles": [
+      "Exactly one known table lock owner and one waiting RowExclusiveLock, with a still-unfinished real HTTPS request.",
+      "The conservative witness age includes the entire SSH/SQL/response roundtrip and is rechecked after VM ownership lookup immediately before requesting SIGKILL.",
+      "Thirty externally fsynced acknowledgements and31actual row values survive; blocked row rolls back, no helper or lock remains.",
+      "Native HTTPS trust, unauthorized rejection, unchanged binary identity, resources and owned cleanup remain mandatory.",
+      "After recovery anonymous REST401, second user sees zero first-user rows and anonymous private-file404, in addition to authorized row/file reads."
+    ],
+    "scope": "Separate additional interrupted-write guest control after existing native startup reproductions; blocked before COMMIT, no physical host power loss, commit-flush, off-host or ordinary performance claim. No local overlapping effective load credit.",
+    "latest_focused_guards": "native-inflight-cut-guards-002.json"
+  },
+  "final008_predeclaration": {
+    "schema": 1,
+    "recorded_utc": "2026-10-17T19:26:01.913525+00:00",
+    "build_source_commit": "da262d77f4d2557ff5cbd9007b9a3a6273a92221",
+    "candidate": "008",
+    "status": "predeclared; no008campaignstarted",
+    "original_plan_sha256": "6be421d7ea51ad3e03bbcabf1a481ff4c807a2a0d77bd6de2072e69a68bdb695",
+    "original_plan": "remaining-campaign-commands-006.json",
+    "argument_vectors_unchanged": true,
+    "ordinary_order": [
+      "s3-final008-pass-1-001",
+      "disk-final008-pass-1-001",
+      "s3-final008-pass-2-001",
+      "disk-final008-pass-2-001"
+    ],
+    "scope": "Fresh final008 after actualPITR-error defect11; original007disk pass retained as source-bound history,007S3partial stopped and uncredited. Baselines unchanged. Four continuous14400sordinary cases plus15large/fault/topology cases. Maximum30hordinary/24hpost, one local campaign at a time, all original critical/SLO/fairness/byte/time/reserve gates unchanged. Actual corrected host private-file preflight review required before full host runs.",
+    "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
+    "campaigns": [
+      {
+        "run_id": "s3-final008-pass-1-001",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "kind": "single",
+        "arguments": [
+          "--backend",
+          "s3",
+          "--steady",
+          "60s",
+          "--workloads",
+          "read,rls,panel,storage,login,refresh,write,mixed",
+          "--soak-seconds",
+          "14400",
+          "--capacity",
+          "--capacity-step-seconds",
+          "300",
+          "--spikes",
+          "--fixture-disk-mib",
+          "1024",
+          "--wal-mib",
+          "256",
+          "--soak-fraction",
+          "0.7",
+          "--calibration-ceiling",
+          "400",
+          "--s3-memory-mib",
+          "1024",
+          "--storage-fixture-disk-mib",
+          "1024",
+          "--final-idle-seconds",
+          "180",
+          "--write-steady-rate",
+          "50"
+        ],
+        "scope": "Fresh final008 source and ELF; identical existing workload, duration, quotas and acceptance criteria. Prior partial, diagnostic or historical results do not approve this artifact. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "s3-candidate-pass-1-006"
+      },
+      {
+        "run_id": "s3-final008-pass-2-001",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "kind": "single",
+        "arguments": [
+          "--backend",
+          "s3",
+          "--steady",
+          "60s",
+          "--workloads",
+          "read,rls,panel,storage,login,refresh,write,mixed",
+          "--soak-seconds",
+          "14400",
+          "--capacity",
+          "--capacity-step-seconds",
+          "300",
+          "--spikes",
+          "--fixture-disk-mib",
+          "1024",
+          "--wal-mib",
+          "256",
+          "--soak-fraction",
+          "0.7",
+          "--calibration-ceiling",
+          "400",
+          "--s3-memory-mib",
+          "1024",
+          "--storage-fixture-disk-mib",
+          "1024",
+          "--final-idle-seconds",
+          "180",
+          "--write-steady-rate",
+          "50"
+        ],
+        "scope": "Fresh final008 source and ELF; identical existing workload, duration, quotas and acceptance criteria. Prior partial, diagnostic or historical results do not approve this artifact. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "s3-candidate-pass-2-006"
+      },
+      {
+        "run_id": "disk-final008-pass-1-001",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "kind": "single",
+        "arguments": [
+          "--backend",
+          "disk",
+          "--steady",
+          "60s",
+          "--workloads",
+          "read,rls,panel,storage,login,refresh,write,mixed",
+          "--soak-seconds",
+          "14400",
+          "--capacity",
+          "--capacity-step-seconds",
+          "300",
+          "--spikes",
+          "--fixture-disk-mib",
+          "1024",
+          "--wal-mib",
+          "256",
+          "--soak-fraction",
+          "0.7",
+          "--calibration-ceiling",
+          "400",
+          "--s3-memory-mib",
+          "1024",
+          "--storage-fixture-disk-mib",
+          "1024",
+          "--final-idle-seconds",
+          "180",
+          "--write-steady-rate",
+          "50"
+        ],
+        "scope": "Fresh final008 source and ELF; identical existing workload, duration, quotas and acceptance criteria. Prior partial, diagnostic or historical results do not approve this artifact. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "disk-candidate-pass-1-006"
+      },
+      {
+        "run_id": "disk-final008-pass-2-001",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "kind": "single",
+        "arguments": [
+          "--backend",
+          "disk",
+          "--steady",
+          "60s",
+          "--workloads",
+          "read,rls,panel,storage,login,refresh,write,mixed",
+          "--soak-seconds",
+          "14400",
+          "--capacity",
+          "--capacity-step-seconds",
+          "300",
+          "--spikes",
+          "--fixture-disk-mib",
+          "1024",
+          "--wal-mib",
+          "256",
+          "--soak-fraction",
+          "0.7",
+          "--calibration-ceiling",
+          "400",
+          "--s3-memory-mib",
+          "1024",
+          "--storage-fixture-disk-mib",
+          "1024",
+          "--final-idle-seconds",
+          "180",
+          "--write-steady-rate",
+          "50"
+        ],
+        "scope": "Fresh final008 source and ELF; identical existing workload, duration, quotas and acceptance criteria. Prior partial, diagnostic or historical results do not approve this artifact. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "disk-candidate-pass-2-006"
+      },
+      {
+        "run_id": "large-disk-final008-pass-1-001",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "kind": "single",
+        "arguments": [
+          "--backend",
+          "disk",
+          "--steady",
+          "30s",
+          "--steady-rate",
+          "20",
+          "--workloads",
+          "read,rls,panel,storage,login,refresh,write,mixed",
+          "--soak-seconds",
+          "600",
+          "--capacity",
+          "--capacity-step-seconds",
+          "300",
+          "--spikes",
+          "--fixture-disk-mib",
+          "2048",
+          "--wal-mib",
+          "256",
+          "--soak-fraction",
+          "0.7",
+          "--calibration-ceiling",
+          "20",
+          "--s3-memory-mib",
+          "1024",
+          "--final-idle-seconds",
+          "180",
+          "--write-steady-rate",
+          "10",
+          "--rows",
+          "1000000",
+          "--object-bytes",
+          "1048576",
+          "--storage-fixture-disk-mib",
+          "1024"
+        ],
+        "scope": "Fresh final008 source and ELF; identical existing workload, duration, quotas and acceptance criteria. Prior partial, diagnostic or historical results do not approve this artifact. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "large-disk-candidate-pass-1-003"
+      },
+      {
+        "run_id": "large-disk-final008-pass-2-001",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "kind": "single",
+        "arguments": [
+          "--backend",
+          "disk",
+          "--steady",
+          "30s",
+          "--steady-rate",
+          "20",
+          "--workloads",
+          "read,rls,panel,storage,login,refresh,write,mixed",
+          "--soak-seconds",
+          "600",
+          "--capacity",
+          "--capacity-step-seconds",
+          "300",
+          "--spikes",
+          "--fixture-disk-mib",
+          "2048",
+          "--wal-mib",
+          "256",
+          "--soak-fraction",
+          "0.7",
+          "--calibration-ceiling",
+          "20",
+          "--s3-memory-mib",
+          "1024",
+          "--final-idle-seconds",
+          "180",
+          "--write-steady-rate",
+          "10",
+          "--rows",
+          "1000000",
+          "--object-bytes",
+          "1048576",
+          "--storage-fixture-disk-mib",
+          "1024"
+        ],
+        "scope": "Fresh final008 source and ELF; identical existing workload, duration, quotas and acceptance criteria. Prior partial, diagnostic or historical results do not approve this artifact. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "large-disk-candidate-pass-2-003"
+      },
+      {
+        "run_id": "large-s3-final008-pass-1-001",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "kind": "single",
+        "arguments": [
+          "--backend",
+          "s3",
+          "--steady",
+          "30s",
+          "--steady-rate",
+          "20",
+          "--workloads",
+          "read,rls,panel,storage,login,refresh,write,mixed",
+          "--soak-seconds",
+          "600",
+          "--capacity",
+          "--capacity-step-seconds",
+          "300",
+          "--spikes",
+          "--fixture-disk-mib",
+          "2048",
+          "--wal-mib",
+          "256",
+          "--soak-fraction",
+          "0.7",
+          "--calibration-ceiling",
+          "20",
+          "--s3-memory-mib",
+          "1024",
+          "--final-idle-seconds",
+          "180",
+          "--write-steady-rate",
+          "10",
+          "--rows",
+          "1000000",
+          "--object-bytes",
+          "1048576",
+          "--storage-fixture-disk-mib",
+          "4096"
+        ],
+        "scope": "Fresh final008 source and ELF; identical existing workload, duration, quotas and acceptance criteria. Prior partial, diagnostic or historical results do not approve this artifact. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "large-s3-candidate-pass-1-003"
+      },
+      {
+        "run_id": "large-s3-final008-pass-2-001",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "kind": "single",
+        "arguments": [
+          "--backend",
+          "s3",
+          "--steady",
+          "30s",
+          "--steady-rate",
+          "20",
+          "--workloads",
+          "read,rls,panel,storage,login,refresh,write,mixed",
+          "--soak-seconds",
+          "600",
+          "--capacity",
+          "--capacity-step-seconds",
+          "300",
+          "--spikes",
+          "--fixture-disk-mib",
+          "2048",
+          "--wal-mib",
+          "256",
+          "--soak-fraction",
+          "0.7",
+          "--calibration-ceiling",
+          "20",
+          "--s3-memory-mib",
+          "1024",
+          "--final-idle-seconds",
+          "180",
+          "--write-steady-rate",
+          "10",
+          "--rows",
+          "1000000",
+          "--object-bytes",
+          "1048576",
+          "--storage-fixture-disk-mib",
+          "4096"
+        ],
+        "scope": "Fresh final008 source and ELF; identical existing workload, duration, quotas and acceptance criteria. Prior partial, diagnostic or historical results do not approve this artifact. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "large-s3-candidate-pass-2-003"
+      },
+      {
+        "run_id": "fault-final008-pass-1-001",
+        "kind": "fault",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "arguments": [
+          "--capacity",
+          "--provisional-rate",
+          "64",
+          "--s3-faults",
+          "--focus",
+          "all"
+        ],
+        "scope": "Fresh complete owned fault campaign with four five-minute qualification steps, real RustFS provider, database/app/owned OOM/filesystem/provider faults, original35second recovery and no changed acceptance limits. Supplemental full five-case matrix runs separately on exact common remote007ELF. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "fault-final007-pass-1-001"
+      },
+      {
+        "run_id": "fault-final008-pass-2-001",
+        "kind": "fault",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "arguments": [
+          "--capacity",
+          "--provisional-rate",
+          "64",
+          "--s3-faults",
+          "--focus",
+          "all"
+        ],
+        "scope": "Fresh complete owned fault campaign with four five-minute qualification steps, real RustFS provider, database/app/owned OOM/filesystem/provider faults, original35second recovery and no changed acceptance limits. Supplemental full five-case matrix runs separately on exact common remote007ELF. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "fault-final007-pass-2-001"
+      },
+      {
+        "run_id": "host1-final008-retained-baseline-001",
+        "binary": "retained baseline",
+        "kind": "host",
+        "arguments": [
+          "--projects",
+          "1",
+          "--seconds",
+          "300",
+          "--rate",
+          "8",
+          "--capacity",
+          "--provisional-rate",
+          "32",
+          "--webhooks",
+          "--caddy",
+          "--disk-mib",
+          "1536",
+          "--cpu-period-micros",
+          "100000",
+          "--project-cpu-policy",
+          "quota",
+          "--private-file-isolation"
+        ],
+        "scope": "Fresh strict private-file protocol on both baseline/candidate: identical1536MiB aggregate PG DISK,300second steps,1/5/10projects,allCPU/RAM/delivery/absoluteSLO/relativefairness gates unchanged. Complete directed read/write rejection,ownbytes/metadata/anonymous fencing before/after and under every long traffic phase; bounded8192auxrequests,64/s,2KiBresponses,20sgraph watchdog. AuxHTTPnotcountedask6usefulwork. Earlier failed profiles preserved. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "host1-retained-baseline-003"
+      },
+      {
+        "run_id": "host1-final008-pass-1-001",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "kind": "host",
+        "arguments": [
+          "--projects",
+          "1",
+          "--seconds",
+          "300",
+          "--rate",
+          "8",
+          "--capacity",
+          "--provisional-rate",
+          "32",
+          "--webhooks",
+          "--caddy",
+          "--disk-mib",
+          "1536",
+          "--cpu-period-micros",
+          "100000",
+          "--project-cpu-policy",
+          "quota",
+          "--private-file-isolation"
+        ],
+        "scope": "Fresh strict private-file protocol on both baseline/candidate: identical1536MiB aggregate PG DISK,300second steps,1/5/10projects,allCPU/RAM/delivery/absoluteSLO/relativefairness gates unchanged. Complete directed read/write rejection,ownbytes/metadata/anonymous fencing before/after and under every long traffic phase; bounded8192auxrequests,64/s,2KiBresponses,20sgraph watchdog. AuxHTTPnotcountedask6usefulwork. Earlier failed profiles preserved. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "host1-candidate-pass-1-003"
+      },
+      {
+        "run_id": "host1-final008-pass-2-001",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "kind": "host",
+        "arguments": [
+          "--projects",
+          "1",
+          "--seconds",
+          "300",
+          "--rate",
+          "8",
+          "--capacity",
+          "--provisional-rate",
+          "32",
+          "--webhooks",
+          "--caddy",
+          "--disk-mib",
+          "1536",
+          "--cpu-period-micros",
+          "100000",
+          "--project-cpu-policy",
+          "quota",
+          "--private-file-isolation"
+        ],
+        "scope": "Fresh strict private-file protocol on both baseline/candidate: identical1536MiB aggregate PG DISK,300second steps,1/5/10projects,allCPU/RAM/delivery/absoluteSLO/relativefairness gates unchanged. Complete directed read/write rejection,ownbytes/metadata/anonymous fencing before/after and under every long traffic phase; bounded8192auxrequests,64/s,2KiBresponses,20sgraph watchdog. AuxHTTPnotcountedask6usefulwork. Earlier failed profiles preserved. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "host1-candidate-pass-2-003"
+      },
+      {
+        "run_id": "host5-final008-retained-baseline-001",
+        "binary": "retained baseline",
+        "kind": "host",
+        "arguments": [
+          "--projects",
+          "5",
+          "--seconds",
+          "300",
+          "--rate",
+          "8",
+          "--capacity",
+          "--provisional-rate",
+          "32",
+          "--webhooks",
+          "--caddy",
+          "--disk-mib",
+          "1536",
+          "--cpu-period-micros",
+          "100000",
+          "--project-cpu-policy",
+          "shared",
+          "--private-file-isolation"
+        ],
+        "scope": "Fresh strict private-file protocol on both baseline/candidate: identical1536MiB aggregate PG DISK,300second steps,1/5/10projects,allCPU/RAM/delivery/absoluteSLO/relativefairness gates unchanged. Complete directed read/write rejection,ownbytes/metadata/anonymous fencing before/after and under every long traffic phase; bounded8192auxrequests,64/s,2KiBresponses,20sgraph watchdog. AuxHTTPnotcountedask6usefulwork. Earlier failed profiles preserved. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "host5-retained-baseline-003"
+      },
+      {
+        "run_id": "host5-final008-pass-1-001",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "kind": "host",
+        "arguments": [
+          "--projects",
+          "5",
+          "--seconds",
+          "300",
+          "--rate",
+          "8",
+          "--capacity",
+          "--provisional-rate",
+          "32",
+          "--webhooks",
+          "--caddy",
+          "--disk-mib",
+          "1536",
+          "--cpu-period-micros",
+          "100000",
+          "--project-cpu-policy",
+          "shared",
+          "--private-file-isolation"
+        ],
+        "scope": "Fresh strict private-file protocol on both baseline/candidate: identical1536MiB aggregate PG DISK,300second steps,1/5/10projects,allCPU/RAM/delivery/absoluteSLO/relativefairness gates unchanged. Complete directed read/write rejection,ownbytes/metadata/anonymous fencing before/after and under every long traffic phase; bounded8192auxrequests,64/s,2KiBresponses,20sgraph watchdog. AuxHTTPnotcountedask6usefulwork. Earlier failed profiles preserved. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "host5-candidate-pass-1-003"
+      },
+      {
+        "run_id": "host5-final008-pass-2-001",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "kind": "host",
+        "arguments": [
+          "--projects",
+          "5",
+          "--seconds",
+          "300",
+          "--rate",
+          "8",
+          "--capacity",
+          "--provisional-rate",
+          "32",
+          "--webhooks",
+          "--caddy",
+          "--disk-mib",
+          "1536",
+          "--cpu-period-micros",
+          "100000",
+          "--project-cpu-policy",
+          "shared",
+          "--private-file-isolation"
+        ],
+        "scope": "Fresh strict private-file protocol on both baseline/candidate: identical1536MiB aggregate PG DISK,300second steps,1/5/10projects,allCPU/RAM/delivery/absoluteSLO/relativefairness gates unchanged. Complete directed read/write rejection,ownbytes/metadata/anonymous fencing before/after and under every long traffic phase; bounded8192auxrequests,64/s,2KiBresponses,20sgraph watchdog. AuxHTTPnotcountedask6usefulwork. Earlier failed profiles preserved. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "host5-candidate-pass-2-003"
+      },
+      {
+        "run_id": "host10-final008-retained-baseline-001",
+        "binary": "retained baseline",
+        "kind": "host",
+        "arguments": [
+          "--projects",
+          "10",
+          "--seconds",
+          "300",
+          "--rate",
+          "4",
+          "--capacity",
+          "--provisional-rate",
+          "8",
+          "--webhooks",
+          "--caddy",
+          "--disk-mib",
+          "1536",
+          "--cpu-period-micros",
+          "100000",
+          "--project-cpu-policy",
+          "shared",
+          "--private-file-isolation"
+        ],
+        "scope": "Fresh strict private-file protocol on both baseline/candidate: identical1536MiB aggregate PG DISK,300second steps,1/5/10projects,allCPU/RAM/delivery/absoluteSLO/relativefairness gates unchanged. Complete directed read/write rejection,ownbytes/metadata/anonymous fencing before/after and under every long traffic phase; bounded8192auxrequests,64/s,2KiBresponses,20sgraph watchdog. AuxHTTPnotcountedask6usefulwork. Earlier failed profiles preserved. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "host10-retained-baseline-003"
+      },
+      {
+        "run_id": "host10-final008-pass-1-001",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "kind": "host",
+        "arguments": [
+          "--projects",
+          "10",
+          "--seconds",
+          "300",
+          "--rate",
+          "4",
+          "--capacity",
+          "--provisional-rate",
+          "8",
+          "--webhooks",
+          "--caddy",
+          "--disk-mib",
+          "1536",
+          "--cpu-period-micros",
+          "100000",
+          "--project-cpu-policy",
+          "shared",
+          "--private-file-isolation"
+        ],
+        "scope": "Fresh strict private-file protocol on both baseline/candidate: identical1536MiB aggregate PG DISK,300second steps,1/5/10projects,allCPU/RAM/delivery/absoluteSLO/relativefairness gates unchanged. Complete directed read/write rejection,ownbytes/metadata/anonymous fencing before/after and under every long traffic phase; bounded8192auxrequests,64/s,2KiBresponses,20sgraph watchdog. AuxHTTPnotcountedask6usefulwork. Earlier failed profiles preserved. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "host10-candidate-pass-1-003"
+      },
+      {
+        "run_id": "host10-final008-pass-2-001",
+        "binary": "frozen final008 with eleven confirmed production corrections and rebuilt guide assets",
+        "kind": "host",
+        "arguments": [
+          "--projects",
+          "10",
+          "--seconds",
+          "300",
+          "--rate",
+          "4",
+          "--capacity",
+          "--provisional-rate",
+          "8",
+          "--webhooks",
+          "--caddy",
+          "--disk-mib",
+          "1536",
+          "--cpu-period-micros",
+          "100000",
+          "--project-cpu-policy",
+          "shared",
+          "--private-file-isolation"
+        ],
+        "scope": "Fresh strict private-file protocol on both baseline/candidate: identical1536MiB aggregate PG DISK,300second steps,1/5/10projects,allCPU/RAM/delivery/absoluteSLO/relativefairness gates unchanged. Complete directed read/write rejection,ownbytes/metadata/anonymous fencing before/after and under every long traffic phase; bounded8192auxrequests,64/s,2KiBresponses,20sgraph watchdog. AuxHTTPnotcountedask6usefulwork. Earlier failed profiles preserved. Same exact argument vector as named prior declaration; new source/binary requires fresh observations.",
+        "previous_unstarted_or_superseded_plan_run_id": "host10-candidate-pass-2-003"
+      }
+    ],
+    "plan_sha256": "2d5e9b5dddeddf0555b2d842fddda37a17fb480cfc1552b4fa72d411900f58ba",
+    "ordinary_chain_sha256": "2c821a5c51dc53215fe8952929687161e5bfd6b5817cd896f1e6f69e5487ccc4",
+    "runner_sha256": "d2417b87006ddf230769b9f46ca88eaa110708fd0ae445096312a9d2a580606f",
+    "post_chain_sha256": "bcfefdbd5c5f291608c6352cfa131ed7734df8660024b736fb1493528423ed34",
+    "post_chain_maximum_seconds": 86400,
+    "post_host_gate": "Actual fresh final008host private-files N1and5 preflight PASSED,cleanupreviewed, exact6producttrees before any fullhostcase. Priorfailedtopology/fairnessverdicts remain unchanged.",
+    "ordinary_chain_script": "run-final-endurance-chain-008-guarded-v2.py",
+    "superseded_unstarted_draft_chain_sha256": "ae72bc5f580cd20d766f1c7b89fdc09377faaa37621de468f6f2678831039252",
+    "ordinary_preconditions": [
+      "Frozen008all18ordinaryCIpassed",
+      "Twoindependent actualcorrectedPITRVMpasses/cleanup source008",
+      "Localfive-scenariorealHTTPsmoke/cleanup same008ELF passed",
+      "Sixproducttreesclean/unchanged, uniqueIDs, nootherlocalload, unchangedhostreserves"
+    ],
+    "superseded_unstarted_guard_draft_sha256": "6ae750dc6614bcc0ba284a88d50035081e6b64513ffcae3d9c2018a1371e3172",
+    "guard_draft_correction": "Fault completion has no binarySHAfield. Verify actual launch-manifest and actual fixture manifest binarySHAand matrixfocus; no execution occurred with prior guard draft, no gate relaxed."
+  },
+  "historical_candidate007_at_supersession": {
+    "source_commit": "35f4a9725d7edcf571f91084c555c127e7323653",
+    "binary_sha256": "96811748f1f45ad4894114188642f9343df661c750ad22768eaf2275659081b1",
+    "build_seconds": 93.28642953903181,
+    "status": "frozen final007; ordinaryCI18/native12passed; first ordinary disk campaign active, final endurance and comparisons pending",
+    "evidence": "final-local-candidate-35f4a97.json",
+    "previous_candidate_evidence": "final-local-candidate-860d2f9.json",
+    "SDK_before_after": [
+      "sdk-independent-server-clients-before-001.json",
+      "sdk-independent-server-clients-after-ci-001.json",
+      "sdk-independent-server-clients-built-before-after-001.json"
+    ],
+    "functional_smoke": "matrix-sdk007-auth-links-functional-smoke-001.json",
+    "ordinary_CI_evidence": "ci-sdk007-auth-metrics-product-trees.json",
+    "ordinary_CI_checks_passed": 18,
+    "native_suite_evidence": "native-final-suite-35f4a97/index.json",
+    "native_cases_passed": 12,
+    "current_browser_passes": 1,
+    "current_browser_evidence": "browser-sdk007-measured-auth-pass-1-001.json",
+    "original_browser_failure": "browser-sdk007-refresh-slo-first-failure-001.json"
+  },
+  "historical_native_same_artifact_suite_f40774e": {
+    "workflow_run_id": 39017663454,
+    "source_commit": "f40774e1504a924fe6d9c801e251278cee1a8fab",
+    "binary_sha256": "872c3b1efc71e0118386cdd3caf36bae0de26cb213307b91396fe30c0af83d75",
+    "status": "passed",
+    "cases": 12,
+    "evidence": "native-final-suite-f40774e/index.json",
+    "historical_7e_suite": "native-final-suite-7e68fd2/index.json",
+    "scope": "Native functional scope only; final load/other matrices and unresolved earlier startup failure remain separate."
+  },
+  "PITR_boot_persistence_predeclaration": {
+    "evidence": "native-pitr-boot-persistence-predeclaration-001.json",
+    "status": "notrun; newsourceCI/freshVMpending",
+    "scenario": "runtime-pitr-reboot",
+    "new_production_fix_applied": false,
+    "confirmed_defects": 11,
+    "next_attempt_evidence": "native-pitr-boot-final009-predeclaration-001.json",
+    "current_status": "ConfirmedPGautorestart inactual009VM. Separatefixture-recoverySSH1failedwithoutnumericdetails; originalfailurepreserved. No app/APIreopeningclaim.",
+    "actual_before_evidence": "native-pitr-boot-persistence-confirmed-001.json",
+    "recovery_diagnostic_predeclaration": "native-pitr-recovery-diagnostic-predeclaration-001.json"
+  },
+  "historical_candidate008_at_diagnostic_freeze": {
+    "source_commit": "da262d77f4d2557ff5cbd9007b9a3a6273a92221",
+    "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
+    "identity": "008",
+    "status": "Historical008 build/runtime checks retained. First S3partial interrupted duringcalibration2445s/422samples/cleanuptrue after newtestCI failed; no soak, no partialtimecredit.",
+    "build_evidence": "final-local-candidate-da262d7.json",
+    "functional_smoke": "matrix-sdk008-auth-links-functional-smoke-001.json",
+    "native_suite_evidence": "native-final-suite/index.json",
+    "native_cases_passed": 12,
+    "interruption_evidence": "s3-final008-pass-1-interrupted-001.json"
+  }
+}

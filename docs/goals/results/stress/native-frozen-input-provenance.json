@@ -1,0 +1,13 @@
+{
+  "source_ref": "test/g05-frozen-reboot-5b2b2a4-001",
+  "wrapper_commit": "13351ed896f86312c680c52ac30bc258d638be8b",
+  "production_source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+  "harness_source_commit": "1f872e198d612c5606790508a2ea1a474ce14120",
+  "frozen_binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+  "size_bytes": 30484800,
+  "all_six_production_trees_identical_to_extraction": true,
+  "no_rebuild": true,
+  "no_second_freeze": true,
+  "prepared_at_utc": "2026-10-17T21:54:49.699876+00:00",
+  "scope": "Existing native VM and artifact-verification capabilities configured with the already-frozen bytes; binary is retained only on this immutable staging input ref, outside production PR91 and draft90."
+}

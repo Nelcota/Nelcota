@@ -86,11 +86,12 @@
   "remaining_campaigns": [
     {
       "cell": "restore-fencing guest reboot",
-      "status": "not run"
+      "status": "failed",
+      "evidence": "native-reboot-converged-verdict.json"
     },
     {
       "cell": "continuous four-hour disk endurance",
-      "status": "not run"
+      "status": "in progress"
     },
     {
       "cell": "continuous four-hour real S3 endurance",
@@ -101,7 +102,7 @@
       "status": "not run"
     }
   ],
-  "status": "final artifact frozen once; campaigns not started",
+  "status": "guest reboot failed with cleanup; disk campaign starting on unchanged frozen artifact",
   "certifies_g05": false,
   "frozen_artifact_evidence": "campaign-final-artifact.json"
 }

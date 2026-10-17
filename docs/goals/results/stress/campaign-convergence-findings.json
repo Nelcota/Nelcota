@@ -11,9 +11,12 @@
       "classification": "confirmed product defect",
       "finding": "PostgreSQL autostarts after guest reboot following an uncertain marker-only PITR restore error; authenticated API reopening not established in the original observation.",
       "evidence": [
-        "native-pitr-boot-persistence-confirmed-001.json"
+        "native-pitr-boot-persistence-confirmed-001.json",
+        "native-reboot-converged-final-001.json"
       ],
-      "action": "Record final reboot probe; no persistent-fence fix, refreeze or campaign restart."
+      "action": "Keep open; no product fix, refreeze or campaign restart. Continue disk/S3/fault campaigns after confirmed cleanup; authorization/RLS escape and data loss/corruption were not observed in this controlled fixture.",
+      "final_reproduction": "Same final ELF: first post-boot sample at0.405166837seconds had appPID1090andPGPID728active, authenticatedAPIreopened true. Explicit fixture recovery and authorization canaries passed; fixture rows preserved.",
+      "final_campaign_verdict": "failed"
     },
     {
       "id": "O1",
@@ -60,11 +63,33 @@
   "harness_ledger": [
     {
       "id": "H01",
-      "status": "minimal correction; final probe not run yet",
+      "status": "minimal correction validated in the final probe; product boot fence still failed",
       "problem": "Previous guest-cut diagnostics observed zero-byte installed executable and unit; no explicit durable fixture baseline preceded the reboot-fencing cut. Recovery cause is not asserted solely from this observation.",
       "original_workflow": 39070711756,
       "correction": "One bounded sync inside the owned disposable guest immediately before the PITR reboot cut, followed by the existing safety assertion. Existing 20/50-second boot observation, quotas and all production code stay unchanged.",
-      "scope_limit": "Preparation of the installed fixture only; no physical-power-loss, installation durability or real WAL/PITR approval. No new campaign or retry of environment-blocked cells."
+      "scope_limit": "Preparation of the installed fixture only; no physical-power-loss, installation durability or real WAL/PITR approval. No new campaign or retry of environment-blocked cells.",
+      "after": "Explicit fixture recovery succeeded; original helper failure remains historical and its exclusive cause is not inferred.",
+      "evidence": [
+        "native-reboot-preconvergence-fixture-diagnostic.json",
+        "native-reboot-converged-final-001.json"
+      ]
+    },
+    {
+      "id": "H02",
+      "status": "reporting corrected",
+      "problem": "Operator assertion reused62from a different test selection, but actual probe selection ran55; all55passed. The operator assertion itself failed exit1 and is preserved.",
+      "correction": "Publish actual separate receipts:55probe plus5artifact-verifier controls,60unique cases, all passed. No duplicate-run counts and no criterion changes.",
+      "evidence": "converged-native-control-validation.json"
+    },
+    {
+      "id": "H03",
+      "status": "existing artifact transport configured",
+      "problem": "The existing standalone native workflow rebuilt the source, producing a different ELF on its runner. That would violate the redirected campaign requirement to use one frozen artifact.",
+      "correction": "Configure the existing native artifact verifier and --binary input with the frozen30,484,800-byte ELF on an immutable staging-only ref. No new benchmark capability. The native staging wrapper has all six production trees identical to the CI-approved extraction source.",
+      "source_ref": "test/g05-frozen-reboot-5b2b2a4-001",
+      "wrapper_commit": "13351ed896f86312c680c52ac30bc258d638be8b",
+      "frozen_binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+      "scope_limit": "Binary transport only; no second build/freeze or change to production PR91. Only the reboot target is dispatched."
     }
   ],
   "scope": "Original historical findings are not relabelled as fixed by extraction or by later passes."

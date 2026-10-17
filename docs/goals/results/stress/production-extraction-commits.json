@@ -1,0 +1,65 @@
+{
+  "source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+  "commits": [
+    {
+      "commit": "0f93b7411a9dcc5d45ce054a66c20278006a1f98",
+      "subject": "fix(cli): bind native PostgreSQL operations to their cluster"
+    },
+    {
+      "commit": "19e5af98367c96a4d50e7f84b28eeb43892449d3",
+      "subject": "fix(cli): resolve native host paths before provisioning"
+    },
+    {
+      "commit": "07ae417978b4f228bce6bd3f7b715e7c34863cc4",
+      "subject": "fix(cli): preserve native host ownership across lifecycle commands"
+    },
+    {
+      "commit": "d25c3a787609c4321d114ee0295cedbde3279398",
+      "subject": "fix(cli): scope native subprocesses to their project directory"
+    },
+    {
+      "commit": "2996dbd5665a0957476944da18db028cb2d433da",
+      "subject": "fix(cli): reject incomplete native backup configuration cleanup"
+    },
+    {
+      "commit": "4aaaa205c2f3033d2378919a5d842c985cdb8b7e",
+      "subject": "fix(admin): retain SQL admission through cancellation cleanup"
+    },
+    {
+      "commit": "669548e5f36700131a40d8c48b6af877ca63a1b7",
+      "subject": "fix(admin): retain export admission until backend cleanup"
+    },
+    {
+      "commit": "ae93b2b53618e519954a20908dc37cdbdf1a5991",
+      "subject": "test(server): generate shared authenticator fixture credentials"
+    },
+    {
+      "commit": "1b509ca5136ec5d6ea88dfa48408fcee03353c8a",
+      "subject": "fix(admin): close unpolled export rows at response expiry"
+    },
+    {
+      "commit": "c94d0dda4f37e1bb2bf9f66f9399d17dfa5e2f0c",
+      "subject": "fix(sdk): coalesce browser refreshes queued during rotation"
+    },
+    {
+      "commit": "6ab1ef4360be02ba82ad5965361d04d3408f1273",
+      "subject": "fix(sdk): isolate default server session coordination queues"
+    },
+    {
+      "commit": "eeb2468083b4cb7293be12fc4fcd035574676230",
+      "subject": "fix(cli): keep services stopped after an uncertain PITR restore"
+    },
+    {
+      "commit": "1b6c5aa7c331d97dc0dbcdbb9d03c5a4ed68e7c1",
+      "subject": "test(ci): repeat focused SQL cancellation ownership controls"
+    },
+    {
+      "commit": "b1c3b125722445731a46faa95b62911d84f12816",
+      "subject": "build(admin): rebuild embedded guides for lifecycle and SDK fixes"
+    },
+    {
+      "commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+      "subject": "ci: validate review presets when CI configuration changes"
+    }
+  ]
+}

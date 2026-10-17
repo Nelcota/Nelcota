@@ -1546,24 +1546,15 @@
     "second_pass_evidence": "provider-runtime-corrected-pass-2.json"
   },
   "current_final_candidate": {
-    "identity": "009diagnostic",
-    "status": "Diagnostic009source615CI18passed; actual017bootprobe FAILED withPGactivebeforeexplicitrecovery. Twelfthproductiondefect confirmed; eleven corrected, persistentfence pending.",
-    "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
-    "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
-    "last_frozen_artifact_evidence": "final-local-candidate-615a0a0.json",
-    "binary_bytes_equal_008": true,
-    "product_changes_since_008": [
-      "crates/server/tests/sql_cancellation.rs"
-    ],
-    "confirmed_production_defects": 12,
-    "focused_cancellation_controls_passed": 3,
-    "additional_export_repetitions_passed": 6,
-    "focused_boot_executor_controls_passed": 18,
-    "scope": "Source009 implementation/asset bytes unchanged from008 and localELF actuallyequal. Retained008CI/nativechecks do not replace exactsource615ordinaryCI. Testpreconditioncorrection is not a twelfth production defect.",
+    "status": "frozen once; final for this campaign",
+    "source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+    "binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+    "production_pr": 91,
     "ordinary_CI_checks_passed": 18,
-    "CI_evidence": "ci-candidate009-source615a0a0.json",
-    "corrected_production_defects": 11,
-    "actual_boot_evidence": "native-pitr-boot-persistence-confirmed-001.json"
+    "freeze_count": 1,
+    "refreeze_authorized": false,
+    "evidence": "campaign-final-artifact.json",
+    "remaining_campaigns": "Only guest reboot, disk4h, realS3-4h and single faults under load, in that order. No new product corrections."
   },
   "current_campaign_checkpoint": {
     "checkpoint": "load-time-checkpoint-020.json",
@@ -1605,7 +1596,7 @@
     "corrective_evidence": "host-resource-and-collected-watchdog-correction-001.json",
     "latest_focused_evidence": "host-Docker-name-and-watchdog-guards-001.json"
   },
-  "latest_inventory_update_utc": "2026-10-17T21:47:21.635818+00:00",
+  "latest_inventory_update_utc": "2026-10-17T21:58:35.797611+00:00",
   "native_startup_reproductions": {
     "status": "passed scoped repetitions; original failure unresolved",
     "count": 8,
@@ -1627,10 +1618,7 @@
     "actual_after_passes": 2
   },
   "next_final_candidate": {
-    "status": "Requires persistentPITRbootfix and actualrecoveryverification before newfinalfreeze/longcampaign",
-    "confirmed_production_defects": 12,
-    "evidence": "final-local-candidate-615a0a0.json",
-    "scope": "No change to19predeclared workloads/SLOs/budgets/reserves and no partial008credit."
+    "status": "none; no further freeze authorized"
   },
   "historical_candidate007": {
     "status": "source-bound historical007 only; first disk4h/comparisons passed, laterPITRdefect requires008. PartialS3stopped/cleaned.",
@@ -1689,7 +1677,16 @@
     "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
     "evidence": "native-pitr-boot-persistence-confirmed-001.json",
     "confirmed_production_defects": 12,
-    "pending": "Persistentrecoveryfence+regressions+twoactualVMs; separatefixture-recoveryfailureSSH1diagnostic planned withnumericretention."
+    "pending": "Persistentrecoveryfence+regressions+twoactualVMs; separatefixture-recoveryfailureSSH1diagnostic planned withnumericretention.",
+    "final_convergence_probe": {
+      "status": "failed",
+      "workflow": 39073029665,
+      "binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+      "source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+      "scope": "Same frozen bytes; historical failure stays open. No realWAL/PITR or physical power-loss approval.",
+      "evidence": "native-reboot-converged-verdict.json",
+      "authenticated_API_reopened": true
+    }
   },
   "historical_candidate008_at_diagnostic_freeze": {
     "status": "Source008 CI18/native12/immediatePITR2/smoke retained as historical source-bound evidence. FirstS3 interrupted atcalibration2445s/422samples,zero soak,cleanuptrue,no partialcredit.",
@@ -1824,7 +1821,34 @@
         "status": "not run"
       }
     ],
-    "status": "extraction PR CI pending; no final freeze yet",
-    "certifies_g05": false
+    "status": "guest reboot failed; same artifact retained; disk campaign starting",
+    "certifies_g05": false,
+    "frozen_artifact_evidence": "campaign-final-artifact.json"
+  },
+  "historical_pre_convergence_current_final_candidate": {
+    "identity": "009diagnostic",
+    "status": "Diagnostic009source615CI18passed; actual017bootprobe FAILED withPGactivebeforeexplicitrecovery. Twelfthproductiondefect confirmed; eleven corrected, persistentfence pending.",
+    "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
+    "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
+    "last_frozen_artifact_evidence": "final-local-candidate-615a0a0.json",
+    "binary_bytes_equal_008": true,
+    "product_changes_since_008": [
+      "crates/server/tests/sql_cancellation.rs"
+    ],
+    "confirmed_production_defects": 12,
+    "focused_cancellation_controls_passed": 3,
+    "additional_export_repetitions_passed": 6,
+    "focused_boot_executor_controls_passed": 18,
+    "scope": "Source009 implementation/asset bytes unchanged from008 and localELF actuallyequal. Retained008CI/nativechecks do not replace exactsource615ordinaryCI. Testpreconditioncorrection is not a twelfth production defect.",
+    "ordinary_CI_checks_passed": 18,
+    "CI_evidence": "ci-candidate009-source615a0a0.json",
+    "corrected_production_defects": 11,
+    "actual_boot_evidence": "native-pitr-boot-persistence-confirmed-001.json"
+  },
+  "historical_pre_convergence_next_final_candidate": {
+    "status": "Requires persistentPITRbootfix and actualrecoveryverification before newfinalfreeze/longcampaign",
+    "confirmed_production_defects": 12,
+    "evidence": "final-local-candidate-615a0a0.json",
+    "scope": "No change to19predeclared workloads/SLOs/budgets/reserves and no partial008credit."
   }
 }
