@@ -1441,12 +1441,14 @@
     "scope": "Capability/publication only: 17 exports, 18 samples, three real memory gauges, owned cleanup. Requested bytes explicitly unavailable; live-owner release and historical retention attribution remain unverified."
   },
   "current_ci_failure": {
-    "status": "fixture corrected; original failure retained",
-    "evidence": "ci-native-executable-identity-failure.json",
-    "test": "updates::runtime::tests::running_native_identity_rejects_replacement_even_with_the_same_hash",
-    "scope": "Original first-validation identity panic at line 863 preserved. Bounded real child I/O added only to fixture; 1000/1000 real repetitions passed in 9.064s on c98aaaf. Production fail-closed validation unchanged; final whole-CI gates remain separate.",
-    "diagnostic_evidence": "ci-native-executable-panic-location.json",
-    "regression_evidence": "ci-native-executable-identity-after.json"
+    "source_commit": "65d5ce498e8f63edd6a69d5938cd6e607c4faeb3",
+    "status": "Original source65failure retained; correctedtestsource615passedall18ordinaryCIchecks. Originalexclusivecauseunconfirmed.",
+    "evidence": "ci-boot-control-export-cancellation-failure-001.json",
+    "test": "cancelled_exports_keep_admission_until_postgres_finishes_cleanup",
+    "controlled_before": "export-cancellation-preparation-before-001.json",
+    "after": "export-cancellation-preparation-after-001.json",
+    "additional_repetitions": "export-cancellation-preparation-repeated-after-001.json",
+    "scope": "Controlled relationlock proves stateactive neednot mean Execute. OriginalCIwait_event notcaptured; exclusivecauseunconfirmed. No production change or thresholdwaiver."
   },
   "native_final_same_artifact_suite": {
     "workflow_run_id": 39064489119,
@@ -1544,25 +1546,22 @@
     "second_pass_evidence": "provider-runtime-corrected-pass-2.json"
   },
   "current_final_candidate": {
-    "status": "frozen008; sourceCI18/SDK204, nativecommon12, immediatePITR2VMs andfive-scenariosmokepassed; firstS3active, bootpersistencehypothesispending",
-    "latest_fix_commit": "3cd1b8a",
-    "generated_asset_commit": "da262d77f4d2557ff5cbd9007b9a3a6273a92221",
-    "source_commit": "da262d77f4d2557ff5cbd9007b9a3a6273a92221",
+    "identity": "009diagnostic",
+    "status": "All18ordinaryCI615passed;017actualownedguestbootprobe dispatched, no verdictyet. No longloadactive.",
+    "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
     "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
-    "last_frozen_artifact_evidence": "final-local-candidate-da262d7.json",
+    "last_frozen_artifact_evidence": "final-local-candidate-615a0a0.json",
+    "binary_bytes_equal_008": true,
+    "product_changes_since_008": [
+      "crates/server/tests/sql_cancellation.rs"
+    ],
     "confirmed_production_defects": 11,
-    "focused_PITR_tests_passed": 6,
-    "native_actual_PITR_before": "native-pitr-unknown-state-reopening-before-001.json",
-    "native_actual_PITR_after": "native-pitr-error-final008-after-001/index.json",
+    "focused_cancellation_controls_passed": 3,
+    "additional_export_repetitions_passed": 6,
+    "focused_boot_executor_controls_passed": 18,
+    "scope": "Source009 implementation/asset bytes unchanged from008 and localELF actuallyequal. Retained008CI/nativechecks do not replace exactsource615ordinaryCI. Testpreconditioncorrection is not a twelfth production defect.",
     "ordinary_CI_checks_passed": 18,
-    "scope": "NewCLIandguideproducttrees require008observations; no007approval transfers implicitly.",
-    "functional_smoke": "matrix-sdk008-auth-links-functional-smoke-001.json",
-    "CI_evidence": "ci-final008-product-source.json",
-    "SDK_unit_passed": 204,
-    "active_endurance": "s3-final008-pass-1-001",
-    "native_complete_suite_workflow": 39064489119,
-    "native_evidence": "native-final-suite/index.json",
-    "native_cases_passed": 12
+    "CI_evidence": "ci-candidate009-source615a0a0.json"
   },
   "current_campaign_checkpoint": {
     "checkpoint": "load-time-checkpoint-020.json",
@@ -1604,7 +1603,7 @@
     "corrective_evidence": "host-resource-and-collected-watchdog-correction-001.json",
     "latest_focused_evidence": "host-Docker-name-and-watchdog-guards-001.json"
   },
-  "latest_inventory_update_utc": "2026-10-17T20:28:04.514055+00:00",
+  "latest_inventory_update_utc": "2026-10-17T21:05:41.119737+00:00",
   "native_startup_reproductions": {
     "status": "passed scoped repetitions; original failure unresolved",
     "count": 8,
@@ -1626,11 +1625,10 @@
     "actual_after_passes": 2
   },
   "next_final_candidate": {
-    "identity": "008",
-    "status": "008releasebuilt/frozen, smokepending; newCI/native/affectedcampaigns notpassed",
+    "status": "Next longcampaign requires criticalbootprobe/anyconfirmedfix and exactsourceCIclose; current009isdiagnostic",
     "confirmed_production_defects": 11,
-    "evidence": "final-local-candidate-da262d7.json",
-    "scope": "ProductchangedafteractualPITRerrorrepro;007doesnotcertify008. No active local load."
+    "evidence": "final-local-candidate-615a0a0.json",
+    "scope": "No change to19predeclared workloads/SLOs/budgets/reserves and no partial008credit."
   },
   "historical_candidate007": {
     "status": "source-bound historical007 only; first disk4h/comparisons passed, laterPITRdefect requires008. PartialS3stopped/cleaned.",
@@ -1684,10 +1682,40 @@
     "previous_suite": "native-final-suite-860d2f9/index.json"
   },
   "native_PITR_boot_persistence": {
-    "status": "hypothesis unconfirmed; notrun",
-    "source_commit": "65d5ce498e8f63edd6a69d5938cd6e607c4faeb3",
-    "evidence": "native-pitr-boot-persistence-predeclaration-001.json",
+    "status": "hypothesis unconfirmed;017actualprobe dispatched",
+    "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
+    "evidence": "native-pitr-boot-final009-predeclaration-001.json",
     "confirmed_production_defects": 11,
-    "pending": "CI18newharness andfreshactualVM; no productionchangebeforeproof"
+    "pending": "ActualVMverdict pending; no productionpatchbeforeproof"
+  },
+  "historical_candidate008_at_diagnostic_freeze": {
+    "status": "Source008 CI18/native12/immediatePITR2/smoke retained as historical source-bound evidence. FirstS3 interrupted atcalibration2445s/422samples,zero soak,cleanuptrue,no partialcredit.",
+    "latest_fix_commit": "3cd1b8a",
+    "generated_asset_commit": "da262d77f4d2557ff5cbd9007b9a3a6273a92221",
+    "source_commit": "da262d77f4d2557ff5cbd9007b9a3a6273a92221",
+    "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
+    "last_frozen_artifact_evidence": "final-local-candidate-da262d7.json",
+    "confirmed_production_defects": 11,
+    "focused_PITR_tests_passed": 6,
+    "native_actual_PITR_before": "native-pitr-unknown-state-reopening-before-001.json",
+    "native_actual_PITR_after": "native-pitr-error-final008-after-001/index.json",
+    "ordinary_CI_checks_passed": 18,
+    "scope": "NewCLIandguideproducttrees require008observations; no007approval transfers implicitly.",
+    "functional_smoke": "matrix-sdk008-auth-links-functional-smoke-001.json",
+    "CI_evidence": "ci-final008-product-source.json",
+    "SDK_unit_passed": 204,
+    "active_endurance": null,
+    "native_complete_suite_workflow": 39064489119,
+    "native_evidence": "native-final-suite/index.json",
+    "native_cases_passed": 12,
+    "interruption_evidence": "s3-final008-pass-1-interrupted-001.json"
+  },
+  "historical_CI_identity_fixture_failure": {
+    "status": "fixture corrected; original failure retained",
+    "evidence": "ci-native-executable-identity-failure.json",
+    "test": "updates::runtime::tests::running_native_identity_rejects_replacement_even_with_the_same_hash",
+    "scope": "Original first-validation identity panic at line 863 preserved. Bounded real child I/O added only to fixture; 1000/1000 real repetitions passed in 9.064s on c98aaaf. Production fail-closed validation unchanged; final whole-CI gates remain separate.",
+    "diagnostic_evidence": "ci-native-executable-panic-location.json",
+    "regression_evidence": "ci-native-executable-identity-after.json"
   }
 }

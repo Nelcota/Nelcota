@@ -1,0 +1,53 @@
+{
+  "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
+  "build_command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "nelcota-server"
+  ],
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+  "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+  "cargo_lock_sha256": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff",
+  "workspace_manifest_sha256": "2527746af359ef502f1bd6a836fda5a161456fcf7d11766a1b1d4da64a86de09",
+  "build_jobs": 4,
+  "incremental": "0",
+  "release_profile": {
+    "lto": "thin",
+    "codegen_units": 1
+  },
+  "compiler_overrides": [],
+  "build_exit": 0,
+  "build_seconds": 0.35529770399443805,
+  "completed_utc": "2026-10-17T20:49:16.675001+00:00",
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
+  "size": 30484800,
+  "scope": "Source-pinned diagnostic candidate009 after correcting only the export cancellation test readiness; same eleven production corrections and regenerated assets as008. Existing release cache retained; fresh bounded Cargo invocation, not a clean-cache rebuild. Boot-persistence probe and new CI/endurance remain mandatory. No production release or deployment.",
+  "status": "diagnostic candidate009 frozen after test-only readiness correction; new CI and boot-persistence probe pending",
+  "certifies_g05": false,
+  "product_tree_objects": {
+    "crates": "ff4529b132261df3a58ea375dfcf509d150c686a",
+    "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+    "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+    "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+    "sdk": "9bd7af8fc90a0a3cd5429ad40d8c3ec7b23efedd",
+    "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
+  },
+  "previous_build": "final-local-candidate-da262d7.json",
+  "build_receipt": "candidate-final-009.json",
+  "architecture": "x86_64-unknown-linux-gnu",
+  "release_cache_reused": true,
+  "product_changes_since_008": [
+    "crates/server/tests/sql_cancellation.rs"
+  ],
+  "binary_bytes_equal_008": true
+}

@@ -1,0 +1,35 @@
+{
+  "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
+  "ref": "test/g05-pitr-boot-final009-001",
+  "script": "run-remote-final009-controls-017.py",
+  "script_sha256": "9a644c0d8dedb831ad661d3a8c15e5fa2025e75d3afb1437ec7762b9c137681a",
+  "case": "native-pitr-reboot-final009-before-1",
+  "maximum_seconds": 7200,
+  "maximum_seconds_each_workflow": 5400,
+  "status": "prepared; wait all18CI615 and empty queue before creating owned immutable ref",
+  "prerequisites": [
+    "CI18/18 exact source615",
+    "retained008PITR2/common12 + exact test-only diff checked",
+    "no queued or active manual stress workflow",
+    "frozen009six-product-tree match"
+  ],
+  "scope": "Probe still unconfirmed. No new production patch, no partial endurance credit. Prior016 launcher exited on preserved CI failure before ref/dispatch.",
+  "recorded_utc": "2026-10-17T20:53:09.192550+00:00",
+  "source_files_sha256": {
+    "bench/native_pitr_failure.py": "f03f76d21187ba206c0d9c5bb068cd3019ebbc332d48f24746d21480263b87d2",
+    "bench/native_pitr_reboot.py": "e8064dfee3abf04436eb87125315c2c38dc347caa2369222389ef0a52d0296da",
+    "bench/native_vm.py": "9364e2e48395c2f8ba4cfc84682263c720b0aa25a9d608daa1001696a5e62c86",
+    "bench/native_evidence.py": "6c9882bbc3ccd52b2a113d68a8c3edd381c43583f0812c5829f89a6f567da008",
+    ".github/workflows/stress.yml": "22bd9eb06ae2268fd236407fc322647ef2facd683ca68e26c8a149461b178101"
+  },
+  "focused_executor_controls": {
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0,
+    "evidence": "export-cancellation-preparation-focused-checks-001.json"
+  },
+  "prior_control": "native-pitr-boot-persistence-predeclaration-001.json",
+  "prior_launcher": "Source65 CI failed; stopped before creating any ref or dispatch. Originalfailure retained.",
+  "candidate_evidence": "final-local-candidate-615a0a0.json",
+  "certifies_g05": false
+}

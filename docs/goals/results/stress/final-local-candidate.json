@@ -1,5 +1,5 @@
 {
-  "source_commit": "da262d77f4d2557ff5cbd9007b9a3a6273a92221",
+  "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
   "build_command": [
     "cargo",
     "build",
@@ -20,8 +20,8 @@
   },
   "compiler_overrides": [],
   "build_exit": 0,
-  "build_seconds": 88.80950128700351,
-  "completed_utc": "2026-10-17T19:26:10.215864+00:00",
+  "build_seconds": 0.35529770399443805,
+  "completed_utc": "2026-10-17T20:49:16.675001+00:00",
   "cpu_affinity": [
     0,
     1,
@@ -31,18 +31,25 @@
   ],
   "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
   "size": 30484800,
-  "scope": "Fresh frozen local staging candidate after eleven confirmed production corrections including uncertain PITR-error stopped-service preservation, independent default server SDK queues, native-browser late-overlap refresh and rebuilt guide assets, retaining SQL/export ownership corrections; no production release or deployment",
-  "status": "frozen candidate008 after eleven corrections; new matchingCI/native/realPITR-error repetitions/endurance still pending",
+  "scope": "Source-pinned diagnostic candidate009 after correcting only the export cancellation test readiness; same eleven production corrections and regenerated assets as008. Existing release cache retained; fresh bounded Cargo invocation, not a clean-cache rebuild. Boot-persistence probe and new CI/endurance remain mandatory. No production release or deployment.",
+  "status": "Diagnostic009 source615CI18/18 passed; actual017bootprobe running; no long009campaign and no G05approval",
   "certifies_g05": false,
   "product_tree_objects": {
-    "crates": "4a4cfb7efb49f0cb7f0e00b3aeb594c8cc75f091",
+    "crates": "ff4529b132261df3a58ea375dfcf509d150c686a",
     "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
     "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
     "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
     "sdk": "9bd7af8fc90a0a3cd5429ad40d8c3ec7b23efedd",
     "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0"
   },
-  "previous_build": "final-local-candidate-35f4a97.json",
-  "build_receipt": "candidate-final-008.json",
-  "architecture": "x86_64-unknown-linux-gnu"
+  "previous_build": "final-local-candidate-da262d7.json",
+  "build_receipt": "candidate-final-009.json",
+  "architecture": "x86_64-unknown-linux-gnu",
+  "release_cache_reused": true,
+  "product_changes_since_008": [
+    "crates/server/tests/sql_cancellation.rs"
+  ],
+  "binary_bytes_equal_008": true,
+  "CI_evidence": "ci-candidate009-source615a0a0.json",
+  "ordinary_CI_checks_passed": 18
 }

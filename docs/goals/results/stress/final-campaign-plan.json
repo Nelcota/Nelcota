@@ -205,7 +205,7 @@
       "preserved_artifact": {
         "source_commit": "e6fdfd7cca377edb0b36184a21a9a7b30a4d1d0c",
         "binary_sha256": "acfb2c604a7376be95690852ef016bca90eba599a55bad4be27b6c071b59a6b2",
-        "evidence": "final-local-candidate.json",
+        "evidence": "final-local-candidate-e6fdfd7.json",
         "byte_equivalence_evidence": "release-test-fixture-byte-equivalence.json",
         "status": "same exact retained ELF as the ongoing disk003 campaign; no workload, process or approval-threshold change; updated test/native CI pending"
       },
@@ -671,9 +671,9 @@
     "approval_thresholds_reduced": false
   },
   "current_final_artifact": {
-    "source_commit": "da262d77f4d2557ff5cbd9007b9a3a6273a92221",
+    "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
     "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
-    "scope": "Latestlocal008performanceELF; remotecommon008nativeELF muststillbuild/test separately. No bitreproducibilityor007approvaltransfer."
+    "status": "Source-pinned build verified with releasecache; byte-identical008localELF. Only export cancellation testchanged inproducttrees. No longcampaign until criticalbootprobe/anyconfirmedfix and exactsourceCI close."
   },
   "additional_browser_auth_pressure": {
     "status": "First corrected full pass005 passed; two further fresh owner-metric receipts are predeclared before execution. No full G05 approval.",
@@ -753,14 +753,14 @@
     }
   },
   "current_final_candidate": {
-    "source_commit": "da262d77f4d2557ff5cbd9007b9a3a6273a92221",
+    "identity": "009diagnostic",
+    "source_commit": "615a0a0304b28cb5abb4824ee87ecaf655086dae",
     "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
-    "identity": "008",
-    "status": "frozen; actual150ssmokepassed, fullCI/2actualPITRbeforeordinary gated",
-    "build_evidence": "final-local-candidate-da262d7.json",
-    "functional_smoke": "matrix-sdk008-auth-links-functional-smoke-001.json",
-    "native_suite_evidence": "native-final-suite/index.json",
-    "native_cases_passed": 12
+    "build_evidence": "final-local-candidate-615a0a0.json",
+    "status": "Source009test-only correction/byte-equal008localELF verified; all18exactsource615CIpassed; actual017bootprobe running. No longcampaign before criticalprobe/anyconfirmedfix closes.",
+    "certifies_g05": false,
+    "CI_evidence": "ci-candidate009-source615a0a0.json",
+    "ordinary_CI_checks_passed": 18
   },
   "historical_candidate006": {
     "source_commit": "860d2f990949bfc5c8c612de3341c65a39e8d259",
@@ -1736,6 +1736,19 @@
     "status": "notrun; newsourceCI/freshVMpending",
     "scenario": "runtime-pitr-reboot",
     "new_production_fix_applied": false,
-    "confirmed_defects": 11
+    "confirmed_defects": 11,
+    "next_attempt_evidence": "native-pitr-boot-final009-predeclaration-001.json",
+    "current_status": "Actual017probe workflow39069412746 running onimmutable615ref after all18CI. Hypothesisstillunconfirmed; no productionpatchbeforeproof."
+  },
+  "historical_candidate008_at_diagnostic_freeze": {
+    "source_commit": "da262d77f4d2557ff5cbd9007b9a3a6273a92221",
+    "binary_sha256": "aa0967f175d13410d4085841c1e1351597b7d38c7cab8adf51963bfa57336a73",
+    "identity": "008",
+    "status": "Historical008 build/runtime checks retained. First S3partial interrupted duringcalibration2445s/422samples/cleanuptrue after newtestCI failed; no soak, no partialtimecredit.",
+    "build_evidence": "final-local-candidate-da262d7.json",
+    "functional_smoke": "matrix-sdk008-auth-links-functional-smoke-001.json",
+    "native_suite_evidence": "native-final-suite/index.json",
+    "native_cases_passed": 12,
+    "interruption_evidence": "s3-final008-pass-1-interrupted-001.json"
   }
 }

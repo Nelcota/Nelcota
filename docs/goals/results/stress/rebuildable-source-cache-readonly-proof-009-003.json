@@ -1,0 +1,19 @@
+{
+  "started_utc": "2026-10-17T21:00:41.395206+00:00",
+  "scope": "Read-only proof of rebuildable Cargo registry sources against retained Cargo.lock-authenticated crate archives; no removal or compiler/load overlap. Source/data/frozen artifacts/credentials untouched.",
+  "status": "passed; read-only proof completed; all source directories retained",
+  "maximum_seconds": 55,
+  "cargo_lock_sha256": "cb7f9f559f32415fc520a144801ba3f59ba0ca091530d487f9ad3790788189ff",
+  "packages_verified": 458,
+  "packages_retained_without_proof": 249,
+  "source_bytes_verified": 398874813,
+  "source_allocated_bytes_verified": 456732672,
+  "packages_removed": 0,
+  "ended_utc": "2026-10-17T21:01:18.304335+00:00",
+  "elapsed_seconds": 36.9237365629524,
+  "detail_sha256": "043a0e22ac430800d5ac8f98a86d3586c749b679d0167b4ce71ab5e2a9036572",
+  "packages_retained_without_proof_reason": "249packages outside current Cargo.lock or missing unique archive/source proof; all458verified and249unverified sources remain untouched. Revalidate source metadata/archive proof and idle state before any later cache release.",
+  "workspace_resources_created": false,
+  "source_directories_removed": 0,
+  "load_time_credit_seconds": 0
+}

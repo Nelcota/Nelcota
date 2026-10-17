@@ -3821,3 +3821,41 @@ Validação focada adicional sequencial:18/18 controles Python do executor
 PITR,fmt,boundaries,Clippy `nelcota-server --test sql_cancellation` com
 `-D warnings` e diff-check aprovados;23,42s no total, sem carga concorrente.
 [Checks](results/stress/export-cancellation-preparation-focused-checks-001.json).
+
+
+### 2026-10-17, 20:49 UTC — fonte009 diagnóstica e CI da correção
+
+Commit615a0a0304b28cb5abb4824ee87ecaf655086dae enviado aoPR90draft.
+Única mudança entre as seis árvores de produto deDA008 e615 é o teste
+`crates/server/tests/sql_cancellation.rs`; implementação/assets iguais.
+Invocação Cargo release com lockfile/cache existente concluiu0,355s e
+produziu exatamente oELFaa0967/30484800bytes já observado em008. Não
+é rebuild com cache limpo. Novas árvores009 e hashes preservados na
+[proveniência](results/stress/final-local-candidate-615a0a0.json).
+
+CI18da fonte615 ainda pendente. Launcher017 espera o resultado completo,
+confere as duas VMs imediatas e12casos comuns008 retidos com diff estritamente
+limitado ao teste, fila manual vazia, ref imutável própria e seis árvores009
+antes de uma única VMboot.18controles Python agora executados/aprovados.
+[Declaração009](results/stress/native-pitr-boot-final009-predeclaration-001.json).
+Nenhuma campanha longa009 iniciou; próxima congelagem/campanha depende
+do fechamento dessa hipótese crítica e de qualquer correção confirmada.
+
+
+### 2026-10-17, 21:05 UTC — CI009 completo; probe de boot iniciado
+
+Fonte615a0a0 concluiu18/18 checks às21:04:33UTC, incluindoRust completo,
+controle dedicado SQL/export, onboarding, consumidor de auth, host lifecycle
+e S3 real. [Prova de CI](results/stress/ci-candidate009-source615a0a0.json).
+Launcher017 avançou somente depois dessa prova, pré-requisitos nativos008,
+diff limitado ao teste e fila vazia; criou ref imutável própria009 e
+disparou uma VM de runtime-pitr-reboot. Sem veredito, sem novo defeito
+confirmado e sem alteração de produção antes do resultado real.
+
+Verificação local somente de leitura do cache Cargo:458pacotes,398874813
+bytes de fonte/456732672alocados, comparados byte a byte com TAR autenticado
+pelo Cargo.lock;249pacotes sem prova suficiente preservados. Todos707
+continuam presentes.36,924s de preparação, zero carga e zero bytes
+reclamados. Revalidar estado ocioso/metadata/tipos/nlinks/paths/arquivos
+e diretórios desconhecidos antes de qualquer manutenção posterior.
+[Recibo](results/stress/rebuildable-source-cache-readonly-proof-009-003.json).
