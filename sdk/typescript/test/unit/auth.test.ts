@@ -10,6 +10,52 @@ afterEach(() => {
 
 const KEY = 'nelcota.api.example.com.session';
 
+describe('isolated default server clients', () => {
+  it.each([false, true])('keeps an independent cached session readable during another client sign-in (Web Locks=%s)', async (webLocks) => {
+    vi.stubGlobal('window', undefined);
+    vi.stubGlobal('document', undefined);
+    const queues = new Map<string, Promise<void>>();
+    vi.stubGlobal('navigator', {});
+    if (webLocks) vi.stubGlobal('navigator', { locks: {
+      request: <T>(name: string, task: () => Promise<T>) => {
+        const result = (queues.get(name) ?? Promise.resolve()).then(task);
+        queues.set(name, result.then(() => undefined, () => undefined));
+        return result;
+      },
+    } });
+    let entered!: () => void;
+    let release!: () => void;
+    const started = new Promise<void>((resolve) => { entered = resolve; });
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    const slow = createClient('https://api.example.com', {
+      fetch: async () => { entered(); await held; return json(session(900, 'slow-refresh')); },
+      auth: { autoRefresh: false },
+    });
+    const independent = createClient('https://api.example.com', {
+      fetch: async () => { throw new Error('A cached session read must not send HTTP'); },
+      auth: { autoRefresh: false },
+    });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let signing: Promise<unknown> | undefined;
+    try {
+      await independent.auth.setSession(session(900, 'independent-refresh'));
+      signing = slow.auth.signInWithPassword({ email: 'ana@example.com', password: 'pw' });
+      await started;
+      const cancel = new AbortController();
+      timer = setTimeout(() => cancel.abort(), 1000);
+      const result = await independent.auth.getSession({ signal: cancel.signal });
+      expect(result.error).toBeNull();
+      expect(result.data?.refresh_token).toBe('independent-refresh');
+    } finally {
+      clearTimeout(timer);
+      release();
+      await signing;
+      slow.dispose();
+      independent.dispose();
+    }
+  });
+});
+
 function setup(storage: SessionStorage = memoryStorage(), ...replies: Parameters<typeof mockFetch>) {
   const mock = mockFetch(...replies);
   const nelcota = createClient('https://api.example.com', {

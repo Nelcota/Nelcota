@@ -36,6 +36,7 @@ export class SessionManager {
   // Shared with the OAuth verifier store, using a distinct key suffix.
   readonly storage: SessionStorage;
   readonly key: string;
+  readonly #lockName: string | symbol;
   readonly #margin: number;
   readonly #autoRefresh: boolean;
   readonly #listeners = new Set<AuthListener>();
@@ -59,6 +60,10 @@ export class SessionManager {
     while (end > 0 && pathname[end - 1] === '/') end--;
     const path = pathname.slice(0, end);
     this.key = options.storageKey ?? `nelcota.${url.host}${path}.session`;
+    this.#lockName = `${this.key}.refresh`;
+    // Default server memory stores belong to separate requests. Their queues
+    // must stay independent when another client holds a sign-in across HTTP.
+    if (!isBrowser() && !options.storage) this.#lockName = Symbol();
     if (native && this.storage === native) {
       let factory: IDBFactory | undefined;
       try { factory = globalThis.indexedDB; } catch { /* Report unavailable storage on the first operation. */ }
@@ -83,8 +88,7 @@ export class SessionManager {
     }
   }
   #locked<T>(task: () => Promise<T>): Promise<T> {
-    // Keep the existing name to coordinate with other clients/tabs as well.
-    return withLock(`${this.key}.refresh`, task);
+    return withLock(this.#lockName, task);
   }
   async #read(force = false, allowPending = false): Promise<Session | null> {
     // Storage may still contain a spent token or a session already signed out.
