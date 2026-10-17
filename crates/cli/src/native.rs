@@ -18,6 +18,7 @@ mod units;
 pub(crate) use units::render_unit;
 
 pub use binary::{deploy_binary, deployed_binary, rollback_binary};
+pub(crate) use postgres::postgres_command;
 pub use postgres::{PG_DATA, POSTGRES_UNIT, configure_postgres};
 pub use provisioning::{check_machine, install_packages};
 pub use units::{app_unit, install_unit, systemctl, systemctl_quiet, unit_path, unit_state};

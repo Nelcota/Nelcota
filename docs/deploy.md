@@ -149,6 +149,13 @@ the PostgreSQL project's apt repository (PGDG) and Caddy from its own, then:
   `backup`, `restore`, `pitr`, `upgrade`, `remove`); they drive `systemctl`,
   `journalctl` and `runuser -u postgres` instead of `docker compose`.
 - One project per machine: a second `init` is refused. For more, use Docker.
+- Native PostgreSQL uses the local `17/main` cluster on port 5432. A differently
+  configured `17/main`, or another PostgreSQL cluster reserving 5432, is rejected
+  before packages or new host/project configuration are written, including with
+  `--skip-checks`. Other ports are not selected by native database commands. Native
+  administrative clients explicitly select this cluster and local socket;
+  ambient `PGCLUSTER`, `PGHOST`, `PGHOSTADDR`, `PGPORT` or service settings cannot
+  redirect a backup, restore or credential update to a different database.
 - The app's unit runs as a throwaway user (`DynamicUser`) with no write
   access to the system (`ProtectSystem=strict`) and no capabilities.
 - `upgrade` swaps the binary the unit runs for the one you are running (so

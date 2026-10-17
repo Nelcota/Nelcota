@@ -43,6 +43,10 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Security
 
+- Reject native PostgreSQL cluster/port collisions before provisioning and pin
+  administrative clients to local `17/main:5432`, preventing initialization or
+  ambient libpq settings from changing another cluster. Send the generated
+  database password through bounded private stdin instead of command arguments.
 - Update rustls to 0.23.46 for RUSTSEC-2026-0346, 0347, 0348 and 0349.
   Published 0.4.0 predates this source correction.
 

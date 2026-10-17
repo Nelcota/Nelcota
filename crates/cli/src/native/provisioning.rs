@@ -32,6 +32,7 @@ pub fn check_machine() -> anyhow::Result<()> {
     if unit_state("systemd-journald").is_none() {
         bail!("systemd is not running on this machine");
     }
+    super::postgres::check_cluster_layout()?;
     ok("Debian/Ubuntu with systemd, as root");
     Ok(())
 }
