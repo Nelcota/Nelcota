@@ -8,7 +8,10 @@
 pub mod panel;
 mod postgres;
 
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::{Arc, OnceLock},
+    time::Duration,
+};
 
 use axum::{
     Router,
@@ -33,7 +36,15 @@ use tower::ServiceExt;
 use uuid::Uuid;
 
 pub const JWT_SECRET: &str = "test-secret-with-more-than-32-characters";
-pub const AUTHENTICATOR_PASSWORD: &str = "test-authenticator-password";
+/// Cluster roles are shared by this process's isolated test databases. Keep
+/// one fresh secret per test binary so concurrent bootstraps cannot invalidate
+/// another TestApp's API pool.
+pub fn authenticator_password() -> &'static str {
+    static PASSWORD: OnceLock<String> = OnceLock::new();
+    PASSWORD
+        .get_or_init(|| format!("{}{}", Uuid::new_v4().simple(), Uuid::new_v4().simple()))
+        .as_str()
+}
 pub const ADMIN_EMAIL: &str = "admin@example.com";
 pub const SSO_SECRET: &str = "host-shared-secret-with-32-chars+";
 
@@ -231,7 +242,7 @@ impl TestApp {
         };
 
         if external_database.is_none() {
-            db::bootstrap(&admin, AUTHENTICATOR_PASSWORD, 10)
+            db::bootstrap(&admin, authenticator_password(), 10)
                 .await
                 .unwrap();
         }
@@ -266,12 +277,12 @@ impl TestApp {
             )
             .unwrap(),
         );
-        let pool = db::api_pool(&admin, AUTHENTICATOR_PASSWORD, options.pool_size);
+        let pool = db::api_pool(&admin, authenticator_password(), options.pool_size);
         let catalog = load_catalog(&pool, "public").await.unwrap();
         let reload_listener = spawn_reload_listener(
             catalog.clone(),
             pool.clone(),
-            db::authenticator_config(&admin, AUTHENTICATOR_PASSWORD),
+            db::authenticator_config(&admin, authenticator_password()),
         );
         let state = AppState {
             pool: pool.clone(),
