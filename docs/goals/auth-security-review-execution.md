@@ -1,68 +1,93 @@
 # G06 — Authentication security review execution record
 
-Status: planned; baseline prerequisite pending. This is an intake record,
-not a completed security review or a certification.
+Status: in progress. This bounded source review is not an external audit,
+penetration test, compliance certification or production acceptance.
 
-## Baseline and start gate
+## Frozen baseline and run boundaries
 
-The [goal](auth-security-review.md) requires a frozen `main` SHA after the G05
-production fixes merge. At intake (and rechecked before creating this planning branch), PR [#91](https://github.com/Nelcota/Nelcota/pull/91)
-is open at `5b2b2a49f60274456e84fc027fd3e401fd64e417`; all 18 ordinary CI
-checks passed on that SHA. It has not merged. That PR head is **not** recorded
-as the reviewed `main` baseline.
+- Goal authority: [G06](auth-security-review.md), read in full before phase 1.
+- Reviewed frozen SHA: `7df975cf0bbed970f01948d559e959b38404a111` (the goal's Planning baseline).
+- Current main at phase 1 start: `4d5992b2b27e47ece47ac30f020ca13f3af539af`.
+- Phase 1 start: 2026-10-18 18:24:20 UTC.
+- Eight-hour checkpoint due: 2026-10-19 02:24:20 UTC.
+- Hard deadline: 2026-10-19 18:24:20 UTC.
+- Source is a read-only Git archive of the frozen SHA, not a moving checkout.
+- Private sanitized evidence: ignored `target/auth-review/20261018/`.
+- PR [#97](https://github.com/Nelcota/Nelcota/pull/97) merged by the configured
+  squash method as `4d5992b2b27e47ece47ac30f020ca13f3af539af` after all 17 applicable
+  ordinary checks passed on `f5e196012d8dab07caab59b2f3e7ca6d76cece1b`.
+  Native presets were not triggered by their path filter. GitHub automatically
+  deleted its branch; this is the specific Part 1 deletion authorized by the task.
 
-- Planning-only branch base: `2efede8c27ee12119142170e8bd9742ff7cb900e`; this is not a reviewed security baseline.
-- Reviewed frozen `main` SHA: pending.
-- Phase 1 start: not started.
-- Hard 24-hour deadline: not started; record when phase 1 starts.
-- G05 finished its bounded campaign without full approval; its source/artifact
-  stayed immutable. No G06 test, change or audit ran alongside those campaigns.
-- No automatic merge is authorized. Wait for the required merged baseline;
-  do not substitute a moving checkout or treat G05 evidence as G06 coverage.
+The complete path diff from the baseline to current main contains workflow
+updates, goal documents and the PITR preflight/docs/embedded-guide rebuild from
+#97. It changes no auth/session source or SDK source. Embedded asset filenames
+and import references changed during the guide rebuild; those bytes are not
+substituted for the frozen panel source under review.
+
+No releases, tags, deploys, settings/workflow changes or other merges are
+permitted. Medium/Low fix PRs, if eligible, remain unmerged. High/Critical
+patches and reproductions are withheld from public Git history and PRs.
+
+## Inventory and threat model
+
+Trust boundaries: unauthenticated callers to auth endpoints; account/session
+state to PostgreSQL; signed claims to RLS roles; project signing keys to other
+projects; browser panel cookies to admin authority; project-panel SSO to host
+controller authority; SDK storage and refresh coordination to distinct callers.
+
+Local OAuth and SMTP doubles are permitted. Real providers, real mail, real
+accounts and production deployments are **blocked (environment)** from the
+start and will not be contacted. Existing tests count only when actually run
+and when they assert the relevant negative case. Code reading or green CI alone
+cannot establish a cell verdict.
 
 ## Coverage and verdicts
 
-No owning path has been reviewed and no dynamic G06 test has run. The cells
-below remain `not run` until both required forms of evidence are available.
-Code reading alone and ordinary CI alone do not establish a cell verdict.
+`Not started` below is a checkpoint state, not a passing verdict. Final entries
+will use G06 verdicts and identify both code reading and dynamic evidence.
 
-| Cell | Verdict | Evidence |
-|---|---|---|
-| Password storage | not run | Baseline prerequisite pending; no G06 evidence. |
-| Login | not run | Baseline prerequisite pending; no G06 evidence. |
-| Brute force and abuse | not run | Baseline prerequisite pending; no G06 evidence. |
-| Account enumeration | not run | Baseline prerequisite pending; no G06 evidence. |
-| JWT | not run | Baseline prerequisite pending; no G06 evidence. |
-| API keys and roles | not run | Baseline prerequisite pending; no G06 evidence. |
-| Refresh tokens | not run | Baseline prerequisite pending; no G06 evidence. |
-| Logout and revocation | not run | Baseline prerequisite pending; no G06 evidence. |
-| Password reset and magic links | not run | Baseline prerequisite pending; no G06 evidence. |
-| Email verification and change | not run | Baseline prerequisite pending; no G06 evidence. |
-| OAuth (local doubles) | not run | Baseline prerequisite pending; no G06 evidence. |
-| Cookies, CSRF and origin | not run | Baseline prerequisite pending; no G06 evidence. |
-| Panel SSO | not run | Baseline prerequisite pending; no G06 evidence. |
-| SDKs | not run | Baseline prerequisite pending; no G06 evidence. |
-| Input handling | not run | Baseline prerequisite pending; no G06 evidence. |
-| Errors, logs and config | not run | Baseline prerequisite pending; no G06 evidence. |
-| Dependencies | not run | Baseline prerequisite pending; no G06 evidence. |
-
-Real OAuth provider behavior and real mail deliverability are **blocked
-(environment)** from intake, as required by the goal. Local SMTP/OAuth doubles
-remain in scope once phase 1 starts; they cannot certify real providers.
+| Cell | State / verdict | Owning code | Planned dynamic evidence |
+|---|---|---|---|
+| Password storage | not started | `crates/auth/src/password.rs; credentials.rs` | server auth; auth unit tests |
+| Login | not started | `crates/auth/src/accounts.rs; password.rs` | server auth |
+| Brute force and abuse | not started | `crates/auth/src/rate_limit.rs; request.rs; state.rs` | server auth; auth unit tests |
+| Account enumeration | not started | `accounts.rs; links/send.rs; confirmation.rs` | server auth |
+| JWT | not started | `crates/auth/src/keys.rs; lib.rs; crates/core/src/claims.rs` | auth unit tests; server auth/RLS |
+| API keys and roles | not started | `crates/core/src/extract.rs; db.rs; auth/db.rs` | server auth; auth_reuse; RLS |
+| Refresh tokens | not started | `crates/auth/src/sessions.rs` | server auth; auth_reuse |
+| Logout and revocation | not started | `sessions.rs; crates/auth/src/lib.rs` | server auth; auth_reuse |
+| Password reset and magic links | not started | `recovery.rs; verify.rs; links/` | server auth; OAuth local doubles |
+| Email verification and change | not started | `confirmation.rs; verify.rs; accounts.rs` | server auth; OAuth local doubles |
+| OAuth (local doubles) | not started | `crates/auth/src/oauth/; oauth.rs` | server oauth; auth unit tests |
+| Cookies, CSRF and origin | not started | `crates/admin/src/auth.rs; middleware.rs; server router` | server admin auth; panel auth tests |
+| Panel SSO | not started | `crates/admin/src/sso.rs; host SSO boundary` | server admin SSO |
+| SDKs | not started | `sdk/typescript/src/auth/; sdk/rust/src/auth.rs` | SDK unit/transport; server sdk_rust |
+| Input handling | not started | `crates/auth/src/credentials.rs; handlers.rs` | server auth; auth unit tests |
+| Errors, logs and config | not started | `auth/error.rs; mail.rs; core/config.rs` | auth/core unit tests; server negative tests |
+| Dependencies | not started | `Cargo.lock; panel/SDK package-lock.json` | cargo audit; panel/SDK npm audit |
 
 ## Findings and disclosure
 
-No G06 finding is claimed. During execution, private evidence belongs only in
-`target/auth-review/<run-id>/`. Do not publish exploit details or descriptive
-vulnerability titles for unfixed Critical/High issues. Reproduced issues in
-that class require immediate maintainer notification under the goal policy.
-Contracts, released migrations, dependencies, Argon2 parameters and existing
-thresholds retain the goal's decision boundaries.
+No confirmed finding is claimed at this initial checkpoint. Suspicions must be
+reproduced or rejected. Public High/Critical entries will contain only the
+finding identifier, severity, checklist row and “details withheld pending
+maintainer review”. No public patch, regression or exploit narrative is allowed
+for an unfixed finding in that class.
 
-## Intake validation
+## Execution log
 
-The supplied goal is recorded without changing its checklist or approval
-criteria. Its G05 related link targets the immutable goal document on the separate
-G05 evidence commit `68d62df`; that document is not yet on `main`. Only local Markdown link validation and
-`git diff --check` apply to this planning record. There are no claimed test,
-audit, regression or vulnerability-remediation results.
+- Intake: read repository instructions, goal and network/runtime instructions;
+  reused installed Rust/Node tools and caches without changing setup or locks.
+- Baseline: checked all later changed paths and extracted the exact Git tree.
+- Resource policy: four Cargo jobs, two Rust test threads, sequential Rust,
+  Vitest and audit runs. Only disposable local fixtures are authorized.
+
+## Decisions and limitations
+
+- Follow the specifically authorized #97 merge and branch deletion as the
+  exception to the general prohibition on merges/deletions; nothing else is
+  closed or deleted.
+- No real provider/mail checks will be attempted or replaced with workarounds.
+- This record is not a published release plan; release notes and commands belong
+  only in the maintainer's final private task response.
