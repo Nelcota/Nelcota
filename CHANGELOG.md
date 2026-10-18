@@ -27,6 +27,9 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Clear pending TypeScript SDK OAuth verification state on sign-out, including
+  native browser journal state and failed or sessionless logout.
+
 - Redact authentication adapter credentials and email message content from
   `Debug` diagnostics, including validated mail/OAuth configuration views.
 - Reject account passwords above the documented 256-character maximum before

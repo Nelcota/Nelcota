@@ -73,7 +73,6 @@ export class AuthClient {
   accessToken(): Promise<string | null> { return this.#manager.accessToken(); }
   refreshSession(options: AuthRequestOptions = {}): Promise<Result<Session>> { return this.#manager.refresh(options); }
   async setSession(session: Session): Promise<void> {
-    if (!isSession(session)) throw new NelcotaUsageError('Not a Nelcota session');
     await this.#manager.set(session);
   }
   // --------------------------------------------------------------- sign in
