@@ -7,6 +7,9 @@ Dates refer to published releases; Unreleased describes source changes.
 
 ### Fixed
 
+- Clear pending OAuth verification state on sign-out, including the native
+  journal and storage mirror, absent sessions and failed server revocation.
+
 - Keep default server-memory clients' coordination queues independent so
   one pending sign-in cannot block another request's cached session read.
   Shared adapters and browser sessions retain their existing coordination scope.
