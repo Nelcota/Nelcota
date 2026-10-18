@@ -1,0 +1,26 @@
+{
+  "source_commit": "b449eb5d31b8bbb08ebd24a743691b339d131c8b",
+  "binary_sha256": "5a27c2c602c9e6e60020110b661c700de0bdbe1df965e01a431f4d55c9770726",
+  "binary_bytes": 30611072,
+  "test_binary_sha256": "5927c0270b3b4a66fd14860365c48a1c85c30c91eabb04c1faae2f04ea41cb9d",
+  "cli_test_tree": "123f7727636661878946c1905f53004db30b1bc5",
+  "production_trees": {
+    "crates": "5842f05f4d48fccf9e77013782a8bfc072ba9dfd",
+    "deploy": "dc3cee1048a19391ab9414b0902111e553adaecf",
+    "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+    "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+    "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+    "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0",
+    ".cargo": "9a75d949131e96094a6e1bcda5abdedb8bef5936"
+  },
+  "harness_source": "13351ed896f86312c680c52ac30bc258d638be8b",
+  "build": {
+    "toolchain": "1.99.0",
+    "profile": "release",
+    "locked": true,
+    "Cargo_jobs": 4,
+    "Rust_test_threads": 2,
+    "incremental": false
+  },
+  "scope": "A/B PITR fence recovery, actual disposable Docker daemon restarts and one real native guest reboot; no G05 campaign, real archive WAL/PITR or physical power-loss claim"
+}

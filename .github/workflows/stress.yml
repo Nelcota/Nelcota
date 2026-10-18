@@ -1,31 +1,75 @@
-name: Release stress campaign
-
-on:
-  workflow_dispatch:
-
+name: P12 atomic recovery and reboot verification
+'on':
+  workflow_dispatch: {}
 permissions:
   contents: read
-
+concurrency:
+  group: p12-atomic-${{ github.repository }}
+  cancel-in-progress: false
 jobs:
-  stress:
-    # Dedicated host with at least three CPUs and Docker. Heavy load is kept
-    # off pull-request runners and uses explicit per-container budgets.
-    runs-on: [self-hosted, linux, x64, nelcota-benchmark]
-    timeout-minutes: 90
+  p12-docker-daemon:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d
-        with:
-          toolchain: '1.99.0'
-      - run: nice -n19 ionice -c3 cargo build --locked --release -p nelcota-server
-      - run: nice -n19 ionice -c3 python3 bench/campaign.py --binary target/release/nelcota --output target/stress-report
-      - name: Campaign diagnostics
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: release-stress-report
-          path: target/stress-report
-          if-no-files-found: ignore
-          retention-days: 14
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - name: Verify exact production trees and the frozen ELF
+      run: python3 target/p12-fixes-input/verify.py
+    - name: Explicit root owner regressions on owned temporary paths
+      timeout-minutes: 2
+      run: sudo -n target/p12-fixes-input/cli-tests --ignored --exact pitr::fence::transaction_tests::foreign_owned_markers_and_directory_are_rejected_when_chown_is_available --nocapture --test-threads=2
+    - name: Both policies across actual disposable Docker daemon restart
+      timeout-minutes: 12
+      run: python3 target/pitr-review-fixes/operator/docker-probe.py --binary target/p12-fixes-input/nelcota --output target/p12-atomic-docker --allow-disposable-daemon-restart
+    - name: Preserve public structured Docker evidence
+      if: always()
+      run: "import base64,gzip,hashlib,json\nfrom pathlib import Path\np=Path('target/p12-atomic-docker/report.json')\nif p.exists():\n raw=p.read_bytes();assert len(raw)<65536\n print('::notice title=P12 atomic Docker evidence::'+json.dumps({'sha256':hashlib.sha256(raw).hexdigest(),'encoding':'gzip+base64','payload':base64.b64encode(gzip.compress(raw,mtime=0)).decode()}))"
+      shell: python
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      if: always()
+      with:
+        name: p12-atomic-docker-evidence
+        path: target/p12-atomic-docker/report.json
+        retention-days: 14
+        if-no-files-found: error
+  p12-native-reboot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      CARGO_BUILD_JOBS: '4'
+      RUST_TEST_THREADS: '2'
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - name: Verify exact production trees and the frozen ELF
+      run: python3 target/p12-fixes-input/verify.py
+    - name: Native diagnostic redaction and exit status controls
+      timeout-minutes: 2
+      run: 'nice -n19 ionice -c3 python3 -m unittest discover -s scripts/review_tests -p test_stress_native_vm.py -v
+
+        nice -n19 ionice -c3 python3 -m unittest discover -s scripts/review_tests -p test_stress_native_pitr_error.py -v
+
+        nice -n19 ionice -c3 python3 -m unittest discover -s scripts/review_tests -p test_stress_native_pitr_reboot.py -v'
+    - name: Prepare bounded KVM tooling
+      timeout-minutes: 10
+      run: 'sudo apt-get update -q
+
+        sudo apt-get install -y -q --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils'
+    - name: One fresh real guest reboot with the frozen ELF
+      timeout-minutes: 35
+      run: "sudo env GITHUB_ACTIONS=\"$GITHUB_ACTIONS\" RUNNER_ENVIRONMENT=\"$RUNNER_ENVIRONMENT\" \\\n  GITHUB_SHA=\"$GITHUB_SHA\" GITHUB_RUN_ID=\"$GITHUB_RUN_ID\" GITHUB_RUN_ATTEMPT=\"$GITHUB_RUN_ATTEMPT\" \\\n  python3 target/pitr-review-fixes/operator/probe.py --binary target/p12-fixes-input/nelcota \\\n  --output \"target/p12-atomic-native/native-vm-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}\" \\\n  --scenario runtime-pitr-reboot"
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      if: always()
+      with:
+        name: p12-atomic-native-evidence
+        path: target/p12-atomic-native/native-vm-*-public
+        retention-days: 14
+        if-no-files-found: ignore
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: p12-atomic-frozen-artifact-manifest
+        path: target/p12-fixes-input/manifest.json
+        retention-days: 14
+        if-no-files-found: error
