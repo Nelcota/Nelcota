@@ -57,7 +57,7 @@ will use G06 verdicts and identify both code reading and dynamic evidence.
 | API keys and roles | not started | `crates/core/src/extract.rs; db.rs; auth/db.rs` | server auth; auth_reuse; RLS |
 | Refresh tokens | not started | `crates/auth/src/sessions.rs` | server auth; auth_reuse |
 | Logout and revocation | not started | `sessions.rs; crates/auth/src/lib.rs` | server auth; auth_reuse |
-| Password reset and magic links | not started | `recovery.rs; verify.rs; links/` | server auth; OAuth local doubles |
+| Password reset and magic links | open finding (G06-F01; High; details withheld pending maintainer review) | `recovery.rs; verify.rs; links/` | server auth; OAuth local doubles |
 | Email verification and change | not started | `confirmation.rs; verify.rs; accounts.rs` | server auth; OAuth local doubles |
 | OAuth (local doubles) | not started | `crates/auth/src/oauth/; oauth.rs` | server oauth; auth unit tests |
 | Cookies, CSRF and origin | not started | `crates/admin/src/auth.rs; middleware.rs; server router` | server admin auth; panel auth tests |
@@ -69,8 +69,10 @@ will use G06 verdicts and identify both code reading and dynamic evidence.
 
 ## Findings and disclosure
 
-No confirmed finding is claimed at this initial checkpoint. Suspicions must be
-reproduced or rejected. Public High/Critical entries will contain only the
+Confirmed private finding: **G06-F01: severity High, Password reset and magic
+links; details withheld pending maintainer review.** Dynamic exploration of
+that issue stopped after confirmation. No patch or regression for it is
+published. Other suspicions must be reproduced or rejected. Public High/Critical entries will contain only the
 finding identifier, severity, checklist row and “details withheld pending
 maintainer review”. No public patch, regression or exploit narrative is allowed
 for an unfixed finding in that class.
@@ -80,6 +82,8 @@ for an unfixed finding in that class.
 - Intake: read repository instructions, goal and network/runtime instructions;
   reused installed Rust/Node tools and caches without changing setup or locks.
 - Baseline: checked all later changed paths and extracted the exact Git tree.
+- Dynamic baseline suites: server `auth` 27 passed; server `oauth` 18 passed
+  using local provider doubles. No ignored tests in either suite.
 - Resource policy: four Cargo jobs, two Rust test threads, sequential Rust,
   Vitest and audit runs. Only disposable local fixtures are authorized.
 
