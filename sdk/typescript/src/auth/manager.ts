@@ -177,7 +177,7 @@ export class SessionManager {
     this.#broadcast?.notify();
   }
   set(session: Session): Promise<void> {
-    if (!isSession(session)) throw new TypeError('Not a Nelcota session');
+    if (!isSession(session)) throw new NelcotaUsageError('Not a Nelcota session');
     return this.#locked(async () => {
       if (this.#native) await this.#read(true, true);
       await this.#write(session, 'signed_in');
@@ -252,28 +252,23 @@ export class SessionManager {
       }
     });
   }
-  signOut(revoke: (session: Session) => Promise<Result<null>>): Promise<Result<null>> {
+  signOut(request: (session: Session) => Promise<Result<null>>): Promise<Result<null>> {
     return this.#locked(async () => {
       try {
-        const current = await this.#read(true, true);
-        if (!current) {
-          this.#session = null;
-          if (this.#dirty) await this.#persist();
-          this.#schedule(null);
-          return ok(null);
+        const session = await this.#read(true, true);
+        if (session) {
+          const result = await request(session);
+          await this.#write(null, 'signed_out');
+          return result;
         }
-        const result = await revoke(current);
-        await this.#write(null, 'signed_out');
-        return result;
+        if (this.#dirty) await this.#persist();
+        this.#schedule(null);
+        return ok(null);
       }
       finally {
-        // Match exchangeCode's lifecycle -> PKCE lock order. A committed null
-        // also retires verifiers still visible in another native snapshot.
-        const key = `${this.key}.pkce`;
-        await withLock(key, async () => {
-          try { await this.#pkce?.write(null); }
-          finally { await this.storage.removeItem(key); }
-        });
+        // Match exchangeCode's lifecycle -> PKCE lock order. Consume commits a
+        // null receipt before removing the potentially stale native mirror.
+        await withLock(`${this.key}.pkce`, () => this.consumeVerifier());
       }
     });
   }

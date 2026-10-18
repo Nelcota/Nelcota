@@ -1,10 +1,21 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
-import { createClient, memoryStorage } from '../../src/index.js';
+import { createClient, memoryStorage, NelcotaUsageError, type Session } from '../../src/index.js';
 import { empty, json, mockFetch, session } from './helpers.js';
 
 const KEY = 'nelcota.api.example.com.session';
 afterEach(() => vi.unstubAllGlobals());
+
+it.each([null, {}])('rejects invalid explicit sessions before touching storage: %s', async value => {
+  const storage = { getItem: vi.fn(() => null), setItem: vi.fn(), removeItem: vi.fn() };
+  const client = createClient('https://api.example.com', { auth: { storage, autoRefresh: false } });
+  try {
+    await expect(client.auth.setSession(value as unknown as Session)).rejects.toBeInstanceOf(NelcotaUsageError);
+    expect(storage.getItem).not.toHaveBeenCalled();
+    expect(storage.setItem).not.toHaveBeenCalled();
+    expect(storage.removeItem).not.toHaveBeenCalled();
+  } finally { client.dispose(); }
+});
 
 it('still removes pending OAuth state when deleting the session fails', async () => {
   const backing = memoryStorage();
