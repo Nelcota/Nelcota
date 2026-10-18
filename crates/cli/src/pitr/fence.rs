@@ -82,6 +82,14 @@ pub(crate) fn require_clear(project: &Project) -> anyhow::Result<()> {
     require_clear_at(&state(project), &recovery(project)?)
 }
 
+/// Read-only target checks, before stopping services or creating any fence.
+pub(super) fn preflight(project: &Project) -> anyhow::Result<()> {
+    match project.runtime {
+        Runtime::Docker => docker::preflight(&Fence::new(project)?),
+        Runtime::Systemd => native::preflight_target(),
+    }
+}
+
 pub(crate) fn require_clear_at(directory: &Path, command: &str) -> anyhow::Result<()> {
     check_clear_at(directory, command, false)
 }
@@ -333,7 +341,7 @@ pub(crate) fn recover(project: &Project, yes: bool) -> anyhow::Result<()> {
     fence.directory()?;
     match project.runtime {
         Runtime::Docker => docker::validate_for_recovery(&fence)?,
-        Runtime::Systemd => {}
+        Runtime::Systemd => native::preflight_target()?,
     }
     if !yes
         && !(crate::util::interactive()

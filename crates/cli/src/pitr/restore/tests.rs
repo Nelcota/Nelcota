@@ -3,11 +3,29 @@ use crate::{
     host::Runtime,
     project::{Project, Service},
 };
+use serde_json::{Value, json};
 use std::{fs, os::unix::fs::PermissionsExt, path::Path, process::Command};
 
 const FIXTURE: &str = "NELCOTA_PITR_ERROR_TEST_FIXTURE";
 const TEST: &str =
     "pitr::restore::tests::restore_fence_survives_process_exit_and_requires_verified_recovery";
+
+pub(in crate::pitr) fn supported_postgres_settings() -> Vec<Value> {
+    let mut services = vec![
+        json!({}),
+        json!({"command":null}),
+        json!({"command":["postgres"]}),
+        json!({"environment":{"PGDATA":"/var/lib/postgresql/data"}}),
+    ];
+    for profile in ["1gb", "2gb", "4gb", "8gb"] {
+        let mut args = vec!["postgres".to_owned()];
+        for (key, value) in crate::scaffold::profile_settings(profile) {
+            args.extend(["-c".to_owned(), format!("{key}={value}")]);
+        }
+        services.push(json!({"command":args}));
+    }
+    services
+}
 
 #[test]
 fn restore_fence_survives_process_exit_and_requires_verified_recovery() {
@@ -63,14 +81,23 @@ fn restore_fence_survives_process_exit_and_requires_verified_recovery() {
         }
         return;
     }
-    for mode in [
+    let mut scenarios: Vec<_> = [
         "uncertain",
         "success",
         "wal-fails",
         "verify-fails",
         "amcheck-fails",
         "fence-unwritable",
-    ] {
+    ]
+    .into_iter()
+    .map(|mode| (mode, json!({})))
+    .collect();
+    for postgres in supported_postgres_settings().into_iter().skip(1) {
+        for mode in ["success", "uncertain"] {
+            scenarios.push((mode, postgres.clone()));
+        }
+    }
+    for (mode, postgres) in scenarios {
         let directory = tempfile::tempdir().unwrap();
         let directory_path = directory.path().join("project");
         fs::create_dir(&directory_path).unwrap();
@@ -100,6 +127,7 @@ fn restore_fence_survives_process_exit_and_requires_verified_recovery() {
             .args(["--exact", TEST, "--nocapture"])
             .env(FIXTURE, directory_path.as_path())
             .env("PITR_FIXTURE_MODE", mode)
+            .env("PITR_FIXTURE_POSTGRES", postgres.to_string())
             .env("PATH", &bin)
             .output()
             .unwrap();
@@ -157,6 +185,7 @@ fn restore_fence_survives_process_exit_and_requires_verified_recovery() {
                 ])
                 .env(FIXTURE, directory_path.as_path())
                 .env("PITR_FIXTURE_MODE", mode)
+                .env("PITR_FIXTURE_POSTGRES", postgres.to_string())
                 .env("PATH", &bin)
                 .output()
                 .unwrap();
@@ -173,6 +202,71 @@ fn restore_fence_survives_process_exit_and_requires_verified_recovery() {
                     .exists()
             );
         }
+    }
+}
+
+#[test]
+fn docker_restore_preflight_refuses_overrides_before_stopping_or_writing() {
+    const FLAG: &str = "NELCOTA_PITR_PREFLIGHT_FIXTURE";
+    const NAME: &str = "pitr::restore::tests::docker_restore_preflight_refuses_overrides_before_stopping_or_writing";
+    if let Some(directory) = std::env::var_os(FLAG) {
+        let project = Project::new("preflight", Path::new(&directory), Runtime::Docker);
+        let error = super::restore(&project, None, true)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("services.postgres"), "{error}");
+        assert!(error.contains("supported"), "{error}");
+        assert!(!project.path("pitr-fence").exists());
+        assert!(!project.path("adapter-marker").exists());
+        assert_eq!(
+            fs::read(project.path("docker-compose.yml")).unwrap(),
+            b"# original fixture\n"
+        );
+        let log = fs::read_to_string(project.path("commands.log")).unwrap();
+        assert!(
+            log.lines()
+                .all(|line| line.ends_with("config --format json")),
+            "mutating adapter ran: {log}"
+        );
+        return;
+    }
+    for postgres in [
+        json!({"command":["postgres","-D","/other"]}),
+        json!({"command":["postgres","--pgdata=/other"]}),
+        json!({"command":["postgres","-c","data_directory=/other"]}),
+        json!({"command":["postgres","-c","config_file=/other"]}),
+        json!({"environment":{"PGDATA":"/other"}}),
+        json!({"environment":{"PGDATA":null}}),
+        json!({"command":[]}),
+    ] {
+        let root = tempfile::tempdir().unwrap();
+        let directory = root.path().join("project");
+        fs::create_dir(&directory).unwrap();
+        let bin = directory.join("bin");
+        fs::create_dir(&bin).unwrap();
+        fs::write(
+            directory.join("docker-compose.yml"),
+            b"# original fixture\n",
+        )
+        .unwrap();
+        fs::write(directory.join("pgbackrest.env"), b"# fixture\n").unwrap();
+        fs::write(bin.join("docker"), ADAPTER).unwrap();
+        fs::set_permissions(bin.join("docker"), fs::Permissions::from_mode(0o700)).unwrap();
+        let output = Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", NAME, "--nocapture"])
+            .env(FLAG, &directory)
+            .env(FIXTURE, &directory)
+            .env("PITR_FIXTURE_MODE", "uncertain")
+            .env("PITR_FIXTURE_POSTGRES", postgres.to_string())
+            .env("PATH", bin)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "setting {postgres}: {}{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 }
 
@@ -195,7 +289,12 @@ printf '%s\n' "$*" >> "$NELCOTA_PITR_ERROR_TEST_FIXTURE/commands.log"
 case " $* " in
   *" stop app postgres "|*" rm --stop --force app postgres ") exit 0 ;;
   *" guarded-serve --check-only --check-support ") exit 0 ;;
-  *" config --format json ") printf '%s\n' '{"name":"fixture","services":{"app":{"image":"app:fixed","restart":"always"},"postgres":{"image":"postgres:17","restart":"always"}}}'; exit 0 ;;
+  *" config --format json ")
+    if [ -n "${PITR_FIXTURE_POSTGRES:-}" ]; then
+      printf '%s\n' '{"name":"fixture","services":{"app":{"image":"app:fixed","restart":"always"},"postgres":' "$PITR_FIXTURE_POSTGRES" '}}'
+      exit 0
+    fi
+    printf '%s\n' '{"name":"fixture","services":{"app":{"image":"app:fixed","restart":"always"},"postgres":{"image":"postgres:17","restart":"always"}}}'; exit 0 ;;
   *" --entrypoint pgbackrest postgres --stanza=main --delta restore ")
     test -f "$NELCOTA_PITR_ERROR_TEST_FIXTURE/pitr-fence/active.json"
     printf '%s\n' 'adapter reached data directory' > "$NELCOTA_PITR_ERROR_TEST_FIXTURE/adapter-marker"
