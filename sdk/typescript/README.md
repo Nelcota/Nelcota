@@ -250,6 +250,8 @@ On upgrade, the journal imports the existing `localStorage` session once.
 Reload all open tabs to avoid mixing old and new coordination protocols.
 Use `signOut()` or clear all site data to remove native sessions; editing
 only `localStorage` no longer changes authoritative session state.
+Signing out also clears the pending OAuth verifier from the journal and
+its storage mirror, including when no session exists or server logout fails.
 
 Failed sign-in/logout publication keeps the newer local state while the exact
 prior journal revision remains current, even if another client wrote that

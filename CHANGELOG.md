@@ -27,6 +27,21 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Keep password login usable from independent sources during account-targeted
+  abuse, with hard IP/account-source quotas and at most two seconds of aggregate
+  delay. Document the distributed-guessing trade-off and operator recovery.
+
+- Enforce optional JWT `nbf` and `iat` with 30 seconds of clock leeway across
+  built-in verifiers. Issuer and audience remain informative.
+
+- Clear pending TypeScript SDK OAuth verification state on sign-out, including
+  native browser journal state and failed or sessionless logout.
+
+- Redact authentication adapter credentials and email message content from
+  `Debug` diagnostics, including validated mail/OAuth configuration views.
+- Reject account passwords above the documented 256-character maximum before
+  database admission or Argon2 verification, including current-password checks.
+  Keep invalid-credential responses and supported Unicode passwords unchanged.
 - Reject Docker PITR PostgreSQL command/data-directory overrides before stopping
   services or writing a fence. Allow only the default command or an exact
   generated tuning profile, with default PGDATA; reject indeterminate settings.
