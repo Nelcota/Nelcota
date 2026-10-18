@@ -7,13 +7,18 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
+fn password(index: usize) -> &'static str {
+    static VALUES: std::sync::OnceLock<[String; 3]> = std::sync::OnceLock::new();
+    &VALUES.get_or_init(|| std::array::from_fn(|_| Uuid::new_v4().to_string()))[index]
+}
+
 async fn account(app: &TestApp) -> Value {
     let email = format!("{}@example.test", Uuid::new_v4().simple());
     let session = app
         .post(
             "/auth/v1/signup",
             None,
-            json!({"email": email, "password": "original-password-123"}),
+            json!({"email": email, "password": password(0)}),
         )
         .await;
     assert_eq!(session.status, StatusCode::CREATED);
@@ -77,14 +82,19 @@ async fn pending(app: &TestApp, session: &Value) -> Pending {
     }
 }
 async fn change(app: &TestApp, session: &Value) -> Reply {
-    app.request(Method::PUT, "/auth/v1/user", session["access_token"].as_str(),
-        Some(json!({"current_password": "original-password-123", "password": "replacement-password-456"}))).await
+    app.request(
+        Method::PUT,
+        "/auth/v1/user",
+        session["access_token"].as_str(),
+        Some(json!({"current_password": password(0), "password": password(1)})),
+    )
+    .await
 }
 async fn recover(app: &TestApp, token: &str) -> Reply {
     app.post(
         "/auth/v1/verify",
         None,
-        json!({"type": "recovery", "token": token, "password": "recovery-password-789"}),
+        json!({"type": "recovery", "token": token, "password": password(2)}),
     )
     .await
 }
@@ -164,7 +174,7 @@ async fn admin_reset_retires_pending_credentials() {
             Method::PUT,
             &format!("/admin/api/users/{id}/password"),
             &cookie,
-            json!({"password": "replacement-password-456"})
+            json!({"password": password(1)})
         )
         .await
         .status,
@@ -250,10 +260,7 @@ async fn invalidation_error_rolls_back_the_entire_password_replacement() {
     app.admin_client.batch_execute("CREATE FUNCTION public.reject_flow_delete() RETURNS trigger LANGUAGE plpgsql AS $$
         BEGIN RAISE EXCEPTION 'injected deletion failure'; END $$;
         CREATE TRIGGER reject_flow_delete BEFORE DELETE ON auth.flow_states FOR EACH ROW EXECUTE FUNCTION public.reject_flow_delete();").await.unwrap();
-    assert_eq!(
-        change(&app, &session).await.status,
-        StatusCode::BAD_REQUEST
-    );
+    assert_eq!(change(&app, &session).await.status, StatusCode::BAD_REQUEST);
     app.admin_client
         .batch_execute("DROP TRIGGER reject_flow_delete ON auth.flow_states")
         .await
@@ -262,7 +269,7 @@ async fn invalidation_error_rolls_back_the_entire_password_replacement() {
         app.post(
             "/auth/v1/token?grant_type=password",
             None,
-            json!({"email": session["user"]["email"], "password": "original-password-123"})
+            json!({"email": session["user"]["email"], "password": password(0)})
         )
         .await
         .status,
