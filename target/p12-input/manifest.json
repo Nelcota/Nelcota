@@ -1,0 +1,23 @@
+{
+  "source_commit": "6c488abbed10f3ef5f40ca466ba870af8e5cedcf",
+  "binary_sha256": "a4ddfc8aa9e8de5e9bdb33c8d8d40b172ea8dc8575a76bb74346032500840dd3",
+  "binary_bytes": 30563648,
+  "production_trees": {
+    "crates": "fd9206d1a00a71a46057c1ed98f11af30fa430bb",
+    "deploy": "dc3cee1048a19391ab9414b0902111e553adaecf",
+    "migrations": "e88cfbfd12955dc8cb9180d3324df6a5d9e62206",
+    "Cargo.toml": "20a3154fea3f1883ccc42882fbd671bc0b12b17f",
+    "Cargo.lock": "9150a443d0d0cec57de152e13bd9a6cb8e7a8c2d",
+    "rust-toolchain.toml": "0fd1b3a84b408770d883519014b040aed30a15f0",
+    ".cargo": "9a75d949131e96094a6e1bcda5abdedb8bef5936"
+  },
+  "harness_source": "13351ed896f86312c680c52ac30bc258d638be8b",
+  "build": {
+    "profile": "release",
+    "locked": true,
+    "Cargo_jobs": 4,
+    "Rust_test_threads": 2,
+    "toolchain": "1.99.0"
+  },
+  "scope": "P12 controlled marker-only restore failure and genuine guest reboot; no G05 campaign, physical power-loss or real WAL/PITR claim"
+}
