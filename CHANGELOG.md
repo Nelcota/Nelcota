@@ -41,6 +41,7 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
   `Debug` diagnostics, including validated mail/OAuth configuration views.
 
 - Harden session invalidation.
+- Persist panel SSO replay protection.
 
 - Reject account passwords above the documented 256-character maximum before
   database admission or Argon2 verification, including current-password checks.

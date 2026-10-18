@@ -45,6 +45,16 @@ the origin panel performs a *handoff*:
    email, refuses already-used tokens and creates its own session. The token
    leaves the URL immediately.
 
+Handoff redemption writes a SHA-256 digest of the signed `jti` to the project's
+internal PostgreSQL replay table before creating a panel session. All processes
+and instances sharing that database use the same atomic single-use boundary;
+database failures refuse the handoff. Receipts cover the 5-second validation
+leeway and remain for at least another day. Each successful redemption removes
+at most 5,000 older receipts; idle tables are cleaned on the next redemption.
+Keep instance clocks synchronized. A panel session never grants host-controller
+authority. Internal migration `V16` installs this owner-only table; it is not
+part of the standalone auth migration selection.
+
 With per-project login there is no shared secret: the handoff does not exist,
 and each panel only accepts its own credentials.
 
