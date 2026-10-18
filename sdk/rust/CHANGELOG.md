@@ -1,9 +1,12 @@
 # Changelog
 
 Package releases use Semantic Versioning and Keep a Changelog categories.
-Dates refer to published releases; Unreleased describes source changes.
+Dates identify release entries; registry availability requires a successful publish.
 
-## Unreleased
+## 0.1.3 — 2026-10-18
+
+Prepared package candidate. Version metadata and this changelog do not publish
+the package; use a local archive until registry publication completes.
 
 ### Fixed
 

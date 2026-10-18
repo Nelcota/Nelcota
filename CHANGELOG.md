@@ -6,7 +6,10 @@ Dates are published release dates in UTC.
 Server releases are listed here. The [TypeScript SDK](sdk/typescript/CHANGELOG.md)
 and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
-## [Unreleased]
+## [0.5.0] — 2026-10-18
+
+Release preparation: publication and coordinated integration are separate gates.
+The dated entry does not establish artifact availability.
 
 ### Added
 
@@ -26,6 +29,9 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
   external archive consumer; integration and release evidence under `docs/goals/`.
 
 ### Fixed
+
+- Harden session invalidation.
+- Persist panel SSO replay protection.
 
 - Enforce optional JWT `nbf` and `iat` with 30 seconds of clock leeway across
   built-in verifiers. Issuer and audience remain informative.
@@ -95,8 +101,11 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
   See [release handoff](docs/onboarding/release.md) for validation and rollback.
 - The TypeScript SDK's cross-tab storage publication correction needs a
   separate SDK package release; installing the server does not update clients.
-- This section describes an unpublished candidate. The published `0.4.0`
-  binaries and image do not contain these changes.
+- The published `0.4.0` binaries and image do not contain these changes.
+  Publication requires final coordinated integration and exact-source checks.
+  Recheck the complete internal migration inventory before tagging.
+- Client candidates have independent versions: TypeScript `0.2.0` and Rust
+  `0.1.3`. Preparing these versions does not publish either package.
 
 ## [0.4.0] — 2026-10-11
 
@@ -189,7 +198,7 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
   project isolation, backups, upgrades and database PITR.
 - Application storage and OAuth/magic links were not part of this release.
 
-[Unreleased]: https://github.com/Nelcota/Nelcota/compare/v0.4.0...main
+[0.5.0]: https://github.com/Nelcota/Nelcota/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Nelcota/Nelcota/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Nelcota/Nelcota/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Nelcota/Nelcota/compare/v0.2.0...v0.3.0

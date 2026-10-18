@@ -1,15 +1,15 @@
 # Client contract
 
-`@nelcota/client` 0.1.x targets the Nelcota HTTP protocol implemented by this
+`@nelcota/client` 0.2.x targets the Nelcota HTTP protocol implemented by this
 repository. The package has its own version; server compatibility is determined
 by the endpoints and features below, not by matching package version numbers.
 
 ## Version scope
 
-This is the current source contract. Published 0.1.2 predates native IndexedDB
-journaling and exact numeric preservation below; consult its bundled package
-docs for that release. Unreleased client behavior requires a rebuilt/new client
-package, independently of a server update.
+This is the 0.2.0 source/package candidate contract. Registry installation
+requires successful publication; a server update does not install the client.
+Published 0.1.2 predates native IndexedDB journaling and exact numeric
+preservation below; consult its bundled documentation for that release.
 
 ## Interface
 

@@ -25,7 +25,7 @@ or the [client contract](docs/contract.md). Empty results, 401/403 or a
   a browser.
 
 ```sh
-npm install @nelcota/client@0.1.2
+npm install @nelcota/client@0.2.0
 nelcota types -o src/database.ts
 ```
 
@@ -45,12 +45,12 @@ const nelcota = createClient('https://api.example.com');
 
 ## Version scope
 
-The installation above selects published 0.1.2. This reference describes current
-source, including Unreleased changes. Native IndexedDB session/PKCE journaling,
-exact numeric preservation and the latest cancellation ownership fixes are not
-in published 0.1.2. Read that package's bundled README for its release contract;
-use a locally built package to try source changes. Updating the server does not
-update installed clients. Node is SDK tooling/runtime, not a backend requirement.
+This checkout prepares 0.2.0; the registry command above requires its successful
+publication. Until then, install a locally packed archive. Published 0.1.2 lacks
+native IndexedDB session/PKCE journaling, exact numeric preservation and the
+latest cancellation/sign-out cleanup fixes. Read each package's bundled README
+for its contract. Updating the server does not update installed clients.
+Node is SDK tooling/runtime, not a backend requirement.
 
 ## Independent modules
 
@@ -490,8 +490,8 @@ error immediately with `retryAfter`, allowing the app to decide when to retry.
 
 | @nelcota/client | Server baseline | Support |
 |---|---|---|
-| 0.1.x | Server `v0.3.0` or later | Full contract suite, OAuth routes, `updateUser`, exposed CORS headers and generated `Relationships` |
-| 0.1.x | Server `v0.2.0` | Not supported: lacks the OAuth routes, `PUT /auth/v1/user`, the JSON error contract, generated `Relationships` and the newer exposed headers |
+| 0.2.x | Server `v0.3.0` or later | Full contract suite, OAuth routes, `updateUser`, exposed CORS headers and generated `Relationships` |
+| 0.2.x | Server `v0.2.0` | Not supported: lacks the OAuth routes, `PUT /auth/v1/user`, the JSON error contract, generated `Relationships` and the newer exposed headers |
 
 Release verification covers Node 22/24/26, Bun, Deno and the Chromium, Firefox
 and WebKit engines. Other runtimes need their own validation.
