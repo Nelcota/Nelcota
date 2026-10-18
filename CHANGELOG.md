@@ -27,6 +27,9 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Reject account passwords above the documented 256-character maximum before
+  database admission or Argon2 verification, including current-password checks.
+  Keep invalid-credential responses and supported Unicode passwords unchanged.
 - Reject Docker PITR PostgreSQL command/data-directory overrides before stopping
   services or writing a fence. Allow only the default command or an exact
   generated tuning profile, with default PGDATA; reject indeterminate settings.

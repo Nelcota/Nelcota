@@ -7,6 +7,14 @@
 #[derive(Debug, PartialEq, Eq)]
 pub struct InvalidCredential(pub &'static str);
 
+const MAX_PASSWORD_CHARS: usize = 256;
+
+/// Bound verification inputs without imposing creation-time minimum strength
+/// on credentials imported from another password store.
+pub(crate) fn password_exceeds_limit(password: &str) -> bool {
+    password.chars().nth(MAX_PASSWORD_CHARS).is_some()
+}
+
 /// A simple mailbox address (ASCII dot-atom local part, DNS domain), matching
 /// the SMTP address parser. Display names, quoted local parts and controls
 /// are not account identifiers. Surrounding spaces are trimmed.
@@ -45,11 +53,11 @@ pub fn normalize_email(email: &str) -> Result<String, InvalidCredential> {
 }
 
 pub fn validate_password(password: &str) -> Result<(), InvalidCredential> {
-    match password.chars().count() {
+    match password.chars().take(MAX_PASSWORD_CHARS + 1).count() {
         0..8 => Err(InvalidCredential(
             "the password needs at least 8 characters",
         )),
-        8..=256 => Ok(()),
+        8..=MAX_PASSWORD_CHARS => Ok(()),
         _ => Err(InvalidCredential(
             "the password can have at most 256 characters",
         )),

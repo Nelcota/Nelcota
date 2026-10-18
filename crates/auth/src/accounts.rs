@@ -1,7 +1,7 @@
 //! Signup, password authentication and account lookup.
 use crate::{
     AuthState, confirmation,
-    credentials::{normalize_email, validate_password},
+    credentials::{normalize_email, password_exceeds_limit, validate_password},
     db::{USER_JSON, begin_auth, db_error},
     error::{invalid_email, invalid_grant, validation, weak_password},
     links::{self, LinkKind},
@@ -159,6 +159,9 @@ pub(crate) async fn password_grant(
             return Err(invalid_grant("invalid email or password"));
         }
     };
+    if password_exceeds_limit(&password) {
+        return Err(invalid_grant("invalid email or password"));
+    }
     // Per-account limit on top of the per-IP one (distributed attacker).
     limit(state, &format!("login:{email}"))?;
 
@@ -344,6 +347,12 @@ async fn change_password(
     current_password: Option<String>,
 ) -> Result<(Option<String>, String), ApiError> {
     validate_password(&password).map_err(weak_password)?;
+    if current_password
+        .as_deref()
+        .is_some_and(password_exceeds_limit)
+    {
+        return Err(invalid_grant("current password is incorrect"));
+    }
     // A stolen access token must not become a password-guessing oracle.
     limit(state, &format!("password:{user_id}"))?;
     let phc: Option<String> = {
