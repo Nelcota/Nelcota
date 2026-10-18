@@ -38,8 +38,8 @@ mantido como rascunho para revisão.
 | Célula | Veredicto/estado | Evidência |
 |---|---|---|
 | a — fence de restore após reboot | **failed** | [Probe final](results/stress/native-reboot-converged-verdict.json): os mesmos bytes congelados; PostgreSQL, aplicação e API autenticada reabriram na primeira amostra, antes da recuperação explícita. Linhas preservadas, canários401/RLS0/arquivo404 e limpeza confirmados. P12 fica aberto, sem correção automática. |
-| b — disco contínuo, quatro horas | **passed** | [14.400s contínuos,18.705s de carga total, integridade e limpeza](results/stress/disk-converged-final-001.json); [oito comparações aprovadas](results/stress/disk-converged-final-001-comparison.json). |
-| c — S3 real contínuo, quatro horas | Em execução desde18/10,03:20UTC | Provedor RustFS real, compatível com S3, no staging local; sem alegação de AWS ou WAL/PITR. |
+| b — disco contínuo, quatro horas | **passed** | [14.400s contínuos,18.690s efetivos, integridade e limpeza](results/stress/disk-converged-final-001.json); [oito comparações aprovadas](results/stress/disk-converged-final-001-comparison.json). |
+| c — S3 real contínuo, quatro horas | Em execução desde18/10,03:42UTC, tentativa002 | A tentativa001 foi [interrompida pelo reinício do ambiente](results/stress/s3-converged-final-001-platform-interruption.json), antes do endurance, sem crédito de soak. Diagnósticos preservados e limpeza confirmada. Única nova tentativa de infraestrutura, mesmo ELF e limites; RustFS real compatível com S3, sem alegação de AWS/WAL/PITR. |
 | d — falhas simples sob carga | **not run**, aguardando S3 | Somente o perfil existente, uma falha por vez. |
 | Oito células operacionais declaradas | **blocked (environment)** | [Perfis necessários e proibição de retry/workaround](results/stress/campaign-convergence-policy.json). |
 

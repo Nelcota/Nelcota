@@ -4037,8 +4037,9 @@ the fencing probe did not establish that installation durability is fixed.
 
 `disk-converged-final-001` passed on the one final immutable B59 ELF, source
 `5b2b2a49f60274456e84fc027fd3e401fd64e417`. Its single closed endurance
-interval is 14,400 seconds; total completed traffic is 18,705 seconds.
-Preparation, warmup and final 180-second idle are excluded. The owner exited0
+interval is14,400seconds; the raw completed-traffic counter is18,705seconds,
+including15seconds of warmup. Effective load excluding warmup is18,690seconds.
+Preparation and final180-second idle are also excluded. The owner exited0
 at03:19:00UTC with cleanup confirmed; no owned container or volume remains.
 All eight comparable workloads passed the unchanged p951.1/useful-throughput.9
 gates against `disk-final-pass-1-002`. Capacity qualification is a400iter/s
@@ -4057,3 +4058,32 @@ Evidence: `disk-converged-final-001.json`, its comparison and verified lossless
 resource archive receipt under `results/stress/`. The raw resource series was
 compressed only after closure, with identical reconstruction checksum.
 Next: one real S3 campaign, then the existing single-fault profile.
+
+## Platform interruption before S3 endurance — 2026-10-18T03:41:48.886322+00:00
+
+The cloud execution API returned409environment_offline. On reconnection, host
+uptime was35.8s; the previous S3 owner/worker identities were absent and all
+four owned service containers were stopped with exit255. The last checkpoint
+is `panel-2`,88resource observations. There is no executor completion receipt
+and no S3 endurance interval began. The original attempt is failed due to
+infrastructure, not silently passed or erased. Root cause of the platform
+restart remains unknown; no product/data-loss conclusion is inferred.
+
+Before cleanup, private stopped-container diagnostics and all three owned
+volumes were archived with checksums. Existing ownership-checked cleanup
+removed only the interrupted run's containers/volumes and fixture directory.
+The unrelated test PostgreSQL container was left in its observed stopped
+state. External cleanup and original incomplete evidence are preserved.
+
+One bounded infrastructure retry of the same S3 step uses run
+`s3-converged-final-002`, identical existing arguments and the same frozen ELF.
+It adds no harness feature and does not address a new product finding. The
+eight explicitly environment-blocked cells remain unretried; no threshold,
+SLO, source or absolute30h deadline changes. No further infrastructure retry
+is planned. D follows only after safe closure.
+
+Accounting erratum H04: raw disk counter18,705 includes15seconds of warmup;
+effective disk load is18,690seconds. Continuous endurance remains14,400seconds.
+Historical floor162,324 plus completed final disk18,690 yields181,014seconds
+(50h16m54s); the interrupted S3's510closed non-warmup seconds are preserved
+but not added to that passing-run floor.

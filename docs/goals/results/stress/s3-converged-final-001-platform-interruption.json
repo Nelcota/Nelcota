@@ -1,0 +1,79 @@
+{
+  "status": "failed",
+  "failure_class": "environment interruption before endurance",
+  "run_id": "s3-converged-final-001",
+  "original_executor_completion_missing": true,
+  "observed_at_utc": "2026-10-18T03:41:48.886322+00:00",
+  "last_checkpoint": {
+    "monotonic": 357801.523044523,
+    "phase": "panel-2",
+    "load_seconds_completed": 525.0,
+    "resource_observations": 88
+  },
+  "completed_traffic_seconds_including_warmup": 525,
+  "completed_traffic_seconds_excluding_warmup": 510,
+  "continuous_endurance_seconds_credited": 0,
+  "cleanup_confirmed": true,
+  "cleanup": {
+    "containers": [],
+    "volumes": [],
+    "directory_removed": true,
+    "externally_reconciled_after_platform_reboot": true,
+    "diagnostics_preserved_before_cleanup": true,
+    "observed_at_utc": "2026-10-18T03:41:04.958007+00:00"
+  },
+  "stopped_container_states": [
+    {
+      "role": "app",
+      "id": "68ba0d6aba62cac70c38823e17742baa86a4da988e61e4ed1ccbabb5bd452c30",
+      "state": {
+        "Status": "exited",
+        "Running": false,
+        "ExitCode": 255,
+        "OOMKilled": false,
+        "StartedAt": "2026-10-18T03:20:19.494335101Z",
+        "FinishedAt": "2026-10-18T03:38:39.3873624Z"
+      }
+    },
+    {
+      "role": "pg",
+      "id": "255dae7ad5eff0fdaa04c0ccaddc86a509fa3120da96237d81a85be995e334e5",
+      "state": {
+        "Status": "exited",
+        "Running": false,
+        "ExitCode": 255,
+        "OOMKilled": false,
+        "StartedAt": "2026-10-18T03:20:13.339311416Z",
+        "FinishedAt": "2026-10-18T03:38:39.385506789Z"
+      }
+    },
+    {
+      "role": "s3",
+      "id": "2029c7fc7bc3ccece3c06bc5da9f78e1fd4fe5c17bd84c63ceadec1ebb76c6d2",
+      "state": {
+        "Status": "exited",
+        "Running": false,
+        "ExitCode": 255,
+        "OOMKilled": false,
+        "StartedAt": "2026-10-18T03:20:16.822400346Z",
+        "FinishedAt": "2026-10-18T03:38:39.385563523Z"
+      }
+    },
+    {
+      "role": "metrics",
+      "id": "c1b70a42766ebea4585ef973bfcf24b6c1aa9b2f9a1fb21a41c4e40d136509ba",
+      "state": {
+        "Status": "exited",
+        "Running": false,
+        "ExitCode": 255,
+        "OOMKilled": false,
+        "StartedAt": "2026-10-18T03:20:09.676808972Z",
+        "FinishedAt": "2026-10-18T03:38:39.387415609Z"
+      }
+    }
+  ],
+  "private_diagnostics_and_volume_archives_preserved": true,
+  "no_product_defect_inferred": true,
+  "frozen_binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+  "follow_up": "One bounded infrastructure retry of the same S3 step on the same frozen bytes; not a product-triggered campaign restart. No retry of any of the eight environment-blocked cells. Original hard deadline and all gates unchanged."
+}

@@ -2650,5 +2650,11 @@
     "source_sha256": "e3b61342dcb090212c9061aa31a063641b1d76305b2ef16ed55fe77d68c8d257"
   },
   "baseline_candidate_regression": "not yet established; requires final independent comparable run",
-  "raw_evidence_location": "target/stress-g05/disk-converged-final-001"
+  "raw_evidence_location": "target/stress-g05/disk-converged-final-001",
+  "effective_load_accounting": {
+    "closed_traffic_seconds_including_warmup": 18705,
+    "warmup_seconds_excluded": 15,
+    "effective_load_seconds": 18690,
+    "continuous_endurance_seconds": 14400
+  }
 }

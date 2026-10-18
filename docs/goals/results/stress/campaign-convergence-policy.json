@@ -101,14 +101,17 @@
       "completed_load_seconds": 18705,
       "baseline_comparison": "disk-converged-final-001-comparison.json",
       "comparable_workloads_passed": 8,
-      "cleanup_confirmed": true
+      "cleanup_confirmed": true,
+      "effective_load_seconds_excluding_warmup": 18690
     },
     {
       "cell": "continuous four-hour real S3 endurance",
       "status": "in progress",
-      "run_id": "s3-converged-final-001",
-      "started_at_utc": "2026-10-18T03:20:06.738217+00:00",
-      "requested_seconds": 14400
+      "run_id": "s3-converged-final-002",
+      "started_at_utc": "2026-10-18T03:42:05.063681+00:00",
+      "requested_seconds": 14400,
+      "infrastructure_interruption": "s3-converged-final-001-platform-interruption.json",
+      "maximum_infrastructure_retries": 1
     },
     {
       "cell": "single faults under load",
@@ -118,5 +121,5 @@
   "status": "a failed; b passed with eight comparisons; c running; d not run",
   "certifies_g05": false,
   "frozen_artifact_evidence": "campaign-final-artifact.json",
-  "updated_at_utc": "2026-10-18T03:19:56.446837+00:00"
+  "updated_at_utc": "2026-10-18T03:42:05.063681+00:00"
 }

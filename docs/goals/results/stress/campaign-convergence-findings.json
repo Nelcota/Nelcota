@@ -100,7 +100,24 @@
       "wrapper_commit": "13351ed896f86312c680c52ac30bc258d638be8b",
       "frozen_binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
       "scope_limit": "Binary transport only; no second build/freeze or change to production PR91. Only the reboot target is dispatched."
+    },
+    {
+      "id": "H04",
+      "status": "reporting corrected",
+      "problem": "Initial disk checkpoint prose called18705trafficseconds effective while this includes15warmupseconds. Raw campaign counters and14,400second continuous interval remain correct.",
+      "correction": "Exclude the15second warmup:18,690effective seconds for the completed disk campaign. The historical162,324second floor already excludes warmup. Updated passing-run floor181,014seconds,50h16m54s.",
+      "evidence": "disk-converged-final-001.json"
     }
   ],
-  "scope": "Original historical findings are not relabelled as fixed by extraction or by later passes."
+  "scope": "Original historical findings are not relabelled as fixed by extraction or by later passes.",
+  "infrastructure_ledger": [
+    {
+      "id": "I01",
+      "status": "interrupted attempt preserved; external cleanup confirmed; one bounded S3 retry",
+      "cause": "Cloud environment disconnected with409environment_offline; returned with uptime35.8s, old process identities absent and owned containers stopped exit255. Platform restart is established; root cause of the platform restart is unknown.",
+      "evidence": "s3-converged-final-001-platform-interruption.json",
+      "effect": "No S3 endurance interval began; zero endurance credit.525closed traffic seconds include15warmup;510non-warmup seconds preserved separately, not added to the passing-run floor.",
+      "action": "Use existing harness, identical arguments and final frozen ELF for S3attempt002 once, then D. No product change, refreeze or blocked-cell retry."
+    }
+  ]
 }
