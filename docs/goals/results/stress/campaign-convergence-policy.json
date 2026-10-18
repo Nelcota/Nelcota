@@ -85,47 +85,49 @@
   "production_source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
   "remaining_campaigns": [
     {
-      "cell": "restore-fencing guest reboot",
-      "status": "failed",
-      "evidence": "native-reboot-converged-verdict.json"
+      "cell": "a",
+      "name": "Restore-fencing guest reboot",
+      "verdict": "failed",
+      "evidence": "native-reboot-converged-verdict.json",
+      "reason": "P12: app, PostgreSQL and authenticated API reopened before explicit recovery; controlled rows preserved and authorization canaries passed.",
+      "status": "failed"
     },
     {
-      "cell": "continuous four-hour disk endurance",
-      "status": "passed",
-      "phase": "continuous endurance",
-      "requested_seconds": 14400,
-      "soak_iterations_per_second": 280,
-      "start_checkpoint": "disk-converged-final-001-soak-start.json",
+      "cell": "b",
+      "name": "Continuous four-hour disk endurance",
+      "verdict": "passed",
       "evidence": "disk-converged-final-001.json",
-      "continuous_seconds": 14400,
-      "completed_load_seconds": 18705,
-      "baseline_comparison": "disk-converged-final-001-comparison.json",
+      "effective_load_seconds": 18690,
+      "continuous_endurance_seconds": 14400,
       "comparable_workloads_passed": 8,
-      "cleanup_confirmed": true,
-      "effective_load_seconds_excluding_warmup": 18690
+      "status": "passed"
     },
     {
-      "cell": "continuous four-hour real S3 endurance",
-      "status": "failed",
-      "run_id": "s3-converged-final-002",
-      "started_at_utc": "2026-10-18T03:42:05.063681+00:00",
-      "requested_seconds": 14400,
-      "infrastructure_interruption": "s3-converged-final-001-platform-interruption.json",
-      "maximum_infrastructure_retries": 1,
+      "cell": "c",
+      "name": "Continuous four-hour real S3 endurance",
+      "verdict": "failed",
       "evidence": "s3-converged-final-002-failed.json",
-      "continuous_seconds_credited": 0,
-      "cleanup_confirmed": true,
-      "no_further_retry": true
+      "prior_attempt_evidence": "s3-converged-final-001-platform-interruption.json",
+      "continuous_endurance_seconds": 0,
+      "reason": "First attempt interrupted by environment reboot; one bounded infrastructure retry stopped on sampler fork EAGAIN before endurance. No further retry.",
+      "status": "failed"
     },
     {
-      "cell": "single faults under load",
-      "status": "in progress",
-      "run_id": "fault-converged-final-001",
-      "started_at_utc": "2026-10-18T03:59:29.840265+00:00"
+      "cell": "d",
+      "name": "Single faults under load",
+      "verdict": "passed",
+      "evidence": "fault-converged-final-001.json",
+      "effective_load_seconds": 1580,
+      "acknowledged_missing": 0,
+      "unknown_or_corrupt": 0,
+      "status": "passed"
     }
   ],
-  "status": "a failed; b passed; c failed; d running; report and stop next",
+  "status": "campaign closed without G05 approval",
   "certifies_g05": false,
   "frozen_artifact_evidence": "campaign-final-artifact.json",
-  "updated_at_utc": "2026-10-18T03:59:13.568513+00:00"
+  "updated_at_utc": "2026-10-18T03:59:13.568513+00:00",
+  "closed_at_utc": "2026-10-18T04:31:10.214326+00:00",
+  "final_verdict_evidence": "campaign-final-verdicts.json",
+  "next_campaign": null
 }

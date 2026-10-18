@@ -1,0 +1,6 @@
+{
+  "file": "stress-verification-report-history.pt-BR.md",
+  "sha256": "368dd166d3aac166b2f41768606e6a7a525d6dc5060f4ddaec42aa58d6d587d0",
+  "bytes": 119361,
+  "scope": "Exact working-report bytes preserved before the final closure report. Historical dates, failed runs and obsolete pending states remain historical; use the final report and campaign-final-verdicts.json for current verdicts."
+}

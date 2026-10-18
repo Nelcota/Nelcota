@@ -1,8 +1,11 @@
 # G05: Full stress, endurance and failure-recovery verification
 
-Status: in progress. The [execution record](stress-verification-execution.md)
-tracks actual campaigns, corrections and incomplete gates. This goal records no
-production capacity certification.
+Status: campaign closed without G05 approval (2026-10-18). The
+[final Portuguese report](stress-verification-report.pt-BR.md) and
+[execution record](stress-verification-execution.md) preserve all failed,blocked
+and unrun gates. Four ordered final cells ended failed/passed/failed/passed;
+no further campaign or automatic fix follows this execution. This goal records
+no production capacity certification.
 
 Planning baseline: `2efede8c27ee12119142170e8bd9742ff7cb900e` (PR #89).
 Its 17 PR checks and 17 post-merge checks passed. Those checks do not establish
@@ -322,9 +325,9 @@ comparisons; cleanup results; and remaining limits. Give each scenario a
 Provide practical VPS sizing guidance only for the measured workload and
 headroom, including OS, database, proxy and controller costs.
 
-- [ ] Coverage inventory, immutable baseline and predeclared manifests/SLOs exist.
-- [ ] Generator calibration, units, sampling and evidence gates are validated.
-- [ ] Safe cancellation, watchdogs, redaction and owned teardown are demonstrated.
+- [x] Coverage inventory, immutable baseline and predeclared manifests/SLOs exist.
+- [x] Generator calibration, units, sampling and evidence gates are validated.
+- [x] Safe cancellation, watchdogs, redaction and owned teardown are demonstrated.
 - [ ] Steady, staircase, spike and repeated pressure/rest phases pass twice.
 - [ ] All capability, security and concurrency matrix cells have evidence.
 - [ ] 1/5/10-project isolation, shared-host fairness and controller responsiveness pass.
@@ -332,8 +335,8 @@ headroom, including OS, database, proxy and controller costs.
 - [ ] Fault injection, drain, restart, restore and applicable deployment gates pass.
 - [ ] Resource ownership, data/file/event invariants and regression gates pass.
 - [ ] Confirmed defects have focused fixes, reproductions and passing regressions.
-- [ ] Final affected Rust/UI/SDK/native lint checks and CI match the tested SHA.
-- [ ] Findings, measurements, sizing limits and all failed/blocked/unrun work are reported.
+- [x] Final affected Rust/UI/SDK/native lint checks and CI match the tested SHA.
+- [x] Findings, measurements, sizing limits and all failed/blocked/unrun work are reported.
 
 The goal remains open while a mandatory gate is failed, blocked or unrun.
 Optional deployment experiments need their own verdict and cannot widen the

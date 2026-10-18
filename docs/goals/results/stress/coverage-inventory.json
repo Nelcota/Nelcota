@@ -1,7 +1,7 @@
 {
-  "status": "in progress",
-  "backend_source": "2efede8c27ee12119142170e8bd9742ff7cb900e",
-  "binary_sha256": "75c44c85a85db26195166aa1d2c6caf481e3db476801ec8131525ef62adf1be0",
+  "status": "campaign closed without G05 approval",
+  "backend_source": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+  "binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
   "rows": [
     {
       "id": "auth",
@@ -161,6 +161,12 @@
         "independent_passes": 2,
         "evidence": "browser-sdk007-two-measured-passes-001.json",
         "scope": "Both final007 measured full browser passes completed with same-ELF/budgets; original refresh SLO failure remains unexplained. Whole row includes further mandatory clauses."
+      },
+      "final_convergence_verdict": {
+        "area": "Authentication and independent consumers",
+        "verdict": "not run",
+        "scope": "Login/refresh and negative probes passed only within disk workload; full recovery/link/two-consumer stress not run.",
+        "evidence": "campaign-final-verdicts.json"
       }
     },
     {
@@ -283,7 +289,13 @@
           "scope": "First final007 small-object100k-row disk campaign:18690effective seconds including continuous4h; resource/integrity/cleanup/eight equivalent comparisons passed. Broader row and independent second/S3 passes still pending.",
           "evidence": "disk-final007-pass-1-001.json"
         }
-      ]
+      ],
+      "final_convergence_verdict": {
+        "area": "REST, RPC, RLS and statistics",
+        "verdict": "not run",
+        "scope": "100k-row disk subset passed; complete 1M-row/RPC/statistics matrix not run on final artifact.",
+        "evidence": "campaign-final-verdicts.json"
+      }
     },
     {
       "id": "mutations",
@@ -350,6 +362,12 @@
         "independent_passes": 2,
         "evidence": "matrix-sdk007-two-corrected-passes-001.json",
         "scope": "Only the named five-scenario supplemental subset; whole row status unchanged."
+      },
+      "final_convergence_verdict": {
+        "area": "Concurrent mutations and ambiguous replies",
+        "verdict": "passed",
+        "scope": "Bounded local atomic-transfer, contention, invalid/duplicate input, deadlock and ambiguous/lost-COMMIT ledger profile passed.",
+        "evidence": "campaign-final-verdicts.json"
       }
     },
     {
@@ -417,6 +435,12 @@
         "independent_passes": 2,
         "evidence": "matrix-sdk007-two-corrected-passes-001.json",
         "scope": "Only the named five-scenario supplemental subset; whole row status unchanged."
+      },
+      "final_convergence_verdict": {
+        "area": "Catalog, DDL and refresh recovery",
+        "verdict": "not run",
+        "scope": "Full concurrent DDL/migration/refresh recovery not run.",
+        "evidence": "campaign-final-verdicts.json"
       }
     },
     {
@@ -513,7 +537,13 @@
           "scope": "First final007 small-object100k-row disk campaign:18690effective seconds including continuous4h; resource/integrity/cleanup/eight equivalent comparisons passed. Broader row and independent second/S3 passes still pending.",
           "evidence": "disk-final007-pass-1-001.json"
         }
-      ]
+      ],
+      "final_convergence_verdict": {
+        "area": "Disk bytes, quotas, collisions and paths",
+        "verdict": "not run",
+        "scope": "Small-object four-hour endurance and owned ENOSPC passed; full Unicode/path/collision/large/slow-client matrix not run.",
+        "evidence": "campaign-final-verdicts.json"
+      }
     },
     {
       "id": "s3",
@@ -583,7 +613,13 @@
           "evidence": "large-s3-retained-baseline-001.json",
           "scope": "Retained-source baseline only:1Mrows/table,1MiBobjects,7612signedevents0missing/extra/duplicate,4170effective seconds,786samples,maxgap11.6s,cleanup.600ssoak does not satisfy4h; separate postprocessing duplicate-compression refusal preserved."
         }
-      ]
+      ],
+      "final_convergence_verdict": {
+        "area": "Real S3-compatible storage and multipart",
+        "verdict": "failed",
+        "scope": "Endurance did not begin; provider restart/pause subset in D passed, multipart/long endurance not approved.",
+        "evidence": "campaign-final-verdicts.json"
+      }
     },
     {
       "id": "webhooks",
@@ -681,7 +717,13 @@
           "scope": "First final007 small-object100k-row disk campaign:18690effective seconds including continuous4h; resource/integrity/cleanup/eight equivalent comparisons passed. Broader row and independent second/S3 passes still pending.",
           "evidence": "disk-final007-pass-1-001.json"
         }
-      ]
+      ],
+      "final_convergence_verdict": {
+        "area": "Signatures, committed identities, queue and retries",
+        "verdict": "not run",
+        "scope": "259229signed identities reconciled in disk endurance; full retry/key-change/lease matrix not run.",
+        "evidence": "campaign-final-verdicts.json"
+      }
     },
     {
       "id": "admin",
@@ -808,6 +850,12 @@
         "independent_passes": 2,
         "evidence": "matrix-sdk007-two-corrected-passes-001.json",
         "scope": "Only the named five-scenario supplemental subset; whole row status unchanged."
+      },
+      "final_convergence_verdict": {
+        "area": "SQL/export admission and cancellation",
+        "verdict": "not run",
+        "scope": "Focused SQL/export cancellation regressions passed in ordinary source CI; full concurrent stress cell not run.",
+        "evidence": "campaign-final-verdicts.json"
       }
     },
     {
@@ -898,6 +946,12 @@
         "independent_passes": 2,
         "evidence": "browser-sdk007-two-measured-passes-001.json",
         "scope": "Both final007 measured full browser passes completed with same-ELF/budgets; original refresh SLO failure remains unexplained. Whole row includes further mandatory clauses."
+      },
+      "final_convergence_verdict": {
+        "area": "Panel tabs, request lifetime and retained resources",
+        "verdict": "not run",
+        "scope": "HTTP panel workload is not browser feedback/timer/listener stress; no final browser campaign.",
+        "evidence": "campaign-final-verdicts.json"
       }
     },
     {
@@ -989,6 +1043,12 @@
         "independent_passes": 2,
         "evidence": "browser-sdk007-two-measured-passes-001.json",
         "scope": "Both final007 measured full browser passes completed with same-ELF/budgets; original refresh SLO failure remains unexplained. Whole row includes further mandatory clauses."
+      },
+      "final_convergence_verdict": {
+        "area": "TypeScript/Rust SDK runtime, cancellation and refresh",
+        "verdict": "not run",
+        "scope": "Focused SDK regressions passed; full frozen-artifact runtime/browser stress not run.",
+        "evidence": "campaign-final-verdicts.json"
       }
     },
     {
@@ -1065,6 +1125,12 @@
         "full_host_predeclaration": "post-endurance-private-files-predeclaration-001.json",
         "scope": "Existing failed fairness results remain failed. New full1/5/10 baselines and two candidate passes add identical bounded private-file pressure; short real-service preflight is prepared only.",
         "failed_preflight": "host-private-files-bootstrap-failure-001.json"
+      },
+      "final_convergence_verdict": {
+        "area": "Independent 1/5/10-project capacity and fairness",
+        "verdict": "blocked (environment)",
+        "scope": "One-project disk subset passed; ten projects blocked; historical five-project fairness failures remain.",
+        "evidence": "campaign-final-verdicts.json"
       }
     },
     {
@@ -1115,7 +1181,13 @@
           "evidence": "native-final-suite-f40774e/index.json",
           "scope": "Final product-source common ELF; all six native cases twice, fresh VMs, verified runtime inode/digest, same-target restore,30ACKs per runtime after guest RAM loss, cleanup. Original af01678startup failure still unresolved; no combined controller/update stress or off-host certification."
         }
-      ]
+      ],
+      "final_convergence_verdict": {
+        "area": "Concurrent host management, durable receipts and limits",
+        "verdict": "not run",
+        "scope": "Full lifecycle/receipt/admission-limit stress not run.",
+        "evidence": "campaign-final-verdicts.json"
+      }
     },
     {
       "id": "updates",
@@ -1147,7 +1219,13 @@
           "evidence": "native-final-suite-f40774e/index.json",
           "scope": "Final product-source common ELF; all six native cases twice, fresh VMs, verified runtime inode/digest, same-target restore,30ACKs per runtime after guest RAM loss, cleanup. Original af01678startup failure still unresolved; no combined controller/update stress or off-host certification."
         }
-      ]
+      ],
+      "final_convergence_verdict": {
+        "area": "Update activation, interruption and compatibility",
+        "verdict": "not run",
+        "scope": "Full activation/interruption/compatibility stress not run.",
+        "evidence": "campaign-final-verdicts.json"
+      }
     },
     {
       "id": "backup",
@@ -1226,6 +1304,12 @@
         "independent_passes": 2,
         "evidence": "matrix-sdk007-two-corrected-passes-001.json",
         "scope": "Only the named five-scenario supplemental subset; whole row status unchanged."
+      },
+      "final_convergence_verdict": {
+        "area": "Local paired snapshots and restored integrity",
+        "verdict": "passed",
+        "scope": "Local pg_dump under writers, fresh target, accounting/token/immutable-file checks passed; intentional snapshot rewind is explicitly bounded.",
+        "evidence": "campaign-final-verdicts.json"
       }
     },
     {
@@ -1299,6 +1383,12 @@
         "independent_passes": 2,
         "evidence": "matrix-sdk007-two-corrected-passes-001.json",
         "scope": "Only the named five-scenario supplemental subset; whole row status unchanged."
+      },
+      "final_convergence_verdict": {
+        "area": "Malformed inputs, churn and ingress policy",
+        "verdict": "not run",
+        "scope": "Input400/403/401 subset passed; complete malformed/slow/churn/ingress stress not run.",
+        "evidence": "campaign-final-verdicts.json"
       }
     },
     {
@@ -1368,7 +1458,13 @@
           "evidence": "native-final-suite-f40774e/index.json",
           "scope": "Final product-source common ELF; all six native cases twice, fresh VMs, verified runtime inode/digest, same-target restore,30ACKs per runtime after guest RAM loss, cleanup. Original af01678startup failure still unresolved; no combined controller/update stress or off-host certification."
         }
-      ]
+      ],
+      "final_convergence_verdict": {
+        "area": "Public DNS/ACME/TLS, native systemd and power loss",
+        "verdict": "failed",
+        "scope": "Final guest reboot fence failed P12; public TLS and physical power loss remain blocked.",
+        "evidence": "campaign-final-verdicts.json"
+      }
     },
     {
       "id": "offhost",
@@ -1376,17 +1472,29 @@
       "entrypoints": "docs/backup.md; scripts/acceptance-pitr.sh",
       "status": "blocked",
       "scope_or_limit": "Read-only GitHub repository secret public-key metadata returned403; no established private staging-key transport is available in this integration. No secret, permission, workflow or backup was changed/exposed. No configured separate recovery host/WAL archive/PITR target; local RustFS does not certify off-host durability.",
-      "private_transport_evidence": "offhost-private-transport-capability-001.json"
+      "private_transport_evidence": "offhost-private-transport-capability-001.json",
+      "final_convergence_verdict": {
+        "area": "Off-host restore, external cloud provider and PITR",
+        "verdict": "blocked (environment)",
+        "scope": "No off-host restore or real WAL/PITR attempt; staging profiles remain required.",
+        "evidence": "campaign-final-verdicts.json"
+      }
     },
     {
       "id": "arm64",
       "area": "Separate ARM64 operating envelope",
       "entrypoints": "G05 execution boundaries",
       "status": "blocked",
-      "scope_or_limit": "This measured host is x86_64; no isolated ARM64 load target is configured."
+      "scope_or_limit": "This measured host is x86_64; no isolated ARM64 load target is configured.",
+      "final_convergence_verdict": {
+        "area": "Separate ARM64 operating envelope",
+        "verdict": "blocked (environment)",
+        "scope": "No native ARM64 staging host; no retry/workaround.",
+        "evidence": "campaign-final-verdicts.json"
+      }
     }
   ],
-  "scope_note": "Each whole-row stress verdict remains incomplete until all required scenarios and repetitions have evidence. Passed functional subsets do not promote rows or G05. Historical arrival, HTTP-negative and final-hop latency defects invalidate final-protocol performance approval; raw originals remain unchanged.",
+  "scope_note": "Final authoritative verdicts are in campaign-final-verdicts.json and each row final_convergence_verdict. Earlier native_diagnostics/functional_subset entries remain historical with original artifacts and dates; they do not certify unrun final cells.",
   "certifies_g05": false,
   "cpu_policy_native_control": {
     "status": "passed",
@@ -1596,7 +1704,7 @@
     "corrective_evidence": "host-resource-and-collected-watchdog-correction-001.json",
     "latest_focused_evidence": "host-Docker-name-and-watchdog-guards-001.json"
   },
-  "latest_inventory_update_utc": "2026-10-17T21:58:35.797611+00:00",
+  "latest_inventory_update_utc": "2026-10-18T04:31:10.214326+00:00",
   "native_startup_reproductions": {
     "status": "passed scoped repetitions; original failure unresolved",
     "count": 8,
@@ -1805,25 +1913,51 @@
     "production_source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
     "remaining_campaigns": [
       {
-        "cell": "restore-fencing guest reboot",
-        "status": "not run"
+        "cell": "a",
+        "name": "Restore-fencing guest reboot",
+        "verdict": "failed",
+        "evidence": "native-reboot-converged-verdict.json",
+        "reason": "P12: app, PostgreSQL and authenticated API reopened before explicit recovery; controlled rows preserved and authorization canaries passed.",
+        "status": "failed"
       },
       {
-        "cell": "continuous four-hour disk endurance",
-        "status": "not run"
+        "cell": "b",
+        "name": "Continuous four-hour disk endurance",
+        "verdict": "passed",
+        "evidence": "disk-converged-final-001.json",
+        "effective_load_seconds": 18690,
+        "continuous_endurance_seconds": 14400,
+        "comparable_workloads_passed": 8,
+        "status": "passed"
       },
       {
-        "cell": "continuous four-hour real S3 endurance",
-        "status": "not run"
+        "cell": "c",
+        "name": "Continuous four-hour real S3 endurance",
+        "verdict": "failed",
+        "evidence": "s3-converged-final-002-failed.json",
+        "prior_attempt_evidence": "s3-converged-final-001-platform-interruption.json",
+        "continuous_endurance_seconds": 0,
+        "reason": "First attempt interrupted by environment reboot; one bounded infrastructure retry stopped on sampler fork EAGAIN before endurance. No further retry.",
+        "status": "failed"
       },
       {
-        "cell": "single faults under load",
-        "status": "not run"
+        "cell": "d",
+        "name": "Single faults under load",
+        "verdict": "passed",
+        "evidence": "fault-converged-final-001.json",
+        "effective_load_seconds": 1580,
+        "acknowledged_missing": 0,
+        "unknown_or_corrupt": 0,
+        "status": "passed"
       }
     ],
-    "status": "guest reboot failed; same artifact retained; disk campaign starting",
+    "status": "campaign closed without G05 approval",
     "certifies_g05": false,
-    "frozen_artifact_evidence": "campaign-final-artifact.json"
+    "frozen_artifact_evidence": "campaign-final-artifact.json",
+    "updated_at_utc": "2026-10-18T03:59:13.568513+00:00",
+    "closed_at_utc": "2026-10-18T04:31:10.214326+00:00",
+    "final_verdict_evidence": "campaign-final-verdicts.json",
+    "next_campaign": null
   },
   "historical_pre_convergence_current_final_candidate": {
     "identity": "009diagnostic",
@@ -1850,5 +1984,6 @@
     "confirmed_production_defects": 12,
     "evidence": "final-local-candidate-615a0a0.json",
     "scope": "No change to19predeclared workloads/SLOs/budgets/reserves and no partial008credit."
-  }
+  },
+  "final_verdict_evidence": "campaign-final-verdicts.json"
 }

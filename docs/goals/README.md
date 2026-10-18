@@ -10,10 +10,11 @@ G04 completed three project reviews with an evolving finding ledger; its
 evidence is recorded in [the review execution record](triple-review-execution.md).
 A focused [memory lifecycle review](memory-review-execution.md) records subsequent
 ownership/cancellation corrections and their release-of-resource evidence.
-G05 is in progress: it defines fresh stress/endurance campaigns, ten-project host
-isolation, controlled failures and measurable recovery gates. Its
-[execution record](stress-verification-execution.md) separates measured runs
-from incomplete work; it does not inherit capacity certification from earlier CI.
+G05's autonomous campaign is closed without full approval: final disk and local
+single-fault profiles passed; native reboot fencing and S3 endurance failed,
+with eight operational cells blocked. See the [final Portuguese report](stress-verification-report.pt-BR.md)
+and [execution record](stress-verification-execution.md); ordinary CI does not
+certify unrun production capacity or deployment gates.
 
 | Goal | Outcome |
 |---|---|
@@ -21,7 +22,7 @@ from incomplete work; it does not inherit capacity certification from earlier CI
 | [G02: Architecture and operational quality](architecture-security-performance.md) | Clear module ownership, tested security boundaries and reproducible performance, load and stress evidence across the project. |
 | [G03: Controlled panel updates](panel-updates-and-recovery.md) | Implemented: scoped authority, verified release discovery, durable jobs and recovery; production activation remains gated by exact-binary VPS acceptance. |
 | [G04: Three project reviews](triple-project-review.md) | Three complementary reviews, reproduced corrections, evolving criteria and a final evidence-based report. |
-| [G05: Full stress verification](full-stress-verification.md) | In progress: sustainable capacity, overload, spikes, ten-project fairness, continuous disk/S3 endurance and fault recovery with final-artifact evidence. |
+| [G05: Full stress verification](full-stress-verification.md) | Campaign closed without full approval: disk/faults passed, reboot fence/S3 failed, eight environment blocks; all final verdicts retained. |
 
 G02 established the inventory and retained release baseline; G01's archive
 consumer proves the auth boundary. The ownership map and regression gates keep

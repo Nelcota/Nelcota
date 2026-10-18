@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "checked_at_utc": "2026-10-18T04:34:09.670260+00:00",
+  "scope": "Documentation/data consistency only, not additional stress or product test coverage.",
+  "current_markdown_files": 4,
+  "local_links_resolved": 278,
+  "ordered_campaign_verdicts": 4,
+  "original_acceptance_criteria": 12,
+  "full_matrix_verdicts": 18,
+  "environment_blocked_cells": 8,
+  "final_source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+  "frozen_binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+  "ordinary_product_CI": {
+    "PR": 91,
+    "source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+    "successful_checks": 18,
+    "total_checks": 18,
+    "observed_at_utc": "2026-10-18T04:28:04Z"
+  },
+  "historical_report_checksum_preserved": true,
+  "diff_check": "passed",
+  "no_added_product_code_or_benchmark_features": true
+}

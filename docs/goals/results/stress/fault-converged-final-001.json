@@ -1,0 +1,728 @@
+{
+  "run_id": "fault-converged-final-001",
+  "status": "passed",
+  "certifies_g05": false,
+  "scope": "One existing local single-fault profile; no combined faults, off-host restore, real WAL/PITR or physical power-loss certification. Provider faults do not replace four-hour S3 endurance.",
+  "backend_source": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+  "binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+  "frozen_harness": {
+    "run_id": "fault-converged-final-001",
+    "git": "9e3e5e6949c59c772273703c9202dfc522230dbf",
+    "binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+    "harness_sources": {
+      "bench/allocation.py": "4b98e093b86e9b9187812cd49e8d5710f54561f196bdd222573c0edd06cff34d",
+      "bench/arrival_check.py": "1b0973f2995a94390ebabcc76c2ab4843586d284980a6e5e65d6e3cb1ea60a1b",
+      "bench/arrival_counters.py": "dc94222d07dc40b7bbd5d376f5d8bac5ba8fec4d590cb6da625e487c01b16f35",
+      "bench/auth_link_pressure.py": "2a7c52969f0f1b00688875a38129a64e803e052f04f6e9d699f73e49dfa400db",
+      "bench/browser_auth.py": "6162dc9977eb27f36096d1ef76df1a9d0311f3970da526fdd2f5f524fb105ee8",
+      "bench/browser_auth_probe.py": "b3ddb202635e038441d8b2689666a3e40e7f467cb10f94da4f3df2a404b31469",
+      "bench/browser_campaign.py": "b9fdecbe52c2c62bd0a402c29043fa8a02644858fd771cdd939641962b876c0a",
+      "bench/browser_diagnostics.py": "d870541836492e9ff8eaf8fbfc1c464d61582684aba7e7e814c57dd0bc9b51aa",
+      "bench/browser_driver.py": "5f4caae687da61e2182e0ee66a4e266303c0dfa1b40cea2e4ae2a07bdda328db",
+      "bench/browser_entry.py": "5dd870c1aeb14bc711686dce9f41e976160c0fdf1b844ebea7c72382cb639c23",
+      "bench/browser_images.py": "77dc48c506eb96f3d02dfb7ef7e7695fbd19effed0d3f179be1a2cf31009fc16",
+      "bench/browser_owners.py": "a12ffcdcf65e8cbc98605f2d4aa48eb7141cf4b488bce7cfd7483d47de299769",
+      "bench/browser_runtime.py": "0bf4d561b6efc82dcde87012be92c2b621d80f50f2e2be9c5cb0e85625d78b42",
+      "bench/campaign.py": "1303eba807b06f9b69bd7675ded297dc045c916183270e64d54cba428027c655",
+      "bench/compaction_check.py": "d64608d5e59d463b685c1310c925e29edee959fadab7d73a1a1e57a71384ab21",
+      "bench/compare.py": "7ae08619c14730906f4d565960616ca876aa6d61ff6ac17146cf692762b8e602",
+      "bench/cpu_policy.py": "04a227c9032905844ece265773013d7581351627f2a4ac71a8fee6c8a690d89d",
+      "bench/database_readiness_probe.py": "251b093345d7d22d4e9d6810b8a9a28e7a5301324912ad78ce497f79b96c64ef",
+      "bench/disk_usage.py": "502da50d95f979128c91d49b3037cb08885ddcbb941af0a9bd842e0d193da38e",
+      "bench/evidence.py": "214bcb18089fce8b33dc7a9613856c23f48f433767a7e97cdd95861dae3cb67d",
+      "bench/export_series.py": "7ee41df608b7920acd1a5ab581247add472e072e60aaa982571f0bd3c2ae0bec",
+      "bench/fault_campaign.py": "f99178c0c2dc72be72dcec5c4059a84b58c43111cce6d8fcf6fabb21b9aa9991",
+      "bench/fixture_copy.py": "8c1421202b5543c16fa0fd0af4e47f7a8f9ef1bd9cd9423bfde28eda3dec6288",
+      "bench/fleet_observer.py": "3e51bb4b4229f0854c2e67c2fadef489feed0b28893ba3fe1baad67e1fe415b4",
+      "bench/fleet_private_files.py": "8059590e30f1fdf42cc2b0473321744c670f2deaa4bc7126965d51e1bcbb0940",
+      "bench/fleet_webhooks.py": "ae5d21861ef3951a50a37fdfc84507685e87c2f8cc1698ae0d5972244d0b97ce",
+      "bench/generator_cpu.py": "21ba9c685c1696c58869f06c55bab6f8825a5c55637b7aea140e13e4d1733ef7",
+      "bench/guard_check.py": "2fa55b5e70154e7498ab79f627ef7623ae965cb4727a8318845bc5eb9baf481d",
+      "bench/host_campaign.py": "a5ccac34e56d47ff167d57385d1b435e8821a5188c18fedfc6d5cd91d4574cde",
+      "bench/host_compare.py": "36cf853e81d7ff3e2ecbb5e4c3988bb0ced091f92535b0d53a7697876b2b76e5",
+      "bench/host_file_probe.py": "5330297c8734c672ab1077ef53954415ec6f9afb94552b8b28db2820b047b0a6",
+      "bench/host_resources.py": "8efc29fce9b182aca6bdc2fa91e26ad9d526a4b1267f69a917d132270e4065e5",
+      "bench/http_boundary.py": "c1b386a57e6fd225ddf8333c52ed53c8c93d71bbf42ec2da08cc3132087d75b9",
+      "bench/http_check.py": "8879f62f1541f8321f799358cdd56035d3e189d46dc43fe91b106ba514788ab7",
+      "bench/http_counters.py": "c08c51ce7faf1f415476e77c80bd96dfd891b3292ceb15bd2dd781aed32f671a",
+      "bench/ingress.py": "4976738ec1c3e96862f87a02d81843087a72a665a2de829acc4c6804b6117ed2",
+      "bench/latency.py": "0483d0b22be2811669835446c17ec4c183a79bfb5477c43c2ea01cd0976aadd0",
+      "bench/launch.py": "d593354c355c4c7c5ab9fc13abeee8c2c82789ccb507fcf37fe3a3b580c578c6",
+      "bench/ledger_arrivals.py": "d382cf85693a40996237150b3c3392452e29d35245bbef69b5065ccbf37651ba",
+      "bench/ledger_capacity.py": "43fb6d0a6e864c97f565c2694fbd354cad00517cfe1a2f2b916131b2989520b2",
+      "bench/load_time.py": "23e9b43a24b7842259e94958cf2a0836a7b970cabdab2c908d5761dd688527c5",
+      "bench/lost_reply.py": "2048c95f21169fe46adddb28c4feffa60da365d369f4730ed6f7c6bcbfd348bb",
+      "bench/matrix_pressure.py": "5889e1ddc7dd10894f6854d8cfbc43612e64c0cb14bfce6bc003e84807de3b45",
+      "bench/matrix_probe.py": "3f5287a8dface2301d3e661aae2d1b909ecceee8643a4fc06d5cf9849ab4a907",
+      "bench/metrics.py": "ef5d35ca1d1773bb5fd622b1653d2c8b8e5d0681c88c92ccab1daef45bf1bf26",
+      "bench/monitor.py": "bd869d88b833930602dc3770e5467040021cca6930f89fd298c269b6850c2e61",
+      "bench/native_artifact.py": "fb38df329250168071671162019acfff93f291283808eee2451b656cd7198c85",
+      "bench/native_cluster.py": "e018810cfc015846d3e878a001db2e3c19a815c7fa77305986c930cfce2d1c23",
+      "bench/native_contracts.py": "40932b429b44d7f6bb765b2f34ebf762cd8dad414efe6b155a2d43b64ff1c280",
+      "bench/native_cut.py": "13e637bdb527e7768ea52a37d54971781f35dd11e1a3dbe9350b1633c275aa9c",
+      "bench/native_evidence.py": "6c9882bbc3ccd52b2a113d68a8c3edd381c43583f0812c5829f89a6f567da008",
+      "bench/native_guest.py": "f0313f05b2fab7913a0487dfef842831af3f27d2c791b45e1ad18704f82d464f",
+      "bench/native_inflight.py": "e8741a77f6de21e19ae85ba280d65df2a4799bbc5c2cdd97df9387a80d14a79a",
+      "bench/native_pitr_failure.py": "34b8722ec9d42c7dfabbaae5ef4fb782b1c134b796fdf371c5a494212d6d4364",
+      "bench/native_pitr_reboot.py": "9871a151b208b014cb4a492b63a09f32fcb049f8a5a53a8edcd3b47791eb9e31",
+      "bench/native_preflight.py": "69ca8ad6ee6bad336ae4ac1013e6867d663eb5e7a0900e3bf9e160ec65c6ad45",
+      "bench/native_vm.py": "6010efd9213bf788fdff78cfabcc04c232cf80d99d7a6221b936b5a3d2951700",
+      "bench/objects.py": "a1612bc2e457481705044ce21a376d898544dbbff004a8920511218858a8210b",
+      "bench/observations.py": "a8acd10d4b28cc44e9619bd969d75d6a2d5543444c97daab63e549414238b988",
+      "bench/oracle_check.py": "2492f32547aa01ec75f179a002fc92c9eb432b2cc609320ff117ca62ce0bb79c",
+      "bench/otlp_metrics.py": "ed8b9e115916f02b3c4556ca06b6a15c927ecb595cd22f83187081635c46927e",
+      "bench/ownership.py": "ffd3e9343b7f8262d05ee0363ab01b1f7e77089bb8f09ca8d0a350532402fa06",
+      "bench/plot_series.py": "e1076161947003cb14b0137e4655b2ba3dedd911b6fb08daefe9335db4fadfe9",
+      "bench/ports.py": "edcb747bf4f29429d2abf5abf2741289c586cb64b0cf3484fa891edb5d798276",
+      "bench/postgres_evidence.py": "7152ea8c58232981c07b6c20d4a6a8cfba1046de1893d09c78de58607a95855a",
+      "bench/project_diagnostics.py": "0c6ff5a0d0c77636b05aebfdb97aef11c00f00511705258a6055bcc22a311972",
+      "bench/projects.py": "d2afceaf4cb8853010f95e15d333c570b6a34afe650581da34cac3372456a297",
+      "bench/provider_capabilities.py": "fc1aa8c527c7a35e326903a4150c1d0ee65c7a27ab331879dab5a76ba81d0138",
+      "bench/provider_reclamation.py": "c1b2673e15f028832163a2f17eff695ee4f81da2b544547c4a992ebe00e75d64",
+      "bench/provider_runtime.py": "6c17b3d7d43a13c4e36a36c390f254dcafc68ef798517f4204bc8982871183e9",
+      "bench/receiver.py": "b4f172be66aee69649c826052951ff839272d7501ec0d0a2e648d65dedd4ee9d",
+      "bench/resource_republish.py": "08bb4fcbf857bc5afd4d0cc49f91f98e2b98bb295791c60178c4b2a3eee22464",
+      "bench/sdk_unit_evidence.py": "49148be46c2826d47eefa91763a72ccfe4d1ada5b526a1023f121386de93c703",
+      "bench/sqlite_evidence.py": "77b0da843ac1c0d5a29c97e2f6fa78b67fbbe96a68c5aeef05df9f0895c16215",
+      "bench/watchdog.py": "25ab3e86efdcec9c1da84942ef27fee285339adbda15b70791030e4863ff7bb3",
+      "bench/allocation_probe.c": "f833882f9c9697d7e838871dad3d398fb6427e78b21104d30ea8fcd7f13678f3",
+      "bench/campaign.js": "0ac01578bf19155302fe465884b480d792569086f23bb4ba3615ca5f0ce2547d",
+      "bench/browser_auth.js": "ea710e415c77a84df94524b2290c63067822f404299beee812cec5103eb1568a",
+      "bench/setup.sql": "104496228668127c3a95a0defa6efe2d6c06a00c56bdc19999052043e700c798",
+      "scripts/upgrade/support.py": "97fd54c7d8fe80d70d0201e71454dd4f72fef760e161800ad503760d3f90feb8"
+    }
+  },
+  "manifest": {
+    "scope": "local ledger mutations and negative JWT probes; no public proxy/controller acceptance",
+    "capacity_qualification": true,
+    "real_s3_faults": true,
+    "binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+    "initial_iterations_per_second": 8,
+    "maximum_inflight": 8,
+    "maximum_attempts": 100000,
+    "parent_rss_limit_mib": 512,
+    "app_cpu_each": 0.5,
+    "postgres_cpu_each": 0.5,
+    "app_memory_mib_each": 128,
+    "postgres_memory_mib_each": 256,
+    "provider_cpu": 0.5,
+    "provider_memory_mib": 512,
+    "owned_filesystem_exhaustion_mib": 16,
+    "recovery_deadline_seconds": 35,
+    "snapshot": "pg_dump snapshot under controlled database writers, immutable file fixture",
+    "storage": "disk, with explicitly temporary tmpfs ENOSPC scenarios and optional real RustFS faults",
+    "focus": "all",
+    "dropped_replies": {
+      "pre_response_percent": 5,
+      "after_upstream_commit_reply_percent": 5,
+      "maximum_intermediary_tasks": 8,
+      "downstream": "owned private HTTP socketpair",
+      "upstream": "real project HTTP",
+      "automatic_retries": 0
+    }
+  },
+  "completion": {
+    "status": "passed",
+    "load_seconds": 1580,
+    "resource_observations": 312,
+    "cleanup_confirmed": true,
+    "error_type": "NoneType"
+  },
+  "cleanup": {
+    "confirmed": true,
+    "containers": [],
+    "volumes": [],
+    "directory_removed": true
+  },
+  "capacity": {
+    "qualified_lower_bound_iterations_per_second": 64,
+    "fault_rate": 51,
+    "ratio": 0.796875,
+    "workload": "90% acknowledged atomic-transfer RPC plus negative JWT probe, 5% pre-response disconnects, 5% discarded real upstream commit replies; ambiguous outcomes reconciled without retries"
+  },
+  "invariants": {
+    "attempted": 65945,
+    "acknowledged": 58826,
+    "committed": 62092,
+    "acknowledged_missing": 0,
+    "unknown_or_corrupt": 0,
+    "ambiguous_attempts": 6868,
+    "ambiguous_committed": 3266,
+    "automatic_mutation_retries": 0,
+    "explicit_primary_key_duplicate_status": 409,
+    "accounting": {
+      "accounts": 2,
+      "total": 2000000,
+      "first_balance": 1003266,
+      "committed": 62092,
+      "delta": 3266,
+      "counter": 62092
+    }
+  },
+  "lost_commit_replies": {
+    "confirmed_backend_commit_replies_discarded": 3266,
+    "lost_commits_missing_or_corrupt": 0,
+    "downstream_transport": "owned HTTP socketpair",
+    "upstream": "real project HTTP",
+    "automatic_retries": 0
+  },
+  "fault_controls": {
+    "mutation-boundaries": {
+      "invalid_delta_status": 400,
+      "authenticated_without_execute_status": 403,
+      "partial_invalid_rows": 0
+    },
+    "declared-oom": {
+      "status": "observed",
+      "state": {
+        "Status": "exited",
+        "Running": false,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": true,
+        "Dead": false,
+        "Pid": 0,
+        "ExitCode": 137,
+        "Error": "",
+        "StartedAt": "2026-10-18T04:22:10.750996308Z",
+        "FinishedAt": "2026-10-18T04:22:11.397595482Z"
+      },
+      "limit_mib": 8,
+      "tag": "io.nelcota.stress.fault=oom",
+      "scope": "only the owned source app",
+      "trigger": "one normal password verification with unchanged Argon2 parameters"
+    },
+    "filesystem-bytes": {
+      "status": "passed",
+      "filesystem": "owned 16-MiB tmpfs",
+      "host_disk_filled": false,
+      "observed_enospc": true,
+      "inodes": null,
+      "database_commits_during_fault": 113,
+      "failure_http_status": 507,
+      "failure_code": "storage_full",
+      "failed_metadata_rows": 0,
+      "subsequent_upload_and_bytes_verified": true
+    },
+    "filesystem-inodes": {
+      "status": "passed",
+      "filesystem": "owned 16-MiB tmpfs",
+      "host_disk_filled": false,
+      "observed_enospc": true,
+      "inodes": 64,
+      "database_commits_during_fault": 111,
+      "failure_http_status": 500,
+      "failure_code": "internal",
+      "failed_metadata_rows": 0,
+      "subsequent_upload_and_bytes_verified": true
+    },
+    "snapshot": {
+      "bytes": 3341089,
+      "sha256": "bccfd8d1bceef28a46f505607095d87577190a7d6625a7345d46ab9ccda619fe",
+      "writers_active": true,
+      "object_fixture_mutations": false,
+      "started_monotonic": 2674.228286483,
+      "ended_monotonic": 2675.201837043
+    },
+    "restore": {
+      "status": "passed",
+      "rto_seconds": 2.5297773510001207,
+      "rpo_upper_bound_seconds": 18.00055703599992,
+      "restored_rows": 53589,
+      "source_rows": 54456,
+      "restored_accounting": {
+        "accounts": 2,
+        "total": 2000000,
+        "first_balance": 1002821,
+        "committed": 53589,
+        "delta": 2821,
+        "counter": 53589
+      },
+      "intentional_snapshot_rewind_rows": 867,
+      "cross_project_token_status": 401,
+      "restored_user_matches": true,
+      "physical_bytes_match": true,
+      "scope": "local DB snapshot plus immutable files, no off-host/PITR/systemd certification"
+    },
+    "provider-restart": {
+      "status": "passed",
+      "responses": {
+        "200": 47,
+        "201": 1,
+        "connection-unavailable": 53,
+        "500": 1,
+        "503": 1
+      },
+      "recovery_seconds": 0.5573789959998976,
+      "positive_bytes_verified": true,
+      "unauthorized_status": 401,
+      "real_provider": "RustFS"
+    },
+    "provider-pause": {
+      "status": "passed",
+      "responses": {
+        "200": 46
+      },
+      "recovery_seconds": 0.051877184999739256,
+      "positive_bytes_verified": true,
+      "unauthorized_status": 401,
+      "real_provider": "RustFS"
+    }
+  },
+  "load_phases": [
+    {
+      "phase": "baseline",
+      "counts": {
+        "200": 216,
+        "acknowledged": 216,
+        "deliberately-dropped-reply": 12,
+        "deliberately-lost-committed-reply": 12
+      },
+      "requested_seconds": 30,
+      "elapsed_seconds": 30.000112649999892,
+      "offered_iterations": 240,
+      "rate": 8,
+      "fault_injected": false,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 4.279340999801207,
+        "p99_ms": 7.347781999897052,
+        "successful_post_responses": 216,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": true
+    },
+    {
+      "phase": "capacity-25",
+      "counts": {
+        "200": 4320,
+        "acknowledged": 4320,
+        "deliberately-dropped-reply": 240,
+        "deliberately-lost-committed-reply": 240
+      },
+      "requested_seconds": 300,
+      "elapsed_seconds": 300.0000865720001,
+      "offered_iterations": 4800,
+      "rate": 16,
+      "fault_injected": false,
+      "exploratory": true,
+      "success_latency": {
+        "p95_ms": 4.476103000115472,
+        "p99_ms": 7.7716149999105255,
+        "successful_post_responses": 4320,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": true
+    },
+    {
+      "phase": "capacity-50",
+      "counts": {
+        "200": 8640,
+        "acknowledged": 8640,
+        "deliberately-dropped-reply": 480,
+        "deliberately-lost-committed-reply": 480
+      },
+      "requested_seconds": 300,
+      "elapsed_seconds": 300.0000521709999,
+      "offered_iterations": 9600,
+      "rate": 32,
+      "fault_injected": false,
+      "exploratory": true,
+      "success_latency": {
+        "p95_ms": 4.034172000046965,
+        "p99_ms": 6.8403919999582286,
+        "successful_post_responses": 8640,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": true
+    },
+    {
+      "phase": "capacity-75",
+      "counts": {
+        "200": 12960,
+        "acknowledged": 12960,
+        "deliberately-dropped-reply": 720,
+        "deliberately-lost-committed-reply": 720
+      },
+      "requested_seconds": 300,
+      "elapsed_seconds": 300.0000734580001,
+      "offered_iterations": 14400,
+      "rate": 48,
+      "fault_injected": false,
+      "exploratory": true,
+      "success_latency": {
+        "p95_ms": 4.110055000182911,
+        "p99_ms": 7.015998999804651,
+        "successful_post_responses": 12960,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": true
+    },
+    {
+      "phase": "capacity-100",
+      "counts": {
+        "200": 17280,
+        "acknowledged": 17280,
+        "deliberately-dropped-reply": 960,
+        "deliberately-lost-committed-reply": 960
+      },
+      "requested_seconds": 300,
+      "elapsed_seconds": 300.0000807860001,
+      "offered_iterations": 19200,
+      "rate": 64,
+      "fault_injected": false,
+      "exploratory": true,
+      "success_latency": {
+        "p95_ms": 3.4972909998032264,
+        "p99_ms": 6.59321800003454,
+        "successful_post_responses": 17280,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": true
+    },
+    {
+      "phase": "database-unavailable",
+      "counts": {
+        "200": 667,
+        "acknowledged": 667,
+        "deliberately-dropped-reply": 51,
+        "deliberately-lost-committed-reply": 37,
+        "503": 265
+      },
+      "requested_seconds": 20,
+      "elapsed_seconds": 20.00008170000001,
+      "offered_iterations": 1020,
+      "rate": 51,
+      "fault_injected": true,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 4.273628999726498,
+        "p99_ms": 6.341475000226637,
+        "successful_post_responses": 667,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": false
+    },
+    {
+      "phase": "database-recovered",
+      "counts": {
+        "200": 918,
+        "acknowledged": 918,
+        "deliberately-dropped-reply": 51,
+        "deliberately-lost-committed-reply": 51
+      },
+      "requested_seconds": 20,
+      "elapsed_seconds": 20.000081086000137,
+      "offered_iterations": 1020,
+      "rate": 51,
+      "fault_injected": false,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 3.153163000206405,
+        "p99_ms": 6.311040000127832,
+        "successful_post_responses": 918,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": true
+    },
+    {
+      "phase": "deadlock-under-writers",
+      "counts": {
+        "200": 788,
+        "acknowledged": 788,
+        "deliberately-dropped-reply": 44,
+        "deliberately-lost-committed-reply": 43,
+        "dropped_arrivals": 145
+      },
+      "requested_seconds": 20,
+      "elapsed_seconds": 20.0000857189998,
+      "offered_iterations": 1020,
+      "rate": 51,
+      "fault_injected": true,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 3.4428559997650154,
+        "p99_ms": 2865.6367510002383,
+        "successful_post_responses": 788,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": false
+    },
+    {
+      "phase": "deadlock-recovered",
+      "counts": {
+        "200": 918,
+        "acknowledged": 918,
+        "deliberately-dropped-reply": 51,
+        "deliberately-lost-committed-reply": 51
+      },
+      "requested_seconds": 20,
+      "elapsed_seconds": 20.00008194999964,
+      "offered_iterations": 1020,
+      "rate": 51,
+      "fault_injected": false,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 3.491617999770824,
+        "p99_ms": 5.591548000211333,
+        "successful_post_responses": 918,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": true
+    },
+    {
+      "phase": "app-kill",
+      "counts": {
+        "200": 832,
+        "acknowledged": 832,
+        "deliberately-dropped-reply": 46,
+        "deliberately-lost-committed-reply": 46,
+        "connection-unavailable": 96
+      },
+      "requested_seconds": 20,
+      "elapsed_seconds": 20.00008010700003,
+      "offered_iterations": 1020,
+      "rate": 51,
+      "fault_injected": true,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 3.187856999829819,
+        "p99_ms": 5.093498999940493,
+        "successful_post_responses": 832,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": false
+    },
+    {
+      "phase": "app-recovered",
+      "counts": {
+        "200": 918,
+        "acknowledged": 918,
+        "deliberately-dropped-reply": 51,
+        "deliberately-lost-committed-reply": 51
+      },
+      "requested_seconds": 20,
+      "elapsed_seconds": 20.000083542000084,
+      "offered_iterations": 1020,
+      "rate": 51,
+      "fault_injected": false,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 3.0598399998780224,
+        "p99_ms": 4.730219000066427,
+        "successful_post_responses": 918,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": true
+    },
+    {
+      "phase": "container-oom",
+      "counts": {
+        "200": 1298,
+        "acknowledged": 1298,
+        "deliberately-dropped-reply": 73,
+        "deliberately-lost-committed-reply": 72,
+        "connection-unavailable": 87
+      },
+      "requested_seconds": 30,
+      "elapsed_seconds": 30.000096820999715,
+      "offered_iterations": 1530,
+      "rate": 51,
+      "fault_injected": true,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 3.9833709997765254,
+        "p99_ms": 7.1448980002060125,
+        "successful_post_responses": 1298,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": false
+    },
+    {
+      "phase": "oom-recovered",
+      "counts": {
+        "200": 918,
+        "acknowledged": 918,
+        "deliberately-dropped-reply": 51,
+        "deliberately-lost-committed-reply": 51
+      },
+      "requested_seconds": 20,
+      "elapsed_seconds": 20.000082739999925,
+      "offered_iterations": 1020,
+      "rate": 51,
+      "fault_injected": false,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 3.193852000094921,
+        "p99_ms": 4.980807000265486,
+        "successful_post_responses": 918,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": true
+    },
+    {
+      "phase": "snapshot-under-writers",
+      "counts": {
+        "200": 918,
+        "acknowledged": 918,
+        "deliberately-dropped-reply": 51,
+        "deliberately-lost-committed-reply": 51
+      },
+      "requested_seconds": 20,
+      "elapsed_seconds": 20.000081280999893,
+      "offered_iterations": 1020,
+      "rate": 51,
+      "fault_injected": true,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 4.426720000083151,
+        "p99_ms": 31.940715000018827,
+        "successful_post_responses": 918,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": true
+    },
+    {
+      "phase": "filesystem-bytes-under-writers",
+      "counts": {
+        "200": 1326,
+        "acknowledged": 1326,
+        "deliberately-dropped-reply": 74,
+        "deliberately-lost-committed-reply": 74,
+        "connection-unavailable": 56
+      },
+      "requested_seconds": 30,
+      "elapsed_seconds": 30.00008034199982,
+      "offered_iterations": 1530,
+      "rate": 51,
+      "fault_injected": true,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 5.583819000094081,
+        "p99_ms": 9.200449000218214,
+        "successful_post_responses": 1326,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": false
+    },
+    {
+      "phase": "filesystem-inodes-under-writers",
+      "counts": {
+        "200": 1319,
+        "acknowledged": 1319,
+        "deliberately-dropped-reply": 73,
+        "deliberately-lost-committed-reply": 73,
+        "connection-unavailable": 65
+      },
+      "requested_seconds": 30,
+      "elapsed_seconds": 30.000094060000265,
+      "offered_iterations": 1530,
+      "rate": 51,
+      "fault_injected": true,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 4.062154000166629,
+        "p99_ms": 8.660434999910649,
+        "successful_post_responses": 1319,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": false
+    },
+    {
+      "phase": "filesystem-recovered",
+      "counts": {
+        "200": 918,
+        "acknowledged": 918,
+        "deliberately-dropped-reply": 51,
+        "deliberately-lost-committed-reply": 51
+      },
+      "requested_seconds": 20,
+      "elapsed_seconds": 20.000080155999967,
+      "offered_iterations": 1020,
+      "rate": 51,
+      "fault_injected": false,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 4.28442999964318,
+        "p99_ms": 7.920284000192623,
+        "successful_post_responses": 918,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": true
+    },
+    {
+      "phase": "provider-restart-under-writers",
+      "counts": {
+        "200": 1377,
+        "acknowledged": 1377,
+        "deliberately-dropped-reply": 77,
+        "deliberately-lost-committed-reply": 76
+      },
+      "requested_seconds": 30,
+      "elapsed_seconds": 30.000080823999724,
+      "offered_iterations": 1530,
+      "rate": 51,
+      "fault_injected": true,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 4.947212999923067,
+        "p99_ms": 7.941811999899073,
+        "successful_post_responses": 1377,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": true
+    },
+    {
+      "phase": "provider-pause-under-writers",
+      "counts": {
+        "200": 1377,
+        "acknowledged": 1377,
+        "deliberately-dropped-reply": 77,
+        "deliberately-lost-committed-reply": 76
+      },
+      "requested_seconds": 30,
+      "elapsed_seconds": 30.000086224999905,
+      "offered_iterations": 1530,
+      "rate": 51,
+      "fault_injected": true,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 4.05482700034554,
+        "p99_ms": 7.701209000060771,
+        "successful_post_responses": 1377,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": true
+    },
+    {
+      "phase": "provider-recovered",
+      "counts": {
+        "200": 918,
+        "acknowledged": 918,
+        "deliberately-dropped-reply": 51,
+        "deliberately-lost-committed-reply": 51
+      },
+      "requested_seconds": 20,
+      "elapsed_seconds": 20.00008190000017,
+      "offered_iterations": 1020,
+      "rate": 51,
+      "fault_injected": false,
+      "exploratory": false,
+      "success_latency": {
+        "p95_ms": 4.330001000198536,
+        "p99_ms": 6.827821000115364,
+        "successful_post_responses": 918,
+        "method": "nearest rank, successful POST only"
+      },
+      "nominal_qualified": true
+    }
+  ],
+  "effective_load_seconds_excluding_warmup": 1580,
+  "resources": {
+    "sample_count": 312,
+    "maximum_observation_gap_seconds": 13.246874606000347,
+    "violations": [],
+    "scope": "Original resource gates passed; the declared owned 8-MiB OOM is intentional. This does not establish heap allocator ownership or absence of all leaks."
+  },
+  "raw_evidence_location": "target/stress-g05/fault-converged-final-001"
+}

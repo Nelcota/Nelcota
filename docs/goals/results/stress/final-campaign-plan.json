@@ -1,5 +1,5 @@
 {
-  "status": "one final artifact; narrowed ordered campaigns only",
+  "status": "campaign closed without G05 approval",
   "recorded_at_utc": "2026-10-17T21:58:35.799364+00:00",
   "source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
   "binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
@@ -56,10 +56,11 @@
       "scope": "One ordered convergence campaign. Existing argument vector, SLOs, quotas and gates unchanged. No repeat, automatic product fix or refreeze.",
       "previous_unstarted_or_superseded_plan_run_id": "disk-candidate-pass-1-006",
       "previous_declaration": "disk-final008-pass-1-001",
-      "status": "in progress"
+      "status": "passed",
+      "evidence": "disk-converged-final-001.json"
     },
     {
-      "run_id": "s3-converged-final-001",
+      "run_id": "s3-converged-final-002",
       "binary": "one immutable campaign-final ELF from extraction PR91",
       "kind": "single",
       "arguments": [
@@ -92,9 +93,15 @@
         "--write-steady-rate",
         "50"
       ],
-      "scope": "One ordered convergence campaign. Existing argument vector, SLOs, quotas and gates unchanged. No repeat, automatic product fix or refreeze.",
+      "scope": "One S3 cell with one explicitly recorded bounded infrastructure retry after platform reboot before endurance; final attempt failed, no further retry. No product-triggered restart or refreeze.",
       "previous_unstarted_or_superseded_plan_run_id": "s3-candidate-pass-1-006",
-      "previous_declaration": "s3-final008-pass-1-001"
+      "previous_declaration": "s3-final008-pass-1-001",
+      "status": "failed",
+      "evidence": "s3-converged-final-002-failed.json",
+      "original_run_id": "s3-converged-final-001",
+      "infrastructure_interruption": "s3-converged-final-001-platform-interruption.json",
+      "maximum_infrastructure_retries": 1,
+      "original_scope": "One ordered convergence campaign. Existing argument vector, SLOs, quotas and gates unchanged. No repeat, automatic product fix or refreeze."
     },
     {
       "run_id": "fault-converged-final-001",
@@ -110,7 +117,9 @@
       ],
       "scope": "One ordered convergence campaign. Existing argument vector, SLOs, quotas and gates unchanged. No repeat, automatic product fix or refreeze.",
       "previous_unstarted_or_superseded_plan_run_id": "fault-final007-pass-1-001",
-      "previous_declaration": "fault-final008-pass-1-001"
+      "previous_declaration": "fault-final008-pass-1-001",
+      "status": "passed",
+      "evidence": "fault-converged-final-001.json"
     }
   ],
   "environment_blocked_cells": [
@@ -182,5 +191,8 @@
   "no_product_fix_refreeze_or_campaign_restart": true,
   "new_harness_features_authorized": false,
   "minimal_evidence_invalidating_harness_corrections": "Ledger H01/H03; existing verifier and artifact input reused. No thresholds or SLOs changed.",
-  "certifies_g05": false
+  "certifies_g05": false,
+  "closed_at_utc": "2026-10-18T04:31:10.214326+00:00",
+  "final_verdict_evidence": "campaign-final-verdicts.json",
+  "next_campaign": null
 }

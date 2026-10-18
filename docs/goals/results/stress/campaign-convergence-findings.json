@@ -117,6 +117,13 @@
       "problem": "Initial disk checkpoint prose called18705trafficseconds effective while this includes15warmupseconds. Raw campaign counters and14,400second continuous interval remain correct.",
       "correction": "Exclude the15second warmup:18,690effective seconds for the completed disk campaign. The historical162,324second floor already excludes warmup. Updated passing-run floor181,014seconds,50h16m54s.",
       "evidence": "disk-converged-final-001.json"
+    },
+    {
+      "id": "H05",
+      "status": "reporting corrected; no benchmark code changed",
+      "problem": "An ad-hoc fault-report projection used elapsed, a field from the single-project sampler, instead of the fault sampler monotonic field; projection failed before writing its public summary.",
+      "correction": "Read the actual fault-series monotonic samples from the verified lossless archive. Original run completion, resource validation and cleanup were unchanged.",
+      "evidence": "fault-converged-final-001.json"
     }
   ],
   "scope": "Original historical findings are not relabelled as fixed by extraction or by later passes.",
@@ -129,5 +136,7 @@
       "effect": "No S3 endurance interval began; zero endurance credit.525closed traffic seconds include15warmup;510non-warmup seconds preserved separately, not added to the passing-run floor.",
       "action": "Use existing harness, identical arguments and final frozen ELF for S3attempt002 once, then D. No product change, refreeze or blocked-cell retry."
     }
-  ]
+  ],
+  "campaign_closed_at_utc": "2026-10-18T04:31:10.214326+00:00",
+  "next_campaign": null
 }

@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "protocol": "lossless-gzip-v1",
+  "scope": "Closed owned resource evidence only; no active traffic or fixture changes; no effective-load time credit",
+  "uncompressed_name": "resources.jsonl",
+  "uncompressed_bytes": 2464397,
+  "uncompressed_sha256": "c5f01d4e4cbc6aac7c830bd2820ce29d5ba6a25a9e2496ed6bcd4d72f8e7d7a4",
+  "uncompressed_mode": 384,
+  "uncompressed_mtime_ns": 1792297569517979681,
+  "compressed_name": "resources.jsonl.gz",
+  "compressed_bytes": 252505,
+  "compressed_sha256": "b1a42a94381533aecc791c4bdcaf330f0f6e1fdf18cfd1adf115426ceb6e1058",
+  "restoration": "Decompress this file to a fresh regular resources.jsonl, verify its SHA256 and size, then restore the recorded mode/mtime before readers that require the original path.",
+  "helper_sha256": "e8068ba41e352e90b59830d0901d59a2292658f57589713eab094604513d851a",
+  "elapsed_seconds": 0.01930072499999369,
+  "actual_released_bytes": 2211840
+}

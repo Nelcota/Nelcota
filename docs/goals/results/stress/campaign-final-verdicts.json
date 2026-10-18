@@ -1,0 +1,383 @@
+{
+  "status": "campaign closed without G05 approval",
+  "certifies_g05": false,
+  "closed_at_utc": "2026-10-18T04:31:10.214326+00:00",
+  "redirect_started_at_utc": "2026-10-17T21:27:36+00:00",
+  "deadline_utc": "2026-10-19T03:27:36Z",
+  "redirect_wall_clock_seconds": 25414.214326,
+  "source_commit": "5b2b2a49f60274456e84fc027fd3e401fd64e417",
+  "binary_sha256": "b59d2c15fcf12d90e0ad01b13f5bbaa73c73eabe9a302d9a05186b26c15c630e",
+  "freeze_count": 1,
+  "no_refreeze": true,
+  "production_pr": 91,
+  "production_pr_ordinary_checks_passed": 18,
+  "production_pr_state": "OPEN ready for review; not merged",
+  "draft_evidence_pr": 90,
+  "cells": [
+    {
+      "cell": "a",
+      "name": "Restore-fencing guest reboot",
+      "verdict": "failed",
+      "evidence": "native-reboot-converged-verdict.json",
+      "reason": "P12: app, PostgreSQL and authenticated API reopened before explicit recovery; controlled rows preserved and authorization canaries passed."
+    },
+    {
+      "cell": "b",
+      "name": "Continuous four-hour disk endurance",
+      "verdict": "passed",
+      "evidence": "disk-converged-final-001.json",
+      "effective_load_seconds": 18690,
+      "continuous_endurance_seconds": 14400,
+      "comparable_workloads_passed": 8
+    },
+    {
+      "cell": "c",
+      "name": "Continuous four-hour real S3 endurance",
+      "verdict": "failed",
+      "evidence": "s3-converged-final-002-failed.json",
+      "prior_attempt_evidence": "s3-converged-final-001-platform-interruption.json",
+      "continuous_endurance_seconds": 0,
+      "reason": "First attempt interrupted by environment reboot; one bounded infrastructure retry stopped on sampler fork EAGAIN before endurance. No further retry."
+    },
+    {
+      "cell": "d",
+      "name": "Single faults under load",
+      "verdict": "passed",
+      "evidence": "fault-converged-final-001.json",
+      "effective_load_seconds": 1580,
+      "acknowledged_missing": 0,
+      "unknown_or_corrupt": 0
+    }
+  ],
+  "environment_blocked_cells": [
+    {
+      "cell": "Off-host restore",
+      "verdict": "blocked (environment)",
+      "reason": "No independently provisioned recovery host and approved private backup transfer path",
+      "required_staging_profile": "Two independently isolated hosts, separately owned storage and verified encrypted backup transport; a fresh recovery database/file target with capacity for the original dataset plus backup/restore temporary space and the 15% disk/inode and 10% RAM reserves. Record unchanged RPO/RTO, credentials and checksum/row/file reconciliation before starting.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    },
+    {
+      "cell": "Real WAL/PITR with pgBackRest/S3",
+      "verdict": "blocked (environment)",
+      "reason": "No configured real WAL archive/repository and recovery target",
+      "required_staging_profile": "Dedicated PostgreSQL 17/systemd host with real pgBackRest, verified-TLS S3 repository and generated fixture credentials; independent fresh restore target, continuous timestamped acknowledged-write ledger, retained base backups/WAL and enough bounded repository/target disk for the complete replay window plus reserves. The marker-only error adapter is not a substitute.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    },
+    {
+      "cell": "Public DNS/ACME/TLS",
+      "verdict": "blocked (environment)",
+      "reason": "No owned public staging hostname, DNS control and reachable ACME ingress",
+      "required_staging_profile": "Dedicated public staging address and domain with narrowly scoped DNS credentials, verified authority/provenance, ports 80/443 available and bounded traffic; disposable Caddy/ACME certificate lifecycle, renewal/reload tests and unchanged TLS validation. A local CA is not public ACME evidence.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    },
+    {
+      "cell": "ARM64",
+      "verdict": "blocked (environment)",
+      "reason": "No native ARM64 staging runner",
+      "required_staging_profile": "Dedicated Linux ARM64 machine with Docker/systemd as applicable, compatible pinned toolchain and native provider/generator images; at least the original effective CPU slots (3 disk/4 S3), measured per-component RAM/disk budgets and original reserves. Emulation does not satisfy the native architecture cell.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    },
+    {
+      "cell": "Separate load-generator machine",
+      "verdict": "blocked (environment)",
+      "reason": "No independently isolated generator host/network measurement path",
+      "required_staging_profile": "Dedicated target host plus separate generator machine and controlled network; generator capacity above the declared offered load, measured saturation/drops/steal and network limits, TLS enabled, synchronized metadata and monotonic local measurements. Co-located CPU affinity is not off-host capacity evidence.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    },
+    {
+      "cell": "Ten-project host topology",
+      "verdict": "blocked (environment)",
+      "reason": "Current disk cannot fit the declared physical fixtures and root reserve",
+      "required_staging_profile": "Disposable host with ten independent project PostgreSQL/file/JWT fixtures at the original sizes, provider and proxy as applicable, declared aggregate CPU/RAM plus OS/controller/generator headroom. The last projection required 16,062,994,022.4 free bytes including reserve; provision additional physical disk headroom for telemetry, WAL, temporary files and full-run growth before admission. Do not delete caches, shrink fixtures, oversubscribe silently or retry on this host.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    },
+    {
+      "cell": "24-hour rehearsal",
+      "verdict": "blocked (environment)",
+      "reason": "No separately reserved uninterrupted 24-hour staging window compatible with the remaining ordered campaigns and hard deadline",
+      "required_staging_profile": "Dedicated disposable host, independent observer/watchdog and resource/storage reservation for 24 uninterrupted measured hours plus preparation and safe cleanup; original traffic, SLOs, reserves, recovery and evidence retention. Short campaigns cannot be added together to claim this cell.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    },
+    {
+      "cell": "Power loss beyond VM process cuts",
+      "verdict": "blocked (environment)",
+      "reason": "No isolated physical power/storage fault apparatus",
+      "required_staging_profile": "Dedicated nonproduction hardware or equivalently controlled infrastructure exposing real host/storage power interruption, independently durable acknowledged-write witness and diagnostics, externally controlled recovery/power cycle and restore material. QEMU process/RAM cuts do not prove controller-cache or physical-media durability.",
+      "workarounds_authorized": false,
+      "retry_authorized": false
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "number": 1,
+      "criterion": "Coverage inventory, immutable baseline and SLOs",
+      "verdict": "passed",
+      "evidence_or_limit": "Inventory and manifests exist; all mandatory cells retain explicit limits."
+    },
+    {
+      "number": 2,
+      "criterion": "Generator calibration, units, sampling and evidence gates",
+      "verdict": "passed",
+      "evidence_or_limit": "Disk qualification400iter/s; fault qualification64iter/s; closed counters and unchanged observation gates. S3 observation failed visibly."
+    },
+    {
+      "number": 3,
+      "criterion": "Cancellation, watchdogs, redaction and owned teardown",
+      "verdict": "passed",
+      "evidence_or_limit": "Executed profiles stopped on limits and cleaned owned fixtures; platform-reboot attempt required separately recorded external cleanup."
+    },
+    {
+      "number": 4,
+      "criterion": "Two independent final steady/staircase/spike/rest passes",
+      "verdict": "not run",
+      "evidence_or_limit": "Only one final disk campaign completed; historical other-artifact runs do not satisfy this gate."
+    },
+    {
+      "number": 5,
+      "criterion": "All capability/security/concurrency matrix cells",
+      "verdict": "not run",
+      "evidence_or_limit": "Broader cells remain unexecuted under the convergence directive."
+    },
+    {
+      "number": 6,
+      "criterion": "1/5/10-project isolation/fairness/controller",
+      "verdict": "blocked (environment)",
+      "evidence_or_limit": "Ten-project disk/reserve profile unavailable; five-project historical failures remain open."
+    },
+    {
+      "number": 7,
+      "criterion": "Final four-hour disk and S3 endurance",
+      "verdict": "failed",
+      "evidence_or_limit": "Disk14400s passed; S3 zero endurance seconds credited."
+    },
+    {
+      "number": 8,
+      "criterion": "Faults, recovery, restore and deployment",
+      "verdict": "failed",
+      "evidence_or_limit": "Local single faults passed, but native restore-fencing failed; off-host/PITR/public deployment blocked."
+    },
+    {
+      "number": 9,
+      "criterion": "Resource ownership, integrity and regression gates",
+      "verdict": "failed",
+      "evidence_or_limit": "Disk/fault integrity passed; S3 observation gate failed and full allocator ownership attribution remains open."
+    },
+    {
+      "number": 10,
+      "criterion": "All confirmed defects fixed with regressions",
+      "verdict": "failed",
+      "evidence_or_limit": "Eleven of twelve confirmed production defects fixed; P12 intentionally left open by convergence policy."
+    },
+    {
+      "number": 11,
+      "criterion": "Affected Rust/UI/SDK/native lint and ordinary CI on tested SHA",
+      "verdict": "passed",
+      "evidence_or_limit": "PR91 source5b2b2a4 has18/18 successful ordinary checks, re-observed2026-10-18T04:28UTC; native runtime fencing remains a separate failed cell."
+    },
+    {
+      "number": 12,
+      "criterion": "Final report, sizing limits and failures/blocks/unrun work",
+      "verdict": "passed",
+      "evidence_or_limit": "This closure records all four ordered cells, eight unchanged environment blocks, open findings and unexecuted original gates."
+    }
+  ],
+  "full_matrix": {
+    "auth": {
+      "area": "Authentication and independent consumers",
+      "verdict": "not run",
+      "scope": "Login/refresh and negative probes passed only within disk workload; full recovery/link/two-consumer stress not run.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "rest": {
+      "area": "REST, RPC, RLS and statistics",
+      "verdict": "not run",
+      "scope": "100k-row disk subset passed; complete 1M-row/RPC/statistics matrix not run on final artifact.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "mutations": {
+      "area": "Concurrent mutations and ambiguous replies",
+      "verdict": "passed",
+      "scope": "Bounded local atomic-transfer, contention, invalid/duplicate input, deadlock and ambiguous/lost-COMMIT ledger profile passed.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "catalog": {
+      "area": "Catalog, DDL and refresh recovery",
+      "verdict": "not run",
+      "scope": "Full concurrent DDL/migration/refresh recovery not run.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "disk": {
+      "area": "Disk bytes, quotas, collisions and paths",
+      "verdict": "not run",
+      "scope": "Small-object four-hour endurance and owned ENOSPC passed; full Unicode/path/collision/large/slow-client matrix not run.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "s3": {
+      "area": "Real S3-compatible storage and multipart",
+      "verdict": "failed",
+      "scope": "Endurance did not begin; provider restart/pause subset in D passed, multipart/long endurance not approved.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "webhooks": {
+      "area": "Signatures, committed identities, queue and retries",
+      "verdict": "not run",
+      "scope": "259229signed identities reconciled in disk endurance; full retry/key-change/lease matrix not run.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "admin": {
+      "area": "SQL/export admission and cancellation",
+      "verdict": "not run",
+      "scope": "Focused SQL/export cancellation regressions passed in ordinary source CI; full concurrent stress cell not run.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "browser": {
+      "area": "Panel tabs, request lifetime and retained resources",
+      "verdict": "not run",
+      "scope": "HTTP panel workload is not browser feedback/timer/listener stress; no final browser campaign.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "sdks": {
+      "area": "TypeScript/Rust SDK runtime, cancellation and refresh",
+      "verdict": "not run",
+      "scope": "Focused SDK regressions passed; full frozen-artifact runtime/browser stress not run.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "topologies": {
+      "area": "Independent 1/5/10-project capacity and fairness",
+      "verdict": "blocked (environment)",
+      "scope": "One-project disk subset passed; ten projects blocked; historical five-project fairness failures remain.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "management": {
+      "area": "Concurrent host management, durable receipts and limits",
+      "verdict": "not run",
+      "scope": "Full lifecycle/receipt/admission-limit stress not run.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "updates": {
+      "area": "Update activation, interruption and compatibility",
+      "verdict": "not run",
+      "scope": "Full activation/interruption/compatibility stress not run.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "backup": {
+      "area": "Local paired snapshots and restored integrity",
+      "verdict": "passed",
+      "scope": "Local pg_dump under writers, fresh target, accounting/token/immutable-file checks passed; intentional snapshot rewind is explicitly bounded.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "hostile": {
+      "area": "Malformed inputs, churn and ingress policy",
+      "verdict": "not run",
+      "scope": "Input400/403/401 subset passed; complete malformed/slow/churn/ingress stress not run.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "deployment": {
+      "area": "Public DNS/ACME/TLS, native systemd and power loss",
+      "verdict": "failed",
+      "scope": "Final guest reboot fence failed P12; public TLS and physical power loss remain blocked.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "offhost": {
+      "area": "Off-host restore, external cloud provider and PITR",
+      "verdict": "blocked (environment)",
+      "scope": "No off-host restore or real WAL/PITR attempt; staging profiles remain required.",
+      "evidence": "campaign-final-verdicts.json"
+    },
+    "arm64": {
+      "area": "Separate ARM64 operating envelope",
+      "verdict": "blocked (environment)",
+      "scope": "No native ARM64 staging host; no retry/workaround.",
+      "evidence": "campaign-final-verdicts.json"
+    }
+  },
+  "effective_load_accounting": {
+    "historical_nonoverlapping_floor_seconds": 162324,
+    "final_disk_seconds_excluding_warmup": 18690,
+    "final_fault_seconds": 1580,
+    "final_passing_profiles_seconds": 20270,
+    "conservative_combined_floor_seconds": 182594,
+    "combined_floor_hms": "50h43m14s",
+    "S3_partial_closed_seconds_preserved_but_not_added": {
+      "attempt001": 510,
+      "attempt002": 810
+    },
+    "continuous_final_disk_seconds": 14400,
+    "continuous_final_S3_seconds": 0,
+    "scope": "Preparation/warmup/idle/incomplete intervals excluded; no remote overlap credited. Historical elapsed time does not certify the final artifact or replace S3/two-pass gates."
+  },
+  "confirmed_production_defects": 12,
+  "fixed_production_defects": 11,
+  "open_findings": [
+    {
+      "id": "P12",
+      "status": "open",
+      "classification": "confirmed product defect",
+      "evidence": [
+        "native-pitr-boot-persistence-confirmed-001.json",
+        "native-reboot-converged-final-001.json"
+      ]
+    },
+    {
+      "id": "O1",
+      "status": "open",
+      "classification": "unexplained historical failure",
+      "evidence": [
+        "native-final007-startup-reproductions-001/index.json"
+      ]
+    },
+    {
+      "id": "O2",
+      "status": "open",
+      "classification": "unexplained historical SLO failure",
+      "evidence": [
+        "browser-sdk007-refresh-slo-first-failure-001.json"
+      ]
+    },
+    {
+      "id": "O3",
+      "status": "open",
+      "classification": "historical fairness failures",
+      "evidence": [
+        "fleet-5-sharing-final-pass-1.json",
+        "fleet-5-sharing-smoke-findings.json"
+      ]
+    },
+    {
+      "id": "O4",
+      "status": "open",
+      "classification": "resource attribution incomplete",
+      "evidence": [
+        "disk-final007-pass-1-001.json"
+      ]
+    },
+    {
+      "id": "O5",
+      "status": "open",
+      "classification": "unexplained pre-convergence installation/fixture durability observation",
+      "evidence": [
+        "native-reboot-preconvergence-fixture-diagnostic.json"
+      ]
+    },
+    {
+      "id": "O6",
+      "status": "open",
+      "classification": "resource observation failure; cause unconfirmed",
+      "evidence": [
+        "s3-converged-final-002-failed.json"
+      ]
+    }
+  ],
+  "critical_exception_observed": false,
+  "all_started_local_fixtures_cleanup_confirmed": true,
+  "next_campaign": null,
+  "stop_reason": "All four ordered steps have a final verdict; no further scope, fixes, retries or refreezes. G05 approval remains withheld."
+}

@@ -1,15 +1,15 @@
 # G05 — Registro técnico da execução
 
-Status: em execução, G05 sem aprovação. O checkpoint conservador 020 registra
-45h05min24s de intervalos de carga efetiva concluídos. O mínimo de oito horas
-foi atingido; um décimo primeiro defeito PITR foi reproduzido e corrigido.
-O candidato008 foi construído; suas campanhas afetadas ainda precisam executar. O relatório em português contém a situação atual dos 12 critérios.
-As passagens históricas de quatro horas com contadores incompletos continuam
-sem aprovação. O baseline posterior em disco passou no protocolo corrigido;
-a primeira passagem final007 em disco também passou, com oito comparações equivalentes.
-S3 parcial007 encerrou com limpeza; o novo008 exige repetição. Preparação, aquecimento, espera, descanso,
-fases interrompidas e tempo remoto sobreposto não contam no checkpoint.
-Resultados históricos abaixo mantêm a fonte, o escopo e as falhas originais.
+Status: campaign closed without G05 approval at 2026-10-18T04:31:10.214326+00:00.
+The [final Portuguese report](stress-verification-report.pt-BR.md) and
+[structured verdicts](results/stress/campaign-final-verdicts.json) are current.
+Four ordered steps ended failed/passed/failed/passed; eight environment cells
+remain blocked without retries. One artifact/source 5b2b2a4/B59 was frozen once.
+No merge/deploy,post-freeze product fix or further campaign is authorized by
+this execution record. Historical entries below retain their original artifacts
+and dates; earlier pending wording does not supersede the final closure.
+Effective-load lower bound 182,594seconds excludes warmup/idle/preparation and
+remote overlaps; only disk completed final four-hour endurance,S3 did not.
 
 ## Identidade e ambiente
 
@@ -4104,3 +4104,20 @@ or fixture directory. Raw counter825seconds includes15warmup;810non-warmup
 seconds of closed phases survive, but zero seconds of S3 endurance are
 credited. The final four-hour S3 criterion is failed/unapproved.
 Next: only the predeclared existing single-fault campaign, once, then report.
+
+## Final ordered fault campaign and closure — 2026-10-18T04:31:10.214326+00:00
+
+`fault-converged-final-001` passed,owner exit0,1,580closed traffic seconds,
+312resource samples/max gap13.246875s,no resource violations and cleanup
+confirmed.58,826ACKs and3,266discarded real COMMIT replies reconcile with
+zero missing/corrupt entries and no automatic mutation retry. Local restore
+RTO2.529777s/RPO upper bound18.000557s;867rows are intentional snapshot
+rewind on a fresh target,not source ACK loss. Source invariants remain whole.
+
+The four final cells have verdicts failed/passed/failed/passed. Original
+thresholds,two-pass and broad matrix requirements are unchanged and unapproved
+where incomplete. All eight environment-blocked profiles remain unretried.
+No new product defect was fixed or refrozen. P12 and observationsO1..O6 remain
+open. No critical exception was observed. The campaign is stopped; no further
+campaign,workaround or retry follows this report. G06 remains planned pending
+its required merged-main baseline; it is not G05 scope or review coverage.

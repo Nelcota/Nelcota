@@ -1,0 +1,24 @@
+{
+  "certifies_g05": false,
+  "scope": "Preparation/warmup/idle/incomplete intervals excluded; no remote overlap credited. Historical elapsed time does not certify the final artifact or replace S3/two-pass gates.",
+  "historical_nonoverlapping_floor_seconds": 162324,
+  "final_disk_seconds_excluding_warmup": 18690,
+  "final_fault_seconds": 1580,
+  "final_passing_profiles_seconds": 20270,
+  "conservative_combined_floor_seconds": 182594,
+  "combined_floor_hms": "50h43m14s",
+  "S3_partial_closed_seconds_preserved_but_not_added": {
+    "attempt001": 510,
+    "attempt002": 810
+  },
+  "continuous_final_disk_seconds": 14400,
+  "continuous_final_S3_seconds": 0,
+  "prior_checkpoint": "load-time-checkpoint-020.json",
+  "new_passing_runs": [
+    "disk-converged-final-001",
+    "fault-converged-final-001"
+  ],
+  "effective_load_lower_bound_seconds": 182594,
+  "minimum_eight_hours_reached_globally": true,
+  "eight_hours_final_endurance_reached": false
+}
