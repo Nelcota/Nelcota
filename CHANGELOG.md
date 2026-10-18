@@ -27,6 +27,10 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Persist a PITR recovery fence before data-directory changes, blocking native
+  and Docker service startup across CLI exit, daemon restart and host reboot.
+  Release it only through verified restore promotion or explicit `pitr recover`;
+  see [backup recovery](docs/backup.md#pitr-recovery-fence).
 - Bind native app subprocesses to their project directory so migrations from
   the host's cwd or `NELCOTA_ROOT` do not reacquire their parent's host lease.
 - Resolve the host directory before generating native systemd configuration,

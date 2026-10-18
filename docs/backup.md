@@ -179,12 +179,10 @@ nelcota -p shop pitr disable                                   # stops archiving
   database continues on a new timeline that older backups cannot serve.
 - Recovery is destructive. Some configuration/archive problems are rejected
   early, but an unreachable target can be detected during WAL replay after
-  files were restored. PostgreSQL may remain stopped or in recovery; inspect
-  status/logs and retry with a covered target. Do not assume the old database
-  is unchanged or automatically restored. If pgBackRest's file-restore command
-  fails, the CLI keeps PostgreSQL and the app stopped: a nonzero exit does not
-  prove that the data directory is untouched. Verify recovery before starting
-  services.
+  files were restored. Before changing data, the CLI persists a recovery fence
+  outside the data directory. An error or interrupted restore retains it across
+  CLI exit, service restart and machine reboot. Do not assume the old database
+  is unchanged or automatically restored. Use the explicit recovery steps below.
 - Projects created before PITR are updated by `enable`: Postgres switches to
   the image built from `postgres/Dockerfile` and gets an `egress` network to
   reach S3 (the `internal` network has no way out). If `docker-compose.yml`
@@ -192,6 +190,78 @@ nelcota -p shop pitr disable                                   # stops archiving
 
 The acceptance test (`scripts/acceptance-pitr.sh`) runs the whole cycle
 against a local S3 server with TLS.
+
+### PITR recovery fence
+
+This is an Unreleased source capability; use a matching CLI and app artifact.
+Docker refuses a restore before changing data if the app image does not support
+the guard. Custom entrypoints, app commands or data-directory locations require
+reviewed integration; they are refused rather than silently left unprotected.
+
+The durable fence is `active.json` (or a partially committed `recovery.json`)
+under `/var/lib/nelcota-pitr/` on systemd, or
+`projects/<project>/pitr-fence/` on Docker. It records the owning project and
+directory. It has no timeout and is never removed at boot. Do not delete these
+files, move the host directory, bypass entrypoints or disable the start guards.
+
+Native PostgreSQL and app units check the fence in `ExecStartPre`, including
+boot, manual `systemctl start` and cluster starts redirected through systemd.
+The CLI refuses `up`, service starts/restarts and direct serving while fenced.
+Each refusal identifies the fence and recovery command; systemd records its
+message in the service journal. A refused unit can be `failed` with PID zero.
+
+Docker removes old containers without removing their data volumes before any
+restore writes. The fenced Compose file mounts the state read-only and guards
+both entrypoints; its restart policy is temporarily `no`. This prevents old
+`unless-stopped` or `always` containers from reopening after a daemon or host
+restart. A manual container start still exits at the guard, even if its restart
+policy is changed. Docker starts asynchronously: inspect its exit status and
+logs, not only the exit code of `docker start`. Successful recovery restores
+the exact original Compose file and `up` applies its original restart policies.
+
+Inspect the fence and preserve the failed restore's diagnostics:
+
+```sh
+nelcota -C /opt/nelcota -p shop pitr status
+# Native service diagnostics:
+sudo journalctl -u postgresql@17-main -u nelcota-shop -n 60 --no-pager
+```
+
+When files may have been replaced or WAL recovery was interrupted, retry a
+restore with a target covered by the archive. This explicit operation keeps
+ordinary starts fenced while a temporary recovery-only PostgreSQL instance
+replays WAL, without a TCP listener or autostart. Only verified promotion and
+a stopped recovery instance release the fence:
+
+```sh
+sudo nelcota -C /opt/nelcota -p shop pitr restore --time "2026-10-07 14:30:00+00" --yes
+```
+
+To intentionally retain the current directory, first establish from the error
+and backup history that retaining it is appropriate. Then run verification:
+
+```sh
+sudo nelcota -C /opt/nelcota -p shop pitr recover --yes
+sudo nelcota -C /opt/nelcota -p shop up
+nelcota -C /opt/nelcota -p shop status
+```
+
+`recover` stops any owned leftover recovery instance, requires a cleanly stopped
+PG17 directory without recovery signals or a backup label, verifies the control
+file and enabled page checksums, then checks heaps, TOAST and B-tree indexes
+with `pg_amcheck` using at most two parallel workers. It can install the missing `amcheck`
+extension in `pg_catalog`. This temporary PostgreSQL instance has no TCP
+listener and cannot autostart; ordinary services remain blocked. After a clean
+stop, the offline checks run again before the fence is durably cleared.
+`--yes` skips the question, never verification. Failed checks retain the fence;
+use a covered restore instead of removing it manually.
+
+These checks cannot prove application-level correctness, preservation of every
+acknowledged write or byte identity when checksums were disabled. Reconcile
+data with your verified backup/history. After starting, verify an authorized
+read, another user's RLS isolation, anonymous rejection and a private-file 404
+before reopening external traffic. Recovery checks do not replace an off-host
+restore rehearsal or paired file recovery.
 
 ## Troubleshooting
 
