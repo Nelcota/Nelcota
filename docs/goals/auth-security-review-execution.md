@@ -1,5 +1,127 @@
 # G06 — Authentication security review execution record
 
+Status: authorized resolution follow-up. Five public findings are integrated;
+two High findings have fixes prepared privately. Release publication remains
+held. This source review is not a production acceptance or external audit.
+
+The current ledger below supersedes the original open/ready statuses. The
+original bounded review, measurements and authorization are preserved verbatim
+in the archived section; they describe their original time and artifact.
+
+## Authorized resolution ledger
+
+| Finding | Severity | Current status |
+|---|---|---|
+| G06-F01 | High | details withheld, fix prepared privately |
+| G06-F02 | Medium | Merged in [#102](https://github.com/Nelcota/Nelcota/pull/102): optional nbf/iat validation with 30-second leeway; issuer/audience remain informative. |
+| G06-F03 | Medium | Merged in [#99](https://github.com/Nelcota/Nelcota/pull/99): bound account verification inputs before pool/hash admission. |
+| G06-F04 | Low | Merged in [#100](https://github.com/Nelcota/Nelcota/pull/100): redact adapter/configuration diagnostics. |
+| G06-F05 | High | details withheld, fix prepared privately |
+| G06-F06 | Medium | Merged in [#101](https://github.com/Nelcota/Nelcota/pull/101): clear pending SDK OAuth state on sign-out. |
+| G06-F07 | Medium | Merged in [#103](https://github.com/Nelcota/Nelcota/pull/103): explicitly authorized account/source limit plus bounded-delay alternative; the old strict aggregate ceiling is not retained. |
+
+Every merge used squash after an independent review pass, an ordinary merge of
+current main into its branch where needed, and all **17 applicable ordinary
+checks passing on the exact head**. No protection/check bypass or history rewrite
+was used. The five merged remote branches were deleted; no unrelated branch,
+issue, repository setting or workflow was changed by this follow-up.
+
+| PR | Reviewed/up-to-date head (17 successful checks) | Squash merge |
+|---|---|---|
+| #99 | `e388912e72f52b9f7f7791644080415817ac733c` | `27a01afb05c3bdd458390347b6bdaa467791df82` |
+| #100 | `a8be69a9171d454c5104af8c0c33bfc7d7f69935` | `228218989e773104d659d0d47a8e9394ed478403` |
+| #101 | `992a309e93dce2b64c8a6146c53ac3fdcd28851f` | `c249e4237950d852b13ae182d6a89c88b23e2b95` |
+| #102 | `ae464ecec15f6de053dc11456713b1a308f0c5bb` | `098d28c7e62389ea5ed2631d3031fe3caf5d1bec` |
+| #103 | `75ea5996a1ff2952ddfa708d53520c42994816c1` | `4387592eafd56818d3093d590867fde2fb542ad5` |
+
+Native presets were not triggered by their unchanged path filter and are not
+counted as a passed eighteenth check. Public main after these merges is
+`4387592eafd56818d3093d590867fde2fb542ad5`; its post-merge CI is a separate run.
+
+## Public before/after evidence and decisions
+
+- Independent repetitions confirm #99's two old-source admission failures and
+  supported-input control; all three pass after correction. An initial shared
+  compilation-cache result was excluded and the old source was recompiled.
+- #100's four diagnostic assertions fail on old source; all 64 owning-library
+  tests pass after correction. #101's four original cleanup assertions fail on
+  old source; all 118 related tests, type checking and deterministic guide
+  rebuild pass on its updated branch. SDK gzip budgets remain unchanged.
+- F02: the old key tests have three expected failures and the REST regression
+  fails because the request is accepted. After correction/current-main update:
+  47 auth unit tests, the HTTP regression and all 10 RLS tests pass, with Clippy
+  and 37 guide tests. The exact inclusive +30/+31-second boundary is checked.
+  Built-in raw-payload and request verification share this policy; SDKs do not
+  become cryptographic JWT validators. `iss`/`aud` remain informative by the
+  maintainer's explicit decision.
+- F07: both final regressions fail on unchanged old production source. After
+  correction/current-main update: 49 auth units and 32 related HTTP tests pass,
+  with Clippy and 37 guide tests. The initial forwarded-header fixture was
+  invalid while proxy trust was off; it was replaced by actual connection
+  metadata and rerun before changing production code.
+- F07's strict aggregate-ceiling requirement is **not claimed as passed**. An
+  unrecognized legitimate source cannot be distinguished from another attacking
+  source before password verification. The maintainer explicitly allowed this
+  fallback: hard IP/account-source burst/refill quotas (default 30), plus account
+  delay of 125/250/500/1,000/2,000 ms, capped at two seconds. Distributed sources
+  can exceed the former aggregate ceiling. The bound is throttle delay, not a
+  total-latency/SLO promise under worker, store-capacity or other overload.
+  Single-source quotas, Argon2 parameters, worker admission/deadlines and
+  fail-closed key capacity are unchanged. Sleeps own no pool/hash slot.
+- EN/PT auth guidance documents the trade-off, shared NAT/per-process limits
+  and SMTP-disabled operator recovery: verify identity through a trusted
+  separate channel, reset through the project panel, block abuse at ingress,
+  use an independent source or allow up to 60 seconds without new attempts for
+  full refill. A password reset does not erase throttle buckets.
+- #103's initial `367720be68206a0f0aac454476ae682f350818d6` failed CodeQL with
+  four literal test-password alerts. Generated disposable credentials and the
+  final main update pass CodeQL without suppression or changed thresholds.
+  The failed run is retained, not relabeled as passed.
+- Rust/Vitest/audit runs in this follow-up are sequential, with four Cargo jobs
+  and two Rust test threads. Only disposable local fixtures are used.
+
+## Release preparation and remaining gates
+
+[PR #104](https://github.com/Nelcota/Nelcota/pull/104) is a **draft** preparation
+of server/core/auth 0.5.0, TypeScript SDK 0.2.0 and Rust SDK 0.1.3. It must wait
+for coordinated integration and final validation. Only approved neutral release
+wording is public for deferred security work. No such implementation, regression
+or reproduction is included in the public release PR or this record.
+
+The independent TypeScript minor candidate accounts for required native
+IndexedDB and wider generated numeric/array types. Rust retains Rust 1.88+ and
+server 0.3.0+ compatibility. Workspace registry versions/checksums are unchanged;
+the new consumer lock preserves the same registry entries. SDK/source version
+metadata is not registry publication.
+
+At exact public candidate `070cf10ae34060a2101b884be820f70ba53854a7`, local
+TypeScript checks pass 212 unit + 15 type tests, package installation and runtime
+smoke; auth gzip is 11,246/11,250 B. Rust SDK checks pass 31 tests + 10 doctests,
+plus 7 real-server HTTP/Postgres contracts. Catalog validation and 37 guide tests
+pass; generated guide assets are a separate commit.
+
+Native Notes acceptance passed **twice**, six functional groups per run, on
+PostgreSQL 17.11 with the same binary SHA-256
+`69e3161a891511ac7fc546c1fa8e01a197a66e3ac2258eb28892ae03caea6f15`.
+Its bytes were rechecked after each run; owned containers and volumes were
+removed. These are public-candidate acceptance checks, not a new stress soak or
+certification of deferred integration.
+
+Local browser acceptance is **blocked (environment)**: executables are absent
+and Playwright's CDN download returned HTTP 403 Domain forbidden. No alternate
+download/proxy bypass was attempted. Ordinary CI browser checks remain required;
+the locally blocked check is not counted as passed. Real OAuth/mail and public
+TLS/VPS acceptance remain outside the available fixtures. Historical G05
+measurements are not relabeled as 0.5.0 results.
+
+Follow-up started at 2026-10-18 19:56:28 UTC. Its six-hour checkpoint is due
+2026-10-19 01:56:28 UTC and hard budget ends 2026-10-19 11:56:28 UTC. The record
+and release PR remain draft until publication. No tag, GitHub Release object,
+SDK package publication, production deployment or public High patch is made.
+
+<details>
+<summary>Original bounded review — completed 2026-10-18 19:17:58 UTC</summary>
+
 Status: completed with open findings. This bounded source review is not an external audit,
 penetration test, compliance certification or production acceptance.
 
@@ -207,3 +329,5 @@ only to the private maintainer task response; no public patch is implied.
 No G05 campaign, VM probe, production action, new dependency or migration ran.
 The execution PR remains draft. Release preparation is private and publishes
 no version, tag or release artifact.
+
+</details>
