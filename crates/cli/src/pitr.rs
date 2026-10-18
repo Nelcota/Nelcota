@@ -13,8 +13,10 @@
 
 mod commands;
 mod config;
+pub(crate) mod fence;
 mod restore;
 pub use config::{enabled, write_dockerfile};
+pub(crate) use fence::recover;
 pub use restore::restore;
 
 use crate::{
@@ -30,6 +32,7 @@ const HEALTH_TIMEOUT: Duration = Duration::from_secs(120);
 
 /// Turns WAL archiving on and takes the first full backup.
 pub fn enable(host: &Host, project: &Project) -> anyhow::Result<()> {
+    fence::require_clear(project)?;
     config::prepare(host, project)?;
     project.wait_healthy(Service::Postgres, HEALTH_TIMEOUT)?;
     pgbackrest(project, &["stanza-create"]).context("could not create the repository in S3")?;
@@ -59,6 +62,7 @@ pub fn enable(host: &Host, project: &Project) -> anyhow::Result<()> {
 
 /// Stops archiving. The backups already in S3 stay there.
 pub fn disable(project: &Project) -> anyhow::Result<()> {
+    fence::require_clear(project)?;
     if !enabled(project) {
         bail!("PITR is not enabled for {}", project.name);
     }
@@ -86,12 +90,19 @@ pub fn disable(project: &Project) -> anyhow::Result<()> {
 
 /// Backups and the WAL range the archive covers (`pgbackrest info`).
 pub fn status(project: &Project) -> anyhow::Result<()> {
+    let fenced = fence::status(project)?;
     if !enabled(project) {
         println!(
             "PITR is off for {}: nelcota -p {} pitr enable",
             project.name, project.name
         );
         return Ok(());
+    }
+    if fenced {
+        return crate::project::run(
+            &mut project.as_postgres_offline(&["pgbackrest", "--stanza=main", "info"]),
+            "pgbackrest info (offline)",
+        );
     }
     pgbackrest(project, &["info"])
 }

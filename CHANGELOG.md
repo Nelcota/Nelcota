@@ -27,6 +27,18 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Release Docker PITR fences with one atomic rename that restores original
+  Compose bytes while removing the final marker; keep interrupted recovery
+  retryable and reject symlinked, foreign-owned or unexpected fence paths.
+- Plain `up` is no longer PITR recovery: use `pitr recover` or a covered restore.
+  Docker PITR temporarily rewrites Compose and removes containers, not volumes.
+  Unsupported custom entrypoints/app commands/PGDATA and older app images are
+  refused; native recovery requires the matching installed binary.
+  `pitr recover` may install the missing `amcheck` extension in `pg_catalog`.
+- Persist a PITR recovery fence before data-directory changes, blocking native
+  and Docker service startup across CLI exit, daemon restart and host reboot.
+  Release it only through verified restore promotion or explicit `pitr recover`;
+  see [backup recovery](docs/backup.md#pitr-recovery-fence).
 - Bind native app subprocesses to their project directory so migrations from
   the host's cwd or `NELCOTA_ROOT` do not reacquire their parent's host lease.
 - Resolve the host directory before generating native systemd configuration,
