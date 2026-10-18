@@ -331,6 +331,7 @@ pub(crate) async fn update_user(
         .await
         .map_err(db_error)?;
     if new_hash.is_some() {
+        crate::db::retire_pending_credentials(&tx, user_id).await?;
         // Whoever signed in with the old password loses access; this
         // session continues.
         tx.execute(

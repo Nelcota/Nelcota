@@ -777,10 +777,9 @@ async fn recovery_of_a_confirmed_account_preserves_its_verified_provider_identit
             .body["code"],
         "invalid_grant"
     );
-    assert_eq!(
-        h.redeem(&pending["code"], VERIFIER).await.status,
-        StatusCode::OK
-    );
+    let stale = h.redeem(&pending["code"], VERIFIER).await;
+    assert_eq!(stale.status, StatusCode::BAD_REQUEST);
+    assert_eq!(stale.body["code"], "invalid_grant");
     assert_eq!(h.session().await["user"]["id"], owner.body["user"]["id"]);
     assert_eq!(
         password_login(

@@ -250,6 +250,13 @@ otherwise `401 invalid_token`. The response is the updated user, as in `GET
 /auth/v1/user`. Changing the email is not supported yet (it needs a
 confirmation of the new address); an administrator can change it in SQL.
 
+Password replacement through the signed-in account, recovery completion or
+panel administration retires that user's pending email credentials and OAuth
+codes in the same transaction. Existing token issuance history remains for
+email send cooldowns; unrelated accounts are unchanged. Account-row locking
+serializes replacement with credential redemption. A database error rolls
+back the password, session and pending-credential changes together.
+
 ## Password recovery
 
 Off until the project configures SMTP (Nelcota has no mail server of its own;
