@@ -38,8 +38,8 @@ mantido como rascunho para revisão.
 | Célula | Veredicto/estado | Evidência |
 |---|---|---|
 | a — fence de restore após reboot | **failed** | [Probe final](results/stress/native-reboot-converged-verdict.json): os mesmos bytes congelados; PostgreSQL, aplicação e API autenticada reabriram na primeira amostra, antes da recuperação explícita. Linhas preservadas, canários401/RLS0/arquivo404 e limpeza confirmados. P12 fica aberto, sem correção automática. |
-| b — disco contínuo, quatro horas | Em execução desde17/10,22:01UTC | Mesmo ELF; preparação/capacidade não substituem as quatro horas de endurance. |
-| c — S3 real contínuo, quatro horas | **not run**, aguardando disco | Provedor RustFS real, compatível com S3, no staging local; sem alegação de AWS ou WAL/PITR. |
+| b — disco contínuo, quatro horas | **passed** | [14.400s contínuos,18.705s de carga total, integridade e limpeza](results/stress/disk-converged-final-001.json); [oito comparações aprovadas](results/stress/disk-converged-final-001-comparison.json). |
+| c — S3 real contínuo, quatro horas | Em execução desde18/10,03:20UTC | Provedor RustFS real, compatível com S3, no staging local; sem alegação de AWS ou WAL/PITR. |
 | d — falhas simples sob carga | **not run**, aguardando S3 | Somente o perfil existente, uma falha por vez. |
 | Oito células operacionais declaradas | **blocked (environment)** | [Perfis necessários e proibição de retry/workaround](results/stress/campaign-convergence-policy.json). |
 

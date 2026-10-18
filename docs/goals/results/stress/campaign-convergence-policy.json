@@ -91,22 +91,32 @@
     },
     {
       "cell": "continuous four-hour disk endurance",
-      "status": "in progress",
+      "status": "passed",
       "phase": "continuous endurance",
       "requested_seconds": 14400,
       "soak_iterations_per_second": 280,
-      "start_checkpoint": "disk-converged-final-001-soak-start.json"
+      "start_checkpoint": "disk-converged-final-001-soak-start.json",
+      "evidence": "disk-converged-final-001.json",
+      "continuous_seconds": 14400,
+      "completed_load_seconds": 18705,
+      "baseline_comparison": "disk-converged-final-001-comparison.json",
+      "comparable_workloads_passed": 8,
+      "cleanup_confirmed": true
     },
     {
       "cell": "continuous four-hour real S3 endurance",
-      "status": "not run"
+      "status": "in progress",
+      "run_id": "s3-converged-final-001",
+      "started_at_utc": "2026-10-18T03:20:06.738217+00:00",
+      "requested_seconds": 14400
     },
     {
       "cell": "single faults under load",
       "status": "not run"
     }
   ],
-  "status": "guest reboot failed with cleanup; disk campaign starting on unchanged frozen artifact",
+  "status": "a failed; b passed with eight comparisons; c running; d not run",
   "certifies_g05": false,
-  "frozen_artifact_evidence": "campaign-final-artifact.json"
+  "frozen_artifact_evidence": "campaign-final-artifact.json",
+  "updated_at_utc": "2026-10-18T03:19:56.446837+00:00"
 }

@@ -4032,3 +4032,28 @@ and before/after process identities must establish completion. No product change
 rebuild or refreeze has occurred. The original zero-byte installation observation
 from diagnostic018also remains open asO5; syncing the owned fixture baseline for
 the fencing probe did not establish that installation durability is fixed.
+
+## Converged disk campaign closed — 2026-10-18T03:19:56.446837+00:00
+
+`disk-converged-final-001` passed on the one final immutable B59 ELF, source
+`5b2b2a49f60274456e84fc027fd3e401fd64e417`. Its single closed endurance
+interval is 14,400 seconds; total completed traffic is 18,705 seconds.
+Preparation, warmup and final 180-second idle are excluded. The owner exited0
+at03:19:00UTC with cleanup confirmed; no owned container or volume remains.
+All eight comparable workloads passed the unchanged p951.1/useful-throughput.9
+gates against `disk-final-pass-1-002`. Capacity qualification is a400iter/s
+lower bound at the declared ceiling; the endurance offered280iter/s.
+
+All six idle censuses have24FDs/4tasks/18sockets, zero stuck idle transactions
+and waiting locks. Final queue drain took0.075591s. There were zero OOMs;
+peak app RSS50,768KiB, soak peak48,356KiB, and maximum observation gap11.6s.
+259,229 unique events reconcile with zero missing/extra/duplicates;129 objects
+were verified and no unreferenced key was found. The read-only fixture census
+retained100,000public/100,000private rows and10,129storage metadata rows.
+Anonymous memory ownership is not fully attributed; O4 remains open. This is
+one local single-project campaign with small objects, not full G05 approval.
+
+Evidence: `disk-converged-final-001.json`, its comparison and verified lossless
+resource archive receipt under `results/stress/`. The raw resource series was
+compressed only after closure, with identical reconstruction checksum.
+Next: one real S3 campaign, then the existing single-fault profile.
