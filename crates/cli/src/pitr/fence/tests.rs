@@ -142,6 +142,143 @@ fn docker_custom_startup_is_rejected_before_an_unenforceable_fence() {
     }
 }
 
+fn reject_postgres_settings(settings: Vec<Value>, setting: &str) {
+    let root = tempfile::tempdir().unwrap();
+    let project = project(root.path(), Runtime::Docker);
+    let fence = Fence::new(&project).unwrap();
+    let mut accepted = Vec::new();
+    for postgres in settings {
+        let config = json!({"services":{"postgres":postgres,"app":{}}});
+        match docker::render_fixture(&fence, config) {
+            Ok(_) => accepted.push(postgres),
+            Err(error) => {
+                let message = error.to_string();
+                assert!(message.contains(setting), "{message}");
+                assert!(message.contains("supported"), "{message}");
+            }
+        }
+    }
+    assert!(
+        accepted.is_empty(),
+        "unsafe {setting} settings passed validation: {accepted:?}"
+    );
+    assert!(!project.path(STATE).exists());
+}
+
+#[test]
+fn docker_pgdata_command_overrides_are_refused() {
+    reject_postgres_settings(
+        [
+            json!(["postgres", "-D", "/other"]),
+            json!(["postgres", "-D/other"]),
+            json!(["postgres", "--pgdata", "/other"]),
+            json!(["postgres", "--pgdata=/other"]),
+        ]
+        .into_iter()
+        .map(|command| json!({"command":command}))
+        .collect(),
+        "services.postgres.command",
+    );
+}
+
+#[test]
+fn docker_data_directory_configuration_overrides_are_refused() {
+    reject_postgres_settings(
+        [
+            json!(["postgres", "-c", "data_directory=/other"]),
+            json!(["postgres", "-cdata_directory=/other"]),
+            json!(["postgres", "--data_directory=/other"]),
+        ]
+        .into_iter()
+        .map(|command| json!({"command":command}))
+        .collect(),
+        "services.postgres.command",
+    );
+}
+
+#[test]
+fn docker_config_file_overrides_are_refused() {
+    reject_postgres_settings(
+        [
+            json!(["postgres", "-c", "config_file=/other/postgresql.conf"]),
+            json!(["postgres", "-cconfig_file=/other/postgresql.conf"]),
+            json!(["postgres", "--config_file=/other/postgresql.conf"]),
+        ]
+        .into_iter()
+        .map(|command| json!({"command":command}))
+        .collect(),
+        "services.postgres.command",
+    );
+}
+
+#[test]
+fn docker_indeterminate_pgdata_environment_is_refused() {
+    reject_postgres_settings(
+        vec![
+            json!({"environment":{"PGDATA":null}}),
+            json!({"environment":["PGDATA=/other"]}),
+            json!({"environment":"PGDATA=/other"}),
+        ],
+        "services.postgres.environment",
+    );
+}
+
+#[test]
+fn docker_postgres_command_allowlist_refuses_unknown_forms_and_profile_changes() {
+    let mut settings: Vec<_> = [
+        json!([]),
+        json!("postgres"),
+        json!(false),
+        json!(["/bin/sh", "-c", "postgres"]),
+        json!(["postgres", "-c", "work_mem=5MB"]),
+        json!([
+            "postgres",
+            "-c",
+            "shared_preload_libraries=pg_stat_statements",
+            "-D",
+            "/other"
+        ]),
+    ]
+    .into_iter()
+    .map(|command| json!({"command":command}))
+    .collect();
+    for profile in ["1gb", "2gb", "4gb", "8gb"] {
+        let mut args = vec!["postgres".to_owned()];
+        for (key, value) in crate::scaffold::profile_settings(profile) {
+            args.extend(["-c".to_owned(), format!("{key}={value}")]);
+        }
+        args.extend(["-c".to_owned(), "config_file=/other".to_owned()]);
+        settings.push(json!({"command":args}));
+    }
+    reject_postgres_settings(settings, "services.postgres.command");
+}
+
+#[test]
+#[cfg(unix)]
+fn docker_default_and_all_generated_profile_commands_preserve_startup_arguments() {
+    let root = tempfile::tempdir().unwrap();
+    let project = project(root.path(), Runtime::Docker);
+    let fence = Fence::new(&project).unwrap();
+    for postgres in super::super::restore::tests::supported_postgres_settings() {
+        let rendered: Value = serde_json::from_slice(
+            &docker::render_fixture(&fence, json!({"services":{"postgres":postgres,"app":{}}}))
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            rendered["services"]["postgres"]["command"],
+            postgres["command"]
+        );
+        assert!(
+            rendered["services"]["postgres"]["entrypoint"][2]
+                .as_str()
+                .unwrap()
+                .contains("docker-entrypoint.sh")
+        );
+    }
+    assert!(!project.path(STATE).exists());
+}
+
 #[cfg(unix)]
 #[test]
 fn dangling_symlink_fences_fail_closed() {

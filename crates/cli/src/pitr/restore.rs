@@ -35,6 +35,7 @@ pub fn restore(project: &Project, time: Option<&str>, yes: bool) -> anyhow::Resu
         bail!("restore cancelled (use --yes to skip the question)");
     }
 
+    super::fence::preflight(project)?;
     step(&format!("Stopping {}", project.name));
     project.stop(&[Service::App, Service::Postgres])?;
     let fence = Fence::begin(project)?;

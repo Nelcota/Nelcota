@@ -13,6 +13,8 @@ const GUARDED: &str = "compose.guarded.json";
 const MOUNT: &str = "/nelcota-pitr-fence";
 const MOUNT_STATE: &str = "/nelcota-pitr-fence/pitr-fence";
 
+mod preflight;
+
 fn digest(bytes: &[u8]) -> String {
     Sha256::digest(bytes)
         .iter()
@@ -34,7 +36,7 @@ pub(super) fn arm(fence: &Fence<'_>) -> anyhow::Result<()> {
     }
     // Inspect the primary config without following links before invoking
     // Compose, even for its non-serving capability preflight.
-    let original = project_directory.read("docker-compose.yml", 2 * 1024 * 1024, false)?;
+    let (original, guarded) = prepare(fence)?;
     // Older scratch app images have no shell and cannot safely enforce a file
     // fence. Refuse before changing PGDATA rather than assuming their version.
     let support = project
@@ -59,18 +61,6 @@ pub(super) fn arm(fence: &Fence<'_>) -> anyhow::Result<()> {
             "the app image must support the PITR entrypoint guard; upgrade it to the matching Nelcota version before restoring (PGDATA was not changed)"
         );
     }
-    if original.len() > 2 * 1024 * 1024 {
-        bail!("compose exceeds the PITR recovery receipt limit");
-    }
-    let output = project
-        .compose_command()
-        .args(["config", "--format", "json"])
-        .output()?;
-    if !output.status.success() || output.stdout.len() > 2 * 1024 * 1024 {
-        bail!("could not resolve a bounded Docker configuration before PITR");
-    }
-    let config: Value = serde_json::from_slice(&output.stdout)?;
-    let guarded = guarded_config(fence, config)?;
     // The original is exact bytes, kept private: resolved Compose JSON can
     // contain credentials. Do not print or publish either configuration.
     directory.write(ORIGINAL, &original)?;
@@ -85,6 +75,32 @@ pub(super) fn arm(fence: &Fence<'_>) -> anyhow::Result<()> {
     Ok(())
 }
 
+pub(super) fn preflight(fence: &Fence<'_>) -> anyhow::Result<()> {
+    if fence.owned(RECEIPT)? || fence.owned(ACTIVE)? {
+        validate_compose(fence)?;
+        let guarded = fence.directory()?.read(GUARDED, 2 * 1024 * 1024, true)?;
+        upgraded_guard(fence, &guarded)?;
+        return Ok(());
+    }
+    prepare(fence)?;
+    Ok(())
+}
+
+fn prepare(fence: &Fence<'_>) -> anyhow::Result<(Vec<u8>, Vec<u8>)> {
+    let original = super::read_compose(fence.project)?;
+    let output = fence
+        .project
+        .compose_command()
+        .args(["config", "--format", "json"])
+        .output()?;
+    if !output.status.success() || output.stdout.len() > 2 * 1024 * 1024 {
+        bail!("could not resolve supported services.postgres configuration before PITR");
+    }
+    let config: Value = serde_json::from_slice(&output.stdout)
+        .context("cannot determine supported services.postgres configuration from Compose JSON")?;
+    Ok((original, guarded_config(fence, config)?))
+}
+
 fn guarded_config(fence: &Fence<'_>, mut config: Value) -> anyhow::Result<Vec<u8>> {
     let message = format!(
         "PITR fence {MOUNT_STATE}/{ACTIVE} blocks startup; run `{}` (backup recovery guide)",
@@ -95,7 +111,12 @@ fn guarded_config(fence: &Fence<'_>, mut config: Value) -> anyhow::Result<Vec<u8
             .get_mut("services")
             .and_then(|services| services.get_mut(name))
             .and_then(Value::as_object_mut)
-            .context("PITR requires app and postgres Compose services")?;
+            .context(
+                "PITR requires supported services.app and services.postgres Compose services",
+            )?;
+        if name == "postgres" {
+            preflight::validate(service)?;
+        }
         // Keep failed guards from entering a Docker restart loop. The original
         // policy is restored with the exact original Compose file after recovery.
         service.insert("restart".into(), json!("no"));
@@ -138,12 +159,6 @@ fn guarded_config(fence: &Fence<'_>, mut config: Value) -> anyhow::Result<Vec<u8
             service.insert("command".into(), json!([]));
         }
         if name == "postgres" {
-            let pgdata = service.get("environment").and_then(|e| e.get("PGDATA"));
-            if pgdata
-                .is_some_and(|v| !v.is_null() && v.as_str() != Some("/var/lib/postgresql/data"))
-            {
-                bail!("custom PGDATA requires reviewed PITR fencing before restore");
-            }
             let script = format!(
                 "set -eu; if [ -L {MOUNT_STATE} ] || [ ! -d {MOUNT_STATE} ] || [ \"$(stat -c %u {MOUNT_STATE})\" != \"$(stat -c %u {MOUNT})\" ] || [ -e {MOUNT_STATE}/{ACTIVE} ] || [ -L {MOUNT_STATE}/{ACTIVE} ] || [ -e {MOUNT_STATE}/{RECEIPT} ] || [ -L {MOUNT_STATE}/{RECEIPT} ] || [ ! -f {MOUNT_STATE}/release.verified.json ] || [ -L {MOUNT_STATE}/release.verified.json ] || [ \"$(stat -c %u {MOUNT_STATE}/release.verified.json)\" != \"$(stat -c %u {MOUNT})\" ] || [ \"$(stat -c %a {MOUNT_STATE}/release.verified.json)\" != 600 ] || [ \"$(stat -c %h {MOUNT_STATE}/release.verified.json)\" != 1 ]; then printf '%s\\n' {} >&2; exit 78; fi; exec /usr/local/bin/docker-entrypoint.sh \"$@\"",
                 quote(&message)

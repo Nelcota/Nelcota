@@ -27,6 +27,11 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Reject Docker PITR PostgreSQL command/data-directory overrides before stopping
+  services or writing a fence. Allow only the default command or an exact
+  generated tuning profile, with default PGDATA; reject indeterminate settings.
+  Validate the packaged native startup command and effective data directory too.
+  See [supported PITR configuration](docs/backup.md#supported-postgresql-startup-configuration).
 - Release Docker PITR fences with one atomic rename that restores original
   Compose bytes while removing the final marker; keep interrupted recovery
   retryable and reject symlinked, foreign-owned or unexpected fence paths.

@@ -9,7 +9,14 @@ use std::{
 const GUARD: &str = "/usr/local/lib/nelcota/pitr-check";
 const DROP_IN: &str = "80-nelcota-pitr-fence.conf";
 
+mod preflight;
+
+pub(super) fn preflight_target() -> anyhow::Result<()> {
+    preflight::validate()
+}
+
 pub(super) fn arm(fence: &Fence<'_>) -> anyhow::Result<()> {
+    preflight_target()?;
     // Require the installed artifact to understand the new check-only guard.
     // An older binary is refused before replacing any start adapter or data.
     let library = Directory::required(Path::new("/usr/local/lib/nelcota"))?;
