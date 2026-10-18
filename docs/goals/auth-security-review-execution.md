@@ -11,7 +11,9 @@ penetration test, compliance certification or production acceptance.
 - Phase 1 start: 2026-10-18 18:24:20 UTC.
 - Eight-hour checkpoint due: 2026-10-19 02:24:20 UTC.
 - Hard deadline: 2026-10-19 18:24:20 UTC.
-- Source is a read-only Git archive of the frozen SHA, not a moving checkout.
+- Source is a frozen Git archive, not a moving checkout. Integrity verification
+  found 1,226 byte-identical tracked files and two test-only append overlays;
+  production code was unchanged. Extra disposable probes are outside Git.
 - Private sanitized evidence: ignored `target/auth-review/20261018/`.
 - PR [#97](https://github.com/Nelcota/Nelcota/pull/97) merged by the configured
   squash method as `4d5992b2b27e47ece47ac30f020ca13f3af539af` after all 17 applicable
@@ -44,28 +46,34 @@ cannot establish a cell verdict.
 
 ## Coverage and verdicts
 
-`Not started` below is a checkpoint state, not a passing verdict. Final entries
-will use G06 verdicts and identify both code reading and dynamic evidence.
+All 17 original rows have code-reading and dynamic evidence. `Fixed` means a
+verified correction on the linked isolated PR, **not** a correction merged into
+the frozen baseline or current main. The three fix PRs must remain unmerged.
 
-| Cell | State / verdict | Owning code | Planned dynamic evidence |
+| Cell | Verdict | Code reading | Dynamic evidence / limitation |
 |---|---|---|---|
-| Password storage | not started | `crates/auth/src/password.rs; credentials.rs` | server auth; auth unit tests |
-| Login | not started | `crates/auth/src/accounts.rs; password.rs` | server auth |
-| Brute force and abuse | not started | `crates/auth/src/rate_limit.rs; request.rs; state.rs` | server auth; auth unit tests |
-| Account enumeration | not started | `accounts.rs; links/send.rs; confirmation.rs` | server auth |
-| JWT | not started | `crates/auth/src/keys.rs; lib.rs; crates/core/src/claims.rs` | auth unit tests; server auth/RLS |
-| API keys and roles | not started | `crates/core/src/extract.rs; db.rs; auth/db.rs` | server auth; auth_reuse; RLS |
-| Refresh tokens | not started | `crates/auth/src/sessions.rs` | server auth; auth_reuse |
-| Logout and revocation | not started | `sessions.rs; crates/auth/src/lib.rs` | server auth; auth_reuse |
-| Password reset and magic links | open finding (G06-F01; High; details withheld pending maintainer review) | `recovery.rs; verify.rs; links/` | server auth; OAuth local doubles |
-| Email verification and change | not started | `confirmation.rs; verify.rs; accounts.rs` | server auth; OAuth local doubles |
-| OAuth (local doubles) | not started | `crates/auth/src/oauth/; oauth.rs` | server oauth; auth unit tests |
-| Cookies, CSRF and origin | not started | `crates/admin/src/auth.rs; middleware.rs; server router` | server admin auth; panel auth tests |
-| Panel SSO | open finding (G06-F05; High; details withheld pending maintainer review) | `crates/admin/src/sso.rs; host SSO boundary` | server admin SSO |
-| SDKs | not started | `sdk/typescript/src/auth/; sdk/rust/src/auth.rs` | SDK unit/transport; server sdk_rust |
-| Input handling | not started | `crates/auth/src/credentials.rs; handlers.rs` | server auth; auth unit tests |
-| Errors, logs and config | not started | `auth/error.rs; mail.rs; core/config.rs` | auth/core unit tests; server negative tests |
-| Dependencies | not started | `Cargo.lock; panel/SDK package-lock.json` | cargo audit; panel/SDK npm audit |
+| Password storage | fixed — F03, #99 | `auth/password.rs`, `credentials.rs` | Auth 27 + auth/core 40/20 baseline units; fresh salts differ at unchanged Argon2id parameters; #99 maximum ASCII/Unicode regressions pass. Rehash on password replacement uses the current implementation; automatic login-time parameter upgrades are not implemented. |
+| Login | fixed — F03, #99 | `auth/accounts.rs`, `password.rs`, `confirmation.rs` | Unknown/wrong status/body match; 20 paired timing observations after warm-up; disabled confirmation policy tested; #99 auth suite 27 passes and oversized-input regressions. Timing observations are local, not a universal side-channel proof. |
+| Brute force and abuse | open finding — F07 | `auth/rate_limit.rs`, `request.rs`, `state.rs` | IP/account quotas and gradual refill tested; bounded hash ownership and a controlled 504 deadline tested while another project stays healthy. F07 records the configured recovery-off/account-quota policy gap. |
+| Account enumeration | passed within documented policy | `accounts.rs`, `links/send.rs`, `confirmation.rs` | Auth 27 checks wrong/unknown login and existing/missing recovery, magic link and resend. Signup deliberately returns documented 409 on duplicates; OAuth linking refusals follow the documented policy. |
+| JWT | open finding — F02 | `auth/keys.rs`, `auth/lib.rs`, `core/claims.rs`; `docs/jwt-and-roles.md` | RLS 10 and key units reject none, tampering, unknown role/key, expiry and foreign independently keyed projects. Migration HS256 mode follows configuration. Additional signed-claim probes confirm F02; no issuer/audience contract was changed. |
+| API keys and roles | passed | `core/db.rs`, `claims.rs`, `auth/db.rs`; panel token boundary | RLS 10 + auth_reuse 10: pooled roles/claims reset after success/error; API roles cannot read auth schema; JWT/service credentials do not open the panel or controller. Service-role issuance by an authenticated project administrator is deliberate operator authority. |
+| Refresh tokens | passed within documented grace | `auth/sessions.rs`, token schema and pruning | Auth 27 + auth_reuse 10 demonstrate rotation, expiry, replay revocation, newest-only live successor and logout/password-replacement refresh rejection across instances. Ten-second retry grace is explicit; it is not strict rejection of every concurrent retry. |
+| Logout and revocation | passed within documented access-token bound | `auth/sessions.rs`, `lib.rs`; panel sessions | Auth/auth_reuse and SDK HTTP fixture revoke refresh families across instances. Access JWTs remain stateless through expiry plus configured verifier leeway (default 900 + 30 seconds); panel sessions revoke in their owning process. |
+| Password reset and magic links | open finding — F01, High | Reviewed; details withheld pending maintainer review | Existing auth/OAuth suites and private verification completed. Details withheld pending maintainer review. |
+| Email verification and change | passed for implemented flows | `confirmation.rs`, `verify.rs`, account/inbox ownership | Auth 27 + OAuth 18 cover proof of inbox ownership, unverified identities and single-use confirmation. Self-service email change and account-disabled state are not implemented; source search and an ignored email-update-field probe confirm this sub-scope is not applicable. |
+| OAuth (local doubles) | passed for implemented local flow | `auth/oauth.rs`, flow/identities/provider/PKCE/redirect adapters | OAuth 18 + auth units cover state, PKCE, exact configured provider callback, redirect allowlist and linking refusal. Google uses authenticated userinfo, not ID-token validation; parser negatives run. Real provider behavior remains blocked (environment). |
+| Cookies, CSRF and origin | passed for documented topology | `admin/auth.rs`, `middleware.rs`, server CORS and panel auth state | Panel auth/cookie units, controller boundary tests and extra CSRF/CORS probes reject foreign/null origins and cross-site mutations. Secure/HttpOnly/Strict attributes are checked; generated proxied deployments enable proxy trust. Public TLS is not exercised. |
+| Panel SSO | open finding — F05, High | Reviewed; details withheld pending maintainer review | Existing panel SSO, controller-boundary and scoped-worker checks completed. Details withheld pending maintainer review. |
+| SDKs | fixed — F06, #101 | TS auth/session/journal/HTTP; Rust auth/transport/scoped clients; panel cache | Baseline TS 110, Rust auth/transport 8/12 and one real-server auth contract pass. Four new cleanup regressions fail before; 118 related tests pass after. Panel API/auth/cache checks: 29 passed, one GC-only test subsequently run separately. |
+| Input handling | fixed — F03, #99 | `auth/credentials.rs`, handlers and JSON extractors | Oversized/malformed bodies, ASCII mailbox restrictions, case/Unicode collisions and 256-character limits checked. Two pool-admission regressions fail before and pass after; supported 256-character Unicode passwords still sign in. |
+| Errors, logs and config | fixed — F04, #100 | Auth error/mail/provider adapters; core configuration; SDK diagnostics and server request logging | Four diagnostic regressions fail before and pass after (64 library tests after). Weak/missing keys, invalid settings, malformed requests and generic auth responses are checked. Logs exclude query strings; no default-path production leak is claimed for explicit Debug views. |
+| Dependencies | passed at audit time | Frozen `Cargo.lock` and both npm lockfiles; package boundaries | `cargo audit`: zero vulnerabilities/warnings, 1,338 advisories at DB commit `999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b`; panel and SDK `npm audit`: zero advisories at all severities. No dependency/lock changes. |
+
+Blocked sub-scopes from intake: real OAuth providers and real mail delivery.
+These are not extra checklist rows and were not substituted with live services.
+No original row is unreviewed; absent subfeatures are identified above rather
+than invented. A passing row is bounded by its documented behavior and fixtures.
 
 ## Public finding ledger
 
@@ -73,10 +81,11 @@ will use G06 verdicts and identify both code reading and dynamic evidence.
 |---|---|---|---|
 | G06-F01 | High | Password reset and magic links | details withheld pending maintainer review |
 | G06-F02 | Medium | JWT | Open decision: built-in issuer/audience are deliberately informative; future `nbf`/`iat` are not enforced. Tightening the documented policy requires a contract decision. |
-| G06-F03 | Medium | Input handling | Fixed in isolated [PR #99](https://github.com/Nelcota/Nelcota/pull/99), CI pending; account verification bounds precede pool admission. |
-| G06-F04 | Low | Errors, logs and config | Fixed in isolated [PR #100](https://github.com/Nelcota/Nelcota/pull/100), CI pending; redact explicit adapter/configuration Debug views. No default-path production leak claimed. |
+| G06-F03 | Medium | Input handling | Fixed in isolated [PR #99](https://github.com/Nelcota/Nelcota/pull/99), 17/17 applicable CI passed on `e388912e72f52b9f7f7791644080415817ac733c`, ready; account verification bounds precede pool admission. |
+| G06-F04 | Low | Errors, logs and config | Fixed in isolated [PR #100](https://github.com/Nelcota/Nelcota/pull/100), 17/17 applicable CI passed on `e2aa4e59eb5c9593e27fd8cea4b94ef38f91da9b`, ready; redact explicit adapter/configuration Debug views. No default-path production leak claimed. |
 | G06-F05 | High | Panel SSO | details withheld pending maintainer review |
 | G06-F06 | Medium | SDKs | Fixed in isolated [PR #101](https://github.com/Nelcota/Nelcota/pull/101), CI pending; retire pending OAuth verification state on sign-out. |
+| G06-F07 | Medium | Brute force and abuse | Open policy decision: independent source addresses can exhaust an account quota and a subsequent correct login receives 429; with supported SMTP-disabled configuration, recovery/magic-link requests return 403. Do not weaken throttling; decide on independent recovery/unlock requirements. |
 
 ## Findings and disclosure
 
@@ -117,7 +126,7 @@ for an unfixed finding in that class.
   update, noncredentialed CORS and cross-origin cookie mutations were checked.
 - Fix evidence: F03 before 1 pass / 2 failures, after 3 passes plus 27 existing
   auth passes. F04 before 4 assertion failures, after 64 library passes.
-  F06 before 4 assertion failures, after 116 SDK passes plus 37 guide passes.
+  F06 before 4 assertion failures, after 118 SDK passes plus 37 guide passes.
   Source/translation and generated asset commits are separated in #101.
 - Fixture correction: an initial standalone core diagnostics probe used a UUID
   feature absent from that crate and did not compile; the corrected probe ran
@@ -126,6 +135,39 @@ for an unfixed finding in that class.
 - Execution sequencing deviation: Clippy for #99 was started during the final
   seconds of its auth suite. No Vitest or audit overlapped; subsequent local
   Rust/Vitest/audit stages are serialized. All result statuses are retained.
+- Additional baseline probes passed: distinct per-hash salts and per-account
+  throttling across source addresses; a busy hash worker retains its permit
+  while a controlled 50 ms request deadline yields 504 and a separate project's
+  health check succeeds. This uses a short fixture deadline, not a production
+  capacity/SLO measurement; production defaults and existing thresholds did not
+  change.
+- F07 policy probe used a disposable quota of two to demonstrate the same
+  account-key behavior without a load campaign: two invalid source addresses,
+  then correct credentials from a third address returned 429; disabled recovery
+  and magic-link flows returned 403. No indefinite real-world lockout was claimed
+  or attempted. Continuous refill remains intact; no quota was weakened.
+- Panel baseline API/auth/cache tests: 29 passed and one GC-only check skipped
+  without GC exposure. The skipped check was then explicitly run with the
+  repository's documented fork/GC flags: 1 passed; its other six tests were
+  filtered, not counted as newly passed.
+- Rust SDK real-server auth/refresh/recovery/scoped-token contract: 1 passed.
+  Controller HTTP boundary tests: 3 passed; panel cookie parsing/attributes:
+  2 passed; scoped CLI worker authority: 1 passed.
+- Dependency audit databases were reachable. Cargo audit and panel/SDK npm
+  audit each reported zero advisories. No exception or reachability waiver was
+  required and no registry configuration/lockfile changed.
+- #101 initial head `e3f64b337c0fae9720c621d00ee8b0f2657d6301` failed ordinary
+  SDK CI at its gzip budget (auth 11,283 B / 11,250 B). The follow-up
+  `c9e861d1b295a518f48282b138477bfacaa44dbe` reuses existing credential operations
+  and keeps public explicit-session validation at its owner. All 118 related
+  tests, type check, build and installed-package acceptance pass locally;
+  auth is 11,246 / 11,250 B and root 17,064 / 17,100 B. No budget changed.
+  The failed historical CI run is retained, not replaced by a success claim.
+- Local package acceptance initially encountered an unwritable home npm cache;
+  a workspace-owned cache resolved setup and the installed-package check passed.
+- Approval review initially rejected even the redacted High marker. The exact
+  authorization in the task was provided for re-review; approval then succeeded.
+  No affected-code detail, private regression or proposed High patch was pushed.
 - Resource policy: four Cargo jobs, two Rust test threads, sequential Rust,
   Vitest and audit runs. Only disposable local fixtures are authorized.
 
@@ -135,5 +177,11 @@ for an unfixed finding in that class.
   exception to the general prohibition on merges/deletions; nothing else is
   closed or deleted.
 - No real provider/mail checks will be attempted or replaced with workarounds.
+- The configured repository automation closed issue #96 through #97's existing
+  closing reference. No issue was closed manually and no settings were changed.
+- Two policy gaps (F02/F07) are kept as maintainer decisions: enforcing stricter
+  claims or changing authentication/recovery availability is a documented
+  behavior decision; no contract change, new dependency or weakened quota was
+  introduced to force an approval verdict.
 - This record is not a published release plan; release notes and commands belong
   only in the maintainer's final private task response.
