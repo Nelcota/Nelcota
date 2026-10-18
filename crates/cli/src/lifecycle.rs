@@ -11,6 +11,9 @@ pub(crate) const HEALTH_TIMEOUT: Duration = Duration::from_secs(120);
 
 /// Starts the projects (each one until its healthcheck passes) and Caddy.
 pub fn up(host: &Host, manifest: &Manifest, projects: &[Project]) -> anyhow::Result<()> {
+    for project in projects {
+        crate::pitr::fence::require_clear(project)?;
+    }
     if manifest.runtime == Runtime::Docker {
         caddy::ensure_network()?;
     }

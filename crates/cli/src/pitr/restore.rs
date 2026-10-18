@@ -3,6 +3,7 @@ use super::{
     HEALTH_TIMEOUT,
     commands::{self, pgbackrest},
     enabled,
+    fence::Fence,
 };
 use crate::{
     project::{Project, Service},
@@ -11,6 +12,7 @@ use crate::{
 use anyhow::bail;
 use std::time::{Duration, Instant};
 const RECOVERY_TIMEOUT: Duration = Duration::from_secs(3600);
+pub(super) mod recovery;
 
 #[cfg(all(test, unix))]
 mod tests;
@@ -35,6 +37,7 @@ pub fn restore(project: &Project, time: Option<&str>, yes: bool) -> anyhow::Resu
 
     step(&format!("Stopping {}", project.name));
     project.stop(&[Service::App, Service::Postgres])?;
+    let fence = Fence::begin(project)?;
 
     step(&format!("Restoring {} to {moment}", project.name));
     // --delta only rewrites files that differ from the backup.
@@ -42,17 +45,24 @@ pub fn restore(project: &Project, time: Option<&str>, yes: bool) -> anyhow::Resu
         // A nonzero exit does not prove that --delta left every file untouched.
         // Keep the stopped services fenced until recovery is verified.
         return Err(err.context(format!(
-            "the data directory may have changed; Postgres and the app remain stopped. \
+            "the data directory may have changed; Postgres and the app remain stopped behind a durable PITR fence. \
              Inspect `nelcota -p {0} pitr status` and the restore error before retrying \
-             with a covered target; do not start the services until recovery is verified",
+             with a covered target, or explicitly verify the stopped directory with \
+             `nelcota -p {0} pitr recover --yes`; ordinary startup is blocked until recovery is verified",
             project.name
         )));
     }
 
     step("Replaying WAL (Postgres starts once it reaches the target)");
     // A fresh start: a crash from now on is this recovery failing.
+    let mut recovery = recovery::Recovery::start(project)?;
+    wait_for_promotion(project, &recovery)?;
+    recovery.stop()?;
+    super::fence::verify_stopped(project)?;
+    // Only this explicit restore's verified promotion can release the fence.
+    fence.clear_verified()?;
     project.recreate(Service::Postgres)?;
-    wait_for_promotion(project)?;
+    project.wait_healthy(Service::Postgres, HEALTH_TIMEOUT)?;
     ok("database restored");
 
     // The restore started a new timeline. Backups taken on the old one after
@@ -77,14 +87,16 @@ pub fn restore(project: &Project, time: Option<&str>, yes: bool) -> anyhow::Resu
 
 /// Waits until Postgres has left recovery. A target the archive does not
 /// reach makes Postgres exit: that is a failure.
-fn wait_for_promotion(project: &Project) -> anyhow::Result<()> {
+pub(super) fn wait_for_promotion(
+    project: &Project,
+    recovery: &recovery::Recovery<'_>,
+) -> anyhow::Result<()> {
     let deadline = Instant::now() + RECOVERY_TIMEOUT;
     loop {
-        if commands::in_recovery(project) == Some(false) {
+        if recovery.in_recovery() == Some(false) {
             return Ok(());
         }
-        if project.postgres_crashed() {
-            project.stop(&[Service::Postgres])?;
+        if recovery.crashed() {
             bail!(
                 "Postgres could not finish the recovery (is the target inside the archive? \
                  see `nelcota -p {0} pitr status` and `nelcota -p {0} logs postgres`); \
