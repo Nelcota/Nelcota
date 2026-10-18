@@ -8,7 +8,7 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ## [0.5.0] — 2026-10-18
 
-Release preparation: publication and coordinated integration are separate gates.
+Release preparation: publication requires final artifact verification.
 The dated entry does not establish artifact availability.
 
 ### Added
@@ -45,9 +45,6 @@ The dated entry does not establish artifact availability.
 
 - Redact authentication adapter credentials and email message content from
   `Debug` diagnostics, including validated mail/OAuth configuration views.
-
-- Harden session invalidation.
-- Persist panel SSO replay protection.
 
 - Reject account passwords above the documented 256-character maximum before
   database admission or Argon2 verification, including current-password checks.
@@ -102,16 +99,17 @@ The dated entry does not establish artifact availability.
 
 ### Upgrade notes
 
-- Startup applies internal migrations `V14__user_listing_index.sql` and
-  `V15__storage_directory_index.sql` when upgrading from `0.4.0`. Plan a
-  maintenance window for large user or storage metadata tables.
+- Startup applies internal migrations `V14__user_listing_index.sql`,
+  `V15__storage_directory_index.sql` and `V16__panel_sso_replays.sql` when
+  upgrading from `0.4.0`. V14/V15 index user and storage listings; V16 adds
+  durable panel SSO redemption receipts. Plan a maintenance window for large
+  metadata tables and keep the paired database/file backup available.
 - Keep database backups and their paired disk snapshots before upgrading.
   See [release handoff](docs/onboarding/release.md) for validation and rollback.
 - The TypeScript SDK's cross-tab storage publication correction needs a
   separate SDK package release; installing the server does not update clients.
 - The published `0.4.0` binaries and image do not contain these changes.
-  Publication requires final coordinated integration and exact-source checks.
-  Recheck the complete internal migration inventory before tagging.
+  Publication requires exact-source checks and final artifact verification.
 - Client candidates have independent versions: TypeScript `0.2.0` and Rust
   `0.1.3`. Preparing these versions does not publish either package.
 
