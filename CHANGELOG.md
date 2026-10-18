@@ -27,6 +27,8 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Redact authentication adapter credentials and email message content from
+  `Debug` diagnostics, including validated mail/OAuth configuration views.
 - Reject Docker PITR PostgreSQL command/data-directory overrides before stopping
   services or writing a fence. Allow only the default command or an exact
   generated tuning profile, with default PGDATA; reject indeterminate settings.

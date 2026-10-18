@@ -46,12 +46,20 @@ pub struct ProviderEndpoints {
     pub emails: Option<String>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Provider {
     pub(crate) kind: ProviderKind,
     client_id: String,
     client_secret: String,
     endpoints: ProviderEndpoints,
+}
+
+impl std::fmt::Debug for Provider {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Provider")
+            .field("kind", &self.kind)
+            .finish_non_exhaustive()
+    }
 }
 
 /// The account at the provider, as far as sign-in needs it.

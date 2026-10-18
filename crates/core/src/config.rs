@@ -511,7 +511,6 @@ impl Config {
 }
 
 /// Validated auth email settings (see [`Config::mail`]).
-#[derive(Debug)]
 pub struct MailConfig<'a> {
     pub smtp_url: &'a str,
     pub from: &'a str,
@@ -520,14 +519,31 @@ pub struct MailConfig<'a> {
     pub magic_link_url: Option<&'a str>,
 }
 
+impl fmt::Debug for MailConfig<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MailConfig")
+            .field("confirmation_enabled", &self.confirmation_url.is_some())
+            .field("magic_link_enabled", &self.magic_link_url.is_some())
+            .finish_non_exhaustive()
+    }
+}
+
 /// Validated provider sign-in settings (see [`Config::oauth`]).
-#[derive(Debug)]
 pub struct OAuthConfig<'a> {
     pub api_url: &'a str,
     pub redirect_urls: Vec<&'a str>,
     /// Client id and secret of each enabled provider.
     pub google: Option<(&'a str, &'a str)>,
     pub github: Option<(&'a str, &'a str)>,
+}
+
+impl fmt::Debug for OAuthConfig<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("OAuthConfig")
+            .field("google_enabled", &self.google.is_some())
+            .field("github_enabled", &self.github.is_some())
+            .finish_non_exhaustive()
+    }
 }
 
 fn client<'a>(
@@ -835,5 +851,46 @@ mod tests {
         assert!(!previous.deployment_validation);
         assert!(previous.deployment_gate.is_none());
         assert!(previous.deployment_id.is_none());
+    }
+}
+
+#[cfg(test)]
+mod g06_diagnostics {
+    use super::*;
+    #[test]
+    fn mail_config_debug_hides_credentials() {
+        let sensitive = format!(
+            "sensitive-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
+        let url = format!("smtps://operator:{sensitive}@mail.example.test:465");
+        let config = MailConfig {
+            smtp_url: &url,
+            from: "mail@example.test",
+            recovery_url: "https://app.example.test/recover",
+            confirmation_url: None,
+            magic_link_url: None,
+        };
+        assert!(!format!("{config:?}").contains(&sensitive));
+    }
+    #[test]
+    fn oauth_config_debug_hides_credentials() {
+        let sensitive = format!(
+            "sensitive-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
+        let config = OAuthConfig {
+            api_url: "https://api.example.test",
+            redirect_urls: vec!["https://app.example.test/auth"],
+            google: Some(("client", &sensitive)),
+            github: Some(("client", &sensitive)),
+        };
+        assert!(!format!("{config:?}").contains(&sensitive));
     }
 }

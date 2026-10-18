@@ -126,3 +126,24 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod g06_diagnostics {
+    use super::*;
+    #[test]
+    fn provider_debug_hides_credentials() {
+        let sensitive = generate_ed25519_private_key();
+        let provider = Provider::google("client", &sensitive);
+        assert!(!format!("{provider:?}").contains(&sensitive));
+    }
+    #[test]
+    fn email_debug_hides_message_content() {
+        let sensitive = generate_ed25519_private_key();
+        let message = Email {
+            to: "user@example.test".into(),
+            subject: "Sign in".into(),
+            text: sensitive.clone(),
+        };
+        assert!(!format!("{message:?}").contains(&sensitive));
+    }
+}
