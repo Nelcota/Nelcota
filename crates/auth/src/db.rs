@@ -20,3 +20,24 @@ pub(crate) const USER_JSON: &str = "json_build_object(
     'user_metadata', u.raw_user_meta_data,
     'created_at', u.created_at,
     'last_sign_in_at', u.last_sign_in_at)";
+
+/// Call while holding the account row lock, in the password-write transaction.
+/// Keep issuance rows so password changes do not reset email send cooldowns.
+pub(crate) async fn retire_pending_credentials(
+    tx: &Transaction<'_>,
+    user_id: uuid::Uuid,
+) -> Result<(), ApiError> {
+    tx.execute(
+        "UPDATE auth.one_time_tokens SET used_at = now() WHERE user_id = $1 AND used_at IS NULL",
+        &[&user_id],
+    )
+    .await
+    .map_err(db_error)?;
+    tx.execute(
+        "DELETE FROM auth.flow_states WHERE user_id = $1",
+        &[&user_id],
+    )
+    .await
+    .map_err(db_error)?;
+    Ok(())
+}
