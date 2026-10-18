@@ -1,21 +1,26 @@
 //! Durable PITR ownership, independent of the CLI process and of PGDATA.
 mod docker;
+#[cfg(test)]
+mod faults;
+mod files;
 mod native;
 mod verify;
 
 use crate::{host::Runtime, naming, project::Project};
 use anyhow::{Context, bail};
-use nelcota_deployment::{atomic_write, read_private};
+use files::Directory;
+#[cfg(test)]
+use nelcota_deployment::atomic_write;
 use serde::{Deserialize, Serialize};
-use std::{
-    fs, io,
-    path::{Path, PathBuf},
-};
+#[cfg(test)]
+use std::fs;
+use std::path::{Path, PathBuf};
 
 pub(crate) const NATIVE_STATE: &str = "/var/lib/nelcota-pitr";
 const STATE: &str = "pitr-fence";
 const ACTIVE: &str = "active.json";
 const RECEIPT: &str = "recovery.json";
+const RELEASED: &str = "release.verified.json";
 
 #[derive(Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -40,13 +45,16 @@ fn state(project: &Project) -> PathBuf {
 }
 
 fn present(path: &Path) -> anyhow::Result<bool> {
-    match fs::symlink_metadata(path) {
-        Ok(_) => Ok(true),
-        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(false),
-        Err(error) => {
-            Err(error).with_context(|| format!("cannot inspect PITR fence {}", path.display()))
-        }
-    }
+    let parent = path.parent().context("PITR fence has no parent")?;
+    let directory = match Directory::open(parent, false, false)? {
+        Some(directory) => directory,
+        None => return Ok(false),
+    };
+    let name = path
+        .file_name()
+        .and_then(|v| v.to_str())
+        .context("invalid PITR fence path")?;
+    directory.checked(name, true)
 }
 
 fn quote(value: &str) -> String {
@@ -67,32 +75,69 @@ fn recovery(project: &Project) -> anyhow::Result<String> {
 }
 
 pub(crate) fn require_clear(project: &Project) -> anyhow::Result<()> {
-    let directory = state(project);
-    if !present(&directory.join(ACTIVE))? && !present(&directory.join(RECEIPT))? {
-        return Ok(());
-    }
-    require_clear_at(&directory, &recovery(project)?)
+    // Validate the project path too: a renamed/symlinked ancestor must not
+    // redirect a subsequent Docker or filesystem operation.
+    #[cfg(unix)]
+    Directory::open(&project.dir, false, false)?;
+    require_clear_at(&state(project), &recovery(project)?)
 }
 
 pub(crate) fn require_clear_at(directory: &Path, command: &str) -> anyhow::Result<()> {
+    check_clear_at(directory, command, false)
+}
+
+pub(crate) fn require_guard_clear_at(directory: &Path, command: &str) -> anyhow::Result<()> {
+    check_clear_at(directory, command, true)
+}
+
+fn check_clear_at(directory: &Path, command: &str, required: bool) -> anyhow::Result<()> {
+    let opened = Directory::open(directory, false, false).with_context(|| {
+        format!(
+            "PITR fence {} (or {}) cannot be verified; startup refused; run `{command}`",
+            directory.join(ACTIVE).display(),
+            directory.join(RECEIPT).display()
+        )
+    })?;
+    let opened = match opened {
+        Some(opened) => opened,
+        None if required => bail!(
+            "PITR fence {} cannot be verified because its directory is missing; startup refused; run `{command}`",
+            directory.join(ACTIVE).display()
+        ),
+        None => return Ok(()),
+    };
     for name in [ACTIVE, RECEIPT] {
-        let path = directory.join(name);
-        if present(&path)? {
+        if opened.checked(name, true)? {
             bail!(
                 "PITR fence {} blocks startup; inspect the restore error and run `{command}` (see the backup recovery guide)",
-                path.display()
+                directory.join(name).display()
             );
         }
+    }
+    opened.validate_state_files()?;
+    if opened.checked("compose.guarded.json", true)? && !opened.checked(RELEASED, true)? {
+        bail!(
+            "PITR fence {} has no committed release; run `{command}`",
+            directory.display()
+        );
     }
     Ok(())
 }
 
 /// Also covers a direct `serve`, outside the generated native unit.
 pub(crate) fn require_native_clear() -> anyhow::Result<()> {
-    require_clear_at(
-        Path::new("/nelcota-pitr-fence"),
-        "nelcota -C <host> -p <project> pitr recover --yes",
-    )?;
+    let mounted = Path::new("/nelcota-pitr-fence/pitr-fence");
+    if Directory::open(Path::new("/nelcota-pitr-fence"), false, true)?.is_some() {
+        // Parent mount preserves visibility of a substituted state symlink.
+        let candidate = match Directory::open(mounted, false, false)? {
+            Some(_) => mounted,
+            None => Path::new("/nelcota-pitr-fence"),
+        };
+        require_clear_at(
+            candidate,
+            "nelcota -C <host> -p <project> pitr recover --yes",
+        )?;
+    }
     require_clear_at(
         Path::new(NATIVE_STATE),
         "nelcota -C <host> -p <project> pitr recover --yes",
@@ -101,27 +146,9 @@ pub(crate) fn require_native_clear() -> anyhow::Result<()> {
 
 /// A readable directory permits unprivileged startup checks, never writes.
 fn directory(path: &Path) -> anyhow::Result<()> {
-    match fs::create_dir(path) {
-        Ok(()) => fs::File::open(path.parent().context("fence has no parent")?)?.sync_all()?,
-        Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
-        Err(error) => return Err(error).context("cannot create PITR fence directory"),
-    }
-    let metadata = fs::symlink_metadata(path)?;
-    if !metadata.is_dir() || metadata.file_type().is_symlink() {
-        bail!("unsafe PITR fence directory {}", path.display());
-    }
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::{MetadataExt, PermissionsExt};
-        if metadata.uid() != fs::metadata(path.parent().context("fence has no parent")?)?.uid()
-            || metadata.mode() & 0o022 != 0
-        {
-            bail!("unsafe PITR fence directory ownership");
-        }
-        fs::set_permissions(path, fs::Permissions::from_mode(0o755))?;
-    }
-    fs::File::open(path)?.sync_all()?;
-    Ok(())
+    Directory::open(path, true, false)?
+        .context("PITR fence directory is missing")?
+        .make_readable()
 }
 
 pub(super) fn status(project: &Project) -> anyhow::Result<bool> {
@@ -140,44 +167,76 @@ pub(super) fn status(project: &Project) -> anyhow::Result<bool> {
 impl<'a> Fence<'a> {
     fn new(project: &'a Project) -> anyhow::Result<Self> {
         naming::validate_project_name(&project.name)?;
+        Directory::open(&project.dir, false, false)?
+            .context("PITR project directory is missing")?;
+        if let Some(directory) = Directory::open(&state(project), false, false)? {
+            directory.validate_state_files()?;
+        }
         let receipt = serde_json::to_vec(&Receipt {
             schema: 1,
             project: project.name.clone(),
             directory: project.dir.canonicalize()?,
             runtime: project.runtime,
         })?;
-        Ok(Self {
+        let fence = Self {
             project,
             state: state(project),
             receipt,
-        })
+        };
+        fence.owned(RELEASED)?;
+        fence.owned(RECEIPT)?;
+        fence.owned(ACTIVE)?;
+        Ok(fence)
+    }
+
+    fn directory(&self) -> anyhow::Result<Directory> {
+        Directory::open(&self.project.dir, false, false)?
+            .context("PITR project directory is missing")?;
+        let directory = Directory::required(&self.state)?;
+        directory.validate_state_files()?;
+        Ok(directory)
     }
 
     fn owned(&self, name: &str) -> anyhow::Result<bool> {
-        let path = self.state.join(name);
-        if !present(&path)? {
+        let directory = match Directory::open(&self.state, false, false)? {
+            Some(directory) => directory,
+            None => return Ok(false),
+        };
+        directory.validate_state_files()?;
+        if !directory.checked(name, true)? {
             return Ok(false);
         }
-        let metadata = fs::symlink_metadata(&path)?;
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::MetadataExt;
-            if metadata.uid() != fs::metadata(&self.state)?.uid() || metadata.nlink() != 1 {
-                bail!("PITR fence ownership changed; preserve diagnostics and inspect manually");
+        let bytes = directory.read(name, 2 * 1024 * 1024, true)?;
+        if bytes == self.receipt {
+            return Ok(true);
+        }
+        if name == ACTIVE && self.project.runtime == Runtime::Docker {
+            // The last Docker marker contains exact original Compose bytes.
+            // Its identity remains bound by recovery.json or the verified
+            // release receipt throughout conversion/atomic release.
+            let identity = match directory.checked(RECEIPT, true)? {
+                true => RECEIPT,
+                false => RELEASED,
+            };
+            if directory.read(identity, 16384, true)? == self.receipt
+                && bytes == docker::original(self)?
+            {
+                return Ok(true);
             }
         }
-        if read_private(&path, 16384)? != self.receipt {
-            bail!(
-                "PITR fence belongs to another project/directory; preserve it and inspect manually"
-            );
-        }
-        Ok(true)
+        bail!(
+            "PITR fence {} belongs to another project/directory or changed; preserve all markers and inspect manually",
+            self.state.join(name).display()
+        );
     }
 
     /// Arm every boot/start adapter before pgBackRest can touch PGDATA. Never
     /// clear in Drop: interruption, including power loss, must remain fenced.
     pub(crate) fn begin(project: &'a Project) -> anyhow::Result<Self> {
         let fence = Self::new(project)?;
+        if project.runtime == Runtime::Docker {
+            read_compose(project)?;
+        }
         directory(&fence.state)?;
         let receipt = fence.owned(RECEIPT)?;
         let active = fence.owned(ACTIVE)?;
@@ -188,33 +247,73 @@ impl<'a> Fence<'a> {
             Runtime::Systemd => native::arm(&fence)?,
             Runtime::Docker => docker::arm(&fence)?,
         }
-        atomic_write(&fence.state.join(RECEIPT), &fence.receipt)?;
-        atomic_write(&fence.state.join(ACTIVE), &fence.receipt)?;
+        let directory = fence.directory()?;
+        directory.write(RECEIPT, &fence.receipt)?;
+        let active = match project.runtime {
+            Runtime::Docker => docker::original(&fence)?,
+            Runtime::Systemd => fence.receipt.clone(),
+        };
+        directory.write(ACTIVE, &active)?;
+        directory.remove(RELEASED)?;
         Ok(fence)
     }
 
     /// Called only by an explicit recovery or after verified restore promotion.
     pub(crate) fn clear_verified(&self) -> anyhow::Result<()> {
+        let directory = self.directory()?;
         let active = self.owned(ACTIVE)?;
         let receipt = self.owned(RECEIPT)?;
         if !active && !receipt {
-            bail!("PITR fence is missing; preserve diagnostics");
+            return self.finish_committed_release();
         }
+        self.owned(RELEASED)?;
+        if self.project.runtime == Runtime::Docker {
+            docker::validate_for_recovery(self)?;
+            docker::require_guarded(self)?;
+        }
+        // Persist identity/verification BEFORE removing any startup marker.
+        // This is metadata, not a startup marker. It makes retries after the
+        // commit (including a subsequent fsync error) explicitly idempotent.
+        directory.write(RELEASED, &self.receipt)?;
         match self.project.runtime {
-            Runtime::Systemd => {}
-            Runtime::Docker => docker::restore_compose(self)?,
+            Runtime::Docker => {
+                let original = docker::original(self)?;
+                // Convert legacy receipt markers while a guard still blocks.
+                // Any failure before the final rename leaves guarded Compose
+                // AND at least active.json. The final rename is the commit:
+                // it removes active.json AND installs original Compose in one
+                // operation, never exposing original Compose with a marker.
+                directory.write(ACTIVE, &original)?;
+                directory.remove(RECEIPT)?;
+                let project = Directory::open(&self.project.dir, false, false)?
+                    .context("PITR project is missing")?;
+                directory.move_to(ACTIVE, &project, "docker-compose.yml")?;
+            }
+            Runtime::Systemd => {
+                // Permanent startup adapters remain installed. The final
+                // unlink is the commit; every earlier failure retains a marker.
+                directory.remove(RECEIPT)?;
+                directory.remove(ACTIVE)?;
+            }
         }
-        // Adapters remain installed until the marker is durably removed. A
-        // cleanup error never authorizes startup of an unverified directory.
-        if receipt {
-            fs::remove_file(self.state.join(RECEIPT))?;
-        }
-        fs::File::open(&self.state)?.sync_all()?;
-        if active {
-            fs::remove_file(self.state.join(ACTIVE))?;
-        }
-        fs::File::open(&self.state)?.sync_all()?;
         Ok(())
+    }
+
+    fn finish_committed_release(&self) -> anyhow::Result<()> {
+        let directory = self.directory()?;
+        if directory.read(RELEASED, 16384, true)? != self.receipt {
+            bail!(
+                "PITR fence {} has no owned verified release; preserve diagnostics",
+                self.state.display()
+            );
+        }
+        if self.project.runtime == Runtime::Docker {
+            docker::require_original(self)?;
+        }
+        Directory::open(&self.project.dir, false, false)?
+            .context("PITR project is missing")?
+            .sync()?;
+        directory.sync()
     }
 }
 
@@ -223,10 +322,18 @@ pub(crate) fn recover(project: &Project, yes: bool) -> anyhow::Result<()> {
     let active = fence.owned(ACTIVE)?;
     let receipt = fence.owned(RECEIPT)?;
     if !active && !receipt {
-        bail!(
-            "no PITR fence for {}; recovery was not needed",
-            project.name
+        fence.finish_committed_release()?;
+        crate::util::ok(
+            "PITR recovery was already committed; original startup configuration is restored",
         );
+        return Ok(());
+    }
+    // Validate every receipt/configuration before any mutation. In particular,
+    // rejected links/owners must not even stop or reconfigure services.
+    fence.directory()?;
+    match project.runtime {
+        Runtime::Docker => docker::validate_for_recovery(&fence)?,
+        Runtime::Systemd => {}
     }
     if !yes
         && !(crate::util::interactive()
@@ -236,19 +343,33 @@ pub(crate) fn recover(project: &Project, yes: bool) -> anyhow::Result<()> {
     {
         bail!("recovery cancelled (use --yes to confirm)");
     }
+    fence.directory()?.make_readable()?;
+    match project.runtime {
+        Runtime::Docker => docker::arm(&fence)?,
+        Runtime::Systemd => native::arm(&fence)?,
+    }
+    files::boundary("ordinary guards armed")?;
     project.stop(&[
         crate::project::Service::App,
         crate::project::Service::Postgres,
     ])?;
+    files::boundary("ordinary services stopped")?;
     super::restore::recovery::Recovery::stop_previous(project)?;
+    files::boundary("previous recovery stopped")?;
     verify::clean_directory(project)?;
+    files::boundary("first offline verification completed")?;
     // This recovery-only server has no TCP listener and no restart policy.
     // Keep both ordinary service entrypoints fenced while checking relations.
     let mut verification = super::restore::recovery::Recovery::start(project)?;
+    files::boundary("isolated verification started")?;
     super::restore::wait_for_promotion(project, &verification)?;
+    files::boundary("verification promotion completed")?;
     verification.check_relations()?;
+    files::boundary("relation verification completed")?;
     verification.stop()?;
+    files::boundary("isolated verification stopped")?;
     verify::clean_directory(project)?;
+    files::boundary("second offline verification completed")?;
     if project.runtime == Runtime::Systemd {
         crate::native::systemctl(&[
             "reset-failed".into(),
@@ -269,3 +390,11 @@ pub(super) fn verify_stopped(project: &Project) -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests;
+#[cfg(all(test, unix))]
+mod transaction_tests;
+
+pub(in crate::pitr) fn read_compose(project: &Project) -> anyhow::Result<Vec<u8>> {
+    Directory::open(&project.dir, false, false)?
+        .context("PITR project is missing")?
+        .read("docker-compose.yml", 2 * 1024 * 1024, false)
+}

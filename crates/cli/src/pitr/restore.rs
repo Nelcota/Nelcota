@@ -15,7 +15,7 @@ const RECOVERY_TIMEOUT: Duration = Duration::from_secs(3600);
 pub(super) mod recovery;
 
 #[cfg(all(test, unix))]
-mod tests;
+pub(super) mod tests;
 
 /// Restores the database to `time` (or to the last archived write) and
 /// starts a new timeline from there.

@@ -1,16 +1,17 @@
 //! Guard the actual container entrypoints, including daemon/host restarts.
+use super::files::Directory;
 use super::{ACTIVE, Fence, RECEIPT, quote, recovery};
 use anyhow::{Context, bail};
-use nelcota_deployment::{atomic_write, read_private};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use std::{fs, process::Stdio};
+use std::process::Stdio;
 
 const ORIGINAL: &str = "compose.original.yml";
 const ORIGINAL_DIGEST: &str = "compose.original.sha256";
 const DIGEST: &str = "compose.guarded.sha256";
 const GUARDED: &str = "compose.guarded.json";
 const MOUNT: &str = "/nelcota-pitr-fence";
+const MOUNT_STATE: &str = "/nelcota-pitr-fence/pitr-fence";
 
 fn digest(bytes: &[u8]) -> String {
     Sha256::digest(bytes)
@@ -21,13 +22,19 @@ fn digest(bytes: &[u8]) -> String {
 
 pub(super) fn arm(fence: &Fence<'_>) -> anyhow::Result<()> {
     let project = fence.project;
+    let directory = fence.directory()?;
+    let project_directory =
+        Directory::open(&project.dir, false, false)?.context("PITR project is missing")?;
     if fence.owned(RECEIPT)? || fence.owned(ACTIVE)? {
         validate_compose(fence)?;
-        let guarded = read_private(&fence.state.join(GUARDED), 2 * 1024 * 1024)?;
-        atomic_write(&project.path("docker-compose.yml"), &guarded)?;
-        // A retry must also remove any existing guarded stopped containers.
+        let guarded = directory.read(GUARDED, 2 * 1024 * 1024, true)?;
+        let upgraded = upgraded_guard(fence, &guarded)?;
+        project_directory.write_config("docker-compose.yml", &upgraded)?;
         return project.compose_ok(&["rm", "--stop", "--force", "app", "postgres"]);
     }
+    // Inspect the primary config without following links before invoking
+    // Compose, even for its non-serving capability preflight.
+    let original = project_directory.read("docker-compose.yml", 2 * 1024 * 1024, false)?;
     // Older scratch app images have no shell and cannot safely enforce a file
     // fence. Refuse before changing PGDATA rather than assuming their version.
     let support = project
@@ -41,6 +48,7 @@ pub(super) fn arm(fence: &Fence<'_>) -> anyhow::Result<()> {
             "/usr/local/bin/nelcota",
             "app",
             "guarded-serve",
+            "--check-only",
             "--check-support",
         ])
         .stdout(Stdio::null())
@@ -51,7 +59,6 @@ pub(super) fn arm(fence: &Fence<'_>) -> anyhow::Result<()> {
             "the app image must support the PITR entrypoint guard; upgrade it to the matching Nelcota version before restoring (PGDATA was not changed)"
         );
     }
-    let original = fs::read(project.path("docker-compose.yml"))?;
     if original.len() > 2 * 1024 * 1024 {
         bail!("compose exceeds the PITR recovery receipt limit");
     }
@@ -66,14 +73,11 @@ pub(super) fn arm(fence: &Fence<'_>) -> anyhow::Result<()> {
     let guarded = guarded_config(fence, config)?;
     // The original is exact bytes, kept private: resolved Compose JSON can
     // contain credentials. Do not print or publish either configuration.
-    atomic_write(&fence.state.join(ORIGINAL), &original)?;
-    atomic_write(
-        &fence.state.join(ORIGINAL_DIGEST),
-        digest(&original).as_bytes(),
-    )?;
-    atomic_write(&fence.state.join(GUARDED), &guarded)?;
-    atomic_write(&fence.state.join(DIGEST), digest(&guarded).as_bytes())?;
-    atomic_write(&project.path("docker-compose.yml"), &guarded)?;
+    directory.write(ORIGINAL, &original)?;
+    directory.write(ORIGINAL_DIGEST, digest(&original).as_bytes())?;
+    directory.write(GUARDED, &guarded)?;
+    directory.write(DIGEST, digest(&guarded).as_bytes())?;
+    project_directory.write_config("docker-compose.yml", &guarded)?;
     // Existing containers retain their old entrypoint and restart policy.
     // Delete them, without deleting volumes, before activating the fence or
     // permitting any restore. New containers always get guarded entrypoints.
@@ -83,7 +87,7 @@ pub(super) fn arm(fence: &Fence<'_>) -> anyhow::Result<()> {
 
 fn guarded_config(fence: &Fence<'_>, mut config: Value) -> anyhow::Result<Vec<u8>> {
     let message = format!(
-        "PITR fence {MOUNT}/{ACTIVE} blocks startup; run `{}` (backup recovery guide)",
+        "PITR fence {MOUNT_STATE}/{ACTIVE} blocks startup; run `{}` (backup recovery guide)",
         recovery(fence.project)?
     );
     for name in ["postgres", "app"] {
@@ -110,7 +114,7 @@ fn guarded_config(fence: &Fence<'_>, mut config: Value) -> anyhow::Result<Vec<u8
             bail!("PITR fence mount conflicts with a custom volume");
         }
         volumes.push(
-            json!({"type":"bind", "source":fence.state.canonicalize()?, "target":MOUNT,
+            json!({"type":"bind", "source":fence.project.dir.canonicalize()?, "target":MOUNT,
             "read_only":true,"bind":{"create_host_path":false}}),
         );
         if name == "app" {
@@ -126,7 +130,7 @@ fn guarded_config(fence: &Fence<'_>, mut config: Value) -> anyhow::Result<Vec<u8
                     "/usr/local/bin/nelcota",
                     "guarded-serve",
                     "--state",
-                    MOUNT,
+                    MOUNT_STATE,
                     "--recovery",
                     recovery(fence.project)?
                 ]),
@@ -141,7 +145,7 @@ fn guarded_config(fence: &Fence<'_>, mut config: Value) -> anyhow::Result<Vec<u8
                 bail!("custom PGDATA requires reviewed PITR fencing before restore");
             }
             let script = format!(
-                "set -eu; if [ -e {MOUNT}/{ACTIVE} ] || [ -L {MOUNT}/{ACTIVE} ] || [ -e {MOUNT}/{RECEIPT} ] || [ -L {MOUNT}/{RECEIPT} ]; then printf '%s\\n' {} >&2; exit 78; fi; exec /usr/local/bin/docker-entrypoint.sh \"$@\"",
+                "set -eu; if [ -L {MOUNT_STATE} ] || [ ! -d {MOUNT_STATE} ] || [ \"$(stat -c %u {MOUNT_STATE})\" != \"$(stat -c %u {MOUNT})\" ] || [ -e {MOUNT_STATE}/{ACTIVE} ] || [ -L {MOUNT_STATE}/{ACTIVE} ] || [ -e {MOUNT_STATE}/{RECEIPT} ] || [ -L {MOUNT_STATE}/{RECEIPT} ] || [ ! -f {MOUNT_STATE}/release.verified.json ] || [ -L {MOUNT_STATE}/release.verified.json ] || [ \"$(stat -c %u {MOUNT_STATE}/release.verified.json)\" != \"$(stat -c %u {MOUNT})\" ] || [ \"$(stat -c %a {MOUNT_STATE}/release.verified.json)\" != 600 ] || [ \"$(stat -c %h {MOUNT_STATE}/release.verified.json)\" != 1 ]; then printf '%s\\n' {} >&2; exit 78; fi; exec /usr/local/bin/docker-entrypoint.sh \"$@\"",
                 quote(&message)
             );
             service.insert("entrypoint".into(), json!(["/bin/sh", "-c", script, "--"]));
@@ -162,30 +166,95 @@ fn escape_dollars(value: &mut Value) {
     }
 }
 
-fn validate_compose(fence: &Fence<'_>) -> anyhow::Result<Vec<u8>> {
-    let original = read_private(&fence.state.join(ORIGINAL), 2 * 1024 * 1024)?;
-    if digest(&original).as_bytes() != read_private(&fence.state.join(ORIGINAL_DIGEST), 64)? {
-        bail!("saved original Docker configuration changed; PITR fence retained");
+fn upgraded_guard(fence: &Fence<'_>, guarded: &[u8]) -> anyhow::Result<Vec<u8>> {
+    let mut config: Value = serde_json::from_slice(guarded)?;
+    unescape_dollars(&mut config);
+    for name in ["app", "postgres"] {
+        let service = config["services"][name]
+            .as_object_mut()
+            .context("invalid saved PITR service")?;
+        service.remove("entrypoint");
+        if name == "app" {
+            service.remove("command");
+        }
+        if let Some(volumes) = service.get_mut("volumes").and_then(Value::as_array_mut) {
+            volumes.retain(|v| v.get("target").and_then(Value::as_str) != Some(MOUNT));
+        }
     }
-    let expected = read_private(&fence.state.join(DIGEST), 64)?;
-    let guarded = read_private(&fence.state.join(GUARDED), 2 * 1024 * 1024)?;
-    if digest(&guarded).as_bytes() != expected {
-        bail!("saved Docker PITR start guard changed; preserve the fence and inspect manually");
-    }
-    let current = fs::read(fence.project.path("docker-compose.yml"))?;
-    // A power cut during release may leave the original already restored.
-    if current != original && digest(&current).as_bytes() != expected {
+    guarded_config(fence, config)
+}
+
+pub(super) fn original(fence: &Fence<'_>) -> anyhow::Result<Vec<u8>> {
+    let directory = fence.directory()?;
+    let original = directory.read(ORIGINAL, 2 * 1024 * 1024, true)?;
+    if digest(&original).as_bytes() != directory.read(ORIGINAL_DIGEST, 64, true)? {
         bail!(
-            "Docker configuration changed while PITR-fenced; preserve the fence and inspect manually"
+            "PITR fence {}: saved original Compose changed; all markers retained",
+            directory.path.join(ORIGINAL).display()
         );
     }
     Ok(original)
 }
 
-pub(super) fn restore_compose(fence: &Fence<'_>) -> anyhow::Result<()> {
-    let original = validate_compose(fence)?;
-    atomic_write(&fence.project.path("docker-compose.yml"), &original)?;
+fn validate_compose(fence: &Fence<'_>) -> anyhow::Result<Vec<u8>> {
+    let original = original(fence)?;
+    let directory = fence.directory()?;
+    let expected = directory.read(DIGEST, 64, true)?;
+    let guarded = directory.read(GUARDED, 2 * 1024 * 1024, true)?;
+    if digest(&guarded).as_bytes() != expected {
+        bail!("PITR fence saved Docker guard changed; preserve all markers");
+    }
+    let project =
+        Directory::open(&fence.project.dir, false, false)?.context("PITR project is missing")?;
+    let current = project.read("docker-compose.yml", 2 * 1024 * 1024, false)?;
+    // Accept a pre-fix interrupted release only so explicit recovery can
+    // re-arm its guards BEFORE touching PostgreSQL. Never clear it directly.
+    if current != original
+        && digest(&current).as_bytes() != expected
+        && current != upgraded_guard(fence, &guarded)?
+    {
+        bail!(
+            "PITR fence {}: Docker configuration changed; preserve all markers",
+            project.path.join("docker-compose.yml").display()
+        );
+    }
+    Ok(original)
+}
+
+pub(super) fn validate_for_recovery(fence: &Fence<'_>) -> anyhow::Result<()> {
+    validate_compose(fence)?;
+    fence.owned(super::RELEASED)?;
     Ok(())
+}
+
+pub(super) fn require_guarded(fence: &Fence<'_>) -> anyhow::Result<()> {
+    validate_compose(fence)?;
+    let project =
+        Directory::open(&fence.project.dir, false, false)?.context("PITR project is missing")?;
+    let current = project.read("docker-compose.yml", 2 * 1024 * 1024, false)?;
+    let saved = fence.directory()?.read(GUARDED, 2 * 1024 * 1024, true)?;
+    if current != saved && current != upgraded_guard(fence, &saved)? {
+        bail!("PITR fence requires guarded Compose before release; rerun pitr recover --yes");
+    }
+    Ok(())
+}
+
+pub(super) fn require_original(fence: &Fence<'_>) -> anyhow::Result<()> {
+    let project =
+        Directory::open(&fence.project.dir, false, false)?.context("PITR project is missing")?;
+    if project.read("docker-compose.yml", 2 * 1024 * 1024, false)? != original(fence)? {
+        bail!("PITR fence has no committed original Compose; preserve diagnostics");
+    }
+    Ok(())
+}
+
+fn unescape_dollars(value: &mut Value) {
+    match value {
+        Value::String(text) => *text = text.replace("$$", "$"),
+        Value::Array(items) => items.iter_mut().for_each(unescape_dollars),
+        Value::Object(items) => items.values_mut().for_each(unescape_dollars),
+        _ => {}
+    }
 }
 
 #[cfg(test)]

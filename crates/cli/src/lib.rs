@@ -81,6 +81,9 @@ pub enum Command {
             default_value = "nelcota -C <host> -p <project> pitr recover --yes"
         )]
         recovery: String,
+        /// Startup guard only: never loads server config or starts HTTP.
+        #[arg(long)]
+        check_only: bool,
         /// Capability preflight only: never starts the server.
         #[arg(long)]
         check_support: bool,
@@ -274,12 +277,14 @@ mod types_tests {
     #[test]
     fn guarded_container_entrypoint_refuses_fence_before_loading_server_config() {
         let directory = tempfile::tempdir().unwrap();
-        std::fs::write(directory.path().join("active.json"), b"fenced").unwrap();
+        let state = directory.path().join("state");
+        std::fs::create_dir(&state).unwrap();
+        nelcota_deployment::atomic_write(&state.join("active.json"), b"fenced").unwrap();
         let args = [
             "nelcota",
             "guarded-serve",
             "--state",
-            directory.path().to_str().unwrap(),
+            state.to_str().unwrap(),
             "--recovery",
             "nelcota -C /owned -p shop pitr recover --yes",
         ];
@@ -464,13 +469,17 @@ pub fn run(mut cli: Cli) -> anyhow::Result<Outcome> {
         Command::GuardedServe {
             state,
             recovery,
+            check_only,
             check_support,
         } => {
             if check_support {
                 return Ok(Outcome::Done);
             }
-            pitr::fence::require_clear_at(&state, &recovery)?;
+            pitr::fence::require_guard_clear_at(&state, &recovery)?;
             pitr::fence::require_native_clear()?;
+            if check_only {
+                return Ok(Outcome::Done);
+            }
             Ok(Outcome::Serve(Box::new(Config::load()?)))
         }
         Command::Updates(args) => updates::run(&cli.dir, args),

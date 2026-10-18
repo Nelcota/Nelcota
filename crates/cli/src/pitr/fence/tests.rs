@@ -52,7 +52,6 @@ fn unfenced_directories_are_allowed_and_foreign_fences_cannot_be_released() {
 #[cfg(unix)]
 #[test]
 fn native_boot_and_manual_systemctl_guards_fail_then_allow_verified_recovery() {
-    use std::process::Command;
     let root = tempfile::tempdir().unwrap();
     let project = project(root.path(), Runtime::Systemd);
     let mut fence = Fence::new(&project).unwrap();
@@ -61,14 +60,7 @@ fn native_boot_and_manual_systemctl_guards_fail_then_allow_verified_recovery() {
     let units = root.path().join("units");
     fs::create_dir(&units).unwrap();
     native::arm_fixture(&fence, &units).unwrap();
-    let guard = fence.state.join("check-start");
-    assert!(
-        Command::new("/bin/sh")
-            .arg(&guard)
-            .status()
-            .unwrap()
-            .success()
-    );
+    require_clear_at(&fence.state, "unused").unwrap();
     atomic_write(&fence.state.join(ACTIVE), &fence.receipt).unwrap();
     atomic_write(&fence.state.join(RECEIPT), &fence.receipt).unwrap();
     for unit in [
@@ -78,22 +70,15 @@ fn native_boot_and_manual_systemctl_guards_fail_then_allow_verified_recovery() {
         let contents =
             fs::read_to_string(units.join(format!("{unit}.service.d/80-nelcota-pitr-fence.conf")))
                 .unwrap();
-        assert!(contents.contains(&format!("ExecStartPre=+/bin/sh {}", guard.display())));
-        let output = Command::new("/bin/sh").arg(&guard).output().unwrap();
-        assert_eq!(output.status.code(), Some(78));
-        let error = String::from_utf8(output.stderr).unwrap();
-        assert!(error.contains(&fence.state.join(ACTIVE).display().to_string()));
-        assert!(error.contains("pitr recover --yes"));
+        assert!(contents.contains("guarded-serve --check-only --state"));
+        assert!(contents.contains("pitr recover --yes"));
+        let error = require_clear_at(&fence.state, "pitr recover --yes")
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("active.json") && error.contains("pitr recover --yes"));
     }
     fence.clear_verified().unwrap();
     require_clear_at(&fence.state, "unused").unwrap();
-    assert!(
-        Command::new("/bin/sh")
-            .arg(&guard)
-            .status()
-            .unwrap()
-            .success()
-    );
 }
 
 #[test]

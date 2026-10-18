@@ -133,7 +133,7 @@ impl<'a> Recovery<'a> {
             }
             Runtime::Docker => {
                 let config: serde_json::Value =
-                    serde_json::from_slice(&std::fs::read(project.path("docker-compose.yml"))?)?;
+                    serde_json::from_slice(&crate::pitr::fence::read_compose(project)?)?;
                 let label = format!("io.nelcota.pitr-owner={}", recovery.name);
                 let mut command = vec![
                     "run",

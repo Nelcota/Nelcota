@@ -72,11 +72,17 @@ fn restore_fence_survives_process_exit_and_requires_verified_recovery() {
         "fence-unwritable",
     ] {
         let directory = tempfile::tempdir().unwrap();
-        let bin = directory.path().join("bin");
+        let directory_path = directory.path().join("project");
+        fs::create_dir(&directory_path).unwrap();
+        let bin = directory_path.as_path().join("bin");
         fs::create_dir(&bin).unwrap();
-        fs::write(directory.path().join("pgbackrest.env"), "# test fixture\n").unwrap();
         fs::write(
-            directory.path().join("docker-compose.yml"),
+            directory_path.as_path().join("pgbackrest.env"),
+            "# test fixture\n",
+        )
+        .unwrap();
+        fs::write(
+            directory_path.as_path().join("docker-compose.yml"),
             "# original fixture\n",
         )
         .unwrap();
@@ -84,11 +90,15 @@ fn restore_fence_survives_process_exit_and_requires_verified_recovery() {
         fs::write(&adapter, ADAPTER).unwrap();
         fs::set_permissions(&adapter, fs::Permissions::from_mode(0o700)).unwrap();
         if mode == "fence-unwritable" {
-            fs::write(directory.path().join("pitr-fence"), b"not a directory").unwrap();
+            fs::write(
+                directory_path.as_path().join("pitr-fence"),
+                b"not a directory",
+            )
+            .unwrap();
         }
         let output = Command::new(std::env::current_exe().unwrap())
             .args(["--exact", TEST, "--nocapture"])
-            .env(FIXTURE, directory.path())
+            .env(FIXTURE, directory_path.as_path())
             .env("PITR_FIXTURE_MODE", mode)
             .env("PATH", &bin)
             .output()
@@ -102,8 +112,8 @@ fn restore_fence_survives_process_exit_and_requires_verified_recovery() {
         if mode == "fence-unwritable" {
             continue;
         }
-        assert!(directory.path().join("adapter-marker").is_file());
-        let commands = fs::read_to_string(directory.path().join("commands.log")).unwrap();
+        assert!(directory_path.as_path().join("adapter-marker").is_file());
+        let commands = fs::read_to_string(directory_path.as_path().join("commands.log")).unwrap();
         let commands: Vec<_> = commands.lines().collect();
         let removal = commands
             .iter()
@@ -126,7 +136,10 @@ fn restore_fence_survives_process_exit_and_requires_verified_recovery() {
             continue;
         }
         assert!(
-            directory.path().join("pitr-fence/active.json").is_file(),
+            directory_path
+                .as_path()
+                .join("pitr-fence/active.json")
+                .is_file(),
             "fence must survive the child process"
         );
         assert!(
@@ -142,7 +155,7 @@ fn restore_fence_survives_process_exit_and_requires_verified_recovery() {
                     "pitr::restore::tests::explicit_recovery_reopens_verified_directory",
                     "--nocapture",
                 ])
-                .env(FIXTURE, directory.path())
+                .env(FIXTURE, directory_path.as_path())
                 .env("PITR_FIXTURE_MODE", mode)
                 .env("PATH", &bin)
                 .output()
@@ -153,7 +166,12 @@ fn restore_fence_survives_process_exit_and_requires_verified_recovery() {
                 String::from_utf8_lossy(&output.stdout),
                 String::from_utf8_lossy(&output.stderr)
             );
-            assert!(!directory.path().join("pitr-fence/active.json").exists());
+            assert!(
+                !directory_path
+                    .as_path()
+                    .join("pitr-fence/active.json")
+                    .exists()
+            );
         }
     }
 }
@@ -171,12 +189,12 @@ fn explicit_recovery_reopens_verified_directory() {
     }
 }
 
-const ADAPTER: &str = r#"#!/bin/sh
+pub(in crate::pitr) const ADAPTER: &str = r#"#!/bin/sh
 set -eu
 printf '%s\n' "$*" >> "$NELCOTA_PITR_ERROR_TEST_FIXTURE/commands.log"
 case " $* " in
   *" stop app postgres "|*" rm --stop --force app postgres ") exit 0 ;;
-  *" guarded-serve --check-support ") exit 0 ;;
+  *" guarded-serve --check-only --check-support ") exit 0 ;;
   *" config --format json ") printf '%s\n' '{"name":"fixture","services":{"app":{"image":"app:fixed","restart":"always"},"postgres":{"image":"postgres:17","restart":"always"}}}'; exit 0 ;;
   *" --entrypoint pgbackrest postgres --stanza=main --delta restore ")
     test -f "$NELCOTA_PITR_ERROR_TEST_FIXTURE/pitr-fence/active.json"
