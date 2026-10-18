@@ -70,6 +70,7 @@ pub fn remove(
         Runtime::Docker => None,
     };
     let project = host.project(&manifest, &entry);
+    crate::pitr::fence::require_clear(&project)?;
     match no_backup {
         true => {
             warn("--no-backup: removing without a final backup");

@@ -12,7 +12,6 @@ pub(super) trait Services {
     fn recreate(&self, service: Service) -> anyhow::Result<()>;
     fn logs(&self, follow: bool, service: Option<Service>) -> anyhow::Result<()>;
     fn health(&self, service: Service) -> Option<String>;
-    fn postgres_crashed(&self) -> bool;
     fn prepare_version(&self, version: &str) -> anyhow::Result<()>;
 }
 
@@ -71,25 +70,6 @@ impl Services for Docker<'_> {
             .output()
             .ok()?;
         Some(String::from_utf8_lossy(&output.stdout).trim().to_owned())
-    }
-    fn postgres_crashed(&self) -> bool {
-        let id = match self.0.compose_output_quiet(&["ps", "-a", "-q", "postgres"]) {
-            Ok(id) => id,
-            _ => {
-                return false;
-            }
-        };
-        Command::new("docker")
-            .args(["inspect", "--format", "{{.RestartCount}}", id.trim()])
-            .output()
-            .ok()
-            .and_then(|out| {
-                String::from_utf8_lossy(&out.stdout)
-                    .trim()
-                    .parse::<u64>()
-                    .ok()
-            })
-            .is_some_and(|count| count > 0)
     }
     fn prepare_version(&self, version: &str) -> anyhow::Result<()> {
         // Override Compose interpolation only; the running project's .env
@@ -202,9 +182,6 @@ impl Services for Systemd<'_> {
             }
             .into(),
         )
-    }
-    fn postgres_crashed(&self) -> bool {
-        native::unit_state(native::POSTGRES_UNIT).as_deref() == Some("failed")
     }
     fn prepare_version(&self, _version: &str) -> anyhow::Result<()> {
         Ok(())

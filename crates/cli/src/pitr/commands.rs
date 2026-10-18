@@ -41,21 +41,6 @@ pub(super) fn restore(project: &Project, time: Option<&str>) -> anyhow::Result<(
         "pgbackrest restore",
     )
 }
-pub(super) fn in_recovery(project: &Project) -> Option<bool> {
-    let output = project
-        .as_postgres(&["psql", "-tAc", "SELECT pg_is_in_recovery()"])
-        .stderr(std::process::Stdio::null())
-        .output()
-        .ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    match String::from_utf8_lossy(&output.stdout).trim() {
-        "f" => Some(false),
-        "t" => Some(true),
-        _ => None,
-    }
-}
 
 #[cfg(test)]
 mod tests {
