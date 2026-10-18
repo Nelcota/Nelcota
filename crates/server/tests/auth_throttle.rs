@@ -64,11 +64,10 @@ async fn exhausted_account_budget_does_not_reject_a_fresh_source() {
         .status,
         StatusCode::CREATED
     );
+    let wrong = Uuid::new_v4().to_string();
     for source in ["192.0.2.1", "192.0.2.2"] {
         assert_eq!(
-            login_from(&app, &email, "wrong-password", source)
-                .await
-                .status,
+            login_from(&app, &email, &wrong, source).await.status,
             StatusCode::BAD_REQUEST
         );
     }
@@ -97,21 +96,18 @@ async fn one_source_keeps_its_existing_hard_ceiling() {
     })
     .await;
     let email = format!("{}@example.test", Uuid::new_v4().simple());
+    let wrong = Uuid::new_v4().to_string();
     for _ in 0..2 {
         assert_eq!(
-            login_from(&app, &email, "wrong-password", "192.0.2.4")
-                .await
-                .status,
+            login_from(&app, &email, &wrong, "192.0.2.4").await.status,
             StatusCode::BAD_REQUEST
         );
     }
-    let blocked = login_from(&app, &email, "wrong-password", "192.0.2.4").await;
+    let blocked = login_from(&app, &email, &wrong, "192.0.2.4").await;
     assert_eq!(blocked.status, StatusCode::TOO_MANY_REQUESTS);
     assert!(blocked.headers.contains_key(header::RETRY_AFTER));
     assert_eq!(
-        login_from(&app, &email, "wrong-password", "192.0.2.5")
-            .await
-            .status,
+        login_from(&app, &email, &wrong, "192.0.2.5").await.status,
         StatusCode::BAD_REQUEST
     );
 }
