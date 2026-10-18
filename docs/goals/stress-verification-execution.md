@@ -4087,3 +4087,20 @@ effective disk load is18,690seconds. Continuous endurance remains14,400seconds.
 Historical floor162,324 plus completed final disk18,690 yields181,014seconds
 (50h16m54s); the interrupted S3's510closed non-warmup seconds are preserved
 but not added to that passing-run floor.
+
+## S3 bounded retry failed — 2026-10-18T03:59:13.568513+00:00
+
+`s3-converged-final-002` failed before endurance at `login-1`: the resource
+sampler's disk-budget step received `exec sh: can't fork: Resource temporarily
+unavailable`, repeated during teardown.131resource observations preceded the
+stop. The last complete sample had app6/PG22/metrics9/S380cgroup tasks, each
+with pids.max256, and zero observed OOMs. The host hierarchical pids.events
+counter was max2 after closure; the offending component was not attributed.
+The cause remains open O6; no product defect or acknowledged-data failure is
+inferred from these observations. No quota/SLO change or further S3 retry.
+
+The owner exited1 and cleanup is confirmed, with no owned container, volume
+or fixture directory. Raw counter825seconds includes15warmup;810non-warmup
+seconds of closed phases survive, but zero seconds of S3 endurance are
+credited. The final four-hour S3 criterion is failed/unapproved.
+Next: only the predeclared existing single-fault campaign, once, then report.

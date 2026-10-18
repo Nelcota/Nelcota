@@ -106,20 +106,26 @@
     },
     {
       "cell": "continuous four-hour real S3 endurance",
-      "status": "in progress",
+      "status": "failed",
       "run_id": "s3-converged-final-002",
       "started_at_utc": "2026-10-18T03:42:05.063681+00:00",
       "requested_seconds": 14400,
       "infrastructure_interruption": "s3-converged-final-001-platform-interruption.json",
-      "maximum_infrastructure_retries": 1
+      "maximum_infrastructure_retries": 1,
+      "evidence": "s3-converged-final-002-failed.json",
+      "continuous_seconds_credited": 0,
+      "cleanup_confirmed": true,
+      "no_further_retry": true
     },
     {
       "cell": "single faults under load",
-      "status": "not run"
+      "status": "in progress",
+      "run_id": "fault-converged-final-001",
+      "started_at_utc": "2026-10-18T03:59:29.840265+00:00"
     }
   ],
-  "status": "a failed; b passed with eight comparisons; c running; d not run",
+  "status": "a failed; b passed; c failed; d running; report and stop next",
   "certifies_g05": false,
   "frozen_artifact_evidence": "campaign-final-artifact.json",
-  "updated_at_utc": "2026-10-18T03:42:05.063681+00:00"
+  "updated_at_utc": "2026-10-18T03:59:13.568513+00:00"
 }

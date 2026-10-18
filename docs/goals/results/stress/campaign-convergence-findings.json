@@ -68,6 +68,16 @@
         "native-reboot-preconvergence-fixture-diagnostic.json"
       ],
       "action": "Preserve the original observation. The final fencing probe established a synced disposable installation baseline to avoid masking boot reopening; it does not prove the installation-durability issue fixed. No extra experiment, product fix or campaign restart in this narrowed schedule."
+    },
+    {
+      "id": "O6",
+      "status": "open",
+      "classification": "resource observation failure; cause unconfirmed",
+      "finding": "S3attempt002 failed at login-1 when disk-budget sampling could not fork a shell (EAGAIN).131samples preceded the failure; no endurance began.",
+      "evidence": [
+        "s3-converged-final-002-failed.json"
+      ],
+      "action": "Retain failed receipt and missing scope. Cleanup confirmed. No product fix, quota increase, refreeze or further S3 retry. Continue only D after safe admission."
     }
   ],
   "harness_ledger": [

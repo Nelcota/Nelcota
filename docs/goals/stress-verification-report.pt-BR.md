@@ -39,8 +39,8 @@ mantido como rascunho para revisão.
 |---|---|---|
 | a — fence de restore após reboot | **failed** | [Probe final](results/stress/native-reboot-converged-verdict.json): os mesmos bytes congelados; PostgreSQL, aplicação e API autenticada reabriram na primeira amostra, antes da recuperação explícita. Linhas preservadas, canários401/RLS0/arquivo404 e limpeza confirmados. P12 fica aberto, sem correção automática. |
 | b — disco contínuo, quatro horas | **passed** | [14.400s contínuos,18.690s efetivos, integridade e limpeza](results/stress/disk-converged-final-001.json); [oito comparações aprovadas](results/stress/disk-converged-final-001-comparison.json). |
-| c — S3 real contínuo, quatro horas | Em execução desde18/10,03:42UTC, tentativa002 | A tentativa001 foi [interrompida pelo reinício do ambiente](results/stress/s3-converged-final-001-platform-interruption.json), antes do endurance, sem crédito de soak. Diagnósticos preservados e limpeza confirmada. Única nova tentativa de infraestrutura, mesmo ELF e limites; RustFS real compatível com S3, sem alegação de AWS/WAL/PITR. |
-| d — falhas simples sob carga | **not run**, aguardando S3 | Somente o perfil existente, uma falha por vez. |
+| c — S3 real contínuo, quatro horas | **failed** | [Tentativa002](results/stress/s3-converged-final-002-failed.json) parou antes do endurance: coletor sem capacidade de fork, causa ainda não atribuída; limpeza confirmada. Tentativa001 interrompida pelo reinício do ambiente e preservada. Sem nova tentativa nem crédito de quatro horas S3. |
+| d — falhas simples sob carga | Em execução desde18/10,03:59UTC | Somente o perfil existente, uma falha por vez; S3 anterior encerrado com limpeza confirmada. |
 | Oito células operacionais declaradas | **blocked (environment)** | [Perfis necessários e proibição de retry/workaround](results/stress/campaign-convergence-policy.json). |
 
 O G05 permanece sem aprovação integral. Controles locais deste escopo:
