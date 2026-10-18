@@ -28,6 +28,9 @@ jobs:
       - run: cargo clippy --all-targets -- -D warnings
       # Integration tests start Postgres 17 via testcontainers (the runner's Docker).
       - run: cargo test --all
+      - name: Dedicated SQL and export cancellation ownership controls
+        timeout-minutes: 2
+        run: nice -n19 ionice -c3 cargo test --locked -p nelcota-server --test sql_cancellation -- --nocapture
       - name: documented Notes onboarding
         timeout-minutes: 5
         run: |

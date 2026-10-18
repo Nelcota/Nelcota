@@ -283,14 +283,15 @@ it('does not send a refresh when the reservation cannot commit', async () => {
   try {
     // Seed a fresh session, then fail the transaction that reserves rotation.
     await client.auth.setSession(session());
-    const open = factory.open.bind(factory);
-    let calls = 0;
-    vi.spyOn(factory, 'open').mockImplementation((...args) => {
-      if (++calls === 3) throw new Error('reservation failed');
-      return open(...args);
+    const original = BrowserSessionState.prototype.reserve;
+    const reservation = vi.spyOn(BrowserSessionState.prototype, 'reserve').mockImplementation(function (this: BrowserSessionState, value) {
+      vi.spyOn(factory, 'open').mockImplementationOnce(() => { throw new Error('reservation failed'); });
+      return original.call(this, value);
     });
-    await expect(client.auth.refreshSession()).rejects.toThrow('reservation failed');
-    expect(mock.calls).toHaveLength(0);
+    try {
+      await expect(client.auth.refreshSession()).rejects.toThrow('reservation failed');
+      expect(mock.calls).toHaveLength(0);
+    } finally { reservation.mockRestore(); }
   } finally { client.dispose(); }
 });
 

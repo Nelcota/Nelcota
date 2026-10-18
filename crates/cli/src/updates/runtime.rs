@@ -847,6 +847,11 @@ mod tests {
 
     #[test]
     fn running_native_identity_rejects_replacement_even_with_the_same_hash() {
+        use std::io::{Read, Write};
+        use std::os::fd::OwnedFd;
+        use std::os::unix::net::UnixStream;
+        use std::process::Stdio;
+
         struct Process(std::process::Child);
         impl Drop for Process {
             fn drop(&mut self) {
@@ -856,8 +861,29 @@ mod tests {
         }
         let temporary = tempfile::tempdir().unwrap();
         let installed = temporary.path().join("installed");
-        fs::copy("/bin/sleep", &installed).unwrap();
-        let process = Process(Command::new(&installed).arg("30").spawn().unwrap());
+        fs::copy("/bin/cat", &installed).unwrap();
+        let (mut readiness, child_socket) = UnixStream::pair().unwrap();
+        readiness
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        readiness
+            .set_write_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        let input: OwnedFd = child_socket.try_clone().unwrap().into();
+        let output: OwnedFd = child_socket.into();
+        let process = Process(
+            Command::new(&installed)
+                .stdin(Stdio::from(input))
+                .stdout(Stdio::from(output))
+                .spawn()
+                .unwrap(),
+        );
+        // spawn's exec notification can precede /proc's executable update.
+        // Actual child I/O proves readiness without retrying the security check.
+        readiness.write_all(b"ready\n").unwrap();
+        let mut observed = [0; 6];
+        readiness.read_exact(&mut observed).unwrap();
+        assert_eq!(&observed, b"ready\n");
         let running = std::path::PathBuf::from(format!("/proc/{}/exe", process.0.id()));
         let digest = digest_file(&installed, 256 * 1024 * 1024).unwrap();
         validate_running_binary(&installed, &running, &digest).unwrap();

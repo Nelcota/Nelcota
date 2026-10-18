@@ -65,6 +65,10 @@ pub fn remove(
         bail!("removal cancelled (use --yes to skip the question)");
     }
 
+    let native_lease = match manifest.runtime {
+        Runtime::Systemd => Some(native::acquire_machine(host)?),
+        Runtime::Docker => None,
+    };
     let project = host.project(&manifest, &entry);
     match no_backup {
         true => {
@@ -114,6 +118,9 @@ pub fn remove(
             fs::remove_dir_all(&project.dir)?;
             ok(&format!("folder {} removed", project.dir.display()));
         }
+    }
+    if let Some(lease) = native_lease {
+        lease.release()?;
     }
     ok(&format!("project {name} removed"));
     Ok(())

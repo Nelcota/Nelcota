@@ -148,7 +148,22 @@ the PostgreSQL project's apt repository (PGDG) and Caddy from its own, then:
 - Every command works the same way (`up`, `down`, `status`, `logs`, `migrate`,
   `backup`, `restore`, `pitr`, `upgrade`, `remove`); they drive `systemctl`,
   `journalctl` and `runuser -u postgres` instead of `docker compose`.
-- One project per machine: a second `init` is refused. For more, use Docker.
+- One project per machine: a second `init` is refused, including from another
+  directory and with `--skip-checks`. A machine-wide lease serializes native
+  init/removal; `/var/lib/nelcota-native/owner.json` keeps the host-directory
+  claim across interrupted commands. Only a completely successful `remove`
+  releases it. Do not delete this record to bypass an interrupted installation:
+  inspect and recover the original host over SSH. Legacy installations without
+  a record are adopted only when their existing unit points unambiguously to
+  the selected host's absolute `.env` path; conflicting or incomplete state
+  requires explicit recovery. For multiple projects, use Docker.
+- Native PostgreSQL uses the local `17/main` cluster on port 5432. A differently
+  configured `17/main`, or another PostgreSQL cluster reserving 5432, is rejected
+  before packages or new host/project configuration are written, including with
+  `--skip-checks`. Other ports are not selected by native database commands. Native
+  administrative clients explicitly select this cluster and local socket;
+  ambient `PGCLUSTER`, `PGHOST`, `PGHOSTADDR`, `PGPORT` or service settings cannot
+  redirect a backup, restore or credential update to a different database.
 - The app's unit runs as a throwaway user (`DynamicUser`) with no write
   access to the system (`ProtectSystem=strict`) and no capabilities.
 - `upgrade` swaps the binary the unit runs for the one you are running (so
