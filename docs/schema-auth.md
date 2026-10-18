@@ -204,12 +204,31 @@ it completes or times out.
 SMTP errors and timeouts are logged; sending remains a best-effort background
 operation rather than a durable delivery queue.
 
-Password: 8 to 256 characters. Rate limit:
-`NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE` per IP (default 30) and the same limit
-per email on password login. Refreshes and PKCE redemptions
-(`grant_type=refresh_token` / `pkce`) draw from a separate per-IP budget of
-10 times that (300 by default), so open tabs refreshing do not use up the
-password sign-in budget of everyone behind the same IP.
+Password: 8 to 256 characters. Password login has hard limits of
+`NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE` per IP (default 30) and per normalized
+email/IP pair. All attempts count, including successful and unknown-account
+attempts. Each bucket allows a burst of that size and refills continuously
+at that many attempts per minute; the shared per-IP budget remains unchanged.
+
+The account aggregate uses the same quota for backpressure, rather than hard
+rejection: excess attempts wait 125, 250, 500, 1,000, then at most 2,000 ms.
+A refill admission resets the delay progression. Waiting holds neither a DB
+connection nor a password worker. A correct login from an independent source
+with available IP/pair budgets inherits at most two seconds of throttle delay,
+even during continuing account-targeted abuse. Normal request deadlines,
+worker admission/overload responses and bounded limiter capacity still apply.
+
+Trade-off: a strict account-wide verification ceiling cannot also guarantee
+admission of an unrecognized legitimate source when attackers continuously
+spend that ceiling. Distributed sources can now exceed the former aggregate
+ceiling; each source and email/source pair retain the original hard quota.
+The aggregate delay is backpressure, not a distributed brute-force ceiling.
+Keep trusted proxy configuration and upstream abuse controls; limits are per
+process and shared NAT users still share their IP budget.
+
+Refreshes and PKCE redemptions (`grant_type=refresh_token` / `pkce`) draw from
+a separate per-IP budget of 10 times that (300 by default), so open tabs
+refreshing do not use up the password sign-in budget.
 
 ## Updating the signed-in user
 
@@ -245,6 +264,16 @@ NELCOTA_PASSWORD_RECOVERY_URL=https://app.shop.com/new-password
 
 A half-configured setup stops the server from starting (better than finding
 out on the first "forgot my password").
+
+When SMTP is disabled, there is no self-service email reset. An operator must
+verify the account owner's identity through a separate trusted channel, sign
+in to the project panel, open **Users**, select the account and reset its
+password. Deliver the replacement privately. This ends refresh sessions but
+does not erase IP/pair throttle state or revoke existing access JWTs before
+expiry. Stop abusive sources at the trusted ingress, then retry from an
+independent source or allow at most 60 seconds without new attempts for full
+bucket refill. There is no persistent account lock to unlock. Do not restart
+the service or disable limits as a recovery shortcut.
 
 1. The app calls `POST /auth/v1/recover {email}`. The answer is always
    `200 {}`, so it does not reveal who has an account. If the account exists,

@@ -1,1 +1,0 @@
-import{_ as e,v as t}from"./index.svelte-5JiAXn-L.js";import"./button-Cikm8edb.js";import{E as n}from"./index-glEM1LmL.js";var r=new Set([`$$slots`,`$$events`,`$$legacy`]);function i(i,a){let o=e(a,r),s={name:`user-round`,size:24,node:[[`circle`,{cx:`12`,cy:`8`,r:`5`}],[`path`,{d:`M20 21a8 8 0 0 0-16 0`}]],aliases:[`user-2`]};n(i,t(()=>o,{get icon(){return s}}))}export{i as t};
