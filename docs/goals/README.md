@@ -11,12 +11,18 @@ evidence is recorded in [the review execution record](triple-review-execution.md
 A focused [memory lifecycle review](memory-review-execution.md) records subsequent
 ownership/cancellation corrections and their release-of-resource evidence.
 
+G06 is planned: its bounded authentication/session review starts on one frozen
+`main` SHA after the G05 production fixes in [PR #91](https://github.com/Nelcota/Nelcota/pull/91)
+merge. The [intake record](auth-security-review-execution.md) claims no completed
+security coverage; phase 1 and its 24-hour budget have not started.
+
 | Goal | Outcome |
 |---|---|
 | [G01: Reusable authentication](auth-reusability.md) | An independent Rust consumer integrates Nelcota authentication through a stable public API and a documented database lifecycle. |
 | [G02: Architecture and operational quality](architecture-security-performance.md) | Clear module ownership, tested security boundaries and reproducible performance, load and stress evidence across the project. |
 | [G03: Controlled panel updates](panel-updates-and-recovery.md) | Implemented: scoped authority, verified release discovery, durable jobs and recovery; production activation remains gated by exact-binary VPS acceptance. |
 | [G04: Three project reviews](triple-project-review.md) | Three complementary reviews, reproduced corrections, evolving criteria and a final evidence-based report. |
+| [G06: Authentication and session security](auth-security-review.md) | Planned: endpoint/token/SDK threat model, negative fixture tests, bounded fixes and a Portuguese report; merged-main baseline prerequisite pending. |
 
 G02 established the inventory and retained release baseline; G01's archive
 consumer proves the auth boundary. The ownership map and regression gates keep
