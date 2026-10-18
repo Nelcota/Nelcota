@@ -27,6 +27,9 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Enforce optional JWT `nbf` and `iat` with 30 seconds of clock leeway across
+  built-in verifiers. Issuer and audience remain informative.
+
 - Clear pending TypeScript SDK OAuth verification state on sign-out, including
   native browser journal state and failed or sessionless logout.
 

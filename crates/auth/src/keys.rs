@@ -58,9 +58,11 @@ pub struct Keys {
     jwks: String,
 }
 
+const JWT_LEEWAY_SECS: u64 = 30;
+
 fn validation(alg: Algorithm) -> Validation {
     let mut validation = Validation::new(alg);
-    validation.leeway = 30;
+    validation.leeway = JWT_LEEWAY_SECS;
     // `aud` is informative in the contract (docs/jwt-and-roles.md): not required.
     validation.validate_aud = false;
     validation
@@ -163,7 +165,7 @@ impl Keys {
 }
 
 impl Keys {
-    /// Checks signature and expiry and returns the raw payload, without
+    /// Checks signature, expiry and optional time claims and returns the raw payload, without
     /// reading it as request claims. For tokens that are not API tokens, such
     /// as signed storage URLs.
     pub fn verify_payload(&self, token: &str) -> Result<Value, VerifyError> {
@@ -180,8 +182,29 @@ impl Keys {
             }
             _ => return Err(VerifyError::UnknownKey),
         };
+        validate_time_claims(&data.claims, jsonwebtoken::get_current_timestamp())?;
         Ok(data.claims)
     }
+}
+
+// Both signing algorithms and raw-payload consumers share this boundary.
+// Absent claims remain compatible; present NumericDates must be whole,
+// non-negative seconds, matching the documented expiration representation.
+fn validate_time_claims(payload: &Value, now: u64) -> Result<(), VerifyError> {
+    for claim in ["nbf", "iat"] {
+        if let Some(value) = payload.get(claim) {
+            let timestamp = value.as_u64().ok_or_else(|| {
+                jsonwebtoken::errors::Error::from(jsonwebtoken::errors::ErrorKind::InvalidToken)
+            })?;
+            if timestamp > now.saturating_add(JWT_LEEWAY_SECS) {
+                return Err(jsonwebtoken::errors::Error::from(
+                    jsonwebtoken::errors::ErrorKind::ImmatureSignature,
+                )
+                .into());
+            }
+        }
+    }
+    Ok(())
 }
 
 impl JwtVerifier for Keys {
@@ -332,5 +355,87 @@ mod tests {
         assert!(Keys::new(Some("not-base64!"), None).is_err());
         assert!(Keys::new(Some("AAAA"), None).is_err());
         assert!(Keys::new(None, None).is_err());
+    }
+    fn time_claim_keys() -> [Keys; 2] {
+        let mut secret = [0u8; 32];
+        getrandom::fill(&mut secret).unwrap();
+        [
+            Keys::new(Some(&generate_ed25519_private_key()), Some(&secret)).unwrap(),
+            Keys::new(None, Some(&secret)).unwrap(),
+        ]
+    }
+
+    #[test]
+    fn rejects_future_nbf_for_both_signing_algorithms() {
+        for keys in time_claim_keys() {
+            let mut claims = payload();
+            claims["nbf"] = json!(jsonwebtoken::get_current_timestamp() + 300);
+            let token = keys.sign(&claims).unwrap();
+            assert!(keys.verify_payload(&token).is_err());
+            assert!(keys.verify(&token).is_err());
+        }
+    }
+
+    #[test]
+    fn rejects_future_iat_for_both_signing_algorithms() {
+        for keys in time_claim_keys() {
+            let mut claims = payload();
+            claims["iat"] = json!(jsonwebtoken::get_current_timestamp() + 300);
+            let token = keys.sign(&claims).unwrap();
+            assert!(keys.verify_payload(&token).is_err());
+            assert!(keys.verify(&token).is_err());
+        }
+    }
+
+    #[test]
+    fn rejects_malformed_optional_time_claims() {
+        for keys in time_claim_keys() {
+            for name in ["nbf", "iat"] {
+                for value in [
+                    json!(null),
+                    json!("123"),
+                    json!(-1),
+                    json!(1.5),
+                    json!({}),
+                    json!(true),
+                ] {
+                    let mut claims = payload();
+                    claims[name] = value;
+                    assert!(keys.verify_payload(&keys.sign(&claims).unwrap()).is_err());
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn accepts_optional_time_claims_and_preserves_informative_issuer_audience() {
+        for keys in time_claim_keys() {
+            for offset in [None, Some(-300_i64), Some(10)] {
+                let mut claims = payload();
+                if let Some(offset) = offset {
+                    let time = jsonwebtoken::get_current_timestamp()
+                        .checked_add_signed(offset)
+                        .unwrap();
+                    claims["nbf"] = json!(time);
+                    claims["iat"] = json!(time);
+                }
+                claims["iss"] = json!("external-issuer");
+                claims["aud"] = json!(["external-audience"]);
+                let token = keys.sign(&claims).unwrap();
+                assert!(keys.verify(&token).is_ok());
+                assert_eq!(keys.verify_payload(&token).unwrap(), claims);
+            }
+        }
+    }
+
+    #[test]
+    fn optional_time_claim_leeway_has_an_exact_inclusive_boundary() {
+        for name in ["nbf", "iat"] {
+            for (timestamp, accepted) in [(1_030, true), (1_031, false), (u64::MAX, false)] {
+                let mut claims = payload();
+                claims[name] = json!(timestamp);
+                assert_eq!(validate_time_claims(&claims, 1_000).is_ok(), accepted);
+            }
+        }
     }
 }
