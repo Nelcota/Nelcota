@@ -67,6 +67,17 @@ will use G06 verdicts and identify both code reading and dynamic evidence.
 | Errors, logs and config | not started | `auth/error.rs; mail.rs; core/config.rs` | auth/core unit tests; server negative tests |
 | Dependencies | not started | `Cargo.lock; panel/SDK package-lock.json` | cargo audit; panel/SDK npm audit |
 
+## Public finding ledger
+
+| ID | Severity | Checklist row | Status |
+|---|---|---|---|
+| G06-F01 | High | Password reset and magic links | details withheld pending maintainer review |
+| G06-F02 | Medium | JWT | Open decision: built-in issuer/audience are deliberately informative; future `nbf`/`iat` are not enforced. Tightening the documented policy requires a contract decision. |
+| G06-F03 | Medium | Input handling | Fixed in isolated [PR #99](https://github.com/Nelcota/Nelcota/pull/99), CI pending; account verification bounds precede pool admission. |
+| G06-F04 | Low | Errors, logs and config | Fixed in isolated [PR #100](https://github.com/Nelcota/Nelcota/pull/100), CI pending; redact explicit adapter/configuration Debug views. No default-path production leak claimed. |
+| G06-F05 | High | Panel SSO | details withheld pending maintainer review |
+| G06-F06 | Medium | SDKs | Fixed in isolated [PR #101](https://github.com/Nelcota/Nelcota/pull/101), CI pending; retire pending OAuth verification state on sign-out. |
+
 ## Findings and disclosure
 
 Confirmed private finding: **G06-F01: severity High, Password reset and magic
@@ -90,6 +101,31 @@ for an unfixed finding in that class.
 - Additional checks: `auth_reuse` 10 passed; `rls` 10 passed; panel login/CSRF
   integration 1 passed; panel SSO integration 1 passed. These do not override
   open finding verdicts.
+- Owning auth/core baseline units: 40 + 20 passed. The four added diagnostic
+  regressions were excluded from this unchanged-behavior run and separately
+  failed on the baseline as intended; no ignored tests were counted as passes.
+- SDK baseline: 110 TypeScript unit tests and 8 Rust auth + 12 Rust transport
+  tests passed. Four new TypeScript cleanup regressions failed on the baseline.
+- Boundary probes: cross-project EdDSA, expired keys/tokens and role forgery
+  rejected; future temporal claims and informative issuer/audience accepted
+  as recorded for F02. Twenty alternating wrong/unknown login pairs after four
+  warm-up pairs had medians 398.36/396.55 ms (ratio 1.005); this local observation
+  is not a statistical timing-channel certification.
+- Input/cookie probe passed after correcting its initial expectation from 400
+  to the documented 422 for invalid email; the initial failed probe is retained.
+  Oversized-body/malformed JSON, normalized-email collision, unsupported email
+  update, noncredentialed CORS and cross-origin cookie mutations were checked.
+- Fix evidence: F03 before 1 pass / 2 failures, after 3 passes plus 27 existing
+  auth passes. F04 before 4 assertion failures, after 64 library passes.
+  F06 before 4 assertion failures, after 116 SDK passes plus 37 guide passes.
+  Source/translation and generated asset commits are separated in #101.
+- Fixture correction: an initial standalone core diagnostics probe used a UUID
+  feature absent from that crate and did not compile; the corrected probe ran
+  all four assertions without adding a dependency. Compile failure is not
+  counted as defect reproduction.
+- Execution sequencing deviation: Clippy for #99 was started during the final
+  seconds of its auth suite. No Vitest or audit overlapped; subsequent local
+  Rust/Vitest/audit stages are serialized. All result statuses are retained.
 - Resource policy: four Cargo jobs, two Rust test threads, sequential Rust,
   Vitest and audit runs. Only disposable local fixtures are authorized.
 
