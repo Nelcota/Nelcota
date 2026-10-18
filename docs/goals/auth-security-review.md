@@ -4,8 +4,8 @@ Status: planned. Record actual work in an execution record at
 `docs/goals/auth-security-review-execution.md`. This goal certifies no
 external audit, penetration test or compliance standard.
 
-Planning baseline: fill in the `main` SHA at start, after the G05 production
-fixes have merged. Review one frozen SHA; never review a moving checkout.
+Planning baseline: `7df975cf0bbed970f01948d559e959b38404a111` (`main` after the G05 production
+fixes have merged). Review one frozen SHA; never review a moving checkout.
 
 ## Objective
 
