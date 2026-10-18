@@ -61,7 +61,7 @@ will use G06 verdicts and identify both code reading and dynamic evidence.
 | Email verification and change | not started | `confirmation.rs; verify.rs; accounts.rs` | server auth; OAuth local doubles |
 | OAuth (local doubles) | not started | `crates/auth/src/oauth/; oauth.rs` | server oauth; auth unit tests |
 | Cookies, CSRF and origin | not started | `crates/admin/src/auth.rs; middleware.rs; server router` | server admin auth; panel auth tests |
-| Panel SSO | not started | `crates/admin/src/sso.rs; host SSO boundary` | server admin SSO |
+| Panel SSO | open finding (G06-F05; High; details withheld pending maintainer review) | `crates/admin/src/sso.rs; host SSO boundary` | server admin SSO |
 | SDKs | not started | `sdk/typescript/src/auth/; sdk/rust/src/auth.rs` | SDK unit/transport; server sdk_rust |
 | Input handling | not started | `crates/auth/src/credentials.rs; handlers.rs` | server auth; auth unit tests |
 | Errors, logs and config | not started | `auth/error.rs; mail.rs; core/config.rs` | auth/core unit tests; server negative tests |
@@ -72,7 +72,10 @@ will use G06 verdicts and identify both code reading and dynamic evidence.
 Confirmed private finding: **G06-F01: severity High, Password reset and magic
 links; details withheld pending maintainer review.** Dynamic exploration of
 that issue stopped after confirmation. No patch or regression for it is
-published. Other suspicions must be reproduced or rejected. Public High/Critical entries will contain only the
+published. **G06-F05: severity High, Panel SSO; details withheld pending maintainer
+review.** Dynamic exploration of that issue stopped after confirmation.
+
+Other suspicions must be reproduced or rejected. Public High/Critical entries will contain only the
 finding identifier, severity, checklist row and “details withheld pending
 maintainer review”. No public patch, regression or exploit narrative is allowed
 for an unfixed finding in that class.
@@ -84,6 +87,9 @@ for an unfixed finding in that class.
 - Baseline: checked all later changed paths and extracted the exact Git tree.
 - Dynamic baseline suites: server `auth` 27 passed; server `oauth` 18 passed
   using local provider doubles. No ignored tests in either suite.
+- Additional checks: `auth_reuse` 10 passed; `rls` 10 passed; panel login/CSRF
+  integration 1 passed; panel SSO integration 1 passed. These do not override
+  open finding verdicts.
 - Resource policy: four Cargo jobs, two Rust test threads, sequential Rust,
   Vitest and audit runs. Only disposable local fixtures are authorized.
 
