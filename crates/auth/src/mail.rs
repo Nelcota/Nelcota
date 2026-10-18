@@ -19,11 +19,19 @@ use lettre::{
 
 /// Plain-text message: links work in any client and there is no HTML to
 /// escape.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Email {
     pub to: String,
     pub subject: String,
     pub text: String,
+}
+
+impl std::fmt::Debug for Email {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Message bodies can contain one-time credentials. Keep diagnostics
+        // useful without formatting their contents or recipient information.
+        f.debug_struct("Email").finish_non_exhaustive()
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
