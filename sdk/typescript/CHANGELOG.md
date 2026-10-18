@@ -7,6 +7,15 @@ Dates refer to published releases; Unreleased describes source changes.
 
 ### Fixed
 
+- Keep default server-memory clients' coordination queues independent so
+  one pending sign-in cannot block another request's cached session read.
+  Shared adapters and browser sessions retain their existing coordination scope.
+
+- Coalesce native browser refresh calls that arrive while another tab is
+  rotating, preserving the original comparison snapshot before waiting on
+  Web Locks. Authoritative journal checks still guard every accepted rotation;
+  later explicit refreshes remain independent.
+
 - Release cancelled shared-operation waiters immediately while accepted rotation
   finishes and persists its result; prevent retained AbortSignal/listener graphs.
 

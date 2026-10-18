@@ -2,21 +2,25 @@
 use crate::contracts::{SqlError, SqlResponse, SqlResult};
 use futures_util::{StreamExt, pin_mut};
 use nelcota_core::Claims;
-use tokio::sync::Semaphore;
+use std::{sync::Arc, time::Duration};
+use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 use tokio_postgres::{NoTls, SimpleQueryMessage};
 
 const MAX_ROWS: usize = 1000;
 const MAX_BYTES: usize = 8 * 1024 * 1024;
 const MAX_RESULTS: usize = 32;
+// The dedicated connection has a thirty-second statement timeout. Retain
+// admission through its cleanup, including five seconds for a lost transport.
+const CLEANUP_TIMEOUT: Duration = Duration::from_secs(35);
 
 /// Shared by every request. Dedicated connections never contaminate a pool.
 pub struct SqlExecutor {
-    slots: Semaphore,
+    slots: Arc<Semaphore>,
 }
 impl Default for SqlExecutor {
     fn default() -> Self {
         Self {
-            slots: Semaphore::new(4),
+            slots: Arc::new(Semaphore::new(4)),
         }
     }
 }
@@ -77,26 +81,47 @@ impl Results {
 }
 /// Dropping the HTTP future also closes its dedicated database connection.
 struct Driver {
-    task: tokio::task::JoinHandle<Result<(), tokio_postgres::Error>>,
+    task: Option<tokio::task::JoinHandle<Result<(), tokio_postgres::Error>>>,
     cancel: tokio_postgres::CancelToken,
+    runtime: tokio::runtime::Handle,
+    slot: Option<OwnedSemaphorePermit>,
     completed: bool,
 }
 impl Drop for Driver {
     fn drop(&mut self) {
-        // Closing a socket alone need not interrupt a running Postgres query.
-        if !self.completed {
-            let cancel = self.cancel.clone();
-            if let Ok(runtime) = tokio::runtime::Handle::try_current() {
-                runtime.spawn(async move {
-                    let _ = tokio::time::timeout(
-                        std::time::Duration::from_secs(2),
-                        cancel.cancel_query(NoTls),
-                    )
-                    .await;
-                });
-            }
+        let mut task = match self.task.take() {
+            Some(task) => task,
+            None => return,
+        };
+        if self.completed {
+            task.abort();
+            return;
         }
-        self.task.abort();
+        let cancel = self.cancel.clone();
+        let slot = self.slot.take();
+        self.runtime.spawn(async move {
+            let _slot = slot;
+            let deadline = tokio::time::Instant::now() + CLEANUP_TIMEOUT;
+            // A successful cancel write does not acknowledge that PostgreSQL
+            // stopped the query. Keep the driver alive to drain its response.
+            let _ = tokio::time::timeout(Duration::from_secs(2), cancel.cancel_query(NoTls)).await;
+            let confirmed = match tokio::time::timeout_at(deadline, &mut task).await {
+                Ok(Ok(Ok(()))) => true,
+                Ok(_) => false,
+                Err(_) => {
+                    task.abort();
+                    let _ = task.await;
+                    false
+                }
+            };
+            if !confirmed {
+                // A disconnected transport cannot establish that server work
+                // ended. Preserve the bounded statement-timeout grace before
+                // admitting replacement work; no query or credential is logged.
+                tracing::warn!("SQL cancellation cleanup was not confirmed");
+                tokio::time::sleep_until(deadline).await;
+            }
+        });
     }
 }
 
@@ -111,7 +136,11 @@ impl SqlExecutor {
         sql: &str,
         claims: Option<&Claims>,
     ) -> Result<SqlResponse, SqlBusy> {
-        let _slot = self.slots.try_acquire().map_err(|_| SqlBusy)?;
+        let slot = self
+            .slots
+            .clone()
+            .try_acquire_owned()
+            .map_err(|_| SqlBusy)?;
         let role = claims.map_or("owner", |claims| claims.role().as_str());
         tracing::info!(bytes = sql.len(), role, "panel SQL editor run");
         let mut config = config.clone();
@@ -123,8 +152,10 @@ impl SqlExecutor {
             Err(err) => return Ok(query_error(err)),
         };
         let mut driver = Driver {
-            task: tokio::spawn(connection),
+            task: Some(tokio::spawn(connection)),
             cancel: client.cancel_token(),
+            runtime: tokio::runtime::Handle::current(),
+            slot: Some(slot),
             completed: false,
         };
         // The connection is this run's alone, so session settings are enough:

@@ -34,7 +34,7 @@ mod util;
 
 use std::path::PathBuf;
 
-use anyhow::bail;
+use anyhow::{Context, bail};
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use nelcota_core::Config;
 
@@ -71,6 +71,23 @@ pub enum Command {
     Updates(updates::UpdatesArgs),
     /// Starts the HTTP server (the default when no command is given).
     Serve,
+    /// Internal container entrypoint: refuses to serve a PITR-fenced project.
+    #[command(hide = true)]
+    GuardedServe {
+        #[arg(long, default_value = "/nelcota-pitr-fence")]
+        state: PathBuf,
+        #[arg(
+            long,
+            default_value = "nelcota -C <host> -p <project> pitr recover --yes"
+        )]
+        recovery: String,
+        /// Startup guard only: never loads server config or starts HTTP.
+        #[arg(long)]
+        check_only: bool,
+        /// Capability preflight only: never starts the server.
+        #[arg(long)]
+        check_support: bool,
+    },
     /// Creates a project (and the host, the first time).
     Init(Box<InitArgs>),
     /// Lists the host's projects and the state of each one.
@@ -256,6 +273,40 @@ mod types_tests {
         ));
         assert!(Cli::try_parse_from(["nelcota", "types", "--lang", "python"]).is_err());
     }
+
+    #[test]
+    fn guarded_container_entrypoint_refuses_fence_before_loading_server_config() {
+        let directory = tempfile::tempdir().unwrap();
+        let state = directory.path().join("state");
+        std::fs::create_dir(&state).unwrap();
+        nelcota_deployment::atomic_write(&state.join("active.json"), b"fenced").unwrap();
+        let args = [
+            "nelcota",
+            "guarded-serve",
+            "--state",
+            state.to_str().unwrap(),
+            "--recovery",
+            "nelcota -C /owned -p shop pitr recover --yes",
+        ];
+        let error = match run(Cli::try_parse_from(args).unwrap()) {
+            Err(error) => error.to_string(),
+            Ok(_) => panic!("fenced entrypoint returned a server configuration"),
+        };
+        assert!(error.contains("active.json") && error.contains("pitr recover --yes"));
+        let mut support = args.to_vec();
+        support.push("--check-support");
+        assert!(matches!(
+            run(Cli::try_parse_from(support).unwrap()).unwrap(),
+            Outcome::Done
+        ));
+        let recovery = Cli::try_parse_from(["nelcota", "pitr", "recover", "--yes"]).unwrap();
+        assert!(matches!(
+            recovery.command,
+            Some(Command::Pitr {
+                action: PitrAction::Recover { yes: true }
+            })
+        ));
+    }
 }
 
 #[derive(Subcommand, Debug)]
@@ -275,6 +326,12 @@ pub enum PitrAction {
     Disable,
     /// Base backups and the time range that can be restored.
     Status,
+    /// Verifies a cleanly stopped PG17 directory and explicitly clears its fence.
+    Recover {
+        /// Does not ask for confirmation; verification is still mandatory.
+        #[arg(long)]
+        yes: bool,
+    },
     /// Takes a base backup now (full on Sundays, differential otherwise).
     Backup,
     /// Restores the database to a moment (REPLACES the current data).
@@ -364,36 +421,24 @@ pub enum Outcome {
     UpdatesServe(nelcota_deployment::protocol::ControllerConfig),
 }
 
-pub fn run(cli: Cli) -> anyhow::Result<Outcome> {
+pub fn run(mut cli: Cli) -> anyhow::Result<Outcome> {
+    cli.dir = std::path::absolute(&cli.dir).context("could not resolve the host directory")?;
     let host = host::Host::new(&cli.dir);
     // Every enrolled host mutation participates in the same deployment lease.
     let _deployment = match cli.command.as_ref() {
         Some(
-            Command::Init(_)
-            | Command::Up
+            Command::Up
             | Command::Down { .. }
             | Command::Remove { .. }
             | Command::PanelLogin { .. }
-            | Command::Migrate { .. }
             | Command::Upgrade { .. }
             | Command::Backup { .. }
             | Command::Restore { .. }
             | Command::Pitr { .. }
             | Command::AdminPassword,
-        ) if cli.dir.join(host::MANIFEST).is_file() => {
-            let lease = nelcota_deployment::HostLock::acquire(&cli.dir)?;
-            nelcota_deployment::management::ensure_idle(&cli.dir)?;
-            let journal = nelcota_deployment::Journal::open(&cli.dir)?;
-            if journal
-                .list()?
-                .iter()
-                .any(|job| !job.public.phase.terminal())
-            {
-                bail!(
-                    "deployment needs recovery: use nelcota updates recover before mutating this host"
-                );
-            }
-            Some(lease)
+        ) => {
+            host.require()?;
+            Some(host::acquire_mutation_lease(&cli.dir)?)
         }
         _ => None,
     };
@@ -417,7 +462,26 @@ pub fn run(cli: Cli) -> anyhow::Result<Outcome> {
     }
 
     match cli.command.unwrap_or(Command::Serve) {
-        Command::Serve => Ok(Outcome::Serve(Box::new(Config::load()?))),
+        Command::Serve => {
+            pitr::fence::require_native_clear()?;
+            Ok(Outcome::Serve(Box::new(Config::load()?)))
+        }
+        Command::GuardedServe {
+            state,
+            recovery,
+            check_only,
+            check_support,
+        } => {
+            if check_support {
+                return Ok(Outcome::Done);
+            }
+            pitr::fence::require_guard_clear_at(&state, &recovery)?;
+            pitr::fence::require_native_clear()?;
+            if check_only {
+                return Ok(Outcome::Done);
+            }
+            Ok(Outcome::Serve(Box::new(Config::load()?)))
+        }
         Command::Updates(args) => updates::run(&cli.dir, args),
         Command::Init(mut args) => {
             if args.project.is_none() {
@@ -572,6 +636,7 @@ pub fn run(cli: Cli) -> anyhow::Result<Outcome> {
                 PitrAction::Enable => pitr::enable(&host, &project),
                 PitrAction::Disable => pitr::disable(&project),
                 PitrAction::Status => pitr::status(&project),
+                PitrAction::Recover { yes } => pitr::recover(&project, yes),
                 PitrAction::Backup => pitr::backup(&project),
                 PitrAction::Restore { time, yes } => pitr::restore(&project, time.as_deref(), yes),
             })

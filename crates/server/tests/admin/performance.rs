@@ -155,6 +155,89 @@ async fn export_lifetime_expires_even_when_the_body_is_not_polled() {
 }
 
 #[tokio::test]
+async fn large_unpolled_exports_close_database_connections_at_the_response_deadline() {
+    let app = TestApp::spawn_with(Options {
+        export_timeout: Duration::from_millis(500),
+        ..Options::default()
+    })
+    .await;
+    let cookie = login(&app).await;
+    app.admin_client.batch_execute(
+        "CREATE VIEW public.large_deadline_export AS SELECT i AS id, repeat('x',1024) AS payload FROM generate_series(1,8192)i"
+    ).await.unwrap();
+    app.catalog.reload(&app.pool).await.unwrap();
+    let mut responses = Vec::new();
+    for _ in 0..2 {
+        let response = app
+            .router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/admin/api/tables/large_deadline_export/export?format=json")
+                    .header("cookie", &cookie)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        responses.push(response);
+    }
+    let released = tokio::time::timeout(Duration::from_secs(3), async {
+        loop {
+            let connections: i64 = app.admin_client.query_one(
+                "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND application_name='nelcota-admin-export'",
+                &[],
+            ).await.unwrap().get(0);
+            if connections == 0 { break; }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    }).await.is_ok();
+    let retained: i64 = app.admin_client.query_one(
+        "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND application_name='nelcota-admin-export'",
+        &[],
+    ).await.unwrap().get(0);
+    // Retire both bodies before asserting the before-fix failure so their
+    // actual response channels and backend queries are always cleaned.
+    for response in responses {
+        assert!(
+            tokio::time::timeout(Duration::from_secs(3), response.into_body().collect())
+                .await
+                .unwrap()
+                .is_err(),
+            "an expired large export must not produce a successful complete body"
+        );
+    }
+    tokio::time::timeout(Duration::from_secs(3), async {
+        loop {
+            let connections: i64 = app.admin_client.query_one(
+                "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND application_name='nelcota-admin-export'",
+                &[],
+            ).await.unwrap().get(0);
+            if connections == 0 { break; }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    }).await.expect("consumed expired exports must clean their owned database connections");
+    println!(
+        "::notice title=G05 large unpolled export deadline::{}",
+        serde_json::json!({
+            "case":"large_unpolled_exports_close_database_connections_at_the_response_deadline",
+            "unpolled_exports":2, "rows_each":8192, "payload_bytes_per_row":1024,
+            "response_deadline_milliseconds":500, "connection_release_budget_seconds":3,
+            "database_connections_released_without_body_poll":released,
+            "database_connections_before_retiring_bodies":retained,
+            "expired_complete_bodies_rejected":2, "database_connections_after_cleanup":0,
+            "scope":"Real owned PostgreSQL and deliberately unpolled response channels; generated fixture only, no load-time credit"
+        })
+    );
+    assert!(
+        released,
+        "large unpolled exports retained database connections after their response deadline"
+    );
+    assert_eq!(retained, 0);
+}
+
+#[tokio::test]
 async fn stale_and_missing_statistics_do_not_trigger_full_exact_counts() {
     let app = TestApp::spawn().await;
     let cookie = login(&app).await;

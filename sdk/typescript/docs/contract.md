@@ -80,6 +80,9 @@ can be sync or async. Instantiate a server client per request or supply a per-re
 The default storage key includes the host and base path, so projects under
 different paths cannot overwrite each other's sessions in a shared adapter.
 
+Default server-memory clients use independent coordination queues. A pending
+sign-in on another client cannot delay reading an unrelated request's session.
+
 Refresh calls on one auth client share a promise. Clients sharing an adapter
 and storage key are serialized with Web Locks, with a module-local queue as a
 fallback. Native browser sessions also commit a refresh reservation before HTTP

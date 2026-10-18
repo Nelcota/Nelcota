@@ -81,6 +81,7 @@ impl Project {
 
     /// Starts everything (and, on systemd, enables it at boot).
     pub fn up(&self) -> anyhow::Result<()> {
+        crate::pitr::fence::require_clear(self)?;
         services::for_project(self).up()
     }
 
@@ -91,6 +92,7 @@ impl Project {
     }
 
     pub fn start(&self, services: &[Service]) -> anyhow::Result<()> {
+        crate::pitr::fence::require_clear(self)?;
         services::for_project(self).start(services)
     }
 
@@ -101,6 +103,7 @@ impl Project {
     /// Restarts a service so it rereads its configuration (on Docker, a new
     /// container: also picks up `.env` and image changes).
     pub fn recreate(&self, service: Service) -> anyhow::Result<()> {
+        crate::pitr::fence::require_clear(self)?;
         services::for_project(self).recreate(service)
     }
 
@@ -151,12 +154,6 @@ impl Project {
         }
     }
 
-    /// Did Postgres die since it was last (re)started? A recovery whose
-    /// target the archive does not reach makes it exit.
-    pub fn postgres_crashed(&self) -> bool {
-        services::for_project(self).postgres_crashed()
-    }
-
     // ------------------------------------------------- commands on the data
 
     /// A program run as the `postgres` user next to the running database
@@ -170,11 +167,7 @@ impl Project {
                     .args(args);
                 command
             }
-            Runtime::Systemd => {
-                let mut command = Command::new("runuser");
-                command.args(["-u", "postgres", "--"]).args(args);
-                command
-            }
+            Runtime::Systemd => native::postgres_command(args),
         }
     }
 
@@ -239,7 +232,11 @@ impl Project {
             }
             Runtime::Systemd => {
                 let mut command = Command::new(std::env::current_exe()?);
-                command.envs(self.env().read()?).args(args);
+                command
+                    .arg("--dir")
+                    .arg(&self.dir)
+                    .envs(self.env().read()?)
+                    .args(args);
                 Ok(command)
             }
         }
@@ -294,21 +291,6 @@ impl Project {
                 args.join(" "),
                 output.status
             );
-        }
-        Ok(String::from_utf8_lossy(&output.stdout).into_owned())
-    }
-
-    /// Like [`Project::compose_output`], without echoing errors: for polling
-    /// a state that is expected to fail for a while.
-    pub fn compose_output_quiet(&self, args: &[&str]) -> anyhow::Result<String> {
-        let output = self
-            .compose_command()
-            .args(args)
-            .stderr(Stdio::null())
-            .output()
-            .context("could not run `docker compose`")?;
-        if !output.status.success() {
-            bail!("[{}] `docker compose {}` failed", self.name, args.join(" "));
         }
         Ok(String::from_utf8_lossy(&output.stdout).into_owned())
     }

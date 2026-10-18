@@ -699,7 +699,7 @@ async fn rust_types_cli_reads_the_real_catalog_and_keeps_the_typescript_default(
             }
             command
                 .env("NELCOTA_DATABASE_URL", database_url)
-                .env("NELCOTA_AUTHENTICATOR_PASSWORD", AUTHENTICATOR_PASSWORD)
+                .env("NELCOTA_AUTHENTICATOR_PASSWORD", authenticator_password())
                 .env("NELCOTA_JWT_SECRET", JWT_SECRET)
                 .env("NELCOTA_DB_SCHEMA", "public")
                 .output()

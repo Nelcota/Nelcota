@@ -204,10 +204,10 @@ pub(super) fn prepare(host: &Host, project: &Project) -> anyhow::Result<()> {
     Ok(())
 }
 pub(super) fn remove(project: &Project) -> anyhow::Result<()> {
-    fs::remove_file(project.path(ENV_FILE))?;
     if project.runtime == Runtime::Systemd {
-        let _ = fs::remove_file(native::PGBACKREST_CONF);
+        native::remove_backup_configuration()?;
     }
+    fs::remove_file(project.path(ENV_FILE))?;
     Ok(())
 }
 #[cfg(test)]

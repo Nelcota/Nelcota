@@ -10,6 +10,52 @@ afterEach(() => {
 
 const KEY = 'nelcota.api.example.com.session';
 
+describe('isolated default server clients', () => {
+  it.each([false, true])('keeps an independent cached session readable during another client sign-in (Web Locks=%s)', async (webLocks) => {
+    vi.stubGlobal('window', undefined);
+    vi.stubGlobal('document', undefined);
+    const queues = new Map<string, Promise<void>>();
+    vi.stubGlobal('navigator', {});
+    if (webLocks) vi.stubGlobal('navigator', { locks: {
+      request: <T>(name: string, task: () => Promise<T>) => {
+        const result = (queues.get(name) ?? Promise.resolve()).then(task);
+        queues.set(name, result.then(() => undefined, () => undefined));
+        return result;
+      },
+    } });
+    let entered!: () => void;
+    let release!: () => void;
+    const started = new Promise<void>((resolve) => { entered = resolve; });
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    const slow = createClient('https://api.example.com', {
+      fetch: async () => { entered(); await held; return json(session(900, 'slow-refresh')); },
+      auth: { autoRefresh: false },
+    });
+    const independent = createClient('https://api.example.com', {
+      fetch: async () => { throw new Error('A cached session read must not send HTTP'); },
+      auth: { autoRefresh: false },
+    });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let signing: Promise<unknown> | undefined;
+    try {
+      await independent.auth.setSession(session(900, 'independent-refresh'));
+      signing = slow.auth.signInWithPassword({ email: 'ana@example.com', password: 'pw' });
+      await started;
+      const cancel = new AbortController();
+      timer = setTimeout(() => cancel.abort(), 1000);
+      const result = await independent.auth.getSession({ signal: cancel.signal });
+      expect(result.error).toBeNull();
+      expect(result.data?.refresh_token).toBe('independent-refresh');
+    } finally {
+      clearTimeout(timer);
+      release();
+      await signing;
+      slow.dispose();
+      independent.dispose();
+    }
+  });
+});
+
 function setup(storage: SessionStorage = memoryStorage(), ...replies: Parameters<typeof mockFetch>) {
   const mock = mockFetch(...replies);
   const nelcota = createClient('https://api.example.com', {
@@ -128,6 +174,75 @@ describe('password sign-in', () => {
 });
 
 describe('refresh', () => {
+  it.each([false, true])('coalesces a late native-browser refresh while another tab is rotating (warm=%s)', async (warm) => {
+    vi.stubGlobal('indexedDB', new IDBFactory());
+    vi.stubGlobal('window', {});
+    vi.stubGlobal('document', {});
+    vi.stubGlobal('BroadcastChannel', undefined);
+    const committed = new Map([[KEY, JSON.stringify(session())]]);
+    const storage = {
+      getItem: (key: string) => committed.get(key) ?? null,
+      setItem: (key: string, value: string) => { committed.set(key, value); },
+      removeItem: (key: string) => { committed.delete(key); },
+    };
+    vi.stubGlobal('localStorage', storage);
+    let queue: Promise<unknown> = Promise.resolve();
+    let pending = false;
+    let waiting = 0;
+    let firstStarted!: () => void;
+    let releaseFirst!: () => void;
+    let laterQueued!: () => void;
+    const started = new Promise<void>((resolve) => { firstStarted = resolve; });
+    const release = new Promise<void>((resolve) => { releaseFirst = resolve; });
+    const queued = new Promise<void>((resolve) => { laterQueued = resolve; });
+    vi.stubGlobal('navigator', { locks: {
+      request: <T>(_name: string, task: () => Promise<T>) => {
+        if (pending && ++waiting === 2) laterQueued();
+        const run = queue.then(task);
+        queue = run.then(() => undefined, () => undefined);
+        return run;
+      },
+    } });
+    let rotations = 0;
+    const mock = mockFetch(async () => {
+      rotations++;
+      if (rotations === 1) {
+        pending = true;
+        firstStarted();
+        await release;
+        pending = false;
+      }
+      return json(session(900, `refresh-${rotations + 1}`, `access-${rotations + 1}`));
+    });
+    const clients = [0, 1, 2].map(() => createClient('https://api.example.com', {
+      fetch: mock.fetch, auth: { autoRefresh: false },
+    }));
+    try {
+      await clients[0]!.auth.getSession();
+      if (warm) await Promise.all(clients.slice(1).map(client => client.auth.getSession()));
+      const first = clients[0]!.auth.refreshSession();
+      await started;
+      const later = clients.slice(1).map(client => client.auth.refreshSession());
+      await queued;
+      expect(rotations).toBe(1);
+      releaseFirst();
+      const results = await Promise.all([first, ...later]);
+      expect(rotations).toBe(1);
+      expect(results.every(result => result.error === null)).toBe(true);
+      expect(results.map(result => result.data?.refresh_token)).toEqual(['refresh-2', 'refresh-2', 'refresh-2']);
+      const subsequent = await clients[1]!.auth.refreshSession();
+      expect(rotations).toBe(2);
+      expect(subsequent.data?.refresh_token).toBe('refresh-3');
+      // A stale per-client cache must not suppress a later explicit refresh.
+      const following = await clients[0]!.auth.refreshSession();
+      expect(rotations).toBe(3);
+      expect(following.data?.refresh_token).toBe('refresh-4');
+    } finally {
+      releaseFirst();
+      clients.forEach(client => client.dispose());
+    }
+  });
+
   it('leaves the lock-grant task before reading a native storage snapshot', async () => {
     vi.stubGlobal('indexedDB', new IDBFactory());
     vi.stubGlobal('window', {});
