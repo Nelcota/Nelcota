@@ -1,7 +1,12 @@
 # G06 — Authentication security review execution record
 
-Status: in progress. This bounded source review is not an external audit,
+Status: completed with open findings. This bounded source review is not an external audit,
 penetration test, compliance certification or production acceptance.
+
+Completion summary: **17 rows examined: 8 passed, 5 fixed on unmerged PRs,
+4 open-finding rows.** Finding counts: 0 Critical, 2 High (details withheld
+pending maintainer review), 4 Medium and 1 Low. Real OAuth providers and real
+mail delivery remain blocked (environment).
 
 ## Frozen baseline and run boundaries
 
@@ -9,6 +14,8 @@ penetration test, compliance certification or production acceptance.
 - Reviewed frozen SHA: `7df975cf0bbed970f01948d559e959b38404a111` (the goal's Planning baseline).
 - Current main at phase 1 start: `4d5992b2b27e47ece47ac30f020ca13f3af539af`.
 - Phase 1 start: 2026-10-18 18:24:20 UTC.
+- Part 2 completed: 2026-10-18 19:17:58 UTC (53 minutes 38 seconds).
+- Completed before the eight-hour checkpoint; no minimum review duration was required.
 - Eight-hour checkpoint due: 2026-10-19 02:24:20 UTC.
 - Hard deadline: 2026-10-19 18:24:20 UTC.
 - Source is a frozen Git archive, not a moving checkout. Integrity verification
@@ -84,7 +91,7 @@ than invented. A passing row is bounded by its documented behavior and fixtures.
 | G06-F03 | Medium | Input handling | Fixed in isolated [PR #99](https://github.com/Nelcota/Nelcota/pull/99), 17/17 applicable CI passed on `e388912e72f52b9f7f7791644080415817ac733c`, ready; account verification bounds precede pool admission. |
 | G06-F04 | Low | Errors, logs and config | Fixed in isolated [PR #100](https://github.com/Nelcota/Nelcota/pull/100), 17/17 applicable CI passed on `e2aa4e59eb5c9593e27fd8cea4b94ef38f91da9b`, ready; redact explicit adapter/configuration Debug views. No default-path production leak claimed. |
 | G06-F05 | High | Panel SSO | details withheld pending maintainer review |
-| G06-F06 | Medium | SDKs | Fixed in isolated [PR #101](https://github.com/Nelcota/Nelcota/pull/101), CI pending; retire pending OAuth verification state on sign-out. |
+| G06-F06 | Medium | SDKs | Fixed in isolated [PR #101](https://github.com/Nelcota/Nelcota/pull/101), 17/17 applicable CI passed on `c9e861d1b295a518f48282b138477bfacaa44dbe`, ready; retire pending OAuth verification state on sign-out. |
 | G06-F07 | Medium | Brute force and abuse | Open policy decision: independent source addresses can exhaust an account quota and a subsequent correct login receives 429; with supported SMTP-disabled configuration, recovery/magic-link requests return 403. Do not weaken throttling; decide on independent recovery/unlock requirements. |
 
 ## Findings and disclosure
@@ -168,6 +175,11 @@ for an unfixed finding in that class.
 - Approval review initially rejected even the redacted High marker. The exact
   authorization in the task was provided for re-review; approval then succeeded.
   No affected-code detail, private regression or proposed High patch was pushed.
+- Final fix verification: #99, #100 and #101 are ready for review, each with
+  all 17 applicable ordinary checks successful on the exact SHA in the ledger.
+  Native presets were not triggered by their unchanged path filter. No fix PR
+  was merged; main remains `4d5992b2b27e47ece47ac30f020ca13f3af539af`, with all
+  16 check runs reported for that main SHA successful at verification.
 - Resource policy: four Cargo jobs, two Rust test threads, sequential Rust,
   Vitest and audit runs. Only disposable local fixtures are authorized.
 
@@ -185,3 +197,13 @@ for an unfixed finding in that class.
   introduced to force an approval verdict.
 - This record is not a published release plan; release notes and commands belong
   only in the maintainer's final private task response.
+
+## Bounded completion
+
+All original cells have verdicts; there are no unreviewed/not-run original
+rows. The two blocked real-service sub-scopes and absent email-change/disabled
+account features remain explicit. High details and proposed patches belong
+only to the private maintainer task response; no public patch is implied.
+No G05 campaign, VM probe, production action, new dependency or migration ran.
+The execution PR remains draft. Release preparation is private and publishes
+no version, tag or release artifact.
