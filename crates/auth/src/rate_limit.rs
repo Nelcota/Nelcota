@@ -33,6 +33,8 @@ pub const SESSION_RATE_LIMIT_FACTOR: u32 = 10;
 const MAX_KEYS: usize = 50_000;
 const CLEANUP_INTERVAL: Duration = Duration::from_secs(1);
 const FULL_REFILL: Duration = Duration::from_secs(60);
+const LOGIN_DELAY_BASE: Duration = Duration::from_millis(125);
+const LOGIN_DELAY_MAX_STEP: u64 = 4;
 
 type Direct<C> =
     governor::RateLimiter<NotKeyed, InMemoryState, C, NoOpMiddleware<<C as Clock>::Instant>>;
@@ -40,6 +42,7 @@ type Direct<C> =
 struct Entry<C: Clock> {
     limiter: Direct<C>,
     last_accepted: AtomicU64,
+    login_delay_step: AtomicU64,
 }
 
 struct State<C: Clock> {
@@ -98,6 +101,25 @@ impl<C: Clock + Clone> RateLimiter<C> {
         Ok(())
     }
 
+    /// An account aggregate supplies backpressure, never a renewable lockout.
+    /// A full key store still fails closed; do not bypass bounded admission.
+    pub(crate) fn login_delay(&self, key: &str) -> Result<Duration, Duration> {
+        let result = self.check(key);
+        let state = self.state.read().unwrap_or_else(|e| e.into_inner());
+        let entry = state.entries.get(key).ok_or(CLEANUP_INTERVAL)?;
+        if result.is_ok() {
+            entry.login_delay_step.store(0, Ordering::Relaxed);
+            return Ok(Duration::ZERO);
+        }
+        let step = entry
+            .login_delay_step
+            .try_update(Ordering::Relaxed, Ordering::Relaxed, |step| {
+                Some(step.saturating_add(1).min(LOGIN_DELAY_MAX_STEP))
+            })
+            .expect("delay update always supplies a value");
+        Ok(LOGIN_DELAY_BASE * (1_u32 << step.min(LOGIN_DELAY_MAX_STEP)))
+    }
+
     /// `Ok` while the key has budget; `Err(wait)` until its budget refills.
     /// Unknown keys are also refused while capacity is full, with a retry hint.
     pub fn check(&self, key: &str) -> Result<(), Duration> {
@@ -140,6 +162,7 @@ impl<C: Clock + Clone> RateLimiter<C> {
             .or_insert_with(|| Entry {
                 limiter: governor::RateLimiter::direct_with_clock(self.quota, self.clock.clone()),
                 last_accepted: AtomicU64::new(now.duration_since(self.start).as_u64()),
+                login_delay_step: AtomicU64::new(0),
             });
         self.check_entry(entry)
     }
@@ -313,5 +336,41 @@ mod tests {
             8
         );
         assert_eq!(limiter.state.read().unwrap().entries.len(), 8);
+    }
+    #[test]
+    fn login_aggregate_delay_is_progressive_bounded_and_refills() {
+        let (limiter, clock) = limiter(2);
+        assert_eq!(limiter.login_delay("account"), Ok(Duration::ZERO));
+        assert_eq!(limiter.login_delay("account"), Ok(Duration::ZERO));
+        for milliseconds in [125, 250, 500, 1_000, 2_000, 2_000, 2_000] {
+            assert_eq!(
+                limiter.login_delay("account"),
+                Ok(Duration::from_millis(milliseconds))
+            );
+        }
+        assert_eq!(limiter.login_delay("other"), Ok(Duration::ZERO));
+        clock.advance(Duration::from_secs(30));
+        assert_eq!(limiter.login_delay("account"), Ok(Duration::ZERO));
+        assert_eq!(
+            limiter.login_delay("account"),
+            Ok(Duration::from_millis(125))
+        );
+    }
+
+    #[test]
+    fn login_delay_does_not_bypass_key_capacity_or_pair_limits() {
+        let clock = FakeRelativeClock::default();
+        let limiter = RateLimiter::with_capacity(1, clock.clone(), 2);
+        assert!(limiter.check("pair").is_ok());
+        assert_eq!(limiter.login_delay("account"), Ok(Duration::ZERO));
+        assert!(limiter.check("pair").is_err());
+        assert_eq!(
+            limiter.login_delay("account"),
+            Ok(Duration::from_millis(125))
+        );
+        assert_eq!(limiter.login_delay("unknown"), Err(CLEANUP_INTERVAL));
+        assert_eq!(limiter.state.read().unwrap().entries.len(), 2);
+        clock.advance(Duration::from_secs(60));
+        assert_eq!(limiter.login_delay("unknown"), Ok(Duration::ZERO));
     }
 }

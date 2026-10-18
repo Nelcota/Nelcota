@@ -162,8 +162,19 @@ pub(crate) async fn password_grant(
     if password_exceeds_limit(&password) {
         return Err(invalid_grant("invalid email or password"));
     }
-    // Per-account limit on top of the per-IP one (distributed attacker).
-    limit(state, &format!("login:{email}"))?;
+    // A fresh source must not inherit a renewable account-wide rejection.
+    // Keep the hard pair/IP budgets and delay before pool/hash admission.
+    limit(
+        state,
+        &format!("login-source:{email}:{}", crate::request::ip_key(ip)),
+    )?;
+    let delay = state
+        .limiter
+        .login_delay(&format!("login:{email}"))
+        .map_err(|wait| ApiError::rate_limited(wait.as_secs()))?;
+    if !delay.is_zero() {
+        tokio::time::sleep(delay).await;
+    }
 
     let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
     let found: Option<(Uuid, Option<String>)> = {

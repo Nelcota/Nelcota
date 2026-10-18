@@ -27,6 +27,10 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Keep password login usable from independent sources during account-targeted
+  abuse, with hard IP/account-source quotas and at most two seconds of aggregate
+  delay. Document the distributed-guessing trade-off and operator recovery.
+
 - Enforce optional JWT `nbf` and `iat` with 30 seconds of clock leeway across
   built-in verifiers. Issuer and audience remain informative.
 
