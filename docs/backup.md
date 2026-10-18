@@ -194,30 +194,56 @@ against a local S3 server with TLS.
 ### PITR recovery fence
 
 This is an Unreleased source capability; use a matching CLI and app artifact.
-Docker refuses a restore before changing data if the app image does not support
-the guard. Custom entrypoints, app commands or data-directory locations require
-reviewed integration; they are refused rather than silently left unprotected.
+Run fence mutations and recovery on the Linux host. Docker refuses a restore
+before changing data if the app image does not support the guard. Native recovery
+also requires the matching installed app binary. Custom entrypoints, app commands
+or data-directory locations require reviewed integration; they are refused
+rather than silently left unprotected.
 
 The durable fence is `active.json` (or a partially committed `recovery.json`)
 under `/var/lib/nelcota-pitr/` on systemd, or
-`projects/<project>/pitr-fence/` on Docker. It records the owning project and
-directory. It has no timeout and is never removed at boot. Do not delete these
-files, move the host directory, bypass entrypoints or disable the start guards.
+`projects/<project>/pitr-fence/` on Docker. Private receipts bind the fence to
+its owning project and directory. Docker's `active.json` holds the exact original
+Compose bytes for atomic release; do not print or publish its contents. The fence
+has no timeout and is never removed at boot. Do not delete these files, move the
+host directory, bypass entrypoints or disable the start guards.
 
 Native PostgreSQL and app units check the fence in `ExecStartPre`, including
 boot, manual `systemctl start` and cluster starts redirected through systemd.
-The CLI refuses `up`, service starts/restarts and direct serving while fenced.
-Each refusal identifies the fence and recovery command; systemd records its
-message in the service journal. A refused unit can be `failed` with PID zero.
+The guard invokes a dedicated check-only copy at
+`/usr/local/lib/nelcota/pitr-check`, retained across app binary rollback, without
+following a script inside the fence directory. The CLI refuses `up`, service starts/restarts
+and direct serving while fenced. Plain `up` is not a recovery action: use
+`pitr recover` or a covered restore. Each refusal identifies the fence and
+recovery command; systemd records its message in the service journal. A refused
+unit can be `failed` with PID zero.
 
-Docker removes old containers without removing their data volumes before any
-restore writes. The fenced Compose file mounts the state read-only and guards
-both entrypoints; its restart policy is temporarily `no`. This prevents old
-`unless-stopped` or `always` containers from reopening after a daemon or host
-restart. A manual container start still exits at the guard, even if its restart
-policy is changed. Docker starts asynchronously: inspect its exit status and
-logs, not only the exit code of `docker start`. Successful recovery restores
-the exact original Compose file and `up` applies its original restart policies.
+Docker temporarily rewrites `docker-compose.yml` and removes old containers
+without removing their data volumes before any restore writes. The fenced
+Compose mounts the project directory read-only so a substituted fence-directory
+symlink remains visible to both entrypoint guards; its restart policy is
+`no`. This prevents old `unless-stopped` or `always` containers from reopening
+after a daemon or host restart. A manual container start still exits at the
+guard, even if its restart policy is changed. Docker starts asynchronously:
+inspect its exit status and logs, not only the exit code of `docker start`.
+Successful recovery restores the exact original Compose bytes and `up` applies
+its original restart policies.
+
+Recovery validates directory components and every state file without following
+symlinks, and rejects wrong owners, hardlinks or unexpected types before changing
+PITR state or services. A refusal names the rejected path; preserve every marker
+and investigate the ownership/layout instead of deleting it.
+
+After verification and a clean recovery-server stop, Docker persists an
+owner-bound `release.verified.json`, prepares `active.json` with the original
+Compose bytes and removes `recovery.json`. One atomic rename then removes the
+last marker and restores `docker-compose.yml` together; both directories are
+synced. Failure before that commit leaves markers and guarded Compose. Failure
+after it leaves no markers and the original Compose. Native guards remain
+installed while markers are removed and synced. Repeating `pitr recover --yes`
+re-verifies a fenced directory or finishes an already committed release; a
+failed final sync does not require manual edits. The retained verification
+receipt is metadata, not an active fence, and never authorizes automatic cleanup.
 
 Inspect the fence and preserve the failed restore's diagnostics:
 
@@ -225,6 +251,15 @@ Inspect the fence and preserve the failed restore's diagnostics:
 nelcota -C /opt/nelcota -p shop pitr status
 # Native service diagnostics:
 sudo journalctl -u postgresql@17-main -u nelcota-shop -n 60 --no-pager
+```
+
+If native recovery refuses an older installed app binary, keep services stopped
+and install your already verified matching artifact atomically before retrying.
+Do not replace it with an unverified download:
+
+```sh
+sudo install -m 0755 /path/to/verified/nelcota /usr/local/lib/nelcota/nelcota.pitr-new
+sudo mv /usr/local/lib/nelcota/nelcota.pitr-new /usr/local/lib/nelcota/nelcota
 ```
 
 When files may have been replaced or WAL recovery was interrupted, retry a
