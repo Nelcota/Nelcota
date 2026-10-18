@@ -73,6 +73,7 @@ pub(crate) async fn complete(
     )
     .await
     .map_err(db_error)?;
+    crate::db::retire_pending_credentials(&tx, user_id).await?;
     // Whoever signed in with the old password loses access (refresh tokens die
     // immediately; access JWTs already issued stay valid until they expire).
     tx.execute(
