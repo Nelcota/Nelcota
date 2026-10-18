@@ -30,7 +30,7 @@ member of the other roles and assumes one of them in each request.
 1. The API reads `Authorization: Bearer <jwt>` (the scheme is case-insensitive:
    `bearer <jwt>` works too).
    - Without the header: the request becomes `anon`.
-   - Header present but invalid (signature, `exp`, scheme, unknown `kid` or
+   - Header present but invalid (signature, `exp`, `nbf`, `iat`, scheme, unknown `kid` or
      role): **401**. It never silently becomes `anon`.
 2. Opens **one** transaction and runs, with parameters:
    ```sql
@@ -79,7 +79,14 @@ generates one).
 | `role` | yes | `anon`, `authenticated` or `service_role`. Any other value → 401. |
 | `sub`  | only for `authenticated` | the user's uuid (`auth.uid()`). |
 | `exp`  | yes | epoch in seconds; 30 s of leeway. |
-| `iss`, `aud` | no | informative: not required by verification. |
+| `nbf`, `iat` | no | if present, whole non-negative epoch seconds; reject values more than 30 s in the future. |
+| `iss`, `aud` | no | informative: not required or matched by verification. |
+
+The same built-in `Keys` validator checks EdDSA and HS256 API tokens and signed
+raw payloads. Standalone auth consumers inherit these checks. The Rust and
+TypeScript SDKs forward tokens to the server; they do not verify signatures or
+make authorization decisions from decoded claims. Keep issuer/audience policy
+in a custom verifier when required; `iss`/`aud` remain informative.
 
 Other claims are passed through untouched to `auth.jwt()`. Logout revokes the
 session and the refresh tokens; the access JWT, which is stateless, stays valid
