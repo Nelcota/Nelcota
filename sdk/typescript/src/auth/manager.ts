@@ -254,16 +254,27 @@ export class SessionManager {
   }
   signOut(revoke: (session: Session) => Promise<Result<null>>): Promise<Result<null>> {
     return this.#locked(async () => {
-      const current = await this.#read(true, true);
-      if (!current) {
-        this.#session = null;
-        if (this.#dirty) await this.#persist();
-        this.#schedule(null);
-        return ok(null);
+      try {
+        const current = await this.#read(true, true);
+        if (!current) {
+          this.#session = null;
+          if (this.#dirty) await this.#persist();
+          this.#schedule(null);
+          return ok(null);
+        }
+        const result = await revoke(current);
+        await this.#write(null, 'signed_out');
+        return result;
       }
-      const result = await revoke(current);
-      await this.#write(null, 'signed_out');
-      return result;
+      finally {
+        // Match exchangeCode's lifecycle -> PKCE lock order. A committed null
+        // also retires verifiers still visible in another native snapshot.
+        const key = `${this.key}.pkce`;
+        await withLock(key, async () => {
+          try { await this.#pkce?.write(null); }
+          finally { await this.storage.removeItem(key); }
+        });
+      }
     });
   }
   #schedule(session: Session | null, delayMs?: number): void {

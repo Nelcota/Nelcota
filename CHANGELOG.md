@@ -27,6 +27,9 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Clear pending TypeScript SDK OAuth verification state on sign-out, including
+  native browser journal state and failed or sessionless logout.
+
 - Reject Docker PITR PostgreSQL command/data-directory overrides before stopping
   services or writing a fence. Allow only the default command or an exact
   generated tuning profile, with default PGDATA; reject indeterminate settings.
