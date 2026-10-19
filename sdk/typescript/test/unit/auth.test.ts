@@ -73,6 +73,79 @@ function stored(value: unknown): SessionStorage {
   return storage;
 }
 
+describe.each([false, true])('queued authentication cancellation (Web Locks=%s)', webLocks => {
+  it.each(['signUp', 'signInWithPassword', 'verifyEmailLink', 'resetPassword'] as const)('cancels %s before the lifecycle owner finishes', async method => {
+    vi.useFakeTimers();
+    const queues = new Map<string, Promise<void>>();
+    vi.stubGlobal('navigator', webLocks ? { locks: {
+      request: <T>(name: string, task: () => Promise<T>) => {
+        const result = (queues.get(name) ?? Promise.resolve()).then(task);
+        queues.set(name, result.then(() => undefined, () => undefined));
+        return result;
+      },
+    } } : {});
+    let entered!: () => void, release!: () => void;
+    const started = new Promise<void>(resolve => { entered = resolve; });
+    const held = new Promise<void>(resolve => { release = resolve; });
+    const { nelcota, calls } = setup(stored(session()), async () => {
+      entered(); await held; return json(session(900, 'replacement'));
+    });
+    const rotating = nelcota.auth.refreshSession();
+    await started;
+    const controller = new AbortController();
+    const options = { signal: controller.signal };
+    const actions = {
+      signUp: () => nelcota.auth.signUp({ email: 'a@example.com', password: 'pw' }, options),
+      signInWithPassword: () => nelcota.auth.signInWithPassword({ email: 'a@example.com', password: 'pw' }, options),
+      verifyEmailLink: () => nelcota.auth.verifyEmailLink({ type: 'signup', token: 'fixture' }, options),
+      resetPassword: () => nelcota.auth.resetPassword({ token: 'fixture', password: 'pw' }, options),
+    };
+    let code: string | undefined;
+    const pending = actions[method]().then(result => { code = result.error?.code; });
+    try {
+      controller.abort();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(code).toBe('aborted');
+      expect(calls).toHaveLength(1);
+    } finally {
+      release(); await Promise.all([rotating, pending]);
+      expect(calls).toHaveLength(1);
+      expect((await nelcota.auth.getSession()).data?.refresh_token).toBe('replacement');
+      nelcota.dispose(); vi.useRealTimers();
+    }
+  });
+});
+
+it('finishes an accepted session publication after its sign-in waiter cancels', async () => {
+  vi.useFakeTimers();
+  let entered!: () => void, release!: () => void;
+  const started = new Promise<void>(resolve => { entered = resolve; });
+  const held = new Promise<void>(resolve => { release = resolve; });
+  const backing = memoryStorage();
+  const storage: SessionStorage = {
+    ...backing,
+    setItem: async (key, value) => { entered(); await held; await backing.setItem(key, value); },
+  };
+  const { nelcota, calls } = setup(storage, json(session()));
+  const controller = new AbortController();
+  let code: string | undefined;
+  const pending = nelcota.auth.signInWithPassword({ email: 'a@example.com', password: 'pw' }, { signal: controller.signal })
+    .then(result => { code = result.error?.code; });
+  await started;
+  try {
+    controller.abort();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(code).toBe('aborted');
+    expect(await backing.getItem(KEY)).toBeNull();
+  } finally {
+    release(); await pending;
+    expect((await nelcota.auth.getSession()).data?.refresh_token).toBe('refresh-1');
+    expect(JSON.parse((await backing.getItem(KEY))!).refresh_token).toBe('refresh-1');
+    expect(calls).toHaveLength(1);
+    nelcota.dispose(); vi.useRealTimers();
+  }
+});
+
 describe('session storage keys', () => {
   it.each([
     ['', ''],

@@ -286,22 +286,33 @@ impl AuthClient {
         self.client.inner.auth.events.subscribe()
     }
 
+    /// Cancellation may withdraw a queued request, before HTTP or session publication.
+    async fn lock_state(&self) -> Result<tokio::sync::MutexGuard<'_, State>> {
+        crate::http::cancel(&self.client.options, async {
+            Ok(self.client.inner.auth.gate.lock().await)
+        })
+        .await
+    }
+
     /// Current session, refreshed on demand. Explicit tokens do not change this session.
     pub async fn get_session(&self) -> Result<Option<Session>> {
-        let manager = &self.client.inner.auth;
-        let observed = manager.epoch.load(Ordering::Acquire);
-        let mut state = manager.gate.lock().await;
-        manager.load(&mut state).await?;
-        match &state.session {
-            None => Ok(None),
-            Some(session) if session.expires_in_now() > manager.margin_for(session) => {
-                Ok(Some(session.clone()))
+        crate::http::cancel(&self.client.options, async {
+            let manager = &self.client.inner.auth;
+            let observed = manager.epoch.load(Ordering::Acquire);
+            let mut state = manager.gate.lock().await;
+            manager.load(&mut state).await?;
+            match &state.session {
+                None => Ok(None),
+                Some(session) if session.expires_in_now() > manager.margin_for(session) => {
+                    Ok(Some(session.clone()))
+                }
+                _ => {
+                    drop(state);
+                    self.refresh_since(observed).await.map(Some)
+                }
             }
-            _ => {
-                drop(state);
-                self.refresh_since(observed).await.map(Some)
-            }
-        }
+        })
+        .await
     }
 
     pub(crate) fn access_token(&self) -> StorageFuture<'_, Option<String>> {
@@ -451,7 +462,7 @@ impl AuthClient {
             body["data"] = data;
         }
         let manager = &self.client.inner.auth;
-        let mut state = manager.gate.lock().await;
+        let mut state = self.lock_state().await?;
         let response = self
             .client
             .json::<Value>(
@@ -480,7 +491,7 @@ impl AuthClient {
     pub async fn sign_in_with_password(&self, email: &str, password: &str) -> Result<Session> {
         let body = json!({"email": address(email)?, "password": password});
         let manager = &self.client.inner.auth;
-        let mut state = manager.gate.lock().await;
+        let mut state = self.lock_state().await?;
         let session = self.token("password", body).await?;
         manager
             .save(&mut state, Some(session.clone()), AuthEventKind::SignedIn)
@@ -618,7 +629,7 @@ impl AuthClient {
     }
     async fn verify(&self, body: Value) -> Result<Session> {
         let manager = &self.client.inner.auth;
-        let mut state = manager.gate.lock().await;
+        let mut state = self.lock_state().await?;
         let session = self
             .client
             .json::<Session>(
@@ -663,7 +674,7 @@ impl AuthClient {
             return Err(Error::Usage("invalid PKCE verifier".into()));
         }
         let manager = &self.client.inner.auth;
-        let mut state = manager.gate.lock().await;
+        let mut state = self.lock_state().await?;
         let session = self
             .token("pkce", json!({"auth_code":code, "code_verifier":verifier}))
             .await?;

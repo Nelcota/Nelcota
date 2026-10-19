@@ -4,7 +4,6 @@
  */
 
 import { NelcotaError, NelcotaUsageError, clientError, fail, ok, type Result } from '../core/errors.js';
-import { abortable } from '../core/cancellation.js';
 import type { HttpClient } from '../core/http.js';
 import { isBrowser } from '../core/jwt.js';
 import { SessionManager, type AuthListener, type AuthOptions, type AuthRequestOptions } from './manager.js';
@@ -101,12 +100,12 @@ export class AuthClient {
       if (isSession(result.data)) return ok({ user: result.data.user, session: result.data });
       const user = (result.data as { user?: unknown } | null)?.user;
       return isUser(user) ? ok({ user, session: null }) : fail(invalidResponse());
-    }, data => data.session);
+    }, data => data.session, options.signal);
   }
 
   async signInWithPassword(credentials: Credentials, options: AuthRequestOptions = {}): Promise<Result<Session>> {
     const body = { email: email(credentials.email), password: credentials.password };
-    return this.#manager.authenticate(() => this.#token('password', body, options), session => session);
+    return this.#manager.authenticate(() => this.#token('password', body, options), session => session, options.signal);
   }
 
   /**
@@ -135,8 +134,7 @@ export class AuthClient {
 
   /** Trades the `code` from the OAuth redirect (and the stored verifier) for a session. */
   async exchangeCode(code: string, options: AuthRequestOptions = {}): Promise<Result<Session>> {
-    if (options.signal?.aborted) return fail(clientError('aborted', 'The request was aborted'));
-    const operation = this.#manager.authenticate(async () => {
+    return this.#manager.authenticate(async () => {
       const key = `${this.#manager.key}.pkce`;
       const verifier = await withLock(key, async () => {
         if (options.signal?.aborted) return null;
@@ -144,10 +142,9 @@ export class AuthClient {
         return this.#manager.consumeVerifier();
       });
       if (!verifier && options.signal?.aborted) return fail(clientError('aborted', 'The request was aborted'));
-      if (!verifier) return fail(clientError('pkce_missing', 'No sign-in was started in this browser (PKCE verifier missing)'));
+      if (!verifier) return fail(clientError('pkce_missing', 'PKCE verifier missing; restart sign-in'));
       return this.#token('pkce', { auth_code: code, code_verifier: verifier }, options.timeout === undefined ? {} : { timeout: options.timeout });
-    }, session => session);
-    return abortable(operation, options.signal).then(result => result.error ? fail(result.error) : result.data);
+    }, session => session, options.signal);
   }
 
   /**
@@ -204,7 +201,7 @@ export class AuthClient {
       const result = await this.#http.json<unknown>({ method: 'POST', path: '/auth/v1/verify', json: body, auth: false, signal: options.signal, timeout: options.timeout });
       if (result.error) return fail(result.error);
       return isSession(result.data) ? ok(result.data) : fail(invalidResponse());
-    }, session => session);
+    }, session => session, options.signal);
   }
 
   async #emailOnly(path: string, body: Record<string, string>, options: AuthRequestOptions): Promise<Result<null>> {
@@ -277,12 +274,12 @@ function absoluteUrl(value: string, what: string): URL {
   try {
     return new URL(value);
   } catch {
-    throw new NelcotaUsageError(`Invalid ${what}: ${JSON.stringify(value)} is not an absolute URL`);
+    throw new NelcotaUsageError(`${what} must be an absolute URL`);
   }
 }
 
 function invalidResponse(): NelcotaError {
-  return clientError('invalid_response', 'The server answered with an unexpected shape');
+  return clientError('invalid_response', 'Invalid auth response');
 }
 
 /** Rewrites the address bar, only when `original` is the page being shown. */
