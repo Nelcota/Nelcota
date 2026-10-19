@@ -571,6 +571,16 @@ impl Query {
         if let Some(error) = self.error {
             return Err(error);
         }
+        if self.cardinality != Cardinality::Many
+            && (self.method == Method::HEAD
+                || (!self.rpc
+                    && self.method != Method::GET
+                    && !self.prefer.iter().any(|p| p == "return=representation")))
+        {
+            return Err(Error::Usage(
+                "single/maybe_single requires rows: select a representation and omit head".into(),
+            ));
+        }
         if (self.method == Method::PATCH || self.method == Method::DELETE) && self.filters == 0 {
             return Err(Error::Usage(
                 "update/delete requires at least one parent filter".into(),
