@@ -1,7 +1,7 @@
 /** Sessions and users as the server returns them, and where they are kept. */
 import { parseJson } from '../core/json.js';
 
-import type { Json } from '../rest/types.js';
+import type { Json } from '../core/json-types.js';
 
 export interface User {
   id: string;

@@ -4,7 +4,7 @@
  * still works untyped.
  */
 
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type { Json } from '../core/json-types.js';
 
 export interface GenericRelationship {
   foreignKeyName: string;

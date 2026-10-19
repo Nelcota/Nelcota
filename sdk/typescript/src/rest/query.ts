@@ -17,50 +17,13 @@ import {
   type IsValue,
 } from './conditions.js';
 import type { GenericSchema, Relation, RowOf, SelectRow } from './types.js';
+import type { FilterColumn, OrderOptions, QueryOutcome, QueryResult, ReferencedOption, RowRange, SelectOptions, UpsertOptions } from './query-types.js';
+export type { CountOption, FilterColumn, OrderOptions, QueryOutcome, QueryResult, QuerySuccess, ReferencedOption, RowRange, SelectOptions, UpsertOptions } from './query-types.js';
 
 /** Filters and ordering use every column of the table, not only the selected ones. */
 type TableRow<S extends GenericSchema, Name extends string> = RowOf<Relation<S, Name>>;
 
-/**
- * The rows a read returned, zero-based and inclusive, from `Content-Range`.
- * `null` when no rows came back or the response has no range (writes).
- */
-export interface RowRange {
-  from: number;
-  to: number;
-}
-
-export interface QuerySuccess<T> {
-  data: T;
-  error: null;
-  /** Total matching rows with `count: 'exact'`, else `null`. */
-  count: number | null;
-  /** Which rows of the match these are. With `count`, `range.to + 1 < count` means more rows exist. */
-  range: RowRange | null;
-  status: number;
-}
-
-export type QueryResult<T> =
-  | QuerySuccess<T>
-  | { data: null; error: NelcotaError; count: null; range: null; status: number };
-
-/** What awaiting a query gives: a result, or only a success after `throwOnError()`. */
-export type QueryOutcome<T, Throws extends boolean> = Throws extends true ? QuerySuccess<T> : QueryResult<T>;
-
-/** A column of the row, or a path into an embed (`orders.total`). */
-export type FilterColumn<Row> = (string & keyof Row) | `${string}.${string}`;
-
 type ValueFor<Row, C> = C extends keyof Row ? FilterValue<Row[C]> : FilterScalar;
-
-export interface ReferencedOption {
-  /** Applies to an embed (its alias), e.g. `orders` or `orders.items`. */
-  referencedTable?: string;
-}
-
-export interface OrderOptions extends ReferencedOption {
-  ascending?: boolean;
-  nullsFirst?: boolean;
-}
 
 type Method = 'GET' | 'HEAD' | 'POST' | 'PATCH' | 'DELETE';
 type Cardinality = 'many' | 'one' | 'maybe';
@@ -383,23 +346,6 @@ export function selectList(columns: string): string {
 }
 
 // ------------------------------------------------------------------ entry
-
-export interface CountOption {
-  /** `exact` counts every matching row (a second scan: use it when shown). */
-  count?: 'exact';
-}
-
-export interface SelectOptions<Head extends boolean = boolean> extends CountOption {
-  /** Only the count, no rows (a HEAD request). */
-  head?: Head;
-}
-
-export interface UpsertOptions {
-  /** Columns of the unique key to match (default: the primary key). */
-  onConflict?: string | readonly string[];
-  /** Keep existing rows instead of merging into them. */
-  ignoreDuplicates?: boolean;
-}
 
 /** `client.from(table)`: picks the operation. */
 export class TableRef<S extends GenericSchema, Name extends string, Row, Insert, Update> {

@@ -7,24 +7,9 @@ import { Broadcast, withLock } from './coordination.js';
 import { BrowserSessionConflictError, BrowserSessionState } from './browser-state.js';
 import { isSession, memoryStorage, parseSession, secondsLeft, type Session, type SessionStorage, type User } from './session.js';
 
-export type AuthEvent = 'signed_in' | 'signed_out' | 'refreshed' | 'user_updated';
-export type AuthListener = (event: AuthEvent, session: Session | null) => void;
-export interface AuthOptions {
-  /** Default: native localStorage with an IndexedDB coordination journal in browsers, memory elsewhere. */
-  storage?: SessionStorage;
-  /** Default: nelcota.<host><base-path>.session. */
-  storageKey?: string;
-  /** Refresh in the background. Default: on in browsers. */
-  autoRefresh?: boolean;
-  /** Refresh when fewer than this many seconds remain, capped at half the token lifetime. Default 60. */
-  refreshMargin?: number;
-  /** Unexpected storage/adapter failures in background auth. Automatic refresh pauses until a session is written successfully. */
-  onBackgroundError?: (error: unknown) => void | Promise<void>;
-}
-export interface AuthRequestOptions {
-  signal?: AbortSignal;
-  timeout?: number;
-}
+import type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions } from './types.js';
+export type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions } from './types.js';
+
 const RETRY_REFRESH_MS = 10_000;
 
 function browserStorage(): SessionStorage | undefined {
