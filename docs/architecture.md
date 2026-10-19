@@ -39,7 +39,10 @@ existing public interface. Panel handlers are grouped under `admin/src/tables/`,
 the router. Tables own row queries, structure, exports and DDL adaptation;
 `tables/catalog` supplies metadata also used by overview and policies. Pure
 DDL generation stays in `ddl/`, execution in `apply`, and SQL error adaptation
-in `error`. The SQL feature also owns its autocomplete schema endpoint.
+in `error`. Table DDL exposes a small facade over `table/spec` (typed input),
+`table/column` (shared column rendering), `table/create` and `table/alter`
+(statement planning). Alteration keeps one working schema owner and preserves
+the action order. The SQL feature also owns its autocomplete schema endpoint.
 
 Authentication's HTTP handlers adapt requests to `accounts` and `sessions`.
 `db` owns auth-role transactions and `request` owns HTTP metadata. `links`
@@ -135,7 +138,10 @@ The REST root composes routes. Its `http` adapter handles URLs, preferences,
 status codes and headers; `operations` compiles and executes CRUD/RPC under
 the caller's role, returning PostgreSQL-generated JSON and range metadata.
 Catalog internals separate `model`, `introspection`, `refresh` and `listener`
-behind the public `CatalogHandle` interface. Keep the returned `ReloadListener`
+behind the public `CatalogHandle` interface. Introspection coordinates private
+readers for relations, columns, constraints and functions; each reader owns
+its query and row mapping. The four reads remain sequential, and a complete
+snapshot is published only after all succeed. Keep the returned `ReloadListener`
 owner alive until shutdown; dropping it cancels the listener/driver. Dropping
 the final catalog owner cancels reconciliation, including pool waits.
 
@@ -168,6 +174,20 @@ Rust module facades use explicit exports. Types returned by a public method
 must be reachable through its public interface, including errors such as
 `SqlBusy` alongside `SqlExecutor`.
 
+Apply SOLID to these existing boundaries:
+
+- Single responsibility: separate typed requests, SQL planning, database reads,
+  HTTP adaptation and browser effects; keep transaction and cleanup ownership together.
+- Open/closed: extend real variation through existing storage, mail and database
+  interfaces. Do not introduce a trait or strategy for one implementation.
+- Liskov substitution: preserve public signatures, error behavior and output;
+  use the same characterization tests before and after moving responsibilities.
+- Interface segregation: expose the operation a caller needs through a small
+  facade; keep query-specific readers and rendering helpers private.
+- Dependency inversion: shared panel infrastructure depends on shared contracts
+  and session state, while pages depend on that infrastructure. Shared modules
+  must not import a feature page or the application shell.
+
 Bucket mutations belong to storage's operation interface on `StorageState`.
 Both the public routes and panel call it; bucket privileges, RLS and foreign
 keys remain PostgreSQL's responsibility. Operations return typed records and
@@ -183,10 +203,34 @@ adapter, pure helpers, components and adjacent unit tests. `shell/` owns
 navigation, the command palette and the application frame. Reusable panel
 components live in `components/shared/`; shadcn primitives stay in
 `components/ui/`. Table/policy metadata and DDL previews shared by several
-features live in `shared/schema/`. Keep shared transport, contracts, resource
-loading and browser persistence at the library root; persistence is named
-`local-storage.ts` to distinguish it from the storage feature. API usage
-examples belong to `features/api/api-examples.ts`.
+features live in `shared/schema/`, including the identifier rendering used by
+both guided access and policy templates. API usage examples belong to
+`features/api/api-examples.ts`.
+
+Shared panel modules have explicit owners under `ui/src/lib/`:
+
+| Directory | Responsibility |
+| --- | --- |
+| `transport/` | HTTP requests, response parsing, upload adaptation and transport errors |
+| `contracts/` | Generated wire-type facade and response-contract selection |
+| `resources/` | Request lifetime, query cache and shared panel-session state |
+| `navigation/` | History routing, route matching and URL pagination |
+| `browser/` | Clipboard, download effects, identifiers and local persistence |
+| `forms/` | Password input helpers and confirmation before closing dirty forms |
+| `formatting/` | Date labels and pure CSV/JSON encoding |
+| `components/` | UI primitives, reusable components and their class/type utilities |
+
+Keep source files and adjacent tests inside those directories. Pure tabular
+encoding is independent of object URLs and download clicks; upload error
+construction is independent of the API/session coordinator. Shared session state
+lives in `resources/session.svelte.ts`, consumed by both transport and login.
+The shadcn aliases point generated utilities to `components/utils` and browser
+hooks to `browser/`, keeping future generated modules in the same ownership map.
+
+`python3 scripts/check-boundaries.py` rejects loose library modules, unregistered
+library directories, shared-to-page imports and stale direct module URLs in
+browser probes. Existing native import lint checks dependency cycles. Adding a
+new shared owner requires updating this map and its boundary contract.
 
 Use relative imports within a feature and `$lib/...` for dependencies outside
 it. Rust filenames use snake_case, TypeScript helpers use kebab-case, and
