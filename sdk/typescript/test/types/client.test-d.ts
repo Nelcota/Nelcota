@@ -49,6 +49,19 @@ describe('select', () => {
     expectTypeOf<Result<typeof maybe>>().toEqualTypeOf<{ id: number | string } | null>();
   });
 
+  it('preserves cardinality when changing a projection', () => {
+    const one = nelcota.from('orders').select().single().select('id');
+    const maybe = nelcota.from('orders').select().maybeSingle().select('id');
+    expectTypeOf<Result<typeof one>>().toEqualTypeOf<{ id: number | string }>();
+    expectTypeOf<Result<typeof maybe>>().toEqualTypeOf<{ id: number | string } | null>();
+    // @ts-expect-error a reselected single row cannot be paginated
+    one.pages(10);
+    // @ts-expect-error nullable rows cannot be paginated
+    maybe.pages(10);
+    const write = nelcota.from('customers').insert({ name: 'Ana' }).select('id');
+    expectTypeOf<Result<typeof write>>().toEqualTypeOf<{ id: number | string }[]>();
+  });
+
   it('types HEAD as null and preserves that through another select', () => {
     const head = nelcota.from('orders').select('id', { head: true });
     expectTypeOf<Result<typeof head>>().toEqualTypeOf<null>();
@@ -160,6 +173,10 @@ describe('untyped client', () => {
     const loose = createClient('https://api.example.com');
     const query = loose.from('anything').select('a,b(c)').eq('x', 1);
     expectTypeOf<Result<typeof query>>().toEqualTypeOf<Record<string, any>[]>();
+    const one = loose.from('anything').select().single().select('id');
+    const maybe = loose.from('anything').select().maybeSingle().select('id');
+    expectTypeOf<Result<typeof one>>().toEqualTypeOf<Record<string, any>>();
+    expectTypeOf<Result<typeof maybe>>().toEqualTypeOf<Record<string, any> | null>();
   });
 });
 

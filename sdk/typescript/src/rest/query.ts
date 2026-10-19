@@ -27,6 +27,7 @@ type ValueFor<Row, C> = C extends keyof Row ? FilterValue<Row[C]> : FilterScalar
 
 type Method = 'GET' | 'HEAD' | 'POST' | 'PATCH' | 'DELETE';
 type Cardinality = 'many' | 'one' | 'maybe';
+type Reselected<Out, Row> = [Out] extends [null | readonly unknown[]] ? Row[] : null extends Out ? Row | null : Row;
 
 interface State {
   readonly http: HttpClient;
@@ -49,9 +50,7 @@ function referenced(key: string, options: ReferencedOption | undefined): string 
 
 /** Total rows from `Content-Range: 0-19/137` (`*` when not counted). */
 export function countFromRange(header: string | null): number | null {
-  const total = header?.split('/')[1];
-  if (!total || total === '*') return null;
-  const count = Number(total);
+  const count = Number(header?.match(/^(?:\d+-\d+|\*)\/(\d+)$/)?.[1]);
   return Number.isSafeInteger(count) ? count : null;
 }
 
@@ -208,14 +207,14 @@ export class Query<S extends GenericSchema, Name extends string, Row, Out, Head 
    * After `insert`/`update`/`upsert`/`delete`: return the affected rows,
    * with these columns and embeds.
    */
-  select<Q extends string = '*'>(columns?: Q): Query<S, Name, SelectRow<S, Name, Q>, Head extends true ? null : SelectRow<S, Name, Q>[], Head, Throws> {
+  select<Q extends string = '*'>(columns?: Q): Query<S, Name, SelectRow<S, Name, Q>, Head extends true ? null : Reselected<Out, SelectRow<S, Name, Q>>, Head, Throws> {
     const params = this.#state.params.filter(([k]) => k !== 'select');
     const next = this.#with({
       params: [...params, ['select', selectList(columns ?? '*')]],
       prefer: [...this.#state.prefer.filter((p) => !p.startsWith('return=')), 'return=representation'],
       returnsRows: this.#state.method !== 'HEAD',
     });
-    return next as unknown as Query<S, Name, SelectRow<S, Name, Q>, Head extends true ? null : SelectRow<S, Name, Q>[], Head, Throws>;
+    return next as unknown as Query<S, Name, SelectRow<S, Name, Q>, Head extends true ? null : Reselected<Out, SelectRow<S, Name, Q>>, Head, Throws>;
   }
 
   abortSignal(signal: AbortSignal): this {
