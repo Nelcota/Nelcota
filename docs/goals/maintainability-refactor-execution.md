@@ -1,6 +1,6 @@
 # G07 — Targeted maintainability refactoring: execution record
 
-Status: inventory complete; target selection pending. This document stays in a
+Status: complete: two independent implementation PRs are ready for review. This document stays in a
 draft PR. Each implementation target gets an independent PR for human review;
 none may be merged by this run.
 
@@ -95,9 +95,9 @@ Selected longest eligible Rust functions from the complete Clippy report:
 | Location at baseline | Function / responsibility | Logical lines |
 | --- | --- | ---: |
 | `crates/cli/src/updates/worker/host.rs:39` | `dispatch` | 252 |
-| `crates/cli/src/updates/enroll.rs:54` | `enroll` | 250 |
+| `crates/cli/src/updates/enroll.rs:54` | `run` | 250 |
 | `crates/server/src/main.rs:28` | `main` | 243 |
-| `crates/cli/src/updates/management.rs:583` | management operation | 241 |
+| `crates/cli/src/updates/management.rs:583` | `apply_with` | 241 |
 | `crates/cli/src/updates/worker.rs:243` | `dispatch` | 227 |
 | `crates/api/src/catalog/introspection.rs:12` | `Catalog::load` | 221 |
 | `crates/api/src/rust.rs:111` | `generate` | 172 |
@@ -105,9 +105,9 @@ Selected longest eligible Rust functions from the complete Clippy report:
 | `crates/api/src/openapi.rs:82` | `generate` | 147 |
 | `crates/api/src/typescript.rs:103` | `generate` | 129 |
 | `crates/admin/src/lib.rs:62` | `router` | 119 |
-| `crates/api/src/query/sql.rs:325` | query rendering | 116 |
-| `crates/storage/src/upload.rs:72` | upload | 115 |
-| `sdk/rust/src/http.rs:127` | HTTP request | 115 |
+| `crates/api/src/query/sql.rs:325` | `insert` | 116 |
+| `crates/storage/src/upload.rs:72` | `write` | 115 |
+| `sdk/rust/src/http.rs:127` | `request` | 115 |
 
 `server::main` is the only default cognitive-complexity warning (26/25).
 No excessive-parameter warning was found in Rust. This does not mean every
@@ -209,6 +209,149 @@ absence of semantic duplication. Manual inspection found:
 
 ## Phase 2 / 3 execution ledger
 
-Pending the inventory draft PR. No production code has been changed at this
-checkpoint. Characterization commits, before/after results, implementation PRs,
-exact-head CI and final dispositions will be recorded here.
+### Target selection
+
+Inventory draft: [#106](https://github.com/Nelcota/Nelcota/pull/106), opened
+before production edits. Exactly two targets were selected, in ranking order.
+The concrete problem/change for each was written in the inventory first. The
+remaining six candidates stay deferred for the risks recorded above; eight is
+an upper bound rather than a quota.
+
+Both implementation branches start independently at the baseline main SHA,
+without depending on the inventory or each other. They affect different files.
+No public branch was rebased or force-pushed. Main is unchanged.
+
+### Before/after evidence
+
+| Target | Characterization commit (original implementation) | Before | Refactor head | After | PR |
+| --- | --- | --- | --- | --- | --- |
+| TS RPC signature | `05a8c99c2f1a573458453b04ddc34e7faf27fcee` | 6 generator tests passed | `f33b33aeeafb3981ef67fa445316178d91d77eb5` | 43 API tests passed, including the same 6 | [#107](https://github.com/Nelcota/Nelcota/pull/107) |
+| Rust RPC return | `1df5a92a1821e63c959054b1627a4cae53e0b882` | 3 generator tests passed | `008f93b6345646317fff08e3e12bdf38f111b9e4` | 43 API tests passed, including the same 3 | [#108](https://github.com/Nelcota/Nelcota/pull/108) |
+
+The totals belong to independent branches, each adding one test to baseline's
+42 API tests. They are not a claim of a combined-branch test run. No tests were
+ignored in these local runs. Characterization was committed separately before
+production extraction; its entire test module remained byte-identical afterward:
+
+- TS test-module SHA-256:
+  `c11a35dbdfe9c8ded2aa35d8f57198c017198081af4d5b55939993140420bcf2`.
+- Rust test-module SHA-256:
+  `4e3481b12e6b8112743930c3a6d7a625f1362bbf6c8aa11440df8cd07abd3e1d`.
+
+TS characterization compares the complete Functions section, including escaping,
+ordering, required/default arguments, table/view references, scalar sets, arrays
+and void. Existing tests also cover precise numbers, relationships and view kinds.
+Rust characterization compares the complete RPC section across eight return
+combinations, including module collisions, schema qualification and void priority.
+Its existing full generated-model fixture remains unchanged.
+
+Additional Rust-head checks:
+
+- Rust SDK generated-model serialization: **1 passed**, omission/null/defaults
+  and decimal precision retained.
+- Server real-catalog/CLI types contract: **1 passed**, preserving Rust output
+  and the default TypeScript language, using disposable shared PostgreSQL 17.
+- Both heads: formatting, package all-target Clippy with `-D warnings`, diff
+  whitespace and the excluded-path guard passed.
+- Final complete diffs: TS **108 insertions / 44 deletions** (152 changed lines,
+  including moved implementation); Rust **102 / 18** (120 changed lines). Both
+  are below 400 even counting moved code.
+
+Commands, run sequentially with four Cargo jobs/two test threads:
+
+```sh
+# On the TS characterization commit, before production changes:
+scripts/test.sh rust --locked -p nelcota-api --lib typescript::tests
+# On the Rust characterization commit, before production changes:
+scripts/test.sh rust --locked -p nelcota-api --lib rust::tests
+# On each corresponding refactor head:
+scripts/test.sh rust --locked -p nelcota-api --lib
+cargo fmt --all --check
+cargo clippy --locked -p nelcota-api --all-targets -- -D warnings
+# Additional checks on the Rust head:
+scripts/test.sh rust --locked -p nelcota-client --test models
+scripts/test.sh rust --locked -p nelcota-server --test sdk_rust \
+  rust_types_cli_reads_the_real_catalog_and_keeps_the_typescript_default
+```
+
+The one-off post-refactor report no longer flags TS `generate` above 100 logical
+lines. Rust `generate` falls from **172 to 156**, still above 100. That remaining
+warning is reported openly: this pass isolates one concrete responsibility,
+rather than chasing a length threshold through a whole-renderer rewrite.
+
+### SDK bundle and scope verification
+
+`npm --prefix sdk/typescript run build` and `npm --prefix sdk/typescript run size`
+passed after the Rust checks, with unchanged gzip sizes:
+
+| Entry | Bytes | Budget |
+| --- | ---: | ---: |
+| `index.js` | 17,064 | 17,100 |
+| `rest/index.js` | 9,387 | 9,550 |
+| `auth/index.js` | 11,246 | 11,250 |
+| `storage/index.js` | 7,267 | 7,400 |
+
+Both PRs have an empty diff under `sdk/`; the four-byte auth headroom is intact.
+The changed-path guard confirms each implementation PR touches its one eligible
+source file only. No migration, public signature, HTTP/SDK contract, CLI flag,
+configuration, workflow, dependency, recent-fix test or panel asset changed.
+No bundled-guide rebuild is needed for this unbundled execution document.
+
+### Ordinary CI and final disposition
+
+Both implementation PRs were marked **ready for review** only after fetching
+fresh check results and reconfirming the unchanged exact head and main base:
+
+| PR | Exact head | Ordinary checks | Last check completed (UTC) | Disposition |
+| --- | --- | --- | --- | --- |
+| [#107](https://github.com/Nelcota/Nelcota/pull/107/checks) | `f33b33aeeafb3981ef67fa445316178d91d77eb5` | **17/17 success** | 2026-10-19 02:07:14 | Ready; not merged |
+| [#108](https://github.com/Nelcota/Nelcota/pull/108/checks) | `008f93b6345646317fff08e3e12bdf38f111b9e4` | **17/17 success** | 2026-10-19 02:10:40 | Ready; not merged |
+
+The successful set on each head comprises `check`, `native-lint`, `supply-chain`,
+`upgrade`, `admin-ui`, `sdk / sdk`, SDK Node 22/26, Rust SDK Ubuntu/macOS/Windows,
+`msrv`, CodeQL analyses for actions/Python/JavaScript-TypeScript/Rust and the
+CodeQL result check. No neutral, ignored or pending check is counted as passed.
+The separately filtered `native-presets` configuration workflow does not apply
+because none of its path filters changed. No workflow was dispatched manually.
+
+The draft inventory's initial head `f28ce58415bc19ee8832fd13339a145195a52197`
+also passed its 17 checks. Its final documentation-only update starts ordinary
+CI again; that draft remains the execution archive rather than an implementation
+merge candidate. See its checks for the current documentation-head result.
+
+Main remained `b18412a65f4accc4d759d7f840e50420d32d7579`. No merge, tag,
+release, publication, deployment or repository setting change was performed.
+
+### Timing and budget closure
+
+The original eight-hour deadline was 2026-10-19 09:37:29 UTC. Both code heads
+finished ordinary CI by 02:10:40, inside that budget. On processing the later
+`Continua` message, the environment clock was **10:44:07 UTC**, already beyond
+the deadline. Only closure of the existing work was performed at that point:
+reconfirming checks/heads, marking the two existing PRs ready, and committing
+this execution record. No additional target, refactor, test campaign or rerun
+was started. The elapsed interval is not claimed as effective testing time.
+The final documentation-only CI is not awaited beyond the expired budget.
+
+### Further decisions and limitations
+
+7. Prefer pure helper extraction over moving formatting and changing error
+   conventions. The new helpers return strings and introduce no ignored Results,
+   unwraps, traits or dependencies in production code.
+8. Preserve existing language-specific relation lookup, nullable set behavior,
+   identifier collisions and void precedence even where the two generators use
+   different rules. This is not a contract redesign.
+9. Keep all runtime SDK/panel refactors deferred. Measuring TypeScript does not
+   require changing it, especially with the current bundle and asset exclusions.
+10. Do not run stress, reboot, release or deployment campaigns for pure catalog
+    code generation. Existing ordinary CI supplies platform/browser/provider,
+    packaging and supply-chain coverage without modifying those areas.
+11. Initial formatting checks requested normal formatter adjustments while
+    preparing the changes; these were applied before final checks. No behavioral
+    test failed, no budget/lint was weakened, and no new product defect was
+    confirmed during this bounded review.
+12. Automatic app attachment calls did not return and were cancelled; PR URLs
+    are recorded directly here and in the handoff. GitHub PR creation succeeded.
+13. Close the run after publishing the existing evidence, because the original
+    wall-clock deadline had passed at resumption. Do not use the continuation
+    message as implicit permission to expand the scope or restart the budget.
