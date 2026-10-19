@@ -43,7 +43,11 @@ impl BucketFiles {
             .unwrap_or("application/octet-stream");
         let header = HeaderValue::from_str(content_type)
             .map_err(|_| Error::Usage("invalid content type header".into()))?;
-        let media = content_type.split(';').next().unwrap_or_default();
+        let media = content_type
+            .split(';')
+            .next()
+            .unwrap_or_default()
+            .trim_end_matches([' ', '\t']);
         let valid = media.split_once('/').is_some_and(|(kind, subtype)| {
             [kind, subtype].iter().all(|part| {
                 !part.is_empty()

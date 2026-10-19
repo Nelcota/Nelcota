@@ -170,3 +170,22 @@ base and all applicable ordinary CI checks passing on the exact PR head;
 the PR records hosted results and the completed review. Cleanup is restricted
 to this task's branch. No tags, releases, package publications or deployment
 are part of this follow-up.
+
+### Post-opening review: MIME parameter whitespace
+
+Review of [PR #113](https://github.com/Nelcota/Nelcota/pull/113), initially at
+`a0641ffd3a812450d9388c47a90fdc843772e93f`, found that the new Rust MIME check
+rejected valid optional whitespace before a parameter delimiter. The expanded
+storage regression failed with `text/plain ; charset=utf-8` before the correction
+(`mime-ows-before.log`). The media type check now removes trailing space/tab
+for validation only; the outgoing header remains unchanged. The regression
+covers space and tab, checks the exact received header and still refuses all
+six malformed inputs before HTTP.
+
+After the correction, all 39 Rust runtime tests and 10 compiled doctests passed
+again, together with formatting, strict SDK clippy, verified crate packaging
+and the external archive consumer. These follow-up results are recorded in
+`pr-rust-after.log`, `pr-fmt.log`, `pr-clippy.log`, `pr-rust-package.log` and
+`pr-rust-consumer.log` in the same evidence directory. TypeScript source, bundle
+measurements and embedded guides are unchanged by this correction. Hosted CI
+must validate the new head before merge.

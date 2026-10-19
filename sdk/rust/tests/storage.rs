@@ -112,11 +112,12 @@ async fn empty_mime_components_are_rejected_before_upload_but_empty_files_are_va
     let calls = Arc::new(AtomicUsize::new(0));
     let router = Router::new().fallback(any({
         let calls = calls.clone();
-        move || {
+        move |request: Request| {
             calls.fetch_add(1, Ordering::SeqCst);
-            async {
+            async move {
+                let content_type = request.headers()[header::CONTENT_TYPE].to_str().unwrap();
                 axum::Json(json!({"id":"o1", "bucket":"docs", "name":"empty.txt",
-                    "size":0, "mime_type":"text/plain", "etag":"e"}))
+                    "size":0, "mime_type":content_type, "etag":"e"}))
             }
         }
     }));
@@ -143,22 +144,26 @@ async fn empty_mime_components_are_rejected_before_upload_but_empty_files_are_va
         ));
     }
     assert_eq!(calls.load(Ordering::SeqCst), 0);
-    assert_eq!(
-        files
+    for content_type in [
+        "text/plain;charset=utf-8",
+        "text/plain ; charset=utf-8",
+        "text/plain\t; charset=utf-8",
+    ] {
+        let stored = files
             .upload(
                 "empty.txt",
                 "",
                 UploadOptions {
-                    content_type: Some("text/plain;charset=utf-8".into()),
+                    content_type: Some(content_type.into()),
                     ..Default::default()
-                }
+                },
             )
             .await
-            .unwrap()
-            .size,
-        0
-    );
-    assert_eq!(calls.load(Ordering::SeqCst), 1);
+            .unwrap();
+        assert_eq!(stored.size, 0);
+        assert_eq!(stored.mime_type, content_type);
+    }
+    assert_eq!(calls.load(Ordering::SeqCst), 3);
     server.abort();
 }
 
