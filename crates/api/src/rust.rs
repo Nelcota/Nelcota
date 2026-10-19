@@ -1,5 +1,5 @@
 //! Rust models from the same catalog as REST and TypeScript. No DB connection at build time.
-use crate::catalog::{Catalog, Column, TableKind};
+use crate::catalog::{Catalog, Column, Function, TableKind};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt::Write,
@@ -104,6 +104,30 @@ fn column_type(column: &Column, enums: &BTreeMap<String, String>) -> String {
         return name.clone();
     }
     scalar(&column.type_name)
+}
+
+fn function_returns(
+    schema: &str,
+    modules: &BTreeMap<String, String>,
+    function: &Function,
+) -> String {
+    let table_name = function
+        .return_type
+        .strip_prefix(&format!("{schema}."))
+        .unwrap_or(&function.return_type);
+    let base = modules
+        .get(table_name)
+        .map(|m| format!("super::super::{m}::Row"))
+        .unwrap_or_else(|| scalar(&function.return_type));
+    match () {
+        _ if function.returns_void => "()".into(),
+        _ if function.returns_set => {
+            format!("Vec<Option<{base}>>")
+        }
+        _ => {
+            format!("Option<{base}>")
+        }
+    }
 }
 
 /// Generate a self-contained Rust module using serde, serde_json and nelcota-client.
@@ -259,23 +283,7 @@ pub fn generate(catalog: &Catalog) -> String {
                 let _ = writeln!(out, "                pub {name}: {ty},");
             }
             out.push_str("            }\n");
-            let table_name = function
-                .return_type
-                .strip_prefix(&format!("{}.", catalog.schema))
-                .unwrap_or(&function.return_type);
-            let base = modules
-                .get(table_name)
-                .map(|m| format!("super::super::{m}::Row"))
-                .unwrap_or_else(|| scalar(&function.return_type));
-            let returns = match () {
-                _ if function.returns_void => "()".into(),
-                _ if function.returns_set => {
-                    format!("Vec<Option<{base}>>")
-                }
-                _ => {
-                    format!("Option<{base}>")
-                }
-            };
+            let returns = function_returns(&catalog.schema, &modules, function);
             let _ = writeln!(out, "            pub type Returns = {returns};\n        }}");
         }
     }
