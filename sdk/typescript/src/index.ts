@@ -12,10 +12,10 @@
  */
 
 import { AuthClient, type AuthOptions } from './auth/index.js';
+import { StorageClient } from './storage/index.js';
 import { createHttpClient, type TransportOptions } from './core/options.js';
 import { RestClient } from './rest/index.js';
 import type { DefaultSchemaName, SchemaOf } from './rest/types.js';
-import { StorageClient } from './storage/index.js';
 
 export interface ClientOptions<SchemaName> extends TransportOptions {
   /** Schema the types come from (the server exposes one, `public` by default). */

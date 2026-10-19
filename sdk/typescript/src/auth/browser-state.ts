@@ -23,7 +23,7 @@ function receipt(value: unknown): Receipt {
 
 export class BrowserSessionState {
   readonly #owner = createVerifier();
-  #observed: string | undefined;
+  revision: string | undefined;
   constructor(readonly key: string, private readonly factory: IDBFactory | undefined) {}
 
   async #open(): Promise<IDBDatabase> {
@@ -98,11 +98,11 @@ export class BrowserSessionState {
         store.put(state, this.key);
       }
       const owned = state.owner === this.#owner;
-      const retainDirty = dirty !== undefined && (owned || state.revision === this.#observed);
+      const retainDirty = dirty !== undefined && (owned || state.revision === this.revision);
       if (state.kind === 'refreshing' && !owned && !allowPending && !retainDirty) throw new Error('Browser session refresh was interrupted; sign in again');
       return { value: retainDirty ? dirty : state.value, retainDirty, revision: state.revision };
     });
-    this.#observed = result.revision;
+    this.revision = result.revision;
     return { value: result.value, retainDirty: result.retainDirty };
   }
 
@@ -114,7 +114,7 @@ export class BrowserSessionState {
       if (state.kind === 'ready' && parseSession(state.value)?.refresh_token !== session.refresh_token) throw new Error('Browser session changed before refresh');
       store.put(next, this.key);
     });
-    this.#observed = next.revision;
+    this.revision = next.revision;
   }
 
   async write(value: string | null, completingRefresh = false): Promise<void> {
@@ -126,7 +126,7 @@ export class BrowserSessionState {
       }
       store.put(next, this.key);
     });
-    this.#observed = next.revision;
+    this.revision = next.revision;
   }
 
   async consume(legacy: () => string | null): Promise<string | null> {
@@ -137,7 +137,7 @@ export class BrowserSessionState {
       store.put(next, this.key);
       return state.value;
     });
-    this.#observed = next.revision;
+    this.revision = next.revision;
     return value;
   }
 }

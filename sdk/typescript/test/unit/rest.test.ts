@@ -133,6 +133,21 @@ describe('reads', () => {
     expect(rangeFromHeader(null)).toBeNull();
   });
 
+  it.each(['0-0/-1', '0-0/+1', '0-0/0x10', '0-0/1e2', '0-0/1.5', '0-0/1/2',
+    '0-0/9007199254740992', 'garbage/12', '0-0/ 12'])('ignores invalid totals in %s', header => {
+    expect(countFromRange(header)).toBeNull();
+  });
+
+  it('keeps runtime cardinality when reselecting singular queries', async () => {
+    const { nelcota } = client(json([{ id: 1 }]));
+    try {
+      expect((await nelcota.from('todos').select().single().select('id')).data).toEqual({ id: 1 });
+      const empty = client(json([]));
+      try { expect((await empty.nelcota.from('todos').select().maybeSingle().select('id')).data).toBeNull(); }
+      finally { empty.nelcota.dispose(); }
+    } finally { nelcota.dispose(); }
+  });
+
   it('exposes the returned range so truncation is visible', async () => {
     const { nelcota, calls } = client(json([{ id: 1 }, { id: 2 }], 200, { 'content-range': '10-11/40' }));
     const result = await nelcota.from('todos').select('id', { count: 'exact' }).limit(2).offset(10);

@@ -34,8 +34,7 @@ export function withLock<T>(name: string | symbol, task: () => Promise<T>): Prom
 export type SessionSignal = 'changed';
 
 export class Broadcast {
-  readonly #channel: BroadcastChannel | undefined;
-  #closed = false;
+  #channel: BroadcastChannel | undefined;
 
   constructor(name: string, onMessage: () => void) {
     if (typeof BroadcastChannel === 'undefined') return;
@@ -48,13 +47,11 @@ export class Broadcast {
   }
 
   notify(): void {
-    if (this.#closed) return;
     this.#channel?.postMessage('changed' satisfies SessionSignal);
   }
 
   close(): void {
-    if (this.#closed) return;
-    this.#closed = true;
     this.#channel?.close();
+    this.#channel = undefined;
   }
 }

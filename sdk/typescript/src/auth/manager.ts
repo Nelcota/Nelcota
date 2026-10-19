@@ -1,16 +1,17 @@
 /** One owner for session persistence, lifecycle transitions and refresh timers. */
+import { isSession, memoryStorage, parseSession, secondsLeft, type Session, type SessionStorage, type User } from './session.js';
+import { BrowserSessionConflictError, BrowserSessionState } from './browser-state.js';
+import { Broadcast, withLock } from './coordination.js';
 import { NelcotaUsageError, clientError, fail, ok, type Result } from '../core/errors.js';
 import { abortable } from '../core/cancellation.js';
 import { isBrowser } from '../core/jwt.js';
 import { encodeJson } from '../core/json.js';
-import { Broadcast, withLock } from './coordination.js';
-import { BrowserSessionConflictError, BrowserSessionState } from './browser-state.js';
-import { isSession, memoryStorage, parseSession, secondsLeft, type Session, type SessionStorage, type User } from './session.js';
 
 import type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions } from './types.js';
 export type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions } from './types.js';
 
 const RETRY_REFRESH_MS = 10_000;
+type Authentication = Session | { user: User; session: Session | null };
 
 function browserStorage(): SessionStorage | undefined {
   try { return isBrowser() ? globalThis.localStorage : undefined; }
@@ -34,6 +35,7 @@ export class SessionManager {
   #refreshing: Promise<Result<Session>> | null = null;
   #timer: ReturnType<typeof setTimeout> | undefined;
   #disposed = false;
+  #revision = 0;
 
   constructor(url: URL, options: AuthOptions, private rotate: (token: string, options: AuthRequestOptions) => Promise<Result<Session>>) {
     const margin = options.refreshMargin ?? 60;
@@ -130,6 +132,7 @@ export class SessionManager {
   }
   async #write(session: Session | null, event: AuthEvent, completingRefresh = false): Promise<void> {
     const encoded = encodeJson(session);
+    this.#revision++;
     this.#session = session;
     this.#dirty = true;
     this.#schedule(null);
@@ -167,21 +170,24 @@ export class SessionManager {
       await this.#write(session, 'signed_in');
     });
   }
-  async authenticate<T>(request: () => Promise<Result<T>>, sessionOf: (data: T) => Session | null, signal?: AbortSignal): Promise<Result<T>> {
+  async authenticate<T extends Authentication>(request: () => Promise<Result<T>>, signal?: AbortSignal): Promise<Result<T>> {
     if (signal?.aborted) return fail(clientError('aborted', 'The request was aborted'));
+    let entry: typeof request | undefined = request;
     const result = await abortable(this.#locked(async () => {
-      // A cancelled queued caller must not begin HTTP or touch the journal.
-      if (signal?.aborted) return fail(clientError('aborted', 'The request was aborted'));
+      const task = entry;
+      entry = undefined;
+      if (!task) return fail(clientError('aborted', 'The request was aborted'));
       // Capture the receipt before HTTP: failed publication must retain an
       // accepted sign-in until that exact receipt is superseded.
       if (this.#native) await this.#read(true, true);
-      const result = await request();
+      const result = await task();
       if (!result.error) {
-        const session = sessionOf(result.data);
+        const data: Authentication = result.data;
+        const session = isSession(data) ? data : data.session;
         if (session) await this.#write(session, 'signed_in');
       }
       return result;
-    }), signal);
+    }), signal, () => { entry = undefined; });
     return result.data ?? result;
   }
   async get(options: AuthRequestOptions = {}): Promise<Result<Session | null>> {
@@ -231,13 +237,14 @@ export class SessionManager {
     })().finally(() => { this.#refreshing = null; });
     return abortable(this.#refreshing, options.signal).then(result => result.data ?? result);
   }
-  updateUser(snapshot: Session, user: User): Promise<void> {
-    return this.#locked(async () => {
+  rememberUser(snapshot: Session): (user: User) => Promise<void> {
+    const revision = snapshot === this.#session && `${this.#revision}/${this.#native?.revision}`;
+    return user => this.#locked(async () => {
       const current = await this.#read(true);
-      if (current?.access_token === snapshot.access_token && current.refresh_token === snapshot.refresh_token
-          && JSON.stringify(current.user) !== JSON.stringify(user)) {
-        await this.#write({ ...current, user }, 'user_updated');
-      }
+      if (!current || revision !== `${this.#revision}/${this.#native?.revision}`
+          || encodeJson(current) !== encodeJson(snapshot)
+          || encodeJson(current.user) === encodeJson(user)) return;
+      await this.#write({ ...current, user }, 'user_updated');
     });
   }
   signOut(request: (session: Session) => Promise<Result<null>>): Promise<Result<null>> {

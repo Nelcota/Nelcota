@@ -303,13 +303,13 @@ impl AuthClient {
 
     /// Read the server's current user. Scoped clients use their explicit caller token.
     pub async fn get_user(&self) -> Result<User> {
-        let token = self.caller_token().await?;
+        let (token, revision) = self.caller_token().await?;
         let user = self
             .client
             .json::<User>(Spec::new(Method::GET, "/auth/v1/user").token(&token))
             .await?
             .data;
-        self.remember_user(&token, &user).await?;
+        self.remember_user(&token, revision, &user).await?;
         Ok(user)
     }
 
@@ -332,7 +332,7 @@ impl AuthClient {
         if let Some(data) = update.data {
             body.insert("data".into(), data);
         }
-        let token = self.caller_token().await?;
+        let (token, revision) = self.caller_token().await?;
         let user = self
             .client
             .json::<User>(
@@ -342,27 +342,40 @@ impl AuthClient {
             )
             .await?
             .data;
-        self.remember_user(&token, &user).await?;
+        self.remember_user(&token, revision, &user).await?;
         Ok(user)
     }
 
-    async fn caller_token(&self) -> Result<String> {
+    async fn caller_token(&self) -> Result<(String, u64)> {
+        let manager = &self.client.inner.auth;
         match &self.client.token {
-            TokenMode::Fixed(Some(token)) => Ok(token.clone()),
+            TokenMode::Fixed(Some(token)) => {
+                Ok((token.clone(), manager.epoch.load(Ordering::Acquire)))
+            }
             TokenMode::Fixed(None) => Err(Error::SessionMissing),
-            TokenMode::Session => Ok(self
-                .get_session()
-                .await?
-                .ok_or(Error::SessionMissing)?
-                .access_token),
+            TokenMode::Session => {
+                self.get_session().await?.ok_or(Error::SessionMissing)?;
+                // Capture the token and publication epoch from one locked state.
+                let state = self.lock_state().await?;
+                let token = state
+                    .session
+                    .as_ref()
+                    .ok_or(Error::SessionMissing)?
+                    .access_token
+                    .clone();
+                Ok((token, manager.epoch.load(Ordering::Acquire)))
+            }
         }
     }
 
     /// Store a fresher user in the session the request was made with, unless
     /// the session rotated or changed meanwhile.
-    async fn remember_user(&self, token: &str, user: &User) -> Result<()> {
+    async fn remember_user(&self, token: &str, revision: u64, user: &User) -> Result<()> {
         let manager = &self.client.inner.auth;
         let mut state = manager.gate.lock().await;
+        if manager.epoch.load(Ordering::Acquire) != revision {
+            return Ok(());
+        }
         if let Some(session) = state
             .session
             .as_ref()

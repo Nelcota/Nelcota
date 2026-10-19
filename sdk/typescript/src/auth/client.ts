@@ -3,15 +3,15 @@
  * life: stored, refreshed before it expires, shared across tabs.
  */
 
+import { isSession, isUser, type Session, type User } from './session.js';
+import { SessionManager } from './manager.js';
 import { NelcotaError, NelcotaUsageError, clientError, fail, ok, type Result } from '../core/errors.js';
 import type { HttpClient } from '../core/http.js';
 import { isBrowser } from '../core/jwt.js';
-import { SessionManager } from './manager.js';
 import type { AuthListener, AuthOptions, AuthRequestOptions, Credentials, EmailLink, EmailLinkType, OAuthInput, SignUpInput, UserUpdate } from './types.js';
 export type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions, Credentials, EmailLink, EmailLinkType, OAuthInput, OAuthProvider, SignUpInput, UserUpdate } from './types.js';
 import { challengeFor, createVerifier } from './pkce.js';
 import { withLock } from './coordination.js';
-import { isSession, isUser, type Session, type User } from './session.js';
 
 const LINK_TYPES = new Set<string>(['recovery', 'signup', 'magiclink']);
 function email(value: unknown): string {
@@ -41,13 +41,8 @@ export class AuthClient {
 
   async #token(grant: 'password' | 'refresh_token' | 'pkce', body: Record<string, string>, options: AuthRequestOptions = {}): Promise<Result<Session>> {
     const result = await this.#http.json<unknown>({
-      method: 'POST',
-      path: '/auth/v1/token',
-      query: new URLSearchParams({ grant_type: grant }),
-      json: body,
-      auth: false,
-      signal: options.signal,
-      timeout: options.timeout,
+      method: 'POST', path: '/auth/v1/token', query: new URLSearchParams({ grant_type: grant }),
+      json: body, auth: false, signal: options.signal, timeout: options.timeout,
     });
     if (result.error) return fail(result.error);
     return isSession(result.data) ? ok(result.data) : fail(invalidResponse());
@@ -63,12 +58,12 @@ export class AuthClient {
       if (isSession(result.data)) return ok({ user: result.data.user, session: result.data });
       const user = (result.data as { user?: unknown } | null)?.user;
       return isUser(user) ? ok({ user, session: null }) : fail(invalidResponse());
-    }, data => data.session, options.signal);
+    }, options.signal);
   }
 
   async signInWithPassword(credentials: Credentials, options: AuthRequestOptions = {}): Promise<Result<Session>> {
     const body = { email: email(credentials.email), password: credentials.password };
-    return this.#manager.authenticate(() => this.#token('password', body, options), session => session, options.signal);
+    return this.#manager.authenticate(() => this.#token('password', body, options), options.signal);
   }
 
   /**
@@ -107,7 +102,7 @@ export class AuthClient {
       if (!verifier && options.signal?.aborted) return fail(clientError('aborted', 'The request was aborted'));
       if (!verifier) return fail(clientError('pkce_missing', 'PKCE verifier missing; restart sign-in'));
       return this.#token('pkce', { auth_code: code, code_verifier: verifier }, options.timeout === undefined ? {} : { timeout: options.timeout });
-    }, session => session, options.signal);
+    }, options.signal);
   }
 
   /**
@@ -159,12 +154,12 @@ export class AuthClient {
     return this.#verify({ type: 'recovery', token: input.token, password: input.password }, options);
   }
 
-  async #verify(body: Record<string, string>, options: AuthRequestOptions): Promise<Result<Session>> {
+  #verify(body: Record<string, string>, options: AuthRequestOptions): Promise<Result<Session>> {
     return this.#manager.authenticate(async () => {
       const result = await this.#http.json<unknown>({ method: 'POST', path: '/auth/v1/verify', json: body, auth: false, signal: options.signal, timeout: options.timeout });
       if (result.error) return fail(result.error);
       return isSession(result.data) ? ok(result.data) : fail(invalidResponse());
-    }, session => session, options.signal);
+    }, options.signal);
   }
 
   async #emailOnly(path: string, body: Record<string, string>, options: AuthRequestOptions): Promise<Result<null>> {
@@ -191,14 +186,7 @@ export class AuthClient {
 
   /** The signed-in user as the server sees it now. */
   async getUser(options: AuthRequestOptions = {}): Promise<Result<User>> {
-    const { data: session, error } = await this.getSession(options);
-    if (error) return fail(error);
-    if (!session) return fail(clientError('session_missing', 'Not signed in'));
-    const result = await this.#http.json<unknown>({ method: 'GET', path: '/auth/v1/user', auth: session.access_token, signal: options.signal, timeout: options.timeout });
-    if (result.error) return fail(result.error);
-    if (!isUser(result.data)) return fail(invalidResponse());
-    await this.#manager.updateUser(session, result.data);
-    return ok(result.data);
+    return this.#user('GET', undefined, options);
   }
 
   /**
@@ -211,13 +199,18 @@ export class AuthClient {
     if (input.password !== undefined) body['password'] = input.password;
     if (input.currentPassword !== undefined) body['current_password'] = input.currentPassword;
     if (input.data !== undefined) body['data'] = input.data;
+    return this.#user('PUT', body, options);
+  }
+
+  async #user(method: 'GET' | 'PUT', body: Record<string, unknown> | undefined, options: AuthRequestOptions): Promise<Result<User>> {
     const { data: session, error } = await this.getSession(options);
     if (error) return fail(error);
     if (!session) return fail(clientError('session_missing', 'Not signed in'));
-    const result = await this.#http.json<unknown>({ method: 'PUT', path: '/auth/v1/user', json: body, auth: session.access_token, signal: options.signal, timeout: options.timeout });
+    const remember = this.#manager.rememberUser(session);
+    const result = await this.#http.json<unknown>({ method, path: '/auth/v1/user', json: body, auth: session.access_token, signal: options.signal, timeout: options.timeout });
     if (result.error) return fail(result.error);
     if (!isUser(result.data)) return fail(invalidResponse());
-    await this.#manager.updateUser(session, result.data);
+    await remember(result.data);
     return ok(result.data);
   }
 
