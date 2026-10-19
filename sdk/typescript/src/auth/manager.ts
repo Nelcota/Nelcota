@@ -181,11 +181,10 @@ export class SessionManager {
       // accepted sign-in until that exact receipt is superseded.
       if (this.#native) await this.#read(true, true);
       const result = await task();
-      if (!result.error) {
-        const data: Authentication = result.data;
-        const session = isSession(data) ? data : data.session;
-        if (session) await this.#write(session, 'signed_in');
-      }
+      if (result.error) return result;
+      const data: Authentication = result.data;
+      const session = isSession(data) ? data : data.session;
+      if (session) await this.#write(session, 'signed_in');
       return result;
     }), signal, () => { entry = undefined; });
     return result.data ?? result;

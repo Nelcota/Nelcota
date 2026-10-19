@@ -1,5 +1,5 @@
 /** Sessions and users as the server returns them, and where they are kept. */
-import { parseJson } from '../core/json.js';
+import { isRecord, parseJson } from '../core/json.js';
 
 import type { Json } from '../core/json-types.js';
 
@@ -44,14 +44,11 @@ export function memoryStorage(): SessionStorage {
   };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 export function isUser(value: unknown): value is User {
   if (!isRecord(value)) return false;
   return (
     typeof value['id'] === 'string' &&
+    value['id'].length > 0 &&
     typeof value['email'] === 'string' &&
     (value['email_confirmed_at'] === null || typeof value['email_confirmed_at'] === 'string') &&
     typeof value['created_at'] === 'string' &&

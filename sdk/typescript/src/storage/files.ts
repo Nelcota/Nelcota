@@ -3,6 +3,7 @@ import { NelcotaUsageError, clientError, fail, ok, type Result } from '../core/e
 import { bucketId, folderPrefix, objectPath } from '../core/encoding.js';
 import type { HttpClient, RequestSpec } from '../core/http.js';
 import type { FileBody, Listing, ListOptions, OpenOptions, RequestOptions, StoredObject, UploadOptions } from './types.js';
+import { item, listing } from './validation.js';
 
 function contentTypeOf(body: FileBody, explicit: string | undefined): string {
   if (explicit !== undefined) {
@@ -44,6 +45,7 @@ export class BucketFiles {
    * without buffering where the runtime can stream request bodies.
    */
   async upload(name: string, body: FileBody, options: UploadOptions = {}): Promise<Result<StoredObject>> {
+    if (body == null) throw new NelcotaUsageError('A file body is required');
     const spec: RequestSpec = {
       method: options.upsert ? 'PUT' : 'POST',
       path: this.#path('', name),
@@ -51,6 +53,7 @@ export class BucketFiles {
       headers: { 'content-type': contentTypeOf(body, options.contentType) },
       signal: options.signal,
       timeout: options.timeout ?? 0,
+      validate: item,
     };
     const result = await this.#http.json<StoredObject>(spec);
     return result.error ? fail(result.error) : ok(result.data);
@@ -103,6 +106,7 @@ export class BucketFiles {
     const result = await this.#http.json<Listing>({
       method: 'POST',
       path: `/storage/v1/object/list/${this.#bucket}`,
+      validate: listing,
       json: body,
       signal: options.signal,
       timeout: options.timeout,

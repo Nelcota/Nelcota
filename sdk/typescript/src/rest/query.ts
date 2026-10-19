@@ -6,6 +6,7 @@
 import { NelcotaError, NelcotaUsageError } from '../core/errors.js';
 import { columnPath, identifier, inList, scalar, type FilterScalar } from '../core/encoding.js';
 import type { HttpClient } from '../core/http.js';
+import { isRecord } from '../core/json.js';
 import {
   Conditions,
   compareOperator,
@@ -44,8 +45,9 @@ interface State {
 }
 
 function referenced(key: string, options: ReferencedOption | undefined): string {
-  if (!options?.referencedTable) return key;
-  return `${columnPath(options.referencedTable)}.${key}`;
+  const table = options?.referencedTable;
+  if (table === undefined) return key;
+  return `${columnPath(table)}.${key}`;
 }
 
 /** Total rows from `Content-Range: 0-19/137` (`*` when not counted). */
@@ -400,7 +402,7 @@ export class TableRef<S extends GenericSchema, Name extends string, Row, Insert,
 
   /** Changes the rows that match the filters (at least one is required). */
   update(values: Update): Query<S, Name, Row, null> {
-    if (typeof values !== 'object' || values === null || Array.isArray(values)) {
+    if (!isRecord(values)) {
       throw new NelcotaUsageError('update takes one object with the new values');
     }
     return this.#query('PATCH', { body: values, prefer: ['return=minimal'] });
@@ -413,11 +415,15 @@ export class TableRef<S extends GenericSchema, Name extends string, Row, Insert,
 }
 
 function rowsBody(values: unknown): unknown {
-  if (typeof values !== 'object' || values === null) {
+  if (isRecord(values)) return values;
+  if (!Array.isArray(values)) {
     throw new NelcotaUsageError('insert takes an object or an array of objects');
   }
-  if (Array.isArray(values) && values.length === 0) {
+  if (values.length === 0) {
     throw new NelcotaUsageError('insert needs at least one row');
+  }
+  for (const row of values) {
+    if (!isRecord(row)) throw new NelcotaUsageError('insert takes an object or an array of objects');
   }
   return values;
 }

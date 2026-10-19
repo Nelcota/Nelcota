@@ -6,6 +6,7 @@
 import { NelcotaUsageError, type NelcotaError } from '../core/errors.js';
 import { identifier } from '../core/encoding.js';
 import type { HttpClient } from '../core/http.js';
+import { isRecord } from '../core/json.js';
 import { createHttpClient, type TransportOptions } from '../core/options.js';
 import { TableRef } from './query.js';
 import type {
@@ -86,7 +87,7 @@ export class RestClient<S extends GenericSchema> {
    */
   async rpc<F extends FunctionName<S>>(name: F, ...rest: RpcArgs<S, F>): Promise<RpcResult<FunctionReturns<S, F>>> {
     const [args, options = {}] = rest;
-    if (args !== undefined && (typeof args !== 'object' || args === null || Array.isArray(args))) {
+    if (args !== undefined && !isRecord(args)) {
       throw new NelcotaUsageError('rpc arguments are one object of named arguments');
     }
     const result = await this.#http.json<FunctionReturns<S, F>>({
