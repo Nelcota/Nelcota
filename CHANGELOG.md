@@ -8,8 +8,10 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ## [0.5.0] — 2026-10-19
 
-Release preparation: publication requires final artifact verification.
-The dated entry does not establish artifact availability.
+Server 0.5.0 is [published](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.0).
+Verify checksums/provenance and readiness for the selected artifacts before
+installation. Independently versioned SDK patches and application upgrade steps
+are listed in the [version guide](docs/releases/README.md).
 
 ### Added
 

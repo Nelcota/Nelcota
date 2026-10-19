@@ -28,6 +28,7 @@ def check(root: Path) -> list[str]:
         errors.append("Rust SDK Cargo.toml and Cargo.lock versions differ")
 
     required = {
+        "CHANGELOG.md": [f"Server {server} is [published]"],
         "docs/quickstart.md": [f"currently {server}", f"--tag v{server}", f"@nelcota/client@{ts_version}"],
         "docs/onboarding/notes.md": [f"NELCOTA_VERSION={server}", f"--version {server}"],
         "docs/releases/README.md": [f"Server **{server}** is published", f"| {ts_version} |", f"| {rust_version} |"],

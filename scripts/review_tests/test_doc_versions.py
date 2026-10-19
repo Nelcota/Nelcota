@@ -12,7 +12,7 @@ SPEC = importlib.util.spec_from_file_location("doc_versions", ROOT / "scripts/ch
 CHECKER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CHECKER)
 FILES = (
-    "README.md", "Cargo.lock", "docs/quickstart.md", "docs/onboarding/notes.md",
+    "README.md", "CHANGELOG.md", "Cargo.lock", "docs/quickstart.md", "docs/onboarding/notes.md",
     "docs/releases/README.md", "docs/goals/README.md",
     "docs/goals/auth-security-review.md", "docs/goals/auth-security-review-execution.md",
     "sdk/typescript/package.json", "sdk/typescript/package-lock.json",
