@@ -3,7 +3,7 @@
 Package releases use Semantic Versioning and Keep a Changelog categories.
 Dates identify release entries; registry availability requires a successful publish.
 
-## 0.2.0 — 2026-10-18
+## 0.2.0 — 2026-10-19
 
 Prepared package candidate. Version metadata and this changelog do not publish
 the package; use a local archive until registry publication completes.

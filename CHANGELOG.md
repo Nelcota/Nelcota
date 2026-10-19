@@ -6,7 +6,7 @@ Dates are published release dates in UTC.
 Server releases are listed here. The [TypeScript SDK](sdk/typescript/CHANGELOG.md)
 and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
-## [0.5.0] — 2026-10-18
+## [0.5.0] — 2026-10-19
 
 Release preparation: publication requires final artifact verification.
 The dated entry does not establish artifact availability.
