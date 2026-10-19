@@ -7,6 +7,7 @@ import { NelcotaUsageError, clientError, fail, ok, type Result } from '../core/e
 import { bucketId, folderPrefix, objectPath } from '../core/encoding.js';
 import type { HttpClient, RequestSpec } from '../core/http.js';
 import { createHttpClient, type TransportOptions } from '../core/options.js';
+import { encodeJson } from '../core/json.js';
 
 export { NelcotaError, NelcotaUsageError, unwrap } from '../core/errors.js';
 export type { Result } from '../core/errors.js';
@@ -21,7 +22,7 @@ export function createStorageClient(url: string | URL, options: TransportOptions
 export interface Bucket {
   id: string;
   public: boolean;
-  file_size_limit: number | null;
+  file_size_limit: number | string | null;
   allowed_mime_types: string[] | null;
   created_at: string;
   updated_at: string;
@@ -29,8 +30,8 @@ export interface Bucket {
 
 export interface BucketSettings {
   public?: boolean;
-  /** Bytes; it can only lower the server's limit. */
-  file_size_limit?: number | null;
+  /** Positive int64 bytes; use a decimal string above Number.MAX_SAFE_INTEGER. */
+  file_size_limit?: number | string | null;
   /** `image/png`, `image/*`... `null` allows any type. */
   allowed_mime_types?: string[] | null;
 }
@@ -96,6 +97,12 @@ export interface ListOptions extends RequestOptions {
   /** 1 to 1000, default 100. */
   limit?: number;
   offset?: number;
+}
+
+/** Unquote only a canonical integer at the first key; the server retains int64 validation. */
+function bucketJson(settings: BucketSettings & { id?: string }): string {
+  const { file_size_limit: limit, ...rest } = settings;
+  return encodeJson({ file_size_limit: limit, ...rest }).replace(/^(\{"file_size_limit":)"([1-9]\d{0,18})"/, '$1$2');
 }
 
 function contentTypeOf(body: FileBody, explicit: string | undefined): string {
@@ -222,7 +229,7 @@ export class BucketFiles {
     if (result.error) return fail(result.error);
     const relative = result.data?.signed_url;
     if (typeof relative !== 'string' || !relative.startsWith('/storage/v1/object/sign/')) {
-      return fail(clientError('invalid_response', 'The server answered with an unexpected signed URL'));
+      return fail(clientError('invalid_response', 'Invalid signed URL response'));
     }
     return ok(this.#http.href(relative));
   }
@@ -258,7 +265,8 @@ export class StorageClient {
     const result = await this.#http.json<Bucket>({
       method: 'POST',
       path: '/storage/v1/bucket',
-      json: { ...settings, id: bucketId(id) },
+      body: bucketJson({ ...settings, id: bucketId(id) }),
+      headers: { 'content-type': 'application/json' },
       ...options,
     });
     return result.error ? fail(result.error) : ok(result.data);
@@ -268,12 +276,13 @@ export class StorageClient {
   async updateBucket(id: string, settings: BucketUpdateSettings, options: RequestOptions = {}): Promise<Result<Bucket>> {
     if (typeof settings !== 'object' || settings === null || typeof settings.public !== 'boolean'
         || settings.file_size_limit === undefined || settings.allowed_mime_types === undefined) {
-      throw new NelcotaUsageError('updateBucket replaces all settings: provide public, file_size_limit and allowed_mime_types (use null to clear limits)');
+      throw new NelcotaUsageError('updateBucket needs public, file_size_limit and allowed_mime_types (null clears limits)');
     }
     const result = await this.#http.json<Bucket>({
       method: 'PUT',
       path: `/storage/v1/bucket/${bucketId(id)}`,
-      json: settings,
+      body: bucketJson(settings),
+      headers: { 'content-type': 'application/json' },
       ...options,
     });
     return result.error ? fail(result.error) : ok(result.data);

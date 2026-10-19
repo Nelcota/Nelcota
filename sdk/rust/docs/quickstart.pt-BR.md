@@ -1,5 +1,12 @@
 # Começando com Rust
 
+As correções **Unreleased** deste checkout exigem um novo pacote do cliente.
+Elas recusam `single`/`maybe_single` em HEAD ou escritas sem representação
+antes de enviar HTTP: use `.select(...)` para receber a linha de uma escrita.
+O cancelamento também retira requisições de auth da fila de ciclo de vida;
+uma rotação aceita continua responsável por persistir sua sessão.
+Essas correções ainda não fazem parte do pacote publicado 0.1.3.
+
 O SDK usa Tokio e requer Rust 1.88+. Este checkout prepara 0.1.3; adicione
 `nelcota-client = "0.1.3"` ao Cargo.toml somente após a publicação, junto de
 serde, serde_json e tokio (veja o README). Antes disso, use uma dependência

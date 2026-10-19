@@ -85,6 +85,40 @@ describe('files', () => {
 });
 
 describe('buckets', () => {
+  it.each(['9007199254740993', '9223372036854775807'])('preserves int64 bucket limits on read and write (%s)', async limit => {
+    const reply = () => new Response(`{"id":"avatars","public":false,"file_size_limit":${limit},"allowed_mime_types":null,"created_at":"","updated_at":""}`);
+    const { nelcota, calls } = client(reply, reply, reply);
+    const read = await nelcota.storage.getBucket('avatars');
+    expect(read.data?.file_size_limit).toBe(limit);
+    const settings = { public: false, file_size_limit: read.data!.file_size_limit, allowed_mime_types: null };
+    expect((await nelcota.storage.updateBucket('avatars', settings)).error).toBeNull();
+    expect((await nelcota.storage.createBucket('copy', settings)).error).toBeNull();
+    for (const call of calls.slice(1)) {
+      expect(call.headers.get('content-type')).toBe('application/json');
+      expect(call.body).toContain(`"file_size_limit":${limit}`);
+      expect(call.body).not.toContain(`"file_size_limit":"${limit}"`);
+    }
+    nelcota.dispose();
+  });
+
+  it.each([NaN, Infinity, -Infinity])('refuses non-finite bucket limits before HTTP (%s)', async limit => {
+    const { nelcota, calls } = client(json({}));
+    try {
+      await expect(nelcota.storage.createBucket('avatars', { file_size_limit: limit })).rejects.toThrow(NelcotaUsageError);
+      await expect(nelcota.storage.updateBucket('avatars', { public: false, file_size_limit: limit, allowed_mime_types: null })).rejects.toThrow(NelcotaUsageError);
+      expect(calls).toHaveLength(0);
+    } finally { nelcota.dispose(); }
+  });
+
+  it.each(['0', '-1', '01', '1e3', '1.5', ' 1', '1,"public":true', '1e99999999999999999999'])('does not turn invalid decimal settings into JSON syntax (%s)', async limit => {
+    const { nelcota, calls } = client(json({ code: 'invalid_body', message: 'expected an integer' }, 422));
+    try {
+      const result = await nelcota.storage.createBucket('avatars', { public: false, file_size_limit: limit });
+      expect(result.error?.status).toBe(422);
+      expect(JSON.parse(calls[0]!.body!)).toEqual({ id: 'avatars', public: false, file_size_limit: limit });
+    } finally { nelcota.dispose(); }
+  });
+
   it('creates, updates and deletes', async () => {
     const bucket = { id: 'avatars', public: true, file_size_limit: null, allowed_mime_types: ['image/*'], created_at: '', updated_at: '' };
     const { nelcota, calls } = client(json(bucket, 201), json(bucket), empty(204), json([bucket]));

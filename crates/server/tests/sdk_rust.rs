@@ -43,6 +43,51 @@ impl Drop for Live {
 }
 
 #[tokio::test]
+async fn invalid_write_cardinality_never_commits_data() {
+    let live = Live::spawn(Options::default()).await;
+    let client = live.client.with_access_token(user_token(live.app.user_a));
+    let title = "cardinality-preflight-regression";
+    let invalid = client
+        .from("todos")
+        .insert(&json!({"title": title}))
+        .single();
+    assert!(matches!(
+        invalid.execute::<Value>().await,
+        Err(nelcota_client::Error::Usage(_))
+    ));
+    assert!(
+        client
+            .from("todos")
+            .eq("title", title)
+            .execute::<Vec<Value>>()
+            .await
+            .unwrap()
+            .data
+            .is_empty()
+    );
+    let row = client
+        .from("todos")
+        .insert(&json!({"title": title}))
+        .select("id,title")
+        .single()
+        .execute::<Value>()
+        .await
+        .unwrap();
+    assert_eq!(row.data["title"], title);
+    assert_eq!(
+        client
+            .from("todos")
+            .eq("title", title)
+            .execute::<Vec<Value>>()
+            .await
+            .unwrap()
+            .data
+            .len(),
+        1
+    );
+}
+
+#[tokio::test]
 async fn crud_rpc_filters_and_user_isolation_over_http() {
     let live = Live::spawn(Options::default()).await;
     let a = live.client.with_access_token(user_token(live.app.user_a));

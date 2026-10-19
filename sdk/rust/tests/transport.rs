@@ -29,6 +29,67 @@ async fn serve(router: Router) -> (String, tokio::task::JoinHandle<()>) {
 }
 
 #[tokio::test]
+async fn cardinality_without_representation_is_rejected_before_http() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let router = Router::new().fallback(any({
+        let calls = calls.clone();
+        move || {
+            calls.fetch_add(1, Ordering::SeqCst);
+            async { axum::http::StatusCode::CREATED }
+        }
+    }));
+    let (url, task) = serve(router).await;
+    let client = Client::builder(url).build().unwrap();
+    let minimal = [
+        client.from("notes").insert(&json!({"body": "one"})),
+        client
+            .from("notes")
+            .upsert(&json!({"id": 1}), UpsertOptions::default()),
+        client
+            .from("notes")
+            .update(&json!({"body": "two"}))
+            .eq("id", 1),
+        client.from("notes").delete().eq("id", 1),
+        client
+            .from("notes")
+            .select("*")
+            .insert(&json!({"body": "three"})),
+        client.from("notes").head(),
+    ];
+    for query in minimal {
+        for query in [query.clone().single(), query.maybe_single()] {
+            assert!(matches!(
+                query.execute::<Value>().await,
+                Err(Error::Usage(_))
+            ));
+        }
+    }
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+    task.abort();
+}
+
+#[tokio::test]
+async fn cardinality_accepts_explicit_representation_and_rpc_arrays() {
+    let (url, task) =
+        serve(Router::new().fallback(any(|| async { axum::Json(json!([{"id": 1}])) }))).await;
+    let client = Client::builder(url).build().unwrap();
+    for query in [
+        client
+            .from("notes")
+            .insert(&json!({"body": "one"}))
+            .single()
+            .select("*"),
+        client.rpc("rows", &json!({})).single(),
+    ] {
+        assert_eq!(
+            query.execute::<Value>().await.unwrap().data,
+            json!({"id": 1})
+        );
+    }
+    task.abort();
+}
+
+#[tokio::test]
 async fn non_finite_json_never_reaches_writes_or_rpc_but_explicit_null_does() {
     #[derive(serde::Serialize)]
     struct Input {

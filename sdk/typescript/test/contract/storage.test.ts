@@ -3,6 +3,42 @@ import { NelcotaUsageError } from '../../src/index.js';
 import { serviceClient, signedIn, skip, visitor } from './setup.js';
 
 describe.skipIf(skip)('storage against the server', () => {
+  it.each(['9007199254740993', '9223372036854775807'])('round-trips exact bucket limits through the server (%s)', async limit => {
+    const admin = serviceClient();
+    const id = `exact-${limit}`;
+    try {
+      const created = await admin.storage.createBucket(id, { public: false, file_size_limit: limit });
+      expect(created.error).toBeNull();
+      expect(created.data?.file_size_limit).toBe(limit);
+      const read = await admin.storage.getBucket(id);
+      expect(read.error).toBeNull();
+      const updated = await admin.storage.updateBucket(id, { ...read.data!, public: true });
+      expect(updated.error).toBeNull();
+      expect(updated.data).toMatchObject({ public: true, file_size_limit: limit });
+      expect((await admin.storage.listBuckets()).data?.find(bucket => bucket.id === id)?.file_size_limit).toBe(limit);
+    } finally {
+      expect((await admin.storage.deleteBucket(id)).error).toBeNull();
+      admin.dispose();
+    }
+  });
+
+  it('keeps invalid integer settings rejected without changing bucket state', async () => {
+    const admin = serviceClient();
+    const id = 'invalid-limit-review';
+    try {
+      expect((await admin.storage.createBucket(id, { public: false, file_size_limit: 1024 })).error).toBeNull();
+      for (const limit of [0, -1, 1.5, '0', '-1', '01', '1e3', '1.5', ' 1', '1,"public":true', '9223372036854775808']) {
+        const result = await admin.storage.updateBucket(id, { public: true, file_size_limit: limit, allowed_mime_types: null });
+        expect(result.error?.status).toBeGreaterThanOrEqual(400);
+        const current = await admin.storage.getBucket(id);
+        expect(current.data).toMatchObject({ public: false, file_size_limit: 1024 });
+      }
+    } finally {
+      expect((await admin.storage.deleteBucket(id)).error).toBeNull();
+      admin.dispose();
+    }
+  });
+
   it('uploads, downloads, ranges, ETags, lists, replaces and removes', async () => {
     const { client, id } = await signedIn();
     const files = client.storage.from('private-files');

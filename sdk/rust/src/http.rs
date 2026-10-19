@@ -82,7 +82,10 @@ impl Spec {
     }
 }
 
-async fn cancel<T>(options: &RequestOptions, future: impl Future<Output = Result<T>>) -> Result<T> {
+pub(crate) async fn cancel<T>(
+    options: &RequestOptions,
+    future: impl Future<Output = Result<T>>,
+) -> Result<T> {
     if let Some(token) = &options.cancellation {
         return tokio::select! { biased; _ = token.cancelled() => Err(Error::Cancelled), result = future => result };
     }

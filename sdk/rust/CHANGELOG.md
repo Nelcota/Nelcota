@@ -3,6 +3,18 @@
 Package releases use Semantic Versioning and Keep a Changelog categories.
 Dates identify release entries; registry availability requires a successful publish.
 
+## Unreleased
+
+### Fixed
+
+- Reject `single`/`maybe_single` on HEAD and minimal writes before HTTP, so a
+  missing row representation cannot report an error after committing a write.
+  Explicit write representations and array-returning RPC calls remain supported.
+- Cancel queued authentication requests and session reads while preserving
+  accepted refresh rotation and session publication ownership.
+- Resolve package verification archives through Cargo metadata, honoring
+  `CARGO_TARGET_DIR` and Cargo configuration instead of selecting a stale archive.
+
 ## 0.1.3 — 2026-10-19
 
 Prepared package candidate. Version metadata and this changelog do not publish

@@ -93,8 +93,7 @@ export class SessionManager {
   async #read(force = false, allowPending = false): Promise<Session | null> {
     // Storage may still contain a spent token or a session already signed out.
     // Keep the newer local state until a later persistence attempt succeeds.
-    if (!this.#native && this.#dirty) return this.#session ?? null;
-    if (!this.#native && !force && this.#session !== undefined) return this.#session;
+    if (!this.#native && (this.#dirty || (!force && this.#session !== undefined))) return this.#session ?? null;
     const stored = await this.#stored(allowPending);
     this.#session = parseSession(stored);
     if (stored !== null && this.#session === null) {
@@ -183,8 +182,11 @@ export class SessionManager {
       await this.#write(session, 'signed_in');
     });
   }
-  authenticate<T>(request: () => Promise<Result<T>>, sessionOf: (data: T) => Session | null): Promise<Result<T>> {
-    return this.#locked(async () => {
+  async authenticate<T>(request: () => Promise<Result<T>>, sessionOf: (data: T) => Session | null, signal?: AbortSignal): Promise<Result<T>> {
+    if (signal?.aborted) return fail(clientError('aborted', 'The request was aborted'));
+    const result = await abortable(this.#locked(async () => {
+      // A cancelled queued caller must not begin HTTP or touch the journal.
+      if (signal?.aborted) return fail(clientError('aborted', 'The request was aborted'));
       // Capture the receipt before HTTP: failed publication must retain an
       // accepted sign-in until that exact receipt is superseded.
       if (this.#native) await this.#read(true, true);
@@ -194,7 +196,8 @@ export class SessionManager {
         if (session) await this.#write(session, 'signed_in');
       }
       return result;
-    });
+    }), signal);
+    return result.data ?? result;
   }
   async get(options: AuthRequestOptions = {}): Promise<Result<Session | null>> {
     if (options.signal?.aborted) return fail(clientError('aborted', 'The request was aborted'));
@@ -241,7 +244,7 @@ export class SessionManager {
         return result;
       });
     })().finally(() => { this.#refreshing = null; });
-    return abortable(this.#refreshing, options.signal).then(result => result.error ? fail(result.error) : result.data);
+    return abortable(this.#refreshing, options.signal).then(result => result.data ?? result);
   }
   updateUser(snapshot: Session, user: User): Promise<void> {
     return this.#locked(async () => {
@@ -294,8 +297,7 @@ export class SessionManager {
   #background(operation: Promise<unknown>): void {
     void operation.catch(error => {
       if (this.#disposed) return;
-      clearTimeout(this.#timer);
-      this.#timer = undefined;
+      this.#schedule(null);
       // A caller can observe and repair its adapter. Neither the operation nor
       // a throwing error handler may create an unhandled background rejection.
       try { void Promise.resolve(this.#onBackgroundError?.(error)).catch(() => {}); }

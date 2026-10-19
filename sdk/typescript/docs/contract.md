@@ -6,6 +6,9 @@ by the endpoints and features below, not by matching package version numbers.
 
 ## Version scope
 
+The Unreleased fixes in this checkout require a new package: published 0.2.0
+does not include queued-login cancellation or exact bucket-limit writes below.
+
 This is the 0.2.0 source/package candidate contract. Registry installation
 requires successful publication; a server update does not install the client.
 Published 0.1.2 predates native IndexedDB journaling and exact numeric
@@ -116,6 +119,9 @@ seconds before a background attempt; explicit session reads still refresh it
 immediately.
 
 Auth methods that perform HTTP accept `{signal,timeout}` as the last argument.
+Signals also cancel queued authentication before HTTP starts; withdrawing a
+wait never cancels another operation's lifecycle ownership. Once a response is
+accepted, its session publication can finish after the caller stops waiting.
 Concurrent refresh callers share the first caller's timeout. Signals cancel
 each caller's wait independently; rotation continues and persists its result
 even when a waiter cancels. An already aborted caller does not start rotation.
@@ -154,6 +160,15 @@ Creation accepts `BucketSettings` with optional fields. Updating uses
 `allowed_mime_types`, and replaces the entire settings object with PUT.
 Use explicit null to clear a limit. Missing fields throw `NelcotaUsageError`
 before any HTTP request, including in JavaScript consumers.
+
+`Bucket.file_size_limit` is `number | string | null`. Limits beyond JavaScript's
+safe integer range are returned as exact decimal strings, and bucket settings
+accept those strings for read-modify-write. Pass a positive canonical decimal
+string for large int64 limits; the SDK sends it as an unquoted JSON integer.
+Do not first convert an exact string to `number`: JavaScript rounding cannot
+be recovered. The server retains its positive-int64 range and settings validation;
+invalid values return their existing HTTP errors. Non-finite numbers still throw
+before HTTP. Noncanonical decimal strings remain JSON-escaped and quoted.
 
 ## Release acceptance
 

@@ -1,4 +1,5 @@
 use axum::{Json, Router, extract::State, http::StatusCode, routing::post};
+use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use nelcota_client::{
     Client, RequestOptions,
     auth::{AuthEventKind, OAuthProvider, Session},
@@ -51,6 +52,84 @@ async fn server(fail: bool) -> (String, Arc<AtomicUsize>, tokio::task::JoinHandl
         axum::serve(listener, router).await.unwrap();
     });
     (url, count, task)
+}
+
+#[tokio::test]
+async fn cancelled_auth_requests_leave_a_busy_lifecycle_gate() {
+    struct HeldStorage {
+        entered: tokio::sync::Notify,
+        release: tokio::sync::Notify,
+    }
+    impl nelcota_client::auth::SessionStorage for HeldStorage {
+        fn load(&self) -> nelcota_client::auth::StorageFuture<'_, Option<Session>> {
+            Box::pin(async {
+                self.entered.notify_one();
+                self.release.notified().await;
+                Ok(Some(session("a0", "r0")))
+            })
+        }
+        fn save<'a>(
+            &'a self,
+            _: Option<&'a Session>,
+        ) -> nelcota_client::auth::StorageFuture<'a, ()> {
+            Box::pin(async { panic!("cancelled queued authentication must not write a session") })
+        }
+    }
+    let store = Arc::new(HeldStorage {
+        entered: Default::default(),
+        release: Default::default(),
+    });
+    let client = Client::builder("http://127.0.0.1:1")
+        .session_storage(store.clone())
+        .build()
+        .unwrap();
+    let reading = {
+        let auth = client.auth();
+        tokio::spawn(async move { auth.get_session().await })
+    };
+    store.entered.notified().await;
+    let cancellation = nelcota_client::CancellationToken::new();
+    let auth = client
+        .with_options(RequestOptions {
+            timeout: None,
+            cancellation: Some(cancellation.clone()),
+        })
+        .auth();
+    let pending = tokio::spawn(async move {
+        let mut password = [0u8; 32];
+        getrandom::fill(&mut password).unwrap();
+        let password = URL_SAFE_NO_PAD.encode(password);
+        let link = nelcota_client::auth::EmailLink {
+            kind: nelcota_client::auth::EmailLinkType::Signup,
+            token: "fixture".into(),
+        };
+        let verifier = "a".repeat(43);
+        let (login, signup, verify, exchange, read) = tokio::join!(
+            auth.sign_in_with_password("a@example.com", &password),
+            auth.sign_up("a@example.com", &password, None),
+            auth.verify_email_link(&link),
+            auth.exchange_code("fixture", &verifier),
+            auth.get_session(),
+        );
+        [
+            login.map(|_| ()),
+            signup.map(|_| ()),
+            verify.map(|_| ()),
+            exchange.map(|_| ()),
+            read.map(|_| ()),
+        ]
+    });
+    tokio::task::yield_now().await;
+    cancellation.cancel();
+    let result = tokio::time::timeout(Duration::from_secs(1), pending).await;
+    store.release.notify_one();
+    reading.await.unwrap().unwrap();
+    for outcome in result
+        .expect("cancelled requests must leave the gate")
+        .unwrap()
+    {
+        assert_eq!(outcome.unwrap_err().code(), "aborted");
+    }
 }
 
 #[tokio::test]
