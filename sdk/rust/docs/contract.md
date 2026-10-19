@@ -24,6 +24,10 @@ Responses become Rust Result values; empty bodies become JSON null (decode to
 unit or an appropriate Option). `Response<T>` carries status, count and headers.
 Auth/storage convenience methods return the decoded model or structured error.
 
+Unreleased cardinality preflight rejects HEAD and minimal writes with
+`single`/`maybe_single` before HTTP. Request write rows with `.select(...)`;
+array-returning RPC calls remain supported. Published 0.1.3 predates this guard.
+
 HTTP error bodies larger than 64 KiB are discarded; status, a generic error
 code and Retry-After remain available. Successful responses keep their existing
 buffering or streaming contract.
@@ -34,6 +38,12 @@ login session. Refresh waiters share one background rotation task; cancelling
 or dropping them does not leave a task per waiter or stop an accepted rotation.
 Default sessions never persist outside memory. Shared stores across independently
 constructed clients/processes require their own coordination.
+
+Unreleased token cancellation also covers authentication waiting for the lifecycle
+gate and session reads. It does not interrupt persistence of an accepted session;
+detached refresh rotation keeps its existing owner. Logout still waits for that
+owner and clears locally even if revocation fails.
+These changes require a new client package; server installation does not add them.
 
 On-demand and background refresh cap the configured margin at half the token
 lifetime. Short-lived fresh sessions and oversized margins do not cause a

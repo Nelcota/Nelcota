@@ -1,5 +1,14 @@
 # Começando com o SDK JavaScript do Nelcota
 
+As correções **Unreleased** deste checkout exigem um novo pacote do cliente;
+elas ainda não fazem parte do 0.2.0 publicado. O cancelamento passa a retirar
+logins pendentes da fila, preservando a conclusão de operações já aceitas.
+`Bucket.file_size_limit` passa a `number | string | null`: mantenha limites
+grandes como strings decimais exatas ao ler e atualizar o bucket. O SDK envia
+esses valores como inteiros JSON, e o servidor mantém as validações de faixa.
+Converter primeiro para `number` pode perder precisão; use `null` para limpar
+o limite. Atualizar o servidor não atualiza o pacote do aplicativo.
+
 O mesmo pacote funciona em JavaScript e TypeScript. Use um servidor Nelcota
 com os recursos descritos na [matriz de compatibilidade](../README.md#compatibility).
 

@@ -28,6 +28,14 @@ Example external package check (after `cargo package -p nelcota-client`):
 python sdk/rust/scripts/package-test.py
 ```
 
+The consumer resolves the archive under Cargo's effective `target_directory`,
+including `CARGO_TARGET_DIR` and Cargo configuration. Use the same configuration
+for packaging and verification. To run the archive-selection regressions:
+
+```sh
+python3 sdk/rust/scripts/test_package.py
+```
+
 To intentionally verify default HTTPS outside the workspace:
 
 ```sh

@@ -3,6 +3,18 @@
 Package releases use Semantic Versioning and Keep a Changelog categories.
 Dates identify release entries; registry availability requires a successful publish.
 
+## Unreleased
+
+### Fixed
+
+- Cancel queued sign-up, password login, verification and OAuth exchange waits
+  without interrupting another caller's refresh or an accepted publication.
+- Type bucket size limits as `number | string | null` and send exact decimal
+  strings as JSON integers, so reading then updating a large int64 limit does
+  not change its value or send a quoted number. Existing server validation
+  still rejects invalid settings. Use strings before JavaScript rounds a value.
+- Keep usage diagnostics concise without changing error codes or statuses.
+
 ## 0.2.0 — 2026-10-19
 
 Prepared package candidate. Version metadata and this changelog do not publish
