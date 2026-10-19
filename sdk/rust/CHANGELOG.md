@@ -5,6 +5,11 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## Unreleased
 
+### Changed
+
+- Organize private authentication, REST and storage modules by responsibility,
+  preserving public imports, serialization, HTTP behavior and lifecycle ownership.
+
 ### Fixed
 
 - Reject `single`/`maybe_single` on HEAD and minimal writes before HTTP, so a

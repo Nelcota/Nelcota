@@ -5,6 +5,11 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## Unreleased
 
+### Changed
+
+- Separate authentication/query contracts and storage transfers into their own
+  modules, preserving all package entry points and existing client behavior.
+
 ### Fixed
 
 - Cancel queued sign-up, password login, verification and OAuth exchange waits
