@@ -74,6 +74,27 @@ at runtime. RLS and GRANTs always remain server/Postgres decisions.
   errors must be handled by the caller; `download()` buffers into a Blob and
   returns body failures in its result.
 
+## Input and response guards
+
+Insert/upsert arrays require object rows, including at sparse array positions.
+An empty object can request database defaults; empty strings and explicit null
+field values remain valid. An omitted `referencedTable` targets the parent;
+an explicitly empty or null target is refused rather than changing the parent.
+
+Storage uploads require a body. Use an empty string, Blob or byte buffer for a
+zero-byte file; null or undefined is a usage error. Item responses require a
+nonempty string identity; bucket collections and object listings require their
+array containers and item identities. These are minimum representation guards,
+not exhaustive field-by-field schemas. Missing/invalid representations return
+`invalid_response` with the HTTP status and are not retried. Empty collections
+and nullable owner, metadata and bucket limits remain valid.
+
+Blank OAuth codes are rejected before HTTP or verifier consumption. Sessions
+need a nonempty user identity. Password-reset, magic-link and confirmation
+methods return promises even when email validation fails; handle those errors
+with `await`/`catch` or `.catch()`. Synchronous query builders still throw
+`NelcotaUsageError` directly for invalid input.
+
 ## Sessions and lifecycle
 
 Each client owns its session adapter. Native localStorage uses an IndexedDB

@@ -6,7 +6,7 @@
 import { NelcotaError, NelcotaUsageError, clientError } from './errors.js';
 import { abortable } from './cancellation.js';
 import { assertTokenAllowed } from './jwt.js';
-import { encodeJson, parseJson } from './json.js';
+import { encodeJson, isRecord, parseJson } from './json.js';
 
 export type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 
@@ -37,6 +37,8 @@ export interface RequestSpec {
   timeout?: number | undefined;
   /** `false` sends no Authorization header; a string uses that token. */
   auth?: boolean | string | undefined;
+  /** Internal response-shape check, after decoding and before publication. */
+  validate?: (value: unknown) => boolean;
 }
 
 const MAX_RETRY_WAIT_MS = 30_000;
@@ -117,8 +119,8 @@ export async function errorFromResponse(response: Response): Promise<NelcotaErro
   const text = await errorBody(response);
   try {
     const body: unknown = text === null ? null : JSON.parse(text);
-    if (typeof body === 'object' && body !== null && !Array.isArray(body)) {
-      record = body as Record<string, unknown>;
+    if (isRecord(body)) {
+      record = body;
       code = optionalString(record, 'code') ?? code;
       message = optionalString(record, 'message') ?? message;
     }
@@ -276,14 +278,15 @@ export class HttpClient {
   async json<T>(spec: RequestSpec): Promise<{ data: T; error: null; response: Response } | { data: null; error: NelcotaError; response: Response | null }> {
     return this.#request(spec, async (response) => {
       const text = spec.method === 'HEAD' ? '' : await response.text();
-      if (text === '') return null as T;
       try {
-        return parseJson(text) as T;
+        const value = text === '' ? null : parseJson(text);
+        if (spec.validate && !spec.validate(value)) throw new Error('Invalid response shape');
+        return value as T;
       } catch (cause) {
         throw new NelcotaError({
           status: response.status,
           code: 'invalid_response',
-          message: 'The server answered with something that is not JSON',
+          message: 'The server answered with invalid JSON data',
           cause,
         });
       }

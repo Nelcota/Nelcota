@@ -12,6 +12,8 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Fixed
 
+- Refuse blank OAuth codes and empty or malformed MIME type/subtype components
+  before HTTP, preserving valid zero-byte uploads and content-type parameters.
 - Keep delayed profile responses from replacing newer cached user data after
   an update, refresh or explicit session replacement, including identical tokens.
 - Reject `single`/`maybe_single` on HEAD and minimal writes before HTTP, so a

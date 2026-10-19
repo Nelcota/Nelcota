@@ -43,12 +43,20 @@ impl BucketFiles {
             .unwrap_or("application/octet-stream");
         let header = HeaderValue::from_str(content_type)
             .map_err(|_| Error::Usage("invalid content type header".into()))?;
-        if !content_type
+        let media = content_type
             .split(';')
             .next()
             .unwrap_or_default()
-            .contains('/')
-        {
+            .trim_end_matches([' ', '\t']);
+        let valid = media.split_once('/').is_some_and(|(kind, subtype)| {
+            [kind, subtype].iter().all(|part| {
+                !part.is_empty()
+                    && part
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b))
+            })
+        });
+        if !valid {
             return Err(Error::Usage("content type requires type/subtype".into()));
         }
         spec.headers.insert(CONTENT_TYPE, header);

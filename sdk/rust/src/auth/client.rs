@@ -48,14 +48,15 @@ impl Manager {
         self.margin.min(Duration::from_secs(session.expires_in) / 2)
     }
     async fn load(&self, state: &mut State) -> Result<()> {
-        if !state.loaded {
-            let session = self.storage.load().await?;
-            if let Some(session) = &session {
-                session.validate()?;
-            }
-            state.session = session;
-            state.loaded = true;
+        if state.loaded {
+            return Ok(());
         }
+        let session = self.storage.load().await?;
+        if let Some(session) = &session {
+            session.validate()?;
+        }
+        state.session = session;
+        state.loaded = true;
         Ok(())
     }
     async fn save(
@@ -481,6 +482,9 @@ impl AuthClient {
         Ok(PkceFlow { url, verifier })
     }
     pub async fn exchange_code(&self, code: &str, verifier: &str) -> Result<Session> {
+        if code.trim().is_empty() {
+            return Err(Error::Usage("OAuth code is required".into()));
+        }
         if !(43..=128).contains(&verifier.len())
             || !verifier
                 .bytes()

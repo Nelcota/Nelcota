@@ -30,12 +30,14 @@ const BUDGETS = {
   // Native IndexedDB session handoff adds about 1.5 KiB gzip to auth/root only.
   // Receipt revisions, pre-auth snapshots and PKCE ownership add about 360 B gzip.
   // Removable cancellation waiters add 187–204 B gzip to the shared HTTP closure.
-  'index.js': 17_100,
+  // Maintainer-approved input/representation guards: +300 B maximum root/storage,
+  // +50 B auth. Covers null storage replies, missing bodies and blank OAuth codes.
+  'index.js': 17_400,
   // Standalone factories include HTTP and keep the other feature modules out.
   'rest/index.js': 9_550,
   // Failed persistence must retain rotated tokens; background failures are observed.
-  'auth/index.js': 11_250,
-  'storage/index.js': 7_400,
+  'auth/index.js': 11_300,
+  'storage/index.js': 7_700,
 };
 
 function closure(entry, seen = new Set()) {

@@ -26,7 +26,9 @@ const server = createServer((request, response) => {
     if (url.pathname === '/rest/v1/notes') {
       return json(200, [{ id: 1, auth: request.headers.authorization ?? null, query: url.search }], { 'content-range': '0-0/1' });
     }
-    if (url.pathname === '/storage/v1/object/files/u1/a.txt') return json(201, { size: body.length });
+    if (url.pathname === '/storage/v1/object/files/u1/a.txt') {
+      return json(201, { id: 'fixture', bucket: 'files', name: 'u1/a.txt', size: body.length, mime_type: 'text/plain', etag: 'fixture' });
+    }
     if (url.pathname === '/rest/v1/slow') return setTimeout(() => json(200, []), 1000);
     json(404, { code: 'not_found', message: 'no' });
   });

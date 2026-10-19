@@ -12,6 +12,14 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Fixed
 
+- Reject malformed insert/upsert rows, missing upload bodies and explicit empty
+  referenced tables before HTTP, preserving valid null fields and empty files.
+- Refuse blank OAuth codes before consuming the stored verifier, and reject
+  sessions whose user identity is empty.
+- Reject missing storage representations and malformed collection containers
+  with `invalid_response`, preserving empty collections and nullable metadata.
+- Return email validation failures as rejected promises from password-reset,
+  magic-link and confirmation requests.
 - Preserve newer cached user data when older profile responses arrive, including
   session replacements and native journal revisions.
 - Preserve `single`/`maybeSingle` result types through another `select`, and

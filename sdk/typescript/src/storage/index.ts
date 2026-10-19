@@ -3,7 +3,8 @@ import { NelcotaUsageError, fail, ok, type Result } from '../core/errors.js';
 import { bucketId } from '../core/encoding.js';
 import type { HttpClient } from '../core/http.js';
 import { createHttpClient, type TransportOptions } from '../core/options.js';
-import { encodeJson } from '../core/json.js';
+import { encodeJson, isRecord } from '../core/json.js';
+import { item, items } from './validation.js';
 import { BucketFiles } from './files.js';
 import type { Bucket, BucketSettings, BucketUpdateSettings, RequestOptions } from './types.js';
 
@@ -38,12 +39,12 @@ export class StorageClient {
   }
 
   async listBuckets(options: RequestOptions = {}): Promise<Result<Bucket[]>> {
-    const result = await this.#http.json<Bucket[]>({ method: 'GET', path: '/storage/v1/bucket', ...options });
+    const result = await this.#http.json<Bucket[]>({ method: 'GET', path: '/storage/v1/bucket', ...options, validate: items });
     return result.error ? fail(result.error) : ok(result.data);
   }
 
   async getBucket(id: string, options: RequestOptions = {}): Promise<Result<Bucket>> {
-    const result = await this.#http.json<Bucket>({ method: 'GET', path: `/storage/v1/bucket/${bucketId(id)}`, ...options });
+    const result = await this.#http.json<Bucket>({ method: 'GET', path: `/storage/v1/bucket/${bucketId(id)}`, ...options, validate: item });
     return result.error ? fail(result.error) : ok(result.data);
   }
 
@@ -54,13 +55,14 @@ export class StorageClient {
       body: bucketJson({ ...settings, id: bucketId(id) }),
       headers: { 'content-type': 'application/json' },
       ...options,
+      validate: item,
     });
     return result.error ? fail(result.error) : ok(result.data);
   }
 
   /** Replaces every setting; all fields are required, including explicit null limits. */
   async updateBucket(id: string, settings: BucketUpdateSettings, options: RequestOptions = {}): Promise<Result<Bucket>> {
-    if (typeof settings !== 'object' || settings === null || typeof settings.public !== 'boolean'
+    if (!isRecord(settings) || typeof settings.public !== 'boolean'
         || settings.file_size_limit === undefined || settings.allowed_mime_types === undefined) {
       throw new NelcotaUsageError('updateBucket needs public, file_size_limit and allowed_mime_types (null clears limits)');
     }
@@ -70,6 +72,7 @@ export class StorageClient {
       body: bucketJson(settings),
       headers: { 'content-type': 'application/json' },
       ...options,
+      validate: item,
     });
     return result.error ? fail(result.error) : ok(result.data);
   }

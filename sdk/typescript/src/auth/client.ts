@@ -92,6 +92,7 @@ export class AuthClient {
 
   /** Trades the `code` from the OAuth redirect (and the stored verifier) for a session. */
   async exchangeCode(code: string, options: AuthRequestOptions = {}): Promise<Result<Session>> {
+    if (typeof code !== 'string' || code.trim() === '') throw new NelcotaUsageError('An OAuth code is required');
     return this.#manager.authenticate(async () => {
       const key = `${this.#manager.key}.pkce`;
       const verifier = await withLock(key, async () => {
@@ -168,17 +169,17 @@ export class AuthClient {
   }
 
   /** Emails a recovery link. Answers the same whether or not the account exists. */
-  requestPasswordReset(address: string, options: AuthRequestOptions = {}): Promise<Result<null>> {
+  async requestPasswordReset(address: string, options: AuthRequestOptions = {}): Promise<Result<null>> {
     return this.#emailOnly('/auth/v1/recover', { email: email(address) }, options);
   }
 
   /** Emails a passwordless sign-in link. */
-  sendMagicLink(address: string, options: AuthRequestOptions = {}): Promise<Result<null>> {
+  async sendMagicLink(address: string, options: AuthRequestOptions = {}): Promise<Result<null>> {
     return this.#emailOnly('/auth/v1/magiclink', { email: email(address) }, options);
   }
 
   /** Sends the sign-up confirmation email again. */
-  resendConfirmation(address: string, options: AuthRequestOptions = {}): Promise<Result<null>> {
+  async resendConfirmation(address: string, options: AuthRequestOptions = {}): Promise<Result<null>> {
     return this.#emailOnly('/auth/v1/resend', { type: 'signup', email: email(address) }, options);
   }
 

@@ -1,5 +1,9 @@
 import { NelcotaUsageError } from './errors.js';
 
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 /** Decimal identity, independent of exponent notation or insignificant zeros. */
 function decimal(source: string): string {
   const [mantissa = '', power = '0'] = source.toLowerCase().split('e');
