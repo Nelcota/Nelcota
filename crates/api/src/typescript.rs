@@ -480,4 +480,65 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn overloaded_rpc_signatures_preserve_exact_output() {
+        let mut catalog = shop("my-app");
+        let prototype = catalog.functions.remove("recent_orders").unwrap().remove(0);
+        let mut view = table("order-view", Vec::new(), Vec::new());
+        view.kind = TableKind::View;
+        catalog.tables.insert(view.name.clone(), view);
+        let mut overloads = Vec::new();
+        for (return_type, returns_set) in [
+            ("my-app.orders", true),
+            ("orders", false),
+            ("my-app.order-view", true),
+            ("numeric", true),
+            ("text[]", true),
+            ("void", false),
+        ] {
+            overloads.push(Function {
+                name: "lookup-\"rpc".into(),
+                args: Vec::new(),
+                return_type: return_type.into(),
+                returns_set,
+                returns_void: return_type == "void",
+                ..prototype.clone()
+            });
+        }
+        overloads[0].args = vec![
+            Argument {
+                name: "order-id".into(),
+                type_name: "integer".into(),
+                has_default: false,
+            },
+            Argument {
+                name: "tags".into(),
+                type_name: "text[]".into(),
+                has_default: true,
+            },
+        ];
+        catalog.functions.insert("lookup-\"rpc".into(), overloads);
+        let out = generate(&catalog);
+        let functions = out
+            .split_once("    Functions: {\n")
+            .unwrap()
+            .1
+            .split_once("    Enums: {\n")
+            .unwrap()
+            .0;
+        assert_eq!(
+            functions,
+            concat!(
+                "      \"lookup-\\\"rpc\": { Args: { \"order-id\": number; tags?: (string | null)[] }; ",
+                "Returns: Database[\"my-app\"][\"Tables\"][\"orders\"][\"Row\"][] } | ",
+                "{ Args: {  }; Returns: Database[\"my-app\"][\"Tables\"][\"orders\"][\"Row\"] } | ",
+                "{ Args: {  }; Returns: Database[\"my-app\"][\"Views\"][\"order-view\"][\"Row\"][] } | ",
+                "{ Args: {  }; Returns: (number | string | null)[] } | ",
+                "{ Args: {  }; Returns: ((string | null)[] | null)[] } | ",
+                "{ Args: {  }; Returns: undefined };\n",
+                "    };\n",
+            )
+        );
+    }
 }
