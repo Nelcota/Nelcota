@@ -44,6 +44,7 @@ fixture or threshold in those suites changes in this refactor.
 | TypeScript package consumer | Not separately repeated | All four runtime/type entry points passed |
 | TypeScript Node runtime | Not separately repeated | 8 checks passed |
 | TypeScript explicit GC | Not separately repeated | 3 rounds of 1,000 cancelled callers; zero retained signals before completion; completed operations released |
+| Embedded panel guides after translation synchronization | Not separately repeated | 37 passed; guide/type checks report zero errors/warnings; assets rebuilt |
 
 A supplemental read-only comparison checked all **73 Rust items** in the three
 extracted capabilities. Their tokens are unchanged except private sibling
@@ -99,6 +100,11 @@ dependency, package-version change, publication or increase to any budget.
 - An initial server test command selected a nonexistent `types` test target;
   Cargo refused it before running tests. The real SDK/server suite includes the
   type-generator scenario and is run under its actual `sdk_rust` target.
+- The first PR CI failed its panel guide check: the TypeScript SDK changelog is
+  embedded, and its new fragment initially lacked a Portuguese translation.
+  Synchronize that catalog, rerun panel guide/type checks and rebuild embedded
+  assets in a separate build commit. Keep this failure in the evidence; no check
+  is removed or skipped.
 
 No migrations, backend auth/admin/PITR implementations, workflows, configuration
 formats or documented HTTP/SDK contracts are changed. No release or deployment
@@ -137,5 +143,7 @@ npm run test:memory
 NELCOTA_BIN=/absolute/path/to/nelcota npm run test:contract -- --maxWorkers=2
 ```
 
-The Rust package and external-consumer check are recorded separately in the PR
-after committing the files; uncommitted archive state is not used as final evidence.
+The committed Rust package passed archive verification (38 files) and built/ran
+the external consumer. The TypeScript archive installed 60 files and passed all
+four JavaScript/declaration entry points. No package was published. Translation
+and embedded-asset corrections after those checks do not change SDK source blobs.
