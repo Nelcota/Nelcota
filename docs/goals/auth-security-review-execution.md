@@ -1,30 +1,41 @@
 # G06 — Authentication security review execution record
 
-Status: authorized resolution follow-up. Five public findings are integrated;
-two High findings have fixes prepared privately. Release publication remains
-held. This source review is not a production acceptance or external audit.
+Status: finalized after public disclosure and publication of server 0.5.0.
+All seven findings have merged resolutions; F07 retains its explicitly accepted
+mitigation trade-off. This source review is not production acceptance or an
+external audit.
 
 The current ledger below supersedes the original open/ready statuses. The
-original bounded review, measurements and authorization are preserved verbatim
-in the archived section; they describe their original time and artifact.
+original bounded review, measurements and authorization remain dated evidence
+in the archived section. Disclosure placeholders now refer to the public
+advisory; historical coverage verdicts and measurements are unchanged.
 
 ## Authorized resolution ledger
 
-| Finding | Severity | Current status |
-|---|---|---|
-| G06-F01 | High | details withheld, fix prepared privately |
-| G06-F02 | Medium | Merged in [#102](https://github.com/Nelcota/Nelcota/pull/102): optional nbf/iat validation with 30-second leeway; issuer/audience remain informative. |
-| G06-F03 | Medium | Merged in [#99](https://github.com/Nelcota/Nelcota/pull/99): bound account verification inputs before pool/hash admission. |
-| G06-F04 | Low | Merged in [#100](https://github.com/Nelcota/Nelcota/pull/100): redact adapter/configuration diagnostics. |
-| G06-F05 | High | details withheld, fix prepared privately |
-| G06-F06 | Medium | Merged in [#101](https://github.com/Nelcota/Nelcota/pull/101): clear pending SDK OAuth state on sign-out. |
-| G06-F07 | Medium | Merged in [#103](https://github.com/Nelcota/Nelcota/pull/103): explicitly authorized account/source limit plus bounded-delay alternative; the old strict aggregate ceiling is not retained. |
+| Finding | Severity | Final status | Fix PR | Squash merge SHA |
+|---|---|---|---|---|
+| G06-F01 | High (CVSS 3.1: 7.4) | Fixed in server 0.5.0: pending email credentials and OAuth authorization state retire transactionally with password replacement. See the [public advisory][g06-advisory]. | [#105](https://github.com/Nelcota/Nelcota/pull/105) | `bbe9dc8f5f07b6ee545ba6e600ed8b171718744f` |
+| G06-F02 | Medium | Fixed in server 0.5.0: optional nbf/iat validation with 30-second leeway; issuer/audience remain informative. | [#102](https://github.com/Nelcota/Nelcota/pull/102) | `098d28c7e62389ea5ed2631d3031fe3caf5d1bec` |
+| G06-F03 | Medium | Fixed in server 0.5.0: bound account verification inputs before pool/hash admission. | [#99](https://github.com/Nelcota/Nelcota/pull/99) | `27a01afb05c3bdd458390347b6bdaa467791df82` |
+| G06-F04 | Low | Fixed in server 0.5.0: redact adapter/configuration diagnostics. | [#100](https://github.com/Nelcota/Nelcota/pull/100) | `228218989e773104d659d0d47a8e9394ed478403` |
+| G06-F05 | High (CVSS 3.1: 8.1) | Fixed in server 0.5.0: panel SSO single-use redemption uses atomic, durable project-database receipts across restarts and instances. See the [public advisory][g06-advisory]. | [#105](https://github.com/Nelcota/Nelcota/pull/105) | `bbe9dc8f5f07b6ee545ba6e600ed8b171718744f` |
+| G06-F06 | Medium | Fixed and published in TypeScript SDK 0.2.0: clear pending OAuth state on sign-out. | [#101](https://github.com/Nelcota/Nelcota/pull/101) | `c249e4237950d852b13ae182d6a89c88b23e2b95` |
+| G06-F07 | Medium | Authorized mitigation released in server 0.5.0: account/source quotas plus bounded aggregate delay. The original strict aggregate ceiling is not retained; there is no absolute lockout guarantee. | [#103](https://github.com/Nelcota/Nelcota/pull/103) | `4387592eafd56818d3093d590867fde2fb542ad5` |
 
-Every merge used squash after an independent review pass, an ordinary merge of
-current main into its branch where needed, and all **17 applicable ordinary
+The [published advisory GHSA-9f7h-6cpv-wh6q][g06-advisory] covers F01/F05 in
+server versions through 0.4.0, patched in 0.5.0. These summaries stay within its
+public description. Existing access JWTs continue until their configured expiry
+and verifier leeway; the update does not provide immediate access-JWT revocation.
+The SSO impact is scoped to the affected project, without host-controller authority.
+
+The initial five-PR wave (#99–#103) used squash after an independent review
+pass, an ordinary merge of current main into its branch where needed, and all **17 applicable ordinary
 checks passing on the exact head**. No protection/check bypass or history rewrite
 was used. The five merged remote branches were deleted; no unrelated branch,
 issue, repository setting or workflow was changed by this follow-up.
+
+PR #105 subsequently integrated F01/F05. Its exact head below also passed all
+17 applicable checks; the final ledger records its verified squash merge SHA.
 
 | PR | Reviewed/up-to-date head (17 successful checks) | Squash merge |
 |---|---|---|
@@ -33,10 +44,12 @@ issue, repository setting or workflow was changed by this follow-up.
 | #101 | `992a309e93dce2b64c8a6146c53ac3fdcd28851f` | `c249e4237950d852b13ae182d6a89c88b23e2b95` |
 | #102 | `ae464ecec15f6de053dc11456713b1a308f0c5bb` | `098d28c7e62389ea5ed2631d3031fe3caf5d1bec` |
 | #103 | `75ea5996a1ff2952ddfa708d53520c42994816c1` | `4387592eafd56818d3093d590867fde2fb542ad5` |
+| #105 | `62905aecbdf0f53f387d42327986329a9c78e418` | `bbe9dc8f5f07b6ee545ba6e600ed8b171718744f` |
 
 Native presets were not triggered by their unchanged path filter and are not
-counted as a passed eighteenth check. Public main after these merges is
-`4387592eafd56818d3093d590867fde2fb542ad5`; its post-merge CI is a separate run.
+counted as a passed eighteenth check. At the end of the initial five-PR wave,
+main was `4387592eafd56818d3093d590867fde2fb542ad5`; this historical checkpoint
+is not the release tag or this documentation update's main base.
 
 ## Public before/after evidence and decisions
 
@@ -68,6 +81,9 @@ counted as a passed eighteenth check. Public main after these merges is
   total-latency/SLO promise under worker, store-capacity or other overload.
   Single-source quotas, Argon2 parameters, worker admission/deadlines and
   fail-closed key capacity are unchanged. Sleeps own no pool/hash slot.
+- F07 mitigates account-targeted lockout; it does not eliminate it or guarantee
+  legitimate admission. IP/account-source quotas (including shared NAT), limiter
+  capacity and server saturation can still refuse legitimate sign-in.
 - EN/PT auth guidance documents the trade-off, shared NAT/per-process limits
   and SMTP-disabled operator recovery: verify identity through a trusted
   separate channel, reset through the project panel, block abuse at ingress,
@@ -80,15 +96,25 @@ counted as a passed eighteenth check. Public main after these merges is
 - Rust/Vitest/audit runs in this follow-up are sequential, with four Cargo jobs
   and two Rust test threads. Only disposable local fixtures are used.
 
-## Release preparation and remaining gates
+## Published release and SDK versions
 
-[PR #104](https://github.com/Nelcota/Nelcota/pull/104) is a **draft** preparation
-of server/core/auth 0.5.0, TypeScript SDK 0.2.0 and Rust SDK 0.1.3. It must wait
-for coordinated integration and final validation. Only approved neutral release
-wording is public for deferred security work. No such implementation, regression
-or reproduction is included in the public release PR or this record.
+[PR #104](https://github.com/Nelcota/Nelcota/pull/104) merged as
+`b18412a65f4accc4d759d7f840e50420d32d7579`. The published server release is
+[v0.5.0](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.0); its tag points
+to that commit. F01/F05 are fixed through #105 and publicly described by the
+[advisory][g06-advisory].
 
-The independent TypeScript minor candidate accounts for required native
+- Server/core/auth: **0.5.0**.
+- TypeScript SDK: **0.2.0**, published as `@nelcota/client` on npm.
+- Rust SDK: **0.1.3**, published as `nelcota-client` on crates.io.
+
+Installing or updating the server does not update application SDK packages.
+The final documentation branch was updated by an ordinary merge of main
+`6bdfc030dec053c07baae636b579c059d72a66fa`; this changes no review baseline.
+
+### Historical release-candidate validation
+
+The independent TypeScript minor accounts for required native
 IndexedDB and wider generated numeric/array types. Rust retains Rust 1.88+ and
 server 0.3.0+ compatibility. Workspace registry versions/checksums are unchanged;
 the new consumer lock preserves the same registry entries. SDK/source version
@@ -107,17 +133,22 @@ Its bytes were rechecked after each run; owned containers and volumes were
 removed. These are public-candidate acceptance checks, not a new stress soak or
 certification of deferred integration.
 
-Local browser acceptance is **blocked (environment)**: executables are absent
-and Playwright's CDN download returned HTTP 403 Domain forbidden. No alternate
-download/proxy bypass was attempted. Ordinary CI browser checks remain required;
+At that candidate checkpoint, local browser acceptance was **blocked
+(environment)**: executables were absent and Playwright's CDN download returned
+HTTP 403 Domain forbidden. No alternate download/proxy bypass was attempted.
+Ordinary CI browser checks were still required;
 the locally blocked check is not counted as passed. Real OAuth/mail and public
 TLS/VPS acceptance remain outside the available fixtures. Historical G05
 measurements are not relabeled as 0.5.0 results.
 
-Follow-up started at 2026-10-18 19:56:28 UTC. Its six-hour checkpoint is due
-2026-10-19 01:56:28 UTC and hard budget ends 2026-10-19 11:56:28 UTC. The record
-and release PR remain draft until publication. No tag, GitHub Release object,
-SDK package publication, production deployment or public High patch is made.
+The original follow-up started at 2026-10-18 19:56:28 UTC. Its six-hour checkpoint
+was due 2026-10-19 01:56:28 UTC and hard budget ended 2026-10-19 11:56:28 UTC.
+At that checkpoint the record and release PR were draft; that original run did
+not publish a tag, GitHub Release, SDK package or deployment. Publication has now
+been verified separately above. These historical candidate results are not
+relabeled as new validation of the released artifact.
+
+[g06-advisory]: https://github.com/Nelcota/Nelcota/security/advisories/GHSA-9f7h-6cpv-wh6q
 
 <details>
 <summary>Original bounded review — completed 2026-10-18 19:17:58 UTC</summary>
@@ -126,8 +157,9 @@ Status: completed with open findings. This bounded source review is not an exter
 penetration test, compliance certification or production acceptance.
 
 Completion summary: **17 rows examined: 8 passed, 5 fixed on unmerged PRs,
-4 open-finding rows.** Finding counts: 0 Critical, 2 High (details withheld
-pending maintainer review), 4 Medium and 1 Low. Real OAuth providers and real
+4 open-finding rows.** Finding counts: 0 Critical, 2 High, 4 Medium and 1 Low.
+F01/F05 were awaiting coordinated disclosure at that cutoff; their public
+resolution is recorded in the current ledger above. Real OAuth providers and real
 mail delivery remain blocked (environment).
 
 ## Frozen baseline and run boundaries
@@ -189,11 +221,11 @@ the frozen baseline or current main. The three fix PRs must remain unmerged.
 | API keys and roles | passed | `core/db.rs`, `claims.rs`, `auth/db.rs`; panel token boundary | RLS 10 + auth_reuse 10: pooled roles/claims reset after success/error; API roles cannot read auth schema; JWT/service credentials do not open the panel or controller. Service-role issuance by an authenticated project administrator is deliberate operator authority. |
 | Refresh tokens | passed within documented grace | `auth/sessions.rs`, token schema and pruning | Auth 27 + auth_reuse 10 demonstrate rotation, expiry, replay revocation, newest-only live successor and logout/password-replacement refresh rejection across instances. Ten-second retry grace is explicit; it is not strict rejection of every concurrent retry. |
 | Logout and revocation | passed within documented access-token bound | `auth/sessions.rs`, `lib.rs`; panel sessions | Auth/auth_reuse and SDK HTTP fixture revoke refresh families across instances. Access JWTs remain stateless through expiry plus configured verifier leeway (default 900 + 30 seconds); panel sessions revoke in their owning process. |
-| Password reset and magic links | open finding — F01, High | Reviewed; details withheld pending maintainer review | Existing auth/OAuth suites and private verification completed. Details withheld pending maintainer review. |
+| Password reset and magic links | open finding at original cutoff — F01, High | Reviewed at the frozen baseline; public summary in the current ledger above. | Original local verification completed. Subsequently fixed by #105 in server 0.5.0; see the [advisory][g06-advisory]. |
 | Email verification and change | passed for implemented flows | `confirmation.rs`, `verify.rs`, account/inbox ownership | Auth 27 + OAuth 18 cover proof of inbox ownership, unverified identities and single-use confirmation. Self-service email change and account-disabled state are not implemented; source search and an ignored email-update-field probe confirm this sub-scope is not applicable. |
 | OAuth (local doubles) | passed for implemented local flow | `auth/oauth.rs`, flow/identities/provider/PKCE/redirect adapters | OAuth 18 + auth units cover state, PKCE, exact configured provider callback, redirect allowlist and linking refusal. Google uses authenticated userinfo, not ID-token validation; parser negatives run. Real provider behavior remains blocked (environment). |
 | Cookies, CSRF and origin | passed for documented topology | `admin/auth.rs`, `middleware.rs`, server CORS and panel auth state | Panel auth/cookie units, controller boundary tests and extra CSRF/CORS probes reject foreign/null origins and cross-site mutations. Secure/HttpOnly/Strict attributes are checked; generated proxied deployments enable proxy trust. Public TLS is not exercised. |
-| Panel SSO | open finding — F05, High | Reviewed; details withheld pending maintainer review | Existing panel SSO, controller-boundary and scoped-worker checks completed. Details withheld pending maintainer review. |
+| Panel SSO | open finding at original cutoff — F05, High | Reviewed at the frozen baseline; public summary in the current ledger above. | Original panel SSO, controller-boundary and scoped-worker checks completed. Subsequently fixed by #105 in server 0.5.0; see the [advisory][g06-advisory]. |
 | SDKs | fixed — F06, #101 | TS auth/session/journal/HTTP; Rust auth/transport/scoped clients; panel cache | Baseline TS 110, Rust auth/transport 8/12 and one real-server auth contract pass. Four new cleanup regressions fail before; 118 related tests pass after. Panel API/auth/cache checks: 29 passed, one GC-only test subsequently run separately. |
 | Input handling | fixed — F03, #99 | `auth/credentials.rs`, handlers and JSON extractors | Oversized/malformed bodies, ASCII mailbox restrictions, case/Unicode collisions and 256-character limits checked. Two pool-admission regressions fail before and pass after; supported 256-character Unicode passwords still sign in. |
 | Errors, logs and config | fixed — F04, #100 | Auth error/mail/provider adapters; core configuration; SDK diagnostics and server request logging | Four diagnostic regressions fail before and pass after (64 library tests after). Weak/missing keys, invalid settings, malformed requests and generic auth responses are checked. Logs exclude query strings; no default-path production leak is claimed for explicit Debug views. |
@@ -208,26 +240,28 @@ than invented. A passing row is bounded by its documented behavior and fixtures.
 
 | ID | Severity | Checklist row | Status |
 |---|---|---|---|
-| G06-F01 | High | Password reset and magic links | details withheld pending maintainer review |
+| G06-F01 | High | Password reset and magic links | Open at original cutoff; subsequently fixed in #105/server 0.5.0 with transactional pending-credential retirement on password replacement; see the [advisory][g06-advisory]. |
 | G06-F02 | Medium | JWT | Open decision: built-in issuer/audience are deliberately informative; future `nbf`/`iat` are not enforced. Tightening the documented policy requires a contract decision. |
 | G06-F03 | Medium | Input handling | Fixed in isolated [PR #99](https://github.com/Nelcota/Nelcota/pull/99), 17/17 applicable CI passed on `e388912e72f52b9f7f7791644080415817ac733c`, ready; account verification bounds precede pool admission. |
 | G06-F04 | Low | Errors, logs and config | Fixed in isolated [PR #100](https://github.com/Nelcota/Nelcota/pull/100), 17/17 applicable CI passed on `e2aa4e59eb5c9593e27fd8cea4b94ef38f91da9b`, ready; redact explicit adapter/configuration Debug views. No default-path production leak claimed. |
-| G06-F05 | High | Panel SSO | details withheld pending maintainer review |
+| G06-F05 | High | Panel SSO | Open at original cutoff; subsequently fixed in #105/server 0.5.0 with atomic, durable project-database redemption receipts; see the [advisory][g06-advisory]. |
 | G06-F06 | Medium | SDKs | Fixed in isolated [PR #101](https://github.com/Nelcota/Nelcota/pull/101), 17/17 applicable CI passed on `c9e861d1b295a518f48282b138477bfacaa44dbe`, ready; retire pending OAuth verification state on sign-out. |
 | G06-F07 | Medium | Brute force and abuse | Open policy decision: independent source addresses can exhaust an account quota and a subsequent correct login receives 429; with supported SMTP-disabled configuration, recovery/magic-link requests return 403. Do not weaken throttling; decide on independent recovery/unlock requirements. |
 
 ## Findings and disclosure
 
-Confirmed private finding: **G06-F01: severity High, Password reset and magic
-links; details withheld pending maintainer review.** Dynamic exploration of
-that issue stopped after confirmation. No patch or regression for it is
-published. **G06-F05: severity High, Panel SSO; details withheld pending maintainer
-review.** Dynamic exploration of that issue stopped after confirmation.
+At the original cutoff, **G06-F01 (High)** and **G06-F05 (High)** were confirmed
+and awaiting coordinated disclosure. Dynamic exploration stopped after
+confirmation. Both are now fixed by #105 in server 0.5.0. Their short public
+summaries and severity are in the current ledger, limited to the
+[published advisory][g06-advisory]. This finalization adds no F01/F05 exploit
+steps, request sequences or proof-of-concept code.
 
-Other suspicions must be reproduced or rejected. Public High/Critical entries will contain only the
-finding identifier, severity, checklist row and “details withheld pending
-maintainer review”. No public patch, regression or exploit narrative is allowed
-for an unfixed finding in that class.
+The original run required unconfirmed suspicions to be reproduced or rejected
+and restricted disclosure of unfixed High/Critical findings to their identifiers,
+severity and checklist rows. Those historical boundaries did not authorize
+publication of private evidence. This finalization uses only the advisory's
+published F01/F05 description.
 
 ## Execution log
 
@@ -324,8 +358,8 @@ for an unfixed finding in that class.
 
 All original cells have verdicts; there are no unreviewed/not-run original
 rows. The two blocked real-service sub-scopes and absent email-change/disabled
-account features remain explicit. High details and proposed patches belong
-only to the private maintainer task response; no public patch is implied.
+account features remain explicit. F01/F05 awaited coordinated disclosure at
+this original cutoff; their subsequent public resolution is recorded above.
 No G05 campaign, VM probe, production action, new dependency or migration ran.
 The execution PR remains draft. Release preparation is private and publishes
 no version, tag or release artifact.
