@@ -18,4 +18,3 @@ export function httpError(status: number): ApiError {
   const code = [502, 503, 504].includes(status) ? 'server_unreachable' : 'unexpected_response'
   return new ApiError(`HTTP ${status}`, status, code, { status })
 }
-

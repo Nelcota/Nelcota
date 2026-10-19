@@ -78,7 +78,9 @@ ordinary panel cases; its seven results are not added to 406 as unique tests.
 Additional checks:
 
 - Clippy with `-D warnings` for API/admin all targets and the new server test;
-  workspace formatting and diff whitespace passed.
+  workspace formatting and source diff whitespace passed. Generated Svelte
+  output retains its literal space/tab/newline data; it is verified by asset
+  rebuild consistency rather than manual whitespace rewriting.
 - Svelte/TypeScript reported zero errors and warnings. Guide validation and
   translation synchronization passed; embedded assets were rebuilt.
 - Exporting Rust wire contracts produced no generated type/schema changes.

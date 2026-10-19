@@ -27,4 +27,3 @@ export function toJson(columns: readonly string[], rows: readonly (readonly Cell
   const objects = rows.map((row) => Object.fromEntries(columns.map((c, i) => [c, row[i] ?? null])))
   return `${JSON.stringify(objects, null, 2)}\n`
 }
-

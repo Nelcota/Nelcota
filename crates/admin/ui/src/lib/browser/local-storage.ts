@@ -25,4 +25,3 @@ export function write(key: string, value: string) {
     // Storage unavailable: carry on in memory only.
   }
 }
-
