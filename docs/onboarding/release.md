@@ -28,10 +28,12 @@ of the release scope.
 1. Take a database backup and, for disk storage, its paired file snapshot.
    Keep the `.dump` and `.dump.files/` together and test their restore in a
    separate project. Use [backup.md](../backup.md) for the commands.
-2. Allow a maintenance window for internal migrations `V14` and `V15` when
-   upgrading from the published `0.4.0`. They index user listing and storage
-   directories; adding stored columns and indexes can lock or rewrite a large
-   storage metadata table. Measure this on a representative staging copy.
+2. Allow a maintenance window for internal migrations `V14`, `V15` and `V16`
+   when upgrading from the published `0.4.0`. V14/V15 index user listing and
+   storage directories; adding stored columns and indexes can lock or rewrite
+   a large storage metadata table. V16 adds durable panel SSO redemption receipts
+   and is not part of the standalone auth migration selection. Measure the
+   upgrade on a representative staging copy before changing existing projects.
 3. Once the target version is published, install its CLI and use
    `nelcota -p <project> upgrade --version <version>`. Check health, existing
    user login/refresh, RLS, an existing file download and webhook delivery.

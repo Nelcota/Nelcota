@@ -6,7 +6,10 @@ Dates are published release dates in UTC.
 Server releases are listed here. The [TypeScript SDK](sdk/typescript/CHANGELOG.md)
 and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
-## [Unreleased]
+## [0.5.0] — 2026-10-19
+
+Release preparation: publication requires final artifact verification.
+The dated entry does not establish artifact availability.
 
 ### Added
 
@@ -27,6 +30,9 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Harden session invalidation.
+- Persist panel SSO replay protection.
+
 - Keep password login usable from independent sources during account-targeted
   abuse, with hard IP/account-source quotas and at most two seconds of aggregate
   delay. Document the distributed-guessing trade-off and operator recovery.
@@ -39,9 +45,6 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 - Redact authentication adapter credentials and email message content from
   `Debug` diagnostics, including validated mail/OAuth configuration views.
-
-- Harden session invalidation.
-- Persist panel SSO replay protection.
 
 - Reject account passwords above the documented 256-character maximum before
   database admission or Argon2 verification, including current-password checks.
@@ -96,15 +99,19 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Upgrade notes
 
-- Startup applies internal migrations `V14__user_listing_index.sql` and
-  `V15__storage_directory_index.sql` when upgrading from `0.4.0`. Plan a
-  maintenance window for large user or storage metadata tables.
+- Startup applies internal migrations `V14__user_listing_index.sql`,
+  `V15__storage_directory_index.sql` and `V16__panel_sso_replays.sql` when
+  upgrading from `0.4.0`. V14/V15 index user and storage listings; V16 adds
+  durable panel SSO redemption receipts. Plan a maintenance window for large
+  metadata tables and keep the paired database/file backup available.
 - Keep database backups and their paired disk snapshots before upgrading.
   See [release handoff](docs/onboarding/release.md) for validation and rollback.
 - The TypeScript SDK's cross-tab storage publication correction needs a
   separate SDK package release; installing the server does not update clients.
-- This section describes an unpublished candidate. The published `0.4.0`
-  binaries and image do not contain these changes.
+- The published `0.4.0` binaries and image do not contain these changes.
+  Publication requires exact-source checks and final artifact verification.
+- Client candidates have independent versions: TypeScript `0.2.0` and Rust
+  `0.1.3`. Preparing these versions does not publish either package.
 
 ## [0.4.0] — 2026-10-11
 
@@ -197,7 +204,7 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
   project isolation, backups, upgrades and database PITR.
 - Application storage and OAuth/magic links were not part of this release.
 
-[Unreleased]: https://github.com/Nelcota/Nelcota/compare/v0.4.0...main
+[0.5.0]: https://github.com/Nelcota/Nelcota/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Nelcota/Nelcota/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Nelcota/Nelcota/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Nelcota/Nelcota/compare/v0.2.0...v0.3.0

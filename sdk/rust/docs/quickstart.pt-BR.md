@@ -1,10 +1,11 @@
 # Começando com Rust
 
-O SDK usa Tokio e requer Rust 1.88+. Adicione `nelcota-client = "0.1.2"`
-ao Cargo.toml, junto de serde, serde_json e tokio (veja o README). Para testar
-a fonte não publicada, use uma dependência local `path` apontando para
-`sdk/rust`; os exemplos abaixo são executados no checkout. O servidor compilado
-do repositório exige Rust 1.99.0; ele e o SDK têm versões independentes.
+O SDK usa Tokio e requer Rust 1.88+. Este checkout prepara 0.1.3; adicione
+`nelcota-client = "0.1.3"` ao Cargo.toml somente após a publicação, junto de
+serde, serde_json e tokio (veja o README). Antes disso, use uma dependência
+local `path` para `sdk/rust` ou o arquivo validado. O pacote publicado 0.1.2
+tem comportamento anterior. O servidor compilado do repositório exige Rust
+1.99.0; ele e o SDK têm versões independentes.
 
 1. Inicie o Nelcota com `cargo run -- dev` ou use um projeto implantado.
 2. Aplique [examples/notes.sql](https://github.com/Nelcota/Nelcota/blob/main/examples/notes.sql) (o mesmo do SDK JavaScript) pelo

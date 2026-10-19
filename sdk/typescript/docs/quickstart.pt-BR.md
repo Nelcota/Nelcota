@@ -6,12 +6,13 @@ com os recursos descritos na [matriz de compatibilidade](../README.md#compatibil
 ## 1. Instale
 
 ```sh
-npm install @nelcota/client@0.1.2
+npm install @nelcota/client@0.2.0
 ```
 
-O pacote publicado é 0.1.2. O README do checkout descreve também mudanças
-não publicadas; atualizar o servidor não atualiza seu SDK. Para experimentar
-a versão de fonte, execute da raiz deste repositório:
+O checkout prepara o candidato 0.2.0; o comando de registro acima só funciona
+após sua publicação. O pacote publicado 0.1.2 tem comportamento anterior;
+atualizar o servidor não atualiza seu SDK. Até publicar o candidato, instale
+um arquivo local a partir da raiz do repositório:
 
 ```sh
 cd sdk/typescript
