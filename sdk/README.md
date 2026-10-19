@@ -46,6 +46,15 @@ facade; sibling helpers use `pub(super)` only when necessary. Do not expose
 internal state or split lifecycle locks, transactions, cancellation and cleanup
 across unrelated owners merely to shorten a file.
 
+Profile requests capture their publication owner before HTTP. Rust uses the
+existing lifecycle epoch; TypeScript uses a local publication counter and native
+journal revision. A delayed response may update the cache only while that owner
+and its observed session still match. Explicit session replacement advances the
+local revision even when its values are unchanged. Cancellation withdraws a
+queued authentication payload through the shared cancellation owner; once the
+task acquires the lifecycle lock, accepted publication retains its own lifetime.
+The FIFO control slot can drain later without retaining the cancelled request.
+
 ## Applying SOLID
 
 - **SRP:** models, persistence adapters, filter grammar, bucket operations and

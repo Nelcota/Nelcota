@@ -12,6 +12,12 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Fixed
 
+- Preserve newer cached user data when older profile responses arrive, including
+  session replacements and native journal revisions.
+- Preserve `single`/`maybeSingle` result types through another `select`, and
+  ignore malformed or unsafe `Content-Range` totals.
+- Release cancelled queued authentication payloads before the lifecycle owner
+  finishes, preserving accepted publications and independent caller cancellation.
 - Cancel queued sign-up, password login, verification and OAuth exchange waits
   without interrupting another caller's refresh or an accepted publication.
 - Type bucket size limits as `number | string | null` and send exact decimal
