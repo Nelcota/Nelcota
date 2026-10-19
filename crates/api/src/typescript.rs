@@ -9,7 +9,7 @@
 
 use std::fmt::Write;
 
-use crate::catalog::{Catalog, Column, Table, TableKind};
+use crate::catalog::{Catalog, Column, Function, Table, TableKind};
 
 fn ts_scalar(type_name: &str) -> String {
     if let Some(element) = type_name.strip_suffix("[]") {
@@ -100,6 +100,51 @@ fn relationships(out: &mut String, catalog: &Catalog, table: &Table) {
     );
 }
 
+fn function_signature(catalog: &Catalog, function: &Function) -> String {
+    let args = function
+        .args
+        .iter()
+        .map(|a| {
+            format!(
+                "{}{}: {}",
+                key(&a.name),
+                match a.has_default {
+                    true => "?",
+                    false => "",
+                },
+                ts_scalar(&a.type_name)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("; ");
+    let relation = catalog.tables.get(
+        function
+            .return_type
+            .trim_start_matches(&format!("{}.", catalog.schema)),
+    );
+    let base = relation
+        .map(|t| {
+            let section = match t.kind == TableKind::Table {
+                true => "Tables",
+                false => "Views",
+            };
+            format!(
+                "Database[{}][{}][{}][\"Row\"]",
+                string(&catalog.schema),
+                string(section),
+                string(&t.name)
+            )
+        })
+        .unwrap_or_else(|| ts_scalar(&function.return_type));
+    let returns = match (function.returns_set, relation.is_some()) {
+        (false, _) => base,
+        (true, true) => format!("{base}[]"),
+        // Scalar sets can include NULL rows; group unions before `[]`.
+        (true, false) => format!("({base} | null)[]"),
+    };
+    format!("{{ Args: {{ {args} }}; Returns: {returns} }}")
+}
+
 pub fn generate(catalog: &Catalog) -> String {
     let mut out = String::new();
     let schema = key(&catalog.schema);
@@ -160,49 +205,7 @@ pub fn generate(catalog: &Catalog) -> String {
         // Overloads become a union of signatures.
         let signatures: Vec<String> = overloads
             .iter()
-            .map(|f| {
-                let args = f
-                    .args
-                    .iter()
-                    .map(|a| {
-                        format!(
-                            "{}{}: {}",
-                            key(&a.name),
-                            match a.has_default {
-                                true => "?",
-                                false => "",
-                            },
-                            ts_scalar(&a.type_name)
-                        )
-                    })
-                    .collect::<Vec<_>>()
-                    .join("; ");
-                let relation = catalog.tables.get(
-                    f.return_type
-                        .trim_start_matches(&format!("{}.", catalog.schema)),
-                );
-                let base = relation
-                    .map(|t| {
-                        let section = match t.kind == TableKind::Table {
-                            true => "Tables",
-                            false => "Views",
-                        };
-                        format!(
-                            "Database[{}][{}][{}][\"Row\"]",
-                            string(&catalog.schema),
-                            string(section),
-                            string(&t.name)
-                        )
-                    })
-                    .unwrap_or_else(|| ts_scalar(&f.return_type));
-                let returns = match (f.returns_set, relation.is_some()) {
-                    (false, _) => base,
-                    (true, true) => format!("{base}[]"),
-                    // Scalar sets can include NULL rows; group unions before `[]`.
-                    (true, false) => format!("({base} | null)[]"),
-                };
-                format!("{{ Args: {{ {args} }}; Returns: {returns} }}")
-            })
+            .map(|function| function_signature(catalog, function))
             .collect();
         let _ = writeln!(out, "      {}: {};", key(name), signatures.join(" | "));
     }
@@ -479,5 +482,66 @@ mod tests {
                 "{out}"
             );
         }
+    }
+
+    #[test]
+    fn overloaded_rpc_signatures_preserve_exact_output() {
+        let mut catalog = shop("my-app");
+        let prototype = catalog.functions.remove("recent_orders").unwrap().remove(0);
+        let mut view = table("order-view", Vec::new(), Vec::new());
+        view.kind = TableKind::View;
+        catalog.tables.insert(view.name.clone(), view);
+        let mut overloads = Vec::new();
+        for (return_type, returns_set) in [
+            ("my-app.orders", true),
+            ("orders", false),
+            ("my-app.order-view", true),
+            ("numeric", true),
+            ("text[]", true),
+            ("void", false),
+        ] {
+            overloads.push(Function {
+                name: "lookup-\"rpc".into(),
+                args: Vec::new(),
+                return_type: return_type.into(),
+                returns_set,
+                returns_void: return_type == "void",
+                ..prototype.clone()
+            });
+        }
+        overloads[0].args = vec![
+            Argument {
+                name: "order-id".into(),
+                type_name: "integer".into(),
+                has_default: false,
+            },
+            Argument {
+                name: "tags".into(),
+                type_name: "text[]".into(),
+                has_default: true,
+            },
+        ];
+        catalog.functions.insert("lookup-\"rpc".into(), overloads);
+        let out = generate(&catalog);
+        let functions = out
+            .split_once("    Functions: {\n")
+            .unwrap()
+            .1
+            .split_once("    Enums: {\n")
+            .unwrap()
+            .0;
+        assert_eq!(
+            functions,
+            concat!(
+                "      \"lookup-\\\"rpc\": { Args: { \"order-id\": number; tags?: (string | null)[] }; ",
+                "Returns: Database[\"my-app\"][\"Tables\"][\"orders\"][\"Row\"][] } | ",
+                "{ Args: {  }; Returns: Database[\"my-app\"][\"Tables\"][\"orders\"][\"Row\"] } | ",
+                "{ Args: {  }; Returns: Database[\"my-app\"][\"Views\"][\"order-view\"][\"Row\"][] } | ",
+                "{ Args: {  }; Returns: (number | string | null)[] } | ",
+                "{ Args: {  }; Returns: ((string | null)[] | null)[] } | ",
+                "{ Args: {  }; Returns: undefined };\n",
+                "    };\n",
+            )
+        );
     }
 }

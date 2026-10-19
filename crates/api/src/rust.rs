@@ -1,5 +1,5 @@
 //! Rust models from the same catalog as REST and TypeScript. No DB connection at build time.
-use crate::catalog::{Catalog, Column, TableKind};
+use crate::catalog::{Catalog, Column, Function, TableKind};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt::Write,
@@ -104,6 +104,30 @@ fn column_type(column: &Column, enums: &BTreeMap<String, String>) -> String {
         return name.clone();
     }
     scalar(&column.type_name)
+}
+
+fn function_returns(
+    schema: &str,
+    modules: &BTreeMap<String, String>,
+    function: &Function,
+) -> String {
+    let table_name = function
+        .return_type
+        .strip_prefix(&format!("{schema}."))
+        .unwrap_or(&function.return_type);
+    let base = modules
+        .get(table_name)
+        .map(|m| format!("super::super::{m}::Row"))
+        .unwrap_or_else(|| scalar(&function.return_type));
+    match () {
+        _ if function.returns_void => "()".into(),
+        _ if function.returns_set => {
+            format!("Vec<Option<{base}>>")
+        }
+        _ => {
+            format!("Option<{base}>")
+        }
+    }
 }
 
 /// Generate a self-contained Rust module using serde, serde_json and nelcota-client.
@@ -259,23 +283,7 @@ pub fn generate(catalog: &Catalog) -> String {
                 let _ = writeln!(out, "                pub {name}: {ty},");
             }
             out.push_str("            }\n");
-            let table_name = function
-                .return_type
-                .strip_prefix(&format!("{}.", catalog.schema))
-                .unwrap_or(&function.return_type);
-            let base = modules
-                .get(table_name)
-                .map(|m| format!("super::super::{m}::Row"))
-                .unwrap_or_else(|| scalar(&function.return_type));
-            let returns = match () {
-                _ if function.returns_void => "()".into(),
-                _ if function.returns_set => {
-                    format!("Vec<Option<{base}>>")
-                }
-                _ => {
-                    format!("Option<{base}>")
-                }
-            };
+            let returns = function_returns(&catalog.schema, &modules, function);
             let _ = writeln!(out, "            pub type Returns = {returns};\n        }}");
         }
     }
@@ -379,5 +387,81 @@ mod tests {
             code,
             std::fs::read_to_string(path).expect("generated fixture exists")
         );
+    }
+
+    #[test]
+    fn rpc_return_types_preserve_exact_output_and_module_collisions() {
+        use crate::catalog::{Function, Privileges, Table};
+        let mut catalog = Catalog {
+            schema: "public".into(),
+            ..Catalog::default()
+        };
+        for name in ["A", "a", "rpc"] {
+            catalog.tables.insert(
+                name.into(),
+                Table {
+                    name: name.into(),
+                    kind: TableKind::Table,
+                    columns: Vec::new(),
+                    primary_key: Vec::new(),
+                    foreign_keys: Vec::new(),
+                    rls_enabled: true,
+                    rls_forced: false,
+                    security_invoker: false,
+                    comment: None,
+                    privileges: [Privileges::default(); 3],
+                },
+            );
+        }
+        let cases = [
+            ("integer", false, false, "Option<i32>"),
+            ("numeric", true, false, "Vec<Option<serde_json::Number>>"),
+            ("text[]", false, false, "Option<Vec<Option<String>>>"),
+            ("public.A", true, false, "Vec<Option<super::super::a::Row>>"),
+            ("a", false, false, "Option<super::super::a_2::Row>"),
+            (
+                "public.rpc",
+                false,
+                false,
+                "Option<super::super::rpc_2::Row>",
+            ),
+            ("other.A", false, false, "Option<String>"),
+            ("public.A", true, true, "()"),
+        ];
+        let functions = cases
+            .iter()
+            .map(|(return_type, returns_set, returns_void, _)| Function {
+                name: "read".into(),
+                args: Vec::new(),
+                return_type: (*return_type).into(),
+                returns_set: *returns_set,
+                returns_void: *returns_void,
+                volatility: 's',
+                comment: None,
+                executable: [true; 3],
+            })
+            .collect();
+        catalog.functions.insert("read".into(), functions);
+        let code = generate(&catalog);
+        let rpc = code.split_once("    pub mod rpc {\n").unwrap().1;
+        let mut expected = String::new();
+        for (index, (_, _, _, returns)) in cases.iter().enumerate() {
+            expected.push_str(&format!(
+                concat!(
+                    "        pub mod read_{} {{\n",
+                    "            pub const NAME: &str = \"read\";\n",
+                    "            #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Default)]\n",
+                    "            pub struct Args {{\n            }}\n",
+                    "            pub type Returns = {};\n        }}\n",
+                ),
+                index + 1,
+                returns,
+            ));
+        }
+        expected.push_str("    }\n}\n");
+        assert_eq!(rpc, expected);
+        for module in ["a", "a_2", "rpc_2"] {
+            assert!(code.contains(&format!("    pub mod {module} {{\n")));
+        }
     }
 }
