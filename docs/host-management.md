@@ -6,9 +6,10 @@ project receives its own PostgreSQL cluster, signing keys, users, disk files,
 migrations and project panel. The project panel links to the controller; project
 cookies, SSO and service-role tokens never grant host authority.
 
-This capability is **Unreleased**. Published 0.4.0 does not include the host
-controller. Build this source for disposable validation; production enrollment
-requires a matching official controller release and host-specific acceptance.
+This capability is included in published server **0.5.0**. Production enrollment
+requires the matching official controller release and host-specific acceptance.
+Use source builds for disposable validation; source and release artifacts are
+identified separately.
 
 ## Explicit operator enrollment
 

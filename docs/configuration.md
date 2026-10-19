@@ -102,7 +102,7 @@ storage. Backend and backup S3 credentials/settings are separate.
 | `NELCOTA_CONFIG` | server path | `nelcota.toml` | `/etc/nelcota/server.toml` | Selects TOML file; environment overrides it. |
 | `NELCOTA_ROOT` | CLI host path | `.` | `/opt/nelcota` | Equivalent to global `--dir`; does not chdir the raw server TOML loader. |
 | `NELCOTA_IMAGE` | init image string | `ghcr.io/nelcota/nelcota-server` | `ghcr.io/nelcota/nelcota-server` | Default project app image; custom images are outside controlled-update V1. |
-| `NELCOTA_VERSION` | installer/host version string | installer: `latest`; init: CLI version | `0.4.0` | Installer release selection; persisted host image tag. Installing the CLI does not upgrade running projects. |
+| `NELCOTA_VERSION` | installer/host version string | installer: `latest`; init: CLI version | `0.5.0` | Installer release selection; persisted host image tag. Installing the CLI does not upgrade running projects. |
 | `NELCOTA_REPO` | installer repository string | `Nelcota/Nelcota` | `Nelcota/Nelcota` | Release source override; use official artifacts for supported deployments. |
 | `PREFIX` | installer directory | `/usr/local/bin` | `$HOME/.local/bin` | Writable user-owned prefix can avoid sudo for binary installation. Add it to your PATH yourself. |
 | `NELCOTA_SKIP_DOCKER` | installer string switch | `0` | `1` | Exactly `1` skips Docker installation; does not provide Docker for dev. |

@@ -18,6 +18,9 @@ fixes have regressions or runtime evidence in the corresponding goal records.
 | Controlled updates and recovery | [G03 execution](../goals/panel-updates-execution.md) |
 | Three corrective project reviews | [G04 execution](../goals/triple-review-execution.md) |
 | Catalog/client/upload/preview resource lifetimes | [Memory review](../goals/memory-review-execution.md) |
+| G06 authentication/session findings and public disclosure | [Final G06 ledger](../goals/auth-security-review-execution.md) |
+| Targeted maintainability refactoring | [G07 execution](../goals/maintainability-refactor-execution.md) |
+| SDK input, response and asynchronous error boundaries | [SDK review](../goals/sdk-input-async-review-execution.md) |
 | Installation and private Notes/files | [Notes acceptance](../onboarding/validation.md) |
 
 The records identify commits, artifacts, workloads and failed/skipped/unrun

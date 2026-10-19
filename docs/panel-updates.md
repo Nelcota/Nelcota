@@ -6,9 +6,10 @@ separate HTTPS origin; it remains reachable while a project is in maintenance.
 No Node service, Docker socket in the application, or privileged project cookie
 is involved. Node is used only to build the existing frontend.
 
-Installation is disabled after enrollment. Local tests do not constitute VPS
-acceptance. The current published 0.4.0 release predates this controller; a new
-stable release (0.5.0 or later) containing this implementation is required before deploying it.
+The controller is included in published server 0.5.0. Installation is disabled
+after enrollment. Local tests do not constitute VPS acceptance: retain evidence
+for the exact installed controller binary and complete every gate below before
+enabling installation.
 
 ## Enrollment over SSH
 

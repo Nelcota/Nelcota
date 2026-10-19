@@ -1,8 +1,10 @@
 # G06: Authentication and session security review
 
-Status: planned. Record actual work in an execution record at
-`docs/goals/auth-security-review-execution.md`. This goal certifies no
-external audit, penetration test or compliance standard.
+Status: finalized after publication of server 0.5.0 and the public advisory.
+All seven findings have merged resolutions, including the documented F07
+mitigation trade-off. See the [execution record](auth-security-review-execution.md)
+for the final ledger and the preserved original plan/results. This goal certifies
+no external audit, penetration test, production acceptance or compliance standard.
 
 Planning baseline: `7df975cf0bbed970f01948d559e959b38404a111` (`main` after the G05 production
 fixes have merged). Review one frozen SHA; never review a moving checkout.

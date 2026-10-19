@@ -17,7 +17,8 @@ SQL. Schema setup is privileged; client requests use a user's token under RLS.
 
 ## JavaScript and TypeScript
 
-Published consumers install `@nelcota/client@0.1.2`. For checkout demos, enter
+This checkout documents `@nelcota/client@0.2.1`; registry installation requires
+that version to be published. See the [upgrade notes](../sdk/typescript/docs/contract.md#upgrading-from-020). For checkout demos, enter
 `sdk/typescript`, run `npm ci` and `npm run build`, then:
 
 ```sh

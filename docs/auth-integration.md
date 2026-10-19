@@ -6,7 +6,7 @@ dependency is `nelcota-auth`; `nelcota-core` is the only internal transitive
 dependency. Server, CLI, REST, panel, storage and webhooks are absent from its
 dependency graph. No Node runtime is required.
 
-This archive/facade workflow describes unpublished source after server 0.4.0.
+This archive/facade workflow is included in the server 0.5.0 source tree.
 A workspace version does not establish registry availability; use matched
 candidate archives until core/auth receive a separately reviewed release.
 

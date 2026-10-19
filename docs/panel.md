@@ -249,7 +249,7 @@ See [deploy](deploy.md), [auth](schema-auth.md), [storage](storage.md) and [trou
 
 ## Host projects in the controller
 
-The Unreleased host controller adds project creation, paired backups, restore
+The host controller in server 0.5.0 adds project creation, paired backups, restore
 and removal with visual review, typed confirmation, operator reauthentication
 and durable recovery. It uses a separate HTTPS origin and SSH-granted host
 authority. The Projects page links to this controller when enrolled.

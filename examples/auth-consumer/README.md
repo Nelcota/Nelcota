@@ -2,7 +2,8 @@
 
 This example hosts authentication with Axum, Tokio and PostgreSQL. Its graph
 includes auth/core, not the other server capabilities. It demonstrates
-unpublished source/archive packaging, not a deployed auth service.
+source/archive packaging from server 0.5.0, not a deployed auth service.
+Auth/core registry publication remains separate from the server release.
 
 ## Prerequisites
 
@@ -36,8 +37,9 @@ It bootstraps auth-only migrations, uses a separate request pool and owns its
 pruner until Ctrl+C. Signup/token/JWKS use `/auth/v1`; SMTP/OAuth need adapters
 and settings. See the integration guide for budgets and compatibility.
 
-The standalone workspace does not ship a lockfile. Generate and review its
-Cargo.lock on the first build; use `--locked` for subsequent reproducible builds.
+The standalone workspace ships its own Cargo.lock. Review lockfile changes
+when changing the matched core/auth source or archives, and use `--locked`
+once the selected source and its lockfile agree.
 
 ## Package validation
 
@@ -53,7 +55,7 @@ Local `--allow-dirty --no-verify` packaging does not publish or prove a release.
 The subsequent regression builds extracted archives offline and tests owned
 PostgreSQL with generated credentials. It needs Docker, OpenSSL and Python
 3.11.8+. Publish matched core before auth only after separate release review;
-workspace version 0.4.0 does not establish registry availability.
+workspace version 0.5.0 does not establish registry availability.
 
 ## Troubleshooting
 
