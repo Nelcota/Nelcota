@@ -228,22 +228,21 @@ impl Client {
                     .map_err(|_| Error::Timeout)?
             })
             .await;
-            match result {
+            let error = match result {
                 Ok(value) => return Ok(value),
-                Err(error) => {
-                    let transient = matches!(&error, Error::Network(_))
-                        || matches!(error.status(), Some(429 | 503));
-                    let wait = error.retry_after().unwrap_or_else(|| backoff(attempt));
-                    if attempt == tries || !transient || wait > Duration::from_secs(30) {
-                        return Err(error);
-                    }
-                    cancel(&self.options, async {
-                        tokio::time::sleep(wait).await;
-                        Ok(())
-                    })
-                    .await?;
-                }
+                Err(error) => error,
+            };
+            let transient =
+                matches!(&error, Error::Network(_)) || matches!(error.status(), Some(429 | 503));
+            let wait = error.retry_after().unwrap_or_else(|| backoff(attempt));
+            if attempt == tries || !transient || wait > Duration::from_secs(30) {
+                return Err(error);
             }
+            cancel(&self.options, async {
+                tokio::time::sleep(wait).await;
+                Ok(())
+            })
+            .await?;
         }
         unreachable!("at least one attempt")
     }

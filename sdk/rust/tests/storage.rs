@@ -107,6 +107,61 @@ async fn interrupted_buffered_reads_retry_but_write_responses_do_not() {
 
 type Seen = Arc<tokio::sync::Mutex<Vec<Value>>>;
 
+#[tokio::test]
+async fn empty_mime_components_are_rejected_before_upload_but_empty_files_are_valid() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let router = Router::new().fallback(any({
+        let calls = calls.clone();
+        move || {
+            calls.fetch_add(1, Ordering::SeqCst);
+            async {
+                axum::Json(json!({"id":"o1", "bucket":"docs", "name":"empty.txt",
+                    "size":0, "mime_type":"text/plain", "etag":"e"}))
+            }
+        }
+    }));
+    let (url, server) = serve(router).await;
+    let files = Client::builder(url)
+        .build()
+        .unwrap()
+        .storage()
+        .from("docs")
+        .unwrap();
+    for content_type in ["", "/", "/plain", "text/", "text /plain", " text/plain"] {
+        assert!(matches!(
+            files
+                .upload(
+                    "empty.txt",
+                    "",
+                    UploadOptions {
+                        content_type: Some(content_type.into()),
+                        ..Default::default()
+                    }
+                )
+                .await,
+            Err(nelcota_client::Error::Usage(_))
+        ));
+    }
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+    assert_eq!(
+        files
+            .upload(
+                "empty.txt",
+                "",
+                UploadOptions {
+                    content_type: Some("text/plain;charset=utf-8".into()),
+                    ..Default::default()
+                }
+            )
+            .await
+            .unwrap()
+            .size,
+        0
+    );
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+    server.abort();
+}
+
 /// Records method, path, content type and JSON body; answers with a bucket.
 fn recorder(seen: Seen) -> Router {
     Router::new()

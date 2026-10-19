@@ -18,6 +18,41 @@ fn session(token: &str, refresh: &str) -> Session {
         "expires_in":900, "expires_at":4_000_000_000_u64, "user":{"id":"u1","email":"a@example.com",
         "email_confirmed_at":null,"user_metadata":{},"created_at":"2026-10-09","last_sign_in_at":null}})).unwrap()
 }
+
+#[tokio::test]
+async fn empty_oauth_codes_are_rejected_before_http() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let router = Router::new().route(
+        "/auth/v1/token",
+        post({
+            let calls = calls.clone();
+            move || {
+                calls.fetch_add(1, Ordering::SeqCst);
+                async { Json(session("a1", "r1")) }
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let client = Client::builder(format!("http://{}", listener.local_addr().unwrap()))
+        .build()
+        .unwrap();
+    let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    for code in ["", " \n"] {
+        assert!(matches!(
+            client.auth().exchange_code(code, &"v".repeat(64)).await,
+            Err(nelcota_client::Error::Usage(_))
+        ));
+    }
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+    client
+        .auth()
+        .exchange_code("valid-code", &"v".repeat(64))
+        .await
+        .unwrap();
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+    server.abort();
+}
+
 async fn server(fail: bool) -> (String, Arc<AtomicUsize>, tokio::task::JoinHandle<()>) {
     let count = Arc::new(AtomicUsize::new(0));
     let router = Router::new()
