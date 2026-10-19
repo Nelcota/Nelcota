@@ -10,9 +10,15 @@ import tomllib
 root = Path(__file__).resolve().parents[3]
 manifest = tomllib.loads((root / "sdk/rust/Cargo.toml").read_text(encoding="utf-8"))
 name, version = manifest["package"]["name"], manifest["package"]["version"]
-archive = root / "target/package" / f"{name}-{version}.crate"
+metadata = json.loads(subprocess.check_output(
+    ["cargo", "metadata", "--format-version", "1", "--no-deps", "--offline"],
+    cwd=root, text=True,
+))
+archive = Path(metadata["target_directory"]) / "package" / f"{name}-{version}.crate"
 if not archive.is_file():
-    raise SystemExit("Run cargo package -p nelcota-client first")
+    raise SystemExit(f"Run cargo package -p nelcota-client first: missing {archive}")
+
+print(f"Verifying archive: {archive}", flush=True)
 
 with tempfile.TemporaryDirectory(prefix="nelcota-rust-consumer-") as directory:
     directory = Path(directory)
