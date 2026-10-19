@@ -1,6 +1,6 @@
 {
   "name": "@nelcota/client",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "TypeScript client for Nelcota: REST under RLS, auth and storage.",
   "license": "Apache-2.0",
   "repository": {

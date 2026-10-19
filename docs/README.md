@@ -1,7 +1,13 @@
 # Documentation
 
-Choose a guide for your task. Examples target the current source unless a
-published version is specified; server and SDK packages have separate versions.
+Choose a guide for your task. Server 0.5.0 is published. Examples target the
+current source unless a published version is specified; server and SDK packages
+have separate versions. See the [version and upgrade guide](releases/README.md).
+
+The [documentation website](https://nelcota.github.io/NelcotaWebsite/docs/)
+renders these same Markdown guides and their existing Portuguese catalogs. Its
+pinned source commit identifies the snapshot being read; website updates do not
+install a server or SDK package.
 
 ## Start
 
@@ -23,7 +29,7 @@ published version is specified; server and SDK packages have separate versions.
 
 - [Deploy](deploy.md): Docker/systemd, HTTPS and isolated projects.
 - [Backup](backup.md): paired snapshots, offsite copies and database PITR.
-- [Controlled updates](panel-updates.md): unpublished controller and required VPS acceptance.
+- [Controlled updates](panel-updates.md): the 0.5.0 controller and required VPS acceptance.
 - [Panel](panel.md): administrative UI and its authority.
 - [Host project management](host-management.md): isolated project creation, confirmed backup/restore/removal and persistent recovery.
 - [Security model](security/README.md): protections and deployer responsibilities.

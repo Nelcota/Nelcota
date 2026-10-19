@@ -25,6 +25,7 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: cargo fmt --all --check
       - run: python3 scripts/check-boundaries.py
+      - run: python3 scripts/check-doc-versions.py
       - run: cargo clippy --all-targets -- -D warnings
       # Integration tests start Postgres 17 via testcontainers (the runner's Docker).
       - run: cargo test --all

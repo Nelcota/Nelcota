@@ -16,11 +16,11 @@ curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/instal
 nelcota --version
 ```
 
-This installs the latest published release, currently 0.4.0. To build that
+This installs the latest published release, currently 0.5.0. To build that
 release on macOS/Windows with Rust 1.99+:
 
 ```sh
-cargo install --locked --git https://github.com/Nelcota/Nelcota --tag v0.4.0 nelcota-server
+cargo install --locked --git https://github.com/Nelcota/Nelcota --tag v0.5.0 nelcota-server
 ```
 
 For this checkout, run `cargo build --locked -p nelcota-server` and use the
@@ -143,11 +143,13 @@ of signing up again. Another user's token returns none of Ana's notes.
 On a project with confirmation enabled, confirm the email and sign in before
 extracting an access token.
 
-For a runnable JavaScript client, install the published package:
+For a runnable JavaScript client, install the documented SDK version. Confirm
+its registry availability first; a source checkout can also use a reviewed local
+archive as described in the SDK README:
 
 ```sh
 npm init -y
-npm install @nelcota/client@0.1.2
+npm install @nelcota/client@0.2.1
 cat > client.mjs <<'JS'
 import { createClient, unwrap } from '@nelcota/client';
 const client = createClient('http://127.0.0.1:8000');

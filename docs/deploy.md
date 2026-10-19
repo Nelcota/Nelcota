@@ -265,7 +265,7 @@ with the project's `NELCOTA_VERSION` first:
 
 ```sh
 nelcota upgrade --all --dry-run
-nelcota -p shop upgrade --version 0.4.0  # published target; already-current projects are skipped
+nelcota -p shop upgrade --version 0.5.0  # published target; already-current projects are skipped
 ```
 
 ## Local development
@@ -309,7 +309,7 @@ on production behavior.
 
 ## Optional host management
 
-The Unreleased controller can provision and manage isolated Docker projects
+The controller in server 0.5.0 can provision and manage isolated Docker projects
 after explicit SSH enrollment. Approve an official image, domain scope and VPS
 addresses before enabling creation; inspect operation reviews and retain
 recovery access. See `docs/host-management.md` for supported layouts and

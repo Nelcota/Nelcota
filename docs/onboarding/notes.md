@@ -29,7 +29,7 @@ On Linux with Docker already installed, install a specific published release
 into a user-owned directory. Run from the cloned repository:
 
 ```sh
-NELCOTA_VERSION=0.4.0 PREFIX="$HOME/.local/bin" NELCOTA_SKIP_DOCKER=1 sh scripts/install.sh
+NELCOTA_VERSION=0.5.0 PREFIX="$HOME/.local/bin" NELCOTA_SKIP_DOCKER=1 sh scripts/install.sh
 "$HOME/.local/bin/nelcota" --version
 ```
 
@@ -173,7 +173,7 @@ published image version through the existing CLI:
 
 ```sh
 mkdir -p /opt/nelcota-staging && cd /opt/nelcota-staging
-nelcota init staging.example.com --project notes --version 0.4.0
+nelcota init staging.example.com --project notes --version 0.5.0
 nelcota up
 nelcota -p notes status
 ```

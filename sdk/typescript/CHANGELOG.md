@@ -5,6 +5,8 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## Unreleased
 
+## 0.2.1 — 2026-10-19
+
 ### Changed
 
 - Separate authentication/query contracts and storage transfers into their own
@@ -36,8 +38,8 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## 0.2.0 — 2026-10-19
 
-Prepared package candidate. Version metadata and this changelog do not publish
-the package; use a local archive until registry publication completes.
+Published independently of the server. Consult the registry entry for the
+selected version; source version metadata does not publish a package.
 
 ### Fixed
 
@@ -149,6 +151,6 @@ First npm release. Changes since the release candidate:
 
 The candidate becomes a public release only after a successful npm publish.
 
-Release notes describe the package version, not the server. Candidate 0.2.0
-changes are absent from registry 0.1.2; installing them requires the new client
-package after its publication, or a reviewed local archive.
+Historical candidate note: the 0.2.0 changes were absent from registry 0.1.2.
+The package was subsequently published independently of the server; use the
+version-specific changelog and bundled documentation for installed clients.

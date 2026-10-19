@@ -6,13 +6,38 @@ by the endpoints and features below, not by matching package version numbers.
 
 ## Version scope
 
-The Unreleased fixes in this checkout require a new package: published 0.2.0
-does not include queued-login cancellation or exact bucket-limit writes below.
+This is the 0.2.1 package contract. It includes queued-auth cancellation, exact
+bucket-limit writes, profile ordering and the input/response guards below.
+Version 0.2.0 predates these corrections. Registry installation requires
+successful publication of 0.2.1; a server update does not install the client.
+See the [upgrade notes](#upgrading-from-020). Older packages keep the contract in their
+own bundled documentation.
 
-This is the 0.2.0 source/package candidate contract. Registry installation
-requires successful publication; a server update does not install the client.
-Published 0.1.2 predates native IndexedDB journaling and exact numeric
-preservation below; consult its bundled documentation for that release.
+## Upgrading from 0.2.0
+
+Install 0.2.1 explicitly, update the application lockfile and run its type check,
+build and tests. Server and SDK versions remain independent. Existing package
+entrypoints, result/error codes, timeouts and HTTP routes are preserved.
+
+- `Bucket.file_size_limit` is now correctly `number | string | null`. Preserve
+  exact decimal strings when reading/updating large limits; converting them to
+  `number` can lose precision. Use explicit null to clear a limit.
+- `single()`/`maybeSingle()` keep their corrected result types through a chained
+  `select()`. Code relying on the previous inaccurate type may need adjustment.
+- Handle password-reset, magic-link and confirmation validation with
+  `await`/`catch` or `.catch()`: invalid arguments reject the Promise. HTTP and
+  network failures still use the existing result's `error` field.
+- Malformed write rows, blank OAuth codes and absent upload bodies are usage
+  errors before HTTP. Missing storage representations return `invalid_response`.
+  Valid null fields, default row objects, empty collections and zero-byte files
+  remain supported. Storage response checks are minimum shape guards.
+- Cancelled queued auth callers leave the queue without cancelling another
+  refresh owner or an already accepted session publication. Older profile reads
+  cannot overwrite newer cached user data. Writes are never automatically replayed.
+
+Reload open browser tabs after updating so they use the same installed SDK.
+Verify login/refresh/sign-out, a typed read/write and storage against staging;
+update HTTP mocks to return the documented response representation.
 
 ## Interface
 

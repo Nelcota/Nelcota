@@ -4,9 +4,10 @@ Capture and restore a database together with its disk-file snapshot. You need
 a selected initialized host/project, PostgreSQL tools through its runtime,
 sufficient disk space and a private offsite destination when configured.
 
-Source fixes after 0.4.0 are unpublished: use matching release guidance and
-verify the actual artifact. Take a compatible verified pair before destructive
-recovery; database PITR has different guarantees from a dump restore.
+Server 0.5.0 includes the backup and durable PITR fencing behavior described
+here. Use matching release guidance and verify the actual artifact. Take a
+compatible verified pair before destructive recovery; database PITR has different
+guarantees from a dump restore.
 
 ## Backup
 
@@ -235,7 +236,7 @@ continue to work; native recovery supplies fixed `-D` and `config_file` argument
 
 ### PITR recovery fence
 
-This is an Unreleased source capability; use a matching CLI and app artifact.
+The durable fence is included in server 0.5.0; use matching CLI and app artifacts.
 Run fence mutations and recovery on the Linux host. Docker refuses a restore
 before changing data if the app image does not support the guard. Native recovery
 also requires the matching installed app binary. Custom entrypoints, app commands

@@ -319,4 +319,4 @@ in `nelcota-deployment`; root effects, policy and recovery live in `nelcota-cli`
 authenticated UI requests plans and confirmed operations through the worker;
 project credentials never grant host authority. Updates, CLI mutations and host
 jobs share one lease and refuse unresolved work. See `docs/host-management.md`
-for the Unreleased feature’s enrollment, recovery and validation limits.
+for the feature’s enrollment, recovery and validation limits in server 0.5.0.

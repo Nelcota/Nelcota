@@ -5,6 +5,8 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## Unreleased
 
+## 0.1.4 — 2026-10-19
+
 ### Changed
 
 - Organize private authentication, REST and storage modules by responsibility,
@@ -26,8 +28,8 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## 0.1.3 — 2026-10-19
 
-Prepared package candidate. Version metadata and this changelog do not publish
-the package; use a local archive until registry publication completes.
+Published independently of the server. Consult the registry entry for the
+selected version; source version metadata does not publish a package.
 
 ### Fixed
 

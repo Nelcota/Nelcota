@@ -10,7 +10,7 @@ One Rust binary provides REST, authentication, file storage, webhooks and an adm
 [![CI](https://github.com/Nelcota/Nelcota/actions/workflows/ci.yml/badge.svg)](https://github.com/Nelcota/Nelcota/actions/workflows/ci.yml)
 [Releases](https://github.com/Nelcota/Nelcota/releases) · [Apache-2.0](LICENSE)
 
-[Quickstart](docs/quickstart.md) · [Deploy](docs/deploy.md) · [Documentation](docs/README.md) · [Changelog](CHANGELOG.md)
+[Quickstart](docs/quickstart.md) · [Deploy](docs/deploy.md) · [Documentation website](https://nelcota.github.io/NelcotaWebsite/docs/) · [Repository guides](docs/README.md) · [Changelog](CHANGELOG.md)
 
 </div>
 
@@ -99,15 +99,17 @@ credentials locally from `.nelcota/dev.env`.
 
 ## Status and roadmap
 
-The latest published server is **0.4.0**. SDKs have independent versions.
-`main` contains unpublished fixes and reusable auth/core packaging; see the
-[changelog](CHANGELOG.md) and [release handoff](docs/onboarding/release.md).
+The latest published server is **0.5.0**. SDKs have independent versions.
+The [release](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.0) includes
+controlled updates, host project management and durable PITR recovery fencing.
+See the [changelog](CHANGELOG.md), [version and upgrade guide](docs/releases/README.md)
+and [release handoff](docs/onboarding/release.md) for source/package distinctions.
 A source build can report the same binary version as a published release until
 its version is bumped: identify it by tag/commit and artifact hash.
 
-Controlled panel updates are implemented in `main`, but require a new official
-release and exact-binary VPS acceptance before activation. They are unavailable
-in published 0.4.0. See [the update guide](docs/panel-updates.md).
+Controlled panel updates are available in server 0.5.0 and remain disabled
+until the exact controller binary passes its documented VPS acceptance matrix.
+See [the update guide](docs/panel-updates.md).
 
 Realtime subscriptions, Edge Functions, MFA and image transformations are not
 implemented. Multiple isolated projects per Docker host are supported; shared

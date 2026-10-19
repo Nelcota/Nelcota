@@ -5,7 +5,7 @@ and file storage under PostgreSQL RLS. For native applications using Tokio.
 
 ```toml
 [dependencies]
-nelcota-client = "0.1.3"
+nelcota-client = "0.1.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
@@ -37,11 +37,12 @@ for note in response.data { println!("{}: {}", note.id, note.body); }
 
 ## Version scope
 
-This checkout prepares 0.1.3. The registry dependency above requires successful
-publication; use a local path/archive until then. Published 0.1.2 lacks the
-refresh-margin/finite-input fixes and expanded lifecycle checks. Installing a
-server release does not update clients. The minimum Rust/server versions and
-HTTP contract remain unchanged.
+This guide targets 0.1.4. Version 0.1.3 is the previous published baseline;
+0.1.4 adds queued-auth cancellation, profile ordering, cardinality preflight
+and OAuth/MIME input checks. Registry installation requires successful
+publication of that version; use a local path/archive before it is available.
+See the [upgrade notes](docs/contract.md#upgrading-from-013). Installing a server release does not
+update clients. Rust 1.88+, server 0.3.0+ and the HTTP contract remain unchanged.
 
 ## REST
 
