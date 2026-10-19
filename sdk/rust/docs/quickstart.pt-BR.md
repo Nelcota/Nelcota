@@ -1,18 +1,36 @@
 # Começando com Rust
 
-As correções **Unreleased** deste checkout exigem um novo pacote do cliente.
+Este guia descreve o SDK **0.1.4**, com correções posteriores ao 0.1.3 publicado.
 Elas recusam `single`/`maybe_single` em HEAD ou escritas sem representação
 antes de enviar HTTP: use `.select(...)` para receber a linha de uma escrita.
 O cancelamento também retira requisições de auth da fila de ciclo de vida;
 uma rotação aceita continua responsável por persistir sua sessão.
-Essas correções ainda não fazem parte do pacote publicado 0.1.3.
+Essas correções exigem atualizar o pacote do cliente.
 
-O SDK usa Tokio e requer Rust 1.88+. Este checkout prepara 0.1.3; adicione
-`nelcota-client = "0.1.3"` ao Cargo.toml somente após a publicação, junto de
-serde, serde_json e tokio (veja o README). Antes disso, use uma dependência
-local `path` para `sdk/rust` ou o arquivo validado. O pacote publicado 0.1.2
-tem comportamento anterior. O servidor compilado do repositório exige Rust
-1.99.0; ele e o SDK têm versões independentes.
+O SDK usa Tokio e requer Rust 1.88+. Adicione `nelcota-client = "0.1.4"`
+ao Cargo.toml depois de confirmar sua publicação, junto de serde, serde_json
+e tokio (veja o README). Antes disso, use uma dependência local `path` para
+`sdk/rust` ou o arquivo validado. Consulte as [notas de atualização](contract.md#upgrading-from-013).
+O servidor compilado do repositório exige Rust 1.99.0; ele e o SDK têm versões
+independentes.
+
+## Atualizar do 0.1.3
+
+Altere a dependência para `nelcota-client = "0.1.4"` e rode
+`cargo update -p nelcota-client --precise 0.1.4`. Confira a versão com
+`cargo tree -p nelcota-client`, versione Cargo.toml/Cargo.lock e execute o build
+e os testes do aplicativo. Rust 1.88+, Tokio, servidor 0.3.0+ e imports públicos
+permanecem compatíveis.
+
+Use `.select(...)` antes de `single`/`maybe_single` nas escritas: HEAD e escritas
+sem representação passam a falhar antes de enviar HTTP. Trate `Error::Usage`
+para código OAuth em branco e componentes MIME inválidos. Parâmetros válidos,
+espaço/tab antes do delimitador e uploads de zero bytes continuam aceitos.
+Cancelamentos retiram esperas da fila sem interromper a rotação/persistência já
+aceita. Verifique login/refresh/logout, cardinalidade e transferência de arquivos
+no staging antes de atualizar os aplicativos de produção.
+
+## Usar o SDK
 
 1. Inicie o Nelcota com `cargo run -- dev` ou use um projeto implantado.
 2. Aplique [examples/notes.sql](https://github.com/Nelcota/Nelcota/blob/main/examples/notes.sql) (o mesmo do SDK JavaScript) pelo

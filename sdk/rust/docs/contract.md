@@ -1,7 +1,7 @@
 # Rust SDK contract
 
-`nelcota-client` 0.1.x supports Nelcota server 0.3.0 or later; release 0.1.2 is
-verified against server 0.4.0. The released v0.2.0 tag is a legacy baseline
+`nelcota-client` 0.1.4 supports Nelcota server 0.3.0 or later; its release
+checks run against this repository’s server 0.5.0 source. The released v0.2.0 tag is a legacy baseline
 without the newer OAuth routes and generators; see the README compatibility
 matrix. Package and server versions are independent. Native Tokio on Linux,
 Windows and macOS is the supported target; blocking and WASM interfaces are
@@ -24,9 +24,9 @@ Responses become Rust Result values; empty bodies become JSON null (decode to
 unit or an appropriate Option). `Response<T>` carries status, count and headers.
 Auth/storage convenience methods return the decoded model or structured error.
 
-Unreleased cardinality preflight rejects HEAD and minimal writes with
+Version 0.1.4 cardinality preflight rejects HEAD and minimal writes with
 `single`/`maybe_single` before HTTP. Request write rows with `.select(...)`;
-array-returning RPC calls remain supported. Published 0.1.3 predates this guard.
+array-returning RPC calls remain supported. Version 0.1.3 predates this guard.
 
 HTTP error bodies larger than 64 KiB are discarded; status, a generic error
 code and Retry-After remain available. Successful responses keep their existing
@@ -39,7 +39,7 @@ or dropping them does not leave a task per waiter or stop an accepted rotation.
 Default sessions never persist outside memory. Shared stores across independently
 constructed clients/processes require their own coordination.
 
-Unreleased token cancellation also covers authentication waiting for the lifecycle
+Version 0.1.4 token cancellation also covers authentication waiting for the lifecycle
 gate and session reads. It does not interrupt persistence of an accepted session;
 detached refresh rotation keeps its existing owner. Logout still waits for that
 owner and clears locally even if revocation fails.
@@ -62,7 +62,28 @@ Acceptance checks: SDK tests/doctests/examples, server HTTP contract tests,
 Rust generator snapshot and generated model compile/serialization tests,
 Clippy/rustfmt, docs, package verification and an external consumer smoke test.
 
-Prepared 0.1.3 retains the core HTTP contract and minimum versions of 0.1.2.
-Its refresh-margin/finite-input corrections and expanded lifecycle checks need
-a new client build/package. Registry availability requires successful
-publication; server and SDK releases remain independent.
+Version 0.1.4 retains the core HTTP contract and minimum Rust/server versions
+of 0.1.3. Its corrections require an updated client build/package. Registry
+availability requires successful publication; server and SDK releases remain
+independent. See the [upgrade notes](#upgrading-from-013).
+
+## Upgrading from 0.1.3
+
+Set `nelcota-client = "0.1.4"`, update Cargo.lock with
+`cargo update -p nelcota-client --precise 0.1.4`, then build and test the
+application. Rust 1.88+, native Tokio on the supported platforms, server 0.3.0+
+and public Rust imports remain unchanged. Server upgrades do not update this crate.
+
+- Request a row with `.select(...)` before `single`/`maybe_single` on a write;
+  HEAD and minimal writes are refused before HTTP. The SDK therefore cannot
+  commit such a write and only afterward report missing cardinality.
+- Handle `Error::Usage` for blank OAuth codes and malformed MIME type/subtype
+  components. Valid content-type parameters, optional space/tab before their
+  delimiter, and zero-byte uploads remain supported; headers are sent unchanged.
+- Cancellation releases queued auth/session callers without interrupting an
+  accepted refresh/persistence owner. Older user reads preserve newer cached
+  profile/session state. Retry limits and mutation replay policy are unchanged.
+
+Exercise login/refresh/sign-out, row representation/cardinality and a file
+transfer in staging. Registry installation requires the selected version to be
+published; before then, use a reviewed local path or packaged archive.
