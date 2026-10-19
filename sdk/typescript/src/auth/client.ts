@@ -6,49 +6,12 @@
 import { NelcotaError, NelcotaUsageError, clientError, fail, ok, type Result } from '../core/errors.js';
 import type { HttpClient } from '../core/http.js';
 import { isBrowser } from '../core/jwt.js';
-import { SessionManager, type AuthListener, type AuthOptions, type AuthRequestOptions } from './manager.js';
-export type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions } from './manager.js';
+import { SessionManager } from './manager.js';
+import type { AuthListener, AuthOptions, AuthRequestOptions, Credentials, EmailLink, EmailLinkType, OAuthInput, SignUpInput, UserUpdate } from './types.js';
+export type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions, Credentials, EmailLink, EmailLinkType, OAuthInput, OAuthProvider, SignUpInput, UserUpdate } from './types.js';
 import { challengeFor, createVerifier } from './pkce.js';
 import { withLock } from './coordination.js';
 import { isSession, isUser, type Session, type User } from './session.js';
-
-export type OAuthProvider = 'google' | 'github';
-export type EmailLinkType = 'recovery' | 'signup' | 'magiclink';
-
-export interface Credentials {
-  email: string;
-  password: string;
-}
-
-export interface SignUpInput extends Credentials {
-  /** Becomes `user_metadata`. Never trust it for authorization. */
-  data?: Record<string, unknown>;
-}
-
-export interface UserUpdate {
-  /** New password (same rules as sign-up). */
-  password?: string;
-  /** Required with `password` when the account already has one. */
-  currentPassword?: string;
-  /**
-   * Merged into `user_metadata` one level deep; a key set to `null` is
-   * removed. Never trust it for authorization.
-   */
-  data?: Record<string, unknown>;
-}
-
-export interface OAuthInput {
-  provider: OAuthProvider;
-  /** App page to come back to; must be allowed in NELCOTA_OAUTH_REDIRECT_URLS. */
-  redirectTo: string;
-  /** Navigate there right away (browsers only). Default true in browsers. */
-  redirect?: boolean;
-}
-
-export interface EmailLink {
-  type: EmailLinkType;
-  token: string;
-}
 
 const LINK_TYPES = new Set<string>(['recovery', 'signup', 'magiclink']);
 function email(value: unknown): string {
