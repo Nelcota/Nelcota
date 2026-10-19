@@ -21,7 +21,7 @@ function observers<T>(operation: Promise<T>): Set<Observer<T>> {
 }
 
 /** Cancel a caller's wait without interrupting a shared operation. */
-export function abortable<T>(operation: Promise<T>, signal?: AbortSignal): Promise<Result<T>> {
+export function abortable<T>(operation: Promise<T>, signal?: AbortSignal, withdraw?: () => void): Promise<Result<T>> {
   if (!signal) return operation.then(value => ok(value));
   const listeners = observers(operation);
   return new Promise<Result<T>>((resolve, reject) => {
@@ -31,6 +31,7 @@ export function abortable<T>(operation: Promise<T>, signal?: AbortSignal): Promi
     };
     const abort = (): void => {
       cleanup();
+      withdraw?.();
       resolve(fail(clientError('aborted', 'The request was aborted')));
     };
     const complete: Observer<T> = outcome => {
