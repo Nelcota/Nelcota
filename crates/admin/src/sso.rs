@@ -11,12 +11,6 @@
 //!   logs nor the `Referer`; the SPA reads it and sends it by POST.
 //! - Without a configured secret ("per-project login" mode), there is no handoff.
 
-use std::{
-    collections::HashMap,
-    sync::Mutex,
-    time::{Duration, Instant},
-};
-
 use axum::{
     Json,
     extract::State,
@@ -24,16 +18,21 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
+use deadpool_postgres::Pool;
 use jsonwebtoken::{
     Algorithm, DecodingKey, EncodingKey, Header, Validation, get_current_timestamp,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use sha2::{Digest, Sha256};
 
 use crate::{AdminState, ApiError, projects};
 
 const TOKEN_TTL_SECS: u64 = 60;
 const ISSUER: &str = "nelcota-admin";
+const HANDOFF_LEEWAY_SECS: u64 = 5;
+const REPLAY_RETENTION_SECS: u64 = 86_400;
+const REPLAY_CLEANUP_BATCH: i64 = 5_000;
 
 #[derive(Serialize, Deserialize)]
 struct HandoffClaims {
@@ -45,17 +44,17 @@ struct HandoffClaims {
     jti: String,
 }
 
-/// Handoff keys and the record of tokens already used (anti-replay).
+/// Handoff keys. Redemption receipts belong to the shared project database.
 pub struct Sso {
     encoding: EncodingKey,
     decoding: DecodingKey,
-    used: Mutex<HashMap<String, Instant>>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum RedeemError {
     Invalid,
     Replayed,
+    Unavailable,
 }
 
 impl Sso {
@@ -63,7 +62,6 @@ impl Sso {
         Sso {
             encoding: EncodingKey::from_secret(secret),
             decoding: DecodingKey::from_secret(secret),
-            used: Mutex::new(HashMap::new()),
         }
     }
 
@@ -87,29 +85,64 @@ impl Sso {
         jsonwebtoken::encode(&Header::new(Algorithm::HS256), &claims, &self.encoding)
     }
 
-    /// Validates a token issued for this project and the configured admin.
-    /// Each token can be used only once.
-    pub fn redeem(&self, token: &str, project: &str, email: &str) -> Result<(), RedeemError> {
+    /// Validates and durably consumes a handoff for this project/admin.
+    /// A database error rejects redemption; there is no process-local fallback.
+    pub async fn redeem(
+        &self,
+        pool: &Pool,
+        token: &str,
+        project: &str,
+        email: &str,
+    ) -> Result<(), RedeemError> {
+        let claims = self.validate(token, project, email)?;
+        let digest = Sha256::digest(claims.jti.as_bytes()).to_vec();
+        let through = claims
+            .exp
+            .checked_add(HANDOFF_LEEWAY_SECS)
+            .ok_or(RedeemError::Invalid)? as f64;
+        // Use the validator's clock, not a potentially skewed database clock.
+        // Keep a conservative day beyond validation expiry, with bounded work.
+        let cutoff = get_current_timestamp().saturating_sub(REPLAY_RETENTION_SECS) as f64;
+        let mut client = pool.get().await.map_err(|_| RedeemError::Unavailable)?;
+        let tx = client
+            .transaction()
+            .await
+            .map_err(|_| RedeemError::Unavailable)?;
+        let inserted = tx.execute(
+            "INSERT INTO nelcota.admin_sso_replays (digest, expires_at) VALUES ($1, to_timestamp($2))
+             ON CONFLICT (digest) DO NOTHING", &[&digest, &through],
+        ).await.map_err(|_| RedeemError::Unavailable)?;
+        if inserted != 1 {
+            return Err(RedeemError::Replayed);
+        }
+        tx.execute(
+            "DELETE FROM nelcota.admin_sso_replays WHERE digest IN (
+                SELECT digest FROM nelcota.admin_sso_replays WHERE expires_at < to_timestamp($1)
+                ORDER BY expires_at LIMIT $2 FOR UPDATE SKIP LOCKED)",
+            &[&cutoff, &REPLAY_CLEANUP_BATCH],
+        )
+        .await
+        .map_err(|_| RedeemError::Unavailable)?;
+        tx.commit().await.map_err(|_| RedeemError::Unavailable)?;
+        Ok(())
+    }
+
+    fn validate(
+        &self,
+        token: &str,
+        project: &str,
+        email: &str,
+    ) -> Result<HandoffClaims, RedeemError> {
         let mut validation = Validation::new(Algorithm::HS256);
         validation.set_audience(&[project]);
         validation.set_issuer(&[ISSUER]);
-        validation.leeway = 5;
+        validation.leeway = HANDOFF_LEEWAY_SECS;
         let data = jsonwebtoken::decode::<HandoffClaims>(token, &self.decoding, &validation)
             .map_err(|_| RedeemError::Invalid)?;
         if !data.claims.sub.eq_ignore_ascii_case(email) {
             return Err(RedeemError::Invalid);
         }
-        let mut used = self.used.lock().unwrap_or_else(|e| e.into_inner());
-        let now = Instant::now();
-        used.retain(|_, expires| *expires > now);
-        if used.contains_key(&data.claims.jti) {
-            return Err(RedeemError::Replayed);
-        }
-        used.insert(
-            data.claims.jti,
-            now + Duration::from_secs(TOKEN_TTL_SECS + 10),
-        );
-        Ok(())
+        Ok(data.claims)
     }
 }
 
@@ -161,7 +194,15 @@ pub async fn redeem(State(state): State<AdminState>, Json(body): Json<RedeemRequ
             .into_response();
         }
     };
-    match sso.redeem(&body.token, &state.host.project, &state.credentials.email) {
+    match sso
+        .redeem(
+            &state.db,
+            &body.token,
+            &state.host.project,
+            &state.credentials.email,
+        )
+        .await
+    {
         Ok(()) => {
             tracing::info!("panel login through an SSO handoff");
             (
@@ -189,22 +230,18 @@ mod tests {
     const SECRET: &[u8] = b"shared-test-secret-with-32-bytes-or-more";
 
     #[test]
-    fn token_works_once_and_only_for_the_target() {
+    fn token_validation_is_bound_to_the_target_and_admin() {
         let sso = Sso::new(SECRET);
         let token = sso.issue("admin@x.com", "blog").unwrap();
         assert_eq!(
-            sso.redeem(&token, "shop", "admin@x.com"),
+            sso.validate(&token, "shop", "admin@x.com").map(|_| ()),
             Err(RedeemError::Invalid)
         );
         assert_eq!(
-            sso.redeem(&token, "blog", "other@x.com"),
+            sso.validate(&token, "blog", "other@x.com").map(|_| ()),
             Err(RedeemError::Invalid)
         );
-        assert_eq!(sso.redeem(&token, "blog", "ADMIN@x.com"), Ok(()));
-        assert_eq!(
-            sso.redeem(&token, "blog", "admin@x.com"),
-            Err(RedeemError::Replayed)
-        );
+        assert!(sso.validate(&token, "blog", "ADMIN@x.com").is_ok());
     }
 
     #[test]
@@ -212,7 +249,7 @@ mod tests {
         let token = Sso::new(SECRET).issue("admin@x.com", "blog").unwrap();
         let other = Sso::new(b"some-other-secret-with-32-bytes-too!!");
         assert_eq!(
-            other.redeem(&token, "blog", "admin@x.com"),
+            other.validate(&token, "blog", "admin@x.com").map(|_| ()),
             Err(RedeemError::Invalid)
         );
 
@@ -231,7 +268,9 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            Sso::new(SECRET).redeem(&expired, "blog", "admin@x.com"),
+            Sso::new(SECRET)
+                .validate(&expired, "blog", "admin@x.com")
+                .map(|_| ()),
             Err(RedeemError::Invalid)
         );
     }

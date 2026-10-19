@@ -204,6 +204,17 @@ pub(super) async fn set_password(
     if updated == 0 {
         return Err(user_not_found());
     }
+    // The password UPDATE holds the account lock used by credential redemption.
+    // Retain token history so resetting a password does not reset send cooldowns.
+    tx.execute(
+        "UPDATE auth.one_time_tokens SET used_at = now() WHERE user_id = $1::text::uuid AND used_at IS NULL",
+        &[&id],
+    ).await?;
+    tx.execute(
+        "DELETE FROM auth.flow_states WHERE user_id = $1::text::uuid",
+        &[&id],
+    )
+    .await?;
     let sessions = tx.execute(
         "UPDATE auth.sessions SET revoked_at = now() WHERE user_id = $1::text::uuid AND revoked_at IS NULL",
         &[&id],
