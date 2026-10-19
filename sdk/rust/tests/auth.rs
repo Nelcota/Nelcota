@@ -1,4 +1,5 @@
 use axum::{Json, Router, extract::State, http::StatusCode, routing::post};
+use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use nelcota_client::{
     Client, RequestOptions,
     auth::{AuthEventKind, OAuthProvider, Session},
@@ -95,14 +96,17 @@ async fn cancelled_auth_requests_leave_a_busy_lifecycle_gate() {
         })
         .auth();
     let pending = tokio::spawn(async move {
+        let mut password = [0u8; 32];
+        getrandom::fill(&mut password).unwrap();
+        let password = URL_SAFE_NO_PAD.encode(password);
         let link = nelcota_client::auth::EmailLink {
             kind: nelcota_client::auth::EmailLinkType::Signup,
             token: "fixture".into(),
         };
         let verifier = "a".repeat(43);
         let (login, signup, verify, exchange, read) = tokio::join!(
-            auth.sign_in_with_password("a@example.com", "pw"),
-            auth.sign_up("a@example.com", "pw", None),
+            auth.sign_in_with_password("a@example.com", &password),
+            auth.sign_up("a@example.com", &password, None),
             auth.verify_email_link(&link),
             auth.exchange_code("fixture", &verifier),
             auth.get_session(),
