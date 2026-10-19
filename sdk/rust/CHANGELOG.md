@@ -12,6 +12,8 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Fixed
 
+- Keep delayed profile responses from replacing newer cached user data after
+  an update, refresh or explicit session replacement, including identical tokens.
 - Reject `single`/`maybe_single` on HEAD and minimal writes before HTTP, so a
   missing row representation cannot report an error after committing a write.
   Explicit write representations and array-returning RPC calls remain supported.
