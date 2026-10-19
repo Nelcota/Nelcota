@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { TableData } from '$lib/types'
+import type { TableData } from '$lib/contracts/types'
 import { TableRows, type TableRowsAdapter } from './table-rows.svelte'
 
 function deferred<T>() {

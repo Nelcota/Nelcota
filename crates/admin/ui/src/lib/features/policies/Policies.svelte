@@ -23,11 +23,11 @@
   import TechnicalToggle from '$lib/shared/schema/components/TechnicalToggle.svelte'
   import { technical } from '$lib/shared/schema/technical.svelte'
   import { describePolicy, type PolicyMeaning } from '$lib/shared/schema/plain'
-  import { RemoteResource } from '$lib/remote-resource.svelte'
-  import { api } from '$lib/api'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+  import { api } from '$lib/transport/api'
   import { ddl, toPolicyDef, type PolicyDef } from '$lib/shared/schema/ddl'
-  import { href, navigate, route } from '$lib/router.svelte'
-  import type { PoliciesData } from '$lib/types'
+  import { href, navigate, route } from '$lib/navigation/router.svelte'
+  import type { PoliciesData } from '$lib/contracts/types'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
 
   const resource = new RemoteResource<PoliciesData>()

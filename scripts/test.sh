@@ -3,7 +3,7 @@
 #
 #   scripts/test.sh db                     start the shared test Postgres, print the export line
 #   scripts/test.sh rust [cargo args...]   e.g. scripts/test.sh rust -p nelcota-server --test rls
-#   scripts/test.sh ui [vitest args...]    e.g. scripts/test.sh ui src/lib/route-match.test.ts
+#   scripts/test.sh ui [vitest args...]    e.g. scripts/test.sh ui src/lib/navigation/route-match.test.ts
 #   scripts/test.sh all                    Rust, then Vitest (never in parallel)
 #
 # Rust integration tests use one shared Postgres container (a database per

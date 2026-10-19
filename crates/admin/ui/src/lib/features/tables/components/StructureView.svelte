@@ -9,7 +9,7 @@
   import DropTableDialog from './DropTableDialog.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import { ddl, type AlterAction, type ColumnInfo, type Structure } from '$lib/shared/schema/ddl'
-  import { isAbort } from '$lib/api'
+  import { isAbort } from '$lib/transport/api'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
 
   let {

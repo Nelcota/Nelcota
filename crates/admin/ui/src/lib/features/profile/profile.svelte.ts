@@ -1,7 +1,7 @@
 // Admin profile: photo version (ms of the last change) or `null` without a photo.
 // The version goes into the URL, so the browser caches the image until it changes.
-import { api } from '$lib/api'
-import { querySession } from '$lib/query-client'
+import { api } from '$lib/transport/api'
+import { querySession } from '$lib/resources/query-client'
 
 const value = $state<{ avatar: number | null; loaded: boolean; epoch: number }>({ avatar: null, loaded: false, epoch: -1 })
 let generation = 0

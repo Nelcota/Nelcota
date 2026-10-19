@@ -1,6 +1,7 @@
 """Check capability ownership and exact packaged migration assets (Python 3.11+)."""
 
 from pathlib import Path
+import re
 import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,6 +16,75 @@ EXPECTED = {
     "cli": {"core", "auth", "api", "deployment"},
     "server": {"core", "auth", "api", "storage", "webhooks", "admin", "cli"},
 }
+
+PANEL_OWNERS = {
+    "browser",
+    "components",
+    "contracts",
+    "features",
+    "formatting",
+    "forms",
+    "generated",
+    "i18n",
+    "navigation",
+    "resources",
+    "shared",
+    "shell",
+    "transport",
+}
+PANEL_FOUNDATIONS = PANEL_OWNERS - {"components", "features", "generated", "shell"}
+MODULE_IMPORT = re.compile(
+    r"(?m)^\s*(?:import|export)\s+(?:type\s+)?"
+    r"(?:(?:\{[^}]*\}|\*(?:\s+as\s+\w+)?|[\w$]+(?:\s*,\s*\{[^}]*\})?)\s+from\s*)?"
+    r"['\"]([^'\"]+)['\"]|\bimport\s*\(\s*['\"]([^'\"]+)['\"]"
+)
+
+
+def panel_ownership(root):
+    """Keep shared modules independent of pages and direct browser probes valid."""
+    errors = []
+    ui = root / "crates/admin/ui"
+    lib = ui / "src/lib"
+    if lib.is_dir():
+        for path in sorted(lib.iterdir()):
+            if path.is_file() and path.suffix in {".ts", ".js", ".svelte"}:
+                errors.append(
+                    f"Panel module needs an owning directory: {path.relative_to(root)}"
+                )
+            if path.is_dir() and path.name not in PANEL_OWNERS:
+                errors.append(
+                    f"Panel directory needs an explicit owner: {path.relative_to(root)}"
+                )
+    for owner in sorted(PANEL_FOUNDATIONS):
+        for path in sorted((lib / owner).rglob("*")):
+            if not path.is_file() or path.suffix not in {".ts", ".js", ".svelte"}:
+                continue
+            for match in MODULE_IMPORT.finditer(path.read_text(encoding="utf-8")):
+                name = next(value for value in match.groups() if value is not None)
+                target = None
+                if name.startswith("$lib/"):
+                    target = lib / name[5:]
+                if name.startswith(("./", "../")):
+                    target = path.parent / name
+                if target is None:
+                    continue
+                if any(
+                    target.resolve().is_relative_to(lib / layer)
+                    for layer in ("features", "shell")
+                ):
+                    errors.append(
+                        f"Shared panel module depends on a page: {path.relative_to(root)} -> {name}"
+                    )
+    for path in sorted((ui / "e2e").glob("*.ts")):
+        for name in re.findall(
+            r"['\"]/admin/src/([^'\"]+)['\"]", path.read_text(encoding="utf-8")
+        ):
+            target = (ui / "src" / name).resolve()
+            if not target.is_relative_to(ui / "src") or not target.is_file():
+                errors.append(
+                    f"Browser probe points to a missing module: {path.relative_to(root)} -> {name}"
+                )
+    return errors
 
 
 def check():
@@ -61,9 +131,12 @@ def check():
         errors.append(
             "Packaged migrations differ from canonical migrations; copy new SQL without editing released files"
         )
+    errors.extend(panel_ownership(ROOT))
     if errors:
         raise SystemExit("\n".join(errors))
-    print("Capability dependencies and packaged migration bytes match their contracts")
+    print(
+        "Capability dependencies, panel ownership and packaged migration bytes match their contracts"
+    )
 
 
 if __name__ == "__main__":

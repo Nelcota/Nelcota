@@ -1,1 +1,1 @@
-export { readBody as readPreview } from '../../read-body'
+export { readBody as readPreview } from '$lib/transport/read-body'

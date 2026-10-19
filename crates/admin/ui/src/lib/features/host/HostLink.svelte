@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { api } from '$lib/api'
+  import { api } from '$lib/transport/api'
   import { t } from '$lib/i18n/index.svelte'
   import { controllerOrigin } from '../updates/controller'
   let origin = $state<string | null>(null)

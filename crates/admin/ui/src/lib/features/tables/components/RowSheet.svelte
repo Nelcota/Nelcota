@@ -5,12 +5,12 @@
   import { toast } from 'svelte-sonner'
   import RowField from './RowField.svelte'
   import UnsavedChangesDialog from '$lib/components/shared/UnsavedChangesDialog.svelte'
-  import { CloseGuard } from '$lib/close-guard.svelte'
+  import { CloseGuard } from '$lib/forms/close-guard.svelte'
   import Save from '@lucide/svelte/icons/save'
   import LoaderCircle from '@lucide/svelte/icons/loader-circle'
-  import { api, enc } from '$lib/api'
+  import { api, enc } from '$lib/transport/api'
   import { fieldProblem, initialFields, rowPayload, type FieldState } from '$lib/features/tables/row-form'
-  import type { Column, RowData } from '$lib/types'
+  import type { Column, RowData } from '$lib/contracts/types'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
 
   let {

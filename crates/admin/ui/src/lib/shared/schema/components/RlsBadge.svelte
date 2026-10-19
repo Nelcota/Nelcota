@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Rls } from '$lib/types'
+  import type { Rls } from '$lib/contracts/types'
   import { t } from '$lib/i18n/index.svelte'
   import { Badge } from '$lib/components/ui/badge'
   import { technical } from '$lib/shared/schema/technical.svelte'

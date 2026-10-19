@@ -1,8 +1,8 @@
 import { beforeEach, expect, it, vi } from 'vitest'
-import { api } from '$lib/api'
+import { api } from '$lib/transport/api'
 import { storageBrowserAdapter } from './api'
 
-vi.mock('$lib/api', () => ({ api: { get: vi.fn() }, ApiError: class extends Error {}, enc: encodeURIComponent, uploadFile: vi.fn() }))
+vi.mock('$lib/transport/api', () => ({ api: { get: vi.fn() }, ApiError: class extends Error {}, enc: encodeURIComponent, uploadFile: vi.fn() }))
 beforeEach(() => vi.mocked(api.get).mockReset())
 
 it('opens a bucket without downloading usage for every other bucket', async () => {

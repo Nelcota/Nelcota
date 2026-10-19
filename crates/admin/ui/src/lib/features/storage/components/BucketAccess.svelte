@@ -9,11 +9,11 @@
   import Callout from '$lib/components/shared/Callout.svelte'
   import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
-  import { RemoteResource } from '$lib/remote-resource.svelte'
-  import { api, enc } from '$lib/api'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+  import { api, enc } from '$lib/transport/api'
   import { technical } from '$lib/shared/schema/technical.svelte'
   import { TEMPLATES, describeRule, locked, type TemplateId } from '$lib/features/storage/bucket-access'
-  import type { DdlResult, StorageAccess, StoragePolicy } from '$lib/types'
+  import type { DdlResult, StorageAccess, StoragePolicy } from '$lib/contracts/types'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
 
   let { bucket }: { bucket: string } = $props()

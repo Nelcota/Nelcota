@@ -3,7 +3,7 @@
 // in the server's .env, so the panel explains instead of offering a form that
 // could not save. Ways that need setup only say how to turn them on; open
 // sign-up, on by default, also says how to turn it off.
-import type { SignIn } from '$lib/types'
+import type { SignIn } from '$lib/contracts/types'
 
 export type OptionId = 'password' | 'confirmation' | 'recovery' | 'magicLink' | 'google' | 'github'
 

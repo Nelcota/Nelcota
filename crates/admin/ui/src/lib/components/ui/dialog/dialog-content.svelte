@@ -3,7 +3,7 @@
 	import XIcon from '@lucide/svelte/icons/x';
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { t } from '$lib/i18n/index.svelte';
-	import { cn, type WithoutChildrenOrChild } from "$lib/utils.js";
+	import { cn, type WithoutChildrenOrChild } from "$lib/components/utils.js";
 	import DialogOverlay from "./dialog-overlay.svelte";
 	import DialogPortal from "./dialog-portal.svelte";
 	import type { Snippet } from "svelte";

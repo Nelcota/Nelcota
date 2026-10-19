@@ -2,8 +2,8 @@
   import { Button } from '$lib/components/ui/button'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
   import History from '@lucide/svelte/icons/history'
-  import type { WebhookDeliveries, WebhookEndpoint } from '$lib/types'
-  import { href } from '$lib/router.svelte'
+  import type { WebhookDeliveries, WebhookEndpoint } from '$lib/contracts/types'
+  import { href } from '$lib/navigation/router.svelte'
   import { t } from '$lib/i18n/index.svelte'
   import { dateLabel, eventLabel, statuses, statusLabel, statusClass } from '../format'
   let { data, endpoints, endpoint, status, hasCursor, onfilter, onnext, onfirst }: {

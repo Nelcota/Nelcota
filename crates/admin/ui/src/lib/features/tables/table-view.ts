@@ -1,4 +1,4 @@
-import { parsePage } from '$lib/pagination'
+import { parsePage } from '$lib/navigation/pagination'
 
 export interface TableView {
   page: number

@@ -9,9 +9,9 @@
   import Copy from '@lucide/svelte/icons/copy'
   import EyeOff from '@lucide/svelte/icons/eye-off'
   import X from '@lucide/svelte/icons/x'
-  import { copyText } from '$lib/clipboard'
+  import { copyText } from '$lib/browser/clipboard'
   import { alignRight, type ColumnKind } from '$lib/features/tables/grid'
-  import type { Column } from '$lib/types'
+  import type { Column } from '$lib/contracts/types'
   import { t } from '$lib/i18n/index.svelte'
 
   let {

@@ -10,9 +10,9 @@
   import RlsBadge from '$lib/shared/schema/components/RlsBadge.svelte'
   import RunAsPicker from '$lib/components/shared/RunAsPicker.svelte'
   import type { RunAsLabels, Viewer } from '$lib/shared/run-as'
-  import { enc } from '$lib/api'
-  import { href, route } from '$lib/router.svelte'
-  import type { Rls, TableData } from '$lib/types'
+  import { enc } from '$lib/transport/api'
+  import { href, route } from '$lib/navigation/router.svelte'
+  import type { Rls, TableData } from '$lib/contracts/types'
   import { t } from '$lib/i18n/index.svelte'
 
   let {

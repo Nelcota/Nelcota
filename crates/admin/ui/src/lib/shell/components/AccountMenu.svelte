@@ -7,13 +7,13 @@
   import ChevronDown from '@lucide/svelte/icons/chevron-down'
   import ImageUp from '@lucide/svelte/icons/image-up'
   import History from '@lucide/svelte/icons/history'
-  import { navigate } from '$lib/router.svelte'
+  import { navigate } from '$lib/navigation/router.svelte'
   import Languages from '@lucide/svelte/icons/languages'
   import Avatar from '$lib/features/profile/components/Avatar.svelte'
   import AvatarDialog from '$lib/features/profile/components/AvatarDialog.svelte'
   import { logout } from '$lib/features/auth/auth'
   import { loadProfile, profile } from '$lib/features/profile/profile.svelte'
-  import { session } from '$lib/features/auth/session.svelte'
+  import { session } from '$lib/resources/session.svelte'
   import { LOCALES, i18n, setLocale, t, type Locale } from '$lib/i18n/index.svelte'
 
   let { open = $bindable(false) }: { open?: boolean } = $props()

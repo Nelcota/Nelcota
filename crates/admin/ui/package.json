@@ -10,7 +10,7 @@
     "guides:check": "node scripts/guides-i18n.mjs --check",
     "guides:pending": "node scripts/guides-i18n.mjs --pending",
     "test": "vitest run src",
-    "test:memory": "vitest run src/lib/query-client.test.ts --pool forks --execArgv=--expose-gc",
+    "test:memory": "vitest run src/lib/resources/query-client.test.ts --pool forks --execArgv=--expose-gc",
     "contracts": "cargo run --manifest-path ../../../Cargo.toml -p nelcota-admin --example export_contracts && node scripts/contracts.mjs",
     "test:e2e": "playwright test"
   },

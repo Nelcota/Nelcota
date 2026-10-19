@@ -1,6 +1,6 @@
 // Navigation between the panels of the host's projects.
-import { api } from '$lib/api'
-import type { ProjectLink } from '$lib/types'
+import { api } from '$lib/transport/api'
+import type { ProjectLink } from '$lib/contracts/types'
 
 /**
  * Opens another project's panel. With single sign-on it carries a handoff

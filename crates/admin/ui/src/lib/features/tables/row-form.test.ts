@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { fieldProblem, initialFields, rowPayload } from './row-form'
-import type { Column } from '$lib/types'
+import type { Column } from '$lib/contracts/types'
 
 const col = (name: string, type: string, extra: Partial<Column> = {}): Column => ({
   name,

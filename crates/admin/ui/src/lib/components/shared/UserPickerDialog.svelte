@@ -1,9 +1,9 @@
 <script lang="ts">
   import * as Command from '$lib/components/ui/command'
-  import { RemoteResource } from '$lib/remote-resource.svelte'
-  import { api } from '$lib/api'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+  import { api } from '$lib/transport/api'
   import { errorMessage } from '$lib/i18n/index.svelte'
-  import type { UsersResponse } from '$lib/types'
+  import type { UsersResponse } from '$lib/contracts/types'
   import type { RunAsLabels, RunAsUser } from '$lib/shared/run-as'
 
   let {

@@ -20,8 +20,8 @@ test('a delayed logout cannot remove the next login cookie or profile', async ({
   })
   await expect.poll(() => typeof finish).toBe('function')
   await page.evaluate(async () => {
-    const { api } = await import(new URL('/admin/src/lib/api.ts', location.href).href)
-    const { session } = await import(new URL('/admin/src/lib/features/auth/session.svelte.ts', location.href).href)
+    const { api } = await import(new URL('/admin/src/lib/transport/api.ts', location.href).href)
+    const { session } = await import(new URL('/admin/src/lib/resources/session.svelte.ts', location.href).href)
     const { profile } = await import(new URL('/admin/src/lib/features/profile/profile.svelte.ts', location.href).href)
     Object.assign(window, { newLogin: api.post('/login').then((me: { email: string }) => {
       session.email = me.email
@@ -34,7 +34,7 @@ test('a delayed logout cannot remove the next login cookie or profile', async ({
   } finally { await finish() }
   const result = await page.evaluate(async () => {
     await Promise.all([Reflect.get(window, 'oldLogout'), Reflect.get(window, 'newLogin')])
-    const { session } = await import(new URL('/admin/src/lib/features/auth/session.svelte.ts', location.href).href)
+    const { session } = await import(new URL('/admin/src/lib/resources/session.svelte.ts', location.href).href)
     const { profile } = await import(new URL('/admin/src/lib/features/profile/profile.svelte.ts', location.href).href)
     return { email: session.email, expired: session.expired, avatar: profile.avatar }
   })

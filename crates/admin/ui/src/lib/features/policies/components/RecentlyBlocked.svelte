@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { dateText } from '$lib/date'
+  import { dateText } from '$lib/formatting/date'
   import { onMount } from 'svelte'
   import { Button } from '$lib/components/ui/button'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import RefreshCw from '@lucide/svelte/icons/refresh-cw'
   import LoadError from '$lib/components/shared/LoadError.svelte'
-  import { RemoteResource } from '$lib/remote-resource.svelte'
-  import { api } from '$lib/api'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+  import { api } from '$lib/transport/api'
   import { technical } from '$lib/shared/schema/technical.svelte'
   import { blockReason, blockTarget } from '$lib/features/policies/blocked'
-  import type { DeniedRequest, DeniedRequests } from '$lib/types'
+  import type { DeniedRequest, DeniedRequests } from '$lib/contracts/types'
   import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
 
   const PREVIEW = 5

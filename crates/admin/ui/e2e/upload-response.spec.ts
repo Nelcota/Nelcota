@@ -7,7 +7,7 @@ for (const declared of [true, false]) {
     await page.route('**/admin/api/upload-test', route => route.fulfill({ status: 503, contentType: 'text/plain', body: 'x'.repeat(1024 * 1024) }))
     await page.goto('/admin/storage/documents')
     const result = await page.evaluate(async declared => {
-      const { upload } = await import(new URL('/admin/src/lib/upload.ts', location.href).href)
+      const { upload } = await import(new URL('/admin/src/lib/transport/upload.ts', location.href).href)
       const descriptor = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseText')!
       const getHeader = XMLHttpRequest.prototype.getResponseHeader
       let textReads = 0, parsed = 0
@@ -36,8 +36,8 @@ test('blob reception preserves normal upload responses and conflict errors', asy
     : route.fulfill({ status: 409, json: { code: 'object_exists', error: 'Already exists' } }))
   await page.goto('/admin/storage/documents')
   const result = await page.evaluate(async () => {
-    const { upload } = await import(new URL('/admin/src/lib/upload.ts', location.href).href)
-    const { parseResponse } = await import(new URL('/admin/src/lib/api.ts', location.href).href)
+    const { upload } = await import(new URL('/admin/src/lib/transport/upload.ts', location.href).href)
+    const { parseResponse } = await import(new URL('/admin/src/lib/transport/api.ts', location.href).href)
     const send = () => upload('/upload-test', new File(['test'], 'test.txt'), (response: Response) => parseResponse(response, '/upload-test', 'POST'))
     const saved = await send()
     try { await send(); return { saved, status: 200, code: '' } }
@@ -54,8 +54,8 @@ test('an oversized unauthorized upload expires the panel session', async ({ page
   await page.route('**/admin/api/upload-test', route => route.fulfill({ status: 401, body: 'x'.repeat(1024 * 1024) }))
   await page.goto('/admin/storage/documents')
   const result = await page.evaluate(async () => {
-    const { uploadFile } = await import(new URL('/admin/src/lib/api.ts', location.href).href)
-    const { session } = await import(new URL('/admin/src/lib/features/auth/session.svelte.ts', location.href).href)
+    const { uploadFile } = await import(new URL('/admin/src/lib/transport/api.ts', location.href).href)
+    const { session } = await import(new URL('/admin/src/lib/resources/session.svelte.ts', location.href).href)
     session.email = 'admin@example.test'
     try { await uploadFile('/upload-test', new File(['test'], 'test.txt')) }
     catch (error) { return { status: (error as { status?: number }).status, email: session.email, expired: session.expired } }
@@ -73,13 +73,13 @@ for (const bytes of [32, 1024 * 1024]) {
     }))
     await page.goto('/admin/storage/documents')
     await page.evaluate(async () => {
-      const { uploadFile } = await import(new URL('/admin/src/lib/api.ts', location.href).href)
+      const { uploadFile } = await import(new URL('/admin/src/lib/transport/api.ts', location.href).href)
       Object.assign(window, { oldUpload: uploadFile('/upload-test', new File(['test'], 'test.txt')).catch(() => null) })
     })
     await expect.poll(() => typeof finish).toBe('function')
     await page.evaluate(async () => {
-      const { api } = await import(new URL('/admin/src/lib/api.ts', location.href).href)
-      const { session } = await import(new URL('/admin/src/lib/features/auth/session.svelte.ts', location.href).href)
+      const { api } = await import(new URL('/admin/src/lib/transport/api.ts', location.href).href)
+      const { session } = await import(new URL('/admin/src/lib/resources/session.svelte.ts', location.href).href)
       const me = await api.post('/login')
       session.email = me.email
       session.expired = false
@@ -87,7 +87,7 @@ for (const bytes of [32, 1024 * 1024]) {
     await finish()
     const result = await page.evaluate(async () => {
       await Reflect.get(window, 'oldUpload')
-      const { session } = await import(new URL('/admin/src/lib/features/auth/session.svelte.ts', location.href).href)
+      const { session } = await import(new URL('/admin/src/lib/resources/session.svelte.ts', location.href).href)
       return { email: session.email, expired: session.expired }
     })
     expect(result).toEqual({ email: 'admin@example.test', expired: false })

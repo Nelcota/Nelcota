@@ -3,10 +3,10 @@
   import { Button } from '$lib/components/ui/button'
   import { toast } from 'svelte-sonner'
   import Avatar from './Avatar.svelte'
-  import { api } from '$lib/api'
+  import { api } from '$lib/transport/api'
   import { prepareAvatar } from '$lib/features/profile/avatar'
   import { profile } from '$lib/features/profile/profile.svelte'
-  import { querySession } from '$lib/query-client'
+  import { querySession } from '$lib/resources/query-client'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
 
   let { open = $bindable(false) }: { open?: boolean } = $props()

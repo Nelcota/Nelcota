@@ -81,6 +81,11 @@ Vite serves `/admin/` on port 5173 and proxies to `http://127.0.0.1:8000` by
 default; set `NELCOTA_API_URL` for another backend. Wire contracts come from Rust
 DTOs; regenerate TypeScript/schemas/validators, never hand-edit generated files.
 Use feature-local state/adapters/components and shared transport/contracts.
+Shared modules have explicit owners under `ui/src/lib/`: `transport`, `contracts`,
+`resources`, `navigation`, `browser`, `forms` and `formatting`. Keep tests beside
+their implementation, keep page dependencies out of these modules, and run
+`python3 scripts/check-boundaries.py` after moving sources. See the ownership map
+in [architecture](docs/architecture.md#source-organization).
 
 `dist/` is tracked and embedded. Rebuild it after UI or bundled-guide changes,
 then rebuild the Rust binary to serve the new assets. Commit generated `dist`

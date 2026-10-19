@@ -22,11 +22,11 @@
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte'
   import BucketDialog from '$lib/features/storage/components/BucketDialog.svelte'
-  import { RemoteResource } from '$lib/remote-resource.svelte'
-  import { api, enc } from '$lib/api'
-  import { href } from '$lib/router.svelte'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+  import { api, enc } from '$lib/transport/api'
+  import { href } from '$lib/navigation/router.svelte'
   import { formatBytes } from '$lib/features/storage/files'
-  import type { Bucket, StorageOverview } from '$lib/types'
+  import type { Bucket, StorageOverview } from '$lib/contracts/types'
   import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
 
   const resource = new RemoteResource<StorageOverview>()

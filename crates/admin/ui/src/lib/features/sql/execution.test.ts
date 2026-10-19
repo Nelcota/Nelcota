@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { SqlResponse } from '$lib/types'
+import type { SqlResponse } from '$lib/contracts/types'
 import { changesSchema, SqlExecution, type SqlAdapter } from './execution.svelte'
 
 function deferred<T>() {

@@ -6,7 +6,7 @@
   import ProjectSwitcher from '$lib/features/projects/components/ProjectSwitcher.svelte'
   import AccountMenu from './AccountMenu.svelte'
   import { palette } from '$lib/shell/palette.svelte'
-  import { href } from '$lib/router.svelte'
+  import { href } from '$lib/navigation/router.svelte'
   import { isActive, navPills } from '$lib/shell/nav'
   import { t } from '$lib/i18n/index.svelte'
 

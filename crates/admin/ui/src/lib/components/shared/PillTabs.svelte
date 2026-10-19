@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { href } from '$lib/router.svelte'
+  import { href } from '$lib/navigation/router.svelte'
 
   // Sibling pages as pills (D98), e.g. Users and User sign-in.
   let {

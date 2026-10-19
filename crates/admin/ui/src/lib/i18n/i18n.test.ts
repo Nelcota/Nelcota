@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ApiError } from '../api'
+import { ApiError } from '$lib/transport/api'
 import { detectLocale, errorMessage, i18n, t, translate } from './index.svelte'
 
 describe('detectLocale', () => {

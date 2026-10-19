@@ -1,7 +1,7 @@
 <script lang="ts">
   import Copy from '@lucide/svelte/icons/copy'
   import ChevronRight from '@lucide/svelte/icons/chevron-right'
-  import { copyText } from '$lib/clipboard'
+  import { copyText } from '$lib/browser/clipboard'
   import type { SqlPreview } from '$lib/shared/schema/preview.svelte'
   import { t } from '$lib/i18n/index.svelte'
 

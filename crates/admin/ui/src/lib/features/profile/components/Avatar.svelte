@@ -1,7 +1,7 @@
 <script lang="ts">
   import { avatarUrl, profile } from '$lib/features/profile/profile.svelte'
-  import { session } from '$lib/features/auth/session.svelte'
-  import { cn } from '$lib/utils'
+  import { session } from '$lib/resources/session.svelte'
+  import { cn } from '$lib/components/utils'
 
   // The admin's photo or, without one, two letters of the email on the brand
   // green (D98). `src` forces an image (preview of a photo not saved yet).

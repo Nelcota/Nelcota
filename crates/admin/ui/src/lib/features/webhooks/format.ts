@@ -1,6 +1,6 @@
-import { dateText } from '$lib/date'
+import { dateText } from '$lib/formatting/date'
 import { hasMessage, intlLocale, translate, i18n, t } from '$lib/i18n/index.svelte'
-import type { WebhookDelivery } from '$lib/types'
+import type { WebhookDelivery } from '$lib/contracts/types'
 
 export const statuses = ['pending', 'processing', 'succeeded', 'failed', 'cancelled'] as const
 export const statusLabel = (value: string) => statuses.includes(value as typeof statuses[number]) ? translate(i18n.locale, `webhooks.status.${value}`) : value

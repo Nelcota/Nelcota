@@ -6,14 +6,14 @@
   import Check from '@lucide/svelte/icons/check'
   import Boxes from '@lucide/svelte/icons/boxes'
   import { toast } from 'svelte-sonner'
-  import { api } from '$lib/api'
+  import { api } from '$lib/transport/api'
   import { openProject } from '$lib/features/projects/projects'
-  import { navigate } from '$lib/router.svelte'
+  import { navigate } from '$lib/navigation/router.svelte'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
-  import type { ProjectsData } from '$lib/types'
+  import type { ProjectsData } from '$lib/contracts/types'
   import mascot from '../../../../assets/mascot.png'
   import { environment, health, watchHealth } from '$lib/shell/health.svelte'
-  import { cn } from '$lib/utils'
+  import { cn } from '$lib/components/utils'
 
   let {
     menuOpen = $bindable(false),

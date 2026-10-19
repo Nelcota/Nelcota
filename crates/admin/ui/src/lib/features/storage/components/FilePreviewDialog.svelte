@@ -8,10 +8,10 @@
   import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import CodeBlock from '$lib/components/shared/CodeBlock.svelte'
-  import { ApiError, isAbort } from '$lib/api'
+  import { ApiError, isAbort } from '$lib/transport/api'
   import { baseName, formatBytes, previewKind } from '$lib/features/storage/files'
   import { readPreview } from '$lib/features/storage/preview'
-  import type { StoredFile } from '$lib/types'
+  import type { StoredFile } from '$lib/contracts/types'
   import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
 
   let { open = $bindable(false), file, url }: { open?: boolean; file: StoredFile; url: string } = $props()

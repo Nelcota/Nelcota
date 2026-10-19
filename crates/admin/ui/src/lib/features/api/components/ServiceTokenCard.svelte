@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dateText } from '$lib/date'
+  import { dateText } from '$lib/formatting/date'
   import * as Select from '$lib/components/ui/select'
   import { Button } from '$lib/components/ui/button'
   import KeyRound from '@lucide/svelte/icons/key-round'
@@ -7,7 +7,7 @@
   import LoaderCircle from '@lucide/svelte/icons/loader-circle'
   import { toast } from 'svelte-sonner'
   import CodeBlock from '$lib/components/shared/CodeBlock.svelte'
-  import { api } from '$lib/api'
+  import { api } from '$lib/transport/api'
   import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
 
   const DURATIONS = ['30', '90', '365']

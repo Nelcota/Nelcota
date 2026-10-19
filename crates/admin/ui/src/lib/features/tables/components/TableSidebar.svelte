@@ -9,9 +9,9 @@
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
   import { Skeleton } from '$lib/components/ui/skeleton'
-  import { href } from '$lib/router.svelte'
-  import { cn } from '$lib/utils'
-  import type { TableSummary } from '$lib/types'
+  import { href } from '$lib/navigation/router.svelte'
+  import { cn } from '$lib/components/utils'
+  import type { TableSummary } from '$lib/contracts/types'
   import { t } from '$lib/i18n/index.svelte'
 
   let {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { canonical, describeRule, locked } from './bucket-access'
-import type { StoragePolicy } from '$lib/types'
+import type { StoragePolicy } from '$lib/contracts/types'
 
 // Exactly as Postgres 17 prints the template policies back (pg_policies).
 const policy = (patch: Partial<StoragePolicy>): StoragePolicy => ({

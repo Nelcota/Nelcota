@@ -7,16 +7,16 @@
   import SunMoon from '@lucide/svelte/icons/sun-moon'
   import LogOut from '@lucide/svelte/icons/log-out'
   import BookOpen from '@lucide/svelte/icons/book-open'
-  import { api } from '$lib/api'
+  import { api } from '$lib/transport/api'
   import { logout } from '$lib/features/auth/auth'
   import { navItems } from '$lib/shell/nav'
   import { t } from '$lib/i18n/index.svelte'
   import { palette } from '$lib/shell/palette.svelte'
-  import { navigate } from '$lib/router.svelte'
+  import { navigate } from '$lib/navigation/router.svelte'
   import { commandScore } from '$lib/shell/search'
   import { SQL_SNIPPETS } from '$lib/features/sql/sql-snippets'
   import { sqlStore } from '$lib/features/sql/sql-store.svelte'
-  import type { TableSummary } from '$lib/types'
+  import type { TableSummary } from '$lib/contracts/types'
 
   let tables = $state<TableSummary[]>([])
 

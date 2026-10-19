@@ -1,5 +1,5 @@
-import { RemoteResource } from '$lib/remote-resource.svelte'
-import type { Bucket, StorageListing } from '$lib/types'
+import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+import type { Bucket, StorageListing } from '$lib/contracts/types'
 import { UploadQueue, type UploadTarget } from './upload-queue.svelte'
 
 /** Files per bulk deletion request (the server's limit, MAX_BULK_DELETE). */

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte'
-  import { CloseGuard } from '$lib/close-guard.svelte'
+  import { CloseGuard } from '$lib/forms/close-guard.svelte'
   import UnsavedChangesDialog from '$lib/components/shared/UnsavedChangesDialog.svelte'
   import Save from '@lucide/svelte/icons/save'
   import * as Dialog from '$lib/components/ui/dialog'

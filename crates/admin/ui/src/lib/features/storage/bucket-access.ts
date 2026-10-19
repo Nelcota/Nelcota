@@ -2,7 +2,7 @@
 // on storage.objects that the panel's templates create, recognized back from
 // the way Postgres prints them. Anything else is a custom rule, with its SQL
 // one click away.
-import type { StoragePolicy } from '$lib/types'
+import type { StoragePolicy } from '$lib/contracts/types'
 
 /** The templates the server builds (`storage_access::Template`). */
 export const TEMPLATES = ['public_read', 'signed_in_read', 'signed_in_upload', 'own_folder', 'own_files'] as const

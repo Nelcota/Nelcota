@@ -6,7 +6,7 @@
   import Plus from '@lucide/svelte/icons/plus'
   import X from '@lucide/svelte/icons/x'
   import { UI_OPERATORS, fromUi, needsValue, toUi, type TableFilter, type UiOp } from '$lib/features/tables/filters'
-  import type { Column } from '$lib/types'
+  import type { Column } from '$lib/contracts/types'
   import { t } from '$lib/i18n/index.svelte'
 
   let {

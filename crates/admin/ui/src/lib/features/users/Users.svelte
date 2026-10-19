@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dateText } from '$lib/date'
+  import { dateText } from '$lib/formatting/date'
   import { untrack } from 'svelte'
   import * as Table from '$lib/components/ui/table'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
@@ -24,14 +24,14 @@
   import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte'
   import CreateUserDialog from '$lib/features/users/components/CreateUserDialog.svelte'
   import SetPasswordDialog from '$lib/features/users/components/SetPasswordDialog.svelte'
-  import { api, enc } from '$lib/api'
-  import { navigate, route } from '$lib/router.svelte'
-  import { copyText } from '$lib/clipboard'
-  import { RemoteResource } from '$lib/remote-resource.svelte'
-  import type { UsersResponse, User } from '$lib/types'
+  import { api, enc } from '$lib/transport/api'
+  import { navigate, route } from '$lib/navigation/router.svelte'
+  import { copyText } from '$lib/browser/clipboard'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+  import type { UsersResponse, User } from '$lib/contracts/types'
   import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
   import { signInMethods } from '$lib/features/users/sign-in-methods'
-  import { parsePage } from '$lib/pagination'
+  import { parsePage } from '$lib/navigation/pagination'
 
   const resource = new RemoteResource<UsersResponse>()
   const users = $derived(resource.data?.users ?? null)

@@ -1,6 +1,6 @@
-import { RemoteResource } from '$lib/remote-resource.svelte'
+import { RemoteResource } from '$lib/resources/remote-resource.svelte'
 import { rowKey, rowPk } from '$lib/features/tables/grid'
-import type { RowData, TableData } from '$lib/types'
+import type { RowData, TableData } from '$lib/contracts/types'
 
 export interface TableRowsAdapter {
   read(table: string, params: URLSearchParams, signal: AbortSignal): Promise<TableData>

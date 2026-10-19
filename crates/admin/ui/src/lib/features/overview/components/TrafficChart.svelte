@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { dateText } from '$lib/date'
+  import { dateText } from '$lib/formatting/date'
   import { areaPath, monotonePath, nearestIndex, niceTicks, type Point } from '$lib/features/overview/chart'
-  import type { MetricsPoint } from '$lib/types'
+  import type { MetricsPoint } from '$lib/contracts/types'
   import { intlLocale, t } from '$lib/i18n/index.svelte'
 
   // API traffic over time (D98): requests as a green area, refused calls as a

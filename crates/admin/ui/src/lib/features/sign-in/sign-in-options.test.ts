@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { minutes, signInOptions } from './sign-in-options'
-import type { SignIn } from '$lib/types'
+import type { SignIn } from '$lib/contracts/types'
 
 const settings = (patch: Partial<SignIn> = {}): SignIn => ({
   signup_enabled: true,

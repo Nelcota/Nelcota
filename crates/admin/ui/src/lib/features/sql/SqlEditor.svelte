@@ -31,7 +31,8 @@
   import CellDetailDialog from '$lib/components/shared/CellDetailDialog.svelte'
   import { changesSchema, SqlExecution } from '$lib/features/sql/execution.svelte'
   import { sqlAdapter } from '$lib/features/sql/api'
-  import { downloadText, toCsv, toJson } from '$lib/download'
+  import { downloadText } from '$lib/browser/download'
+  import { toCsv, toJson } from '$lib/formatting/tabular'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
 
   // The SQL editor's words for who a run acts as (D94).
@@ -61,7 +62,7 @@
   }
   import { SQL_SNIPPETS } from '$lib/features/sql/sql-snippets'
   import { sqlStore, type SavedQuery, type SqlDraft } from '$lib/features/sql/sql-store.svelte'
-  import type { SqlResult } from '$lib/types'
+  import type { SqlResult } from '$lib/contracts/types'
 
   const execution = new SqlExecution(sqlAdapter)
   const schema = $derived(execution.schema.data?.tables ?? {})

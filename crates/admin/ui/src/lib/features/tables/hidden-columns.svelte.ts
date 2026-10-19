@@ -1,6 +1,6 @@
 // Hidden grid columns, remembered per table in this browser.
 
-import { readJson, write } from '$lib/local-storage'
+import { readJson, write } from '$lib/browser/local-storage'
 
 const key = (table: string) => `nelcota:hidden-columns:${table}`
 const parse = (data: unknown): string[] | null =>

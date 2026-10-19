@@ -1,5 +1,5 @@
-import { api, ApiError, enc, uploadFile } from '$lib/api'
-import type { StorageListing, StorageOverview } from '$lib/types'
+import { api, ApiError, enc, uploadFile } from '$lib/transport/api'
+import type { StorageListing, StorageOverview } from '$lib/contracts/types'
 import type { StorageBrowserAdapter } from './browser.svelte'
 
 export const storageBrowserAdapter: StorageBrowserAdapter = {

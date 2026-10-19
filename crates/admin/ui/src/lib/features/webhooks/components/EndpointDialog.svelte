@@ -5,10 +5,10 @@
   import { Input } from '$lib/components/ui/input'
   import { Button } from '$lib/components/ui/button'
   import { Checkbox } from '$lib/components/ui/checkbox'
-  import { CloseGuard } from '$lib/close-guard.svelte'
+  import { CloseGuard } from '$lib/forms/close-guard.svelte'
   import UnsavedChangesDialog from '$lib/components/shared/UnsavedChangesDialog.svelte'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
-  import type { WebhookEndpoint, WebhookSecret } from '$lib/types'
+  import type { WebhookEndpoint, WebhookSecret } from '$lib/contracts/types'
   import { webhooks } from '../api'
 
   let { open = $bindable(false), endpoint = null, tables, allowLoopback, onsaved }: {

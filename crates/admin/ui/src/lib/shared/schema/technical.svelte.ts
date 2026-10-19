@@ -1,4 +1,4 @@
-import { readText, write } from '$lib/local-storage'
+import { readText, write } from '$lib/browser/local-storage'
 
 const KEY = 'nelcota.technical'
 

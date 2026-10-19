@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { clearQuerySession } from '$lib/query-client'
+import { clearQuerySession } from '$lib/resources/query-client'
 import { ddl } from './ddl'
 import { loadTypes, pgTypes } from './pg-types.svelte'
 

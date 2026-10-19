@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dateText } from '$lib/date'
+  import { dateText } from '$lib/formatting/date'
   import { untrack, onDestroy } from 'svelte'
   import * as Table from '$lib/components/ui/table'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
@@ -35,11 +35,11 @@
   import { StorageBrowser } from '$lib/features/storage/browser.svelte'
   import { storageBrowserAdapter } from '$lib/features/storage/api'
   import { type UploadTarget } from '$lib/features/storage/upload-queue.svelte'
-  import { copyText } from '$lib/clipboard'
-  import { enc } from '$lib/api'
-  import { href, route } from '$lib/router.svelte'
+  import { copyText } from '$lib/browser/clipboard'
+  import { enc } from '$lib/transport/api'
+  import { href, route } from '$lib/navigation/router.svelte'
   import { baseName, folderTrail, formatBytes, publicUrl } from '$lib/features/storage/files'
-  import type { StoredFile } from '$lib/types'
+  import type { StoredFile } from '$lib/contracts/types'
   import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
 
   let { bucket }: { bucket: string } = $props()

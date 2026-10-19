@@ -1,8 +1,8 @@
 // Session actions used in more than one place (sidebar, command palette).
-import { api } from '$lib/api'
+import { api } from '$lib/transport/api'
 import { profile } from '$lib/features/profile/profile.svelte'
-import { querySession } from '$lib/query-client'
-import { session } from './session.svelte'
+import { querySession } from '$lib/resources/query-client'
+import { session } from '$lib/resources/session.svelte'
 
 export async function logout() {
   // Even if the request fails, the panel returns to the login screen.

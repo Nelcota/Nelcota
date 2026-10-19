@@ -1,6 +1,6 @@
 // Page names: the topbar breadcrumb and the browser tab title.
 import { hasMessage, t, type MessageKey } from '$lib/i18n/index.svelte'
-import { match } from '$lib/route-match'
+import { match } from '$lib/navigation/route-match'
 
 const titles: Record<string, MessageKey> = {
   '/': 'shell.pages.overview',

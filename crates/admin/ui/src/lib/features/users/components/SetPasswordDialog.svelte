@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CloseGuard } from '$lib/close-guard.svelte'
+  import { CloseGuard } from '$lib/forms/close-guard.svelte'
   import UnsavedChangesDialog from '$lib/components/shared/UnsavedChangesDialog.svelte'
   import KeyRound from '@lucide/svelte/icons/key-round'
   import LoaderCircle from '@lucide/svelte/icons/loader-circle'
@@ -8,9 +8,9 @@
   import { Label } from '$lib/components/ui/label'
   import { toast } from 'svelte-sonner'
   import PasswordField from '$lib/components/shared/PasswordField.svelte'
-  import { api, enc } from '$lib/api'
-  import { passwordProblem } from '$lib/password'
-  import type { User } from '$lib/types'
+  import { api, enc } from '$lib/transport/api'
+  import { passwordProblem } from '$lib/forms/password'
+  import type { User } from '$lib/contracts/types'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
 
   let { open = $bindable(false), user, onsaved }: { open?: boolean; user: User; onsaved: () => void } = $props()

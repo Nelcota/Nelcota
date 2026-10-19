@@ -9,7 +9,7 @@
   import SearchField from '$lib/components/shared/SearchField.svelte'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
   import CodeBlock from '$lib/components/shared/CodeBlock.svelte'
-  import { href, navigate, route } from '$lib/router.svelte'
+  import { href, navigate, route } from '$lib/navigation/router.svelte'
   import { i18n, t } from '$lib/i18n/index.svelte'
   import { commandScore } from '$lib/shell/search'
   import { guides, guideGroups, guidePath, guideSource, guideTranslation, guideSearchText } from './content'

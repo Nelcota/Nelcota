@@ -2,9 +2,9 @@
   import * as Dialog from '$lib/components/ui/dialog'
   import { Button } from '$lib/components/ui/button'
   import CodeBlock from '$lib/components/shared/CodeBlock.svelte'
-  import { href } from '$lib/router.svelte'
+  import { href } from '$lib/navigation/router.svelte'
   import { t } from '$lib/i18n/index.svelte'
-  import type { WebhookSecret } from '$lib/types'
+  import type { WebhookSecret } from '$lib/contracts/types'
   let { value = $bindable(null) }: { value?: WebhookSecret | null } = $props()
 </script>
 <Dialog.Root bind:open={() => value !== null, open => { if (!open) value = null }}>

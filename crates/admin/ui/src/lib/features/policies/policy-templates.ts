@@ -5,6 +5,8 @@
 
 import type { ColumnInfo, PolicyDef } from '$lib/shared/schema/ddl'
 import { t } from '$lib/i18n/index.svelte'
+import { quoteIfNeeded } from '$lib/shared/schema/ident'
+export { quoteIfNeeded } from '$lib/shared/schema/ident'
 
 export type PolicyTemplateId =
   | 'publicRead'
@@ -21,11 +23,6 @@ export interface PolicyTemplate {
 }
 
 const owner = (column: string) => `${quoteIfNeeded(column)} = auth.uid()`
-
-/** Quotes only when the name is not a plain lowercase identifier. */
-export function quoteIfNeeded(name: string): string {
-  return /^[a-z_][a-z0-9_]*$/.test(name) ? name : `"${name.replaceAll('"', '""')}"`
-}
 
 export const POLICY_TEMPLATES: readonly PolicyTemplate[] = [
   {
