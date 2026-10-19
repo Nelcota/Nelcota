@@ -1,8 +1,9 @@
 # G07 — Targeted maintainability refactoring: execution record
 
-Status: complete: two independent implementation PRs are ready for review. This document stays in a
-draft PR. Each implementation target gets an independent PR for human review;
-none may be merged by this run.
+Status: implementation PRs #107 and #108 merged after authorized follow-up
+review. Unless explicitly identified as follow-up evidence below, measurements,
+SHAs and dispositions describe the original refactoring run. Its historical
+results are preserved; integration is recorded separately at the end.
 
 ## Baseline and boundaries
 
@@ -355,3 +356,35 @@ The final documentation-only CI is not awaited beyond the expired budget.
 13. Close the run after publishing the existing evidence, because the original
     wall-clock deadline had passed at resumption. Do not use the continuation
     message as implicit permission to expand the scope or restart the budget.
+
+## Follow-up review and integration — 2026-10-19
+
+A separate maintainer instruction authorized normal squash merges of #107,
+#108 and this documentation PR #106, after full-diff review, updating with main
+where needed, and passing all applicable checks on each exact head.
+
+| PR | Reviewed head | Main base at merge | Applicable checks | Squash merge SHA | Merged at (UTC) |
+| --- | --- | --- | --- | --- | --- |
+| [#107](https://github.com/Nelcota/Nelcota/pull/107) | `f33b33aeeafb3981ef67fa445316178d91d77eb5` | `b18412a65f4accc4d759d7f840e50420d32d7579` | **17/17 success** | `a7ae9c27895a6d43492eeba580bebcaa28859d84` | 2026-10-19T11:00:47Z |
+| [#108](https://github.com/Nelcota/Nelcota/pull/108) | `80d97798e67edf82adbd3d3adff87be8fadd6395` | `a7ae9c27895a6d43492eeba580bebcaa28859d84` | **17/17 success** | `78d4516a926dd14bfc2d60473e4137fd47a388ad` | 2026-10-19T11:20:00Z |
+
+Full-diff review found no blocking or non-blocking issue in either extraction.
+The complete test modules match their characterization commits byte for byte;
+the logs confirm the original implementation passed before extraction. No
+public API, generated output, dependency, contract or configuration changed.
+
+#107 already contained current main. A fresh build of its identical SDK tree
+confirmed auth at **11,246/11,250 bytes gzip**. #108 was updated by a normal
+merge of main, producing `80d97798e67edf82adbd3d3adff87be8fadd6395`; its Rust
+source and characterization tests remained identical to the original reviewed
+head. New ordinary CI passed before squash merge. Both implementation branches
+were deleted after merge. No force-push or protection override was used.
+
+The formerly pending documentation head
+`1f991b88ac1467f57e43273cedfeb276af1c6c55` passed all 17 checks before this
+follow-up. The branch was then updated with main containing both squash merges;
+this single documentation commit records their SHAs and clarifies historical
+status. Its complete diff against main remains this execution record only.
+#106 must pass ordinary CI on that updated exact head before it leaves draft
+and receives its separate authorized squash merge. No original measurement or
+threshold is changed, and this unbundled goal record needs no panel asset rebuild.
