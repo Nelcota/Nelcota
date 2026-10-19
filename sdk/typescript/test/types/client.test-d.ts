@@ -1,8 +1,13 @@
 import { describe, expectTypeOf, it } from 'vitest';
-import { createClient, unwrap, type SelectError, type SelectOptions } from '../../src/index.js';
+import { createClient, unwrap, type Bucket, type BucketSettings, type SelectError, type SelectOptions } from '../../src/index.js';
 import type { Database, Json } from './database.js';
 
 const nelcota = createClient<Database>('https://api.example.com');
+
+it('exposes exact bucket limits in read and write types', () => {
+  expectTypeOf<Bucket['file_size_limit']>().toEqualTypeOf<number | string | null>();
+  expectTypeOf<BucketSettings['file_size_limit']>().toEqualTypeOf<number | string | null | undefined>();
+});
 
 type Result<Q> = Q extends PromiseLike<infer R> ? (R extends { data: infer D; error: null } ? D : never) : never;
 
