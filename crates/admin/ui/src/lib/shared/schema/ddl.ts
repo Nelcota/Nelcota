@@ -1,11 +1,11 @@
 // Table and policy structure: types mirroring the panel API, the client and
 // the pure rules (difference between columns, fields of each policy).
 
-import { api, enc } from '$lib/api'
+import { api, enc } from '$lib/transport/api'
 import type { MessageKey } from '$lib/i18n/index.svelte'
 
-import type { ApiRole, Privilege, OnDelete, ReferenceDef, ColumnDef, GrantDef, CreateTable, AlterAction, ColumnInfo, Structure, PolicyRole, PolicyDef, DdlResult } from '$lib/types'
-import type { Command as PolicyCommand } from '$lib/types'
+import type { ApiRole, Privilege, OnDelete, ReferenceDef, ColumnDef, GrantDef, CreateTable, AlterAction, ColumnInfo, Structure, PolicyRole, PolicyDef, DdlResult } from '$lib/contracts/types'
+import type { Command as PolicyCommand } from '$lib/contracts/types'
 export type { ApiRole, Privilege, OnDelete, ReferenceDef, ColumnDef, GrantDef, CreateTable, AlterAction, ColumnInfo, Structure, PolicyRole, PolicyDef, DdlResult, PolicyCommand }
 import { t } from '$lib/i18n/index.svelte'
 import { toast } from 'svelte-sonner'

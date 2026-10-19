@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { api } from '$lib/api'
-import { clearQuerySession } from '$lib/query-client'
+import { api } from '$lib/transport/api'
+import { clearQuerySession } from '$lib/resources/query-client'
 import { loadProfile, profile } from './profile.svelte'
 
 function deferred() {

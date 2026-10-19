@@ -1,5 +1,5 @@
-import { api, enc } from '$lib/api'
-import type { WebhookEndpoint, WebhookSecret, WebhookEndpoints, WebhookDeliveries, WebhookDetail, WebhookReplay } from '$lib/types'
+import { api, enc } from '$lib/transport/api'
+import type { WebhookEndpoint, WebhookSecret, WebhookEndpoints, WebhookDeliveries, WebhookDetail, WebhookReplay } from '$lib/contracts/types'
 
 export type EndpointInput = Pick<WebhookEndpoint, 'name' | 'table' | 'url' | 'events' | 'enabled' | 'max_attempts'>
 export const webhooks = {

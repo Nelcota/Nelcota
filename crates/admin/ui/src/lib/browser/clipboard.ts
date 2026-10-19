@@ -1,5 +1,5 @@
 import { toast } from 'svelte-sonner'
-import { t } from './i18n/index.svelte'
+import { t } from '$lib/i18n/index.svelte'
 
 /** Report success only after the browser has accepted the copy. */
 export async function copyText(value: string, message = t('common.copied')): Promise<boolean> {

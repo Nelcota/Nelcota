@@ -9,10 +9,10 @@
   import TableProperties from '@lucide/svelte/icons/table-properties'
   import RlsBadge from '$lib/shared/schema/components/RlsBadge.svelte'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
-  import { RemoteResource } from '$lib/remote-resource.svelte'
-  import { api, enc } from '$lib/api'
-  import { href } from '$lib/router.svelte'
-  import type { Overview, TableSummary } from '$lib/types'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+  import { api, enc } from '$lib/transport/api'
+  import { href } from '$lib/navigation/router.svelte'
+  import type { Overview, TableSummary } from '$lib/contracts/types'
   import { intlLocale, t } from '$lib/i18n/index.svelte'
 
   // What the editor shows with no table open (wide screens; phones show the

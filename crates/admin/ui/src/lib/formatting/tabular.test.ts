@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { toCsv, toJson } from './download'
+import { toCsv, toJson } from './tabular'
 
 describe('CSV', () => {
   it('has a BOM, CRLF and quotes only when needed', () => {

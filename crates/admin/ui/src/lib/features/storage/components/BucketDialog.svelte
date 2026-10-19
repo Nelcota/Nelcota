@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte'
-  import { CloseGuard } from '$lib/close-guard.svelte'
+  import { CloseGuard } from '$lib/forms/close-guard.svelte'
   import UnsavedChangesDialog from '$lib/components/shared/UnsavedChangesDialog.svelte'
   import Save from '@lucide/svelte/icons/save'
   import HardDrive from '@lucide/svelte/icons/hard-drive'
@@ -11,9 +11,9 @@
   import * as Field from '$lib/components/ui/field'
   import { Checkbox } from '$lib/components/ui/checkbox'
   import { toast } from 'svelte-sonner'
-  import { api, enc } from '$lib/api'
+  import { api, enc } from '$lib/transport/api'
   import { formatBytes, parseTypes, validBucketName } from '$lib/features/storage/files'
-  import type { Bucket } from '$lib/types'
+  import type { Bucket } from '$lib/contracts/types'
   import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
 
   // Creates a bucket, or edits one when `bucket` is given.

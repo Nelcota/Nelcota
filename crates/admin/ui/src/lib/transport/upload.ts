@@ -1,5 +1,5 @@
 import type { Body, Meta } from '@uppy/core'
-import { httpError } from './api'
+import { httpError } from './api-error'
 import { guardUploadResponse } from './upload-response'
 
 const RESPONSE_BYTES = 64 * 1024

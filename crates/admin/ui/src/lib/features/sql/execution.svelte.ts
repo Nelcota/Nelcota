@@ -1,5 +1,5 @@
-import { RemoteResource } from '$lib/remote-resource.svelte'
-import type { SchemaResponse, SqlResponse } from '$lib/types'
+import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+import type { SchemaResponse, SqlResponse } from '$lib/contracts/types'
 import type { RunAsRequest } from './run-as.svelte'
 
 export interface SqlAdapter {

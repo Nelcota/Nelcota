@@ -1,9 +1,9 @@
 // Column types the server accepts (base list + the schema's enums). Loaded
 // once per session (new enums show up after reloading the page).
 
-import { api } from '$lib/api'
+import { api } from '$lib/transport/api'
 import { ddl } from './ddl'
-import { querySession } from '$lib/query-client'
+import { querySession } from '$lib/resources/query-client'
 
 const catalog = $state({ base: [] as string[], enums: [] as string[], loaded: false, epoch: -1 })
 export const pgTypes = {

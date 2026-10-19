@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Overview, OverviewTable } from '$lib/types'
+import type { Overview, OverviewTable } from '$lib/contracts/types'
 import { attention, nextSteps } from './next-steps'
 
 const table = (name: string, state: OverviewTable['rls']['state'], kind = 'table'): OverviewTable => ({

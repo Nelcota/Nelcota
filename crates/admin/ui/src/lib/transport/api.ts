@@ -1,11 +1,11 @@
 // Panel API client (/admin/api). The session lives in an HttpOnly cookie.
-import { session } from './features/auth/session.svelte'
-import { responseContract } from './contracts'
-import { t } from './i18n/index.svelte'
-import { clearQuerySession, invalidateReads, queryRead, querySession } from './query-client'
+import { session } from '$lib/resources/session.svelte'
+import { responseContract } from '$lib/contracts/responses'
+import { t } from '$lib/i18n/index.svelte'
+import { clearQuerySession, invalidateReads, queryRead, querySession } from '$lib/resources/query-client'
 import { readBody } from './read-body'
-import { ApiError } from './api-error'
-export { ApiError } from './api-error'
+import { ApiError, httpError } from './api-error'
+export { ApiError, httpError } from './api-error'
 
 let authentication = Promise.resolve()
 
@@ -95,15 +95,6 @@ export async function parseResponse<T>(res: Response, path: string, method: stri
   const validate = responseContract(method, path)
   if (validate && !validate(data)) throw new ApiError(t('common.invalidResponse'), 502, 'invalid_response')
   return data as T
-}
-
-/**
- * Failure without a panel error body. Gateway statuses mean the server
- * behind a proxy is down or restarting; anything else is unexpected.
- */
-export function httpError(status: number): ApiError {
-  const code = [502, 503, 504].includes(status) ? 'server_unreachable' : 'unexpected_response'
-  return new ApiError(`HTTP ${status}`, status, code, { status })
 }
 
 export const api = {

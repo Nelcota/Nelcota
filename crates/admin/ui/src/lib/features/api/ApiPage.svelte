@@ -18,11 +18,11 @@
   import ServiceTokenCard from '$lib/features/api/components/ServiceTokenCard.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
-  import { href, navigate, route } from '$lib/router.svelte'
-  import { RemoteResource } from '$lib/remote-resource.svelte'
-  import { api, enc } from '$lib/api'
+  import { href, navigate, route } from '$lib/navigation/router.svelte'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+  import { api, enc } from '$lib/transport/api'
   import { authSnippets, sdkSetup, tableSnippets, type Lang, type Snippet } from '$lib/features/api/api-examples'
-  import type { TableData, TablesResponse } from '$lib/types'
+  import type { TableData, TablesResponse } from '$lib/contracts/types'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
 
   // The panel is served from the same host as the API.

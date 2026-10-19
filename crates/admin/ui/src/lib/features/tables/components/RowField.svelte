@@ -9,7 +9,7 @@
   import { formatJson as prettyJson } from '$lib/features/tables/json-format'
   import { canonicalType, columnKind } from '$lib/features/tables/grid'
   import type { FieldState } from '$lib/features/tables/row-form'
-  import type { Column } from '$lib/types'
+  import type { Column } from '$lib/contracts/types'
   import { t } from '$lib/i18n/index.svelte'
   import type { FieldProblem } from '$lib/features/tables/row-form'
 

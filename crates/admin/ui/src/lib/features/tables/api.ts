@@ -1,5 +1,5 @@
-import { api, enc } from '$lib/api'
-import type { TableData } from '$lib/types'
+import { api, enc } from '$lib/transport/api'
+import type { TableData } from '$lib/contracts/types'
 import type { TableRowsAdapter } from './table-rows.svelte'
 
 /** The panel HTTP adapter for row operations. */

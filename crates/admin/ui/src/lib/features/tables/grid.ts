@@ -1,7 +1,7 @@
 // How grid columns are presented by Postgres type: category, width and
 // alignment. Pure, so it can be tested without mounting a component.
 
-import type { Column, RowData } from '$lib/types'
+import type { Column, RowData } from '$lib/contracts/types'
 
 /** Stable identity, including composite keys; never use a row's position for writes. */
 export function rowKey(row: RowData, primaryKey: readonly string[], fallback = 0): string {

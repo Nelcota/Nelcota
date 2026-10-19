@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { cn } from '$lib/utils'
+  import { cn } from '$lib/components/utils'
   import { t } from '$lib/i18n/index.svelte'
   let { step, steps }: { step: number; steps: string[] } = $props()
 </script>

@@ -3,7 +3,7 @@
   import Search from '@lucide/svelte/icons/search'
   import Mascot from '$lib/shell/components/Mascot.svelte'
   import { palette } from '$lib/shell/palette.svelte'
-  import { href, route } from '$lib/router.svelte'
+  import { href, route } from '$lib/navigation/router.svelte'
   import { t } from '$lib/i18n/index.svelte'
 </script>
 

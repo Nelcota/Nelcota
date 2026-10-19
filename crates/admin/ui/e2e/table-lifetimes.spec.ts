@@ -7,7 +7,7 @@ async function prepareRename(page: Page, pauseReload = false) {
   await page.locator('#settings-name').waitFor()
   await page.evaluate(async (paused) => {
     const { ddl } = await import(new URL('/admin/src/lib/shared/schema/ddl.ts', location.href).href)
-    const { api } = await import(new URL('/admin/src/lib/api.ts', location.href).href)
+    const { api } = await import(new URL('/admin/src/lib/transport/api.ts', location.href).href)
     const original = api.get
     const tables = await original('/tables')
     const state = { saving: false, reloading: false, finish: () => {}, finishReload: () => {} }
@@ -34,7 +34,7 @@ async function prepareRename(page: Page, pauseReload = false) {
 
 async function navigate(page: Page, path: string) {
   await page.evaluate(async (target) => {
-    const { navigate } = await import(new URL('/admin/src/lib/router.svelte.ts', location.href).href)
+    const { navigate } = await import(new URL('/admin/src/lib/navigation/router.svelte.ts', location.href).href)
     navigate(target)
   }, path)
   await expect(page).toHaveURL(new RegExp(`/admin${path}$`))
@@ -73,7 +73,7 @@ test('returning to the original view does not revive its old rename callback', a
   await expect.poll(() => page.evaluate(() => Reflect.get(window, 'pendingRename').reloading)).toBe(true)
   await navigate(page, '/tables/notes')
   await page.evaluate(async () => {
-    const { navigate } = await import(new URL('/admin/src/lib/router.svelte.ts', location.href).href)
+    const { navigate } = await import(new URL('/admin/src/lib/navigation/router.svelte.ts', location.href).href)
     navigate('/tables/notes/structure')
   })
   await expect(page.locator('#settings-name')).toHaveValue('notes')
@@ -84,7 +84,7 @@ test('returning to the original view does not revive its old rename callback', a
 test('navigation queued after a rename response still retires the original operation', async ({ page }) => {
   await prepareRename(page)
   await page.evaluate(async () => {
-    const { navigate } = await import(new URL('/admin/src/lib/router.svelte.ts', location.href).href)
+    const { navigate } = await import(new URL('/admin/src/lib/navigation/router.svelte.ts', location.href).href)
     // Resolve the write before navigation, but run its continuation afterwards.
     Reflect.get(window, 'pendingRename').finish()
     navigate('/tables/notes')

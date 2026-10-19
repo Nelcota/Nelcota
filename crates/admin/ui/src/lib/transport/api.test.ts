@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api, ApiError, parseResponse } from './api'
-import { errorMessage, i18n } from './i18n/index.svelte'
-import { session } from './features/auth/session.svelte'
-import { clearQuerySession, queryRead } from './query-client'
+import { errorMessage, i18n } from '$lib/i18n/index.svelte'
+import { session } from '$lib/resources/session.svelte'
+import { clearQuerySession, queryRead } from '$lib/resources/query-client'
 
 function respond(body: string, status: number) {
   vi.stubGlobal('fetch', vi.fn(async () => new Response(body, { status })))

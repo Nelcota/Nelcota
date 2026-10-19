@@ -2,7 +2,7 @@
 // can be tested without mounting the interface.
 
 import { columnKind } from './grid'
-import type { Column, RowData } from '$lib/types'
+import type { Column, RowData } from '$lib/contracts/types'
 
 export interface FieldState {
   value: string

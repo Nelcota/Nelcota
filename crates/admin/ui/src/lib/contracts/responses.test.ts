@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { responseContract } from './contracts'
+import { responseContract } from './responses'
 
 it('rejects incompatible rows and SQL results rather than trusting the client generic', () => {
   const sql = responseContract('POST', '/sql')!

@@ -3,7 +3,7 @@
 // reimplement any rule. Rapid requests are debounced and the previous one is
 // cancelled.
 
-import { isAbort } from '$lib/api'
+import { isAbort } from '$lib/transport/api'
 import { errorMessage } from '$lib/i18n/index.svelte'
 import type { DdlResult } from './ddl'
 

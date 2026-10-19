@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dateText } from '$lib/date'
+  import { dateText } from '$lib/formatting/date'
   import { onMount } from 'svelte'
   import * as Table from '$lib/components/ui/table'
   import { Skeleton } from '$lib/components/ui/skeleton'
@@ -19,14 +19,15 @@
   import CircleCheck from '@lucide/svelte/icons/circle-check'
   import CircleAlert from '@lucide/svelte/icons/circle-alert'
   import Check from '@lucide/svelte/icons/check'
-  import { RemoteResource } from '$lib/remote-resource.svelte'
-  import { api } from '$lib/api'
-  import { href } from '$lib/router.svelte'
-  import { downloadText, toCsv } from '$lib/download'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+  import { api } from '$lib/transport/api'
+  import { href } from '$lib/navigation/router.svelte'
+  import { downloadText } from '$lib/browser/download'
+  import { toCsv } from '$lib/formatting/tabular'
   import { attention, nextSteps } from '$lib/features/overview/next-steps'
   import { blockReason, blockTarget } from '$lib/features/policies/blocked'
   import { groupSums, percent } from '$lib/features/overview/chart'
-  import type { DeniedRequests, MetricsResponse, Overview } from '$lib/types'
+  import type { DeniedRequests, MetricsResponse, Overview } from '$lib/contracts/types'
   import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
 
   // The project at a glance, laid out after the user's reference dashboard

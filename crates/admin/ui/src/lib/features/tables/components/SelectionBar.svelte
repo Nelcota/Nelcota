@@ -5,9 +5,10 @@
   import Copy from '@lucide/svelte/icons/copy'
   import Download from '@lucide/svelte/icons/download'
   import X from '@lucide/svelte/icons/x'
-  import { copyText } from '$lib/clipboard'
-  import { downloadText, toCsv, toJson } from '$lib/download'
-  import type { RowData } from '$lib/types'
+  import { copyText } from '$lib/browser/clipboard'
+  import { downloadText } from '$lib/browser/download'
+  import { toCsv, toJson } from '$lib/formatting/tabular'
+  import type { RowData } from '$lib/contracts/types'
   import { t } from '$lib/i18n/index.svelte'
 
   let {

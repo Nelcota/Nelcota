@@ -6,8 +6,8 @@
   import CommandPalette from './components/CommandPalette.svelte'
   import NotFound from './NotFound.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
-  import { session } from '$lib/features/auth/session.svelte'
-  import { match, route } from '$lib/router.svelte'
+  import { session } from '$lib/resources/session.svelte'
+  import { match, route } from '$lib/navigation/router.svelte'
   import { crumbsFor } from './titles'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
 

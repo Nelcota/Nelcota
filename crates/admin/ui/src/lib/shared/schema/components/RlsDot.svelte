@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { RlsState } from '$lib/types'
+  import type { RlsState } from '$lib/contracts/types'
 
   let { state }: { state: RlsState } = $props()
 </script>

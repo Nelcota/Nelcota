@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { api } from '$lib/api'
+  import { api } from '$lib/transport/api'
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import { t, errorMessage } from '$lib/i18n/index.svelte'

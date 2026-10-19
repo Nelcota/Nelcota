@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick, untrack } from 'svelte'
-  import { CloseGuard } from '$lib/close-guard.svelte'
+  import { CloseGuard } from '$lib/forms/close-guard.svelte'
   import UnsavedChangesDialog from '$lib/components/shared/UnsavedChangesDialog.svelte'
   import WizardProgress from '$lib/components/shared/WizardProgress.svelte'
   import Save from '@lucide/svelte/icons/save'
@@ -21,7 +21,7 @@
   import { guessOwnerColumn } from '$lib/features/policies/policy-templates'
   import { SqlPreview as Preview } from '$lib/shared/schema/preview.svelte'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
-  import { href } from '$lib/router.svelte'
+  import { href } from '$lib/navigation/router.svelte'
 
   let { open = $bindable(false), table, original = null, existingNames = [], onsaved }: { open?: boolean; table: string; original?: PolicyDef | null; existingNames?: string[]; onsaved: () => void } = $props()
   const blank = (): PolicyDef => ({ name: '', command: 'select', roles: ['authenticated'], permissive: true, using: '', check: '' })

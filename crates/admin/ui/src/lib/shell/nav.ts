@@ -13,7 +13,7 @@ import LogIn from '@lucide/svelte/icons/log-in'
 import BookOpen from '@lucide/svelte/icons/book-open'
 import Webhook from '@lucide/svelte/icons/webhook'
 import type { MessageKey } from '$lib/i18n/index.svelte'
-import { route } from '$lib/router.svelte'
+import { route } from '$lib/navigation/router.svelte'
 
 /** Titles are translation keys: render them with `t(item.title)`. */
 export type NavItem = {

@@ -6,7 +6,7 @@
   import ChevronsLeft from '@lucide/svelte/icons/chevrons-left'
   import ChevronsRight from '@lucide/svelte/icons/chevrons-right'
   import { pageInfo } from '$lib/features/tables/grid'
-  import type { TableData } from '$lib/types'
+  import type { TableData } from '$lib/contracts/types'
   import { intlLocale, t } from '$lib/i18n/index.svelte'
 
   let {

@@ -1,6 +1,6 @@
 // The first things a new project needs, read from the overview. Each step is
 // done when the project shows it, never by a click, so the list stays true.
-import type { Overview } from '$lib/types'
+import type { Overview } from '$lib/contracts/types'
 
 export type StepId = 'table' | 'protect' | 'user' | 'connect'
 

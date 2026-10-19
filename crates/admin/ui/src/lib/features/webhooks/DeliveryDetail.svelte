@@ -7,10 +7,10 @@
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import CodeBlock from '$lib/components/shared/CodeBlock.svelte'
   import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte'
-  import { RemoteResource } from '$lib/remote-resource.svelte'
-  import { href, navigate } from '$lib/router.svelte'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+  import { href, navigate } from '$lib/navigation/router.svelte'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
-  import type { WebhookDetail } from '$lib/types'
+  import type { WebhookDetail } from '$lib/contracts/types'
   import { webhooks } from './api'
   import { canReplay, dateLabel, eventLabel, failureLabel, statusClass, statusLabel } from './format'
 

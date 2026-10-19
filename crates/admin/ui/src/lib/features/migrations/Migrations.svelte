@@ -9,7 +9,7 @@
   import { Badge } from '$lib/components/ui/badge'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import CodeBlock from '$lib/components/shared/CodeBlock.svelte'
-  import { CloseGuard } from '$lib/close-guard.svelte'
+  import { CloseGuard } from '$lib/forms/close-guard.svelte'
   import UnsavedChangesDialog from '$lib/components/shared/UnsavedChangesDialog.svelte'
   import * as Table from '$lib/components/ui/table'
   import * as Dialog from '$lib/components/ui/dialog'
@@ -19,10 +19,10 @@
   import { Skeleton } from '$lib/components/ui/skeleton'
   import { toast } from 'svelte-sonner'
   import DatabaseTabs from '$lib/components/shared/DatabaseTabs.svelte'
-  import { RemoteResource } from '$lib/remote-resource.svelte'
-  import { api } from '$lib/api'
-  import { downloadText } from '$lib/download'
-  import type { ExportedMigration, MigrationsData } from '$lib/types'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+  import { api } from '$lib/transport/api'
+  import { downloadText } from '$lib/browser/download'
+  import type { ExportedMigration, MigrationsData } from '$lib/contracts/types'
   import { errorMessage, hasMessage, i18n, intlLocale, t, translate } from '$lib/i18n/index.svelte'
 
   const resource = new RemoteResource<MigrationsData>()

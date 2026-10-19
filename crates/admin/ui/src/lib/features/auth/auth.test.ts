@@ -1,9 +1,9 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { api } from '$lib/api'
+import { api } from '$lib/transport/api'
 import { profile } from '$lib/features/profile/profile.svelte'
-import { clearQuerySession } from '$lib/query-client'
+import { clearQuerySession } from '$lib/resources/query-client'
 import { logout } from './auth'
-import { session } from './session.svelte'
+import { session } from '$lib/resources/session.svelte'
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); clearQuerySession() })
 

@@ -1,5 +1,5 @@
-import { api } from '$lib/api'
-import type { SchemaResponse, SqlResponse } from '$lib/types'
+import { api } from '$lib/transport/api'
+import type { SchemaResponse, SqlResponse } from '$lib/contracts/types'
 import type { SqlAdapter } from './execution.svelte'
 
 export const sqlAdapter: SqlAdapter = {

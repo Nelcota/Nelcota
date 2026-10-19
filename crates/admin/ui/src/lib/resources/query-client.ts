@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/svelte-query'
-import { session } from './features/auth/session.svelte'
+import { session } from './session.svelte'
 
 // JSON reads share a short-lived cache. SQL execution and all writes always
 // reach the server; a session boundary cancels and discards private data.

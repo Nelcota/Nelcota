@@ -10,7 +10,7 @@
 
 <script lang="ts">
   import { EYES, EYE_ANGLE, FRAME_SIZE, approach, gazeAt, pupilOffset, type Point } from '$lib/shell/mascot'
-  import { cn } from '$lib/utils'
+  import { cn } from '$lib/components/utils'
 
   let {
     pose = 'neutral',

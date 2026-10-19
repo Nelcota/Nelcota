@@ -2,7 +2,8 @@
 // component so the command palette can open a query in the editor.
 // Persisted in the browser (per project, since each panel has its own origin).
 
-import { newId, readJson, readText, write } from '$lib/local-storage'
+import { newId } from '$lib/browser/id'
+import { readJson, readText, write } from '$lib/browser/local-storage'
 
 const DRAFT_KEY = 'nelcota:sql-draft'
 const HISTORY_KEY = 'nelcota:sql-history'

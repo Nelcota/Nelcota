@@ -16,12 +16,12 @@
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
-  import { copyText } from '$lib/clipboard'
-  import { RemoteResource } from '$lib/remote-resource.svelte'
-  import { api } from '$lib/api'
-  import { href } from '$lib/router.svelte'
+  import { copyText } from '$lib/browser/clipboard'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+  import { api } from '$lib/transport/api'
+  import { href } from '$lib/navigation/router.svelte'
   import { openProject } from '$lib/features/projects/projects'
-  import type { ProjectStatus, ProjectsData } from '$lib/types'
+  import type { ProjectStatus, ProjectsData } from '$lib/contracts/types'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
 
   const resource = new RemoteResource<{ projects: ProjectStatus[]; sso: boolean }>()

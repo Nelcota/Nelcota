@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { StorageListing } from '$lib/types'
+import type { StorageListing } from '$lib/contracts/types'
 import { BULK_DELETE_BATCH, StorageBrowser, type StorageBrowserAdapter } from './browser.svelte'
 
 function deferred<T>() {

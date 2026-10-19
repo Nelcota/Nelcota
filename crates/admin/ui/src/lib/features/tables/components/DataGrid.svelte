@@ -7,9 +7,9 @@
   import GridCell from './GridCell.svelte'
   import GridColumnHeader from './GridColumnHeader.svelte'
   import CellDetailDialog from '$lib/components/shared/CellDetailDialog.svelte'
-  import { copyText } from '$lib/clipboard'
+  import { copyText } from '$lib/browser/clipboard'
   import { alignRight, columnKind, columnWidth, editedValue, monospace, nextCell, rowKey, rowPk, type CellPos } from '$lib/features/tables/grid'
-  import type { Column, RowData, TableData } from '$lib/types'
+  import type { Column, RowData, TableData } from '$lib/contracts/types'
   import { t } from '$lib/i18n/index.svelte'
 
   let {

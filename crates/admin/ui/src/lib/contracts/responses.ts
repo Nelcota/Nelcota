@@ -1,4 +1,4 @@
-import * as validators from './generated/validators.js'
+import * as validators from '$lib/generated/validators.js'
 
 type Validator = (value: unknown) => boolean
 const validate = validators as Record<string, Validator>

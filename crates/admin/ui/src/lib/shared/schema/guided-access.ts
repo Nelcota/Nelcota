@@ -1,5 +1,5 @@
 import { blankColumn, type ColumnDef, type CreateTable, type PolicyDef, type Privilege } from './ddl'
-import { quoteIfNeeded } from '$lib/features/policies/policy-templates'
+import { quoteIfNeeded } from './ident'
 
 export type Audience = 'private' | 'owner' | 'signedIn' | 'everyone'
 export type AccessLevel = 'read' | 'full'

@@ -2,7 +2,7 @@
   import Copy from '@lucide/svelte/icons/copy'
   import Check from '@lucide/svelte/icons/check'
   import { t } from '$lib/i18n/index.svelte'
-  import { copyText } from '$lib/clipboard'
+  import { copyText } from '$lib/browser/clipboard'
   import { highlight, type CodeLang, type Token } from '$lib/components/shared/highlight'
 
   let {

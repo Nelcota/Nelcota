@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { blockReason, blockTarget } from './blocked'
-import type { DeniedRequest } from '$lib/types'
+import type { DeniedRequest } from '$lib/contracts/types'
 
 const request = (patch: Partial<DeniedRequest>): DeniedRequest => ({
   at: '2026-10-09T12:00:00Z',

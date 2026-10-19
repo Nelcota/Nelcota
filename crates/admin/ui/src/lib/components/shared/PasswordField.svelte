@@ -4,8 +4,8 @@
   import Eye from '@lucide/svelte/icons/eye'
   import EyeOff from '@lucide/svelte/icons/eye-off'
   import Copy from '@lucide/svelte/icons/copy'
-  import { copyText } from '$lib/clipboard'
-  import { generatePassword, passwordProblem } from '$lib/password'
+  import { copyText } from '$lib/browser/clipboard'
+  import { generatePassword, passwordProblem } from '$lib/forms/password'
   import { t } from '$lib/i18n/index.svelte'
 
   let { value = $bindable(''), id }: { value?: string; id: string } = $props()

@@ -1,6 +1,6 @@
 // Why an API request was refused, in plain language (D93), from what the
 // server recorded: the role, the status and the error code and message.
-import type { DeniedRequest } from '$lib/types'
+import type { DeniedRequest } from '$lib/contracts/types'
 
 export type BlockReason = 'token' | 'rateLimited' | 'files' | 'rls' | 'grantAnon' | 'grantUser' | 'other'
 
