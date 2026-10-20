@@ -12,7 +12,7 @@
     <Dialog.Header><Dialog.Title>{t('webhooks.secretTitle')}</Dialog.Title><Dialog.Description>{t('webhooks.secretHint')}</Dialog.Description></Dialog.Header>
     {#if value}<CodeBlock code={value.secret} wrap />{/if}
     <p class="text-sm text-muted-foreground">{t('webhooks.secretHelp')}</p>
-    <a class="text-sm text-primary underline" href={href('/guides/webhooks')}>{t('webhooks.guide')}</a>
+    <a class="text-sm text-brand underline" href={href('/guides/webhooks')}>{t('webhooks.guide')}</a>
     <Dialog.Footer><Button onclick={() => value = null}>{t('common.close')}</Button></Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>

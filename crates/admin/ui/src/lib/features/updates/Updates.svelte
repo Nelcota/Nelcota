@@ -1,25 +1,28 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { api } from '$lib/transport/api'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import { t, errorMessage } from '$lib/i18n/index.svelte'
   import { controllerOrigin } from './controller'
-  let version = $state('')
-  let origin = $state<string | null>(null)
-  let failure = $state<unknown>(null)
-  let alive = true
-  onMount(() => {
-    void api.get<{ version: string; controller_origin: unknown }>('/updates').then(value => { if (!alive) return; version = typeof value.version === 'string' ? value.version : ''; origin = controllerOrigin(value.controller_origin) }).catch(error => { if (alive) failure = error })
-    return () => { alive = false }
-  })
+  const resource = new RemoteResource<{ version: string; controller_origin: unknown }>()
+  const origin = $derived(controllerOrigin(resource.data?.controller_origin))
+  const version = $derived(typeof resource.data?.version === 'string' && resource.data.version !== '' ? resource.data.version : '…')
+  async function load() {
+    await resource.load(signal => api.get('/updates', { signal }))
+  }
+  onMount(() => { void load(); return () => resource.cancel() })
 </script>
-<div class="mx-auto w-full max-w-page px-4 py-6 sm:px-6 lg:px-8">
+<div class="mx-auto w-full max-w-page px-4 py-6 sm:px-6 lg:px-8" aria-busy={resource.loading}>
   <PageHeader title={t('updates.title')} description={t('updates.subtitle')} />
-  {#if failure}<LoadError message={errorMessage(failure)} onretry={() => window.location.reload()} />{/if}
-  {#if !failure}
+  {#if resource.error}<LoadError message={errorMessage(resource.error)} onretry={load} busy={resource.loading} />{/if}
+  {#if !resource.loaded || resource.loading}
+    <p role="status" class="text-sm text-muted-foreground">{t('common.loading')}</p>
+  {/if}
+  {#if resource.loaded && !resource.loading && !resource.error}
     <div class="grid max-w-2xl gap-5 rounded-3xl bg-card p-6">
-      <p>{t('updates.current')}: <strong translate="no">{version || '…'}</strong></p>
+      <p>{t('updates.current')}: <strong translate="no">{version}</strong></p>
       <p class="text-sm text-muted-foreground">{t('updates.authority')}</p>
       {#if origin}<a class="w-fit rounded-full bg-primary px-5 py-3 font-medium text-primary-foreground" href={`${origin}/admin/`} target="_blank" rel="noopener noreferrer">{t('updates.open')}</a>{/if}
       {#if !origin}<p role="status" class="text-sm text-muted-foreground">{t('updates.unenrolled')}</p>{/if}

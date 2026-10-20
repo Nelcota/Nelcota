@@ -8,4 +8,4 @@ export const failureLabel = (value: string | null) => value && hasMessage(`webho
 export const eventLabel = (value: string) => value === 'INSERT' ? t('webhooks.insert') : value === 'UPDATE' ? t('webhooks.update') : t('webhooks.delete')
 export const dateLabel = (value: string | null) => dateText(value, date => date.toLocaleString(intlLocale()))
 export const canReplay = (delivery: WebhookDelivery) => delivery.endpoint_enabled && ['failed', 'succeeded'].includes(delivery.status) && delivery.last_error !== 'payload_too_large'
-export const statusClass = (value: string) => value === 'succeeded' ? 'bg-primary/10 text-primary' : value === 'failed' ? 'bg-destructive/10 text-destructive' : value === 'pending' || value === 'processing' ? 'bg-warning/10 text-warning' : 'bg-muted text-muted-foreground'
+export const statusClass = (value: string) => value === 'succeeded' ? 'bg-primary/10 text-brand' : value === 'failed' ? 'bg-destructive/10 text-destructive' : value === 'pending' || value === 'processing' ? 'bg-warning/10 text-warning' : 'bg-muted text-muted-foreground'

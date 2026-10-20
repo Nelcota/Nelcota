@@ -52,7 +52,7 @@
         <div class="min-w-0"><dt class="text-muted-foreground">{t('webhooks.eventId')}</dt><dd class="mt-1 break-all font-mono text-xs">{delivery.event_id}</dd></div>
         {#if delivery.next_attempt_at}<div><dt class="text-muted-foreground">{t('webhooks.nextAttempt')}</dt><dd class="mt-1">{dateLabel(delivery.next_attempt_at)}</dd></div>{/if}
       </dl>
-      {#if delivery.replay_of}<a href={href(`/webhooks/deliveries/${delivery.replay_of}`)} class="text-sm text-primary underline">{t('webhooks.replayOf', { id: delivery.replay_of })}</a>{/if}
+      {#if delivery.replay_of}<a href={href(`/webhooks/deliveries/${delivery.replay_of}`)} class="text-sm text-brand underline">{t('webhooks.replayOf', { id: delivery.replay_of })}</a>{/if}
     </section>
     <section class="grid gap-4 rounded-3xl bg-card p-5"><h2 class="font-semibold">{t('webhooks.attemptHistory')}</h2>
       {#if (resource.data.attempts.length)}<div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead><tr class="text-muted-foreground"><th class="py-3 pr-4 font-medium">{t('webhooks.attempt')}</th><th class="py-3 pr-4 font-medium">{t('webhooks.started')}</th><th class="py-3 pr-4 font-medium">{t('webhooks.duration')}</th><th class="py-3 font-medium">{t('webhooks.result')}</th></tr></thead><tbody>
