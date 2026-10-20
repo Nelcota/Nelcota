@@ -122,7 +122,8 @@ fn require_ufw() -> anyhow::Result<()> {
 fn configure_firewall(enable: bool) -> anyhow::Result<()> {
     if !enable {
         warn(
-            "recommended: nelcota init --firewall (or: ufw allow OpenSSH && ufw allow 80/tcp && ufw allow 443 && ufw enable)",
+            "configure the host firewall manually; before enabling it, allow your actual SSH port \
+             and ports 80/443 (use --firewall only when creating a new non-local Linux host)",
         );
         return Ok(());
     }
