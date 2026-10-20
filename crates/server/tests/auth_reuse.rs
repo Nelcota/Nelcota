@@ -23,6 +23,10 @@ struct Database {
     admin: Config,
     client: Client,
     _container: Option<ContainerAsync<Postgres>>,
+    // All bootstraps in a test can ALTER cluster-global roles. Keep the shared
+    // control-database lease for the fixture lifetime, including later retries;
+    // concurrent instances within this database still exercise their own locks.
+    _cluster_lease: Client,
 }
 
 impl Database {
@@ -75,16 +79,13 @@ impl Database {
         nelcota_auth::bootstrap(&admin, authenticator_password(), 10)
             .await
             .unwrap();
-        control
-            .batch_execute("SELECT pg_advisory_unlock(hashtext('nelcota.tests.bootstrap'))")
-            .await
-            .unwrap();
         let (client, connection) = admin.connect(NoTls).await.unwrap();
         tokio::spawn(connection);
         Self {
             admin,
             client,
             _container: container,
+            _cluster_lease: control,
         }
     }
 
