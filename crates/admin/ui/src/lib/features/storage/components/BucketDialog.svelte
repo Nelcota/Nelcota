@@ -29,6 +29,8 @@
   let id = $state('')
   let isPublic = $state(false)
   let limitMb = $state('')
+  let initialLimitMb = $state('')
+  let initialLimit = $state<number | null>(null)
   let types = $state('')
   let saving = $state(false)
   let failure = $state('')
@@ -41,7 +43,9 @@
       untrack(() => {
         id = bucket?.id ?? ''
         isPublic = bucket?.public ?? false
-        limitMb = bucket?.file_size_limit ? String(+(bucket.file_size_limit / MB).toFixed(2)) : ''
+        initialLimit = bucket?.file_size_limit ?? null
+        limitMb = initialLimit === null ? '' : String(initialLimit / MB)
+        initialLimitMb = limitMb
         types = bucket?.allowed_mime_types?.join(', ') ?? ''
         failure = ''
         initialValue = snapshot()
@@ -49,7 +53,8 @@
     }
   })
 
-  const limit = $derived(limitMb.trim() === '' ? null : Math.round(Number(limitMb.replace(',', '.')) * MB))
+  // Display formatting must never become a mutation of an untouched setting.
+  const limit = $derived(limitMb === initialLimitMb ? initialLimit : limitMb.trim() === '' ? null : Math.round(Number(limitMb.replace(',', '.')) * MB))
   const limitOk = $derived(limit === null || (Number.isFinite(limit) && limit > 0))
   const ready = $derived((bucket !== null || validBucketName(id)) && limitOk)
   const nameInvalid = $derived(id !== '' && !validBucketName(id))
