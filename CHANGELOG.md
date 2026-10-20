@@ -10,6 +10,13 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Preserve exact bucket file-size limits when editing other settings, including
+  limits smaller than 0.01 MiB.
+- Protect panel form drafts during navigation and browser history changes; keep
+  global search in the active modal's focus context and within short viewports.
+- Keep account/project controls, long dialog identities and password entry usable
+  on narrow screens and with enlarged text. Improve light-theme status contrast
+  and distinguish update loading, enrollment and retryable error states.
 - Require encrypted auth email transport: implicit TLS or mandatory STARTTLS.
   Refuse plain/opportunistic SMTP, ambiguous URL options and fragments before
   delivery; keep supported encrypted configurations and certificate verification.
