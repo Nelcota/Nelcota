@@ -25,8 +25,8 @@
 </script>
 
 <div class="grid gap-1.5">
-  <div class="flex gap-2">
-    <div class="relative flex-1">
+  <div class="flex flex-wrap gap-2">
+    <div class="relative min-w-0 basis-full sm:flex-1 sm:basis-auto">
       <Input
         {id}
         type={visible ? 'text' : 'password'}
@@ -38,7 +38,7 @@
       />
       <button
         type="button"
-        class="absolute top-1/2 right-1.5 grid size-7 -translate-y-1/2 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        class="absolute top-1/2 right-0 grid size-10 -translate-y-1/2 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         aria-label={visible ? t('users.password.hide') : t('users.password.show')}
         aria-pressed={visible}
         onclick={() => (visible = !visible)}

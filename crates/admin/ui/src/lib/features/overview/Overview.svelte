@@ -137,7 +137,7 @@
     on ? 'border-transparent bg-nav-active font-medium text-nav-active-foreground' : 'border-border-strong text-muted-foreground hover:text-foreground',
   ]
   const card = 'rounded-3xl bg-card p-5'
-  const statLink = 'grid size-7 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
+  const statLink = 'grid size-11 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
 </script>
 
 {#snippet cardHeader(title: string, path: string)}
@@ -149,10 +149,10 @@
   </div>
 {/snippet}
 
-<div class="grid gap-6 mx-auto w-full max-w-page px-4 pt-2 pb-12 sm:px-6 lg:px-8">
+<div class="@container grid gap-6 mx-auto w-full max-w-page px-4 pt-2 pb-12 sm:px-6 lg:px-8">
   <!-- Headline: the page's name with its shortcuts under it, and the
        period's traffic. On phones everything stacks, left-aligned. -->
-  <section class="grid gap-6 sm:gap-8 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+  <section class="grid min-w-0 gap-6 sm:gap-8 @min-[76rem]:grid-cols-2 @min-[76rem]:items-end">
     <div class="grid gap-4">
       <h1 class="max-w-xl text-4xl leading-[1.02] font-semibold tracking-[-0.035em] sm:text-5xl">{t('overview.title')}</h1>
       <nav class="flex flex-wrap gap-2" aria-label={t('overview.quickActions')}>
@@ -162,21 +162,33 @@
       </nav>
     </div>
     {#if (traffic)}
-      <!-- Labels share the top line and figures share the bottom line; on
-           phones the total takes a row and the two meters share the next. -->
-      <div class="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-[auto_minmax(0,16rem)_minmax(0,16rem)] sm:items-end sm:gap-x-12">
-        <p class="col-span-2 text-sm text-muted-foreground sm:col-span-1 sm:col-start-1 sm:row-start-1">{t('overview.hero.requests')}</p>
-        <p class="col-span-2 mb-4 text-4xl leading-none font-semibold tracking-[-0.035em] tabular-nums sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:mb-0 sm:text-5xl">{fmt.format(traffic.totals.requests)}</p>
-        <p class="col-start-1 row-start-3 text-sm text-muted-foreground sm:col-start-2 sm:row-start-1">{t('overview.hero.refused')}</p>
-        <div class="col-start-1 row-start-4 sm:col-start-2 sm:row-start-2"><Meter label={t('overview.hero.refused')} part={traffic.totals.refused} whole={traffic.totals.requests} {format} /></div>
-        <p class="col-start-2 row-start-3 text-sm text-muted-foreground sm:col-start-3 sm:row-start-1">{t('overview.hero.errors')}</p>
-        <div class="col-start-2 row-start-4 sm:col-start-3 sm:row-start-2"><Meter label={t('overview.hero.errors')} part={traffic.totals.errors} whole={traffic.totals.requests} {format} /></div>
+      <div class="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,10rem),1fr))] items-end gap-6">
+        <div class="grid min-w-0 gap-2">
+          <p class="text-sm text-muted-foreground">{t('overview.hero.requests')}</p>
+          <p class="text-4xl leading-none font-semibold tracking-[-0.035em] tabular-nums [overflow-wrap:anywhere] sm:text-5xl">{fmt.format(traffic.totals.requests)}</p>
+        </div>
+        <div class="grid min-w-0 gap-2">
+          <p class="text-sm text-muted-foreground">{t('overview.hero.refused')}</p>
+          <Meter label={t('overview.hero.refused')} part={traffic.totals.refused} whole={traffic.totals.requests} {format} />
+        </div>
+        <div class="grid min-w-0 gap-2">
+          <p class="text-sm text-muted-foreground">{t('overview.hero.errors')}</p>
+          <Meter label={t('overview.hero.errors')} part={traffic.totals.errors} whole={traffic.totals.requests} {format} />
+        </div>
       </div>
     {/if}
     {#if !(traffic) && (metrics.loading)}
       <Skeleton class="h-16 w-[40rem] max-w-full rounded-2xl" />
     {/if}
   </section>
+
+  {#if needs.length > 0}
+    <a href={href('/policies')} class="flex items-center gap-3 rounded-2xl bg-warning/10 px-4 py-3 font-medium text-warning">
+      <CircleAlert class="size-5 shrink-0" aria-hidden="true" />
+      <span>{t('overview.needs.title')} · {fmt.format(needs.length)}</span>
+      <ArrowUpRight class="ml-auto size-5 shrink-0" aria-hidden="true" />
+    </a>
+  {/if}
 
   <!-- One period for the whole page. -->
   <section class="flex flex-wrap items-center justify-between gap-3">
@@ -192,63 +204,8 @@
 
   {#if overview.error}<LoadError message={errorMessage(overview.error)} onretry={loadOverview} busy={overview.loading} />{/if}
 
-  <!-- Stat cards beside the traffic chart. -->
-  <section class="grid gap-4 lg:grid-cols-[18.75rem_minmax(0,1fr)]">
-    <div class="grid content-start gap-4 sm:grid-cols-3 lg:grid-cols-1">
-      {#if (data)}
-        <article class={card}>
-          <div class="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{t('overview.cards.database')}</span>
-            <a href={href('/tables')} class={statLink} aria-label={t('overview.cards.tables')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
-          </div>
-          <div class="mt-4 flex items-end justify-between gap-4">
-            <div class="grid gap-1">
-              <p class="text-sm text-muted-foreground">{t('overview.cards.tables')}</p>
-              <p class="text-3xl leading-none font-semibold tracking-[-0.03em]">{fmt.format(data.counts.tables)}</p>
-              <p class="text-xs text-muted-foreground">{t('overview.cards.tablesCaption', { count: protectedCount })}</p>
-            </div>
-            <Ring value={protectedShare} label={t('overview.cards.tablesRing', { percent: protectedShare })} />
-          </div>
-        </article>
-        <article class={card}>
-          <div class="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{t('overview.cards.auth')}</span>
-            <a href={href('/users')} class={statLink} aria-label={t('overview.cards.users')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
-          </div>
-          <div class="mt-4 flex items-end justify-between gap-4">
-            <div class="grid gap-1">
-              <p class="text-sm text-muted-foreground">{t('overview.cards.users')}</p>
-              <p class="text-3xl leading-none font-semibold tracking-[-0.03em]">{fmt.format(data.counts.users)}</p>
-              <p class="text-xs text-muted-foreground">{t('overview.cards.usersCaption', { count: data.counts.signed_in_users })}</p>
-            </div>
-            <Ring value={signedInShare} label={t('overview.cards.usersRing', { percent: signedInShare })} />
-          </div>
-        </article>
-      {/if}
-      {#if !(data)}
-        <Skeleton class="h-36 rounded-3xl" />
-        <Skeleton class="h-36 rounded-3xl" />
-      {/if}
-      {#if (traffic)}
-        <article class={card}>
-          <div class="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{periodText}</span>
-            <a href={href('/policies')} class={statLink} aria-label={t('overview.cards.refused')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
-          </div>
-          <div class="mt-4 flex items-end justify-between gap-4">
-            <div class="grid gap-1">
-              <p class="text-sm text-muted-foreground">{t('overview.cards.refused')}</p>
-              <p class="text-3xl leading-none font-semibold tracking-[-0.03em]">{fmt.format(traffic.totals.refused)}</p>
-            </div>
-            <MiniBars values={refusedBars} labels={refusedLabels} describe={t('overview.cards.refusedBars')} />
-          </div>
-        </article>
-      {/if}
-      {#if !(traffic)}
-        <Skeleton class="h-36 rounded-3xl" />
-      {/if}
-    </div>
-
+  <!-- Lead with traffic on phones; supplementary stats follow in source order. -->
+  <section class="grid min-w-0 gap-4 @min-[60rem]:grid-cols-[minmax(0,1fr)_18.75rem]">
     <article class={['grid min-w-0 content-start gap-4', card]}>
       <div class="flex flex-wrap items-center gap-2">
         <div class="flex max-w-full flex-wrap items-center gap-2" role="group" aria-label={t('overview.filters.label')}>
@@ -320,6 +277,62 @@
         <Skeleton class="h-[22rem] rounded-2xl" />
       {/if}
     </article>
+
+    <div class="grid min-w-0 content-start gap-4 sm:grid-cols-3 @min-[60rem]:grid-cols-1">
+      {#if (data)}
+        <article class={card}>
+          <div class="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{t('overview.cards.database')}</span>
+            <a href={href('/tables')} class={statLink} aria-label={t('overview.cards.tables')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
+          </div>
+          <div class="mt-4 flex items-end justify-between gap-4">
+            <div class="grid gap-1">
+              <p class="text-sm text-muted-foreground">{t('overview.cards.tables')}</p>
+              <p class="text-3xl leading-none font-semibold tracking-[-0.03em]">{fmt.format(data.counts.tables)}</p>
+              <p class="text-xs text-muted-foreground">{t('overview.cards.tablesCaption', { count: protectedCount })}</p>
+            </div>
+            <Ring value={protectedShare} label={t('overview.cards.tablesRing', { percent: protectedShare })} />
+          </div>
+        </article>
+        <article class={card}>
+          <div class="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{t('overview.cards.auth')}</span>
+            <a href={href('/users')} class={statLink} aria-label={t('overview.cards.users')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
+          </div>
+          <div class="mt-4 flex items-end justify-between gap-4">
+            <div class="grid gap-1">
+              <p class="text-sm text-muted-foreground">{t('overview.cards.users')}</p>
+              <p class="text-3xl leading-none font-semibold tracking-[-0.03em]">{fmt.format(data.counts.users)}</p>
+              <p class="text-xs text-muted-foreground">{t('overview.cards.usersCaption', { count: data.counts.signed_in_users })}</p>
+            </div>
+            <Ring value={signedInShare} label={t('overview.cards.usersRing', { percent: signedInShare })} />
+          </div>
+        </article>
+      {/if}
+      {#if !(data)}
+        <Skeleton class="h-36 rounded-3xl" />
+        <Skeleton class="h-36 rounded-3xl" />
+      {/if}
+      {#if (traffic)}
+        <article class={card}>
+          <div class="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{periodText}</span>
+            <a href={href('/policies')} class={statLink} aria-label={t('overview.cards.refused')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
+          </div>
+          <div class="mt-4 flex items-end justify-between gap-4">
+            <div class="grid gap-1">
+              <p class="text-sm text-muted-foreground">{t('overview.cards.refused')}</p>
+              <p class="text-3xl leading-none font-semibold tracking-[-0.03em]">{fmt.format(traffic.totals.refused)}</p>
+            </div>
+            <MiniBars values={refusedBars} labels={refusedLabels} describe={t('overview.cards.refusedBars')} />
+          </div>
+        </article>
+      {/if}
+      {#if !(traffic)}
+        <Skeleton class="h-36 rounded-3xl" />
+      {/if}
+    </div>
+
   </section>
 
   <!-- Three cards: where the data is, what was refused, what needs doing. -->

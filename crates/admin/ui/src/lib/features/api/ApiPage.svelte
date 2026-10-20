@@ -144,7 +144,7 @@
   <div class="grid gap-6 *:min-w-0">
     <!-- Keep the active section visible while scrolling through the cards. -->
     <div class="sticky top-0 z-10 -my-3 bg-background/90 py-3 backdrop-blur">
-    <nav bind:this={tabRow} class="flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-card p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label={t('connect.navigation')}>
+    <nav bind:this={tabRow} class="flex w-fit max-w-full gap-1 overflow-x-auto rounded-2xl bg-card p-1 [scrollbar-width:thin]" aria-label={t('connect.navigation')}>
       {#each sections as section (section.id)}
         <a
           class={[

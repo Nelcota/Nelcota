@@ -29,7 +29,7 @@
 
 <Dialog.Root bind:open {...restProps}>
 	<Dialog.Content
-		class={cn("rounded-3xl! top-1/3 translate-y-0 overflow-hidden p-0", className)}
+		class={cn("rounded-3xl! flex flex-col gap-0 overflow-hidden p-0 [&_[data-slot=command]]:min-h-0", className)}
 		{showCloseButton}
 		{portalProps}
 	>

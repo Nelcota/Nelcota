@@ -20,20 +20,15 @@
     expanded = false,
   }: {
     menuOpen?: boolean
-    /** Always show the name and status (in the phone menu), whatever the width. */
+    /** Include the mascot in the phone menu as well as the name and status. */
     expanded?: boolean
   } = $props()
 
-  // Below sm and between lg and xl the header only has room for the mascot.
-  const showText = $derived(expanded ? 'flex' : 'hidden sm:flex lg:hidden xl:flex')
-  const showDot = $derived(expanded ? 'hidden' : 'sm:hidden lg:block xl:hidden')
-  const showChevron = $derived(expanded ? 'block' : 'hidden sm:block lg:hidden xl:block')
   const host = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '')
 
   let data = $state<ProjectsData | null>(null)
 
-  // Project identity sits directly on the header, with health beside the
-  // environment label (or beside the mascot when space is limited).
+  // Keep the project identity and environment readable at every width.
   const env = environment()
   const where = env.local ? t('shell.projects.environment.local') : t('shell.projects.environment.remote', { host: env.host })
   const status = $derived(t(`shell.projects.server.${health.status}`))
@@ -62,24 +57,15 @@
   <Button
     {...props}
     variant="ghost"
-    class={cn('group/project h-12 w-full min-w-0 justify-start gap-2.5 rounded-lg px-1.5 text-left sm:px-2', !expanded && 'lg:justify-center xl:justify-start')}
+    class="group/project h-auto min-h-12 w-full min-w-0 justify-start gap-2.5 rounded-lg px-1.5 py-1.5 text-left sm:px-2"
     title={`${t('shell.projects.switch')} · ${status}`}
     aria-label={`${t('shell.projects.switch')}: ${data?.current ?? 'Nelcota'} · ${status}`}
   >
-    <span class="relative grid size-9 shrink-0 place-items-center">
+    <span class={cn('relative size-9 shrink-0 place-items-center', expanded ? 'grid' : 'hidden sm:grid')}>
       <img src={mascot} alt="" width="128" height="128" class="size-9 select-none" draggable="false" />
-      <span
-        class={cn(
-          'absolute right-0 bottom-0 size-2 rounded-full ring-2 ring-background',
-          showDot,
-          health.status === 'online' ? 'bg-brand' : health.status === 'offline' ? 'bg-destructive' : 'bg-muted-foreground',
-        )}
-        role="img"
-        aria-label={status}
-      ></span>
     </span>
-    <span class={cn('min-w-0 flex-1 flex-col gap-1 leading-tight', showText)}>
-      <span class="truncate text-sm font-semibold">{data?.current ?? 'Nelcota'}</span>
+    <span class="flex min-w-0 flex-1 flex-col gap-1 leading-tight">
+      <span class="line-clamp-2 text-sm font-semibold whitespace-normal [overflow-wrap:anywhere]" translate="no">{data?.current ?? 'Nelcota'}</span>
       <span class="flex min-w-0 items-center gap-1.5">
         <span
           class={cn(
@@ -92,7 +78,7 @@
         <span class={cn('truncate text-xs font-normal', health.status === 'offline' ? 'text-destructive' : 'text-muted-foreground')}>{health.status === 'offline' ? status : where}</span>
       </span>
     </span>
-    <ChevronDown data-icon="inline-end" class={cn('text-muted-foreground transition-transform duration-150 group-aria-expanded/project:rotate-180', showChevron)} aria-hidden="true" />
+    <ChevronDown data-icon="inline-end" class="hidden text-muted-foreground transition-transform duration-150 group-aria-expanded/project:rotate-180 sm:block" aria-hidden="true" />
   </Button>
 {/snippet}
 

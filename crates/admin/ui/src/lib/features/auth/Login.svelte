@@ -92,7 +92,7 @@
 <div class="flex min-h-dvh flex-col bg-background px-4 py-4 sm:px-6 sm:py-6">
   <!-- The same bar as the signed-in panel: who this server is on the left,
        language and theme on the right (the account menu is not there yet). -->
-  <header class="flex items-center justify-between gap-3">
+  <header class="flex flex-wrap items-center justify-between gap-3">
     <div class="flex min-w-0 items-center gap-2 rounded-full bg-card py-1.5 ps-1.5 pe-4">
       <!-- On a phone the mark alone, so the project name has the room. -->
       <span class="flex shrink-0 sm:hidden"><Logo mark /></span>
@@ -100,7 +100,7 @@
       {#if project}
         <span class="mx-1 h-5 w-px shrink-0 bg-border-strong" aria-hidden="true"></span>
         <span class="hidden text-sm text-muted-foreground sm:inline">{t('login.project')}</span>
-        <span class="truncate text-sm font-semibold" translate="no">{project}</span>
+        <span class="text-sm font-semibold [overflow-wrap:anywhere]" translate="no">{project}</span>
       {/if}
     </div>
     <div class="flex shrink-0 items-center gap-2">

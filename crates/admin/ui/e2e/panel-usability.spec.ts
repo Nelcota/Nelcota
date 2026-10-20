@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
 import { fixture } from './fixtures'
 
 test.beforeEach(async ({ page }) => {
@@ -13,6 +13,21 @@ async function openUser(page: Page) {
   await page.goto('/admin/users')
   await page.getByRole('button', { name: 'New user', exact: true }).first().click()
   await expect(page.locator('#new-user-email')).toBeVisible()
+}
+
+async function fits(element: Locator) {
+  await expect.poll(() => element.evaluate(e => e.scrollWidth - e.clientWidth)).toBeLessThanOrEqual(1)
+}
+
+async function visibleHitTarget(element: Locator) {
+  await expect(element).toBeInViewport({ ratio: 1 })
+  expect(await element.evaluate(e => {
+    const r = e.getBoundingClientRect()
+    return [0.2, 0.5, 0.8].every(x => [0.2, 0.5, 0.8].every(y => {
+      const hit = document.elementFromPoint(r.x + r.width * x, r.y + r.height * y)
+      return hit !== null && (hit === e || e.contains(hit))
+    }))
+  })).toBe(true)
 }
 
 for (const bytes of [1, 1000, 16384, null]) {
@@ -143,4 +158,79 @@ test('a pending save blocks navigation and a successful save releases the guard'
     await page.locator('header a[href="/admin/storage"]:visible').click()
     await expect(page).toHaveURL(/\/admin\/storage$/)
   } finally { release() }
+})
+
+test('command palette and its last option fit a short landscape viewport', async ({ page }) => {
+  await expect(page.getByRole('button', { name: 'Account', exact: true })).toBeVisible()
+  await page.setViewportSize({ width: 844, height: 390 })
+  await page.keyboard.press('Control+k')
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeInViewport({ ratio: 1 })
+  await page.getByRole('combobox').press('End')
+  await expect(dialog.getByRole('option').last()).toBeInViewport({ ratio: 1 })
+})
+
+test('long bucket identities wrap inside a narrow dialog', async ({ page }) => {
+  const name = 'b'.repeat(63)
+  await page.route('**/admin/api/storage', route => route.fulfill({ json: {
+    enabled: true, backend: 'disk', max_file_size: 52428800, max_total_size: null, public_url: null,
+    buckets: [{ id: name, public: false, file_size_limit: null, allowed_mime_types: null,
+      created_at: '2026-10-08T10:30:00Z', files: 0, bytes: 0 }],
+  } }))
+  await page.setViewportSize({ width: 320, height: 740 })
+  await page.goto('/admin/storage')
+  await page.getByRole('button', { name: `Actions for ${name}`, exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Edit…', exact: true }).click()
+  await fits(page.getByRole('dialog'))
+  await expect(page.getByRole('dialog')).toContainText(name)
+})
+
+test('long account identities and password controls fit a narrow dialog', async ({ page }) => {
+  const email = `${'a'.repeat(64)}@${'b'.repeat(60)}.example.test`
+  await page.route('**/admin/api/users?*', route => route.fulfill({ json: { page: 0, total: 1, has_next: false,
+    users: [{ id: '00000000-0000-4000-8000-000000000001', email, created_at: '2026-10-08T10:30:00Z',
+      last_sign_in_at: null, email_confirmed_at: null, sessions: 0, has_password: true, providers: [] }],
+  } }))
+  await page.setViewportSize({ width: 320, height: 740 })
+  await page.goto('/admin/users')
+  await page.getByRole('button', { name: `Actions for ${email}`, exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Reset password…', exact: true }).click()
+  await fits(page.getByRole('dialog'))
+  expect((await page.locator('#reset-password').boundingBox())?.width).toBeGreaterThan(180)
+})
+
+test('account and project remain readable at intermediate widths in both languages', async ({ page }) => {
+  for (const locale of ['en', 'pt-BR']) {
+    await page.evaluate(locale => localStorage.setItem('nelcota.locale', locale), locale)
+    await page.reload()
+    for (const width of [768, 1024, 1100, 1280]) {
+      await page.setViewportSize({ width, height: 900 })
+      const account = page.getByRole('button', { name: locale === 'en' ? 'Account' : 'Conta', exact: true })
+      expect((await account.boundingBox())?.width).toBeGreaterThanOrEqual(44)
+      await visibleHitTarget(account)
+      await fits(page.locator('header'))
+    }
+  }
+  await page.setViewportSize({ width: 320, height: 740 })
+  await expect(page.locator('header').getByText('nelcota-demo', { exact: true }).first()).toBeVisible()
+  await fits(page.locator('header'))
+})
+
+test('enlarged text reflows the header and overview without occluding controls', async ({ page }) => {
+  await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
+  for (const link of await page.locator('header a:visible').all()) await visibleHitTarget(link)
+  await visibleHitTarget(page.getByRole('button', { name: 'Account', exact: true }))
+  const headline = page.getByRole('heading', { name: 'Overview', exact: true }).locator('..').locator('..')
+  await fits(headline)
+  for (const link of await headline.getByRole('link').all()) await visibleHitTarget(link)
+})
+
+test('password entry gets a full row on a small phone', async ({ page }) => {
+  await openUser(page)
+  await page.setViewportSize({ width: 320, height: 740 })
+  await fits(page.getByRole('dialog'))
+  expect((await page.locator('#new-user-password').boundingBox())?.width).toBeGreaterThan(180)
+  await page.getByRole('button', { name: 'Generate', exact: true }).click()
+  await expect(page.locator('#new-user-password')).not.toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Copy password', exact: true })).toBeEnabled()
 })
