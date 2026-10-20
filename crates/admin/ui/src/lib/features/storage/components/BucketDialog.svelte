@@ -36,7 +36,7 @@
   let failure = $state('')
   let initialValue = $state('')
   const snapshot = () => JSON.stringify([id, isPublic, limitMb, types])
-  const guard = new CloseGuard(() => snapshot() !== initialValue, () => saving, () => (open = false))
+  const guard = new CloseGuard(() => snapshot() !== initialValue, () => saving, () => (open = false), () => open)
 
   $effect(() => {
     if (open) {

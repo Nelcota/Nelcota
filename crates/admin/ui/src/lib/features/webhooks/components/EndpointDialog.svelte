@@ -18,7 +18,7 @@
   let insert = $state(true), update = $state(false), remove = $state(false), enabled = $state(true)
   let attempts = $state(6), saving = $state(false), failure = $state(''), initial = $state('')
   const snapshot = () => JSON.stringify([name, table, url, insert, update, remove, enabled, attempts])
-  const guard = new CloseGuard(() => snapshot() !== initial, () => saving, () => open = false)
+  const guard = new CloseGuard(() => snapshot() !== initial, () => saving, () => open = false, () => open)
   $effect(() => {
     if (open) untrack(() => {
       name = endpoint?.name ?? ''; table = endpoint?.table ?? ''; url = endpoint?.url ?? ''

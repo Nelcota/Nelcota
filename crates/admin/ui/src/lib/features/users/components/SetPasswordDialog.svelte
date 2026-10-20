@@ -19,7 +19,7 @@
   let saving = $state(false)
   // Shown in the dialog, next to the field it is about, like the create dialog.
   let failure = $state('')
-  const guard = new CloseGuard(() => password !== '', () => saving, () => (open = false))
+  const guard = new CloseGuard(() => password !== '', () => saving, () => (open = false), () => open)
 
   $effect(() => {
     if (open) {

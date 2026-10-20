@@ -31,7 +31,7 @@
   let tables = $state<Record<string, string[]>>({})
   let saving = $state(false)
   let initialValue = $state('')
-  const guard = new CloseGuard(() => JSON.stringify(column) !== initialValue, () => saving, () => (open = false))
+  const guard = new CloseGuard(() => JSON.stringify(column) !== initialValue, () => saving, () => (open = false), () => open)
   const preview = new Preview()
 
   $effect(() => {

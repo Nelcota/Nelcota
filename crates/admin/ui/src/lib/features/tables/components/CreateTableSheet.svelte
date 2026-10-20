@@ -41,7 +41,7 @@
   let heading = $state<HTMLHeadingElement | null>(null)
   let initialValue = $state('')
   const draft = $derived(JSON.stringify({ spec, audience, level, advanced }))
-  const guard = new CloseGuard(() => draft !== initialValue, () => saving, () => (open = false))
+  const guard = new CloseGuard(() => draft !== initialValue, () => saving, () => (open = false), () => open)
   const preview = new Preview()
   const steps = $derived(['name', 'fields', 'access', 'review'].map(key => t(`guided.table.steps.${key as 'name' | 'fields' | 'access' | 'review'}`)))
   const nameError = $derived(nameProblem(spec.name) ?? (Object.hasOwn(tables, spec.name.trim()) ? 'exists' : null))

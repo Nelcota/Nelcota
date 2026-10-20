@@ -21,7 +21,7 @@
   let emailInvalid = $state(false)
   let emailTouched = $state(false)
   let failure = $state('')
-  const guard = new CloseGuard(() => email !== '' || password !== '', () => saving, () => (open = false))
+  const guard = new CloseGuard(() => email !== '' || password !== '', () => saving, () => (open = false), () => open)
 
   $effect(() => {
     if (open) {
