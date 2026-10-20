@@ -132,7 +132,7 @@ pub(crate) async fn refresh(state: &AuthState, token: Option<String>) -> Result<
     let row = tx
         .query_opt(
             &format!(
-                "SELECT rt.id, rt.revoked, rt.expires_at < now(), s.id, s.revoked_at IS NOT NULL,
+                "SELECT rt.id, rt.revoked, rt.expires_at <= now(), s.id, s.revoked_at IS NOT NULL,
                         u.id, u.email, {USER_JSON}
                  FROM auth.refresh_tokens rt
                  JOIN auth.sessions s ON s.id = rt.session_id
@@ -161,7 +161,7 @@ pub(crate) async fn refresh(state: &AuthState, token: Option<String>) -> Result<
         email: row.get(6),
         json: row.get(7),
     };
-    if revoked && is_retry(&tx, session_id, token_id).await? {
+    if revoked && !expired && is_retry(&tx, session_id, token_id).await? {
         // The client lost the answer to its rotation (network drop, two tabs
         // racing) and is retrying with the token it still has. Hand out a
         // fresh pair in the same session and retire whatever the lost answer
