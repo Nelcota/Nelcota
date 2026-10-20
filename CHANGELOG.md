@@ -6,6 +6,17 @@ Dates are published release dates in UTC.
 Server releases are listed here. The [TypeScript SDK](sdk/typescript/CHANGELOG.md)
 and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
+## [Unreleased]
+
+### Fixed
+
+- Reject host initialization without the privileges required for storage ownership
+  before writing credentials, including with `--skip-checks`.
+- Require an active, boot-enabled cron scheduler for Linux host installation;
+  validate it in `doctor` and abort init if the daily job cannot be installed.
+- Refuse unavailable or inapplicable `--firewall` requests and propagate ufw rule
+  failures before writing new host credentials. Document VPS prerequisites.
+
 ## [0.5.0] — 2026-10-19
 
 Server 0.5.0 is [published](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.0).

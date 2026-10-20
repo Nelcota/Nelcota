@@ -395,10 +395,10 @@ pub struct InitArgs {
     /// with Postgres and Caddy from apt). Only when the host is created.
     #[arg(long, value_enum, default_value_t = Runtime::Docker)]
     pub runtime: Runtime,
-    /// Configures ufw (allows SSH, 80 and 443 and enables it).
+    /// Configures installed ufw on a new non-local Linux host (SSH, 80 and 443).
     #[arg(long)]
     pub firewall: bool,
-    /// Skips the environment checks.
+    /// Skips Docker, ports, RAM and DNS checks, not installation prerequisites.
     #[arg(long)]
     pub skip_checks: bool,
 }
