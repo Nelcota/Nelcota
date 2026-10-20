@@ -10,6 +10,13 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Require encrypted auth email transport: implicit TLS or mandatory STARTTLS.
+  Refuse plain/opportunistic SMTP, ambiguous URL options and fragments before
+  delivery; keep supported encrypted configurations and certificate verification.
+- Bound refresh retry grace by token expiration, including the exact deadline,
+  while preserving session revocation and reuse detection.
+- Prevent caching of auth handler responses with `no-store`/`no-cache`, retaining
+  the public JWKS cache policy and existing response payloads.
 - Reject host initialization without the privileges required for storage ownership
   before writing credentials, including with `--skip-checks`.
 - Require an active, boot-enabled cron scheduler for Linux host installation;

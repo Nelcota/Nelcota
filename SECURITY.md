@@ -27,8 +27,8 @@ use the same private thread to agree next steps rather than exposing user data.
 
 | Component | Receives fixes |
 | --- | --- |
-| Latest published server release (currently 0.4.0) | Yes; corrections may first land in main and ship in the next release. |
-| Latest published TypeScript/Rust SDKs (currently 0.1.2) | Yes, released independently of the server. |
+| Latest published server release | Yes; corrections may first land in main and ship in the next release. See the [version guide](docs/releases/README.md). |
+| Latest published TypeScript/Rust SDKs | Yes, released independently of the server. See the [SDK release guides](CONTRIBUTING.md#sdks). |
 | Older releases | No routine backports; upgrade and review compatibility notes. |
 | main/source candidates | Development fixes; not a production acceptance guarantee. |
 
@@ -59,7 +59,7 @@ before installing:
 ```sh
 sha256sum -c nelcota-x86_64-unknown-linux-musl.sha256
 gh attestation verify nelcota-x86_64-unknown-linux-musl -R Nelcota/Nelcota
-gh attestation verify oci://ghcr.io/nelcota/nelcota-server:0.4.0 -R Nelcota/Nelcota
+gh attestation verify oci://ghcr.io/nelcota/nelcota-server:0.5.0 -R Nelcota/Nelcota
 ```
 
 Use the corresponding arm64 filename when needed. Checksums detect mismatched

@@ -90,6 +90,10 @@ from the original rotation (its `refreshed_at`). Once R2's successor has been
 rotated in turn, or after the window, R1 is reuse again and step 3 applies.
 The client should still serialize refreshes; the window only absorbs retries.
 
+Retry grace also requires R1 to remain unexpired: `expires_at <= now()` is
+expired, including at the exact deadline. An expired, rotated token follows
+reuse handling and ends that session; it never issues another pair.
+
 ### Cleanup
 
 Once an hour the server deletes refresh tokens past `expires_at` (a rotated
@@ -169,6 +173,11 @@ a full minute, enough to recover the complete GCRA burst.
 | `POST /auth/v1/magiclink` | `{email}` | 200 `{}` (whether or not the account exists) |
 | `POST /auth/v1/resend` | `{type: "signup", email}` | 200 `{}` (whether or not the account exists) |
 | `POST /auth/v1/verify` | `{type: "recovery", token, password}` or `{type: "signup" \| "magiclink", token}` | 200 + session |
+
+Auth handlers send `Cache-Control: no-store` and `Pragma: no-cache` on session,
+account, email-link and OAuth responses, including handler errors and redirects.
+The public JWKS keeps `Cache-Control: public, max-age=300`; it contains no secrets.
+Response bodies, statuses and SDK payloads are unchanged.
 
 Session:
 
@@ -271,6 +280,14 @@ NELCOTA_PASSWORD_RECOVERY_URL=https://app.shop.com/new-password
 
 A half-configured setup stops the server from starting (better than finding
 out on the first "forgot my password").
+
+The SMTP mailer accepts implicit TLS (`smtps://`) or mandatory STARTTLS
+(`smtp://` with `tls=required`). The only query option is one `tls=required`;
+it is optional for SMTPS. Plain SMTP, opportunistic TLS, fragments, repeated
+TLS settings and unknown query options are refused before delivery, including
+on loopback. Fix an existing URL before restarting the updated server; never
+disable certificate verification. Custom mail adapters must enforce their
+own transport security.
 
 When SMTP is disabled, there is no self-service email reset. An operator must
 verify the account owner's identity through a separate trusted channel, sign

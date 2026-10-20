@@ -48,7 +48,7 @@ provider IDs or generated values require your own credentials.
 | `NELCOTA_SIGNUP_ENABLED` | `bool` | `true` | `false` | Allows public signup. Provider sign-in for existing linked accounts has its own documented flow. |
 | `NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE` | `u32` | `30` | `30` | Positive password/signup/email/provider budget per IP. Password login also has an email budget. Refresh/PKCE use a separate 10x budget. |
 | `NELCOTA_TRUST_PROXY` | `bool` | `false` | `true` | Uses rightmost X-Forwarded-For for caller IP. Enable only behind a correctly configured trusted proxy with direct access restricted. |
-| `NELCOTA_SMTP_URL` | `Option<Secret>` | `unset` | `smtps://user:REPLACE@smtp.example.com:465` | Auth email transport; smtps or smtp with required TLS. Set sender and recovery page together. Blank is absent. |
+| `NELCOTA_SMTP_URL` | `Option<Secret>` | `unset` | `smtps://user:REPLACE@smtp.example.com:465` | Auth email transport: `smtps://` or `smtp://` with one `tls=required`. Other TLS/query options, repeated options and fragments are refused. Set sender and recovery page together. Blank is absent. |
 | `NELCOTA_SMTP_FROM` | `Option<String>` | `unset` | `App <no-reply@example.com>` | Sender mailbox/display name. Quote spaces in the deployment environment-file format. |
 | `NELCOTA_PASSWORD_RECOVERY_URL` | `Option<String>` | `unset` | `https://app.example.com/recovery` | Required with SMTP; HTTP(S) application link page without a fragment. Production should use HTTPS. |
 | `NELCOTA_EMAIL_CONFIRMATION_URL` | `Option<String>` | `unset` | `https://app.example.com/confirm` | With SMTP, makes signup wait for email confirmation. HTTP(S) page without a fragment. |

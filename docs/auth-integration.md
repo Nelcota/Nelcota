@@ -79,12 +79,23 @@ The existing `/auth/v1` routes are preserved: `signup`, `token`, `logout`, `user
 grants. Errors keep the existing JSON vocabulary and HTTP statuses through
 `ApiError`. Both existing SDKs can use the external host's auth routes.
 
+The router marks auth handler responses `Cache-Control: no-store` and
+`Pragma: no-cache`, including errors and OAuth redirects. The separate public
+JWKS route keeps its five-minute cache policy. Preserve these headers when
+adding host middleware or a reverse proxy.
+
 Assign `state.mailer`, configure `state.settings.links` before constructing
 the final state, and use the shared `MailDelivery` admission/deadline for mail
 flows. Missing adapters leave the corresponding flows disabled. Provider
 integration uses `OAuth`, `Provider`, `ProviderKind` and explicit redirect
 allowlists. Google and GitHub flows retain the existing verified-email and
 PKCE contracts. Provider HTTP transport initializes its TLS provider internally.
+
+`SmtpMailer::new` accepts implicit TLS via `smtps://` or mandatory STARTTLS via
+`smtp://` with one `tls=required`. The only query option is a single
+`tls=required` (optional for SMTPS); fragments, duplicates and other query/TLS
+settings are refused before delivery, including on loopback. Custom `Mailer`
+implementations remain responsible for their transport security.
 
 `Keys`, `JwtVerifier`, `SharedVerifier`, `Auth`, `Claims`, `Role` and `VerifyError`
 are reachable from the auth facade. EdDSA is preferred; JWKS exposes only public
@@ -106,6 +117,8 @@ the documented short retry grace: competing requests can both return a response,
 but only the newest successor remains usable. Recovery, confirmation, magic-link
 and PKCE credentials retain their single-use database consumption boundaries.
 Password/link changes and revocation must not resurrect an ended session.
+Retry grace never extends a refresh token's expiration: the exact deadline is
+expired, and an expired, rotated token follows the existing reuse handling.
 
 ## Database lifecycle and authorization
 
@@ -154,7 +167,7 @@ connector integration; it is not demonstrated by this example.
 
 ## Compatibility and operation
 
-Auth/core versions travel together. The current candidate manifests use 0.4;
+Auth/core versions travel together. The current source manifests use 0.5.0;
 subsequent compatible fixes preserve constructors, routes, error vocabulary,
 claims and additive database history. Breaking Rust changes during 0.x require
 a new minor version and a migration/upgrade note. After 1.0, breaking public
