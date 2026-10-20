@@ -729,7 +729,7 @@
           </div>
           <ol class="flex flex-wrap gap-2 text-xs" aria-label={h('progress')}>
             {#each steps(job.operation) as stage, index}<li
-                class={`rounded-lg px-3 py-2 ${job.stage === stage || job.stage === 'completed' ? 'bg-primary/10 text-primary' : 'bg-well text-muted-foreground'}`}
+                class={`rounded-lg px-3 py-2 ${job.stage === stage || job.stage === 'completed' ? 'bg-primary/10 text-brand' : 'bg-well text-muted-foreground'}`}
                 aria-current={job.stage === stage ? 'step' : undefined}
               >
                 {index + 1} · {label(stage)}

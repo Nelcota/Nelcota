@@ -41,7 +41,7 @@
   let name = $state(t('migrations.dialog.defaultName'))
   let saving = $state(false)
   let initialName = $state('')
-  const guard = new CloseGuard(() => name !== initialName, () => saving, () => (dialogOpen = false))
+  const guard = new CloseGuard(() => name !== initialName, () => saving, () => (dialogOpen = false), () => dialogOpen)
   $effect(() => { if (dialogOpen) untrack(() => (initialName = name)) })
   // Last migration generated in this visit, to remind the next step.
   let generated = $state<ExportedMigration | null>(null)

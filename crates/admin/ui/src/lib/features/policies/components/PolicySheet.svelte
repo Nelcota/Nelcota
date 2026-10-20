@@ -48,7 +48,7 @@
   let heading = $state<HTMLHeadingElement | null>(null)
   let initialValue = $state('')
   const draft = $derived(JSON.stringify({ custom, advanced, prepareAccess, audience, level, name: nameEdited ? name : '', ownerColumn: ownerColumn === initialOwner ? '' : ownerColumn, createOwner: createOwner !== initialCreateOwner }))
-  const guard = new CloseGuard(() => draft !== initialValue, () => saving, () => (open = false))
+  const guard = new CloseGuard(() => draft !== initialValue, () => saving, () => (open = false), () => open)
   const preview = new Preview()
   const ownerColumns = $derived(columns.filter(column => column.data_type === 'uuid' && (!column.primary_key || !column.default)))
   const addOwner = $derived(!advanced && audience === 'owner' && !ownerColumns.length && createOwner && !columns.some(column => column.name === 'user_id'))

@@ -33,7 +33,7 @@
   let fields = $state<Record<string, FieldState>>({})
   let saving = $state(false)
   let initial = $state('')
-  const guard = new CloseGuard(() => JSON.stringify(fields) !== initial, () => saving, () => (open = false))
+  const guard = new CloseGuard(() => JSON.stringify(fields) !== initial, () => saving, () => (open = false), () => open)
 
   // Reload the fields whenever the sheet opens.
   $effect(() => {

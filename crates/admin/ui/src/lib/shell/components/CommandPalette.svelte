@@ -53,6 +53,8 @@
   function onKeydown(event: KeyboardEvent) {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault()
+      // Respect the active modal's focus and draft; never open a hidden palette.
+      if (!palette.open && document.querySelector('[role="dialog"], [role="alertdialog"]')) return
       palette.open = !palette.open
     }
   }
@@ -71,7 +73,7 @@
   class="sm:max-w-xl"
 >
   <Command.Input aria-label={t('shell.topbar.searchLabel')} placeholder={t('palette.placeholder')} />
-  <Command.List aria-label={t('palette.title')} class="max-h-[min(60vh,420px)]">
+  <Command.List aria-label={t('palette.title')} class="min-h-0 max-h-[min(60dvh,420px)] flex-1">
     <Command.Empty class="py-8 text-muted-foreground">{t('palette.empty')}</Command.Empty>
 
     <Command.Group heading={t('palette.groups.pages')}>

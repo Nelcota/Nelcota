@@ -30,6 +30,7 @@
 		data-slot="dialog-content"
 		class={cn(
 			"bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 ring-foreground/10 grid max-w-[calc(100%_-_2rem)] gap-5 rounded-3xl p-6 text-sm ring-1 shadow-overlay duration-150 sm:max-w-md fixed top-1/2 left-1/2 z-50 w-full max-h-[calc(100dvh_-_2rem)] overflow-y-auto -translate-x-1/2 -translate-y-1/2 outline-none",
+			"*:min-w-0",
 			className
 		)}
 		{...restProps}

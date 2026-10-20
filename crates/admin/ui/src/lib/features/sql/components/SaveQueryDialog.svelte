@@ -25,7 +25,7 @@
 
   let name = $state('')
   let originalName = $state('')
-  const guard = new CloseGuard(() => name !== originalName, () => false, () => (open = false))
+  const guard = new CloseGuard(() => name !== originalName, () => false, () => (open = false), () => open)
 
   // Fill the field on every open (save and rename share this dialog).
   $effect(() => {

@@ -81,6 +81,13 @@ for 24 hours: restarting the server starts them again.
 RLS state shows as a colored badge: green (RLS with policies), amber (RLS on
 without policies) and red (table exposed without RLS).
 
+Altered forms ask before discarding changes, including internal navigation and
+browser Back/Forward. Reloading or leaving the panel uses the browser's own
+confirmation. While a modal is open, Ctrl+K does not open another dialog.
+On phones, open Guides from the navigation menu. Bucket size limits are edited
+in MiB (1,048,576 bytes); changing other settings preserves the exact byte limit,
+and clearing the limit field restores the server default.
+
 | Feature | How to use it |
 |---|---|
 | Edit a cell | double click; Enter saves, Esc cancels, NULL button for nulls |

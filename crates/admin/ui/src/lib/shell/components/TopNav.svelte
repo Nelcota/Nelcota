@@ -10,7 +10,7 @@
   import { isActive, navPills } from '$lib/shell/nav'
   import { t } from '$lib/i18n/index.svelte'
 
-  // Main navigation stays centred; on phones it moves into a sheet.
+  // Navigation gets its own row when the content needs more room.
   let mobileOpen = $state(false)
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
 
@@ -26,7 +26,7 @@
   <button
     type="button"
     onclick={() => (palette.open = true)}
-    class="grid size-14 shrink-0 cursor-pointer place-items-center rounded-full bg-nav text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+    class="grid size-11 shrink-0 cursor-pointer place-items-center rounded-full bg-nav text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:size-14"
     aria-label={`${t('shell.topbar.searchLabel')} (${isMac ? '⌘' : 'Ctrl'} K)`}
     title={`${t('shell.topbar.searchLabel')} (${isMac ? '⌘' : 'Ctrl'} K)`}
   >
@@ -42,34 +42,33 @@
 {/snippet}
 
 <header class="shrink-0 bg-background/85 backdrop-blur">
-  <div class="mx-auto w-full max-w-page px-4 py-4 sm:px-6 lg:px-8">
-  <div class="grid grid-cols-[1fr_auto] items-center gap-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-8">
-    <div class="flex min-w-0 items-center gap-2">
+  <div class="@container mx-auto w-full max-w-page px-4 py-4 sm:px-6 lg:px-8">
+  <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 @min-[80rem]:grid-cols-[minmax(0,1fr)_auto_auto] @min-[80rem]:gap-6">
+    <div class="flex min-w-0 items-center gap-2 @max-[26rem]:col-span-2">
       <button
         type="button"
-        class="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full bg-nav text-muted-foreground hover:text-foreground md:hidden"
+        class="grid size-11 shrink-0 cursor-pointer place-items-center rounded-full bg-nav text-muted-foreground hover:text-foreground md:hidden"
         onclick={() => (mobileOpen = true)}
         aria-label={t('shell.nav.menu')}
       >
         <Menu class="size-5" aria-hidden="true" />
       </button>
-      <div class="min-w-0 max-w-64 lg:w-14 xl:w-auto"><ProjectSwitcher /></div>
+      <div class="min-w-0 max-w-64"><ProjectSwitcher /></div>
     </div>
 
-    <nav aria-label={t('shell.nav.main')} class="hidden items-center gap-1 rounded-full bg-nav p-1.5 lg:flex">
+    <nav aria-label={t('shell.nav.main')} class="hidden items-center gap-1 rounded-full bg-nav p-1.5 @min-[80rem]:flex">
       {@render pills()}
     </nav>
 
-    <div class="flex min-w-0 items-center justify-end gap-2">
-      <a href={href('/guides')} aria-label={t('shell.pages.guides')} title={t('shell.pages.guides')} aria-current={isActive('/guides') ? 'page' : undefined} class={['grid size-10 shrink-0 place-items-center rounded-full transition-colors sm:size-14', isActive('/guides') ? 'bg-nav-active text-nav-active-foreground' : 'bg-nav text-muted-foreground hover:bg-accent hover:text-foreground']}><BookOpen class="size-5" aria-hidden="true" /></a>
+    <div class="flex shrink-0 items-center justify-end gap-2 @max-[26rem]:col-span-2">
+      <a href={href('/guides')} aria-label={t('shell.pages.guides')} title={t('shell.pages.guides')} aria-current={isActive('/guides') ? 'page' : undefined} class={['grid size-11 shrink-0 place-items-center rounded-full transition-colors sm:size-14', isActive('/guides') ? 'bg-nav-active text-nav-active-foreground' : 'bg-nav text-muted-foreground hover:bg-accent hover:text-foreground']}><BookOpen class="size-5" aria-hidden="true" /></a>
       {@render search()}
       <AccountMenu />
     </div>
   </div>
 
-  <!-- Below lg: navigation gets a row of its own. -->
-  <nav aria-label={t('shell.nav.main')} class="mt-3 hidden overflow-x-auto md:block lg:hidden">
-    <div class="mx-auto flex w-max items-center gap-1 rounded-full bg-nav p-1.5">{@render pills()}</div>
+  <nav aria-label={t('shell.nav.main')} class="mt-3 hidden md:block @min-[80rem]:hidden">
+    <div class="mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1 rounded-3xl bg-nav p-1.5">{@render pills()}</div>
   </nav>
   </div>
 </header>
@@ -87,6 +86,9 @@
           <item.icon class="size-[18px]" strokeWidth={1.6} aria-hidden="true" />{t(item.title)}
         </a>
       {/each}
+      <a href={href('/guides')} onclick={() => (mobileOpen = false)} class={[...pill(isActive('/guides')), 'gap-3']}>
+        <BookOpen class="size-[18px]" aria-hidden="true" />{t('shell.pages.guides')}
+      </a>
     </nav>
   </Sheet.Content>
 </Sheet.Root>
