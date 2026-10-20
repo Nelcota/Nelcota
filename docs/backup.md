@@ -22,17 +22,37 @@ nelcota backup --all --keep 7     # every project; keeps the 7 most recent local
 adding a bucket after `init` needs no other change. `--upload` forces it and
 fails without one.
 
+Before the first Linux host `init`, install a scheduler that reads
+`/etc/cron.d` and enable it at boot. On Debian/Ubuntu, as root:
+
+```sh
+apt-get update && apt-get install -y cron
+systemctl enable --now cron.service
+systemctl is-active cron.service
+systemctl is-enabled cron.service
+```
+
+Fedora/RHEL uses the `cronie` package and `crond.service`. The current source
+requires an active, persistently enabled systemd cron service before creating
+host credentials; `--skip-checks` does not waive this prerequisite. A cron file
+alone does not schedule a backup. These validation fixes are **Unreleased**;
+prepare and verify the scheduler manually on published 0.5.0 too.
+
 The first `init` (as root) installs a daily cron job at 03:00
 (`/etc/cron.d/nelcota-backup`):
 
 ```
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 0 3 * * * root '/usr/local/bin/nelcota' -C '/opt/nelcota' backup --all --keep 7 >> /var/log/nelcota-backup.log 2>&1
 ```
 
 A broken project does not stop the others from being backed up; the command
 lists the failures and exits non-zero. `nelcota status` shows the age of each
 project's last backup, and `nelcota doctor` reports a missing cron job or a
-backup older than 26 hours.
+backup older than 26 hours. In the current source, `doctor` also fails when the
+scheduler is inactive or not persistently enabled; a recent manual backup does
+not satisfy that check. Failure to install the cron file aborts a new init
+before host credentials are written.
 
 With disk storage, every dump has a sibling `<dump>.files/` directory containing
 the immutable object versions and a SHA-256 manifest. The dump and file list

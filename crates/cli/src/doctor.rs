@@ -76,6 +76,7 @@ pub fn run(host: &Host) -> anyhow::Result<()> {
 
     step("Backups");
     if cfg!(target_os = "linux") && !manifest.local {
+        report.check(machine::check_backup_scheduler());
         match std::path::Path::new(machine::BACKUP_CRON).is_file() {
             true => {
                 ok(&format!("daily backup job: {}", machine::BACKUP_CRON));

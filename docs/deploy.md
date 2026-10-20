@@ -1,17 +1,42 @@
 # Deploy
 
 Provision PostgreSQL, the Rust app and Caddy for HTTPS on a VPS. You need
-a supported Linux host, administrative access, DNS and open ports 80/443.
+a supported Linux host, root access, DNS and open ports 80/443. Daily backups
+require a running, boot-enabled systemd `cron.service` or `crond.service` whose
+scheduler reads `/etc/cron.d` (Debian/Ubuntu cron or Fedora/RHEL cronie).
 Use an explicitly selected published CLI/image version; source-only features
 require their own release and acceptance. Node is not required.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sh     # binary (with checksum) + Docker if missing
+sudo -i                                        # enter a root shell; omit if already root
+# Debian/Ubuntu; prepare cron before either Docker or native init:
+apt-get update
+apt-get install -y ca-certificates curl coreutils cron
+systemctl enable --now cron.service
+curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | NELCOTA_VERSION=0.5.0 sh
 mkdir -p /opt/nelcota && cd /opt/nelcota
-nelcota init api.yourdomain.com                 # creates the host and the first project
+nelcota init api.yourdomain.com --version 0.5.0  # creates the host and the first project
 nelcota up                                      # starts projects + Caddy, waits for the healthcheck
 nelcota doctor                                  # optional: checks DNS, ports, backups and health
 ```
+
+On Fedora/RHEL, install `cronie` and enable/start `crond.service` instead.
+Other schedulers or init managers are not verified by automatic Linux host
+provisioning. `nelcota dev` does not provision a host and needs neither root
+nor a backup scheduler. Merely belonging to the Docker group is insufficient
+for `init`: the file-storage directory must be owned by UID/GID `65532`.
+
+The current source rejects missing installation prerequisites before writing
+host credentials, even with `--skip-checks`. These preflight fixes are
+**Unreleased**; when installing published 0.5.0, perform the preparation above
+yourself. Never remove an existing project's `.env` just to retry a failed init;
+inspect and preserve any partial installation first.
+
+To request `--firewall`, install `ufw` first and allow your actual SSH port
+before enabling it; the built-in `OpenSSH` rule normally covers port 22.
+The option applies only to the first, non-local Linux host initialization.
+Missing ufw or a failed rule aborts the current source's init. Without the
+option, configure the host firewall and provider security group manually.
 
 First create a DNS **A** record for the domain pointing at the VPS IP. Caddy
 issues the certificate on its own on the first request. After starting
@@ -91,8 +116,8 @@ reported stage before retrying.
 | `--profile 1gb\|2gb\|4gb\|8gb` | Postgres profile (default: by the RAM split across the projects) |
 | `--s3-endpoint`, `--s3-bucket`, `--s3-access-key`, `--s3-secret-key`, `--s3-region` | backup bucket, written to `host.env` (all four or none; region defaults to `us-east-1`). Without them, an interactive `init` asks, reading the secret key without echo |
 | `--runtime docker\|systemd` | how projects run (only when the host is created; see below) |
-| `--firewall` | configures `ufw` (SSH, 80 and 443) |
-| `--skip-checks` | skips the Docker, ports, RAM and DNS checks |
+| `--firewall` | requires installed `ufw`; configures SSH, 80 and 443 only when creating a non-local Linux host |
+| `--skip-checks` | skips Docker, ports, RAM and DNS checks; root, backup scheduler and requested ufw requirements still apply |
 
 ## Commands
 
@@ -104,7 +129,7 @@ project ask for `-p <name>`.
 | `nelcota projects` | lists projects, state and version |
 | `nelcota up` | starts every project and Caddy (`-p` for just one), then checks public HTTPS |
 | `nelcota status` | app and Postgres health, last backup age, version and free disk |
-| `nelcota doctor` | checks Docker, Caddy/ports 80 and 443, free disk, DNS, the backup cron, a backup younger than 26 h per project, S3 and service health; exits non-zero on any problem |
+| `nelcota doctor` | checks Docker, Caddy/ports 80 and 443, free disk, DNS, the backup cron file and active boot-enabled scheduler, a backup younger than 26 h per project, S3 and service health; exits non-zero on any problem |
 | `nelcota -p shop logs -f [app\|postgres]` / `logs caddy` | project logs / the shared proxy's logs |
 | `nelcota -p shop down` / `down --all` | stops (`--volumes` DELETES the data after a confirmation, `--yes` skips it; Docker only) |
 | `nelcota -p shop migrate` | applies `projects/shop/migrations/V<n>__<name>.sql` |
@@ -127,6 +152,9 @@ container, which is what can reach Postgres. Outside a host, they use
 On a small VPS that will only ever hold one project, Nelcota can skip Docker:
 
 ```sh
+sudo -i
+apt-get update && apt-get install -y ca-certificates curl coreutils cron
+systemctl enable --now cron.service
 curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | NELCOTA_SKIP_DOCKER=1 sh
 mkdir -p /opt/nelcota && cd /opt/nelcota
 nelcota init api.yourdomain.com --runtime systemd
@@ -191,16 +219,19 @@ Security details in [panel.md](panel.md).
 
 ## What the first `init` does
 
-1. **Checks** Docker and the compose plugin (a user outside the `docker`
-   group is told to use sudo or `usermod -aG docker $USER`), free ports 80/443
+1. **Checks** root access, an active boot-enabled backup scheduler and installed
+   ufw when requested, before writing host credentials. Then checks Docker and
+   the compose plugin, free ports 80/443
    (in use = error, with how to find the process; `--skip-checks` continues
    anyway), RAM and the domain's DNS.
-2. **Generates** the host secrets: admin credentials (password shown **once**;
+2. **Machine:** with `--firewall`, configures `ufw` (SSH, 80 and 443), then
+   installs the daily backup job (03:00, keeps 7). Failure aborts init before
+   host credentials are written. These prerequisites are not skipped by
+   `--skip-checks`.
+3. **Generates** the host secrets: admin credentials (password shown **once**;
    `host.env` keeps only the argon2id hash) and the single sign-on secret.
-3. **Backup:** asks for the S3-compatible destination (or use `--s3-*`) and,
-   as root, installs the daily cron job for every project (03:00, keeps 7).
+4. **Backup:** asks for the S3-compatible destination (or use `--s3-*`).
    The job uploads whenever `host.env` has a bucket, so S3 can be added later.
-4. **Machine:** with `--firewall`, configures `ufw` (SSH, 80 and 443).
 
 Each later `init` only creates the project: its own secrets (Postgres,
 `authenticator`, Ed25519 key), a Postgres profile from the RAM split between

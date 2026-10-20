@@ -80,9 +80,15 @@ fi
 
 cat <<'MSG'
 
-Next steps:
+VPS next steps (run in a root shell, for example sudo -i):
+  # Prepare a running, boot-enabled cron/crond scheduler that reads /etc/cron.d.
+  # Debian/Ubuntu: apt-get install cron && systemctl enable --now cron.service
+  # --firewall also requires installed ufw; allow your actual SSH port first.
   mkdir -p /opt/nelcota && cd /opt/nelcota   # the host folder
   nelcota init api.yourdomain.com    # point DNS (A record) at this machine first
   nelcota up
   nelcota doctor                     # checks DNS, ports, backups and health
+
+For local application development, use nelcota dev in your application folder.
+It does not require root or a backup scheduler.
 MSG

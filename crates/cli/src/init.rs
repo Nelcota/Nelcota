@@ -68,6 +68,10 @@ pub fn run(host: &Host, args: InitArgs) -> anyhow::Result<()> {
     if existing.is_none() {
         validate_s3_flags(&args)?;
     }
+    if args.firewall && existing.is_some() {
+        bail!("--firewall only applies when a new host is created; configure this host manually");
+    }
+    machine::preflight(local, args.firewall)?;
 
     let CreatedHost {
         mut manifest,
@@ -209,6 +213,9 @@ fn create_host(host: &Host, args: &InitArgs) -> anyhow::Result<CreatedHost> {
     if args.runtime == Runtime::Systemd {
         native::install_packages()?;
     }
+    if !args.local {
+        machine::setup(host, args.firewall)?;
+    }
     let s3 = backup_destination(args);
     let mut secrets = format!(
         "# nelcota host secrets (generated at {}). Mode 600, kept out of git.\n",
@@ -251,9 +258,6 @@ fn create_host(host: &Host, args: &InitArgs) -> anyhow::Result<CreatedHost> {
         host.root().join(".gitignore"),
         "host.env\nprojects/*/.env\nprojects/*/backups/\narchive/\n",
     )?;
-    if !args.local {
-        machine::setup(host, args.firewall);
-    }
     let shown = (manifest.panel_login == crate::host::PanelLogin::Shared).then_some(shared);
     Ok(CreatedHost {
         manifest,
