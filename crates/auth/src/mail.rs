@@ -10,6 +10,7 @@ use std::{sync::Arc, time::Duration};
 use axum::http::StatusCode;
 use nelcota_core::ApiError;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
+use url::Url;
 
 use futures_util::future::BoxFuture;
 use lettre::{
@@ -107,15 +108,43 @@ pub struct SmtpMailer {
 
 impl SmtpMailer {
     pub fn new(url: &str, from: &str) -> Result<Self, MailError> {
+        let url = encrypted_smtp_url(url)?;
         let from = from
             .parse::<Mailbox>()
             .map_err(|e| MailError(format!("invalid NELCOTA_SMTP_FROM: {e}")))?;
         // lettre's error message does not include the URL (which holds the password).
-        let transport = AsyncSmtpTransport::<Tokio1Executor>::from_url(url)
+        let transport = AsyncSmtpTransport::<Tokio1Executor>::from_url(url.as_str())
             .map_err(|e| MailError(format!("invalid NELCOTA_SMTP_URL: {e}")))?
             .timeout(Some(Duration::from_secs(15)))
             .build();
         Ok(SmtpMailer { transport, from })
+    }
+}
+
+/// Apply one policy before lettre can choose a cleartext/opportunistic mode.
+/// Parse the same decoded query pairs as lettre, rejecting ambiguous settings.
+fn encrypted_smtp_url(value: &str) -> Result<Url, MailError> {
+    let invalid = || {
+        MailError(
+            "invalid NELCOTA_SMTP_URL: use smtps://... or smtp://...?tls=required; \
+             only one tls=required query option is supported, without a fragment"
+                .into(),
+        )
+    };
+    let url = Url::parse(value).map_err(|_| invalid())?;
+    if url.fragment().is_some() {
+        return Err(invalid());
+    }
+    let mut required = false;
+    for (name, value) in url.query_pairs() {
+        if name != "tls" || value != "required" || required {
+            return Err(invalid());
+        }
+        required = true;
+    }
+    match (url.scheme(), required) {
+        ("smtps", _) | ("smtp", true) => Ok(url),
+        _ => Err(invalid()),
     }
 }
 
@@ -145,6 +174,73 @@ impl Mailer for SmtpMailer {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn smtp_url(scheme: &str, suffix: &str) -> String {
+        let mut url =
+            url::Url::parse(&format!("{scheme}://mail.example.test:587{suffix}")).unwrap();
+        url.set_username("operator").unwrap();
+        url.set_password(Some(&crate::generate_ed25519_private_key()))
+            .unwrap();
+        url.into()
+    }
+
+    #[test]
+    fn rejects_smtp_without_required_tls() {
+        let accepted: Vec<_> = ["", "?tls=opportunistic", "?tls=", "?TLS=required"]
+            .into_iter()
+            .filter(|suffix| {
+                SmtpMailer::new(&smtp_url("smtp", suffix), "sender@example.test").is_ok()
+            })
+            .collect();
+        assert!(
+            accepted.is_empty(),
+            "unencrypted SMTP modes accepted: {accepted:?}"
+        );
+    }
+
+    #[test]
+    fn rejects_ambiguous_or_unsupported_smtp_options() {
+        let mut accepted = Vec::new();
+        for scheme in ["smtp", "smtps"] {
+            for suffix in [
+                "?tls=required&tls=opportunistic",
+                "?tls=opportunistic&tls=required",
+                "?tls=required&%74ls=required",
+                "?tls=required&unexpected=value",
+                "?tls=required#ignored",
+            ] {
+                if SmtpMailer::new(&smtp_url(scheme, suffix), "sender@example.test").is_ok() {
+                    accepted.push((scheme, suffix));
+                }
+            }
+        }
+        assert!(
+            accepted.is_empty(),
+            "unsupported SMTP options accepted: {accepted:?}"
+        );
+    }
+
+    #[test]
+    fn encrypted_smtp_modes_remain_supported() {
+        for (scheme, suffix) in [
+            ("smtps", ""),
+            ("smtps", "?tls=required"),
+            ("smtp", "?tls=required"),
+            ("smtp", "?%74ls=%72equired"),
+        ] {
+            assert!(SmtpMailer::new(&smtp_url(scheme, suffix), "sender@example.test").is_ok());
+        }
+    }
+
+    #[test]
+    fn rejected_smtp_settings_do_not_expose_the_url_or_credentials() {
+        let url = smtp_url("smtp", "?tls=opportunistic");
+        let error = SmtpMailer::new(&url, "sender@example.test").err().unwrap();
+        assert!(error.0.contains("NELCOTA_SMTP_URL"));
+        for private in [url.as_str(), "operator", "mail.example.test"] {
+            assert!(!error.0.contains(private));
+        }
+    }
 
     #[tokio::test]
     async fn delivery_deadline_drops_the_mailer_future_and_returns_capacity() {
