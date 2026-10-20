@@ -11,10 +11,10 @@ use crate::{
 };
 use axum::{
     Router,
-    extract::State,
-    http::{HeaderMap, StatusCode, header},
-    response::IntoResponse,
-    response::Redirect,
+    extract::{Request, State},
+    http::{HeaderMap, HeaderValue, StatusCode, header},
+    middleware::{self, Next},
+    response::{IntoResponse, Redirect, Response},
     routing::{get, post},
 };
 use nelcota_core::{
@@ -35,8 +35,17 @@ pub fn router(state: AuthState) -> Router {
         .route("/auth/v1/verify", post(verify))
         .route("/auth/v1/authorize", get(authorize))
         .route("/auth/v1/callback", get(callback))
+        .route_layer(middleware::from_fn(no_store))
         .route("/auth/v1/.well-known/jwks.json", get(jwks))
         .with_state(state)
+}
+
+async fn no_store(request: Request, next: Next) -> Response {
+    let mut response = next.run(request).await;
+    let headers = response.headers_mut();
+    headers.insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
+    headers.insert(header::PRAGMA, HeaderValue::from_static("no-cache"));
+    response
 }
 
 async fn signup(
