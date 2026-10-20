@@ -512,11 +512,18 @@ npx playwright-core install chromium firefox webkit
 npm run test:contract -- --browser                # against the real binary (Docker), plus Chromium
 ```
 
-The contract run starts Postgres and Mailpit in containers and the server
-from `target/debug`, applies `test/contract/fixture.sql` and generates the
-types with `nelcota types`. It then runs the contract tests (including a
+The contract run needs OpenSSL and builds a contract-only server from the
+unchanged production entrypoint with lettre's native certificate loader.
+It starts Postgres and Mailpit in containers, requires STARTTLS with a fresh
+local CA trusted only by that server process, applies `test/contract/fixture.sql`
+and generates the types with `nelcota types`. It then runs the contract tests (including a
 fuzz of the query encoding) and, with `--browser`, a Chromium page on
 another origin.
+
+The supplied `target/debug` binary (or `NELCOTA_BIN`) still runs CLI type
+generation and is not replaced. Ordinary production builds keep bundled Mozilla
+roots. No certificate or hostname verification is disabled; the disposable
+certificates and keys are removed with the fixture unless `--keep` is selected.
 
 Set `NELCOTA_SDK_BROWSERS=chromium,firefox,webkit` to exercise all browser
 engines. Browser checks include the runnable demo, simultaneous refresh across

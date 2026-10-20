@@ -11,7 +11,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createHmac, randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -85,9 +85,39 @@ process.on('SIGINT', () => {
 
 let status = 1;
 try {
+  // Use the unchanged server entrypoint with a test-only native trust loader.
+  // The release binary's Mozilla roots cannot trust a disposable local CA.
+  // Building an example keeps the supplied CLI binary untouched.
+  const build = run('cargo', [
+    'build', '--locked', '-p', 'nelcota-auth', '-p', 'nelcota-server',
+    '--example', 'sdk-contract-server', '--features', 'lettre/rustls-native-certs',
+    '--message-format=json',
+  ], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
+  const artifact = build.stdout.split('\n').filter(Boolean).map((line) => JSON.parse(line))
+    .find((item) => item.reason === 'compiler-artifact' && item.target.name === 'sdk-contract-server' && item.executable);
+  if (!artifact) throw new Error('Missing SDK contract server build artifact');
+
+  const certs = join(storageDir, 'smtp-certs');
+  mkdirSync(certs, { mode: 0o700 });
+  const ca = join(certs, 'ca.pem');
+  const caKey = join(certs, 'ca.key');
+  const cert = join(certs, 'smtp.pem');
+  const key = join(certs, 'smtp.key');
+  const csr = join(certs, 'smtp.csr');
+  const extensions = join(certs, 'smtp.ext');
+  writeFileSync(extensions, 'subjectAltName=IP:127.0.0.1\nbasicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n');
+  run('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
+    '-subj', '/CN=Nelcota SDK fixture CA', '-addext', 'basicConstraints=critical,CA:TRUE',
+    '-addext', 'keyUsage=critical,keyCertSign,cRLSign', '-keyout', caKey, '-out', ca]);
+  run('openssl', ['req', '-newkey', 'rsa:2048', '-nodes', '-subj', '/CN=localhost', '-keyout', key, '-out', csr]);
+  run('openssl', ['x509', '-req', '-in', csr, '-CA', ca, '-CAkey', caKey,
+    '-CAcreateserial', '-days', '1', '-extfile', extensions, '-out', cert]);
   run('docker', ['run', '-d', '--name', PG, '-e', 'POSTGRES_PASSWORD=postgres', '-p', '127.0.0.1::5432', 'postgres:17-alpine']);
   // SMTP fixtures must not depend on reverse DNS for Docker bridge addresses.
-  run('docker', ['run', '-d', '--name', MAIL, '-e', 'MP_SMTP_DISABLE_RDNS=true', '-p', '127.0.0.1::1025', '-p', '127.0.0.1::8025', 'axllent/mailpit:v1.27.0']);
+  run('docker', ['run', '-d', '--name', MAIL, '-e', 'MP_SMTP_DISABLE_RDNS=true',
+    '-v', `${cert}:/smtp.pem:ro`, '-v', `${key}:/smtp.key:ro`,
+    '-p', '127.0.0.1::1025', '-p', '127.0.0.1::8025', 'axllent/mailpit:v1.27.0',
+    '--smtp-tls-cert', '/smtp.pem', '--smtp-tls-key', '/smtp.key', '--smtp-require-starttls']);
   const PG_PORT = mappedPort(PG, '5432/tcp');
   const SMTP_PORT = mappedPort(MAIL, '1025/tcp');
   const MAIL_PORT = mappedPort(MAIL, '8025/tcp');
@@ -103,13 +133,15 @@ try {
     NELCOTA_STORAGE_BACKEND: 'disk',
     NELCOTA_STORAGE_DIR: storageDir,
     NELCOTA_STORAGE_MIN_FREE_BYTES: '0',
-    NELCOTA_SMTP_URL: `smtp://127.0.0.1:${SMTP_PORT}`,
+    NELCOTA_SMTP_URL: `smtp://127.0.0.1:${SMTP_PORT}?tls=required`,
+    SSL_CERT_FILE: ca,
+    SSL_CERT_DIR: certs,
     NELCOTA_SMTP_FROM: 'Nelcota SDK <no-reply@example.com>',
     NELCOTA_PASSWORD_RECOVERY_URL: 'https://app.example.com/new-password',
     NELCOTA_MAGIC_LINK_URL: 'https://app.example.com/signed-in',
     RUST_LOG: 'warn',
   };
-  server = spawn(bin, ['serve'], { env, stdio: ['ignore', 'inherit', 'inherit'] });
+  server = spawn(artifact.executable, ['serve'], { env, stdio: ['ignore', 'inherit', 'inherit'] });
   server.on('exit', (code) => {
     if (code !== null && code !== 0) console.error(`nelcota serve exited with ${code}`);
   });
