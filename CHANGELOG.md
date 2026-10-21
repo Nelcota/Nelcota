@@ -8,6 +8,25 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ## [Unreleased]
 
+### Added
+
+- Add an operator-only Server workspace with bounded health/resource diagnostics,
+  typed SMTP/OAuth and external backup settings, daily schedule/local retention,
+  panel-administrator password changes and application restart. Reuse durable
+  host plans, explicit approval, project identities and recovery; keep secrets
+  outside public receipts and preserve the separate update acceptance gate.
+- Record a distinct configuration-rollback result and resume interrupted rollback
+  without restoring database data or replaying a verified application restart.
+- Add external backup write/read/delete tests and verified-copy freshness bound
+  to the current recovery configuration.
+
+### Changed
+
+- Require HTTPS external backup endpoints and read back database/files plus
+  AES256-encrypted recovery configuration before CLI/scheduled backup success or
+  local retention. Failed verification preserves the local backup pair.
+
+
 ## [0.5.1] — 2026-10-21
 
 ### Fixed

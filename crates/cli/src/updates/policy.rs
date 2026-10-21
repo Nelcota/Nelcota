@@ -17,6 +17,8 @@ pub struct Operator {
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Provisioning {
+    #[serde(default)]
+    pub service_hosts: Vec<String>,
     pub version: String,
     pub image_digest: String,
     pub source_sha: String,
