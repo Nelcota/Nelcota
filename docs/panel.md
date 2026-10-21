@@ -201,6 +201,18 @@ a failed request can be retried.
 - **RLS without policies**: RLS on and no policy. Nobody but `service_role`
   (and the owner) has access: it is safe, but maybe not what you want.
 
+## Server operations workspace (unreleased)
+
+The source after server 0.5.1 adds **Server** to the separately authenticated host controller, with **Health**, **Projects**, **Backups** and **Settings**. Published 0.5.1 does not include these new controls. Install a matching reviewed CLI/controller release before using them; project-panel credentials do not grant host authority.
+
+Health runs read-only checks for application/database health, DNS, public HTTPS, the boot-enabled backup scheduler, disk reserve and backup freshness. Missing CPU or memory measurements remain unavailable. A saved external destination, a verified downloaded copy and a restore on another machine are distinct results; none enables update installation by itself.
+
+Settings offers typed SMTP, Google/GitHub sign-in, external backup destination, daily schedule/local retention and panel-administrator password changes. Secrets are write-only: blank preserves an existing credential, and disabling a section removes its settings. SMTP requires encrypted transport and an application recovery page. OAuth return pages are shared by the project's providers. Configuring a provider does not prove a successful provider login.
+
+Review the affected projects, type the displayed phrase and confirm the operator password before execution. Shared panel-password changes affect every project and restart their applications. Other email/login changes restart only the selected application; administrator sessions there end. Configuration failures restore configuration only, never an old database snapshot. A failed rollback keeps the job pending for explicit recovery.
+
+Backups supports local capture, an HTTPS destination write/read/delete test and an external copy with database/file/configuration readback verification. Test email is sent only to the operator: server acceptance does not prove inbox delivery. Recovery of an interrupted email test can send another message. Daily schedules use the VPS time zone; retention deletes older local copies, not remote objects. Keep independent off-host restore rehearsals and the existing update acceptance gates.
+
 ## Changing the admin password
 
 ```sh
