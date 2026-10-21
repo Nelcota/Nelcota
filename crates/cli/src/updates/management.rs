@@ -211,6 +211,7 @@ pub(super) async fn blockers(policy: &Policy, op: &Operation) -> anyhow::Result<
                         | Operation::Configure { .. }
                         | Operation::BackupOffsite { .. }
                         | Operation::TestBackup { .. }
+                        | Operation::TestAlerts { .. }
                         | Operation::TestSmtp { .. }
                 )
             {
@@ -264,6 +265,9 @@ pub(super) async fn blockers(policy: &Policy, op: &Operation) -> anyhow::Result<
                     }
                     _ => blocked.push("offsite_not_configured".into()),
                 }
+            }
+            if matches!(op, Operation::TestAlerts { .. }) && !super::alerts::configured(policy)? {
+                blocked.push("alerts_not_configured".into());
             }
             if let Operation::TestSmtp { .. } = op
                 && let Ok(project) = control_project(policy, op.project())

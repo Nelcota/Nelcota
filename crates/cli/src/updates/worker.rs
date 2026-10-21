@@ -92,6 +92,7 @@ pub async fn run(path: PathBuf) -> anyhow::Result<()> {
         policy_digest: nelcota_deployment::digest_file(&path, 65536)?,
         logins: Mutex::default(),
     });
+    let _alerts = super::alerts::spawn(path);
     let admission = Arc::new(Semaphore::new(8));
     loop {
         let (stream, _) = listener.accept().await?;
@@ -247,7 +248,8 @@ async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Result<Respon
         return Ok(error("policy_changed"));
     }
     match request {
-        request @ (Request::HostDiagnostics { .. }
+        request @ (Request::HostAlerts { .. }
+        | Request::HostDiagnostics { .. }
         | Request::HostConfiguration { .. }
         | Request::HostConfigurePlan { .. }
         | Request::HostStatus { .. }

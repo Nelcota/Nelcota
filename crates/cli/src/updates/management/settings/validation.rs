@@ -86,6 +86,16 @@ pub(crate) fn bytes_digest(bytes: &[u8]) -> String {
 /// Only closed, non-sensitive codes may cross the IPC boundary.
 pub(crate) fn error_code(error: &anyhow::Error) -> &'static str {
     match error.to_string().as_str() {
+        "invalid_alert_limits" => "invalid_alert_limits",
+        "alert_channel_required" => "alert_channel_required",
+        "invalid_alert_email" | "invalid_alert_recipient" => "invalid_alert_recipient",
+        "alert_email_project_changed" => "alert_email_project_changed",
+        "invalid_alert_endpoint" | "invalid_alert_destination" => "invalid_alert_endpoint",
+        "alert_endpoint_required" => "alert_endpoint_required",
+        "invalid_alert_configuration" => "invalid_alert_configuration",
+        "alerts_not_configured" => "alerts_not_configured",
+        "alert_delivery_failed" => "alert_delivery_failed",
+        "alert_heartbeat_failed" => "alert_heartbeat_failed",
         "service_not_approved" => "service_not_approved",
         "invalid_configuration_value" => "invalid_configuration_value",
         "invalid_https_page" => "invalid_https_page",

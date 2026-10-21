@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Section {
+    Alerts,
     Smtp,
     OauthGoogle,
     OauthGithub,
@@ -17,6 +18,11 @@ pub enum Section {
 #[derive(Deserialize, Serialize)]
 #[serde(tag = "section", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Configuration {
+    Alerts {
+        settings: crate::alerts::Settings,
+        webhook_url: Option<String>,
+        heartbeat_url: Option<String>,
+    },
     Smtp {
         enabled: bool,
         url: Option<String>,
@@ -57,6 +63,7 @@ pub enum Configuration {
 impl Configuration {
     pub fn section(&self) -> Section {
         match self {
+            Self::Alerts { .. } => Section::Alerts,
             Self::Smtp { .. } => Section::Smtp,
             Self::OauthGoogle { .. } => Section::OauthGoogle,
             Self::OauthGithub { .. } => Section::OauthGithub,

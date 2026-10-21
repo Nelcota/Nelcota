@@ -1,7 +1,9 @@
 import { ControllerError, hash } from '../updates/controller'
-export const sections = ['smtp', 'oauth_google', 'oauth_github', 'backup', 'schedule', 'admin_password'] as const
+import type { AlertSettings } from './alerts-contracts'
+export const sections = ['alerts', 'smtp', 'oauth_google', 'oauth_github', 'backup', 'schedule', 'admin_password'] as const
 export type Section = typeof sections[number]
 export type Configuration =
+  | { section: 'alerts'; settings: AlertSettings; webhook_url: string | null; heartbeat_url: string | null }
   | { section: 'smtp'; enabled: boolean; url: string | null; from: string; recovery_url: string; confirmation_url: string; magic_link_url: string }
   | { section: 'oauth_google' | 'oauth_github'; enabled: boolean; client_id: string; client_secret: string | null; redirects: string[] }
   | { section: 'backup'; enabled: boolean; endpoint: string; bucket: string; region: string; access_key: string | null; secret_key: string | null }

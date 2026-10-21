@@ -40,7 +40,8 @@ async fn reauthenticate(
 }
 pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Result<Response> {
     let session = match &request {
-        Request::HostDiagnostics { token, .. }
+        Request::HostAlerts { token }
+        | Request::HostDiagnostics { token, .. }
         | Request::HostConfiguration { token, .. }
         | Request::HostConfigurePlan { token, .. }
         | Request::HostStatus { token, .. }
@@ -92,6 +93,16 @@ pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Re
         other => other,
     };
     match request {
+        Request::HostAlerts { .. } => {
+            let _permit = state
+                .host_reads
+                .clone()
+                .try_acquire_owned()
+                .context("host_read_busy")?;
+            Ok(Response::HostAlerts {
+                data: super::super::alerts::status(&state.policy)?,
+            })
+        }
         Request::HostDiagnostics { project, .. } => {
             let _permit = state
                 .host_reads
@@ -202,7 +213,8 @@ pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Re
                 Some(c)
                     if matches!(
                         c.section,
-                        nelcota_deployment::operations::Section::Backup
+                        nelcota_deployment::operations::Section::Alerts
+                            | nelcota_deployment::operations::Section::Backup
                             | nelcota_deployment::operations::Section::Schedule
                     ) =>
                 {
@@ -214,6 +226,14 @@ pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Re
                         .collect()
                 }
                 Some(c) => c.restarts.clone(),
+                None if matches!(operation, Operation::TestAlerts { .. }) => {
+                    crate::host::Host::new(&state.policy.root)
+                        .require()?
+                        .projects
+                        .into_iter()
+                        .map(|p| p.name)
+                        .collect()
+                }
                 None => vec![operation.project().to_owned()],
             };
             let public = HostPlan {
@@ -540,6 +560,9 @@ mod tests {
         let (_temp, state, password) = fixture();
         let token = login(&state, password).await;
         for request in [
+            Request::HostAlerts {
+                token: token.clone(),
+            },
             Request::HostDiagnostics {
                 token: token.clone(),
                 project: "shop".into(),

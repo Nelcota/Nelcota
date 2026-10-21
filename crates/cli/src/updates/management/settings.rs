@@ -74,6 +74,19 @@ pub(crate) fn prepare(
     let mut restarts = Vec::new();
     let mut edits = Vec::new();
     match input {
+        Configuration::Alerts {
+            settings,
+            webhook_url,
+            heartbeat_url,
+        } => {
+            let values = super::super::alerts::config::prepare(
+                policy,
+                settings,
+                webhook_url,
+                heartbeat_url,
+            )?;
+            edits.push(env_edit(Target::Host, host.secrets().path(), values)?);
+        }
         Configuration::Smtp {
             enabled,
             url,
@@ -306,6 +319,9 @@ pub(crate) fn prepare(
 /// Service grants are rechecked by the executing worker, not only by the browser plan.
 pub(crate) fn approve_services(policy: &Policy, prepared: &Prepared) -> anyhow::Result<()> {
     for edit in &prepared.edits {
+        if prepared.section == Section::Alerts {
+            super::super::alerts::config::approve_prepared(policy, &edit.after)?;
+        }
         for (key, value) in crate::envfile::parse(&edit.after) {
             if (prepared.section == Section::Smtp && key == "NELCOTA_SMTP_URL")
                 || (prepared.section == Section::Backup && key == "NELCOTA_BACKUP_S3_ENDPOINT")

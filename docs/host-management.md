@@ -74,6 +74,22 @@ Configuration execution persists its effects and recovery decision. Failed start
 
 External backup copies verify encrypted configuration plus dump/files after download, with reserve for three times the estimated database/file bytes plus the existing host buffer. The destination test uses a unique probe object and removes it; it never deletes backup history. Daily retention is local and keeps 1–365 copies. Readback evidence is not the off-host restore acceptance required to enable updates. All existing update gates and minimum reserves remain in force.
 
+## Operational alerts (unreleased)
+
+**Server → Alerts** adds host-wide application/database/HTTPS health, disk,
+certificate-expiry and successful-backup monitoring. Enrolled host operators
+configure email and HTTPS webhook channels, review changes and explicitly test
+delivery. SMTP comes from a pinned registered project; recipients are enrolled
+host operators. Provider names require the existing `service_hosts` grant.
+Secret endpoint URLs never return to the browser. A matching upgraded backup CLI
+must produce successful-outcome receipts; partial dump mtimes do not count.
+
+A total VPS/worker/network outage requires an independent heartbeat monitor.
+Configure and rehearse that external provider separately. See
+[operational alerts](operational-alerts.md) for thresholds, confirmation,
+retries, payloads, activation and limitations. These controls are not in published
+0.5.1 and do not complete the separate update-installation acceptance.
+
 ## Visual workflow
 
 Open the host controller from the Projects page and sign in with the enrolled

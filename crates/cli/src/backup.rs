@@ -9,6 +9,7 @@ mod remote;
 pub(crate) use remote::{
     publish_remote, s3_configured, test_remote, valid_destination, verify_remote,
 };
+pub(crate) mod outcome;
 mod verification;
 pub(crate) use verification::{latest_verified, verify_copy};
 mod workflow;

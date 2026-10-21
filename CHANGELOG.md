@@ -10,6 +10,14 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Added
 
+- Add operator-approved operational email and HTTPS webhook digests for service
+  health, low disk, certificate expiry and overdue/failed backups. Persist incident
+  confirmation, recovery, cooldown and bounded delivery retries independently of
+  browser sessions; support a separately configured external heartbeat observer.
+- Record private backup outcomes so partial dump mtimes cannot imply success.
+  Matching CLI/controller versions and an independent missed-heartbeat rehearsal
+  are required before operational activation.
+
 - Add an operator-only Server workspace with bounded health/resource diagnostics,
   typed SMTP/OAuth and external backup settings, daily schedule/local retention,
   panel-administrator password changes and application restart. Reuse durable

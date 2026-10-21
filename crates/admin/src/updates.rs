@@ -21,6 +21,7 @@ struct Controller {
 #[derive(Deserialize)]
 #[serde(tag = "action", rename_all = "snake_case", deny_unknown_fields)]
 enum Input {
+    HostAlerts,
     HostDiagnostics {
         project: String,
     },
@@ -184,6 +185,7 @@ async fn action(
     };
     let logout = matches!(input, Input::Logout);
     let request = match input {
+        Input::HostAlerts => Request::HostAlerts { token },
         Input::HostDiagnostics { project } => Request::HostDiagnostics { token, project },
         Input::HostConfiguration { project } => Request::HostConfiguration { token, project },
         Input::HostConfigurePlan {

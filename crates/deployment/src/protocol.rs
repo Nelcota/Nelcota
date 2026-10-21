@@ -14,6 +14,9 @@ pub struct ControllerConfig {
 #[derive(Deserialize, Serialize)]
 #[serde(tag = "action", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Request {
+    HostAlerts {
+        token: String,
+    },
     HostDiagnostics {
         token: String,
         project: String,
@@ -118,6 +121,9 @@ pub struct ProjectStatus {
 #[derive(Deserialize, Serialize)]
 #[serde(tag = "result", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Response {
+    HostAlerts {
+        data: crate::alerts::Status,
+    },
     HostDiagnostics {
         data: crate::operations::Diagnostics,
     },

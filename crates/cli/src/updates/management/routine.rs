@@ -274,6 +274,11 @@ pub(super) fn execute(
                 .context("backup_test_failed")?;
             journal.advance(task, Stage::Verifying, None)?;
         }
+        Operation::TestAlerts { .. } => {
+            changed(journal, task, Stage::Applying)?;
+            super::super::alerts::test(policy)?;
+            journal.advance(task, Stage::Verifying, None)?;
+        }
         Operation::TestSmtp { .. } => {
             use nelcota_auth::Mailer;
             let url = target

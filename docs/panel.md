@@ -282,3 +282,15 @@ and removal with visual review, typed confirmation, operator reauthentication
 and durable recovery. It uses a separate HTTPS origin and SSH-granted host
 authority. The Projects page links to this controller when enrolled.
 Deployment, supported layouts and activation are described in `docs/host-management.md`.
+
+### Operational alerts (unreleased)
+
+In **Server → Alerts**, enrolled host operators can review and configure email
+and HTTPS webhook incident digests for application/database/HTTPS health, low
+disk, certificate expiry and overdue/failed backups. The page shows confirmed
+incidents, recovery, scan freshness, transport acceptance and retry status.
+Changes and delivery tests require explicit approval; project logins have no
+host authority. Secret URLs are write-only. A complete VPS outage requires an
+independent heartbeat provider, configured and rehearsed separately. Follow
+[operational alerts](operational-alerts.md) before enabling; published 0.5.1
+does not include these controls.

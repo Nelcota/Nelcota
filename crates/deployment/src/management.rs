@@ -32,6 +32,9 @@ pub enum Operation {
     BackupOffsite {
         project: String,
     },
+    TestAlerts {
+        project: String,
+    },
     TestSmtp {
         project: String,
     },
@@ -53,6 +56,7 @@ impl Operation {
             | Self::Remove { project }
             | Self::Restart { project }
             | Self::BackupOffsite { project }
+            | Self::TestAlerts { project }
             | Self::TestSmtp { project }
             | Self::TestBackup { project }
             | Self::Configure { project, .. } => project,
@@ -118,6 +122,7 @@ impl Operation {
                 Self::Remove { .. } => "REMOVE",
                 Self::Restart { .. } => "RESTART",
                 Self::BackupOffsite { .. } => "BACKUP_OFFSITE",
+                Self::TestAlerts { .. } => "TEST_ALERTS",
                 Self::TestSmtp { .. } => "TEST_SMTP",
                 Self::TestBackup { .. } => "TEST_BACKUP",
                 Self::Configure { .. } => "CONFIGURE",

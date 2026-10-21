@@ -61,8 +61,8 @@ export function guideLink(link: string, source: string): string | null {
   }
   const guide = guides.find(guide => guide.source === path)
   if (guide) return `/admin${guidePath(guide.id, url.hash.slice(1))}`
-  // The longer staging recipe lives outside the embedded reader.
-  if (path === 'docs/onboarding/notes.md') return `https://github.com/Nelcota/Nelcota/blob/main/${path}${url.hash}`
+  // Longer operational references live outside the embedded reader.
+  if (['docs/onboarding/notes.md', 'docs/operational-alerts.md'].includes(path)) return `https://github.com/Nelcota/Nelcota/blob/main/${path}${url.hash}`
   // Runnable examples have a complete schema and server recipe in the reader.
   if (path === 'sdk/typescript/examples/') return '/admin/guides/example'
   if (path === 'scripts/install.sh') return '/admin/guides/quickstart'

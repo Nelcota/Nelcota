@@ -30,6 +30,7 @@ import webhooks from './messages/webhooks'
 import updates from './messages/updates'
 import host from './messages/host'
 import server from './messages/server'
+import alerts from './messages/alerts'
 
 export type Locale = 'pt-BR' | 'en'
 export const LOCALES: Locale[] = ['pt-BR', 'en']
@@ -57,6 +58,7 @@ const catalogs = {
   updates,
   host,
   server,
+  alerts,
 }
 
 /** `{ one, other }` entries pick a form from `params.count`. */

@@ -16,7 +16,7 @@ export const stages = [
 export type Stage = (typeof stages)[number]
 export type Operation =
   | { kind: 'create'; project: string; domain: string; profile: string }
-  | { kind: 'backup' | 'remove' | 'restart' | 'backup_offsite' | 'test_smtp' | 'test_backup'; project: string }
+  | { kind: 'backup' | 'remove' | 'restart' | 'backup_offsite' | 'test_smtp' | 'test_backup' | 'test_alerts'; project: string }
   | { kind: 'configure'; project: string; section: Section; revision: string }
   | { kind: 'restore'; project: string; backup: string }
 export type Job = {
@@ -101,7 +101,7 @@ function invalid(): never {
 export function parseOperation(v: unknown): Operation {
   if (!object(v) || !project(v.project)) return invalid()
   if (v.kind === 'configure' && isSection(v.section) && revision(v.revision)) return { kind: 'configure', project: v.project, section: v.section, revision: v.revision }
-  if (v.kind === 'backup' || v.kind === 'remove' || v.kind === 'restart' || v.kind === 'backup_offsite' || v.kind === 'test_smtp' || v.kind === 'test_backup')
+  if (v.kind === 'backup' || v.kind === 'remove' || v.kind === 'restart' || v.kind === 'backup_offsite' || v.kind === 'test_smtp' || v.kind === 'test_backup' || v.kind === 'test_alerts')
     return { kind: v.kind, project: v.project }
   if (v.kind === 'restore' && backup(v.backup))
     return { kind: 'restore', project: v.project, backup: v.backup }

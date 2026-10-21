@@ -20,8 +20,30 @@ pub fn backup(
     upload: bool,
     keep: Option<usize>,
 ) -> anyhow::Result<PathBuf> {
+    let receipt = super::outcome::Outcome::begin(project, nelcota_deployment::management::now()?)?;
+    let result = backup_inner(host, project, upload, keep);
+    let recorded = receipt.finish(
+        project,
+        result.is_ok(),
+        nelcota_deployment::management::now()?,
+    );
+    match (result, recorded) {
+        (result, Ok(())) => result,
+        (Ok(_), Err(error)) => {
+            Err(error).context("backup completed but its outcome could not be recorded")
+        }
+        (Err(error), Err(record)) => Err(error).context(format!(
+            "backup failed; recording its outcome also failed: {record}"
+        )),
+    }
+}
+fn backup_inner(
+    host: &Host,
+    project: &Project,
+    upload: bool,
+    keep: Option<usize>,
+) -> anyhow::Result<PathBuf> {
     let dir = project.path("backups");
-    crate::private_fs::dir(&dir)?;
     let name = format!(
         "nelcota-{}-{}-{}.dump",
         project.name,

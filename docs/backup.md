@@ -377,3 +377,13 @@ do not discard the safety backup. Use a disposable host to rehearse recovery.
 
 Related: [deploy](deploy.md), [storage](storage.md), [leaving](leaving.md). Controlled-update recovery has a separate repository
 guide at `docs/panel-updates.md`.
+
+## Operational backup alerts (unreleased)
+
+Current source records private backup attempts and completed success for
+[operational alerts](operational-alerts.md). Partial dump mtimes never count as
+successful backups. Upgrade the CLI executable used by cron along with the
+controller, then complete a successful backup to establish freshness. Failed or
+interrupted attempts preserve earlier success and can raise an incident. Verified
+offsite freshness remains separate from an off-host restore rehearsal. Existing
+backup files and all restore/update acceptance requirements remain unchanged.

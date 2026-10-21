@@ -1,5 +1,18 @@
+import alerts from './alerts'
 import type { Messages } from '../index.svelte'
 const ptBR = {
+  alerts: alerts['pt-BR'].title, test_alerts: alerts['pt-BR'].test,
+  invalid_alert_limits: alerts['pt-BR'].invalid_alert_limits,
+  alert_channel_required: alerts['pt-BR'].alert_channel_required,
+  invalid_alert_recipient: alerts['pt-BR'].invalid_alert_recipient,
+  alert_email_project_changed: alerts['pt-BR'].alert_email_project_changed,
+  invalid_alert_endpoint: alerts['pt-BR'].invalid_alert_endpoint,
+  alert_endpoint_required: alerts['pt-BR'].alert_endpoint_required,
+  invalid_alert_configuration: alerts['pt-BR'].invalid_alert_configuration,
+  alerts_not_configured: alerts['pt-BR'].alerts_not_configured,
+  alert_delivery_failed: alerts['pt-BR'].alert_delivery_failed,
+  alert_heartbeat_failed: alerts['pt-BR'].alert_heartbeat_failed,
+
   insufficient_backup_reserve: 'Não foi possível confirmar espaço para o backup, a leitura de verificação e a reserva da VPS.',
   offsite_verified: 'Cópia externa verificada e recente',
   scheduleImpact: 'A agenda usa o fuso da VPS e vale para todos os projetos. A retenção remove apenas cópias locais antigas; a aplicação não é reiniciada.',
@@ -53,6 +66,18 @@ const ptBR = {
   noProject: 'Selecione um projeto para consultar e operar.', dirty: 'Há alterações ainda não revisadas.',
 }
 const en: Messages<typeof ptBR> = {
+  alerts: alerts.en.title, test_alerts: alerts.en.test,
+  invalid_alert_limits: alerts.en.invalid_alert_limits,
+  alert_channel_required: alerts.en.alert_channel_required,
+  invalid_alert_recipient: alerts.en.invalid_alert_recipient,
+  alert_email_project_changed: alerts.en.alert_email_project_changed,
+  invalid_alert_endpoint: alerts.en.invalid_alert_endpoint,
+  alert_endpoint_required: alerts.en.alert_endpoint_required,
+  invalid_alert_configuration: alerts.en.invalid_alert_configuration,
+  alerts_not_configured: alerts.en.alerts_not_configured,
+  alert_delivery_failed: alerts.en.alert_delivery_failed,
+  alert_heartbeat_failed: alerts.en.alert_heartbeat_failed,
+
   insufficient_backup_reserve: 'Space for the backup, verification readback and VPS reserve could not be confirmed.',
   offsite_verified: 'Recent verified external copy',
   scheduleImpact: 'The schedule uses VPS local time and covers all projects. Retention removes only older local copies; applications are not restarted.',

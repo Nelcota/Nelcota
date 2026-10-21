@@ -3,6 +3,7 @@
   import { CloseGuard } from '$lib/forms/close-guard.svelte'
   import UnsavedChangesDialog from '$lib/components/shared/UnsavedChangesDialog.svelte'
   import Health from '../server/Health.svelte'
+  import Alerts from '../server/Alerts.svelte'
   import Settings from '../server/Settings.svelte'
   import type { Configuration } from '../server/contracts'
   import { Button } from '$lib/components/ui/button'
@@ -25,7 +26,7 @@
     type LogEntry
   } from './controller'
   let { email, expired }: { email: string; expired: () => void } = $props()
-  let area = $state<'projects' | 'health' | 'backups' | 'settings'>('projects')
+  let area = $state<'projects' | 'health' | 'backups' | 'settings' | 'alerts'>('projects')
   let dirty = $state(false)
   let nextNavigation: (() => void) | null = null
   const guard = new CloseGuard(() => dirty, () => busy, () => { dirty = false; const next = nextNavigation; nextNavigation = null; next?.() }, () => true)
@@ -379,7 +380,7 @@
         'completed'
       ]
     if (['configure', 'restart'].includes(op.kind)) return ['accepted', 'validating', 'applying', 'starting', 'verifying', 'completed']
-    if (['test_smtp', 'test_backup'].includes(op.kind)) return ['accepted', 'validating', 'applying', 'verifying', 'completed']
+    if (['test_smtp', 'test_backup', 'test_alerts'].includes(op.kind)) return ['accepted', 'validating', 'applying', 'verifying', 'completed']
     return [
       'accepted',
       'validating',
@@ -422,7 +423,7 @@
   {#if !status}<p role="status">{t('shell.app.loading')}</p>{/if}
   {#if status}
     <nav class="flex flex-wrap gap-2" aria-label={serverText('title')}>
-      {#each ['projects', 'health', 'backups', 'settings'] as item}
+      {#each ['projects', 'health', 'backups', 'settings', 'alerts'] as item}
         <Button variant={area === item ? 'default' : 'outline'} disabled={busy} onclick={() => leave(() => { area = item as typeof area })}>{serverText(item)}</Button>
       {/each}
     </nav>
@@ -551,6 +552,7 @@
         {h('noProjects')}
       </p>{/if}
     {/if}
+    {#if project && area === 'alerts'}{#key project.name}<Alerts project={project.name} disabled={busy || offline || active || pending !== null || plan !== null || recovery !== null} revision={status.jobs.filter(job => terminal(job.stage)).map(job => `${job.id}:${job.sequence}`).join('|')} prepare={configuration => preview(null, configuration)} action={operation => preview(operation)} {expired} ondirty={value => { dirty = value }} navigate={leave} />{/key}{/if}
     {#if project && area === 'health'}{#key project.name}<Health project={project.name} {expired} />{/key}{/if}
     {#if project && (area === 'settings' || area === 'backups')}{#key `${project.name}:${area}`}<Settings project={project.name} domain={project.domain} backups={area === 'backups'} disabled={busy || offline || active || pending !== null || plan !== null || recovery !== null} revision={status.jobs.filter(job => terminal(job.stage)).map(job => `${job.id}:${job.sequence}`).join('|')} prepare={configuration => preview(null, configuration)} action={operation => preview(operation)} {expired} ondirty={value => { dirty = value }} navigate={leave} />{/key}{/if}
     {#if project && area === 'settings'}<div class="grid gap-3 rounded-3xl bg-card p-6"><p class="text-sm text-muted-foreground">{serverText('restartImpact')}</p><Button class="w-fit" variant="outline" disabled={busy || offline || active || pending !== null || plan !== null || recovery !== null || dirty} onclick={() => void preview({ kind: 'restart', project: project.name })}>{serverText('restart')}</Button></div>{/if}

@@ -11,8 +11,9 @@
     prepare: (configuration: Configuration) => Promise<boolean>; action: (operation: Operation) => Promise<boolean>;
     expired: () => void; ondirty: (dirty: boolean) => void; navigate: (proceed: () => void) => void
   } = $props()
+  type SettingsSection = Exclude<Section, 'alerts'>
   let view = $state<ConfigurationView | null>(null), loading = $state(false), failure = $state(''), dirty = $state(false)
-  let section = $state<Section>('smtp'), enabled = $state(false)
+  let section = $state<SettingsSection>('smtp'), enabled = $state(false)
   let smtpUrl = $state(''), from = $state(''), recovery = $state(''), confirmation = $state(''), magic = $state('')
   let clientId = $state(''), clientSecret = $state(''), redirects = $state('')
   let endpoint = $state(''), bucket = $state(''), region = $state('us-east-1'), accessKey = $state(''), secretKey = $state('')
@@ -20,7 +21,7 @@
   let alive = true, generation = 0
   let abort: AbortController | undefined
   const s = (key: string) => translate(i18n.locale, `server.${key}`)
-  const choices = $derived<Section[]>(backups ? ['backup', 'schedule'] : ['smtp', 'oauth_google', 'oauth_github', 'admin_password'])
+  const choices = $derived<SettingsSection[]>(backups ? ['backup', 'schedule'] : ['smtp', 'oauth_google', 'oauth_github', 'admin_password'])
   const blocked = $derived(disabled || loading || !view)
   const valid = $derived(section !== 'admin_password' || (password.length >= 16 && password === repeat))
   function mark(value: boolean) { dirty = value; ondirty(value) }
@@ -76,7 +77,7 @@
     try { if (await prepare(configuration)) mark(false) } finally { clearSecrets() }
   }
   function change(event: Event) {
-    const next = (event.target as HTMLSelectElement).value as Section
+    const next = (event.target as HTMLSelectElement).value as SettingsSection
     ;(event.target as HTMLSelectElement).value = section
     navigate(() => { section = next; populate() })
   }
