@@ -99,12 +99,6 @@ and off-host restore; a successful upload alone does not prove recoverability.
 > project's `.env` a restore still works, but the JWT key changes and every
 > user has to sign in again (passwords keep working).
 
-### Verified external copies (unreleased)
-
-The source after 0.5.1 requires HTTPS backup endpoints without URL credentials, query parameters or fragments. External CLI backups, including the daily schedule, read back the database dump, immutable file snapshot and encrypted recovery configuration before reporting success or pruning local history. Providers must support server-side AES256 encryption for the configuration object. TLS or readback failures preserve the local pair and return an error.
-
-For these new scheduled/manual copies, the encrypted project configuration is stored at `<project>/deployments/<dump-filename>/previous.env` in the backup bucket; keep it with `<project>/<dump-filename>` and `<project>/<dump-filename>.files/`. Update jobs retain their documented job-ID recovery prefix. Root-private verification receipts are bound to the current host/project configuration and do not certify restoration on another machine.
-
 ## Restore
 
 ```sh

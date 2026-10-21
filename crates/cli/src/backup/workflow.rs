@@ -39,7 +39,6 @@ pub fn backup(
         // Publish the immutable file snapshot before making its dump available.
         sync_files_up(host, project, &path)?;
         upload_s3(host, &project.name, &path, &name)?;
-        crate::backup::verify_copy(host, project, &path)?;
     }
     if let Some(keep) = keep {
         prune(&dir, keep)?;

@@ -19,13 +19,6 @@ use std::{
     time::Duration,
 };
 
-mod diagnostics;
-mod live;
-mod routine;
-pub(super) mod settings;
-pub(super) use diagnostics::diagnostics;
-pub(super) use routine::verify_prepared;
-
 pub(super) fn validate_policy(p: &Provisioning) -> anyhow::Result<()> {
     let version = semver::Version::parse(&p.version)?;
     if !version.pre.is_empty()
@@ -41,10 +34,6 @@ pub(super) fn validate_policy(p: &Provisioning) -> anyhow::Result<()> {
         || p.domain_suffixes.is_empty()
         || p.domain_suffixes.len() > 16
         || p.domain_suffixes
-            .iter()
-            .any(|s| !crate::naming::is_valid_domain(s) || s != &s.to_ascii_lowercase())
-        || p.service_hosts.len() > 32
-        || p.service_hosts
             .iter()
             .any(|s| !crate::naming::is_valid_domain(s) || s != &s.to_ascii_lowercase())
         || p.addresses.is_empty()
@@ -204,78 +193,8 @@ pub(super) async fn blockers(policy: &Policy, op: &Operation) -> anyhow::Result<
             }
         }
         _ => {
-            if let Ok(project) = control_project(policy, op.project())
-                && matches!(
-                    op,
-                    Operation::Restart { .. }
-                        | Operation::Configure { .. }
-                        | Operation::BackupOffsite { .. }
-                        | Operation::TestBackup { .. }
-                        | Operation::TestSmtp { .. }
-                )
-            {
-                if matches!(op, Operation::Restart { .. } | Operation::Configure { .. })
-                    && !live::check(&project).await.unwrap_or(false)
-                {
-                    blocked.push("running_configuration_changed".into());
-                }
-                if project.path(crate::maintenance::MARKER).exists() {
-                    blocked.push("maintenance_requires_recovery".into());
-                }
-                if crate::pitr::fence::require_clear(&project).is_err() {
-                    blocked.push("restore_fenced".into());
-                }
-            }
             if control_project(policy, op.project()).is_err() {
                 blocked.push("project_layout_changed".into());
-            }
-            if matches!(
-                op,
-                Operation::BackupOffsite { .. } | Operation::Backup { .. }
-            ) && let Ok(project) = control_project(policy, op.project())
-            {
-                let mut command = project.as_postgres(&["psql", "-XqAt", "-v", "ON_ERROR_STOP=1", "-c", "SELECT pg_database_size(current_database())::text || ',' || coalesce((SELECT sum(size) FROM storage.objects),0)::text"]);
-                command.env("PGOPTIONS", "-c statement_timeout=4000");
-                let required = output(command).await.ok().and_then(|s| {
-                    let (db, files) = s.trim().split_once(',')?;
-                    db.parse::<u64>()
-                        .ok()?
-                        .checked_add(files.parse::<u64>().ok()?)?
-                        .checked_mul(3)?
-                        .checked_add(policy.minimum_free_bytes)
-                });
-                match required {
-                    Some(bytes) if free_bytes(&policy.root) >= bytes => {}
-                    _ => blocked.push("insufficient_backup_reserve".into()),
-                }
-            }
-            if matches!(
-                op,
-                Operation::BackupOffsite { .. } | Operation::TestBackup { .. }
-            ) {
-                let endpoint = host.secrets().get("NELCOTA_BACKUP_S3_ENDPOINT")?;
-                match endpoint {
-                    Some(endpoint)
-                        if endpoint.starts_with("https://") && backup::valid_destination(&host) =>
-                    {
-                        if settings::approved_service(policy, &endpoint).is_err() {
-                            blocked.push("service_not_approved".into());
-                        }
-                    }
-                    _ => blocked.push("offsite_not_configured".into()),
-                }
-            }
-            if let Operation::TestSmtp { .. } = op
-                && let Ok(project) = control_project(policy, op.project())
-            {
-                match project.env().get("NELCOTA_SMTP_URL")? {
-                    Some(url) => {
-                        if settings::approved_service(policy, &url).is_err() {
-                            blocked.push("service_not_approved".into());
-                        }
-                    }
-                    None => blocked.push("smtp_not_configured".into()),
-                }
             }
             if let Operation::Restore { backup, .. } = op
                 && approved_backup(policy, op.project(), backup).is_err()
@@ -602,12 +521,7 @@ fn execute_with(
                 true => Stage::NeedsAttention,
                 false => Stage::Failed,
             };
-            let code = result
-                .as_ref()
-                .err()
-                .map(settings::error_code)
-                .unwrap_or("operation_failed");
-            journal.advance(&mut task, stage, Some(code))?;
+            journal.advance(&mut task, stage, Some("operation_failed"))?;
         }
     }
     result
@@ -617,12 +531,6 @@ fn changed(journal: &HostJournal, task: &mut Task, stage: Stage) -> anyhow::Resu
     journal.advance(task, stage, None)
 }
 trait Effects {
-    fn configuration_checkpoint(&self) -> anyhow::Result<()> {
-        Ok(())
-    }
-    fn restart(&self, project: &Project) -> anyhow::Result<()> {
-        project.recreate(Service::App)
-    }
     fn prepare(&self, _: &Project) -> anyhow::Result<()> {
         Ok(())
     }
@@ -701,21 +609,6 @@ fn apply_with(
                 bail!("project changed after approval");
             }
         }
-    }
-    if !matches!(
-        op,
-        Operation::Create { .. }
-            | Operation::Backup { .. }
-            | Operation::Restore { .. }
-            | Operation::Remove { .. }
-    ) {
-        if let Some(expected) = &task.host_env_sha
-            && digest_file(host.secrets().path(), 65536)? != *expected
-            && !task.public.changed
-        {
-            bail!("host configuration changed after approval");
-        }
-        return routine::execute(policy, journal, task, effects);
     }
     match op.clone() {
         Operation::Create {
@@ -933,7 +826,6 @@ fn apply_with(
             effects.publish(&host)?;
             journal.advance(task, Stage::Verifying, None)?;
         }
-        _ => bail!("invalid management action"),
     }
     effects.finish(journal, task)
 }
