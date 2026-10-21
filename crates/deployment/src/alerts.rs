@@ -55,11 +55,10 @@ impl Settings {
         if self.enabled && !self.email_enabled && !self.webhook_enabled {
             bail!("alert_channel_required");
         }
-        if self.email_enabled
-            && (!valid_project(&self.smtp_project)
-                || self.recipient.len() > 254
-                || self.recipient.is_empty()
-                || self.recipient.chars().any(char::is_control))
+        if (!self.smtp_project.is_empty() && !valid_project(&self.smtp_project))
+            || self.recipient.len() > 254
+            || self.recipient.chars().any(char::is_control)
+            || (self.email_enabled && (self.smtp_project.is_empty() || self.recipient.is_empty()))
         {
             bail!("invalid_alert_email");
         }

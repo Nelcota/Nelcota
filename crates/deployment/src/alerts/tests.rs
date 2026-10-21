@@ -141,6 +141,32 @@ fn unnotified_transient_incidents_do_not_send_spurious_recovery_and_malformed_sn
     );
 }
 #[test]
+fn disabled_email_fields_still_obey_the_panel_response_boundary() {
+    for settings in [
+        Settings {
+            smtp_project: "x".repeat(33),
+            ..Settings::default()
+        },
+        Settings {
+            smtp_project: "../foreign".into(),
+            ..Settings::default()
+        },
+        Settings {
+            recipient: "x".repeat(255),
+            ..Settings::default()
+        },
+        Settings {
+            recipient: "operator\n@example.test".into(),
+            ..Settings::default()
+        },
+    ] {
+        assert!(!settings.email_enabled);
+        assert!(settings.validate().is_err());
+    }
+    assert!(Settings::default().validate().is_ok());
+}
+
+#[test]
 fn backwards_clock_does_not_flood() {
     let mut e = engine();
     active(&mut e);
