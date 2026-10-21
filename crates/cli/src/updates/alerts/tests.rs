@@ -115,3 +115,44 @@ async fn persistence_failure_prevents_delivery_and_failed_delivery_withholds_hea
     assert_eq!(sent[0], sent[1]);
     assert_eq!(restarted.heartbeat_accepted_at, Some(71));
 }
+
+#[tokio::test]
+async fn no_send_scan_persists_a_backward_clock_cap_so_restart_can_retry() {
+    let p = policy();
+    let mut c = config();
+    c.settings.heartbeat_enabled = false;
+    let mut e = active();
+    let b = e
+        .reserve(Channel::Webhook, 10000, 3600, "b".repeat(64))
+        .unwrap()
+        .unwrap();
+    e.delivered(Channel::Webhook, &b, 10000, false).unwrap();
+    let fake = Fake {
+        sent: Arc::default(),
+        succeed: true,
+    };
+    let mut saved = Vec::new();
+    flush(
+        &p,
+        &c,
+        &mut e,
+        &fake,
+        || Ok(1),
+        |s| {
+            saved.push(serde_json::to_vec(s)?);
+            Ok(())
+        },
+    )
+    .await
+    .unwrap();
+    assert!(fake.sent.lock().unwrap().is_empty());
+    assert!(
+        !saved.is_empty(),
+        "no-send scheduler transition must reach disk"
+    );
+    let mut restarted: Engine = serde_json::from_slice(saved.last().unwrap()).unwrap();
+    flush(&p, &c, &mut restarted, &fake, || Ok(61), |_| Ok(()))
+        .await
+        .unwrap();
+    assert_eq!(&*fake.sent.lock().unwrap(), &[b.id]);
+}

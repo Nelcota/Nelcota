@@ -134,19 +134,22 @@ async fn flush(
         if !enabled {
             continue;
         }
-        if let Some(batch) = state.reserve(
+        let batch = state.reserve(
             channel,
             clock()?,
             u64::from(cfg.settings.reminder_hours) * 3600,
             nelcota_deployment::token()?,
-        )? {
-            persist(state)?;
+        )?;
+        // Even a no-send reservation can cap a backward-clock deadline or retire
+        // an obsolete failure. Save that transition before the next scan/reboot.
+        persist(state)?;
+        if let Some(batch) = batch {
             let ok = transport.send(policy, cfg, channel, &batch, false).await;
             state.delivered(channel, &batch, clock()?, ok)?;
             persist(state)?;
         }
     }
-    // Delivery failure must not be hidden behind a successful liveness ping.
+    // Outstanding delivery failure must not be hidden by a liveness ping.
     // A dead-man provider can then notify through its independent channels.
     if cfg.settings.heartbeat_enabled
         && state.monitor_error.is_none()

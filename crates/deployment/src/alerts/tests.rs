@@ -261,3 +261,34 @@ fn persisted_incidents_reject_mismatched_kinds_and_future_delivery_acknowledgeme
             .is_err()
     );
 }
+
+#[test]
+fn removing_a_project_retires_its_obsolete_failed_delivery_without_waiting_for_backoff() {
+    let mut e = engine();
+    for now in 1..=3 {
+        e.observe(
+            vec![Sample {
+                key: format!("{}.database", "a".repeat(64)),
+                project: Some("removed".into()),
+                kind: Kind::Database,
+                severity: Severity::Critical,
+                observation: Observation::Bad,
+            }],
+            now,
+        )
+        .unwrap();
+    }
+    let b = e
+        .reserve(Channel::Webhook, 10, 3600, "b".repeat(64))
+        .unwrap()
+        .unwrap();
+    e.delivered(Channel::Webhook, &b, 11, false).unwrap();
+    e.observe(vec![sample(Observation::Good)], 12).unwrap();
+    assert!(
+        e.reserve(Channel::Webhook, 12, 3600, "c".repeat(64))
+            .unwrap()
+            .is_none()
+    );
+    assert!(e.channels[&Channel::Webhook].last_error.is_none());
+    assert_eq!(e.channels[&Channel::Webhook].next_attempt_at, 0);
+}

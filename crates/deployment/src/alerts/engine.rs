@@ -229,13 +229,6 @@ impl Engine {
             "invalid_alert_delivery"
         );
         let state = self.channels.entry(channel).or_default();
-        // Backward wall-clock changes cannot stall retries for an unbounded time.
-        if state.next_attempt_at > now.saturating_add(3600) {
-            state.next_attempt_at = now.saturating_add(60);
-        }
-        if state.next_attempt_at > now {
-            return Ok(None);
-        }
         let events = self
             .incidents
             .iter()
@@ -261,6 +254,15 @@ impl Engine {
             .collect::<Vec<_>>();
         if events.is_empty() {
             state.pending = None;
+            state.last_error = None;
+            state.next_attempt_at = 0;
+            return Ok(None);
+        }
+        // Backward wall-clock changes cannot stall retries for an unbounded time.
+        if state.next_attempt_at > now.saturating_add(3600) {
+            state.next_attempt_at = now.saturating_add(60);
+        }
+        if state.next_attempt_at > now {
             return Ok(None);
         }
         let mut batch = match state.pending.take() {
