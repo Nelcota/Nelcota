@@ -248,13 +248,7 @@ pub(crate) fn prepare(
             let path = Path::new(crate::machine::BACKUP_CRON);
             trusted_path(path)?;
             let before = String::from_utf8(read_private(path, 16384)?)?;
-            let after = crate::machine::backup_schedule(
-                &std::env::current_exe()?.display().to_string(),
-                &policy.root.display().to_string(),
-                hour,
-                minute,
-                keep,
-            )?;
+            let after = crate::machine::backup_schedule(&before, hour, minute, keep)?;
             edits.push(Edit {
                 target: Target::Schedule,
                 before,

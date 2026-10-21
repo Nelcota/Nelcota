@@ -43,11 +43,10 @@ fn pages_and_schedules_do_not_accept_ambiguous_or_unbounded_inputs() {
     }
     assert!(page("", true).is_ok());
     assert!(page("https://app.test/reset?source=auth", false).is_ok());
+    let installed = "PATH=/usr/bin\n0 3 * * * root '/usr/bin/nelcota' -C '/opt/nelcota' backup --all --keep 7 >> /var/log/nelcota-backup.log 2>&1\n";
+    assert_eq!(schedule_values(installed), Some((3, 0, 7)));
     assert_eq!(
-        schedule_values(
-            &crate::machine::backup_schedule("/usr/bin/nelcota", "/opt/nelcota", 23, 59, 30)
-                .unwrap()
-        ),
+        schedule_values(&crate::machine::backup_schedule(installed, 23, 59, 30).unwrap()),
         Some((23, 59, 30))
     );
     for bad in [
@@ -59,9 +58,9 @@ fn pages_and_schedules_do_not_accept_ambiguous_or_unbounded_inputs() {
     ] {
         assert_eq!(schedule_values(bad), None);
     }
-    assert!(crate::machine::backup_schedule("x", "y", 24, 0, 7).is_err());
-    assert!(crate::machine::backup_schedule("x", "y", 3, 60, 7).is_err());
-    assert!(crate::machine::backup_schedule("x", "y", 3, 0, 0).is_err());
+    assert!(crate::machine::backup_schedule(installed, 24, 0, 7).is_err());
+    assert!(crate::machine::backup_schedule(installed, 3, 60, 7).is_err());
+    assert!(crate::machine::backup_schedule(installed, 3, 0, 0).is_err());
 }
 #[test]
 fn errors_expose_only_known_codes_never_raw_credentials() {
