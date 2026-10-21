@@ -88,6 +88,15 @@ On phones, open Guides from the navigation menu. Bucket size limits are edited
 in MiB (1,048,576 bytes); changing other settings preserves the exact byte limit,
 and clearing the limit field restores the server default.
 
+Ordinary JSON requests have a 60-second deadline, including reading the response.
+If it expires, the panel releases the pending form and keeps its draft. A timed-out
+write may already have completed: refresh the data before trying it again. The
+panel does not automatically repeat writes. File transfers and the enrolled update
+controller retain their separate deadlines.
+
+Table and user page numbers whose offset cannot fit in a signed 64-bit integer
+are refused before querying the database. Return to the first page to continue.
+
 | Feature | How to use it |
 |---|---|
 | Edit a cell | double click; Enter saves, Esc cancels, NULL button for nulls |

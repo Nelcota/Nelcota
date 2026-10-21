@@ -16,6 +16,9 @@ pub(super) struct CreatedUser {
 pub(super) async fn list(pool: &Pool, page: i64, search: &str) -> Result<UsersResponse, ApiError> {
     const SIZE: i64 = 50;
     let page = page.max(0);
+    let offset = page
+        .checked_mul(SIZE)
+        .ok_or_else(|| ApiError::bad_request("invalid_page", "page is too large"))?;
     let (pattern, id) = search_terms(search);
     let client = pool.get().await?;
     let rows = client.query(
@@ -27,7 +30,7 @@ pub(super) async fn list(pool: &Pool, page: i64, search: &str) -> Result<UsersRe
                 ARRAY(SELECT i.provider FROM auth.identities i WHERE i.user_id = u.id ORDER BY i.provider)
          FROM auth.users u WHERE u.email ILIKE $1 OR u.id::text = $4
          ORDER BY u.created_at DESC, u.id DESC LIMIT $2 OFFSET $3",
-        &[&pattern, &(SIZE + 1), &(page * SIZE), &id],
+        &[&pattern, &(SIZE + 1), &offset, &id],
     ).await?;
     let total = client
         .query_one("SELECT count(*) FROM auth.users", &[])
