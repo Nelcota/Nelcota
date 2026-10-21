@@ -1,8 +1,10 @@
 """Release documentation must not drift from the selected package metadata."""
 import importlib.util
 import json
+import re
 import shutil
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -12,7 +14,7 @@ SPEC = importlib.util.spec_from_file_location("doc_versions", ROOT / "scripts/ch
 CHECKER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CHECKER)
 FILES = (
-    "README.md", "CHANGELOG.md", "Cargo.lock", "docs/quickstart.md", "docs/onboarding/notes.md",
+    "README.md", "CHANGELOG.md", "Cargo.toml", "Cargo.lock", "docs/quickstart.md", "docs/onboarding/notes.md",
     "docs/releases/README.md", "docs/goals/README.md",
     "docs/goals/auth-security-review.md", "docs/goals/auth-security-review-execution.md",
     "sdk/typescript/package.json", "sdk/typescript/package-lock.json",
@@ -39,10 +41,19 @@ class VersionDocumentationTests(unittest.TestCase):
     def test_stale_install_target_is_rejected(self):
         path = self.root / "docs/quickstart.md"
         text = path.read_text()
-        start = text.index("currently ") + len("currently ")
-        end = text.index(". To build", start)
-        path.write_text(text[:start] + "0.0.0" + text[end:])
+        path.write_text(re.sub(r"(This guide targets server )\d+\.\d+\.\d+", r"\g<1>0.0.0", text, count=1))
         self.assertTrue(any("docs/quickstart.md" in error for error in CHECKER.check(self.root)))
+
+    def test_source_target_must_match_workspace(self):
+        path = self.root / "Cargo.toml"
+        version = tomllib.loads(path.read_text())["workspace"]["package"]["version"]
+        path.write_text(path.read_text().replace(f'version = "{version}"', 'version = "0.0.0"', 1))
+        self.assertTrue(any("differs from workspace" in error for error in CHECKER.check(self.root)))
+
+    def test_server_lock_version_is_checked(self):
+        path = self.root / "Cargo.lock"
+        path.write_text(re.sub(r'(name = "nelcota-server"\nversion = ")[^"]+', r'\g<1>0.0.0', path.read_text()))
+        self.assertTrue(any("Server workspace" in error for error in CHECKER.check(self.root)))
 
     def test_old_lock_version_is_rejected(self):
         path = self.root / "sdk/typescript/package-lock.json"
