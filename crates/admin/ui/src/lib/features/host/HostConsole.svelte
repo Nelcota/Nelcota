@@ -1,10 +1,5 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte'
-  import { CloseGuard } from '$lib/forms/close-guard.svelte'
-  import UnsavedChangesDialog from '$lib/components/shared/UnsavedChangesDialog.svelte'
-  import Health from '../server/Health.svelte'
-  import Settings from '../server/Settings.svelte'
-  import type { Configuration } from '../server/contracts'
   import { Button } from '$lib/components/ui/button'
   import { Input } from '$lib/components/ui/input'
   import { t, i18n, translate } from '$lib/i18n/index.svelte'
@@ -25,11 +20,6 @@
     type LogEntry
   } from './controller'
   let { email, expired }: { email: string; expired: () => void } = $props()
-  let area = $state<'projects' | 'health' | 'backups' | 'settings'>('projects')
-  let dirty = $state(false)
-  let nextNavigation: (() => void) | null = null
-  const guard = new CloseGuard(() => dirty, () => busy, () => { dirty = false; const next = nextNavigation; nextNavigation = null; next?.() }, () => true)
-  export function leave(proceed: () => void): void { nextNavigation = proceed; guard.request() }
   let status = $state<Status | null>(null),
     plan = $state<Plan | null>(null),
     recovery = $state<Job | null>(null),
@@ -87,13 +77,7 @@
       (!active || recovery !== null || pending !== null) &&
       (!plan || (seconds > 0 && plan.blockers.length === 0))
   )
-  const h = (key: string) => {
-    const value = translate(i18n.locale, `host.${key}`)
-    if (value !== `host.${key}`) return value
-    const server = translate(i18n.locale, `server.${key}`)
-    return server === `server.${key}` ? value : server
-  }
-  const serverText = (key: string) => translate(i18n.locale, `server.${key}`)
+  const h = (key: string) => translate(i18n.locale, `host.${key}`)
   const size = (bytes: number) => `${(bytes / 1024 ** 3).toFixed(1)} GiB`
   function reset() {
     plan = null
@@ -186,7 +170,6 @@
         rejected = false
         failure = h('error')
       }
-      if (!selected) selected = status.projects[0]?.name ?? ''
       if (selected && !status.projects.some((p) => p.name === selected)) {
         selected = ''
         backup = ''
@@ -225,15 +208,15 @@
       password = ''
     }
   })
-  async function preview(operation: Operation | null, configuration?: Configuration): Promise<boolean> {
-    if (busy || offline || active || pending) return false
+  async function preview(operation: Operation) {
+    if (busy || offline || active || pending) return
     reset()
     failure = null
     notice = null
     busy = true
     try {
-      const reply = await call(configuration ? { action: 'host_configure_plan', project: selected, configuration } : { action: 'host_plan', operation })
-      if (!alive) return false
+      const reply = await call({ action: 'host_plan', operation })
+      if (!alive) return
       plan = parsePlan(reply.data)
       key = newKey()
       await tick()
@@ -241,13 +224,10 @@
         reviewForm?.scrollIntoView({ behavior: 'smooth', block: 'start' })
         reviewForm?.querySelector<HTMLElement>('h3')?.focus()
       }
-      return true
     } catch (error) {
-      if (!alive) return false
-      const detail = error instanceof ControllerError ? serverText(error.code) : ''
-      failure = detail !== '' && detail !== `server.${error instanceof ControllerError ? error.code : ''}` ? detail : h('error')
+      if (!alive) return
+      failure = h('error')
       if (error instanceof ControllerError && error.status === 401) expired()
-      return false
     } finally {
       busy = false
       if (alive) schedule()
@@ -378,8 +358,6 @@
         'verifying',
         'completed'
       ]
-    if (['configure', 'restart'].includes(op.kind)) return ['accepted', 'validating', 'applying', 'starting', 'verifying', 'completed']
-    if (['test_smtp', 'test_backup'].includes(op.kind)) return ['accepted', 'validating', 'applying', 'verifying', 'completed']
     return [
       'accepted',
       'validating',
@@ -395,8 +373,8 @@
 <section class="grid gap-6" aria-labelledby="host-title">
   <header class="flex flex-wrap items-start justify-between gap-4">
     <div>
-      <h2 id="host-title" class="text-2xl font-semibold">{serverText('title')}</h2>
-      <p class="mt-2 text-sm text-muted-foreground">{serverText('description')}</p>
+      <h2 id="host-title" class="text-2xl font-semibold">{h('title')}</h2>
+      <p class="mt-2 text-sm text-muted-foreground">{h('subtitle')}</p>
     </div>
     <Button
       variant="outline"
@@ -421,12 +399,6 @@
     </p>{/if}
   {#if !status}<p role="status">{t('shell.app.loading')}</p>{/if}
   {#if status}
-    <nav class="flex flex-wrap gap-2" aria-label={serverText('title')}>
-      {#each ['projects', 'health', 'backups', 'settings'] as item}
-        <Button variant={area === item ? 'default' : 'outline'} disabled={busy} onclick={() => leave(() => { area = item as typeof area })}>{serverText(item)}</Button>
-      {/each}
-    </nav>
-    {#if status.projects.length}<label class="grid gap-2"><span class="text-sm font-medium">{serverText('project')}</span><select class="rounded-xl border border-border bg-card p-3" value={selected} disabled={busy} onchange={event => { const value = event.currentTarget.value; event.currentTarget.value = selected; leave(() => { selected = value; backup = ''; logs = null }) }}>{#each status.projects as p}<option value={p.name}>{p.name} · {p.domain}</option>{/each}</select></label>{/if}
     <dl class="grid gap-3 sm:grid-cols-3">
       {#each [[h('count'), `${status.projects.length} / ${status.max_projects}`], [h('ram'), size(status.ram_mb * 1024 ** 2)], [h('disk'), size(status.free_bytes)]] as item}<div
           class="rounded-2xl border border-border bg-card p-5"
@@ -438,7 +410,7 @@
     {#if status.busy}<p class="rounded-2xl bg-well p-4 text-sm" role="status">
         {h('host_busy')}
       </p>{/if}{#if !status.enabled}<p role="status">{h('readOnly')}</p>{/if}
-    {#if area === 'projects'}<form
+    <form
       onsubmit={(event) => {
         event.preventDefault()
         void preview({ kind: 'create', project: name, domain, profile })
@@ -550,11 +522,7 @@
     {#if !status.projects.length}<p class="rounded-2xl bg-card p-6">
         {h('noProjects')}
       </p>{/if}
-    {/if}
-    {#if project && area === 'health'}{#key project.name}<Health project={project.name} {expired} />{/key}{/if}
-    {#if project && (area === 'settings' || area === 'backups')}{#key `${project.name}:${area}`}<Settings project={project.name} domain={project.domain} backups={area === 'backups'} disabled={busy || offline || active || pending !== null || plan !== null || recovery !== null} revision={status.jobs.filter(job => terminal(job.stage)).map(job => `${job.id}:${job.sequence}`).join('|')} prepare={configuration => preview(null, configuration)} action={operation => preview(operation)} {expired} ondirty={value => { dirty = value }} navigate={leave} />{/key}{/if}
-    {#if project && area === 'settings'}<div class="grid gap-3 rounded-3xl bg-card p-6"><p class="text-sm text-muted-foreground">{serverText('restartImpact')}</p><Button class="w-fit" variant="outline" disabled={busy || offline || active || pending !== null || plan !== null || recovery !== null || dirty} onclick={() => void preview({ kind: 'restart', project: project.name })}>{serverText('restart')}</Button></div>{/if}
-    {#if project && (area === 'projects' || area === 'backups')}<section
+    {#if project}<section
         class="grid gap-4 rounded-3xl border border-border bg-card p-6"
       >
         <h3 class="text-lg font-semibold" translate="no">{project.name}</h3>
@@ -632,10 +600,9 @@
           <p class="mt-2 text-lg font-semibold" translate="no">
             {target.project}
           </p>
-          {#if (plan?.affected_projects ?? recovery?.affected_projects)?.length}<p class="mt-2 text-sm">{serverText('affected')}: <span translate="no">{(plan?.affected_projects ?? recovery?.affected_projects ?? []).join(', ')}</span></p>{/if}
           {#if target.kind === 'create'}<p translate="no">
               {target.domain} · {target.profile}
-            </p>{/if}{#if target.kind === 'configure'}<p>{serverText(target.section)}</p><p class="text-sm">{serverText('impact')}</p>{/if}{#if target.kind === 'restart'}<p class="text-sm">{serverText('restartImpact')}</p>{/if}{#if target.kind === 'backup_offsite'}<p class="text-sm">{serverText('offsiteImpact')}</p>{/if}{#if target.kind === 'test_smtp'}<p class="text-sm">{serverText('testImpact')}</p>{/if}{#if target.kind === 'restore'}<p
+            </p>{/if}{#if target.kind === 'restore'}<p
               class="break-all text-sm"
               translate="no"
             >
@@ -662,7 +629,7 @@
               {h('destructive')}
               {h('restoreImpact')}
             </p>{/if}{#if recovery}<p class="text-sm">
-              {target.kind === 'configure' ? serverText('configurationRecovery') : target.kind === 'restore' && recovery.last_stage === 'verifying'
+              {recovery.last_stage === 'verifying'
                 ? h('preserveWrites')
                 : h('recovery')}
             </p>{/if}{#if plan}<p class="text-sm">
@@ -798,5 +765,3 @@
     </section>
   {/if}
 </section>
-
-<UnsavedChangesDialog bind:open={guard.pending} ondiscard={guard.discard} />

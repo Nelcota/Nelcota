@@ -26,23 +26,6 @@ pub enum Operation {
     Remove {
         project: String,
     },
-    Restart {
-        project: String,
-    },
-    BackupOffsite {
-        project: String,
-    },
-    TestSmtp {
-        project: String,
-    },
-    TestBackup {
-        project: String,
-    },
-    Configure {
-        project: String,
-        section: crate::operations::Section,
-        revision: String,
-    },
 }
 impl Operation {
     pub fn project(&self) -> &str {
@@ -50,20 +33,10 @@ impl Operation {
             Self::Create { project, .. }
             | Self::Backup { project }
             | Self::Restore { project, .. }
-            | Self::Remove { project }
-            | Self::Restart { project }
-            | Self::BackupOffsite { project }
-            | Self::TestSmtp { project }
-            | Self::TestBackup { project }
-            | Self::Configure { project, .. } => project,
+            | Self::Remove { project } => project,
         }
     }
     pub fn validate(&self) -> anyhow::Result<()> {
-        if let Self::Configure { revision, .. } = self
-            && !valid_digest(revision)
-        {
-            bail!("invalid configuration review");
-        }
         if !valid_project(self.project())
             || self.project().starts_with('-')
             || self.project().ends_with('-')
@@ -99,15 +72,6 @@ impl Operation {
     pub fn destructive(&self) -> bool {
         matches!(self, Self::Remove { .. } | Self::Restore { .. })
     }
-    pub fn requires_backup(&self) -> bool {
-        matches!(
-            self,
-            Self::Backup { .. }
-                | Self::BackupOffsite { .. }
-                | Self::Restore { .. }
-                | Self::Remove { .. }
-        )
-    }
     pub fn confirmation(&self) -> String {
         format!(
             "{} {}",
@@ -116,11 +80,6 @@ impl Operation {
                 Self::Backup { .. } => "BACKUP",
                 Self::Restore { .. } => "RESTORE",
                 Self::Remove { .. } => "REMOVE",
-                Self::Restart { .. } => "RESTART",
-                Self::BackupOffsite { .. } => "BACKUP_OFFSITE",
-                Self::TestSmtp { .. } => "TEST_SMTP",
-                Self::TestBackup { .. } => "TEST_BACKUP",
-                Self::Configure { .. } => "CONFIGURE",
             },
             self.project()
         )
@@ -148,20 +107,17 @@ pub enum Stage {
     Applying,
     Verifying,
     Completed,
-    RolledBack,
     Failed,
     NeedsAttention,
 }
 impl Stage {
     pub fn terminal(self) -> bool {
-        matches!(self, Self::Completed | Self::Failed | Self::RolledBack)
+        matches!(self, Self::Completed | Self::Failed)
     }
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Plan {
-    #[serde(default)]
-    pub affected_projects: Vec<String>,
     pub confirmation: String,
     pub id: String,
     pub operation: Operation,
@@ -177,8 +133,6 @@ pub struct Plan {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct PublicJob {
-    #[serde(default)]
-    pub affected_projects: Vec<String>,
     pub last_stage: Option<Stage>,
     pub request_key: String,
     pub id: String,
@@ -205,10 +159,6 @@ pub struct Task {
     pub version: String,
     pub image_digest: String,
     pub interrupted: Option<Stage>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub input_sha: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub host_env_sha: Option<String>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -302,24 +252,8 @@ impl HostJournal {
             || (task.public.stage == Stage::Failed && task.public.changed)
             || (task.public.stage == Stage::NeedsAttention && task.interrupted.is_none())
             || (task.public.stage == Stage::Completed
-                && task.public.operation.requires_backup()
+                && !matches!(task.public.operation, Operation::Create { .. })
                 && task.public.backup.is_none())
-            || (task.public.stage == Stage::RolledBack
-                && (!task.public.changed
-                    || !matches!(task.public.operation, Operation::Configure { .. })))
-            || task.public.affected_projects.len() > 32
-            || task
-                .public
-                .affected_projects
-                .iter()
-                .any(|p| !valid_project(p))
-            || task
-                .public
-                .affected_projects
-                .iter()
-                .collect::<std::collections::HashSet<_>>()
-                .len()
-                != task.public.affected_projects.len()
             || task.public.request_key != task.key
             || !valid_digest(&task.public.id)
             || !valid_digest(&task.key)
@@ -331,10 +265,6 @@ impl HostJournal {
             || task.actor.len() > 254
             || task.env_sha.as_ref().is_some_and(|s| !valid_digest(s))
             || task.backup_sha.as_ref().is_some_and(|s| !valid_digest(s))
-            || task.input_sha.as_ref().is_some_and(|s| !valid_digest(s))
-            || task.host_env_sha.as_ref().is_some_and(|s| !valid_digest(s))
-            || (matches!(task.public.operation, Operation::Configure { .. })
-                && task.input_sha.is_none())
             || task
                 .public
                 .backup
@@ -354,8 +284,7 @@ impl HostJournal {
         if path.exists() {
             let old: Task = serde_json::from_slice(&read_private(&path, 16384)?)?;
             Self::validate(&old)?;
-            if old.public.affected_projects != task.public.affected_projects
-                || old.public.operation != task.public.operation
+            if old.public.operation != task.public.operation
                 || old.key != task.key
                 || old.actor != task.actor
                 || old.plan != task.plan
@@ -363,8 +292,6 @@ impl HostJournal {
                 || old.manifest_sha != task.manifest_sha
                 || old.env_sha != task.env_sha
                 || old.backup_sha != task.backup_sha
-                || old.input_sha != task.input_sha
-                || old.host_env_sha != task.host_env_sha
                 || old.version != task.version
                 || old.image_digest != task.image_digest
                 || old.public.sequence >= task.public.sequence
@@ -456,7 +383,6 @@ mod tests {
         Task {
             schema: 1,
             public: PublicJob {
-                affected_projects: vec!["shop".into()],
                 last_stage: None,
                 id: crate::token().unwrap(),
                 request_key: key.clone(),
@@ -480,18 +406,7 @@ mod tests {
             version: "0.4.0".into(),
             image_digest: crate::token().unwrap(),
             interrupted: None,
-            input_sha: None,
-            host_env_sha: None,
         }
-    }
-    #[test]
-    fn the_affected_project_scope_cannot_be_rewritten_during_recovery() {
-        let root = tempfile::tempdir().unwrap();
-        let journal = HostJournal::open(root.path()).unwrap();
-        let mut original = journal.begin(task(), root.path()).unwrap();
-        original.public.sequence += 1;
-        original.public.affected_projects = vec!["foreign".into()];
-        assert!(journal.save(&original).is_err());
     }
     #[test]
     fn duplicates_do_not_repeat_effects_and_journals_exclude_each_other() {

@@ -24,21 +24,9 @@ impl BackupS3 {
                 .get(key)?
                 .with_context(|| format!("{key} is not set in host.env (see docs/backup.md)"))
         };
-        let endpoint = get("NELCOTA_BACKUP_S3_ENDPOINT")?;
-        let parsed =
-            url::Url::parse(&endpoint).map_err(|_| anyhow::anyhow!("invalid backup endpoint"))?;
-        if parsed.scheme() != "https"
-            || parsed.host_str().is_none()
-            || !parsed.username().is_empty()
-            || parsed.password().is_some()
-            || parsed.fragment().is_some()
-            || parsed.query().is_some()
-        {
-            bail!("offsite backups require an HTTPS endpoint without URL credentials");
-        }
         Ok(BackupS3 {
             native: host.require()?.runtime == crate::host::Runtime::Systemd,
-            endpoint,
+            endpoint: get("NELCOTA_BACKUP_S3_ENDPOINT")?,
             bucket: get("NELCOTA_BACKUP_S3_BUCKET")?,
             access_key: get("NELCOTA_BACKUP_S3_ACCESS_KEY")?,
             secret_key: get("NELCOTA_BACKUP_S3_SECRET_KEY")?,
@@ -147,12 +135,6 @@ pub(crate) fn s3_configured(host: &Host) -> bool {
     let secrets = host.secrets();
     KEYS.iter()
         .any(|key| secrets.get(key).ok().flatten().is_some())
-}
-
-/// A complete syntactically valid destination, distinct from the fail-loud
-/// any-key detection used by the legacy CLI upload switch.
-pub(crate) fn valid_destination(host: &Host) -> bool {
-    BackupS3::from_host(host).is_ok()
 }
 
 /// Uploads to S3-compatible storage (credentials from `host.env`), under `<bucket>/<project>/`.
@@ -302,64 +284,6 @@ pub(crate) fn verify_remote(
         bail!("offsite configuration checksum mismatch");
     }
     Ok(())
-}
-
-/// Publish one already-validated immutable pair; safe to retry the same bytes.
-pub(crate) fn publish_remote(host: &Host, project: &Project, dump: &Path) -> anyhow::Result<()> {
-    crate::backup::validate(dump)?;
-    sync_files_up(host, project, dump)?;
-    upload_s3(
-        host,
-        &project.name,
-        dump,
-        dump.file_name()
-            .and_then(|s| s.to_str())
-            .context("backup name")?,
-    )
-}
-
-/// A unique, encrypted write/read/delete probe never changes an existing backup.
-pub(crate) fn test_remote(host: &Host, scratch: &Path, id: &str) -> anyhow::Result<()> {
-    if !nelcota_deployment::valid_digest(id) {
-        bail!("invalid backup probe");
-    }
-    let s3 = BackupS3::from_host(host)?;
-    let local = tempfile::tempdir_in(scratch)?;
-    crate::private_fs::write(&local.path().join("probe"), id.as_bytes())?;
-    let key = format!("s3://{}/.nelcota-probes/{id}", s3.bucket);
-    s3.run(
-        local.path(),
-        true,
-        None,
-        &[
-            "cp",
-            "/data/probe",
-            &key,
-            "--sse",
-            "AES256",
-            "--only-show-errors",
-        ],
-    )?;
-    let result = (|| -> anyhow::Result<()> {
-        s3.run(
-            local.path(),
-            false,
-            None,
-            &["cp", &key, "/data/readback", "--only-show-errors"],
-        )?;
-        if fs::read(local.path().join("readback"))? != id.as_bytes() {
-            bail!("backup probe readback mismatch");
-        }
-        Ok(())
-    })();
-    let cleanup = s3.run(
-        local.path(),
-        true,
-        None,
-        &["rm", &key, "--only-show-errors"],
-    );
-    result?;
-    cleanup
 }
 
 #[cfg(test)]

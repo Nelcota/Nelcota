@@ -5,7 +5,6 @@
   import Logo from '$lib/shell/components/Logo.svelte'
   import HostConsole from '../host/HostConsole.svelte'
   let view = $state<'projects' | 'updates'>('projects')
-  let hostConsole = $state<HostConsole>()
   import { t, translate, i18n, setLocale } from '$lib/i18n/index.svelte'
   import { ControllerError, request, parseStatus, parsePlan, parseJob, mergeStatus, newKey, message, terminal, type Status, type Plan, type Job } from './controller'
   let status = $state<Status | null>(null)
@@ -94,7 +93,7 @@
 <svelte:window ononline={() => void refresh()} onfocus={() => { if (!signedOut) void refresh() }} />
 <main class="min-h-dvh bg-background px-4 py-6 sm:px-8">
   <div class="mx-auto grid w-full max-w-4xl gap-6">
-    <header class="flex flex-wrap items-center justify-between gap-3"><Logo /><div class="flex items-center gap-2"><Button variant="ghost" onclick={() => setLocale(i18n.locale === 'pt-BR' ? 'en' : 'pt-BR')}>{i18n.locale === 'pt-BR' ? 'English' : 'Português'}</Button>{#if status}<Button variant="outline" disabled={busy} onclick={() => { if (hostConsole) { hostConsole.leave(() => { void logout() }); return }; void logout() }}>{t('shell.account.signOut')}</Button>{/if}</div></header>
+    <header class="flex flex-wrap items-center justify-between gap-3"><Logo /><div class="flex items-center gap-2"><Button variant="ghost" onclick={() => setLocale(i18n.locale === 'pt-BR' ? 'en' : 'pt-BR')}>{i18n.locale === 'pt-BR' ? 'English' : 'Português'}</Button>{#if status}<Button variant="outline" disabled={busy} onclick={logout}>{t('shell.account.signOut')}</Button>{/if}</div></header>
     <div class="grid gap-2"><h1 class="text-2xl font-semibold">{t('updates.controller')}</h1><p class="text-sm text-muted-foreground">{t('updates.authority')}</p></div>
     {#if failure}<p class="rounded-2xl bg-card p-4 text-sm text-destructive" role="alert">{failure}</p>{/if}
     {#if offline}<div role="status" class="flex flex-wrap items-center gap-3 rounded-2xl bg-card p-4"><p>{t('updates.reconnect')}</p><Button variant="outline" onclick={() => void refresh()}>{t('updates.retry')}</Button></div>{/if}
@@ -108,8 +107,8 @@
     {/if}
     {#if status}
       <p class="text-sm text-muted-foreground">{t('updates.session', { email: status.email })}</p>
-      <nav class="flex gap-2" aria-label={t('updates.controller')}>{#if status.host_management}<Button variant={view === 'projects' ? 'default' : 'outline'} onclick={() => { view = 'projects' }}>{t('server.title')}</Button>{/if}<Button variant={view === 'updates' ? 'default' : 'outline'} onclick={() => { if (hostConsole) { hostConsole.leave(() => { view = 'updates' }); return }; view = 'updates' }}>{t('host.updates')}</Button></nav>
-      {#if status.host_management && view === 'projects'}{#key status.email}<HostConsole bind:this={hostConsole} email={status.email} expired={() => { generation++; signedOut = true; status = null; clearApproval(); clearTimeout(timer); for (const abort of requests) abort.abort() }} />{/key}{/if}
+      <nav class="flex gap-2" aria-label={t('updates.controller')}>{#if status.host_management}<Button variant={view === 'projects' ? 'default' : 'outline'} onclick={() => { view = 'projects' }}>{t('host.projects')}</Button>{/if}<Button variant={view === 'updates' ? 'default' : 'outline'} onclick={() => { view = 'updates' }}>{t('host.updates')}</Button></nav>
+      {#if status.host_management && view === 'projects'}{#key status.email}<HostConsole email={status.email} expired={() => { generation++; signedOut = true; status = null; clearApproval(); clearTimeout(timer); for (const abort of requests) abort.abort() }} />{/key}{/if}
       {#if !status.host_management || view === 'updates'}
       <section class="grid gap-4 rounded-3xl bg-card p-6" aria-labelledby="release-title">
         <h2 id="release-title" class="text-lg font-semibold">{t('updates.title')}</h2>
