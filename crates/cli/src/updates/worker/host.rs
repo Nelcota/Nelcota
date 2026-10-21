@@ -12,6 +12,8 @@ pub(super) struct StoredPlan {
     env_sha: Option<String>,
     identity: String,
     backup_sha: Option<String>,
+    host_env_sha: Option<String>,
+    configuration: Option<management::settings::Prepared>,
 }
 async fn reauthenticate(
     state: &Arc<State>,
@@ -38,7 +40,10 @@ async fn reauthenticate(
 }
 pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Result<Response> {
     let session = match &request {
-        Request::HostStatus { token, .. }
+        Request::HostDiagnostics { token, .. }
+        | Request::HostConfiguration { token, .. }
+        | Request::HostConfigurePlan { token, .. }
+        | Request::HostStatus { token, .. }
         | Request::HostPlan { token, .. }
         | Request::HostStart { token, .. }
         | Request::HostRecover { token, .. }
@@ -52,7 +57,65 @@ pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Re
     if !state.policy.operators[index].manage_host || state.policy.host_management.is_none() {
         return Ok(error("host_forbidden"));
     }
+    let mut configuration = None;
+    let request = match request {
+        Request::HostConfigurePlan {
+            token,
+            project,
+            configuration: input,
+        } => {
+            let permit = state
+                .preflights
+                .clone()
+                .try_acquire_owned()
+                .context("host_read_busy")?;
+            let policy = state.policy.clone();
+            let name = project.clone();
+            let prepared = match tokio::task::spawn_blocking(move || {
+                let _permit = permit;
+                let _lease = HostLock::acquire(&policy.root)?;
+                management::settings::prepare(&policy, &name, input)
+            })
+            .await?
+            {
+                Ok(prepared) => prepared,
+                Err(reason) => return Ok(error(management::settings::error_code(&reason))),
+            };
+            let operation = Operation::Configure {
+                project,
+                section: prepared.section,
+                revision: prepared.revision.clone(),
+            };
+            configuration = Some(prepared);
+            Request::HostPlan { token, operation }
+        }
+        other => other,
+    };
     match request {
+        Request::HostDiagnostics { project, .. } => {
+            let _permit = state
+                .host_reads
+                .clone()
+                .try_acquire_owned()
+                .context("host_read_busy")?;
+            let data = tokio::time::timeout(
+                Duration::from_secs(18),
+                management::diagnostics(&state.policy, &project),
+            )
+            .await
+            .context("diagnostics_timeout")??;
+            Ok(Response::HostDiagnostics { data })
+        }
+        Request::HostConfiguration { project, .. } => {
+            let _permit = state
+                .host_reads
+                .clone()
+                .try_acquire_owned()
+                .context("host_read_busy")?;
+            Ok(Response::HostConfiguration {
+                data: management::settings::view(&state.policy, &project)?,
+            })
+        }
         Request::HostStatus { key, .. } => {
             let _permit = state
                 .host_reads
@@ -98,6 +161,9 @@ pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Re
                 .try_acquire_owned()
                 .context("host_read_busy")?;
             operation.validate()?;
+            if matches!(operation, Operation::Configure { .. }) && configuration.is_none() {
+                return Ok(error("configuration_input_required"));
+            }
             let p = state
                 .policy
                 .host_management
@@ -132,7 +198,26 @@ pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Re
                 }
                 _ => None,
             };
+            let affected_projects = match &configuration {
+                Some(c)
+                    if matches!(
+                        c.section,
+                        nelcota_deployment::operations::Section::Backup
+                            | nelcota_deployment::operations::Section::Schedule
+                    ) =>
+                {
+                    crate::host::Host::new(&state.policy.root)
+                        .require()?
+                        .projects
+                        .into_iter()
+                        .map(|p| p.name)
+                        .collect()
+                }
+                Some(c) => c.restarts.clone(),
+                None => vec![operation.project().to_owned()],
+            };
             let public = HostPlan {
+                affected_projects,
                 id: token()?,
                 confirmation: operation.confirmation(),
                 destructive: operation.destructive(),
@@ -166,8 +251,26 @@ pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Re
                     env_sha,
                     identity,
                     backup_sha,
+                    host_env_sha: Some(nelcota_deployment::digest_file(
+                        &state.policy.root.join("host.env"),
+                        65536,
+                    )?),
+                    configuration,
                 },
             );
+            drop(plans);
+            // An abandoned review must release its private configuration on time,
+            // even when the browser closes and no further requests arrive.
+            let owner = Arc::downgrade(state);
+            let id = public.id.clone();
+            tokio::spawn(async move {
+                tokio::time::sleep(Duration::from_secs(300)).await;
+                if let Some(state) = owner.upgrade()
+                    && let Ok(mut plans) = state.host_plans.lock()
+                {
+                    plans.retain(|key, plan| key != &id || plan.expires > Instant::now());
+                }
+            });
             Ok(Response::HostPlan { data: public })
         }
         Request::HostStart {
@@ -226,7 +329,19 @@ pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Re
             if !policy_current(state)? || state.operator(&session)? != index {
                 return Ok(error("policy_changed"));
             }
+            if let Some(prepared) = &stored.configuration {
+                management::verify_prepared(&state.policy, prepared)?;
+            }
+            let input = stored
+                .configuration
+                .as_ref()
+                .map(serde_json::to_vec)
+                .transpose()?;
+            let input_sha = input
+                .as_ref()
+                .map(|bytes| management::settings::bytes_digest(bytes));
             let public = HostJob {
+                affected_projects: stored.public.affected_projects.clone(),
                 last_stage: None,
                 request_key: key.clone(),
                 id: token()?,
@@ -238,7 +353,7 @@ pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Re
                 backup: None,
                 error: None,
             };
-            let task = journal.begin(
+            let mut task = journal.begin(
                 Task {
                     schema: 1,
                     public,
@@ -252,9 +367,20 @@ pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Re
                     version: stored.public.version,
                     image_digest: stored.public.image_digest,
                     interrupted: None,
+                    input_sha,
+                    host_env_sha: stored.host_env_sha,
                 },
                 &state.policy.root,
             )?;
+            if let Some(bytes) = input {
+                let path = journal
+                    .directory(&task.public.id)?
+                    .join("configuration.private.json");
+                if nelcota_deployment::atomic_write(&path, &bytes).is_err() {
+                    journal.advance(&mut task, Stage::Failed, Some("configuration_not_stored"))?;
+                    return Ok(error("configuration_not_stored"));
+                }
+            }
             let public = task.public.clone();
             drop(lease);
             launch(state, &public.id, false).await?;
@@ -396,6 +522,7 @@ mod tests {
         let s = Arc::get_mut(&mut state).unwrap();
         s.policy.operators[0].manage_host = true;
         s.policy.host_management = Some(super::super::super::policy::Provisioning {
+            service_hosts: Vec::new(),
             version: "0.4.0".into(),
             image_digest: token().unwrap(),
             source_sha: token().unwrap()[..40].into(),
@@ -413,6 +540,21 @@ mod tests {
         let (_temp, state, password) = fixture();
         let token = login(&state, password).await;
         for request in [
+            Request::HostDiagnostics {
+                token: token.clone(),
+                project: "shop".into(),
+            },
+            Request::HostConfiguration {
+                token: token.clone(),
+                project: "shop".into(),
+            },
+            Request::HostConfigurePlan {
+                token: token.clone(),
+                project: "shop".into(),
+                configuration: nelcota_deployment::operations::Configuration::AdminPassword {
+                    new_password: "never-processed-without-authority".into(),
+                },
+            },
             Request::HostStatus {
                 token: token.clone(),
                 key: None,

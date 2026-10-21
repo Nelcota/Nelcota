@@ -1,3 +1,4 @@
+import { isSection, revision, type Section } from '../server/contracts'
 import { ControllerError, hash } from '../updates/controller'
 export const stages = [
   'accepted',
@@ -8,15 +9,18 @@ export const stages = [
   'applying',
   'verifying',
   'completed',
+  'rolled_back',
   'failed',
   'needs_attention'
 ] as const
 export type Stage = (typeof stages)[number]
 export type Operation =
   | { kind: 'create'; project: string; domain: string; profile: string }
-  | { kind: 'backup' | 'remove'; project: string }
+  | { kind: 'backup' | 'remove' | 'restart' | 'backup_offsite' | 'test_smtp' | 'test_backup'; project: string }
+  | { kind: 'configure'; project: string; section: Section; revision: string }
   | { kind: 'restore'; project: string; backup: string }
 export type Job = {
+  affected_projects?: string[]
   last_stage?: Stage | null
   id: string
   request_key: string
@@ -47,6 +51,7 @@ export type Status = {
   free_bytes: number
 }
 export type Plan = {
+  affected_projects?: string[]
   id: string
   operation: Operation
   confirmation: string
@@ -95,7 +100,8 @@ function invalid(): never {
 }
 export function parseOperation(v: unknown): Operation {
   if (!object(v) || !project(v.project)) return invalid()
-  if (v.kind === 'backup' || v.kind === 'remove')
+  if (v.kind === 'configure' && isSection(v.section) && revision(v.revision)) return { kind: 'configure', project: v.project, section: v.section, revision: v.revision }
+  if (v.kind === 'backup' || v.kind === 'remove' || v.kind === 'restart' || v.kind === 'backup_offsite' || v.kind === 'test_smtp' || v.kind === 'test_backup')
     return { kind: v.kind, project: v.project }
   if (v.kind === 'restore' && backup(v.backup))
     return { kind: 'restore', project: v.project, backup: v.backup }
@@ -116,6 +122,7 @@ export function parseOperation(v: unknown): Operation {
 export function parseJob(v: unknown): Job {
   if (
     !object(v) ||
+    (v.affected_projects !== undefined && (!Array.isArray(v.affected_projects) || v.affected_projects.length > 32 || !v.affected_projects.every(project) || new Set(v.affected_projects).size !== v.affected_projects.length)) ||
     !hash(v.id) ||
     !(v.last_stage == null || stages.includes(v.last_stage as Stage)) ||
     !hash(v.request_key) ||
@@ -128,7 +135,9 @@ export function parseJob(v: unknown): Job {
     !(v.error === null || text(v.error))
   )
     return invalid()
-  return { ...v, operation: parseOperation(v.operation) } as Job
+  const operation = parseOperation(v.operation)
+  if (v.stage === 'rolled_back' && (operation.kind !== 'configure' || !v.changed)) return invalid()
+  return { ...v, operation } as Job
 }
 export function parseStatus(v: unknown): Status {
   if (
@@ -172,6 +181,7 @@ export function parseStatus(v: unknown): Status {
 export function parsePlan(v: unknown): Plan {
   if (
     !object(v) ||
+    (v.affected_projects !== undefined && (!Array.isArray(v.affected_projects) || v.affected_projects.length > 32 || !v.affected_projects.every(project) || new Set(v.affected_projects).size !== v.affected_projects.length)) ||
     !hash(v.id) ||
     !hash(v.image_digest) ||
     !text(v.confirmation) ||
@@ -194,7 +204,7 @@ export function parsePlan(v: unknown): Plan {
     return invalid()
   return { ...v, operation } as Plan
 }
-export const terminal = (s: Stage) => s === 'completed' || s === 'failed'
+export const terminal = (s: Stage) => s === 'completed' || s === 'failed' || s === 'rolled_back'
 export function mergeStatus(
   old: Status | null,
   next: Status,

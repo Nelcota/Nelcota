@@ -16,8 +16,31 @@ fn log_metadata_omits_free_form_messages_and_sql() {
 struct FixtureEffects {
     image: String,
     fail_finish: Cell<bool>,
+    fault_after: Cell<Option<usize>>,
+    checkpoints: Cell<usize>,
+    fault_secondary: Cell<Option<usize>>,
+    restarts: Cell<usize>,
 }
 impl Effects for FixtureEffects {
+    fn configuration_checkpoint(&self) -> anyhow::Result<()> {
+        let n = self.checkpoints.get() + 1;
+        self.checkpoints.set(n);
+        if self.fault_after.get() == Some(n) || self.fault_secondary.get() == Some(n) {
+            if self.fault_after.get() == Some(n) {
+                self.fault_after.set(None);
+            }
+            if self.fault_secondary.get() == Some(n) {
+                self.fault_secondary.set(None);
+            }
+            bail!("injected configuration boundary");
+        }
+        Ok(())
+    }
+    fn restart(&self, p: &Project) -> anyhow::Result<()> {
+        self.restarts.set(self.restarts.get() + 1);
+        p.recreate(Service::App)
+    }
+
     fn prepare(&self, p: &Project) -> anyhow::Result<()> {
         fs::write(p.path("postgres/Dockerfile"), "FROM postgres:17-alpine\n")?;
         Ok(())
@@ -61,6 +84,9 @@ impl Drop for Cleanup {
     }
 }
 pub(in crate::updates) fn accepted(policy: &Policy, op: Operation) -> anyhow::Result<Task> {
+    accepted_input(policy, op, None)
+}
+fn accepted_input(policy: &Policy, op: Operation, input: Option<&[u8]>) -> anyhow::Result<Task> {
     let host = Host::new(&policy.root);
     let manifest = host.require()?;
     let name = op.project();
@@ -83,6 +109,10 @@ pub(in crate::updates) fn accepted(policy: &Policy, op: Operation) -> anyhow::Re
     let key = nelcota_deployment::token()?;
     let p = policy.host_management.as_ref().unwrap();
     let public = PublicJob {
+        affected_projects: match input {
+            Some(bytes) => serde_json::from_slice::<settings::Prepared>(bytes)?.restarts,
+            None => vec![name.to_owned()],
+        },
         id: nelcota_deployment::token()?,
         request_key: key.clone(),
         operation: op,
@@ -109,9 +139,19 @@ pub(in crate::updates) fn accepted(policy: &Policy, op: Operation) -> anyhow::Re
             version: p.version.clone(),
             image_digest: p.image_digest.clone(),
             interrupted: None,
+            input_sha: input.map(settings::bytes_digest),
+            host_env_sha: Some(digest_file(host.secrets().path(), 65536)?),
         },
         &policy.root,
     )?;
+    if let Some(input) = input {
+        atomic_write(
+            &journal
+                .directory(&task.public.id)?
+                .join("configuration.private.json"),
+            input,
+        )?;
+    }
     Ok(task)
 }
 fn run(policy: &Policy, op: Operation, effects: &FixtureEffects) -> anyhow::Result<Task> {
@@ -235,6 +275,7 @@ fn docker_lifecycle_preserves_other_projects_and_verified_restore_writes() {
         minimum_free_bytes: 1 << 30,
         timeout_seconds: 300,
         host_management: Some(Provisioning {
+            service_hosts: Vec::new(),
             version: env!("CARGO_PKG_VERSION").into(),
             image_digest: nelcota_deployment::token().unwrap(),
             source_sha: nonce[..40].into(),
@@ -246,6 +287,10 @@ fn docker_lifecycle_preserves_other_projects_and_verified_restore_writes() {
     let effects = FixtureEffects {
         image: std::env::var("NELCOTA_HOST_TEST_IMAGE").unwrap(),
         fail_finish: Cell::new(false),
+        fault_after: Cell::new(None),
+        checkpoints: Cell::new(0),
+        fault_secondary: Cell::new(None),
+        restarts: Cell::new(0),
     };
     let orphan = format!("hm{}-orphan", &nonce[..8]);
     let volume = format!("nelcota-{orphan}_pgdata");
@@ -305,6 +350,7 @@ fn docker_lifecycle_preserves_other_projects_and_verified_restore_writes() {
             assert_eq!(task.public.stage, Stage::Completed, "creation failed");
         }
     }
+    routine_configuration_campaign(&policy, &shop, &seed, &effects);
     // An old scoped grant survives a managed project being recreated under its name.
     policy.operators[0].projects = vec![shop.clone()];
     policy
@@ -538,4 +584,183 @@ fn docker_lifecycle_preserves_other_projects_and_verified_restore_writes() {
         sql(other, "SELECT value FROM public.host_probe"),
         "untouched"
     );
+}
+
+/// Real root/Docker effects; inject each durable configuration boundary without
+/// changing PostgreSQL contents or the other project's data.
+fn routine_configuration_campaign(
+    policy: &Policy,
+    shop: &str,
+    seed: &str,
+    effects: &FixtureEffects,
+) {
+    use nelcota_deployment::operations::Configuration;
+    let host = Host::new(&policy.root);
+    let p = control_project(policy, shop).unwrap();
+    let other = control_project(policy, seed).unwrap();
+    sql(
+        &p,
+        "CREATE TABLE public.routine_probe (value text); INSERT INTO public.routine_probe VALUES ('acknowledged')",
+    );
+    sql(
+        &other,
+        "CREATE TABLE public.routine_probe (value text); INSERT INTO public.routine_probe VALUES ('other')",
+    );
+    for boundary in 1..=11 {
+        let password = nelcota_deployment::token().unwrap();
+        let prepared = settings::prepare(
+            policy,
+            shop,
+            Configuration::AdminPassword {
+                new_password: password.clone(),
+            },
+        )
+        .unwrap();
+        let op = Operation::Configure {
+            project: shop.into(),
+            section: prepared.section,
+            revision: prepared.revision.clone(),
+        };
+        let bytes = serde_json::to_vec(&prepared).unwrap();
+        let task = accepted_input(policy, op, Some(&bytes)).unwrap();
+        effects.checkpoints.set(0);
+        effects.fault_after.set(Some(match boundary {
+            11 => 8,
+            other => other,
+        }));
+        effects.fault_secondary.set((boundary == 11).then_some(9));
+        let _ = execute_with(policy, &task.public.id, false, effects);
+        let journal = HostJournal::open(&policy.root).unwrap();
+        let state = || {
+            journal
+                .list()
+                .unwrap()
+                .into_iter()
+                .find(|t| t.public.id == task.public.id)
+                .unwrap()
+        };
+        let after = state();
+        let restarts_before_recovery = effects.restarts.get();
+        if after.public.stage == Stage::NeedsAttention {
+            execute_with(policy, &task.public.id, true, effects).unwrap();
+        }
+        if boundary == 10 {
+            // The final checkpoint is after verification and reopening traffic.
+            // Reconciliation must not recreate either application a second time.
+            assert_eq!(effects.restarts.get(), restarts_before_recovery);
+        }
+        let after = state();
+        assert_eq!(
+            after.public.affected_projects,
+            vec![seed.to_owned(), shop.to_owned()]
+        );
+        assert!(
+            matches!(after.public.stage, Stage::Completed | Stage::RolledBack),
+            "boundary {boundary}: {:?}",
+            after.public.stage
+        );
+        assert!(!p.path(crate::maintenance::MARKER).exists());
+        assert!(!other.path(crate::maintenance::MARKER).exists());
+        assert_eq!(
+            sql(&p, "SELECT value FROM public.routine_probe"),
+            "acknowledged"
+        );
+        assert_eq!(
+            sql(&other, "SELECT value FROM public.routine_probe"),
+            "other"
+        );
+        let shared = host.secrets().get("NELCOTA_ADMIN_PASSWORD_HASH").unwrap();
+        assert_eq!(p.env().get("NELCOTA_ADMIN_PASSWORD_HASH").unwrap(), shared);
+        assert_eq!(
+            other.env().get("NELCOTA_ADMIN_PASSWORD_HASH").unwrap(),
+            shared
+        );
+        let public = serde_json::to_string(&after.public).unwrap();
+        assert!(!public.contains(&password));
+        assert!(!public.contains("argon2id"));
+        p.wait_healthy(Service::App, crate::lifecycle::HEALTH_TIMEOUT)
+            .unwrap();
+        other
+            .wait_healthy(Service::App, crate::lifecycle::HEALTH_TIMEOUT)
+            .unwrap();
+    }
+    effects.fault_after.set(None);
+    let native = Native;
+    let backup_plan = native
+        .preflight(
+            policy,
+            &Operation::Backup {
+                project: shop.into(),
+            },
+        )
+        .unwrap();
+    assert!(backup_plan.is_empty(), "{backup_plan:?}");
+    assert!(
+        native
+            .preflight(
+                policy,
+                &Operation::TestBackup {
+                    project: shop.into()
+                }
+            )
+            .unwrap()
+            .contains(&"offsite_not_configured".into())
+    );
+    assert!(
+        native
+            .preflight(
+                policy,
+                &Operation::TestSmtp {
+                    project: shop.into()
+                }
+            )
+            .unwrap()
+            .contains(&"smtp_not_configured".into())
+    );
+    atomic_write(&p.path(crate::maintenance::MARKER), b"").unwrap();
+    assert!(
+        native
+            .preflight(
+                policy,
+                &Operation::Restart {
+                    project: shop.into()
+                }
+            )
+            .unwrap()
+            .contains(&"maintenance_requires_recovery".into())
+    );
+    fs::remove_file(p.path(crate::maintenance::MARKER)).unwrap();
+    let original = read_private(&p.path(".env"), 65536).unwrap();
+    p.env()
+        .set("NELCOTA_LOG_FORMAT", "unapplied-manual-change")
+        .unwrap();
+    assert!(
+        native
+            .preflight(
+                policy,
+                &Operation::Restart {
+                    project: shop.into()
+                }
+            )
+            .unwrap()
+            .contains(&"running_configuration_changed".into())
+    );
+    atomic_write(&p.path(".env"), &original).unwrap();
+    let restarted = run(
+        policy,
+        Operation::Restart {
+            project: shop.into(),
+        },
+        effects,
+    )
+    .unwrap();
+    assert_eq!(restarted.public.stage, Stage::Completed);
+    assert_eq!(
+        sql(&other, "SELECT value FROM public.routine_probe"),
+        "other"
+    );
+    let configured = settings::view(policy, shop).unwrap();
+    let public = serde_json::to_string(&configured).unwrap();
+    assert!(!public.contains("argon2id"));
+    assert!(!public.contains("SSO_SECRET"));
 }

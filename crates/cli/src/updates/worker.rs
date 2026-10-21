@@ -247,7 +247,10 @@ async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Result<Respon
         return Ok(error("policy_changed"));
     }
     match request {
-        request @ (Request::HostStatus { .. }
+        request @ (Request::HostDiagnostics { .. }
+        | Request::HostConfiguration { .. }
+        | Request::HostConfigurePlan { .. }
+        | Request::HostStatus { .. }
         | Request::HostPlan { .. }
         | Request::HostStart { .. }
         | Request::HostRecover { .. }
