@@ -99,9 +99,10 @@ credentials locally from `.nelcota/dev.env`.
 
 ## Status and roadmap
 
-The latest published server is **0.5.0**. SDKs have independent versions.
-The [release](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.0) includes
-controlled updates, host project management and durable PITR recovery fencing.
+This source targets server **0.5.1**. SDKs have independent versions.
+Confirm published artifacts on the [release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.1).
+This patch includes installation, authentication and panel corrections; controlled
+updates, host project management and durable PITR recovery fencing remain available.
 See the [changelog](CHANGELOG.md), [version and upgrade guide](docs/releases/README.md)
 and [release handoff](docs/onboarding/release.md) for source/package distinctions.
 A source build can report the same binary version as a published release until
