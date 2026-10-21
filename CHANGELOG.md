@@ -10,6 +10,8 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Update TLS certificate verification and root-store dependencies for
+  RUSTSEC-2026-0381, RUSTSEC-2026-0382 and RUSTSEC-2026-0383.
 - Bound ordinary panel JSON requests and response reads to 60 seconds, release
   pending forms on timeout and preserve drafts. Warn that a write may already
   have completed and require checking the data before a manual retry.
