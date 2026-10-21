@@ -9,6 +9,19 @@ async function controller(page: Page) {
     await route.fulfill({ response, body: (await response.text()).replace('<head>', '<head><meta name="nelcota-updates-controller" content="1">') })
   })
 }
+test('an invalid host_busy response is rejected and reconnect accepts a boolean', async ({ page }) => {
+  await controller(page)
+  let compatible = false
+  await page.route('**/admin/api/updates', route => route.fulfill({ json: {
+    result: 'status', data: { ...status, host_busy: compatible ? false : 'false' },
+  } }))
+  await page.goto('/admin/')
+  await expect(page.getByRole('button', { name: 'Reconectar', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Preparar atualização' })).toHaveCount(0)
+  compatible = true
+  await page.getByRole('button', { name: 'Reconectar', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Preparar atualização' })).toBeEnabled()
+})
 test('controller skips project SSO and uses its own operator login', async ({ page }) => {
   await controller(page)
   const projectRequests: string[] = []

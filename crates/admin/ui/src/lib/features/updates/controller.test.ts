@@ -4,6 +4,13 @@ afterEach(() => vi.unstubAllGlobals())
 const job: Job = { id: 'a'.repeat(64), project: 'shop', current: '0.4.0', target: '0.5.0', phase: 'validating', sequence: 6, updated_at: 123, committed: false, error: null }
 const status: Status = { email: 'operator@example.test', projects: [{ name: 'shop', version: '0.4.0', update_available: true }], jobs: [job], release: { version: '0.5.0' }, enabled: true, checking: false, check_error: null }
 describe('update capability responses', () => {
+  it.each([null, 'false', 0, {}])('rejects a non-boolean host_busy (%j)', host_busy => {
+    expect(() => parseStatus({ ...status, host_busy })).toThrow(ControllerError)
+  })
+  it('accepts absent and boolean host_busy states', () => {
+    expect(parseStatus(status).host_busy).toBeUndefined()
+    for (const host_busy of [true, false]) expect(parseStatus({ ...status, host_busy }).host_busy).toBe(host_busy)
+  })
   it('rejects nullable, nonfinite, unsafe and unknown states', () => {
     for (const invalid of [null, {}, { ...job, phase: 'almost_done' }, { ...job, sequence: NaN }, { ...job, sequence: Infinity }, { ...job, sequence: Number.MAX_SAFE_INTEGER + 1 }, { ...job, id: '../state' }, { ...job, committed: 'false' }]) expect(() => parseJob(invalid)).toThrow()
     expect(() => parseStatus({ ...status, jobs: [null] })).toThrow()

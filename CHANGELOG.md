@@ -10,6 +10,11 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Bound ordinary panel JSON requests and response reads to 60 seconds, release
+  pending forms on timeout and preserve drafts. Warn that a write may already
+  have completed and require checking the data before a manual retry.
+- Reject overflowing admin table/user page offsets before querying PostgreSQL,
+  and refuse update-controller status responses with a non-boolean `host_busy`.
 - Preserve exact bucket file-size limits when editing other settings, including
   limits smaller than 0.01 MiB.
 - Protect panel form drafts during navigation and browser history changes; keep

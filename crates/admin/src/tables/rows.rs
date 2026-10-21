@@ -138,9 +138,12 @@ pub(crate) fn build_request(
     };
     let mut pairs: Vec<(String, String)> = filters.iter().map(FilterSpec::to_pair).collect();
     if let Some((page, size)) = page {
+        let offset = page
+            .checked_mul(size)
+            .ok_or_else(|| ApiError::bad_request("invalid_page", "page is too large"))?;
         // One extra row tells whether there is a next page.
         pairs.push(("limit".into(), (size + 1).to_string()));
-        pairs.push(("offset".into(), (page * size).to_string()));
+        pairs.push(("offset".into(), offset.to_string()));
     }
     // Sort: the requested column (validated by the parser) or the PK.
     let order = match &params.sort {
@@ -287,7 +290,7 @@ pub async fn table(
 ) -> ApiResult<crate::contracts::TableData> {
     let table = table_or_404(&state, &name)?;
     let catalog = state.catalog.get();
-    let viewer = params.run_as()?.claims(&state.db).await?;
+    let run_as = params.run_as()?;
     let page = params.page.max(0);
     let size = params.size.unwrap_or(50).clamp(1, MAX_PAGE_SIZE);
     let rows_query = RowsQuery {
@@ -296,6 +299,7 @@ pub async fn table(
         filters: params.filters,
     };
     let request = build_request(&table, &rows_query, Some((page, size)))?;
+    let viewer = run_as.claims(&state.db).await?;
     let filtered = !request.filters.is_empty();
     let sql = query::select(&catalog.schema, &table, &request, None);
 

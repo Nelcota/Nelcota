@@ -8,6 +8,7 @@ import { ApiError, httpError } from './api-error'
 export { ApiError, httpError } from './api-error'
 
 let authentication = Promise.resolve()
+const REQUEST_TIMEOUT_MS = 60_000
 
 async function request<T>(method: string, path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const encoded = body === undefined ? undefined : JSON.stringify(body, (_key, original: unknown) => {
@@ -20,16 +21,37 @@ async function request<T>(method: string, path: string, body?: unknown, signal?:
   const started = querySession()
   const send = async () => {
     requireSession(started)
-    const res = await fetch(`/admin/api${path}`, {
-      method,
-      signal,
-      credentials: 'same-origin',
-      headers: body === undefined ? {} : { 'content-type': 'application/json' },
-      body: encoded,
-    })
-    const result = await parseResponse<T>(res, path, method, started)
-    requireSession(started)
-    return result
+    const controller = new AbortController()
+    const deadline = new DOMException('Request deadline exceeded', 'TimeoutError')
+    const abort = () => controller.abort(signal?.reason)
+    const timer = setTimeout(() => controller.abort(deadline), REQUEST_TIMEOUT_MS)
+    signal?.addEventListener('abort', abort, { once: true })
+    try {
+      if (signal?.aborted) abort()
+      controller.signal.throwIfAborted()
+      const res = await fetch(`/admin/api${path}`, {
+        method,
+        signal: controller.signal,
+        credentials: 'same-origin',
+        headers: body === undefined ? {} : { 'content-type': 'application/json' },
+        body: encoded,
+      })
+      const result = await parseResponse<T>(res, path, method, started, controller.signal)
+      requireSession(started)
+      return result
+    } catch (error) {
+      if (controller.signal.reason === deadline) {
+        const reading = method === 'GET' || method === 'HEAD'
+        // A missing response cannot prove a write was rolled back.
+        if (!reading && started === querySession()) invalidateReads()
+        const code = reading ? 'request_timeout' : 'write_timeout'
+        throw new ApiError(t(`errors.${code}`), 504, code)
+      }
+      throw error
+    } finally {
+      clearTimeout(timer)
+      signal?.removeEventListener('abort', abort)
+    }
   }
   if (!changesSession) return send()
   // Epoch checks cannot undo Set-Cookie. Finish earlier authentication
@@ -63,7 +85,7 @@ function requireSession(started: number) {
   if (started !== querySession()) throw new DOMException('Session changed', 'AbortError')
 }
 
-export async function parseResponse<T>(res: Response, path: string, method: string, started = querySession()): Promise<T> {
+export async function parseResponse<T>(res: Response, path: string, method: string, started = querySession(), signal?: AbortSignal): Promise<T> {
   if (started !== querySession()) {
     void res.body?.cancel().catch(() => {})
     requireSession(started)
@@ -72,8 +94,10 @@ export async function parseResponse<T>(res: Response, path: string, method: stri
   // body fails. Refresh reads before parsing or validating that response.
   if (started === querySession() && res.ok && method !== 'GET' && method !== 'HEAD') invalidateReads()
   // Error pages are metadata; a proxy cannot force the panel to buffer its body.
-  const body = res.ok ? null : await readBody(res, 64 * 1024)
-  const text = res.ok ? await res.text() : (await body?.text() ?? '')
+  // Only errors have a byte cap; both body paths honor the request deadline.
+  const body = await readBody(res, res.ok ? Number.MAX_SAFE_INTEGER : 64 * 1024, signal)
+  const text = await body?.text() ?? ''
+  signal?.throwIfAborted()
   requireSession(started)
   let data: unknown = null
   let json = true

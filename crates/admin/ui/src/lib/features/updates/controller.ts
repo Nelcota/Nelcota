@@ -15,6 +15,7 @@ export function parseJob(value: unknown): Job {
   return value as Job
 }
 export function parseStatus(value: unknown): Status {
+  if (record(value) && value.host_busy !== undefined && typeof value.host_busy !== 'boolean') throw new ControllerError(502, 'invalid_response')
   if (!record(value) || !(value.host_management === undefined || typeof value.host_management === 'boolean') || !text(value.email) || !Array.isArray(value.projects) || value.projects.length > 32 || value.projects.some(p => !record(p) || !text(p.name) || !text(p.version) || typeof p.update_available !== 'boolean') || !Array.isArray(value.jobs) || value.jobs.length > 32 || typeof value.enabled !== 'boolean' || typeof value.checking !== 'boolean' || !(value.check_error === null || text(value.check_error)) || !(value.release === null || (record(value.release) && text(value.release.version)))) throw new ControllerError(502, 'invalid_response')
   return { ...value, jobs: value.jobs.map(parseJob) } as Status
 }
