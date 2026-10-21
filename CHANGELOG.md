@@ -1,12 +1,14 @@
 # Changelog
 
 This history uses Keep a Changelog categories and Semantic Versioning.
-Dates are published release dates in UTC.
+Dates use UTC.
 
 Server releases are listed here. The [TypeScript SDK](sdk/typescript/CHANGELOG.md)
 and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ## [Unreleased]
+
+## [0.5.1] — 2026-10-21
 
 ### Fixed
 
