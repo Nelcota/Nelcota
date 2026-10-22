@@ -11,4 +11,7 @@ pub use secure_fs::{atomic_write, digest_file, private_dir, read_private, token}
 mod tests;
 
 pub mod management;
+pub mod operations;
 pub mod protocol;
+
+pub mod alerts;

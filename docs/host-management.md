@@ -58,6 +58,38 @@ layouts require their CLI/recovery workflows; the interface reports blockers.
 PostgreSQL profiles estimate configuration and do not reserve RAM or guarantee
 capacity. Measure application/database load before filling the host.
 
+## Routine server operations (unreleased)
+
+The source after 0.5.1 extends the same journal/lease to application restart, SMTP/OAuth configuration, external backups, daily schedule/local retention and panel-administrator password changes. These controls require a matching reviewed CLI/controller release; they are not present in published 0.5.1. No terminal, arbitrary command, Docker socket or root password is exposed to the browser.
+
+Add `service_hosts` to the initial root-owned host-management grant for SMTP and S3 destinations, for example `"service_hosts": ["smtp.example.com", "s3.example.com"]`. The default is empty. Entries are exact lowercase DNS hostnames, not wildcards or IP literals. Preparing and executing the relevant changes rechecks this grant. Existing enrollments need one explicit SSH policy update and worker restart; project sessions cannot grant these permissions.
+
+Every change has an immutable, secret-free public plan and receipt. New credential values are kept only in worker memory until confirmation, then in a root-private `configuration.private.json` under the owned job directory. It includes before/after configuration needed for interrupted recovery; protect it like `.env` and archive only completed history. Configuration plans are bounded to 4 MiB. Multiline values, literal single quotes and backslashes are refused rather than reinterpreted; percent-encode such characters inside provider URLs. Blank credential fields preserve the existing value. Disabling a section removes its controlled keys.
+
+SMTP requires `smtps://` or mandatory STARTTLS, a sender and an HTTPS application recovery page. Test email goes only to the enrolled operator; transport acceptance does not certify inbox delivery, and explicit recovery of an uncertain test can resend it. Google/GitHub return pages are shared by the project; verify real provider login separately. The callback remains `https://<project-domain>/auth/v1/callback`.
+
+Review lists every affected project. Shared administrator-password changes update the host and all project hashes under the same lease and recreate the affected applications. Other SMTP/OAuth changes restart only their selected application. S3 destination and cron changes do not restart applications. Existing maintenance/PITR fences, identity changes and unsupported layouts block new routine actions.
+
+Configuration execution persists its effects and recovery decision. Failed startup attempts restore only configuration and verify the previous application state; they never rewind database writes. A cut during rollback resumes rollback even if the interrupted stage was verification. A cut after successful verification reconciles the result without recreating the application again. Successful rollback has its own terminal result, distinct from a successful change. Foreign configuration edits are preserved and require operator attention.
+
+External backup copies verify encrypted configuration plus dump/files after download, with reserve for three times the estimated database/file bytes plus the existing host buffer. The destination test uses a unique probe object and removes it; it never deletes backup history. Daily retention is local and keeps 1–365 copies. Readback evidence is not the off-host restore acceptance required to enable updates. All existing update gates and minimum reserves remain in force.
+
+## Operational alerts (unreleased)
+
+**Server → Alerts** adds host-wide application/database/HTTPS health, disk,
+certificate-expiry and successful-backup monitoring. Enrolled host operators
+configure email and HTTPS webhook channels, review changes and explicitly test
+delivery. SMTP comes from a pinned registered project; recipients are enrolled
+host operators. Provider names require the existing `service_hosts` grant.
+Secret endpoint URLs never return to the browser. A matching upgraded backup CLI
+must produce successful-outcome receipts; partial dump mtimes do not count.
+
+A total VPS/worker/network outage requires an independent heartbeat monitor.
+Configure and rehearse that external provider separately. See
+[operational alerts](operational-alerts.md) for thresholds, confirmation,
+retries, payloads, activation and limitations. These controls are not in published
+0.5.1 and do not complete the separate update-installation acceptance.
+
 ## Visual workflow
 
 Open the host controller from the Projects page and sign in with the enrolled
@@ -123,7 +155,11 @@ host-lease contention delays reconciliation and never retries mutations.
 file snapshots, restore, post-verification recovery, missing safety backups, partial removal/recreation,
 worker-policy reload, Docker volume collisions and removal. It uses explicit
 doubles for DNS/image provenance, public TLS, proxy reload and the unused PITR
-image extension. Browser tests cover visual approval, blockers and lost responses.
+image extension. Routine-operation coverage injects eleven configuration failure
+scenarios, including a second interruption during rollback, and checks shared
+credential consistency, both projects' acknowledged data, restart recovery,
+manual configuration drift and secret-free receipts. Browser tests cover visual
+approval, blockers and lost responses.
 These tests do not certify a production VPS, actual abrupt power loss, native
 systemd deployment or off-host recovery. Rehearse those on the selected host and
 exact official controller/image before production use.

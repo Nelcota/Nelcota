@@ -21,6 +21,17 @@ struct Controller {
 #[derive(Deserialize)]
 #[serde(tag = "action", rename_all = "snake_case", deny_unknown_fields)]
 enum Input {
+    HostAlerts,
+    HostDiagnostics {
+        project: String,
+    },
+    HostConfiguration {
+        project: String,
+    },
+    HostConfigurePlan {
+        project: String,
+        configuration: nelcota_deployment::operations::Configuration,
+    },
     HostStatus {
         key: Option<String>,
     },
@@ -174,6 +185,17 @@ async fn action(
     };
     let logout = matches!(input, Input::Logout);
     let request = match input {
+        Input::HostAlerts => Request::HostAlerts { token },
+        Input::HostDiagnostics { project } => Request::HostDiagnostics { token, project },
+        Input::HostConfiguration { project } => Request::HostConfiguration { token, project },
+        Input::HostConfigurePlan {
+            project,
+            configuration,
+        } => Request::HostConfigurePlan {
+            token,
+            project,
+            configuration,
+        },
         Input::HostStatus { key } => Request::HostStatus { token, key },
         Input::HostPlan { operation } => Request::HostPlan { token, operation },
         Input::HostStart {

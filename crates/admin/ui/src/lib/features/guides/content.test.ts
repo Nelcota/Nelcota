@@ -18,6 +18,7 @@ describe('bundled guides', () => {
     expect(guideLink('../examples/notes.sql', 'docs/quickstart.md')).toBe('/admin/guides/example')
     expect(guideLink('#errors', 'docs/api.md')).toBe('/admin/guides/api?section=errors')
     expect(guideLink('https://github.com/other/repo', 'docs/api.md')).toBeNull()
+    expect(guideLink('operational-alerts.md', 'docs/panel.md')).toBe('https://github.com/Nelcota/Nelcota/blob/main/docs/operational-alerts.md')
     expect(guideLink('javascript:alert(1)', 'docs/api.md')).toBeNull()
     expect(guideLink('%invalid', 'docs/api.md')).toBeNull()
   })

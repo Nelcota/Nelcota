@@ -4,6 +4,8 @@ mod enroll;
 #[cfg(target_os = "linux")]
 pub(crate) use enroll::descriptor;
 #[cfg(target_os = "linux")]
+mod alerts;
+#[cfg(target_os = "linux")]
 mod management;
 #[cfg(target_os = "linux")]
 mod policy;

@@ -8,6 +8,40 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ## [Unreleased]
 
+### Added
+
+- Add operator-approved operational email and HTTPS webhook digests for service
+  health, low disk, certificate expiry and overdue/failed backups. Persist incident
+  confirmation, recovery, cooldown and bounded delivery retries independently of
+  browser sessions; support a separately configured external heartbeat observer.
+- Record private backup outcomes so partial dump mtimes cannot imply success.
+  Matching CLI/controller versions and an independent missed-heartbeat rehearsal
+  are required before operational activation.
+
+- Add an operator-only Server workspace with bounded health/resource diagnostics,
+  typed SMTP/OAuth and external backup settings, daily schedule/local retention,
+  panel-administrator password changes and application restart. Reuse durable
+  host plans, explicit approval, project identities and recovery; keep secrets
+  outside public receipts and preserve the separate update acceptance gate.
+- Record a distinct configuration-rollback result and resume interrupted rollback
+  without restoring database data or replaying a verified application restart.
+- Add external backup write/read/delete tests and verified-copy freshness bound
+  to the current recovery configuration.
+
+### Changed
+
+- Require HTTPS external backup endpoints and read back database/files plus
+  AES256-encrypted recovery configuration before CLI/scheduled backup success or
+  local retention. Failed verification preserves the local backup pair.
+
+
+### Fixed
+
+- Read operational alert secrets from one bounded, private, owner-checked file
+  descriptor without following symlinks; reject shared-address webhook routes.
+- Refuse inconsistent backup completion receipts and show persistent monitor
+  errors before stale-check notices. End the loading notice after a failed read.
+
 ## [0.5.1] — 2026-10-21
 
 ### Fixed
