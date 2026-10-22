@@ -64,6 +64,8 @@ test('Scalar renders an interactive OpenAPI reference and downloads the document
   await reference.locator('a[href="#GET/notes"]:visible').click()
   await expect(reference.locator('body')).toContainText('Filtro: eq, neq')
   await expect(reference.getByRole('button', { name: /Testar Requisição/i }).first()).toBeVisible()
+  // The panel runs on a local URL, where Scalar would offer its hosted SDK sign-up.
+  await expect(reference.getByRole('button', { name: /Gerar SDK/i })).toHaveCount(0)
   expect(await page.locator('main').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
   const pending = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Baixar OpenAPI' }).click()

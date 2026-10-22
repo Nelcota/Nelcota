@@ -1,1 +1,0 @@
-import{b as e,y as t}from"./index.svelte-CeBev2_W.js";import{E as n}from"./index-CfrGj3Fv.js";var r=new Set([`$$slots`,`$$events`,`$$legacy`]);function i(i,a){let o=t(a,r),s={name:`download`,size:24,node:[[`path`,{d:`M12 15V3`}],[`path`,{d:`M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4`}],[`path`,{d:`m7 10 5 5 5-5`}]]};n(i,e(()=>o,{get icon(){return s}}))}export{i as t};
