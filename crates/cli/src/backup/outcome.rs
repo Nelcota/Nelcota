@@ -76,7 +76,16 @@ pub(crate) fn read(project: &Project) -> anyhow::Result<Option<Outcome>> {
         }
     }
     let value: Outcome = serde_json::from_slice(&read_private(&file, 4096)?)?;
-    if value.schema != 1 || !valid_digest(&value.attempt) {
+    // A success receipt must certify the same completed workflow. Do not compare
+    // timestamp ordering: wall clocks can move backwards between observations.
+    let consistent = match value.result {
+        ResultKind::Running => value.finished_at.is_none(),
+        ResultKind::Failed => value.finished_at.is_some(),
+        ResultKind::Succeeded => {
+            value.finished_at.is_some() && value.last_success_at == value.finished_at
+        }
+    };
+    if value.schema != 1 || !valid_digest(&value.attempt) || !consistent {
         bail!("invalid backup outcome");
     }
     if value.identity != identity(project)? {
@@ -130,6 +139,35 @@ mod tests {
         let p = Project::new("base", root, crate::host::Runtime::Docker);
         crate::private_fs::dir(&p.path("backups")).unwrap();
         p
+    }
+    #[test]
+    fn inconsistent_backup_outcomes_never_certify_success_or_get_overwritten() {
+        let temp = tempfile::tempdir().unwrap();
+        let p = project(temp.path());
+        Outcome::begin(&p, 10)
+            .unwrap()
+            .finish(&p, true, 11)
+            .unwrap();
+        let valid = read(&p).unwrap().unwrap();
+        for (result, finished_at, last_success_at) in [
+            (ResultKind::Succeeded, None, Some(11)),
+            (ResultKind::Succeeded, Some(12), Some(11)),
+            (ResultKind::Failed, None, Some(11)),
+            (ResultKind::Running, Some(12), Some(11)),
+        ] {
+            let mut invalid = valid.clone();
+            invalid.result = result;
+            invalid.finished_at = finished_at;
+            invalid.last_success_at = last_success_at;
+            let bytes = serde_json::to_vec(&invalid).unwrap();
+            atomic_write(&path(&p), &bytes).unwrap();
+            assert!(
+                read(&p).is_err(),
+                "inconsistent {result:?} receipt accepted"
+            );
+            assert!(Outcome::begin(&p, 20).is_err());
+            assert_eq!(fs::read(path(&p)).unwrap(), bytes);
+        }
     }
     #[test]
     fn partial_files_and_failed_workflows_never_advance_success_and_interruption_is_visible() {
