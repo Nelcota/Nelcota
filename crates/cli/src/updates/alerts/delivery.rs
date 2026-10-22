@@ -12,6 +12,7 @@ fn public(ip: IpAddr) -> bool {
                 && !ip.is_unspecified()
                 && !ip.is_multicast()
                 && !ip.is_broadcast()
+                && !(ip.octets()[0] == 100 && (64..=127).contains(&ip.octets()[1]))
                 && ip.octets()[0] != 0
                 && ip.octets()[0] < 224
         }
@@ -155,6 +156,18 @@ pub(super) async fn send(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn shared_address_space_is_not_a_public_alert_destination() {
+        for ip in ["100.64.0.0", "100.100.100.200", "100.127.255.255"] {
+            assert!(!public(ip.parse().unwrap()), "shared route accepted: {ip}");
+        }
+        for ip in ["100.63.255.255", "100.128.0.0"] {
+            assert!(
+                public(ip.parse().unwrap()),
+                "public neighbor rejected: {ip}"
+            );
+        }
+    }
     #[test]
     fn destinations_do_not_accept_private_loopback_mapped_or_link_local_routes() {
         for ip in [

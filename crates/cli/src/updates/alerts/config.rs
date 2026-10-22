@@ -2,6 +2,50 @@
 use super::*;
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use nelcota_deployment::alerts::Settings;
+use rustix::fs::{Mode, OFlags, open, openat};
+use std::{fs::File, io::Read, os::unix::fs::MetadataExt};
+const MAX_CONFIG_BYTES: u64 = 65536;
+// Policy validation owns the host root. Anchor the secret read to that directory
+// and inspect the opened descriptor, so replacing the leaf cannot redirect it.
+fn private_values(host: &Host) -> anyhow::Result<Vec<(String, String)>> {
+    let root = File::from(
+        open(
+            host.root(),
+            OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC,
+            Mode::empty(),
+        )
+        .context("unsafe_alert_configuration_directory")?,
+    );
+    let owner = root.metadata()?;
+    ensure!(
+        owner.mode() & 0o022 == 0,
+        "unsafe_alert_configuration_directory"
+    );
+    let file = File::from(
+        openat(
+            &root,
+            "host.env",
+            OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::NONBLOCK | OFlags::CLOEXEC,
+            Mode::empty(),
+        )
+        .context("unsafe_alert_configuration_file")?,
+    );
+    let meta = file.metadata()?;
+    ensure!(
+        meta.is_file()
+            && meta.uid() == owner.uid()
+            && meta.mode() & 0o077 == 0
+            && meta.len() <= MAX_CONFIG_BYTES,
+        "unsafe_alert_configuration_file"
+    );
+    let mut text = String::new();
+    file.take(MAX_CONFIG_BYTES + 1).read_to_string(&mut text)?;
+    ensure!(
+        text.len() as u64 <= MAX_CONFIG_BYTES,
+        "unsafe_alert_configuration_file"
+    );
+    Ok(crate::envfile::parse(&text))
+}
 pub(super) struct Config {
     pub settings: Settings,
     pub webhook: Option<String>,
@@ -14,16 +58,23 @@ const HEARTBEAT: &str = "NELCOTA_ALERTS_HEARTBEAT_URL";
 const IDENTITY: &str = "NELCOTA_ALERTS_SMTP_ID";
 impl Config {
     pub fn read(host: &Host) -> anyhow::Result<Self> {
-        let env = host.secrets();
-        let settings = match env.get(SETTINGS)? {
+        let values = private_values(host)?;
+        let get = |key: &str| {
+            values
+                .iter()
+                .find(|(k, _)| k == key)
+                .map(|(_, v)| v.clone())
+                .filter(|v| !v.is_empty())
+        };
+        let settings = match get(SETTINGS) {
             Some(v) => decode(&v)?,
             None => Settings::default(),
         };
         let config = Self {
             settings,
-            webhook: env.get(WEBHOOK)?,
-            heartbeat: env.get(HEARTBEAT)?,
-            smtp_identity: env.get(IDENTITY)?,
+            webhook: get(WEBHOOK),
+            heartbeat: get(HEARTBEAT),
+            smtp_identity: get(IDENTITY),
         };
         config.settings.validate()?;
         Ok(config)
@@ -200,6 +251,30 @@ mod tests {
     use super::*;
     fn policy(root: &std::path::Path) -> Policy {
         serde_json::from_value(serde_json::json!({"schema":1,"root":root,"origin":"https://control.example.test","controller_uid":1,"controller_gid":1,"verifier":"/verified/gh","operators":[],"project_ids":{},"enable_installation":false,"validation_report":null,"minimum_free_bytes":1073741824u64,"timeout_seconds":300,"host_management":{"service_hosts":["notify.example.test"],"version":"0.5.1","image_digest":"a".repeat(64),"source_sha":"b".repeat(40),"max_projects":32,"domain_suffixes":["example.test"],"addresses":["1.1.1.1"]}})).unwrap()
+    }
+    #[test]
+    fn private_configuration_rejects_symlinks_public_modes_and_oversized_files() {
+        use std::os::unix::fs::{PermissionsExt, symlink};
+        let dir = tempfile::tempdir().unwrap();
+        let host = Host::new(dir.path());
+        let target = dir.path().join("original");
+        crate::private_fs::write(&target, "KEEP=unchanged\n").unwrap();
+        symlink(&target, host.secrets().path()).unwrap();
+        assert!(Config::read(&host).is_err(), "symlinked host.env accepted");
+        assert_eq!(
+            std::fs::read_to_string(&target).unwrap(),
+            "KEEP=unchanged\n"
+        );
+        std::fs::remove_file(host.secrets().path()).unwrap();
+        host.secrets().set("KEEP", "unchanged").unwrap();
+        std::fs::set_permissions(
+            host.secrets().path(),
+            std::fs::Permissions::from_mode(0o644),
+        )
+        .unwrap();
+        assert!(Config::read(&host).is_err(), "public host.env accepted");
+        crate::private_fs::write(host.secrets().path(), "x".repeat(65537)).unwrap();
+        assert!(Config::read(&host).is_err(), "oversized host.env accepted");
     }
     #[test]
     fn endpoint_grants_are_exact_and_disable_needs_no_outbound_authority() {
