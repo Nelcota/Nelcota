@@ -15,8 +15,14 @@ window.addEventListener('message', event => {
     darkMode: Boolean(dark), hideDarkModeToggle: true, withDefaultFonts: false,
     localization: { locale: locale === 'pt-BR' ? 'pt' : 'en' } satisfies NonNullable<ApiReferenceConfiguration['localization']>,
     telemetry: false, agent: { disabled: true }, proxyUrl: '', showDeveloperTools: 'never' as const,
+    // On localhost Scalar offers "Generate SDKs & MCP": a sign-up dialog that
+    // uploads the document to Scalar. The panel keeps everything on this
+    // server (and its CSP blocks the upload), so hide the sidebar call to
+    // action and the per-operation "Generate SDK" buttons, which have no option.
+    mcp: { disabled: true },
     setPageTitle: () => 'Nelcota API',
-    customCss: 'body { margin: 0; } .scalar-app { font-family: system-ui, sans-serif; }',
+    customCss: 'body { margin: 0; } .scalar-app { font-family: system-ui, sans-serif; }'
+      + ' .generate-sdk-button, .selected-client-action { display: none !important; }',
   }
   if (instance) {
     instance.updateConfiguration(config)
