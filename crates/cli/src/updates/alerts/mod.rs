@@ -170,6 +170,16 @@ async fn flush(
     }
     Ok(())
 }
+/// Seconds of tolerance for the whole-second clock read after each tick.
+const SCAN_JITTER: u64 = 5;
+/// A punctual tick can read a clock up to a second "early" relative to the
+/// previous scan; without tolerance it would be skipped and delay confirmation.
+fn scan_due(last_scan_at: Option<u64>, now: u64) -> bool {
+    last_scan_at.is_none_or(|at| {
+        now.checked_sub(at)
+            .is_none_or(|age| age.saturating_add(SCAN_JITTER) >= CHECK_INTERVAL)
+    })
+}
 async fn cycle(policy: &Policy) -> anyhow::Result<()> {
     let host = Host::new(&policy.root);
     let cfg = config::Config::read(&host)?;
@@ -179,10 +189,7 @@ async fn cycle(policy: &Policy) -> anyhow::Result<()> {
     let revision = cfg.fingerprint(policy)?;
     let mut state = store::load(policy, &revision)?;
     let now = nelcota_deployment::management::now()?;
-    if state
-        .last_scan_at
-        .is_some_and(|at| now.checked_sub(at).is_some_and(|age| age < CHECK_INTERVAL))
-    {
+    if !scan_due(state.last_scan_at, now) {
         return Ok(());
     }
     let lease = HostLock::acquire(&policy.root).ok();

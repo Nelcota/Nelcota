@@ -156,3 +156,16 @@ async fn no_send_scan_persists_a_backward_clock_cap_so_restart_can_retry() {
         .unwrap();
     assert_eq!(&*fake.sent.lock().unwrap(), &[b.id]);
 }
+#[test]
+fn punctual_ticks_are_not_skipped_for_whole_second_clock_jitter() {
+    assert!(scan_due(None, 100));
+    // The previous scan read its clock late within its second; this tick read
+    // it early within its second, so only 59 whole seconds appear to elapse.
+    assert!(scan_due(Some(100), 159));
+    assert!(scan_due(Some(100), 160));
+    // A restarted worker still does not rescan immediately.
+    assert!(!scan_due(Some(100), 100));
+    assert!(!scan_due(Some(100), 130));
+    // A backward clock must not stop scanning.
+    assert!(scan_due(Some(100), 50));
+}
