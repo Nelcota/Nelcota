@@ -12,12 +12,26 @@ fn public(ip: IpAddr) -> bool {
                 && !ip.is_unspecified()
                 && !ip.is_multicast()
                 && !ip.is_broadcast()
+                && !ip.is_documentation()
                 && !(ip.octets()[0] == 100 && (64..=127).contains(&ip.octets()[1]))
+                // IETF protocol assignments (192.0.0.0/24) and benchmarking (198.18.0.0/15).
+                && ip.octets()[..3] != [192, 0, 0]
+                && !(ip.octets()[0] == 198 && (18..=19).contains(&ip.octets()[1]))
                 && ip.octets()[0] != 0
                 && ip.octets()[0] < 224
         }
         IpAddr::V6(ip) => {
+            let s = ip.segments();
             ip.to_ipv4_mapped().is_none()
+                // Translation/tunnel prefixes can embed a private IPv4 route:
+                // IPv4-compatible ::/96, NAT64 64:ff9b::/96 and 64:ff9b:1::/48,
+                // Teredo 2001::/32 and 6to4 2002::/16. Documentation 2001:db8::/32.
+                && s[..6] != [0; 6]
+                && s[..6] != [0x64, 0xff9b, 0, 0, 0, 0]
+                && s[..3] != [0x64, 0xff9b, 1]
+                && s[..2] != [0x2001, 0]
+                && s[..2] != [0x2001, 0xdb8]
+                && s[0] != 0x2002
                 && !ip.is_loopback()
                 && !ip.is_unspecified()
                 && !ip.is_multicast()
@@ -162,6 +176,33 @@ mod tests {
             assert!(!public(ip.parse().unwrap()), "shared route accepted: {ip}");
         }
         for ip in ["100.63.255.255", "100.128.0.0"] {
+            assert!(
+                public(ip.parse().unwrap()),
+                "public neighbor rejected: {ip}"
+            );
+        }
+    }
+    #[test]
+    fn reserved_and_translated_routes_are_not_public_alert_destinations() {
+        for ip in [
+            "192.0.0.1",
+            "192.0.2.1",
+            "198.18.0.1",
+            "198.19.255.255",
+            "203.0.113.1",
+            "::a00:1",
+            "64:ff9b::a00:1",
+            "64:ff9b:1::1",
+            "2001::1",
+            "2001:db8::1",
+            "2002:a00:1::1",
+        ] {
+            assert!(
+                !public(ip.parse().unwrap()),
+                "reserved route accepted: {ip}"
+            );
+        }
+        for ip in ["198.17.255.255", "198.20.0.0", "2001:4860:4860::8888"] {
             assert!(
                 public(ip.parse().unwrap()),
                 "public neighbor rejected: {ip}"
