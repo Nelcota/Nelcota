@@ -35,6 +35,13 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
   local retention. Failed verification preserves the local backup pair.
 
 
+### Fixed
+
+- Read operational alert secrets from one bounded, private, owner-checked file
+  descriptor without following symlinks; reject shared-address webhook routes.
+- Refuse inconsistent backup completion receipts and show persistent monitor
+  errors before stale-check notices. End the loading notice after a failed read.
+
 ## [0.5.1] — 2026-10-21
 
 ### Fixed

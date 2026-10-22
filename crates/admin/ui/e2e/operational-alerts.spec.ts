@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test'
 const id = 'a'.repeat(64), digest = 'b'.repeat(64)
 const settings = { enabled: true, email_enabled: false, webhook_enabled: true, heartbeat_enabled: false, smtp_project: '', recipient: '', disk_percent: 15, disk_gib: 3, certificate_days: 14, backup_hours: 26, reminder_hours: 24 }
 const alerts = { settings, recipients: ['operator@example.test'], projects: ['base'], webhook_configured: true, heartbeat_configured: false, webhook_host: 'notify.example.test', heartbeat_host: null, last_scan_at: null, heartbeat_accepted_at: null, heartbeat_error: null, monitor_error: null, maintenance: false, incidents: [], channels: [] }
-async function mount(page: Page, actions: Record<string, unknown>[]) {
+async function mount(page: Page, actions: Record<string, unknown>[], options: { unavailable?: boolean; status?: { monitor_error?: string | null; last_scan_at?: number | null } } = {}) {
   await page.route('**/admin/', async route => {
     const response = await route.fetch()
     await route.fulfill({ response, body: (await response.text()).replace('<head>', '<head><meta name="nelcota-updates-controller" content="1">') })
@@ -14,7 +14,9 @@ async function mount(page: Page, actions: Record<string, unknown>[]) {
     const body = route.request().postDataJSON() as Record<string, unknown>; actions.push(body)
     switch (body.action) {
       case 'host_status': await route.fulfill({ json: { result: 'host_status', data: { receipt: null, enabled: true, projects: [{ name: 'base', domain: 'base.example.test', version: '0.5.1', app: 'healthy', database: 'healthy', backups: [] }], jobs: [], max_projects: 5, ram_mb: 8192, free_bytes: 90 * 1024 ** 3 } } }); return
-      case 'host_alerts': await route.fulfill({ json: { result: 'host_alerts', data: alerts } }); return
+      case 'host_alerts':
+        if (options.unavailable) { await route.fulfill({ status: 503, json: { error: 'unavailable' } }); return }
+        await route.fulfill({ json: { result: 'host_alerts', data: { ...alerts, ...options.status } } }); return
       case 'host_configure_plan': case 'host_plan': {
         const operation = body.action === 'host_configure_plan' ? { kind: 'configure', project: 'base', section: 'alerts', revision: 'c'.repeat(64) } : body.operation as { kind: string }
         await route.fulfill({ json: { result: 'host_plan', data: { id, operation, confirmation: `${operation.kind.toUpperCase()} base`, affected_projects: ['base', 'second-project'], blockers: [], expires_at: Math.floor(Date.now() / 1000) + 300, version: '0.5.1', image_digest: digest, ram_mb: 8192, free_bytes: 90 * 1024 ** 3, project_count: 1, destructive: false } } }); return
@@ -26,7 +28,7 @@ async function mount(page: Page, actions: Record<string, unknown>[]) {
   await page.goto('/admin/')
   await page.getByRole('button', { name: 'Alertas', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Alertas', exact: true })).toBeVisible()
-  await expect(page.getByText('notify.example.test', { exact: false })).toBeVisible()
+  if (!options.unavailable) await expect(page.getByText('notify.example.test', { exact: false })).toBeVisible()
 }
 test('alerts explain external observation, stay read-only and fit mobile', async ({ page }, info) => {
   const actions: Record<string, unknown>[] = []; await mount(page, actions)
@@ -69,4 +71,17 @@ test('drafts require discard and delivery tests prepare a host-wide plan', async
   await expect(page.getByRole('heading', { name: 'Revise antes de confirmar' })).toBeVisible()
   expect(actions.some(a => a.action === 'host_plan' && (a.operation as { kind: string }).kind === 'test_alerts')).toBe(true)
   expect(actions.some(a => a.action === 'host_start')).toBe(false)
+})
+
+test('failed initial status stops announcing loading and offers retry', async ({ page }) => {
+  await mount(page, [], { unavailable: true })
+  await expect(page.getByText('Não foi possível consultar o monitor. Verifique a conexão e tente novamente.')).toBeVisible()
+  await expect(page.getByText('Consultando monitor…', { exact: true })).not.toBeVisible()
+  await expect(page.getByRole('button', { name: 'Recarregar configuração', exact: true })).toBeEnabled()
+})
+test('persistent monitor errors take priority over waiting for a first scan', async ({ page }) => {
+  await mount(page, [], { status: { monitor_error: 'alert_state_unavailable', last_scan_at: null } })
+  await expect(page.getByText('Há verificações indisponíveis; consulte os incidentes')).toBeVisible()
+  await expect(page.getByText('O estado persistido dos alertas está indisponível.', { exact: false })).toBeVisible()
+  await expect(page.getByText('Aguardando uma verificação recente do worker')).not.toBeVisible()
 })

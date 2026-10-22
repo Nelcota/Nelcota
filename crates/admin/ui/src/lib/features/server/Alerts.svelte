@@ -60,10 +60,11 @@
   <p class="text-sm text-muted-foreground">{a('description')}</p>
   {#if failure}<p role="alert" class="text-sm text-destructive">{failure}</p>{/if}
   {#if stale}<p role="alert" class="text-sm text-amber-700 dark:text-amber-400">{a('staleForm')}</p>{/if}
-  {#if !view}<p role="status">{a('loading')}</p>{/if}
+  {#if !view && loading}<p role="status">{a('loading')}</p>{/if}
   {#if view}
     <div class="grid gap-3 rounded-2xl bg-well p-4" role="status">
-      <p class="font-medium">{view.settings.enabled ? clockStale ? a('observerStale') : view.maintenance ? a('maintenance') : view.monitor_error ? a('observerFailed') : active.length > 0 ? `${active.length} · ${a('active')}` : a('noConfirmed') : a('disabled')}</p>
+      <p class="font-medium">{view.settings.enabled ? view.monitor_error ? a('observerFailed') : clockStale ? a('observerStale') : view.maintenance ? a('maintenance') : active.length > 0 ? `${active.length} · ${a('active')}` : a('noConfirmed') : a('disabled')}</p>
+      {#if view.monitor_error === 'alert_state_unavailable'}<p role="alert" class="text-sm text-destructive">{a('stateUnavailable')}</p>{/if}
       <p class="text-sm">{a('lastScan')}: {date(view.last_scan_at)}</p>
       <p class="text-sm">{a('heartbeatAccepted')}: {date(view.heartbeat_accepted_at)}</p>
       {#if view.heartbeat_error}<p class="text-sm text-destructive">{a('alert_heartbeat_failed')}</p>{/if}

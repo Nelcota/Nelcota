@@ -29,8 +29,8 @@ configuration again. SMTP credential rotation is read on the next delivery.
 For a webhook, supply an approved HTTPS POST URL. It is a private credential:
 use the destination's unguessable path/query token, rotate it when exposed and
 use an adapter if the provider expects a different JSON format. Redirects,
-userinfo, fragments, private/loopback/link-local DNS answers and unapproved names
-are refused. A configured egress proxy remains a trusted routing/DNS boundary.
+userinfo, fragments, private/loopback/link-local DNS answers, shared address
+space (`100.64.0.0/10`) and unapproved names are refused. A configured egress proxy remains a trusted routing/DNS boundary.
 Full URLs are never returned to the panel, logs or public operation receipts.
 Blank inputs preserve saved URLs. Disabling an individual URL channel removes
 its URL; disabling the whole monitor preserves channels for later reactivation.
@@ -80,6 +80,8 @@ advances success. Failure preserves the previous success, and interruption leave
 a running receipt recognized as failed once no host operation owns the lease.
 A partial dump or file mtime never qualifies as success. Project identity changes
 do not inherit previous success. Failed panel backup jobs also count as failures.
+Inconsistent completion receipts are refused without replacing their contents;
+they are unavailable evidence, never proof of a successful backup.
 
 Upgrade the executable used by the daily cron job to the same reviewed release
 as the controller, preserving its existing path/root. The old published CLI does
@@ -151,10 +153,14 @@ independently. Emails use the same digest identity and plain text, without priva
 SQL, user records, logs, tokens or provider errors.
 
 Settings and URLs live in root-private `host.env`; private configuration recovery
-files contain before/after secrets. Incident/cooldown state is atomically persisted
+files contain before/after secrets. Configuration reads use one bounded, private,
+owner-checked descriptor anchored to the trusted host directory and refuse symlinks.
+Incident/cooldown state is atomically persisted
 and synchronized under `updates/alerts/state.json`. Invalid state, symlinks,
 foreign ownership or unsafe types fail closed; no automatic erasure or reset of
-corrupt evidence occurs. Keep trusted ownership, inspect worker logs and preserve
+corrupt evidence occurs. The panel prioritizes a persistent-state error over a
+missing-scan notice and explains that automatic sends and heartbeat are suspended.
+Keep trusted ownership, inspect worker logs and preserve
 state for diagnosis before explicit administrator recovery. A disabled monitor
 sends nothing. Provider activation and a real external outage rehearsal are
 required operational checks after installation, not results of repository tests.
