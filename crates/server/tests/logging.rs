@@ -144,3 +144,48 @@ async fn extension_methods_do_not_amplify_diagnostic_lines() {
     }
 }
 
+async fn database_diagnostic_case(code: &str, expected: StatusCode) {
+    let app = TestApp::spawn().await;
+    for json in [false, true] {
+        let error = app.admin_client.batch_execute(&format!(
+            "DO $$ BEGIN RAISE EXCEPTION USING ERRCODE='{code}', MESSAGE='database-message-canary'; END $$;"
+        )).await.unwrap_err();
+        let capture = Capture::default();
+        let error = tracing::dispatcher::with_default(&capture.subscriber(json), || {
+            ApiError::from_db(error, Role::ServiceRole)
+        });
+        assert_eq!(error.into_response().status(), expected);
+        let log = capture.valid(json);
+        assert!(!log.contains("database-message-canary"));
+        assert!(log.contains(code));
+    }
+}
+#[tokio::test]
+async fn internal_database_diagnostics_keep_sqlstate_without_opaque_messages() {
+    database_diagnostic_case("XX000", StatusCode::INTERNAL_SERVER_ERROR).await;
+}
+#[tokio::test]
+async fn transient_database_diagnostics_keep_sqlstate_without_opaque_messages() {
+    database_diagnostic_case("40001", StatusCode::SERVICE_UNAVAILABLE).await;
+}
+
+#[tokio::test]
+async fn pool_diagnostics_classify_backend_failures_without_the_message() {
+    let app = TestApp::spawn().await;
+    for json in [false, true] {
+        let error = app.admin_client.batch_execute(
+            "DO $$ BEGIN RAISE EXCEPTION USING ERRCODE='XX000', MESSAGE='pool-message-canary'; END $$;"
+        ).await.unwrap_err();
+        let capture = Capture::default();
+        let error = tracing::dispatcher::with_default(&capture.subscriber(json), || {
+            ApiError::from_pool(deadpool_postgres::PoolError::Backend(error))
+        });
+        assert_eq!(
+            error.into_response().status(),
+            StatusCode::SERVICE_UNAVAILABLE
+        );
+        let log = capture.valid(json);
+        assert!(!log.contains("pool-message-canary"));
+        assert!(log.contains("backend"));
+    }
+}
