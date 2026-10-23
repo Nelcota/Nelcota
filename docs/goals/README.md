@@ -18,6 +18,14 @@ supersedes its original intake statuses without rewriting the dated evidence.
 G07's two targeted refactorings were reviewed and merged; its
 [execution record](maintainability-refactor-execution.md) preserves the hotspot
 inventory, selected targets and deferred work.
+G08 was started but remains incomplete: preliminary tests and a failed targeted
+regression do not close its three-pass coverage. Its
+[partial execution record](security-data-race-review-execution.md) preserves that
+status; no security or release approval was established.
+G09 completed a bounded investigation with open gates: the polling proposal was
+withdrawn after a failed full-profile comparison; final original-artifact disk/S3
+and 30-minute stability evidence and limits are in the
+[execution record](performance-review-execution.md). No performance approval.
 
 | Goal | Outcome |
 |---|---|
@@ -28,6 +36,8 @@ inventory, selected targets and deferred work.
 | [G05: Complete stress verification](https://github.com/Nelcota/Nelcota/pull/90) | Archived campaign: original-artifact evidence and environment-blocked cells are retained on `test/g05-stress-verification`; production fixes were extracted into #91 and #93. This is not a new soak of the current release. |
 | [G06: Authentication and session security](auth-security-review.md) | Finalized: all seven findings have merged resolutions; public disclosure and server 0.5.0 are recorded, including the F07 trade-off. |
 | [G07: Targeted maintainability refactoring](maintainability-refactor-execution.md) | Completed bounded pass: PRs #107/#108 and the inventory #106 merged; excluded areas and remaining hotspots are future work. |
+| [G08: Security, data exposure and concurrency](security-data-race-review.md) | Incomplete: preliminary evidence only; three-pass coverage and correction/revalidation remain unfinished. Private evidence retained, owned fixture removed, no production approval. |
+| [G09: Evidence-based performance review](performance-review.md) | Executed with limitations: polling proposal withdrawn, failed comparisons retained, original-artifact S3/30-minute stability verified; no performance or production approval. |
 | [G10: Safe operational logging](operational-logging.md) | Executed bounded pass: HTTP/database/mail/storage diagnostics corrected and locally validated; disk latency gate failed, local S3 passed, deployment sinks remain unverified. No performance or production approval. |
 
 Subsequent [module ownership](solid-module-ownership-execution.md),
