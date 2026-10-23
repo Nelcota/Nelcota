@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte'
   import { toast } from 'svelte-sonner'
+  import RefreshCw from '@lucide/svelte/icons/refresh-cw'
   import Webhook from '@lucide/svelte/icons/webhook'
   import Plus from '@lucide/svelte/icons/plus'
   import Pencil from '@lucide/svelte/icons/pencil'
@@ -10,7 +11,6 @@
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import Callout from '$lib/components/shared/Callout.svelte'
-  import PillTabs from '$lib/components/shared/PillTabs.svelte'
   import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte'
   import { RemoteResource } from '$lib/resources/remote-resource.svelte'
   import { route, navigate, href } from '$lib/navigation/router.svelte'
@@ -105,9 +105,8 @@
 
 <div class="mx-auto grid w-full max-w-page gap-6 px-4 pt-2 pb-12 *:min-w-0 sm:px-6 lg:px-8">
   <PageHeader title={t('webhooks.title')} description={t('webhooks.description')}>
-    {#snippet actions()}<Button variant="outline" onclick={reload} disabled={config.loading || history.loading}>{t('common.refresh')}</Button><Button onclick={() => edit(null)} disabled={!config.data?.tables.length}><Plus data-icon="inline-start" aria-hidden="true" />{t('webhooks.create')}</Button>{/snippet}
+    {#snippet actions()}<Button variant="outline" onclick={reload} disabled={config.loading || history.loading}><RefreshCw data-icon="inline-start" aria-hidden="true" />{t('common.refresh')}</Button><Button onclick={() => edit(null)} disabled={!config.data?.tables.length}><Plus data-icon="inline-start" aria-hidden="true" />{t('webhooks.create')}</Button>{/snippet}
   </PageHeader>
-  <PillTabs label={t('webhooks.title')} tabs={[{ path: '/webhooks', label: t('webhooks.configuration') }, { path: '/webhooks?tab=deliveries', label: t('webhooks.deliveries') }]} current={tab === 'deliveries' ? '/webhooks?tab=deliveries' : '/webhooks'} />
   {#if config.error}<LoadError message={errorMessage(config.error)} onretry={loadConfig} busy={config.loading} />{/if}
   {#if !config.data && config.loading}<Skeleton class="h-40 rounded-3xl" />{/if}
   {#if config.data}

@@ -10,7 +10,6 @@
   import Plus from '@lucide/svelte/icons/plus'
   import CodeBlock from '$lib/components/shared/CodeBlock.svelte'
   import HostLink from '../host/HostLink.svelte'
-  import mascot from '../../../assets/mascot.png'
   import { Button } from '$lib/components/ui/button'
   import { toast } from 'svelte-sonner'
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
@@ -77,7 +76,7 @@
         {@const url = address(project)}
         <article class={['flex flex-col gap-4 rounded-3xl bg-card p-5', project.current && 'ring-1 ring-brand/40']}>
           <div class="flex items-center gap-3">
-            <span class="grid size-11 shrink-0 place-items-center rounded-full bg-well"><img src={mascot} alt="" class="size-8 select-none" draggable="false" /></span>
+            <span class="grid size-11 shrink-0 place-items-center rounded-full bg-well"><Boxes class="size-5 text-muted-foreground" strokeWidth={1.6} aria-hidden="true" /></span>
             <div class="grid min-w-0 flex-1">
               <p class="truncate font-semibold">{project.name}</p>
               {#if url}

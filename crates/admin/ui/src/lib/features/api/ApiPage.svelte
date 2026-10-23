@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { onMount, untrack } from 'svelte'
+  import KeyRound from '@lucide/svelte/icons/key-round'
+  import { onMount, untrack, tick } from 'svelte'
   import * as Select from '$lib/components/ui/select'
   import BookOpen from '@lucide/svelte/icons/book-open'
   import Plug from '@lucide/svelte/icons/plug'
@@ -18,6 +19,8 @@
   import ServiceTokenCard from '$lib/features/api/components/ServiceTokenCard.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
+  import { apiSectionPages } from '$lib/shell/nav'
+  import { apiSectionLocation } from '$lib/navigation/api-sections.svelte'
   import { href, navigate, route } from '$lib/navigation/router.svelte'
   import { RemoteResource } from '$lib/resources/remote-resource.svelte'
   import { api, enc } from '$lib/transport/api'
@@ -46,10 +49,11 @@
   }
   onMount(() => { void loadTables(); return () => tablesResource.cancel() })
 
-  // The section nearest the top of the screen, for the pill row.
-  let current = $state('api-address')
-  let tabRow = $state<HTMLElement>()
+  // Scroll position also selects the matching link in the workspace sidebar.
+  const sections = apiSectionPages
+  const apiLocation = apiSectionLocation
   onMount(() => {
+    apiLocation.current = 'api-address'
     const root = document.getElementById('conteudo')
     // The last card is too short to ever reach the top: at the bottom of the page it is the current one.
     const bottom = () => !!root && root.scrollTop > 0 && root.scrollTop + root.clientHeight >= root.scrollHeight - 4
@@ -57,29 +61,36 @@
       (entries) => {
         if (bottom()) return
         const top = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
-        if (top) current = top.target.id
+        if (top) apiLocation.current = top.target.id
       },
       { root, rootMargin: '-80px 0px -55% 0px' },
     )
-    for (const { id } of sections) {
+    for (const { section: id } of sections) {
       const element = document.getElementById(id)
       if (element) observer.observe(element)
     }
     const atBottom = () => {
-      if (bottom()) current = sections[sections.length - 1].id
+      if (bottom()) apiLocation.current = sections[sections.length - 1].section
     }
     root?.addEventListener('scroll', atBottom, { passive: true })
     return () => {
+      apiLocation.current = 'api-address'
       observer.disconnect()
       root?.removeEventListener('scroll', atBottom)
     }
   })
 
-  // On a narrow screen the pill row scrolls sideways: keep the current pill in view.
+  const requestedSection = $derived(route.query.get('section'))
   $effect(() => {
-    const active = tabRow?.querySelector<HTMLElement>(`[href="#${current}"]`)
-    if (!tabRow || !active || tabRow.scrollWidth <= tabRow.clientWidth) return
-    tabRow.scrollTo({ left: active.offsetLeft - (tabRow.clientWidth - active.offsetWidth) / 2, behavior: 'smooth' })
+    const section = requestedSection
+    if (!section || !sections.some(item => item.section === section)) return
+    let cancelled = false
+    void tick().then(() => {
+      if (cancelled) return
+      document.getElementById(section)?.scrollIntoView({ block: 'start' })
+      apiLocation.current = section
+    })
+    return () => { cancelled = true }
   })
 
   function choose(patch: { table?: string; lang?: Lang; topic?: 'tables' | 'auth' }) {
@@ -113,22 +124,11 @@
     { id: 'jwks', label: 'JWKS', path: '/auth/v1/.well-known/jwks.json' },
   ] as const
 
-  const sections = $derived([
-    { id: 'api-address', label: t('connect.address'), short: t('connect.short.address') },
-    { id: 'api-roles', label: t('connect.caller'), short: t('connect.short.caller') },
-    { id: 'api-sdk', label: t('connect.sdk.title'), short: t('connect.short.sdk') },
-    { id: 'api-examples', label: t('connect.examples'), short: t('connect.short.examples') },
-    { id: 'api-token', label: t('connect.token.title'), short: t('connect.short.token') },
-  ])
+
 
   const roles = ['anon', 'authenticated', 'service_role'] as const
   const roleIcons = { anon: Globe, authenticated: UserRound, service_role: Server }
 
-  const tab = (active: boolean) =>
-    [
-      'flex h-8 cursor-pointer items-center gap-2 rounded-full px-3.5 text-sm transition-colors',
-      active ? 'bg-nav-active font-medium text-nav-active-foreground' : 'text-muted-foreground hover:text-foreground',
-    ]
 </script>
 
 <div class="mx-auto grid w-full max-w-page gap-6 px-4 pt-2 pb-12 *:min-w-0 sm:px-6 lg:px-8 [&>:first-child]:mb-0">
@@ -142,23 +142,6 @@
   </PageHeader>
 
   <div class="grid gap-6 *:min-w-0">
-    <!-- Keep the active section visible while scrolling through the cards. -->
-    <div class="sticky top-0 z-10 -my-3 bg-background/90 py-3 backdrop-blur">
-    <nav bind:this={tabRow} class="flex w-fit max-w-full gap-1 overflow-x-auto rounded-2xl bg-card p-1 [scrollbar-width:thin]" aria-label={t('connect.navigation')}>
-      {#each sections as section (section.id)}
-        <a
-          class={[
-            'shrink-0 rounded-full px-4 py-2 text-sm whitespace-nowrap transition-colors',
-            current === section.id ? 'bg-nav-active font-medium text-nav-active-foreground' : 'text-muted-foreground hover:text-foreground',
-          ]}
-          aria-current={current === section.id ? 'location' : undefined}
-          onclick={() => (current = section.id)}
-          href={`#${section.id}`}><span class="sm:hidden">{section.short}</span><span class="hidden sm:inline">{section.label}</span></a
-        >
-      {/each}
-    </nav>
-    </div>
-
     <div class="grid min-w-0 gap-6">
       <section id="api-address" class="grid scroll-mt-20 gap-5 rounded-3xl bg-card p-6">
         <div class="grid gap-3">
@@ -237,12 +220,12 @@
       <section id="api-examples" class="grid scroll-mt-20 gap-5 rounded-3xl bg-card p-6">
         <h2 class="text-lg font-semibold">{t('connect.examples')}</h2>
         <div class="flex flex-wrap items-center gap-3">
-          <nav class="flex h-10 items-center gap-1 rounded-full bg-well p-1" aria-label={t('connect.topic')}>
-            <button type="button" class={tab(topic === 'tables')} aria-pressed={topic === 'tables'} onclick={() => choose({ topic: 'tables' })}
-              >{t('connect.topics.tables')}</button
+          <nav class="panel-segments" aria-label={t('connect.topic')}>
+            <button type="button" class="panel-segment" aria-pressed={topic === 'tables'} onclick={() => choose({ topic: 'tables' })}
+              ><Rows3 class="size-4" aria-hidden="true" />{t('connect.topics.tables')}</button
             >
-            <button type="button" class={tab(topic === 'auth')} aria-pressed={topic === 'auth'} onclick={() => choose({ topic: 'auth' })}
-              >{t('connect.topics.auth')}</button
+            <button type="button" class="panel-segment" aria-pressed={topic === 'auth'} onclick={() => choose({ topic: 'auth' })}
+              ><KeyRound class="size-4" aria-hidden="true" />{t('connect.topics.auth')}</button
             >
           </nav>
           {#if topic === 'tables' && tables.length}
@@ -257,14 +240,14 @@
               </Select.Content>
             </Select.Root>
           {/if}
-          <nav class="flex max-w-full flex-wrap items-center gap-1 rounded-xl bg-well p-1 sm:ml-auto sm:rounded-full" aria-label={t('connect.language')}>
-            <button type="button" class={tab(lang === 'ts')} aria-label={t('connect.sdkLabel')} aria-pressed={lang === 'ts'} onclick={() => choose({ lang: 'ts' })}
+          <nav class="panel-segments sm:ml-auto" aria-label={t('connect.language')}>
+            <button type="button" class="panel-segment" aria-label={t('connect.sdkLabel')} aria-pressed={lang === 'ts'} onclick={() => choose({ lang: 'ts' })}
               ><LangMark lang="ts" /><span class="sm:hidden">SDK</span><span class="hidden sm:inline">{t('connect.sdkLabel')}</span></button
             >
-            <button type="button" class={tab(lang === 'curl')} aria-pressed={lang === 'curl'} onclick={() => choose({ lang: 'curl' })}
+            <button type="button" class="panel-segment" aria-pressed={lang === 'curl'} onclick={() => choose({ lang: 'curl' })}
               ><LangMark lang="curl" />curl</button
             >
-            <button type="button" class={tab(lang === 'js')} aria-pressed={lang === 'js'} onclick={() => choose({ lang: 'js' })}
+            <button type="button" class="panel-segment" aria-pressed={lang === 'js'} onclick={() => choose({ lang: 'js' })}
               ><LangMark lang="js" />JavaScript</button
             >
           </nav>

@@ -950,6 +950,30 @@ disabled until exact-binary VPS fault/offsite evidence passes. See
 the repository-only operating guide at `docs/panel-updates.md` and G03 at
 `docs/goals/panel-updates-and-recovery.md`. These are not registered panel guides.
 
+**D102. The official SVG identity replaces the panel mascot.** This supersedes
+D62 and the mascot retained in D98. The maintainer retains graphite surfaces and orange contextual accents, with
+cobalt blue primary buttons. Use black
+marks on light surfaces and white on dark surfaces. Apply the October 2026
+brand guide to proportions, clear space and unchanged
+SVG masters. Retain Manrope for the interface and IBM Plex Mono for code. Use a single brand placement per screen, a horizontal logo at 240 px or
+larger where space permits, and a symbol at 40 px or larger in compact areas.
+Keep at least 25% of the emblem height as clear space. Project cards and context
+selectors use functional icons instead of repeating the logo. Remove animated
+mascot assets and gaze tracking; authentication and update confirmations remain
+unchanged. Semantic success, warning and error colors retain their meanings.
+
+**D103. Group page navigation in the sidebar.** Database, Users, Events and
+webhooks, and API expose expandable subcategories in the workspace sidebar and
+the same mobile menu. Only the selected child carries the current-page marker;
+parents expose their expanded state. API sections follow scroll position.
+The controller places server areas in its own sidebar, preserving the existing
+unsaved-change and operation guards. Do not duplicate these links in horizontal
+tab bars. Keep table-specific views, example languages and filters beside the
+content they control, using one compact neutral segmented style.
+Blue primary actions remain distinct from neutral selection, secondary controls
+and destructive actions. Contextual icons supplement visible labels and remain
+hidden from assistive technology.
+
 ### Known pending items
 
 - Filtering parent rows by their embeds (`!inner`) and self-referencing embeds.

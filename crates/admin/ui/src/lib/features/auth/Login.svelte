@@ -14,8 +14,6 @@
   import { session } from '$lib/resources/session.svelte'
   import Flag from '$lib/shell/components/Flag.svelte'
   import Logo from '$lib/shell/components/Logo.svelte'
-  import Mascot, { type Pose } from '$lib/shell/components/Mascot.svelte'
-  import type { Point } from '$lib/shell/mascot'
   import { LOCALES, errorMessage, i18n, setLocale, t, type Locale } from '$lib/i18n/index.svelte'
 
   // Short codes on the switch; each option names its language in full for
@@ -23,17 +21,13 @@
   const CODES: Record<Locale, string> = { 'pt-BR': 'PT', en: 'EN' }
 
   let project = $state('')
-  // The mascot waves when the page opens, then stands still.
-  let greeting = $state(true)
   onMount(() => {
     // Signing in is the only thing to do here: start in the email field.
     document.getElementById('email')?.focus()
-    const timer = setTimeout(() => (greeting = false), 2200)
     api
       .get<{ project: string }>('/whoami')
       .then((r) => (project = r.project))
       .catch(() => (project = ''))
-    return () => clearTimeout(timer)
   })
 
   let email = $state('')
@@ -44,7 +38,6 @@
   // follows the panel language rather than the browser's.
   let missing = $state<'email' | 'password' | null>(null)
   let loading = $state(false)
-  let typingPassword = $state(false)
   let showPassword = $state(false)
   let capsLock = $state(false)
 
@@ -75,18 +68,6 @@
     }
   }
 
-  // Closes its eyes while the password is typed; looks sad after a failed login.
-  const pose = $derived<Pose>(typingPassword ? 'eyesClosed' : failure ? 'sad' : greeting ? 'wave' : 'neutral')
-
-  // While the email is typed, follows the text instead of the pointer.
-  let caret = $state<Point | null>(null)
-  function followCaret(event: Event) {
-    const input = event.currentTarget as HTMLInputElement
-    const rect = input.getBoundingClientRect()
-    const chars = input.selectionStart ?? input.value.length
-    // Average character width at 15px: close enough for the gaze.
-    caret = { x: rect.left + Math.min(12 + chars * 8, rect.width - 12), y: rect.top + rect.height / 2 }
-  }
 </script>
 
 <div class="flex min-h-dvh flex-col bg-background px-4 py-4 sm:px-6 sm:py-6">
@@ -104,7 +85,7 @@
       {/if}
     </div>
     <div class="flex shrink-0 items-center gap-2">
-      <div class="flex items-center gap-1 rounded-full bg-card p-1" role="group" aria-label={t('shell.account.language')}>
+      <div class="panel-segments" role="group" aria-label={t('shell.account.language')}>
         {#each LOCALES as locale (locale)}
           {@const current = i18n.locale === locale}
           <button
@@ -113,10 +94,7 @@
             aria-pressed={current}
             aria-label={t(`shell.languages.${locale}`)}
             title={t(`shell.languages.${locale}`)}
-            class={[
-              'flex h-9 cursor-pointer items-center gap-1.5 rounded-full ps-2 pe-3 text-xs font-medium transition-colors',
-              current ? 'bg-nav-active text-nav-active-foreground' : 'text-muted-foreground hover:text-foreground',
-            ]}
+            class="panel-segment"
             onclick={() => setLocale(locale)}><Flag {locale} class="size-[18px]" />{CODES[locale]}</button
           >
         {/each}
@@ -135,9 +113,7 @@
   </header>
 
   <main class="flex flex-1 flex-col items-center justify-center gap-5 pt-6 pb-10">
-    <!-- The mascot peeks over the card's top edge, its feet hidden behind it. -->
-    <div class="relative w-full max-w-[440px] pt-24">
-      <Mascot {pose} lookAt={caret} class="pointer-events-none absolute top-0 right-6 size-32 sm:right-9" />
+    <div class="relative w-full max-w-[440px]">
 
       <form class="relative flex flex-col gap-5 rounded-3xl bg-card px-6 pt-8 pb-7 sm:px-9 sm:pt-9 sm:pb-8" onsubmit={submit} aria-busy={loading} novalidate>
         <div>
@@ -161,14 +137,9 @@
               class="h-11"
               readonly={loading}
               bind:value={email}
-              onfocus={followCaret}
-              onkeyup={followCaret}
-              onclick={followCaret}
-              onblur={() => (caret = null)}
-              oninput={(e) => {
+              oninput={() => {
                 failure = null
                 if (missing === 'email') missing = null
-                followCaret(e)
               }}
               required
               aria-invalid={missing === 'email' ? true : undefined}
@@ -187,8 +158,7 @@
                 class="h-full"
                 readonly={loading}
                 bind:value={password}
-                onfocus={() => (typingPassword = true)}
-                onblur={() => { typingPassword = false; capsLock = false }}
+                onblur={() => { capsLock = false }}
                 onkeydown={checkCapsLock}
                 onkeyup={checkCapsLock}
                 oninput={() => {
@@ -223,7 +193,7 @@
           </Field.Field>
         </Field.Group>
 
-        <Button type="submit" class="mt-1 h-12 w-full text-[15px]" disabled={loading}>{#if loading}<LoaderCircle data-icon="inline-start" class="animate-spin" aria-hidden="true" />{/if}{loading ? t('login.signingIn') : t('login.signIn')}</Button>
+        <Button type="submit" class="mt-1 w-full" disabled={loading}>{#if loading}<LoaderCircle data-icon="inline-start" class="animate-spin" aria-hidden="true" />{/if}{loading ? t('login.signingIn') : t('login.signIn')}</Button>
       </form>
 
       <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{loading ? t('login.signingIn') : ''}</p>

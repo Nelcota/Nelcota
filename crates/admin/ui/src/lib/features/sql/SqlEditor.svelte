@@ -1,5 +1,4 @@
 <script lang="ts">
-  import DatabaseTabs from '$lib/components/shared/DatabaseTabs.svelte'
   import { onMount, onDestroy } from 'svelte'
   import { Button } from '$lib/components/ui/button'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
@@ -176,7 +175,6 @@
 <svelte:window onkeydown={onKeydown} />
 
 <div class="mx-auto flex h-full min-h-0 w-full max-w-page flex-col gap-3 px-4 pt-1 pb-4 sm:px-6 lg:flex-row lg:px-8">
-  <div class="shrink-0 lg:hidden"><DatabaseTabs /></div>
   <SqlSidebar onrename={(query) => openDialog({ mode: 'rename', query })} ondelete={askDelete} ondeleteDraft={(draft) => { toDeleteDraft = draft; deleteDraftOpen = true }} />
 
   <div class="flex min-w-0 flex-1 flex-col overflow-hidden rounded-3xl bg-card">

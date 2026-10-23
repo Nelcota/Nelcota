@@ -6,7 +6,6 @@
   import { href } from '$lib/navigation/router.svelte'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
-  import PillTabs from '$lib/components/shared/PillTabs.svelte'
   import CodeBlock from '$lib/components/shared/CodeBlock.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import OptionCard from '$lib/features/sign-in/components/OptionCard.svelte'
@@ -45,7 +44,6 @@
   <PageHeader title={t('signIn.title')} description={t('signIn.description')}>
     {#snippet actions()}<Button variant="outline" href={href('/connect?topic=auth')}><BookOpen data-icon="inline-start" aria-hidden="true" />{t('signIn.examples')}</Button>{/snippet}
   </PageHeader>
-  <div class="-mt-8"><PillTabs label={t('shell.pages.users')} current={'/sign-in'} tabs={[{ path: '/users', label: t('shell.pages.users') }, { path: '/sign-in', label: t('shell.pages.userSignIn') }]} /></div>
 
   {#if (resource.error)}
     <LoadError message={errorMessage(resource.error)} onretry={load} busy={resource.loading} />

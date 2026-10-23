@@ -18,7 +18,6 @@
   import * as Field from '$lib/components/ui/field'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import { toast } from 'svelte-sonner'
-  import DatabaseTabs from '$lib/components/shared/DatabaseTabs.svelte'
   import { RemoteResource } from '$lib/resources/remote-resource.svelte'
   import { api } from '$lib/transport/api'
   import { downloadText } from '$lib/browser/download'
@@ -130,7 +129,6 @@
 <div class="mx-auto flex w-full max-w-page flex-col gap-3 px-4 pt-1 pb-4 *:min-w-0 sm:px-6 lg:h-full lg:min-h-0 lg:flex-row lg:px-8">
   <aside aria-label={t('migrations.title')} class="flex w-full shrink-0 flex-col overflow-hidden rounded-3xl bg-card lg:w-64 xl:w-72">
     <div class="grid gap-3 border-b p-4">
-      <DatabaseTabs fill />
       <div class="grid gap-1 px-1">
         <h1 class="text-sm font-semibold">{t('migrations.title')}</h1>
         <p class="text-xs text-muted-foreground">{t('migrations.description')}</p>

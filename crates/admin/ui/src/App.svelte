@@ -74,7 +74,7 @@
   <!-- On a card like the login and the 404. -->
   <main class="flex min-h-dvh items-center justify-center bg-background px-4 py-12">
     <div class="flex w-full max-w-md flex-col items-center gap-6 rounded-3xl bg-card px-8 pt-8 pb-10 text-center" role="alert">
-      <Logo size="lg" />
+      <Logo mark size="lg" />
       <div class="grid gap-2">
         <h1 class="text-xl font-semibold tracking-tight">{t('shell.app.offlineTitle')}</h1>
         <p class="text-sm text-muted-foreground">{errorMessage(offline)}</p>

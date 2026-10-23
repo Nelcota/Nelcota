@@ -1,5 +1,7 @@
 <script lang="ts">
+  import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right'
   import { onMount } from 'svelte'
+  import { Button } from '$lib/components/ui/button'
   import { api } from '$lib/transport/api'
   import { RemoteResource } from '$lib/resources/remote-resource.svelte'
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
@@ -24,7 +26,7 @@
     <div class="grid max-w-2xl gap-5 rounded-3xl bg-card p-6">
       <p>{t('updates.current')}: <strong translate="no">{version}</strong></p>
       <p class="text-sm text-muted-foreground">{t('updates.authority')}</p>
-      {#if origin}<a class="w-fit rounded-full bg-primary px-5 py-3 font-medium text-primary-foreground" href={`${origin}/admin/`} target="_blank" rel="noopener noreferrer">{t('updates.open')}</a>{/if}
+      {#if origin}<Button class="w-fit" href={`${origin}/admin/`} target="_blank" rel="noopener noreferrer">{t('updates.open')}<ArrowUpRight data-icon="inline-end" aria-hidden="true" /></Button>{/if}
       {#if !origin}<p role="status" class="text-sm text-muted-foreground">{t('updates.unenrolled')}</p>{/if}
     </div>
   {/if}

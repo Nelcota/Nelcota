@@ -25,8 +25,10 @@
     type Pending,
     type LogEntry
   } from './controller'
-  let { email, expired }: { email: string; expired: () => void } = $props()
-  let area = $state<'projects' | 'health' | 'backups' | 'settings' | 'alerts'>('projects')
+  import type { HostArea } from './navigation'
+  let { email, expired, area = $bindable<HostArea>('projects') }: { email: string; expired: () => void; area?: HostArea } = $props()
+  export function selectArea(next: HostArea): void { leave(() => { area = next }) }
+  export function navigationBusy(): boolean { return busy }
   let dirty = $state(false)
   let nextNavigation: (() => void) | null = null
   const guard = new CloseGuard(() => dirty, () => busy, () => { dirty = false; const next = nextNavigation; nextNavigation = null; next?.() }, () => true)
@@ -422,11 +424,6 @@
     </p>{/if}
   {#if !status}<p role="status">{t('shell.app.loading')}</p>{/if}
   {#if status}
-    <nav class="flex flex-wrap gap-2" aria-label={serverText('title')}>
-      {#each ['projects', 'health', 'backups', 'settings', 'alerts'] as item}
-        <Button variant={area === item ? 'default' : 'outline'} disabled={busy} onclick={() => leave(() => { area = item as typeof area })}>{serverText(item)}</Button>
-      {/each}
-    </nav>
     {#if status.projects.length}<label class="grid gap-2"><span class="text-sm font-medium">{serverText('project')}</span><select class="rounded-xl border border-border bg-card p-3" value={selected} disabled={busy} onchange={event => { const value = event.currentTarget.value; event.currentTarget.value = selected; leave(() => { selected = value; backup = ''; logs = null }) }}>{#each status.projects as p}<option value={p.name}>{p.name} · {p.domain}</option>{/each}</select></label>{/if}
     <dl class="grid gap-3 sm:grid-cols-3">
       {#each [[h('count'), `${status.projects.length} / ${status.max_projects}`], [h('ram'), size(status.ram_mb * 1024 ** 2)], [h('disk'), size(status.free_bytes)]] as item}<div

@@ -76,8 +76,9 @@ test('create shows the key once, then edit/pause/rotate/delete remain usable', a
 
 test('history filters and cursor survive URL navigation; resend preserves the event and opens the new delivery', async ({ page }) => {
   const { writes, historyQueries } = await setup(page)
-  await page.getByRole('button', { name: 'Histórico de entregas', exact: true }).click()
+  await page.getByRole('link', { name: 'Histórico de entregas', exact: true }).click()
   await expect(page.getByRole('link', { name: 'Ver entrega', exact: true })).toBeVisible()
+  await page.getByLabel('Filtrar por webhook').selectOption(endpointId)
   await page.getByLabel('Filtrar por estado').selectOption('failed')
   await expect(page).toHaveURL(new RegExp(`endpoint=${endpointId}.*status=failed`))
   await page.getByRole('button', { name: 'Mais antigas' }).click()

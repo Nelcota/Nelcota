@@ -5,13 +5,13 @@
   import ChevronDown from '@lucide/svelte/icons/chevron-down'
   import Check from '@lucide/svelte/icons/check'
   import Boxes from '@lucide/svelte/icons/boxes'
+  import FolderClosed from '@lucide/svelte/icons/folder-closed'
   import { toast } from 'svelte-sonner'
   import { api } from '$lib/transport/api'
   import { openProject } from '$lib/features/projects/projects'
   import { navigate } from '$lib/navigation/router.svelte'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
   import type { ProjectsData } from '$lib/contracts/types'
-  import mascot from '../../../../assets/mascot.png'
   import { environment, health, watchHealth } from '$lib/shell/health.svelte'
   import { cn } from '$lib/components/utils'
 
@@ -20,7 +20,7 @@
     expanded = false,
   }: {
     menuOpen?: boolean
-    /** Include the mascot in the phone menu as well as the name and status. */
+    /** Include the project icon in the phone menu as well as the name and status. */
     expanded?: boolean
   } = $props()
 
@@ -70,7 +70,7 @@
     aria-label={`${t('shell.projects.switch')}: ${data?.current ?? 'Nelcota'} · ${status}`}
   >
     <span class={cn('relative size-9 shrink-0 place-items-center', expanded ? 'grid' : 'hidden sm:grid')}>
-      <img src={mascot} alt="" width="128" height="128" class="size-9 select-none" draggable="false" />
+      <FolderClosed class="size-5 text-muted-foreground" strokeWidth={1.6} aria-hidden="true" />
     </span>
     <span class="flex min-w-0 flex-1 flex-col gap-1 leading-tight">
       <span class="line-clamp-2 text-sm font-semibold whitespace-normal [overflow-wrap:anywhere]" translate="no">{data?.current ?? 'Nelcota'}</span>
