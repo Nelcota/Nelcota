@@ -90,7 +90,12 @@ impl MailSlot {
             let slot = self;
             match tokio::time::timeout(slot.timeout, mailer.send(message)).await {
                 Ok(Ok(())) => {}
-                Ok(Err(err)) => tracing::error!(error = %err, kind, "failed to send a link email"),
+                Ok(Err(err)) => tracing::error!(
+                    event = "auth.mail_delivery_failed",
+                    error_type = std::any::type_name_of_val(&err),
+                    kind,
+                    "failed to send a link email"
+                ),
                 Err(_) => tracing::error!(kind, "link email delivery timed out"),
             }
             drop(slot);

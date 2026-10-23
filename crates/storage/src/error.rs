@@ -22,8 +22,21 @@ pub(crate) fn too_large(limit: u64) -> ApiError {
     )
 }
 
-pub(crate) fn store_failed(err: impl std::fmt::Display) -> ApiError {
-    tracing::error!(error = %err, "storage backend failed");
+/// Read only typed IO metadata from a bounded cause chain, never its text.
+pub(crate) fn diagnostic_io_kind(
+    error: &(dyn std::error::Error + 'static),
+) -> Option<std::io::ErrorKind> {
+    std::iter::successors(Some(error), |source| source.source())
+        .take(8)
+        .find_map(|source| {
+            source
+                .downcast_ref::<std::io::Error>()
+                .map(std::io::Error::kind)
+        })
+}
+
+pub(crate) fn store_failed(err: impl std::error::Error + 'static) -> ApiError {
+    tracing::error!(event = "storage.backend_failed", error_type = std::any::type_name_of_val(&err), io_kind = ?diagnostic_io_kind(&err), "storage backend failed");
     ApiError::internal()
 }
 

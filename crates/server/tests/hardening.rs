@@ -449,7 +449,7 @@ async fn valid_signed_download_never_records_the_query_token() {
     assert_eq!(reply.0, StatusCode::OK);
     let log = String::from_utf8(capture.0.lock().unwrap().clone()).unwrap();
     assert!(
-        log.contains("/storage/v1/object/sign/logs/file.txt"),
+        log.contains("/storage/v1/object/sign/{bucket}/{*name}"),
         "expected a request span: {log}"
     );
     assert!(!log.contains(signed));

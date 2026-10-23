@@ -136,7 +136,11 @@ impl StorageState {
             .map_err(db_err)?;
         let text: String = row.get(0);
         serde_json::from_str(&text).map_err(|error| {
-            tracing::error!(%error, "invalid object listing");
+            tracing::error!(
+                event = "storage.invalid_listing",
+                error_type = std::any::type_name_of_val(&error),
+                "invalid object listing"
+            );
             ApiError::internal()
         })
     }
