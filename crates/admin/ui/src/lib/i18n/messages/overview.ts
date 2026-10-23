@@ -4,6 +4,8 @@ import type { Messages } from '../index.svelte'
 const ptBR = {
   title: 'Visão geral',
   quickActions: 'Ações rápidas do projeto',
+  resources: 'Recursos do projeto',
+  resourcesAccess: 'Controle de acesso',
   description: 'Seu projeto está no ar.',
   period: {
     label: 'Período',
@@ -108,6 +110,8 @@ const ptBR = {
 const en: Messages<typeof ptBR> = {
   title: 'Overview',
   quickActions: 'Project quick actions',
+  resources: 'Project resources',
+  resourcesAccess: 'Access control',
   description: 'Your project is live.',
   period: {
     label: 'Period',

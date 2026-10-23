@@ -29,6 +29,10 @@ def check(root: Path) -> list[str]:
 
     if npm_lock["version"] != ts_version or npm_lock["packages"][""]["version"] != ts_version:
         errors.append("TypeScript package.json and package-lock.json versions differ")
+    consumer = tomllib.loads((root / "examples/auth-consumer/Cargo.toml").read_text())
+    if consumer["dependencies"]["nelcota-auth"].get("version") != server:
+        errors.append("examples/auth-consumer: nelcota-auth version differs from workspace version")
+
     locked = [p["version"] for p in cargo_lock["package"] if p["name"] == "nelcota-client"]
     if locked != [rust_version]:
         errors.append("Rust SDK Cargo.toml and Cargo.lock versions differ")
@@ -37,6 +41,10 @@ def check(root: Path) -> list[str]:
         "CHANGELOG.md": [f"## [{server}]"],
         "docs/quickstart.md": [f"This guide targets server {server}.", f"--tag v{server}", f"@nelcota/client@{ts_version}"],
         "docs/onboarding/notes.md": [f"NELCOTA_VERSION={server}", f"--version {server}"],
+        "docs/deploy.md": [f"NELCOTA_VERSION={server} sh", f"init api.yourdomain.com --version {server} ", f"upgrade --version {server} "],
+        "docs/README.md": [f"This source targets server {server};"],
+        "docs/auth-integration.md": [f"The current source manifests use {server};"],
+        "crates/core/README.md": [f"The workspace version is {server};"],
         "docs/releases/README.md": [f"This checkout targets server **{server}**", f"| {ts_version} |", f"| {rust_version} |"],
         "sdk/typescript/README.md": [f"@nelcota/client@{ts_version}", f"This guide targets {ts_version}."],
         "sdk/typescript/docs/quickstart.pt-BR.md": [f"@nelcota/client@{ts_version}", f"SDK **{ts_version}**"],

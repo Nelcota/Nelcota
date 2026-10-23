@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { expectReadable } from './accessibility'
 const id = 'a'.repeat(64), digest = 'b'.repeat(64)
 const operator = { email: 'operator@example.test', host_management: true, projects: [{ name: 'base', version: '0.5.1', update_available: false }], jobs: [], release: null, enabled: false, checking: false, check_error: null }
 const host = { receipt: null, enabled: true, projects: [{ name: 'base', domain: 'base.example.test', version: '0.5.1', app: 'healthy', database: 'healthy', backups: ['nelcota-base-test.dump'] }], jobs: [], max_projects: 5, ram_mb: 8192, free_bytes: 90 * 1024 ** 3 }
@@ -34,6 +35,7 @@ test('diagnostics are read-only, preserve unknown CPU, and fit a narrow viewport
   await mount(page, actions)
   await page.getByRole('button', { name: 'Saúde', exact: true }).click()
   await expect(page.getByText('7.0 GiB / 8.0 GiB')).toBeVisible()
+  await expectReadable(page.getByText('Verificado', { exact: true }).first())
   await expect(page.getByText('A instalação de atualizações permanece bloqueada', { exact: false })).toBeVisible()
   await expect(page.getByText('Indisponível', { exact: true })).toBeVisible()
   expect(actions.some(a => a.action === 'host_start')).toBe(false)

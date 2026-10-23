@@ -36,6 +36,9 @@ const ptBR = {
   },
   nav: {
     main: 'Navegação principal',
+    workspace: 'Projeto',
+    breadcrumb: 'Localização atual',
+    shortcuts: 'Atalhos do espaço de trabalho',
     menu: 'Menu',
   },
   topbar: {
@@ -58,6 +61,8 @@ const ptBR = {
   },
   projects: {
     switch: 'Trocar de projeto',
+    loading: 'Carregando projetos…',
+    unavailable: 'Lista de projetos indisponível. Abra Projetos para tentar de novo.',
     heading: 'Projetos',
     separateLogin: 'Projetos (cada um pede o próprio login)',
     all: 'Todos os projetos',
@@ -106,6 +111,9 @@ const en: Messages<typeof ptBR> = {
   },
   nav: {
     main: 'Main navigation',
+    workspace: 'Project',
+    breadcrumb: 'Current location',
+    shortcuts: 'Workspace shortcuts',
     menu: 'Menu',
   },
   topbar: {
@@ -128,6 +136,8 @@ const en: Messages<typeof ptBR> = {
   },
   projects: {
     switch: 'Switch project',
+    loading: 'Loading projects…',
+    unavailable: 'Project list unavailable. Open Projects to try again.',
     heading: 'Projects',
     separateLogin: 'Projects (each asks for its own login)',
     all: 'All projects',

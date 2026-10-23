@@ -18,7 +18,7 @@ See the repository integration guide for packaging and compatibility guarantees.
 ## Version scope
 
 The standalone auth/core distribution is an unpublished source deliverable.
-The workspace version is 0.5.1; that does not prove a registry release.
+The workspace version is 0.5.2; that does not prove a registry release.
 Use matched archives and Rust 1.99+ for this workflow. The complete
 [integration guide](https://github.com/Nelcota/Nelcota/blob/main/docs/auth-integration.md)
 explains promotion, role ownership, private database topology and shutdown.

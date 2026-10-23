@@ -123,7 +123,8 @@ for (const locale of ['pt-BR', 'en']) {
     await expect(page.locator('article')).toContainText('createClient')
     for (const width of [1440, 1024, 768, 390, 320]) {
       await page.setViewportSize({ width, height: 900 })
-      await expect(page.locator('header').first().getByRole('link', { name: locale === 'en' ? 'Guides and references' : 'Guias e referências' })).toBeVisible()
+      if (width >= 1024) await expect(page.locator('.panel-sidebar').getByRole('link', { name: locale === 'en' ? 'Guides and references' : 'Guias e referências' })).toBeVisible()
+      if (width < 1024) await expect(page.getByRole('button', { name: 'Menu', exact: true })).toBeVisible()
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
       expect(await page.locator('main').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
       if (width === 320) {
