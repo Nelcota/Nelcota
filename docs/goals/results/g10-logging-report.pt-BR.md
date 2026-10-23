@@ -61,3 +61,27 @@ S3 local: três amostras válidas por lado; p95 mediano 17.715696ms → 16.41486
 Tráfego comparável G10: 27.84min estimados pelos resumos k6 concluídos, preparação excluída. Disco: verificações funcionais/recursos passaram, gate de latência falhou em três cenários. S3: verificações e gate passaram. Custo INFO/JSON não medido; aprovação de desempenho continua bloqueada. A rodada contínua G09 usa outro ELF e não conta como endurance G10.
 
 Nenhum recurso nomeado da campanha ficou ativo. Objetos Docker antigos foram preservados. Como próximos limites de investigação: OAuth, IDs de conta/sessão, retenção das observações do painel e propagação de contexto async. A redação de tracing não certifica esses registros separados, PostgreSQL/proxy ou todo sink. Não houve push/PR/merge nem alteração na VPS.
+
+## Complemento da revisão: p50 e p99
+
+Medianas dos três quantis por amostra, em ms; não são quantis de uma distribuição combinada. Perfil completo de disco já registrado acima.
+
+| Cenário | Controle p50 | Candidato p50 | Controle p99 | Candidato p99 |
+| --- | ---: | ---: | ---: | ---: |
+| read | 2.230 | 2.070 | 6.401 | 5.273 |
+| rls | 2.271 | 2.359 | 5.529 | 6.116 |
+| panel | 3.138 | 3.269 | 7.200 | 7.548 |
+| storage | 3.126 | 3.548 | 14.727 | 14.162 |
+| login | 22.314 | 24.108 | 38.685 | 48.576 |
+| refresh | 4.527 | 4.341 | 26.397 | 26.091 |
+| mixed | 2.523 | 2.470 | 28.865 | 28.722 |
+
+## Revisão posterior
+
+Revisão completa dos diffs de produção/testes, alteração mínima do sampler, retirada da otimização, relatórios e integridade do pacote anterior. Nenhum novo defeito de produção confirmado nesta revisão. A aprovação de desempenho continua bloqueada; os resultados anteriores não foram repetidos nem reescritos.
+
+Lacuna corrigida: o teste de provedor usava uma variável para alternar JSON, então o cargo test comum cobria só texto. Agora dois executáveis de integração executam texto/JSON automaticamente, com casos compartilhados. A asserção de e-mail espera especificamente kind=recovery; signup nesta fixture não enviava confirmação, portanto não foi demonstrada uma race no teste anterior. O caso JSON valida as linhas e o caso de delete diferido também exige a presença do diagnóstico. Commit de testes2c6017f8; sem dependências/workflows novos.
+
+Verificação posterior:9 testes Rust (7 HTTP/banco +1 provedor texto +1 provedor JSON),2 testes Chromium retidos após o revert, fmt, Clippy server/tests -D warnings e boundaries passaram. Build do painel reproduziu os assets sem drift; o aviso de chunks grandes é preexistente, sem mudança de limiar. PostgreSQL compartilhado removido após os testes. Não houve nova campanha ou refreeze: apenas testes/docs mudaram; hashes dos ELFs medidos permanecem os mesmos.
+
+O relatório passou a incluir p50/p99 por cenário, sem substituir os quantis pelo resultado agregado. No G10, p99 de login38,685→48,576ms também pede investigação; poucas amostras não permitem atribuir causa. RLS/storage/login continuam falhando no gate p95; o S3 aprovado não os compensa. Sem push, merge ou acesso à VPS.
