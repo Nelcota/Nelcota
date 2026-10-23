@@ -1,6 +1,10 @@
 # G10: Safe, actionable operational logging
 
-Status: planned. Execution evidence belongs in [the execution record](operational-logging-execution.md).
+Status: bounded execution finished with four locally validated corrections,
+open disk performance gates and deployment limits. See
+[the execution record](operational-logging-execution.md) and
+[Portuguese report](results/g10-logging-report.pt-BR.md). No performance or
+production approval.
 
 ## Objective
 

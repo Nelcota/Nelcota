@@ -28,7 +28,7 @@ inventory, selected targets and deferred work.
 | [G05: Complete stress verification](https://github.com/Nelcota/Nelcota/pull/90) | Archived campaign: original-artifact evidence and environment-blocked cells are retained on `test/g05-stress-verification`; production fixes were extracted into #91 and #93. This is not a new soak of the current release. |
 | [G06: Authentication and session security](auth-security-review.md) | Finalized: all seven findings have merged resolutions; public disclosure and server 0.5.0 are recorded, including the F07 trade-off. |
 | [G07: Targeted maintainability refactoring](maintainability-refactor-execution.md) | Completed bounded pass: PRs #107/#108 and the inventory #106 merged; excluded areas and remaining hotspots are future work. |
-| [G10: Safe operational logging](operational-logging.md) | Planned bounded execution: actionable context, correlation, sensitive-data redaction, sink/retention guidance and focused regressions; no blanket payload logging or automatic production changes. |
+| [G10: Safe operational logging](operational-logging.md) | Executed bounded pass: HTTP/database/mail/storage diagnostics corrected and locally validated; disk latency gate failed, local S3 passed, deployment sinks remain unverified. No performance or production approval. |
 
 Subsequent [module ownership](solid-module-ownership-execution.md),
 [SDK responsibility](sdk-srp-execution.md), [SDK corrections](sdk-review-fixes-execution.md)
