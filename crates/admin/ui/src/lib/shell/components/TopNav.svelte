@@ -61,10 +61,11 @@
       </div>
     </header>
     <div class="panel-content">
-      <aside class="panel-sidebar" aria-label={t('shell.nav.main')}>
+      <!-- WorkspaceLinks is the labelled navigation landmark; avoid a second one. -->
+      <div class="panel-sidebar">
         <p class="px-3 pb-3 text-xs font-medium text-muted-foreground">{t('shell.nav.workspace')}</p>
         <WorkspaceLinks />
-      </aside>
+      </div>
       {@render children()}
     </div>
   </div>

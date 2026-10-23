@@ -34,8 +34,8 @@ export const databaseTabs = [
 ] as const satisfies readonly { path: string; title: MessageKey; icon: Component }[]
 
 // Main navigation groups, shared by the workspace sidebar and mobile menu.
-// Sign-in settings
-// live under Users; /connect, not /api, since /admin/api/* is the panel API.
+// Sign-in settings live under Users; /connect, not /api, since /admin/api/* is
+// the panel API.
 export const navPills: NavItem[] = [
   { title: 'shell.pages.overview', pill: 'shell.pills.overview', path: '/', icon: House },
   { title: 'shell.pages.database', pill: 'shell.pills.database', path: '/tables', icon: Database, also: ['/sql', '/migrations'] },
