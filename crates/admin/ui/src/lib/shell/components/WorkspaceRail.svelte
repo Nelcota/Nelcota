@@ -20,7 +20,7 @@
 </script>
 
 <aside class="panel-rail" aria-label="Nelcota">
-  <a href={href('/')} class="mb-5 grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10" aria-label="Nelcota"><Logo mark /></a>
+  <a href={href('/')} class="mb-5 grid size-15 shrink-0 place-items-center" aria-label="Nelcota"><Logo mark decorative /></a>
   <nav class="grid gap-2" aria-label={t('shell.nav.shortcuts')}>
     {#each links as item (item.path)}
       <Tooltip.Root>

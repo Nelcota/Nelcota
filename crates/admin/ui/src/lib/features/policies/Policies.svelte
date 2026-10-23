@@ -5,6 +5,8 @@
   import Plus from '@lucide/svelte/icons/plus'
   import Pencil from '@lucide/svelte/icons/pencil'
   import Trash2 from '@lucide/svelte/icons/trash-2'
+  import ShieldOff from '@lucide/svelte/icons/shield-off'
+  import CircleAlert from '@lucide/svelte/icons/circle-alert'
   import ShieldCheck from '@lucide/svelte/icons/shield-check'
   import Search from '@lucide/svelte/icons/search'
   import Rows3 from '@lucide/svelte/icons/rows-3'
@@ -39,6 +41,7 @@
   const appliedSearch = $derived(route.query.get('q') ?? route.query.get('table') ?? '')
   let search = $state('')
   type Filter = 'all' | 'enabled' | 'disabled' | 'attention'
+  const filterIcons = { all: Rows3, enabled: ShieldCheck, disabled: ShieldOff, attention: CircleAlert }
   const FILTERS: Filter[] = ['all', 'enabled', 'disabled', 'attention']
   const rlsFilter = $derived<Filter>(FILTERS.find(filter => filter === route.query.get('filter')) ?? 'all')
   $effect(() => { search = appliedSearch })
@@ -76,11 +79,6 @@
       attention: tables.filter((table) => ['danger', 'warn'].includes(table.rls.state)).length + exposedRelations.length,
     }
   })
-  const segment = (on: boolean) => [
-    'flex h-9 cursor-pointer items-center gap-1.5 rounded-full px-4 text-sm whitespace-nowrap transition-colors',
-    on ? 'bg-nav-active text-nav-active-foreground font-medium' : 'text-muted-foreground hover:text-foreground',
-  ]
-
   /** A policy in words; custom rules are named as such and keep their SQL in view. */
   function sentence(meaning: PolicyMeaning): string {
     switch (meaning.kind) {
@@ -208,10 +206,11 @@
     {#if !(data.tables.length === 0)}
       <div class="flex flex-wrap items-center justify-between gap-3">
         <!-- Wraps on a phone instead of hiding the last filters behind a scroll. -->
-        <div class="flex max-w-full flex-wrap items-center gap-1 rounded-3xl bg-card p-1 sm:rounded-full" role="group" aria-label={t('policies.filterLabel')}>
+        <div class="panel-segments" role="group" aria-label={t('policies.filterLabel')}>
           {#each FILTERS as option (option)}
             {@const on = rlsFilter === option}
-            <button type="button" class={segment(on)} aria-pressed={on} onclick={() => setFilters(option)}>{t(`policies.filters.${option}`)}<span class={['text-xs tabular-nums', on ? 'opacity-70' : 'text-muted-foreground/80']}>{filterCounts[option]}</span></button>
+            {@const Icon = filterIcons[option]}
+            <button type="button" class="panel-segment" aria-pressed={on} onclick={() => setFilters(option)}><Icon class="size-4" aria-hidden="true" />{t(`policies.filters.${option}`)}<span class={['text-xs tabular-nums', on ? 'opacity-70' : 'text-muted-foreground/80']}>{filterCounts[option]}</span></button>
           {/each}
         </div>
         <div class="w-full sm:w-72"><SearchField bind:value={search} oninput={onSearch} label={t('policies.search')} /></div>

@@ -129,14 +129,6 @@
     downloadText(`nelcota-trafego-${range}.csv`, toCsv(['at', 'requests', 'refused', 'errors', 'p95_ms'], rows), 'text/csv')
   }
 
-  const segment = (on: boolean) => [
-    'h-8 cursor-pointer rounded-lg px-3 text-sm transition-colors',
-    on ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:text-foreground',
-  ]
-  const filter = (on: boolean) => [
-    'h-10 shrink-0 cursor-pointer rounded-xl border px-4 text-sm whitespace-nowrap transition-colors',
-    on ? 'border-transparent bg-nav-active font-medium text-nav-active-foreground' : 'border-border-strong text-muted-foreground hover:text-foreground',
-  ]
   const card = 'min-w-0 rounded-xl bg-card p-5'
   const statLink = 'grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
 </script>
@@ -265,9 +257,9 @@
       <span>{since ? `${periodText} · ${t('overview.period.since', { date: since })}` : periodText}</span>
       <TechnicalToggle />
     </p>
-    <div class="flex items-center gap-1 rounded-lg bg-card p-1" role="group" aria-label={t('overview.period.label')}>
-      <button type="button" class={segment(range === '1h')} aria-pressed={range === '1h'} onclick={() => choose('1h')}>{t('overview.period.hour')}</button>
-      <button type="button" class={segment(range === '24h')} aria-pressed={range === '24h'} onclick={() => choose('24h')}>{t('overview.period.day')}</button>
+    <div class="panel-segments" role="group" aria-label={t('overview.period.label')}>
+      <button type="button" class="panel-segment" aria-pressed={range === '1h'} onclick={() => choose('1h')}>{t('overview.period.hour')}</button>
+      <button type="button" class="panel-segment" aria-pressed={range === '24h'} onclick={() => choose('24h')}>{t('overview.period.day')}</button>
     </div>
   </section>
 
@@ -276,12 +268,12 @@
   <section class="grid min-w-0 gap-4">
     <article class={['grid min-w-0 content-start gap-4', card]}>
       <div class="flex flex-wrap items-center gap-2">
-        <div class="flex max-w-full flex-wrap items-center gap-2" role="group" aria-label={t('overview.filters.label')}>
-          <button type="button" class={filter(show === 'all')} aria-pressed={show === 'all'} onclick={() => (show = 'all')}>{t('overview.filters.all')}</button>
-          <button type="button" class={filter(show === 'requests')} aria-pressed={show === 'requests'} onclick={() => (show = 'requests')}>
+        <div class="panel-segments" role="group" aria-label={t('overview.filters.label')}>
+          <button type="button" class="panel-segment" aria-pressed={show === 'all'} onclick={() => (show = 'all')}>{t('overview.filters.all')}</button>
+          <button type="button" class="panel-segment" aria-pressed={show === 'requests'} onclick={() => (show = 'requests')}>
             <span class="mr-1.5 inline-block size-2 rounded-full bg-chart-1 align-middle" aria-hidden="true"></span>{t('overview.filters.requests')}
           </button>
-          <button type="button" class={filter(show === 'refused')} aria-pressed={show === 'refused'} onclick={() => (show = 'refused')}>
+          <button type="button" class="panel-segment" aria-pressed={show === 'refused'} onclick={() => (show = 'refused')}>
             <span class="mr-1.5 inline-block size-2 rounded-full bg-chart-2 align-middle" aria-hidden="true"></span>{t('overview.filters.refused')}
           </button>
         </div>

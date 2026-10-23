@@ -12,7 +12,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Graphite work surfaces, restrained borders and warm action accents. Success,
+/* Graphite surfaces, cobalt primary actions and warm contextual accents. Success,
    warning and destructive states retain their own semantic colours. */
 :root {
 	--background: oklch(0.97 0.002 260);
@@ -21,10 +21,10 @@
 	--card-foreground: oklch(0.145 0 0);
 	--popover: oklch(1 0 0);
 	--popover-foreground: oklch(0.145 0 0);
-	--primary: #b83b00;
+	--primary: #003FDA;
 	--primary-foreground: #ffffff;
-	--primary-border: #b83b00;
-	--primary-hover: #9c3200;
+	--primary-border: #003FDA;
+	--primary-hover: #0035b8;
 	/* Brand text uses a stronger step to retain contrast on light surfaces. */
 	--brand: #aa3600;
 	--brand-soft: rgb(184 59 0 / 9%);
@@ -54,7 +54,7 @@
 	--nav-active-foreground: #202020;
 	--sidebar: oklch(0.985 0.0015 260);
 	--sidebar-foreground: oklch(0.145 0 0);
-	--sidebar-primary: #b83b00;
+	--sidebar-primary: #003FDA;
 	--sidebar-primary-foreground: #ffffff;
 	--sidebar-accent: oklch(0.94 0.004 260);
 	--sidebar-accent-foreground: oklch(0.205 0 0);
@@ -81,10 +81,10 @@
 	--card-foreground: #e6e6e6;
 	--popover: #292929;
 	--popover-foreground: #e6e6e6;
-	--primary: #ff7a24;
-	--primary-foreground: #211006;
-	--primary-border: #ff7a24;
-	--primary-hover: #ff934d;
+	--primary: #003FDA;
+	--primary-foreground: #ffffff;
+	--primary-border: #003FDA;
+	--primary-hover: #0035b8;
 	--brand: #ff9b59;
 	--brand-soft: rgb(255 122 36 / 10%);
 	--secondary: #303030;
@@ -110,8 +110,8 @@
 	--nav-active-foreground: #f5f5f5;
 	--sidebar: #1b1b1b;
 	--sidebar-foreground: #e6e6e6;
-	--sidebar-primary: #ff7a24;
-	--sidebar-primary-foreground: #211006;
+	--sidebar-primary: #003FDA;
+	--sidebar-primary-foreground: #ffffff;
 	--sidebar-accent: #303030;
 	--sidebar-accent-foreground: #e6e6e6;
 	--sidebar-border: oklch(1 0 0 / 7%);
@@ -236,7 +236,7 @@
 		outline-offset: 2px;
 	}
 	html {
-		font-family: 'Manrope Variable', 'Manrope', sans-serif;
+		font-family: var(--font-sans);
 	}
 	body {
 		font-weight: 400;
@@ -367,9 +367,55 @@
 }
 .panel-nav-link:hover, .panel-rail-link:hover { background: var(--accent); color: var(--foreground); }
 .panel-nav-link.is-active, .panel-rail-link.is-active { background: var(--nav-active); color: var(--nav-active-foreground); }
+.panel-nav-link.is-parent-active { color: var(--foreground); }
+.panel-nav-children { margin: 2px 0 6px 20px; border-left: 1px solid var(--border-strong); padding-left: 8px; }
+.panel-nav-children[hidden] { display: none; }
+.panel-nav-child { min-height: 38px; margin-block: 2px; padding-inline: 10px; font-size: .8125rem; }
+/* Shared segmented navigation: routes, in-page sections and local filters.
+   Selection is neutral; primary blue remains reserved for actions. */
+.panel-segments {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+}
+.panel-segments-scroll { flex-wrap: nowrap; overflow-x: auto; }
+.panel-segments-fill { width: 100%; }
+.panel-segment {
+  display: inline-flex;
+  min-height: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 6px;
+  padding: 8px 16px;
+  color: var(--muted-foreground);
+  font-size: 14px;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 150ms, background-color 150ms;
+}
+.panel-segment > svg { width: 16px; height: 16px; flex-shrink: 0; stroke-width: 1.75; }
+.panel-segment:hover:not(:disabled) { background: var(--accent); color: var(--foreground); }
+.panel-segment:is([aria-current="page"], [aria-current="location"], [aria-pressed="true"]) {
+  background: var(--nav-active);
+  color: var(--nav-active-foreground);
+  font-weight: 500;
+}
+.panel-segment:disabled { cursor: default; opacity: .5; }
+.panel-segments-fill .panel-segment { flex: 1; padding-inline: 8px; }
 .panel-rail {
   display: none;
-  width: 64px;
+  width: 80px;
   min-height: 0;
   flex-shrink: 0;
   flex-direction: column;

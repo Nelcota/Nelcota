@@ -1,4 +1,5 @@
 <script lang="ts">
+  import UsersIcon from '@lucide/svelte/icons/users'
   import { dateText } from '$lib/formatting/date'
   import { untrack } from 'svelte'
   import * as Table from '$lib/components/ui/table'
@@ -9,7 +10,6 @@
   import Ellipsis from '@lucide/svelte/icons/ellipsis'
   import Search from '@lucide/svelte/icons/search'
   import UserPlus from '@lucide/svelte/icons/user-plus'
-  import UsersIcon from '@lucide/svelte/icons/users'
   import Copy from '@lucide/svelte/icons/copy'
   import KeyRound from '@lucide/svelte/icons/key-round'
   import LogOut from '@lucide/svelte/icons/log-out'
@@ -18,7 +18,6 @@
   import { Badge } from '$lib/components/ui/badge'
   import { toast } from 'svelte-sonner'
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
-  import PillTabs from '$lib/components/shared/PillTabs.svelte'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte'
@@ -179,7 +178,6 @@
       <Button onclick={() => (createOpen = true)}><UserPlus data-icon="inline-start" aria-hidden="true" />{t('users.new')}</Button>
     {/snippet}
   </PageHeader>
-  <div class="-mt-2 mb-6"><PillTabs label={t('shell.pages.users')} current={'/users'} tabs={[{ path: '/users', label: t('shell.pages.users') }, { path: '/sign-in', label: t('shell.pages.userSignIn') }]} /></div>
 
   {#if error}<LoadError message={error} onretry={load} busy={loading} />{/if}
   {#if (users === null)}

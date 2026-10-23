@@ -92,7 +92,7 @@
         <Input id="settings-comment" bind:value={comment} placeholder={t('tables.settings.descriptionPlaceholder')} />
       </div>
       <!-- Filled only while there is something to save, so the state reads at a glance. -->
-      <Button type="submit" variant={identityChanges.length ? 'default' : 'outline'} disabled={busy !== null || identityChanges.length === 0}>{#if (busy === 'identity')}<LoaderCircle data-icon="inline-start" class="animate-spin" aria-hidden="true" />{/if}{#if !(busy === 'identity')}<Save data-icon="inline-start" aria-hidden="true" />{/if}{busy === 'identity' ? t('common.saving') : t('tables.settings.save')}</Button>
+      <Button size="sm" type="submit" variant={identityChanges.length ? 'default' : 'outline'} disabled={busy !== null || identityChanges.length === 0}>{#if (busy === 'identity')}<LoaderCircle data-icon="inline-start" class="animate-spin" aria-hidden="true" />{/if}{#if !(busy === 'identity')}<Save data-icon="inline-start" aria-hidden="true" />{/if}{busy === 'identity' ? t('common.saving') : t('tables.settings.save')}</Button>
       {#if identityChanges.length && busy !== 'identity'}
         <p class="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground sm:col-span-3" role="status">
           {t('tables.settings.unsaved')}
@@ -139,7 +139,7 @@
           <button type="button" class="cursor-pointer text-foreground underline underline-offset-4" onclick={() => (grants = fromStructure(structure))}>{t('tables.settings.undo')}</button>
         </p>
       {/if}
-      <Button variant={pendingGrants.length ? 'default' : 'outline'} disabled={busy !== null || pendingGrants.length === 0} onclick={() => apply(pendingGrants, 'grants').catch(() => {})}>
+      <Button size="sm" variant={pendingGrants.length ? 'default' : 'outline'} disabled={busy !== null || pendingGrants.length === 0} onclick={() => apply(pendingGrants, 'grants').catch(() => {})}>
         {#if (busy === 'grants')}<LoaderCircle data-icon="inline-start" class="animate-spin" aria-hidden="true" />{/if}
         {#if !(busy === 'grants')}<Save data-icon="inline-start" aria-hidden="true" />{/if}
         {busy === 'grants' ? t('common.saving') : t('tables.settings.saveGrants')}

@@ -16,12 +16,12 @@ curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/instal
 nelcota --version
 ```
 
-This guide targets server 0.5.2. Confirm published artifacts on the
-[release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.2). To build
+This guide targets server 0.5.3. Confirm published artifacts on the
+[release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.3). To build
 that release on macOS/Windows with Rust 1.99+:
 
 ```sh
-cargo install --locked --git https://github.com/Nelcota/Nelcota --tag v0.5.2 nelcota-server
+cargo install --locked --git https://github.com/Nelcota/Nelcota --tag v0.5.3 nelcota-server
 ```
 
 For this checkout, run `cargo build --locked -p nelcota-server` and use the

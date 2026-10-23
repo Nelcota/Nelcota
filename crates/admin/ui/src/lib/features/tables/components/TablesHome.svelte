@@ -3,12 +3,11 @@
   import { Button } from '$lib/components/ui/button'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import Plus from '@lucide/svelte/icons/plus'
-  import Rows3 from '@lucide/svelte/icons/rows-3'
   import History from '@lucide/svelte/icons/history'
   import ArrowRight from '@lucide/svelte/icons/arrow-right'
   import TableProperties from '@lucide/svelte/icons/table-properties'
   import RlsBadge from '$lib/shared/schema/components/RlsBadge.svelte'
-  import EmptyState from '$lib/components/shared/EmptyState.svelte'
+  import TablesWelcome from './TablesWelcome.svelte'
   import { RemoteResource } from '$lib/resources/remote-resource.svelte'
   import { api, enc } from '$lib/transport/api'
   import { href } from '$lib/navigation/router.svelte'
@@ -60,13 +59,7 @@
     </div>
   {/if}
   {#if !(loading && !tables.length) && (!tables.length)}
-    <div class="grid h-full place-items-center p-8">
-      <EmptyState icon={Rows3} title={t('tables.home.emptyTitle')} description={t('tables.home.emptyHint')}>
-        {#snippet actions()}
-          <Button onclick={oncreate}><Plus />{t('tables.editor.newTable')}</Button>
-        {/snippet}
-      </EmptyState>
-    </div>
+    <TablesWelcome {oncreate} />
   {/if}
   {#if !(loading && !tables.length) && !(!tables.length)}
     <div class="grid gap-6 p-6 lg:p-8">

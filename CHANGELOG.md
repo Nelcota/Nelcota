@@ -8,8 +8,19 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ## [Unreleased]
 
+## [0.5.3] — 2026-10-23
+
 ### Changed
 
+- Refresh the operator console with clearer release, approval, recovery and
+  history sections. Use official SVG logos in both panels, retain Manrope,
+  remove the mascot and use cobalt primary actions on graphite surfaces.
+- Simplify the empty table editor and standardize contextual controls, icons
+  and responsive primary buttons.
+- Move database, user, webhook and API navigation into expandable sidebar
+  subcategories, shared with the mobile menu. Move server areas into the
+  operator sidebar while preserving unsaved-change confirmations. Keep
+  table views, example languages and filters beside their content.
 - Keep mailer and storage failure context without opaque provider text or
   identifying storage paths; preserve typed IO metadata and cleanup behavior.
 - Bound request diagnostics and record route templates instead of identifying path

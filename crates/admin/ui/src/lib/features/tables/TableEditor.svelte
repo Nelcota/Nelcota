@@ -37,6 +37,7 @@
   const tables = $derived(tablesResource.data?.tables ?? [])
   const tablesLoading = $derived(tablesResource.loading)
   const tablesError = $derived(tablesResource.error ? errorMessage(tablesResource.error) : '')
+  const emptyCatalog = $derived(tablesResource.loaded && !tablesLoading && !tablesError && !tables.length && !name)
   const rows = new TableRows(tableRowsApi)
   let active = true
   const data = $derived(rows.data)
@@ -243,12 +244,14 @@
   }
 </script>
 
-<div class="mx-auto flex h-full min-h-0 w-full max-w-page gap-3 px-4 pt-1 pb-4 sm:px-6 lg:px-8">
-  <TableSidebar {tables} current={name} loading={tablesLoading} error={tablesError} onretry={loadTables} oncreate={() => (createOpen = true)} />
+<div class={cn("mx-auto flex h-full min-h-0 w-full max-w-page px-4 pt-1 pb-4 sm:px-6 lg:px-8", emptyCatalog ? "flex-col" : "gap-3")}>
+  {#if !emptyCatalog}
+    <TableSidebar {tables} current={name} loading={tablesLoading} error={tablesError} onretry={loadTables} oncreate={() => (createOpen = true)} />
+  {/if}
 
-  <section class={cn('min-w-0 flex-1 flex-col overflow-hidden rounded-3xl bg-card', name ? 'flex' : 'hidden lg:flex')}>
-    {#if (!name)}
-      <TablesHome {tables} loading={tablesLoading} last={lastTable} oncreate={() => (createOpen = true)} />
+  <section class={cn('min-h-0 min-w-0 flex-1 flex-col overflow-hidden', emptyCatalog ? 'flex' : 'rounded-3xl bg-card', !emptyCatalog && (name ? 'flex' : 'hidden lg:flex'))}>
+    {#if !name && !tablesError}
+      <TablesHome {tables} loading={tablesLoading || !tablesResource.loaded} last={lastTable} oncreate={() => (createOpen = true)} />
     {/if}
     {#if !(!name)}
       <TableToolbar

@@ -3,7 +3,7 @@ resolver = "3"
 members = ["crates/*", "sdk/rust"]
 
 [workspace.package]
-version = "0.5.2"
+version = "0.5.3"
 edition = "2024"
 license = "Apache-2.0"
 publish = false
@@ -11,8 +11,8 @@ rust-version = "1.99"
 repository = "https://github.com/Nelcota/Nelcota"
 
 [workspace.dependencies]
-nelcota-core = { path = "crates/core", version = "0.5.2" }
-nelcota-auth = { path = "crates/auth", version = "0.5.2" }
+nelcota-core = { path = "crates/core", version = "0.5.3" }
+nelcota-auth = { path = "crates/auth", version = "0.5.3" }
 nelcota-api = { path = "crates/api" }
 nelcota-cli = { path = "crates/cli" }
 nelcota-deployment = { path = "crates/deployment" }

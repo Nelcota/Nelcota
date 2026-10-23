@@ -1,5 +1,4 @@
 <script lang="ts">
-  import DatabaseTabs from '$lib/components/shared/DatabaseTabs.svelte'
   import { Button } from '$lib/components/ui/button'
   import SearchField from '$lib/components/shared/SearchField.svelte'
   import Search from '@lucide/svelte/icons/search'
@@ -43,21 +42,17 @@
 
 <aside
   aria-label={t('tables.sidebar.label')}
-  class={cn('w-full shrink-0 flex-col overflow-hidden rounded-3xl bg-card lg:flex lg:w-64 xl:w-72', current ? 'hidden' : 'flex lg:w-64 xl:w-72')}
+  class={cn('w-full shrink-0 flex-col overflow-hidden lg:flex lg:w-64 xl:w-72', !tables.length && !loading && !error ? 'border-b border-border lg:border-r lg:border-b-0' : 'rounded-3xl bg-card', current ? 'hidden' : 'flex')}
 >
   <div class="grid gap-3 border-b p-4">
-    <DatabaseTabs fill />
     <div class="flex items-center justify-between gap-2">
-      <svelte:element this={current ? 'p' : 'h1'} class="min-w-0 truncate px-1 text-sm font-semibold">{t('tables.sidebar.title')}</svelte:element>
-      <Button variant="outline" size="sm" title={t('tables.sidebar.newTable')} aria-label={t('tables.sidebar.newTable')} onclick={oncreate}>
-        <Plus data-icon="inline-start" aria-hidden="true" />{t('tables.sidebar.new')}
+      <svelte:element this={current ? 'p' : 'h1'} class="flex min-w-0 items-center gap-2 px-1 text-sm font-semibold">{t('tables.sidebar.heading')}<span class="font-mono text-xs font-normal text-muted-foreground">{loading || error ? '—' : visible.length}</span></svelte:element>
+      <Button variant="ghost" size="icon-sm" title={t('tables.sidebar.newTable')} aria-label={t('tables.sidebar.newTable')} onclick={oncreate}>
+        <Plus class="size-4" aria-hidden="true" />
       </Button>
     </div>
-    <SearchField bind:value={search} label={t('tables.sidebar.search')} />
+    {#if tables.length}<SearchField bind:value={search} label={t('tables.sidebar.search')} />{/if}
   </div>
-  <p class="flex items-center justify-between px-5 pt-4 pb-2 text-xs font-medium text-muted-foreground">
-    {t('tables.sidebar.heading')}<span class="tabular-nums">{visible.length}</span>
-  </p>
   <nav class="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-3" aria-label={t('tables.sidebar.heading')}>
     {#if error}<LoadError message={error} onretry={onretry} busy={loading} />{/if}
     {#if (loading && !tables.length)}
@@ -80,12 +75,11 @@
         {#if table.kind !== 'table'}<span class="text-2xs text-muted-foreground">{t('tables.sidebar.view')}</span>{/if}
       </a>
     {/each}
-      {#if !visible.length && !error}
-        <EmptyState icon={search.trim() ? Search : Rows3} title={search.trim() ? t('common.noMatches') : t('tables.sidebar.empty')} class="px-3 py-6">
+      {#if tables.length > 0 && !visible.length && !error}
+        <EmptyState icon={Search} title={t('common.noMatches')} class="px-3 py-6">
           {#snippet actions()}
             {#if (search.trim())}<Button variant="outline" size="sm" onclick={() => (search = '')}>{t('common.clearSearch')}</Button>
             {/if}
-            {#if !(search.trim()) && (!tables.length)}<Button variant="outline" size="sm" onclick={oncreate}><Plus data-icon="inline-start" aria-hidden="true" />{t('tables.sidebar.newTable')}</Button>{/if}
           {/snippet}
         </EmptyState>
       {/if}

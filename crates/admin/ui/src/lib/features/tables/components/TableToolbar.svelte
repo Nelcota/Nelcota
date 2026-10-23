@@ -6,6 +6,7 @@
   import ChevronLeft from '@lucide/svelte/icons/chevron-left'
   import Funnel from '@lucide/svelte/icons/funnel'
   import Download from '@lucide/svelte/icons/download'
+  import Rows3 from '@lucide/svelte/icons/rows-3'
   import Columns3 from '@lucide/svelte/icons/columns-3'
   import RlsBadge from '$lib/shared/schema/components/RlsBadge.svelte'
   import RunAsPicker from '$lib/components/shared/RunAsPicker.svelte'
@@ -55,8 +56,8 @@
   const rls = $derived(data?.table.rls ?? listedRls)
 
   const tabs = [
-    { view: 'data', label: 'tables.toolbar.data', suffix: '' },
-    { view: 'structure', label: 'tables.toolbar.structure', suffix: '/structure' },
+    { view: 'data', icon: Rows3, label: 'tables.toolbar.data', suffix: '' },
+    { view: 'structure', icon: Columns3, label: 'tables.toolbar.structure', suffix: '/structure' },
   ] as const
 </script>
 
@@ -72,15 +73,12 @@
     <h1 class="min-w-0 truncate text-base font-semibold" title={name}>{name}</h1>
     {#if rls}<RlsBadge {rls} />{/if}
   </div>
-  <nav class="flex h-9 items-center gap-0.5 rounded-full bg-well p-0.5 text-sm sm:ml-1" aria-label={t('tables.toolbar.views')}>
+  <nav class="panel-segments panel-segments-scroll sm:ml-1" aria-label={t('tables.toolbar.views')}>
     {#each tabs as tab (tab.view)}
       <a
         href={href(`/tables/${enc(name)}${tab.suffix}${route.query.size ? `?${route.query}` : ''}`)}
         aria-current={view === tab.view ? 'page' : undefined}
-        class={[
-          'flex h-full items-center rounded-full px-3.5 transition-colors',
-          view === tab.view ? 'bg-nav-active font-medium text-nav-active-foreground' : 'text-muted-foreground hover:text-foreground',
-        ]}>{t(tab.label)}</a
+        class="panel-segment"><tab.icon class="size-4" aria-hidden="true" />{t(tab.label)}</a
       >
     {/each}
   </nav>

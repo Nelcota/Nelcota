@@ -36,6 +36,7 @@ const ptBR = {
   },
   nav: {
     main: 'Navegação principal',
+    userList: 'Lista de usuários',
     workspace: 'Projeto',
     breadcrumb: 'Localização atual',
     shortcuts: 'Atalhos do espaço de trabalho',
@@ -111,6 +112,7 @@ const en: Messages<typeof ptBR> = {
   },
   nav: {
     main: 'Main navigation',
+    userList: 'User list',
     workspace: 'Project',
     breadcrumb: 'Current location',
     shortcuts: 'Workspace shortcuts',

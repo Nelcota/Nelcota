@@ -14,10 +14,11 @@ test.beforeEach(async ({ page }) => {
 test('workspace navigation keeps database tools, breadcrumbs and search usable', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible()
   const navigation = page.locator('.panel-sidebar')
-  await navigation.getByRole('link', { name: 'Banco de dados', exact: true }).click()
-  await page.locator('main').getByRole('navigation', { name: 'Seções do banco de dados' }).getByRole('link', { name: 'SQL', exact: true }).click()
+  await navigation.getByRole('button', { name: 'Banco de dados', exact: true }).click()
+  await navigation.getByRole('link', { name: 'Editor SQL', exact: true }).click()
   await expect(page).toHaveURL(/\/admin\/sql$/)
-  await expect(navigation.getByRole('link', { name: 'Banco de dados', exact: true })).toHaveAttribute('aria-current', 'page')
+  await expect(navigation.getByRole('button', { name: 'Banco de dados', exact: true })).toHaveAttribute('aria-expanded', 'true')
+  await expect(navigation.getByRole('link', { name: 'Editor SQL', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('navigation', { name: 'Localização atual' })).toContainText('Editor SQL')
   await page.getByRole('button', { name: /Buscar \(/ }).click()
   await expect(page.getByRole('combobox')).toBeFocused()
@@ -43,6 +44,7 @@ test('workspace reflows without horizontal overflow in both themes', async ({ pa
     await page.reload()
     await expect.poll(() => page.locator('html').evaluate(e => e.classList.contains('dark'))).toBe(theme === 'dark')
     await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible()
+    await expect(page.locator('img[src*="nelcota-"]:visible')).toHaveCount(1)
     for (const width of [320, 390, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 })
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1)
