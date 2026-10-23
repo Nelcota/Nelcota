@@ -173,7 +173,11 @@ impl Store {
             Backend::Disk { root } => match fs4::available_space(root) {
                 Ok(free) => Some(free),
                 Err(err) => {
-                    tracing::error!(error = %err, "could not read the storage disk's free space");
+                    tracing::error!(
+                        event = "storage.free_space_unavailable",
+                        error_type = std::any::type_name_of_val(&err),
+                        "could not read the storage disk's free space"
+                    );
                     Some(0)
                 }
             },
@@ -225,7 +229,7 @@ impl Store {
     /// Deletes bytes after a commit: a failure leaves them for the collector.
     pub async fn delete_quietly(&self, key: &Key) {
         if let Err(err) = self.delete(key).await {
-            tracing::warn!(key = %key, error = %err, "could not delete stored bytes; the collector will retry");
+            tracing::warn!(event = "storage.delete_deferred", error_type = std::any::type_name_of_val(&err), io_kind = ?crate::error::diagnostic_io_kind(&err), "could not delete stored bytes; the collector will retry");
         }
     }
 

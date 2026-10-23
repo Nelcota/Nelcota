@@ -31,7 +31,11 @@ pub fn spawn_collector(pool: Pool, store: Arc<Store>) {
             match collect(&pool, &store, SystemTime::now()).await {
                 Ok(0) => {}
                 Ok(removed) => tracing::info!(removed, "orphaned storage bytes removed"),
-                Err(err) => tracing::warn!(error = %err, "storage collector failed"),
+                Err(err) => tracing::warn!(
+                    event = "storage.collector_failed",
+                    error_type = std::any::type_name_of_val(&err),
+                    "storage collector failed"
+                ),
             }
         }
     });

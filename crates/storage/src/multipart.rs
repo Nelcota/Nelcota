@@ -18,21 +18,13 @@ pub(crate) async fn writer(
     part: usize,
     slots: Arc<Semaphore>,
 ) -> object_store::Result<WriteMultipart> {
-    let create_key = key.clone();
-    start(
-        async move { store.put_multipart(&create_key).await },
-        key,
-        part,
-        slots,
-    )
-    .await
+    start(async move { store.put_multipart(&key).await }, part, slots).await
 }
 
 async fn start(
     create: impl std::future::Future<Output = object_store::Result<Box<dyn MultipartUpload>>>
     + Send
     + 'static,
-    key: Path,
     part: usize,
     slots: Arc<Semaphore>,
 ) -> object_store::Result<WriteMultipart> {
@@ -50,7 +42,6 @@ async fn start(
                 Box::new(Guard {
                     upload: Some(upload),
                     permit: Some(permit),
-                    key,
                 }),
                 part,
             )),
@@ -73,7 +64,6 @@ fn failure(error: impl std::error::Error + Send + Sync + 'static) -> object_stor
 struct Guard {
     upload: Option<Box<dyn MultipartUpload>>,
     permit: Option<OwnedSemaphorePermit>,
-    key: Path,
 }
 
 #[async_trait]
@@ -109,20 +99,29 @@ impl Drop for Guard {
             }
         };
         let permit = self.permit.take();
-        let key = self.key.clone();
         match tokio::runtime::Handle::try_current() {
             Ok(runtime) => {
                 runtime.spawn(async move {
-                let _permit = permit;
-                match tokio::time::timeout(CLEANUP_TIMEOUT, upload.abort()).await {
-                    Ok(Ok(())) => {},
-                    Ok(Err(error)) => tracing::warn!(%key, %error, "multipart abort failed; S3 lifecycle cleanup is required"),
-                    Err(_) => tracing::warn!(%key, "multipart abort timed out; S3 lifecycle cleanup is required"),
-                }
-            });
+                    let _permit = permit;
+                    match tokio::time::timeout(CLEANUP_TIMEOUT, upload.abort()).await {
+                        Ok(Ok(())) => {}
+                        Ok(Err(error)) => tracing::warn!(
+                            event = "storage.multipart_abort_failed",
+                            error_type = std::any::type_name_of_val(&error),
+                            "multipart abort failed; S3 lifecycle cleanup is required"
+                        ),
+                        Err(_) => tracing::warn!(
+                            event = "storage.multipart_abort_timeout",
+                            "multipart abort timed out; S3 lifecycle cleanup is required"
+                        ),
+                    }
+                });
             }
             _ => {
-                tracing::warn!(%key, "runtime stopped before multipart abort; S3 lifecycle cleanup is required");
+                tracing::warn!(
+                    event = "storage.multipart_abort_unavailable",
+                    "runtime stopped before multipart abort; S3 lifecycle cleanup is required"
+                );
             }
         }
     }
@@ -165,7 +164,6 @@ mod tests {
                 ready.await.unwrap();
                 Ok(Box::new(PendingUpload { aborted: count }) as Box<dyn MultipartUpload>)
             },
-            Path::from("pending"),
             1,
             slots.clone(),
         ));
@@ -195,7 +193,6 @@ mod tests {
                     aborted: aborted.clone(),
                 })),
                 permit: Some(slots.clone().acquire_owned().await.unwrap()),
-                key: Path::from("test"),
             };
             let mut writer = WriteMultipart::new_with_chunk_size(Box::new(guard), 1);
             writer.write(b"part");
