@@ -30,6 +30,10 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Changed
 
+- Bound request diagnostics and record route templates instead of identifying path
+  values. Keep normal request correlation and HTTP responses unchanged.
+- Classify database/pool failures using stable events and SQLSTATE without opaque
+  database messages in diagnostic logs.
 - Require HTTPS external backup endpoints and read back database/files plus
   AES256-encrypted recovery configuration before CLI/scheduled backup success or
   local retention. Failed verification preserves the local backup pair.
