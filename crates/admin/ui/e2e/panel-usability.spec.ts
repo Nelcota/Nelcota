@@ -69,7 +69,8 @@ for (const bytes of [1, 1000, 16384, null]) {
 
 test('Back and Forward protect dirty drafts and preserve history after cancelling', async ({ page }) => {
   await page.goto('/admin/storage')
-  await page.locator('[data-panel-navigation]').getByRole('link', { name: 'Users', exact: true }).first().click()
+  await page.locator('.panel-sidebar').getByRole('button', { name: 'Users', exact: true }).click()
+  await page.locator('.panel-sidebar').getByRole('link', { name: 'User list', exact: true }).click()
   await page.getByRole('button', { name: 'New user', exact: true }).first().click()
   await page.locator('#new-user-email').fill('draft@example.test')
   await page.evaluate(() => history.back())
@@ -122,7 +123,8 @@ test('discard confirmation preserves a history jump across hash entries', async 
   await page.goto('/admin/connect')
   await page.locator('main a[href="#api-sdk"]').first().click()
   await expect(page).toHaveURL(/#api-sdk$/)
-  await page.locator('[data-panel-navigation] a[href="/admin/users"]:visible').click()
+  await page.locator('.panel-sidebar').getByRole('button', { name: 'Users', exact: true }).click()
+  await page.locator('.panel-sidebar').getByRole('link', { name: 'User list', exact: true }).click()
   await page.getByRole('button', { name: 'New user', exact: true }).first().click()
   await page.locator('#new-user-email').fill('history-draft@example.test')
   await page.evaluate(() => history.go(-2))
