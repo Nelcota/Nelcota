@@ -1,0 +1,1 @@
+import{b as e,f as t,x as n}from"./index.svelte-BxMv4FdE.js";var r=new Set([`$$slots`,`$$events`,`$$legacy`]);function i(i,a){let o=e(a,r),s={name:`globe`,size:24,node:[[`circle`,{cx:`12`,cy:`12`,r:`10`}],[`path`,{d:`M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20`}],[`path`,{d:`M2 12h20`}]]};t(i,n(()=>o,{get icon(){return s}}))}export{i as t};
