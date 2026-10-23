@@ -675,3 +675,89 @@ fn group_limits_and_query_clone() {
             .is_err()
     );
 }
+
+#[tokio::test]
+async fn explicit_query_timeout_overrides_a_scoped_default() {
+    let (url, task) = serve(Router::new().fallback(any(|| async {
+        tokio::time::sleep(Duration::from_millis(80)).await;
+        axum::Json(json!([]))
+    })))
+    .await;
+    let client = Client::builder(url)
+        .retries(0)
+        .build()
+        .unwrap()
+        .with_options(RequestOptions {
+            timeout: Some(Duration::from_millis(300)),
+            cancellation: None,
+        });
+    assert!(matches!(
+        client
+            .from("notes")
+            .select("*")
+            .timeout(Duration::from_millis(10))
+            .execute::<Value>()
+            .await,
+        Err(Error::Timeout)
+    ));
+    assert!(
+        client
+            .from("notes")
+            .select("*")
+            .timeout(Duration::ZERO)
+            .execute::<Value>()
+            .await
+            .is_ok()
+    );
+    task.abort();
+}
+
+#[tokio::test]
+async fn shared_row_precision_and_error_fixtures_preserve_the_wire_contract() {
+    let fixture: Value = serde_json::from_str(include_str!("fixtures/protocol.json")).unwrap();
+    let failure = fixture["http_error"].clone();
+    let failure_body = failure["body"].clone();
+    let retry_after = failure["retry_after"].as_str().unwrap().to_owned();
+    let rows = fixture["numeric_rows"].as_str().unwrap().to_owned();
+    let (url, task) = serve(Router::new().fallback(any(move |request: Request| {
+        let body = failure_body.clone();
+        let retry = retry_after.clone();
+        let rows = rows.clone();
+        async move {
+            if request.uri().path().ends_with("failure") {
+                return Response::builder()
+                    .status(429)
+                    .header("retry-after", retry)
+                    .body(Body::from(body.to_string()))
+                    .unwrap();
+            }
+            Response::new(Body::from(rows))
+        }
+    })))
+    .await;
+    let client = Client::builder(url).retries(0).build().unwrap();
+    let response = client
+        .from("notes")
+        .select("*")
+        .execute::<Value>()
+        .await
+        .unwrap();
+    assert_eq!(
+        response.data[0]["id"].to_string(),
+        fixture["exact_id"].as_str().unwrap()
+    );
+    assert_eq!(
+        response.data[0]["decimal"].to_string(),
+        fixture["exact_decimal"].as_str().unwrap()
+    );
+    let error = client
+        .from("failure")
+        .select("*")
+        .execute::<Value>()
+        .await
+        .unwrap_err();
+    assert_eq!(error.status(), Some(429));
+    assert_eq!(error.code(), failure["body"]["code"].as_str().unwrap());
+    assert_eq!(error.retry_after(), Some(Duration::from_secs(17)));
+    task.abort();
+}

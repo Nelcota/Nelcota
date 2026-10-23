@@ -1,18 +1,12 @@
 //! Consuming query builder; request validation and execution retain their original order.
 use super::conditions::{group, in_list, scalar};
+use super::response::{Cardinality, decode};
 use super::{Condition, IsValue, Operator, Order, UpsertOptions};
 use crate::{Client, Error, Response, Result, encoding, http::Spec};
 use reqwest::{Method, header::HeaderValue};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
 use std::time::Duration;
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum Cardinality {
-    Many,
-    One,
-    Maybe,
-}
 
 /// Builders consume `self`; clone a base query to reuse it. Invalid input fails before HTTP.
 #[derive(Clone, Debug)]
@@ -352,6 +346,7 @@ impl Query {
         self.cardinality = Cardinality::Maybe;
         self
     }
+    /// Override the scoped client timeout for this query; zero disables it.
     pub fn timeout(mut self, timeout: Duration) -> Self {
         self.timeout = Some(timeout);
         self
@@ -369,7 +364,7 @@ impl Query {
             .extend_pairs(&self.params)
             .finish())
     }
-    pub async fn execute<T: DeserializeOwned>(self) -> Result<Response<T>> {
+    fn prepare(mut self) -> Result<(Client, Spec, Cardinality)> {
         if let Some(error) = self.error {
             return Err(error);
         }
@@ -394,7 +389,11 @@ impl Query {
         let mut spec = Spec::new(self.method.clone(), self.path);
         spec.params = self.params;
         spec.json = self.body;
-        spec.timeout = self.timeout;
+        // Query-local settings override scoped defaults. Storage's default
+        // unbounded transfer timeout remains a fallback in the transport.
+        if self.timeout.is_some() {
+            self.client.options.timeout = self.timeout;
+        }
         if self.cardinality != Cardinality::Many
             && self.method == Method::GET
             && !spec.params.iter().any(|(k, _)| k == "limit")
@@ -408,43 +407,12 @@ impl Query {
                     .map_err(|_| Error::Usage("invalid preference".into()))?,
             );
         }
-        let response = self.client.json::<Value>(spec).await?;
-        let data =
-            match self.cardinality {
-                Cardinality::Many => response.data,
-                mode => {
-                    let mut rows = response.data.as_array().cloned().ok_or_else(|| {
-                        Error::InvalidResponse {
-                        status: response.status,
-                        message:
-                            "single requires an array response; request representation for writes"
-                                .into(),
-                    }
-                    })?;
-                    match rows.len() {
-                        1 => rows.remove(0),
-                        0 if mode == Cardinality::Maybe => Value::Null,
-                        actual => {
-                            return Err(Error::Cardinality {
-                                expected: match mode == Cardinality::One {
-                                    true => "exactly one",
-                                    false => "at most one",
-                                },
-                                actual,
-                            });
-                        }
-                    }
-                }
-            };
-        let data = serde_json::from_value(data).map_err(|e| Error::InvalidResponse {
-            status: response.status,
-            message: e.to_string(),
-        })?;
-        Ok(Response {
-            data,
-            status: response.status,
-            count: response.count,
-            headers: response.headers,
-        })
+        Ok((self.client, spec, self.cardinality))
+    }
+
+    pub async fn execute<T: DeserializeOwned>(self) -> Result<Response<T>> {
+        let (client, spec, cardinality) = self.prepare()?;
+        let response = client.json::<Value>(spec).await?;
+        decode(response, cardinality)
     }
 }
