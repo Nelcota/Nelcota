@@ -527,9 +527,11 @@ def campaign(arguments):
                     except Exception as error:
                         # Ignore only observations crossing the explicit restart
                         # window. All other sampler failures invalidate evidence.
+                        diagnostic = "sampler-restart-observations.log"
                         if epoch == sampling_epoch and not restarting.is_set():
                             resource_violations.append({"sampler_error": str(error)})
-                        with (output / "sampler-errors.log").open("a") as target:
+                            diagnostic = "sampler-errors.log"
+                        with (output / diagnostic).open("a") as target:
                             target.write(str(error) + "\n")
                     stop.wait(10)
 
