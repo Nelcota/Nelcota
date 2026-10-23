@@ -191,7 +191,7 @@
   {/if}
 
   <section class="resource-canvas" aria-label={t('overview.resources')}>
-    {#if overview.error}<div class="min-w-0 md:col-span-2"><LoadError message={errorMessage(overview.error)} onretry={loadOverview} busy={overview.loading} /></div>{/if}
+    {#if overview.error}<div class="resource-error min-w-0"><LoadError message={errorMessage(overview.error)} onretry={loadOverview} busy={overview.loading} /></div>{/if}
       {#if (data)}
         <article class={card}>
           <div class="flex items-center justify-between text-xs text-muted-foreground">
@@ -351,7 +351,7 @@
   </section>
 
   <!-- Three cards: where the data is, what was refused, what needs doing. -->
-  <section class="grid gap-4 lg:grid-cols-3">
+  <section class="grid gap-4 @min-[40rem]:grid-cols-2 @min-[60rem]:grid-cols-3">
     {#if data || overview.loading}
     <article class={['grid content-start gap-5', card]}>
       {@render cardHeader(t('overview.rows.title'), '/tables')}

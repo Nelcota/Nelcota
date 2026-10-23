@@ -42,6 +42,7 @@ for (const endpoint of ['overview', 'metrics', 'denied']) {
     await page.reload()
     const error = page.locator('main').getByRole('alert')
     await expect(error).toHaveCount(1)
+    await expect.poll(() => error.locator('p').last().evaluate(e => e.clientWidth)).toBeGreaterThanOrEqual(140)
     await expect(page.locator('main [data-slot="skeleton"]')).toHaveCount(0)
     fail = false
     await error.getByRole('button', { name: 'Try again', exact: true }).click()

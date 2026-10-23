@@ -47,6 +47,11 @@ test('workspace reflows without horizontal overflow in both themes', async ({ pa
       await page.setViewportSize({ width, height: 900 })
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1)
       await expect.poll(() => page.locator('main').evaluate(e => e.scrollWidth - e.clientWidth)).toBeLessThanOrEqual(1)
+      const cards = page.getByRole('region', { name: 'Recursos do projeto' }).locator('article')
+      await expect(cards).toHaveCount(3)
+      for (const card of await cards.all()) {
+        await expect.poll(() => card.evaluate(e => e.clientWidth)).toBeGreaterThanOrEqual(220)
+      }
       const account = page.getByRole('button', { name: 'Conta', exact: true })
       await expect(account).toBeInViewport({ ratio: 1 })
       await expect(page.getByRole('region', { name: 'Recursos do projeto' })).toBeVisible()
