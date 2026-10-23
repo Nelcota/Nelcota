@@ -284,3 +284,20 @@ schema. Empty results, 401/403 or a 1000-row cap? See
 [troubleshooting](https://github.com/Nelcota/Nelcota/blob/main/docs/troubleshooting.md).
 Portuguese guide: [quickstart.pt-BR.md](docs/quickstart.pt-BR.md).
 Contract: [contract.md](docs/contract.md). Release: [releasing.md](docs/releasing.md).
+
+
+## Reliable lifecycle and streaming
+
+Clone a client to share one login lifecycle. For independent request identities,
+use `with_access_token` or `anonymous`; do not change a shared login session for
+each incoming user. Independent clients/processes that share FileStorage need
+external rotation coordination. Keep its parent directory private and handle
+storage errors without logging session credentials.
+
+Use `tokio::time::timeout` around the complete operation for a caller deadline;
+query and scoped timeouts cover individual HTTP attempts. With the next crate
+package, an explicit query timeout overrides the scoped default. For large
+files, use `storage().from(bucket)?.open(...)` and consume response chunks with
+backpressure; dropping the response stops reading it. `download()` deliberately
+buffers bytes. Background refresh is opt-in: retain its handle while needed and
+drop it when the owner ends.

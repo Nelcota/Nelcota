@@ -61,3 +61,34 @@ Os exemplos `storage` e `oauth` mostram arquivos com streaming e PKCE. Defina
 `NELCOTA_OAUTH_REDIRECT_URL` também na lista permitida do servidor, abra a URL
 impressa e cole a URL de retorno quando solicitado. Eles não imprimem os tokens
 da sessão. As políticas do banco continuam decidindo quem pode acessar os dados.
+
+
+## Ciclo de vida e operações longas
+
+A atualização do servidor não atualiza o SDK instalado no aplicativo. As
+correções em `Unreleased` exigem a próxima versão do pacote. Não registre
+senhas, tokens, sessões nem URLs assinadas nos logs. Erros do banco também
+podem conter dados do aplicativo; remova informações sensíveis da telemetria.
+
+Clones de `Client` compartilham o mesmo ciclo de login. Para identidades por
+requisição, use `with_access_token` ou `anonymous`. Clientes e processos
+independentes que compartilham FileStorage precisam coordenar o refresh
+externamente. Mantenha o diretório da sessão privado.
+
+Use `tokio::time::timeout` ao redor da operação completa para limitar a espera
+total. Na próxima versão, o timeout explícito da query prevalece sobre
+`RequestOptions.timeout`; zero desativa esse prazo. Transferências continuam
+sem prazo por padrão. Use `open()` e leia os chunks com controle de fluxo para
+arquivos grandes; descartar a resposta interrompe a leitura. `download()`
+armazena o arquivo inteiro em memória.
+
+Cancelar uma gravação pendente remove apenas seu temporário e preserva a sessão
+anterior até o rename. Após o rename, cancelar não desfaz a publicação. No Unix,
+o diretório também é sincronizado após gravação ou remoção; no Windows, a
+substituição é atômica, sem a mesma promessa de sincronização do diretório.
+Falhas do filesystem ainda podem impedir a limpeza e devem ser tratadas.
+
+O MIME explícito de upload usa partes de 1 a 127 caracteres ASCII, com letras,
+dígitos e `!#$&-^_.+`, como o servidor. Parâmetros após ponto e vírgula continuam
+válidos. Valores fora desse conjunto passam a ser recusados antes do upload,
+em vez de depender da substituição do tipo declarado no servidor.

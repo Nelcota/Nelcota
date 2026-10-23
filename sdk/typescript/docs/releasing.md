@@ -63,3 +63,11 @@ new configurations require a first successful publish within two days.
 
 Do not overwrite a published version. Fix a bad release with a new patch version
 and, when appropriate, deprecate the bad version with a concrete migration note.
+
+
+Historical-server compatibility is a separate gate. The current contract runner
+builds `sdk-contract-server` from this checkout; `NELCOTA_BIN` selects the CLI
+used for fixture commands and does not replace that HTTP server. Do not count a
+run with an older CLI as validation of an older server. Run the consumer against
+an actual isolated server at each claimed baseline and record its version/digest,
+fixture and capability coverage before making a broader compatibility claim.

@@ -1,7 +1,7 @@
 # Rust SDK contract
 
 `nelcota-client` 0.1.4 supports Nelcota server 0.3.0 or later; its release
-checks run against this repository’s server 0.5.0 source. The released v0.2.0 tag is a legacy baseline
+checks run against the server source in the same checkout (currently 0.5.3). The released v0.2.0 tag is a legacy baseline
 without the newer OAuth routes and generators; see the README compatibility
 matrix. Package and server versions are independent. Native Tokio on Linux,
 Windows and macOS is the supported target; blocking and WASM interfaces are
@@ -87,3 +87,38 @@ and public Rust imports remain unchanged. Server upgrades do not update this cra
 Exercise login/refresh/sign-out, row representation/cardinality and a file
 transfer in staging. Registry installation requires the selected version to be
 published; before then, use a reviewed local path or packaged archive.
+
+
+## Unreleased hardening
+
+These changes require the next crate package; server updates do not replace the
+0.1.4 crate already compiled into consumer applications.
+
+Timeout precedence is explicit query timeout, scoped `RequestOptions.timeout`,
+then the client default. Zero explicitly disables the deadline. File transfers
+retain their unbounded default unless `RequestOptions.timeout` is supplied.
+Refresh and backoff remain outside the HTTP attempt deadline. Use Tokio's
+`time::timeout` around the complete operation for a total caller deadline;
+dropping that wait does not stop an already owned shared refresh or undo an
+acknowledged server mutation.
+
+FileStorage owns and cleans up only its pending temporary file on cancellation.
+The old session remains until atomic rename; cancellation after rename cannot
+undo publication. Unix additionally syncs the containing directory after rename
+and removal. Windows retains atomic replacement without a directory-sync
+promise. Filesystem failures can still prevent cleanup; keep the directory
+private and inspect adapter errors. Independent clients/processes must still
+coordinate rotations externally.
+
+Explicit upload MIME parts match the server: ASCII letters/digits and
+`!#$&-^_.+`, 1–127 characters per part. Parameters and optional space/tab before
+the semicolon remain supported, and header bytes are sent unchanged. Previously
+accepted HTTP tokens outside this subset are now refused before upload because
+the server cannot preserve their declaration.
+
+Private auth modules separate persistence, endpoint adaptation, OAuth and refresh
+task ownership. REST separates request preparation from decoding and consumes
+single-row JSON without cloning it. Public Rust imports and method signatures
+are unchanged. Shared fixtures with TypeScript cover precision, MIME and errors;
+they complement real-server contracts and do not prove compatibility with every
+historical server version by themselves.
