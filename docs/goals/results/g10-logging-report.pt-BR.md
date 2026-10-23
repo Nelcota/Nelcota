@@ -85,3 +85,13 @@ Lacuna corrigida: o teste de provedor usava uma variável para alternar JSON, en
 Verificação posterior:9 testes Rust (7 HTTP/banco +1 provedor texto +1 provedor JSON),2 testes Chromium retidos após o revert, fmt, Clippy server/tests -D warnings e boundaries passaram. Build do painel reproduziu os assets sem drift; o aviso de chunks grandes é preexistente, sem mudança de limiar. PostgreSQL compartilhado removido após os testes. Não houve nova campanha ou refreeze: apenas testes/docs mudaram; hashes dos ELFs medidos permanecem os mesmos.
 
 O relatório passou a incluir p50/p99 por cenário, sem substituir os quantis pelo resultado agregado. No G10, p99 de login38,685→48,576ms também pede investigação; poucas amostras não permitem atribuir causa. RLS/storage/login continuam falhando no gate p95; o S3 aprovado não os compensa. Sem push, merge ou acesso à VPS.
+
+## Resultado da tentativa de integração
+
+As falhas de CI foram corrigidas: ctutils0.4.4 elimina o alerta público RUSTSEC-2026-0385; os assets foram regenerados após npm ci isolado. Os17 checks passaram no head e5f77511. A reprodução local anterior com node_modules compartilhado não validava uma instalação limpa; o CI identificou essa limitação.
+
+O #126 foi integrado por squash e96fd49e6cccff071f67f087bd5e908c8cbd9a74 após17 checks no head revisado. O #127 incorpora esse main por merge, preservando os índices/changelog e sem alterar a projeção executável do candidato congelado.
+
+A nova sequência A/B/A foi interrompida antes do candidato. A primeira reserva de25% RAM foi recusada; limpeza exclusiva de510.612.243bytes de intermediários desta rodada permitiu executar o controle A, que passou nos sete cenários e terminou com fila0, transações ociosas0, locks0, assinaturas válidas e17 objetos íntegros. A reserva voltou a ser recusada antes de B gerar tráfego; C não foi executado. Não houve nova comparação válida do candidato, redução de limite ou tentativas para selecionar um resultado verde. Leituras pontuais posteriores próximas ao limite não validam retroativamente a tentativa.
+
+**#127 permanece draft, bloqueado pelo ambiente e pelas pendências de latência anteriores.** O CI funcional aprovado não substitui a comparação faltante. O novo head de documentação/merge será validado novamente no CI. Não houve release ou alteração na VPS.
