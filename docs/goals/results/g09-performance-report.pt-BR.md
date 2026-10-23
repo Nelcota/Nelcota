@@ -75,3 +75,27 @@ Limpeza verificada: nenhum container em execução, fixture nomeada de benchmark
 Prioridades: investigar os gates de latência sem selecionar amostras; obter staging/gerador separado para cobertura bloqueada; tratar o polling em revisão própria futura; concluir G08 separadamente. Correções G10 permanecem em outra branch, com seus próprios gates abertos.
 
 CPU Docker da aplicação ao longo da campanha completa (inclui preparação/recovery): mínimo0,59%, mediana1,86%, máximo99,28% de um núcleo; não é atribuição por operação. Na janela contínua, k6 registrou4.089.021 bytes enviados e55.321.305 recebidos. Contadores de IO e limites brutos permanecem em resources.jsonl; NetIO do Docker em host-network não mede esse tráfego HTTP.
+
+## Complemento da revisão: p50 e p99
+
+Medianas dos três quantis por amostra, em ms; não são quantis de uma distribuição combinada. Perfil completo de disco já registrado acima.
+
+| Cenário | Controle p50 | Candidato p50 | Controle p99 | Candidato p99 |
+| --- | ---: | ---: | ---: | ---: |
+| read | 2.230 | 2.091 | 6.401 | 5.608 |
+| rls | 2.271 | 2.245 | 5.529 | 5.443 |
+| panel | 3.138 | 3.249 | 7.200 | 7.210 |
+| storage | 3.126 | 3.129 | 14.727 | 11.085 |
+| login | 22.314 | 24.332 | 38.685 | 39.230 |
+| refresh | 4.527 | 4.611 | 26.397 | 25.527 |
+| mixed | 2.523 | 2.408 | 28.865 | 27.509 |
+
+## Revisão posterior
+
+Revisão completa dos diffs de produção/testes, alteração mínima do sampler, retirada da otimização, relatórios e integridade do pacote anterior. Nenhum novo defeito de produção confirmado nesta revisão. A aprovação de desempenho continua bloqueada; os resultados anteriores não foram repetidos nem reescritos.
+
+Lacuna corrigida: o teste de provedor usava uma variável para alternar JSON, então o cargo test comum cobria só texto. Agora dois executáveis de integração executam texto/JSON automaticamente, com casos compartilhados. A asserção de e-mail espera especificamente kind=recovery; signup nesta fixture não enviava confirmação, portanto não foi demonstrada uma race no teste anterior. O caso JSON valida as linhas e o caso de delete diferido também exige a presença do diagnóstico. Commit de testes2c6017f8; sem dependências/workflows novos.
+
+Verificação posterior:9 testes Rust (7 HTTP/banco +1 provedor texto +1 provedor JSON),2 testes Chromium retidos após o revert, fmt, Clippy server/tests -D warnings e boundaries passaram. Build do painel reproduziu os assets sem drift; o aviso de chunks grandes é preexistente, sem mudança de limiar. PostgreSQL compartilhado removido após os testes. Não houve nova campanha ou refreeze: apenas testes/docs mudaram; hashes dos ELFs medidos permanecem os mesmos.
+
+O relatório passou a incluir p50/p99 por cenário, sem substituir os quantis pelo resultado agregado. No G10, p99 de login38,685→48,576ms também pede investigação; poucas amostras não permitem atribuir causa. RLS/storage/login continuam falhando no gate p95; o S3 aprovado não os compensa. Sem push, merge ou acesso à VPS.
