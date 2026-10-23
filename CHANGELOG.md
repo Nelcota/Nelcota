@@ -8,6 +8,8 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ## [Unreleased]
 
+## [0.5.2] — 2026-10-23
+
 ### Added
 
 - Add operator-approved operational email and HTTPS webhook digests for service
