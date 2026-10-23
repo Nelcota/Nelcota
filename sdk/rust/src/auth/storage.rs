@@ -18,6 +18,10 @@ pub trait SessionStorage: Send + Sync {
 /// a session; on Unix the file is created readable by its owner only (0600).
 /// The refresh token in it is a credential: keep the file out of backups
 /// and shared folders. Like any store, it is not a lock between processes.
+/// Dropping a pending save removes its owned temporary file on ordinary writable
+/// filesystems. Once rename completes, cancellation does not undo publication.
+/// Unix saves/removals also sync the containing directory; Windows uses atomic
+/// replacement without a directory-sync guarantee.
 #[derive(Clone, Debug)]
 pub struct FileStorage {
     path: std::path::PathBuf,
@@ -42,22 +46,48 @@ impl FileStorage {
         let mut name = self.path.file_name().unwrap_or_default().to_os_string();
         name.push(format!(".{}.tmp", u64::from_le_bytes(suffix)));
         let temporary = self.path.with_file_name(name);
-        let result = async {
-            let mut options = tokio::fs::OpenOptions::new();
-            options.write(true).create_new(true);
-            #[cfg(unix)]
+        // Create synchronously: cancelling async open could create a file after
+        // its cleanup guard had already run. Only metadata operations are sync.
+        let mut options = std::fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
             options.mode(0o600);
-            let mut file = options.open(&temporary).await?;
-            tokio::io::AsyncWriteExt::write_all(&mut file, &bytes).await?;
-            file.sync_all().await?;
-            drop(file);
-            tokio::fs::rename(&temporary, &self.path).await
         }
-        .await;
-        if result.is_err() {
-            let _ = tokio::fs::remove_file(&temporary).await;
+        let file = options.open(&temporary).map_err(failed)?;
+        let pending = PendingFile {
+            path: temporary,
+            owned: true,
+        };
+        let mut file = tokio::fs::File::from_std(file);
+        tokio::io::AsyncWriteExt::write_all(&mut file, &bytes)
+            .await
+            .map_err(failed)?;
+        file.sync_all().await.map_err(failed)?;
+        drop(file);
+        // Do not leave a detached rename able to promote after cancellation.
+        pending.persist(&self.path).map_err(failed)?;
+        self.sync_parent().await
+    }
+    async fn sync_parent(&self) -> Result<()> {
+        // Directory fsync is supported on Unix. Windows retains atomic rename;
+        // its platform APIs do not offer the same directory-sync operation.
+        #[cfg(unix)]
+        {
+            let parent = self
+                .path
+                .parent()
+                .filter(|p| !p.as_os_str().is_empty())
+                .unwrap_or_else(|| std::path::Path::new("."));
+            tokio::fs::File::open(parent)
+                .await
+                .map_err(|e| Error::SessionStorage(e.to_string()))?
+                .sync_all()
+                .await
+                .map_err(|e| Error::SessionStorage(e.to_string()))?;
         }
-        result.map_err(failed)
+        Ok(())
     }
 }
 impl SessionStorage for FileStorage {
@@ -76,11 +106,12 @@ impl SessionStorage for FileStorage {
         Box::pin(async move {
             match session {
                 Some(session) => self.write(session).await,
-                None => match tokio::fs::remove_file(&self.path).await {
+                None => match std::fs::remove_file(&self.path) {
                     Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
                         Err(Error::SessionStorage(e.to_string()))
                     }
-                    _ => Ok(()),
+                    Err(_) => Ok(()),
+                    Ok(()) => self.sync_parent().await,
                 },
             }
         })
@@ -107,5 +138,28 @@ impl SessionStorage for MemoryStorage {
                 session.cloned();
             Ok(())
         })
+    }
+}
+
+/// Owns only the file created by this save, including when its future is dropped.
+struct PendingFile {
+    path: std::path::PathBuf,
+    owned: bool,
+}
+impl PendingFile {
+    fn persist(mut self, target: &std::path::Path) -> std::io::Result<()> {
+        std::fs::rename(&self.path, target)?;
+        // Disarm before any later await: the old name no longer belongs to us.
+        self.owned = false;
+        Ok(())
+    }
+}
+impl Drop for PendingFile {
+    fn drop(&mut self) {
+        // Best effort on cancellation; a successful rename already removed it.
+        // Never scan for or remove another writer's temporary files.
+        if self.owned {
+            let _ = std::fs::remove_file(&self.path);
+        }
     }
 }
