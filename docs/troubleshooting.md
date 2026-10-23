@@ -140,3 +140,5 @@ Collect only a short incident window into a private file with `umask 077`. Inclu
 
 Enable detailed logging only briefly on an owned staging reproduction. Existing auth/storage/provider diagnostics and external sinks still require a privacy review; structured JSON alone does not make all messages safe. This bounded logging review does not establish a complete audit ledger, a compliance guarantee or measured zero overhead.
 
+
+Mail delivery failures retain a stable event, message kind and `error_type`; storage failures retain a stable event, error type and typed `io_kind` where available. Missing-byte diagnostics retain the opaque object version, not its bucket name. These events omit opaque provider messages and storage keys/paths. Type names are implementation context, not a public parsing contract; investigate provider-specific causes through a private reproduction.
