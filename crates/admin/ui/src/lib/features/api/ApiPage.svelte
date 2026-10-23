@@ -80,10 +80,18 @@
     }
   })
 
-  const requestedSection = $derived(route.query.get('section'))
+  let previousSection: string | null = null
+  let previousQuery = ''
   $effect(() => {
-    const section = requestedSection
-    if (!section || !sections.some(item => item.section === section)) return
+    // Re-selecting the same URL is still a navigation, but changing example
+    // settings must not jump back to the outline's last destination.
+    void route.revision
+    const section = route.query.get('section')
+    const query = route.query.toString()
+    const scroll = section !== previousSection || query === previousQuery
+    previousSection = section
+    previousQuery = query
+    if (!scroll || !section || !sections.some(item => item.section === section)) return
     let cancelled = false
     void tick().then(() => {
       if (cancelled) return

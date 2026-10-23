@@ -52,6 +52,11 @@ test('API outline scrolls to the chosen section and preserves example settings',
     const rect = e.getBoundingClientRect(), bounds = root.getBoundingClientRect()
     return rect.top >= bounds.top - 1 && rect.top < bounds.bottom
   })).toBe(true)
+  const selectedTop = await page.locator('#api-sdk').evaluate(e => e.getBoundingClientRect().top)
+  await page.locator('#api-address').scrollIntoViewIfNeeded()
+  await expect(sdk).not.toHaveAttribute('aria-current', 'location')
+  await sdk.click()
+  await expect.poll(() => page.locator('#api-sdk').evaluate((e, top) => Math.abs(e.getBoundingClientRect().top - top), selectedTop)).toBeLessThanOrEqual(1)
   await expect(page.locator('main .panel-segments-scroll')).toHaveCount(0)
   await page.locator('#api-examples').scrollIntoViewIfNeeded()
   await page.getByRole('button', { name: 'JavaScript', exact: true }).click()

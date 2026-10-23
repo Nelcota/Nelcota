@@ -46,7 +46,7 @@
 >
   <div class="grid gap-3 border-b p-4">
     <div class="flex items-center justify-between gap-2">
-      <svelte:element this={current || !tables.length ? 'p' : 'h1'} class="flex min-w-0 items-center gap-2 px-1 text-sm font-semibold">{t('tables.sidebar.heading')}<span class="font-mono text-xs font-normal text-muted-foreground">{loading || error ? '—' : visible.length}</span></svelte:element>
+      <svelte:element this={current ? 'p' : 'h1'} class="flex min-w-0 items-center gap-2 px-1 text-sm font-semibold">{t('tables.sidebar.heading')}<span class="font-mono text-xs font-normal text-muted-foreground">{loading || error ? '—' : visible.length}</span></svelte:element>
       <Button variant="ghost" size="icon-sm" title={t('tables.sidebar.newTable')} aria-label={t('tables.sidebar.newTable')} onclick={oncreate}>
         <Plus class="size-4" aria-hidden="true" />
       </Button>
