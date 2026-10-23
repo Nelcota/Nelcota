@@ -1,6 +1,7 @@
 # Release handoff after Notes acceptance
 
-The 0.5.2 release adds the graphite panel, host operations and alert controls
+The 0.5.3 release refines panel branding, grouped navigation and the operator console,
+and improves bounded diagnostic logging
 in the [server changelog](../../CHANGELOG.md). A local acceptance pass proves
 the selected binary and its Notes workflow; it does not publish binaries,
 container images, Rust crates or either SDK package.
@@ -25,7 +26,7 @@ of the release scope.
 
 ## Upgrade an existing project
 
-The 0.5.1 → 0.5.2 patch retains internal schema V16 with no new migration.
+The 0.5.2 → 0.5.3 patch retains internal schema V16 with no new migration.
 Rehearse that exact upgrade and a paired database/file restore on a disposable
 installation before publishing. Existing legacy-upgrade CI also covers
 0.3.1 → this checkout; that result does not substitute for the 0.5.1 baseline.
