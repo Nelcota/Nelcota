@@ -1,94 +1,68 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte'
   import * as Sheet from '$lib/components/ui/sheet'
   import Menu from '@lucide/svelte/icons/menu'
   import Search from '@lucide/svelte/icons/search'
-  import BookOpen from '@lucide/svelte/icons/book-open'
+  import ChevronRight from '@lucide/svelte/icons/chevron-right'
   import ProjectSwitcher from '$lib/features/projects/components/ProjectSwitcher.svelte'
   import AccountMenu from './AccountMenu.svelte'
+  import WorkspaceRail from './WorkspaceRail.svelte'
+  import WorkspaceLinks from './WorkspaceLinks.svelte'
   import { palette } from '$lib/shell/palette.svelte'
-  import { href } from '$lib/navigation/router.svelte'
-  import { isActive, navPills } from '$lib/shell/nav'
+  import { href, route } from '$lib/navigation/router.svelte'
+  import { crumbsFor } from '$lib/shell/titles'
   import { t } from '$lib/i18n/index.svelte'
 
-  // Navigation gets its own row when the content needs more room.
+  let { children }: { children: Snippet } = $props()
   let mobileOpen = $state(false)
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
-
-  const pill = (active: boolean) => [
-    'flex h-10 shrink-0 items-center rounded-full px-4 text-sm whitespace-nowrap transition-colors',
-    active ? 'bg-nav-active font-medium text-nav-active-foreground' : 'text-muted-foreground hover:text-foreground',
-  ]
+  const crumbs = $derived(crumbsFor(route.path))
 </script>
 
-{#snippet search()}
-  <!-- Search everything (the command palette), with its shortcut in view so it
-       does not read as one more page. -->
-  <button
-    type="button"
-    onclick={() => (palette.open = true)}
-    class="grid size-11 shrink-0 cursor-pointer place-items-center rounded-full bg-nav text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:size-14"
-    aria-label={`${t('shell.topbar.searchLabel')} (${isMac ? '⌘' : 'Ctrl'} K)`}
-    title={`${t('shell.topbar.searchLabel')} (${isMac ? '⌘' : 'Ctrl'} K)`}
-  >
-    <Search class="size-5" aria-hidden="true" />
-  </button>
-{/snippet}
-
-{#snippet pills()}
-  {#each navPills as item (item.path)}
-    {@const active = isActive(item.path, item.also)}
-    <a href={href(item.path)} aria-current={active ? 'page' : undefined} class={pill(active)}>{t(item.pill ?? item.title)}</a>
-  {/each}
-{/snippet}
-
-<header class="shrink-0 bg-background/85 backdrop-blur">
-  <div class="@container mx-auto w-full max-w-page px-4 py-4 sm:px-6 lg:px-8">
-  <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 @min-[80rem]:grid-cols-[minmax(0,1fr)_auto_auto] @min-[80rem]:gap-6">
-    <div class="flex min-w-0 items-center gap-2 @max-[26rem]:col-span-2">
-      <button
-        type="button"
-        class="grid size-11 shrink-0 cursor-pointer place-items-center rounded-full bg-nav text-muted-foreground hover:text-foreground md:hidden"
-        onclick={() => (mobileOpen = true)}
-        aria-label={t('shell.nav.menu')}
-      >
-        <Menu class="size-5" aria-hidden="true" />
-      </button>
-      <div class="min-w-0 max-w-64"><ProjectSwitcher /></div>
-    </div>
-
-    <nav aria-label={t('shell.nav.main')} class="hidden items-center gap-1 rounded-full bg-nav p-1.5 @min-[80rem]:flex">
-      {@render pills()}
-    </nav>
-
-    <div class="flex shrink-0 items-center justify-end gap-2 @max-[26rem]:col-span-2">
-      <a href={href('/guides')} aria-label={t('shell.pages.guides')} title={t('shell.pages.guides')} aria-current={isActive('/guides') ? 'page' : undefined} class={['grid size-11 shrink-0 place-items-center rounded-full transition-colors sm:size-14', isActive('/guides') ? 'bg-nav-active text-nav-active-foreground' : 'bg-nav text-muted-foreground hover:bg-accent hover:text-foreground']}><BookOpen class="size-5" aria-hidden="true" /></a>
-      {@render search()}
-      <AccountMenu />
+<div class="panel-workspace">
+  <WorkspaceRail />
+  <div class="panel-body">
+    <header class="panel-topbar">
+      <div class="flex min-w-0 flex-1 items-center gap-2 md:flex-none">
+        <button type="button" class="panel-icon-button panel-menu-trigger" onclick={() => (mobileOpen = true)} aria-label={t('shell.nav.menu')}>
+          <Menu class="size-[18px]" aria-hidden="true" />
+        </button>
+        <div class="min-w-0 flex-1 md:w-52"><ProjectSwitcher /></div>
+      </div>
+      <nav aria-label={t('shell.nav.breadcrumb')} class="hidden min-w-0 flex-1 md:block">
+        <ol class="flex min-w-0 items-center gap-3 text-sm text-muted-foreground">
+          {#each crumbs as crumb, index (`${index}-${crumb.label}`)}
+            <li class="flex min-w-0 items-center gap-3">
+              <ChevronRight class="size-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
+              {#if crumb.path}<a class="truncate hover:text-foreground" href={href(crumb.path)}>{crumb.label}</a>{/if}
+              {#if !crumb.path}<span class="truncate text-foreground" aria-current="page">{crumb.label}</span>{/if}
+            </li>
+          {/each}
+        </ol>
+      </nav>
+      <div class="flex shrink-0 items-center gap-2">
+        <button type="button" onclick={() => (palette.open = true)} class="panel-search" aria-label={`${t('shell.topbar.searchLabel')} (${isMac ? '⌘' : 'Ctrl'} K)`} title={`${t('shell.topbar.searchLabel')} (${isMac ? '⌘' : 'Ctrl'} K)`}>
+          <Search class="size-4 shrink-0" aria-hidden="true" />
+          <span class="hidden lg:block">{t('shell.topbar.searchLabel')}…</span>
+          <kbd class="ml-auto hidden text-xs text-muted-foreground/75 lg:block">{isMac ? '⌘' : 'Ctrl'} K</kbd>
+        </button>
+        <AccountMenu />
+      </div>
+    </header>
+    <div class="panel-content">
+      <aside class="panel-sidebar" aria-label={t('shell.nav.main')}>
+        <p class="px-3 pb-3 text-xs font-medium text-muted-foreground">{t('shell.nav.workspace')}</p>
+        <WorkspaceLinks />
+      </aside>
+      {@render children()}
     </div>
   </div>
-
-  <nav aria-label={t('shell.nav.main')} class="mt-3 hidden md:block @min-[80rem]:hidden">
-    <div class="mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1 rounded-3xl bg-nav p-1.5">{@render pills()}</div>
-  </nav>
-  </div>
-</header>
+</div>
 
 <Sheet.Root bind:open={mobileOpen}>
   <Sheet.Content side="left" class="w-72 gap-0 p-0">
     <Sheet.Title class="sr-only">{t('shell.nav.main')}</Sheet.Title>
-    <div class="flex shrink-0 items-center gap-2 p-3 pr-12">
-      <div class="min-w-0 flex-1"><ProjectSwitcher expanded /></div>
-    </div>
-    <nav class="grid content-start gap-1 overflow-y-auto p-3" aria-label={t('shell.nav.main')}>
-      {#each navPills as item (item.path)}
-        {@const active = isActive(item.path, item.also)}
-        <a href={href(item.path)} onclick={() => (mobileOpen = false)} aria-current={active ? 'page' : undefined} class={[...pill(active), 'gap-3']}>
-          <item.icon class="size-[18px]" strokeWidth={1.6} aria-hidden="true" />{t(item.title)}
-        </a>
-      {/each}
-      <a href={href('/guides')} onclick={() => (mobileOpen = false)} class={[...pill(isActive('/guides')), 'gap-3']}>
-        <BookOpen class="size-[18px]" aria-hidden="true" />{t('shell.pages.guides')}
-      </a>
-    </nav>
+    <div class="border-b p-4 pr-12"><span class="text-sm font-semibold">Nelcota</span></div>
+    <div class="min-h-0 flex-1 overflow-y-auto p-3"><WorkspaceLinks close={() => (mobileOpen = false)} /></div>
   </Sheet.Content>
 </Sheet.Root>

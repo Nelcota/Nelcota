@@ -69,7 +69,7 @@ for (const bytes of [1, 1000, 16384, null]) {
 
 test('Back and Forward protect dirty drafts and preserve history after cancelling', async ({ page }) => {
   await page.goto('/admin/storage')
-  await page.locator('header').getByRole('link', { name: 'Users', exact: true }).first().click()
+  await page.locator('[data-panel-navigation]').getByRole('link', { name: 'Users', exact: true }).first().click()
   await page.getByRole('button', { name: 'New user', exact: true }).first().click()
   await page.locator('#new-user-email').fill('draft@example.test')
   await page.evaluate(() => history.back())
@@ -107,7 +107,7 @@ test('internal navigation and reload respect the active draft and explicit disca
   expect(await page.evaluate(() => !window.dispatchEvent(new Event('beforeunload', { cancelable: true })))).toBe(true)
   // Dispatch the same link action used by shell navigation while the modal is
   // active; the shared router must also guard programmatic navigation.
-  const storage = page.locator('header a[href="/admin/storage"]').first()
+  const storage = page.locator('[data-panel-navigation] a[href="/admin/storage"]').first()
   await storage.evaluate(e => (e as HTMLAnchorElement).click())
   await page.getByRole('button', { name: 'Keep editing', exact: true }).click()
   await expect(page).toHaveURL(/\/admin\/users$/)
@@ -122,7 +122,7 @@ test('discard confirmation preserves a history jump across hash entries', async 
   await page.goto('/admin/connect')
   await page.locator('main a[href="#api-sdk"]').first().click()
   await expect(page).toHaveURL(/#api-sdk$/)
-  await page.locator('header a[href="/admin/users"]:visible').click()
+  await page.locator('[data-panel-navigation] a[href="/admin/users"]:visible').click()
   await page.getByRole('button', { name: 'New user', exact: true }).first().click()
   await page.locator('#new-user-email').fill('history-draft@example.test')
   await page.evaluate(() => history.go(-2))
@@ -150,12 +150,12 @@ test('a pending save blocks navigation and a successful save releases the guard'
     const sent = page.waitForRequest(r => r.method() === 'POST' && new URL(r.url()).pathname === '/admin/api/users')
     await page.getByRole('dialog').locator('button[type="submit"]').click()
     await sent
-    await page.locator('header a[href="/admin/storage"]').first().evaluate(e => (e as HTMLAnchorElement).click())
+    await page.locator('[data-panel-navigation] a[href="/admin/storage"]').first().evaluate(e => (e as HTMLAnchorElement).click())
     await expect(page).toHaveURL(/\/admin\/users$/)
     await expect(page.getByRole('alertdialog')).toHaveCount(0)
     release()
     await expect(page.getByRole('dialog')).toHaveCount(0)
-    await page.locator('header a[href="/admin/storage"]:visible').click()
+    await page.locator('[data-panel-navigation] a[href="/admin/storage"]:visible').click()
     await expect(page).toHaveURL(/\/admin\/storage$/)
   } finally { release() }
 })

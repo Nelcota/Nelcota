@@ -92,7 +92,7 @@
 
           <div class="flex items-center gap-2 rounded-2xl bg-well px-4 py-3 text-sm">
             {#if (project.healthy)}
-              <CircleCheck class="size-4 text-brand" aria-hidden="true" />
+              <CircleCheck class="size-4 text-success" aria-hidden="true" />
               <span>{t('projects.up')}</span>
               {#if project.latency_ms !== null}
                 <span class="text-muted-foreground tabular-nums">· {project.latency_ms} ms</span>

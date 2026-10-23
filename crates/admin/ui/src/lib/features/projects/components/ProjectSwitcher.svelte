@@ -57,7 +57,7 @@
   <Button
     {...props}
     variant="ghost"
-    class="group/project h-auto min-h-12 w-full min-w-0 justify-start gap-2.5 rounded-lg px-1.5 py-1.5 text-left sm:px-2"
+    class="group/project h-auto min-h-12 w-full min-w-0 justify-start gap-2.5 rounded-lg px-1.5 py-1 text-left sm:px-2"
     title={`${t('shell.projects.switch')} · ${status}`}
     aria-label={`${t('shell.projects.switch')}: ${data?.current ?? 'Nelcota'} · ${status}`}
   >
@@ -70,7 +70,7 @@
         <span
           class={cn(
             'size-1.5 shrink-0 rounded-full',
-            health.status === 'online' ? 'bg-brand' : health.status === 'offline' ? 'bg-destructive' : 'bg-muted-foreground',
+            health.status === 'online' ? 'bg-success' : health.status === 'offline' ? 'bg-destructive' : 'bg-muted-foreground',
           )}
           role="img"
           aria-label={status}

@@ -4,6 +4,9 @@
   import * as Table from '$lib/components/ui/table'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import { Button } from '$lib/components/ui/button'
+  import Database from '@lucide/svelte/icons/database'
+  import Users from '@lucide/svelte/icons/users'
+  import ShieldCheck from '@lucide/svelte/icons/shield-check'
   import Plus from '@lucide/svelte/icons/plus'
   import UserPlus from '@lucide/svelte/icons/user-plus'
   import Plug from '@lucide/svelte/icons/plug'
@@ -30,9 +33,7 @@
   import type { DeniedRequests, MetricsResponse, Overview } from '$lib/contracts/types'
   import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
 
-  // The project at a glance, laid out after the user's reference dashboard
-  // (D98): the period's traffic as the headline, one period selector for the
-  // whole page, stat cards beside the chart, three cards of what to look at.
+  // Resource cards and traffic share the existing requests and lifecycle.
   const overview = new RemoteResource<Overview>()
   const metrics = new RemoteResource<MetricsResponse>()
   const denied = new RemoteResource<DeniedRequests>()
@@ -129,15 +130,15 @@
   }
 
   const segment = (on: boolean) => [
-    'h-9 cursor-pointer rounded-full px-3.5 text-sm transition-colors',
+    'h-8 cursor-pointer rounded-lg px-3 text-sm transition-colors',
     on ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:text-foreground',
   ]
   const filter = (on: boolean) => [
     'h-10 shrink-0 cursor-pointer rounded-xl border px-4 text-sm whitespace-nowrap transition-colors',
     on ? 'border-transparent bg-nav-active font-medium text-nav-active-foreground' : 'border-border-strong text-muted-foreground hover:text-foreground',
   ]
-  const card = 'rounded-3xl bg-card p-5'
-  const statLink = 'grid size-11 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
+  const card = 'min-w-0 rounded-xl bg-card p-5'
+  const statLink = 'grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
 </script>
 
 {#snippet cardHeader(title: string, path: string)}
@@ -149,12 +150,11 @@
   </div>
 {/snippet}
 
-<div class="@container grid gap-6 mx-auto w-full max-w-page px-4 pt-2 pb-12 sm:px-6 lg:px-8">
-  <!-- Headline: the page's name with its shortcuts under it, and the
-       period's traffic. On phones everything stacks, left-aligned. -->
-  <section class="grid min-w-0 gap-6 sm:gap-8 @min-[76rem]:grid-cols-2 @min-[76rem]:items-end">
+<div class="@container grid gap-5 mx-auto w-full max-w-page px-4 pt-6 pb-10 sm:px-6 lg:px-8">
+  <!-- Real project actions and period totals remain available at every width. -->
+  <section class="grid min-w-0 gap-5 @min-[60rem]:grid-cols-2 @min-[60rem]:items-center">
     <div class="grid gap-4">
-      <h1 class="max-w-xl text-4xl leading-[1.02] font-semibold tracking-[-0.035em] sm:text-5xl">{t('overview.title')}</h1>
+      <h1 class="text-2xl font-semibold tracking-tight">{t('overview.title')}</h1>
       <nav class="flex flex-wrap gap-2" aria-label={t('overview.quickActions')}>
         <Button size="sm" href={href('/tables?create=true')}><Plus data-icon="inline-start" aria-hidden="true" />{t('tables.editor.newTable')}</Button>
         <Button variant="outline" size="sm" href={href('/users?create=true')}><UserPlus data-icon="inline-start" aria-hidden="true" />{t('users.new')}</Button>
@@ -162,10 +162,10 @@
       </nav>
     </div>
     {#if (traffic)}
-      <div class="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,10rem),1fr))] items-end gap-6">
+      <div class="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] items-end gap-5 rounded-xl bg-card px-5 py-4">
         <div class="grid min-w-0 gap-2">
           <p class="text-sm text-muted-foreground">{t('overview.hero.requests')}</p>
-          <p class="text-4xl leading-none font-semibold tracking-[-0.035em] tabular-nums [overflow-wrap:anywhere] sm:text-5xl">{fmt.format(traffic.totals.requests)}</p>
+          <p class="text-2xl leading-none font-semibold tabular-nums [overflow-wrap:anywhere]">{fmt.format(traffic.totals.requests)}</p>
         </div>
         <div class="grid min-w-0 gap-2">
           <p class="text-sm text-muted-foreground">{t('overview.hero.refused')}</p>
@@ -190,13 +190,81 @@
     </a>
   {/if}
 
+  <section class="resource-canvas" aria-label={t('overview.resources')}>
+      {#if (data)}
+        <article class={card}>
+          <div class="flex items-center justify-between text-xs text-muted-foreground">
+            <span class="flex items-center gap-2 font-medium text-foreground"><Database class="size-4 text-sky-500 dark:text-sky-400" aria-hidden="true" />{t('overview.cards.database')}</span>
+            <a href={href('/tables')} class={statLink} aria-label={t('overview.cards.tables')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
+          </div>
+          <div class="mt-4 flex items-end justify-between gap-4">
+            <div class="grid gap-1">
+              <p class="text-sm text-muted-foreground">{t('overview.cards.tables')}</p>
+              <p class="text-3xl leading-none font-semibold tracking-[-0.03em]">{fmt.format(data.counts.tables)}</p>
+              <p class="text-xs text-muted-foreground">{t('overview.cards.tablesCaption', { count: protectedCount })}</p>
+            </div>
+            <Ring value={protectedShare} label={t('overview.cards.tablesRing', { percent: protectedShare })} />
+          </div>
+          <div class="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t pt-3 text-xs text-muted-foreground">
+            <a class="hover:text-foreground" href={href('/tables')}>{t('overview.tables.openEditor')}</a>
+            <a class="hover:text-foreground" href={href('/sql')}>{t('shell.pills.sql')}</a>
+            <a class="hover:text-foreground" href={href('/migrations')}>{t('shell.pills.migrations')}</a>
+          </div>
+        </article>
+        <article class={card}>
+          <div class="flex items-center justify-between text-xs text-muted-foreground">
+            <span class="flex items-center gap-2 font-medium text-foreground"><Users class="size-4 text-violet-600 dark:text-violet-400" aria-hidden="true" />{t('overview.cards.auth')}</span>
+            <a href={href('/users')} class={statLink} aria-label={t('overview.cards.users')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
+          </div>
+          <div class="mt-4 flex items-end justify-between gap-4">
+            <div class="grid gap-1">
+              <p class="text-sm text-muted-foreground">{t('overview.cards.users')}</p>
+              <p class="text-3xl leading-none font-semibold tracking-[-0.03em]">{fmt.format(data.counts.users)}</p>
+              <p class="text-xs text-muted-foreground">{t('overview.cards.usersCaption', { count: data.counts.signed_in_users })}</p>
+            </div>
+            <Ring value={signedInShare} label={t('overview.cards.usersRing', { percent: signedInShare })} />
+          </div>
+          <div class="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t pt-3 text-xs text-muted-foreground">
+            <a class="hover:text-foreground" href={href('/users')}>{t('shell.pages.users')}</a>
+            <a class="hover:text-foreground" href={href('/sign-in')}>{t('shell.pages.userSignIn')}</a>
+          </div>
+        </article>
+      {/if}
+      {#if !(data)}
+        <Skeleton class="h-36 rounded-3xl" />
+        <Skeleton class="h-36 rounded-3xl" />
+      {/if}
+      {#if (traffic)}
+        <article class={card}>
+          <div class="flex items-center justify-between text-xs text-muted-foreground">
+            <span class="flex items-center gap-2 font-medium text-foreground"><ShieldCheck class="size-4 text-success" aria-hidden="true" />{t('overview.resourcesAccess')}</span>
+            <a href={href('/policies')} class={statLink} aria-label={t('overview.cards.refused')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
+          </div>
+          <div class="mt-4 flex items-end justify-between gap-4">
+            <div class="grid gap-1">
+              <p class="text-sm text-muted-foreground">{t('overview.cards.refused')}</p>
+              <p class="text-3xl leading-none font-semibold tracking-[-0.03em]">{fmt.format(traffic.totals.refused)}</p>
+            </div>
+            <MiniBars values={refusedBars} labels={refusedLabels} describe={t('overview.cards.refusedBars')} />
+          </div>
+          <div class="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t pt-3 text-xs text-muted-foreground">
+            <a class="hover:text-foreground" href={href('/policies')}>{t('shell.pages.policies')}</a>
+            <a class="hover:text-foreground" href={href('/connect')}>{t('shell.pages.connect')}</a>
+          </div>
+        </article>
+      {/if}
+      {#if !(traffic)}
+        <Skeleton class="h-36 rounded-3xl" />
+      {/if}
+  </section>
+
   <!-- One period for the whole page. -->
   <section class="flex flex-wrap items-center justify-between gap-3">
     <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
       <span>{since ? `${periodText} · ${t('overview.period.since', { date: since })}` : periodText}</span>
       <TechnicalToggle />
     </p>
-    <div class="flex items-center gap-1 rounded-full bg-card p-1" role="group" aria-label={t('overview.period.label')}>
+    <div class="flex items-center gap-1 rounded-lg bg-card p-1" role="group" aria-label={t('overview.period.label')}>
       <button type="button" class={segment(range === '1h')} aria-pressed={range === '1h'} onclick={() => choose('1h')}>{t('overview.period.hour')}</button>
       <button type="button" class={segment(range === '24h')} aria-pressed={range === '24h'} onclick={() => choose('24h')}>{t('overview.period.day')}</button>
     </div>
@@ -205,7 +273,7 @@
   {#if overview.error}<LoadError message={errorMessage(overview.error)} onretry={loadOverview} busy={overview.loading} />{/if}
 
   <!-- Lead with traffic on phones; supplementary stats follow in source order. -->
-  <section class="grid min-w-0 gap-4 @min-[60rem]:grid-cols-[minmax(0,1fr)_18.75rem]">
+  <section class="grid min-w-0 gap-4">
     <article class={['grid min-w-0 content-start gap-4', card]}>
       <div class="flex flex-wrap items-center gap-2">
         <div class="flex max-w-full flex-wrap items-center gap-2" role="group" aria-label={t('overview.filters.label')}>
@@ -278,60 +346,7 @@
       {/if}
     </article>
 
-    <div class="grid min-w-0 content-start gap-4 sm:grid-cols-3 @min-[60rem]:grid-cols-1">
-      {#if (data)}
-        <article class={card}>
-          <div class="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{t('overview.cards.database')}</span>
-            <a href={href('/tables')} class={statLink} aria-label={t('overview.cards.tables')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
-          </div>
-          <div class="mt-4 flex items-end justify-between gap-4">
-            <div class="grid gap-1">
-              <p class="text-sm text-muted-foreground">{t('overview.cards.tables')}</p>
-              <p class="text-3xl leading-none font-semibold tracking-[-0.03em]">{fmt.format(data.counts.tables)}</p>
-              <p class="text-xs text-muted-foreground">{t('overview.cards.tablesCaption', { count: protectedCount })}</p>
-            </div>
-            <Ring value={protectedShare} label={t('overview.cards.tablesRing', { percent: protectedShare })} />
-          </div>
-        </article>
-        <article class={card}>
-          <div class="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{t('overview.cards.auth')}</span>
-            <a href={href('/users')} class={statLink} aria-label={t('overview.cards.users')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
-          </div>
-          <div class="mt-4 flex items-end justify-between gap-4">
-            <div class="grid gap-1">
-              <p class="text-sm text-muted-foreground">{t('overview.cards.users')}</p>
-              <p class="text-3xl leading-none font-semibold tracking-[-0.03em]">{fmt.format(data.counts.users)}</p>
-              <p class="text-xs text-muted-foreground">{t('overview.cards.usersCaption', { count: data.counts.signed_in_users })}</p>
-            </div>
-            <Ring value={signedInShare} label={t('overview.cards.usersRing', { percent: signedInShare })} />
-          </div>
-        </article>
-      {/if}
-      {#if !(data)}
-        <Skeleton class="h-36 rounded-3xl" />
-        <Skeleton class="h-36 rounded-3xl" />
-      {/if}
-      {#if (traffic)}
-        <article class={card}>
-          <div class="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{periodText}</span>
-            <a href={href('/policies')} class={statLink} aria-label={t('overview.cards.refused')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
-          </div>
-          <div class="mt-4 flex items-end justify-between gap-4">
-            <div class="grid gap-1">
-              <p class="text-sm text-muted-foreground">{t('overview.cards.refused')}</p>
-              <p class="text-3xl leading-none font-semibold tracking-[-0.03em]">{fmt.format(traffic.totals.refused)}</p>
-            </div>
-            <MiniBars values={refusedBars} labels={refusedLabels} describe={t('overview.cards.refusedBars')} />
-          </div>
-        </article>
-      {/if}
-      {#if !(traffic)}
-        <Skeleton class="h-36 rounded-3xl" />
-      {/if}
-    </div>
+
 
   </section>
 
@@ -415,7 +430,7 @@
           </ul>
         {/if}
         {#if !(needs.length)}
-          <p class="flex items-center gap-2 text-sm font-medium"><CircleCheck class="size-5 shrink-0 text-brand" aria-hidden="true" />{t('overview.needs.allGood')}</p>
+          <p class="flex items-center gap-2 text-sm font-medium"><CircleCheck class="size-5 shrink-0 text-success" aria-hidden="true" />{t('overview.needs.allGood')}</p>
         {/if}
         <!-- The first steps, always in view: each is ticked by what the project
              shows, so the list doubles as a health check. -->

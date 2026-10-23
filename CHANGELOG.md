@@ -30,6 +30,9 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Changed
 
+- Refresh the panel with a graphite workspace, orange action accents, a compact
+  navigation rail/sidebar and contextual breadcrumbs. Keep light mode, keyboard
+  navigation and mobile controls; show real project resources above API traffic.
 - Update the transitive `ctutils` dependency to 0.4.4 for RUSTSEC-2026-0385.
 - Require HTTPS external backup endpoints and read back database/files plus
   AES256-encrypted recovery configuration before CLI/scheduled backup success or
