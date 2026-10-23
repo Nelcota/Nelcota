@@ -1,7 +1,7 @@
 # G08: Security, data exposure and concurrency review
 
-Status: planned. Creating this goal does not execute the audit or establish
-security approval. Record actual work in
+Status: first execution incomplete; no security approval. The original scope
+and acceptance criteria below remain unchanged for a separately authorized run. Record actual work in
 [the execution record](security-data-race-review-execution.md).
 
 ## Objective and scope
