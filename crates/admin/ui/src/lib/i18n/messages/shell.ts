@@ -61,6 +61,8 @@ const ptBR = {
   },
   projects: {
     switch: 'Trocar de projeto',
+    loading: 'Carregando projetos…',
+    unavailable: 'Lista de projetos indisponível. Abra Projetos para tentar de novo.',
     heading: 'Projetos',
     separateLogin: 'Projetos (cada um pede o próprio login)',
     all: 'Todos os projetos',
@@ -134,6 +136,8 @@ const en: Messages<typeof ptBR> = {
   },
   projects: {
     switch: 'Switch project',
+    loading: 'Loading projects…',
+    unavailable: 'Project list unavailable. Open Projects to try again.',
     heading: 'Projects',
     separateLogin: 'Projects (each asks for its own login)',
     all: 'All projects',

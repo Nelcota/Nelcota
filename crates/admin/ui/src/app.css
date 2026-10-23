@@ -31,10 +31,10 @@
 	--secondary: oklch(0.94 0.003 260);
 	--secondary-foreground: oklch(0.205 0 0);
 	--muted: oklch(0.945 0.003 260);
-	--muted-foreground: oklch(0.52 0.008 260);
+	--muted-foreground: oklch(0.49 0.008 260);
 	--accent: oklch(0.94 0.003 260);
 	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.54 0.23 27.325);
+	--destructive: #991b1b;
 	--border: oklch(0 0 0 / 8%);
 	--border-strong: oklch(0 0 0 / 12%);
 	--input: oklch(0 0 0 / 12%);
@@ -61,7 +61,7 @@
 	--sidebar-border: oklch(0 0 0 / 8%);
 	--sidebar-ring: oklch(0.708 0 0);
 	--warning: #9a4708;
-	--success: oklch(0.55 0.15 152);
+	--success: #166534;
 	/* Code syntax (SQL editor), after GitHub's light palette. */
 	--syntax-keyword: #cf222e;
 	--syntax-function: #8250df;
@@ -93,7 +93,7 @@
 	--muted-foreground: #aaaaaa;
 	--accent: #303030;
 	--accent-foreground: #e6e6e6;
-	--destructive: oklch(0.704 0.191 22.216);
+	--destructive: #ff9c9c;
 	--border: oklch(1 0 0 / 7%);
 	--border-strong: oklch(1 0 0 / 12%);
 	--input: oklch(1 0 0 / 12%);

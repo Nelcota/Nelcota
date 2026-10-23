@@ -24,9 +24,12 @@
     expanded?: boolean
   } = $props()
 
+  const hintId = $props.id()
+
   const host = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '')
 
   let data = $state<ProjectsData | null>(null)
+  let loading = $state(true)
 
   // Keep the project identity and environment readable at every width.
   const env = environment()
@@ -39,6 +42,8 @@
       data = await api.get<ProjectsData>('/projects')
     } catch {
       data = null
+    } finally {
+      loading = false
     }
   })
 
@@ -58,7 +63,10 @@
     {...props}
     variant="ghost"
     class="group/project h-auto min-h-12 w-full min-w-0 justify-start gap-2.5 rounded-lg px-1.5 py-1 text-left sm:px-2"
-    title={`${t('shell.projects.switch')} · ${status}`}
+    disabled={!data}
+    aria-busy={loading}
+    aria-describedby={!data ? hintId : undefined}
+    title={data ? `${t('shell.projects.switch')} · ${status}` : t(loading ? 'shell.projects.loading' : 'shell.projects.unavailable')}
     aria-label={`${t('shell.projects.switch')}: ${data?.current ?? 'Nelcota'} · ${status}`}
   >
     <span class={cn('relative size-9 shrink-0 place-items-center', expanded ? 'grid' : 'hidden sm:grid')}>
@@ -75,7 +83,7 @@
           role="img"
           aria-label={status}
         ></span>
-        <span class={cn('truncate text-xs font-normal', health.status === 'offline' ? 'text-destructive' : 'text-muted-foreground')}>{health.status === 'offline' ? status : where}</span>
+        <span id={hintId} class={cn('truncate text-xs font-normal', health.status === 'offline' ? 'text-destructive' : 'text-muted-foreground')}>{health.status === 'offline' ? status : data ? where : t(loading ? 'shell.projects.loading' : 'shell.projects.unavailable')}</span>
       </span>
     </span>
     <ChevronDown data-icon="inline-end" class="hidden text-muted-foreground transition-transform duration-150 group-aria-expanded/project:rotate-180 sm:block" aria-hidden="true" />

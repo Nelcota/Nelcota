@@ -41,6 +41,9 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Keep pending panel confirmations visible until their operation settles, expose
+  mobile menu state and focus, and distinguish failed overview/project loading
+  from ongoing work. Improve small-text and positive-state contrast in both themes.
 - Read operational alert secrets from one bounded, private, owner-checked file
   descriptor without following symlinks; reject shared-address webhook routes.
 - Refuse inconsistent backup completion receipts and show persistent monitor

@@ -15,18 +15,29 @@
 
   let { children }: { children: Snippet } = $props()
   let mobileOpen = $state(false)
+  let navigatedFromMenu = false
+
+  function closeMenu() {
+    navigatedFromMenu = true
+    mobileOpen = false
+  }
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
   const crumbs = $derived(crumbsFor(route.path))
 </script>
 
+<Sheet.Root bind:open={mobileOpen}>
 <div class="panel-workspace">
   <WorkspaceRail />
   <div class="panel-body">
     <header class="panel-topbar">
       <div class="flex min-w-0 flex-1 items-center gap-2 md:flex-none">
-        <button type="button" class="panel-icon-button panel-menu-trigger" onclick={() => (mobileOpen = true)} aria-label={t('shell.nav.menu')}>
-          <Menu class="size-[18px]" aria-hidden="true" />
-        </button>
+        <Sheet.Trigger>
+          {#snippet child({ props })}
+            <button {...props} type="button" class="panel-icon-button panel-menu-trigger" aria-label={t('shell.nav.menu')}>
+              <Menu class="size-[18px]" aria-hidden="true" />
+            </button>
+          {/snippet}
+        </Sheet.Trigger>
         <div class="min-w-0 flex-1 md:w-52"><ProjectSwitcher /></div>
       </div>
       <nav aria-label={t('shell.nav.breadcrumb')} class="hidden min-w-0 flex-1 md:block">
@@ -44,7 +55,7 @@
         <button type="button" onclick={() => (palette.open = true)} class="panel-search" aria-label={`${t('shell.topbar.searchLabel')} (${isMac ? '⌘' : 'Ctrl'} K)`} title={`${t('shell.topbar.searchLabel')} (${isMac ? '⌘' : 'Ctrl'} K)`}>
           <Search class="size-4 shrink-0" aria-hidden="true" />
           <span class="hidden lg:block">{t('shell.topbar.searchLabel')}…</span>
-          <kbd class="ml-auto hidden text-xs text-muted-foreground/75 lg:block">{isMac ? '⌘' : 'Ctrl'} K</kbd>
+          <kbd class="ml-auto hidden text-xs text-muted-foreground lg:block">{isMac ? '⌘' : 'Ctrl'} K</kbd>
         </button>
         <AccountMenu />
       </div>
@@ -59,10 +70,14 @@
   </div>
 </div>
 
-<Sheet.Root bind:open={mobileOpen}>
-  <Sheet.Content side="left" class="w-72 gap-0 p-0">
+  <Sheet.Content side="left" class="w-72 gap-0 p-0" onCloseAutoFocus={(event) => {
+    if (!navigatedFromMenu) return
+    navigatedFromMenu = false
+    event.preventDefault()
+    document.getElementById('conteudo')?.focus()
+  }}>
     <Sheet.Title class="sr-only">{t('shell.nav.main')}</Sheet.Title>
     <div class="border-b p-4 pr-12"><span class="text-sm font-semibold">Nelcota</span></div>
-    <div class="min-h-0 flex-1 overflow-y-auto p-3"><WorkspaceLinks close={() => (mobileOpen = false)} /></div>
+    <div class="min-h-0 flex-1 overflow-y-auto p-3"><WorkspaceLinks close={closeMenu} /></div>
   </Sheet.Content>
 </Sheet.Root>

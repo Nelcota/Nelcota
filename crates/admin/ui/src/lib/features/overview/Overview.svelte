@@ -191,6 +191,7 @@
   {/if}
 
   <section class="resource-canvas" aria-label={t('overview.resources')}>
+    {#if overview.error}<div class="min-w-0 md:col-span-2"><LoadError message={errorMessage(overview.error)} onretry={loadOverview} busy={overview.loading} /></div>{/if}
       {#if (data)}
         <article class={card}>
           <div class="flex items-center justify-between text-xs text-muted-foreground">
@@ -230,7 +231,7 @@
           </div>
         </article>
       {/if}
-      {#if !(data)}
+      {#if !data && overview.loading}
         <Skeleton class="h-36 rounded-3xl" />
         <Skeleton class="h-36 rounded-3xl" />
       {/if}
@@ -253,7 +254,7 @@
           </div>
         </article>
       {/if}
-      {#if !(traffic)}
+      {#if !traffic && metrics.loading}
         <Skeleton class="h-36 rounded-3xl" />
       {/if}
   </section>
@@ -270,7 +271,6 @@
     </div>
   </section>
 
-  {#if overview.error}<LoadError message={errorMessage(overview.error)} onretry={loadOverview} busy={overview.loading} />{/if}
 
   <!-- Lead with traffic on phones; supplementary stats follow in source order. -->
   <section class="grid min-w-0 gap-4">
@@ -352,9 +352,10 @@
 
   <!-- Three cards: where the data is, what was refused, what needs doing. -->
   <section class="grid gap-4 lg:grid-cols-3">
+    {#if data || overview.loading}
     <article class={['grid content-start gap-5', card]}>
       {@render cardHeader(t('overview.rows.title'), '/tables')}
-      {#if (!data)}
+      {#if !data && overview.loading}
         <Skeleton class="h-40 rounded-2xl" />
       {/if}
       {#if !(!data) && (byRows.length === 0)}
@@ -377,9 +378,12 @@
       {/if}
     </article>
 
+    {/if}
+
     <article class={['grid content-start gap-4', card]}>
       {@render cardHeader(t('overview.blocked.title'), '/policies')}
-      {#if (!denied.data)}
+      {#if denied.error}<LoadError message={errorMessage(denied.error)} onretry={loadDenied} busy={denied.loading} />{/if}
+      {#if !denied.data && denied.loading}
         <Skeleton class="h-40 rounded-2xl" />
       {/if}
       {#if !(!denied.data) && (recentBlocks.length === 0)}
@@ -408,9 +412,10 @@
       {/if}
     </article>
 
+    {#if data || overview.loading}
     <article class={['grid content-start gap-4', card]}>
       <h2 class="text-sm font-medium text-muted-foreground">{t('overview.needs.title')}</h2>
-      {#if (!data)}
+      {#if !data && overview.loading}
         <Skeleton class="h-40 rounded-2xl" />
       {/if}
       {#if !(!data)}
@@ -458,5 +463,6 @@
         </div>
       {/if}
     </article>
+    {/if}
   </section>
 </div>
