@@ -85,3 +85,35 @@ test('persistent monitor errors take priority over waiting for a first scan', as
   await expect(page.getByText('O estado persistido dos alertas está indisponível.', { exact: false })).toBeVisible()
   await expect(page.getByText('Aguardando uma verificação recente do worker')).not.toBeVisible()
 })
+
+async function pollingClock(page: Page) {
+  await page.clock.install({ time: new Date('2026-10-23T02:00:00Z') })
+  await page.clock.pauseAt(new Date('2026-10-23T02:00:01Z'))
+}
+async function pollingSeconds(page: Page, seconds: number) {
+  for (let second = 0; second < seconds; second++) {
+    await page.clock.runFor(1000)
+    await page.waitForTimeout(10)
+  }
+}
+test('visible polling keeps unsaved alert settings', async ({ page }) => {
+  await pollingClock(page)
+  const actions: Record<string, unknown>[] = []
+  await mount(page, actions)
+  await page.getByLabel('Avisar abaixo de espaço livre (%)', { exact: true }).fill('20')
+  const before = actions.filter(a => a.action === 'host_alerts').length
+  await pollingSeconds(page, 60)
+  expect(actions.filter(a => a.action === 'host_alerts').length).toBeGreaterThan(before)
+  await expect(page.getByLabel('Avisar abaixo de espaço livre (%)', { exact: true })).toHaveValue('20')
+  expect(actions.some(a => a.action === 'host_start')).toBe(false)
+})
+test('leaving host management releases its pollers', async ({ page }) => {
+  await pollingClock(page)
+  const actions: Record<string, unknown>[] = []
+  await mount(page, actions)
+  await page.getByRole('button', { name: 'Atualizações', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Alertas', exact: true })).toHaveCount(0)
+  const before = actions.length
+  await pollingSeconds(page, 60)
+  expect(actions).toHaveLength(before)
+})
