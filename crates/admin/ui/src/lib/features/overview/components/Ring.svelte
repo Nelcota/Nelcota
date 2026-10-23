@@ -7,13 +7,13 @@
 </script>
 
 <svg viewBox="0 0 56 56" class="size-12 shrink-0" role="img" aria-label={label}>
-  <circle cx="28" cy="28" r={R} fill="none" class="stroke-brand/15" stroke-width="3.5" />
+  <circle cx="28" cy="28" r={R} fill="none" class="stroke-success/15" stroke-width="3.5" />
   <circle
     cx="28"
     cy="28"
     r={R}
     fill="none"
-    class="stroke-brand"
+    class="stroke-success"
     stroke-width="3.5"
     stroke-linecap="round"
     stroke-dasharray={`${(clamped / 100) * C} ${C}`}

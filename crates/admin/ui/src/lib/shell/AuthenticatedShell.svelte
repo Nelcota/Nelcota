@@ -53,9 +53,8 @@
     class="sr-only z-50 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-raised focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
     >{t('shell.app.skipToContent')}</a
   >
-  <div class="flex h-dvh flex-col overflow-hidden bg-background">
-    <TopNav />
-    <div class="flex min-h-0 min-w-0 flex-1 flex-col">
+  <div class="panel-frame">
+    <TopNav>
       <!-- Route and skip-link focus identify the page without framing the viewport. -->
       <!-- Keep absolute accessibility labels inside this scroll container. -->
       <main bind:this={content} id="conteudo" tabindex="-1" aria-label={pageLabel} class="relative min-h-0 min-w-0 flex-1 overflow-auto outline-none">
@@ -136,7 +135,7 @@
           {#if !(path === '/updates') && !(path === '/') && !(path === '/tables' || tableName) && !(path === '/sql') && !(path === '/migrations') && !(path === '/users') && !(path === '/sign-in') && !(path === '/storage') && !(bucketName) && !(path === '/policies') && !(path === '/webhooks') && !(deliveryId) && !(path === '/projects') && !(path === '/connect') && !(path === '/guides' || guide)}<NotFound />{/if}
         {/key}
       </main>
-    </div>
+    </TopNav>
   </div>
   <CommandPalette />
 </Tooltip.Provider>

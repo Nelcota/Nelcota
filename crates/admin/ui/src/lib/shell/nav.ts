@@ -33,8 +33,9 @@ export const databaseTabs = [
   { path: '/migrations', title: 'shell.pills.migrations', icon: History },
 ] as const satisfies readonly { path: string; title: MessageKey; icon: Component }[]
 
-// The pills of the top navigation (D98), in reading order. Sign-in settings
-// live under Users; /connect, not /api, since /admin/api/* is the panel API.
+// Main navigation groups, shared by the workspace sidebar and mobile menu.
+// Sign-in settings live under Users; /connect, not /api, since /admin/api/* is
+// the panel API.
 export const navPills: NavItem[] = [
   { title: 'shell.pages.overview', pill: 'shell.pills.overview', path: '/', icon: House },
   { title: 'shell.pages.database', pill: 'shell.pills.database', path: '/tables', icon: Database, also: ['/sql', '/migrations'] },
@@ -45,7 +46,7 @@ export const navPills: NavItem[] = [
   { title: 'shell.pages.connect', pill: 'shell.pills.connect', path: '/connect', icon: Plug },
 ]
 
-// Every page the command palette can open: the pills, plus pages reached
+// Every page the command palette can open: the groups, plus pages reached
 // from inside them (sign-in from Users, projects from the project switcher).
 export const navItems: NavItem[] = [
   navPills[0],

@@ -33,7 +33,7 @@
   const hint = $derived(ownerView ? t('policies.ownerViewHint') : `${t(`policies.plain.stateHint.${state}`)} (${technicalLabel})`)
 </script>
 
-<!-- Colour only for problems: unprotected (red) and locked (amber). -->
+<!-- Access states keep semantic colours independent of action accents. -->
 <Badge
   variant="outline"
   title={hint}
@@ -41,7 +41,7 @@
     'gap-1 whitespace-nowrap',
     state === 'danger' && 'border-destructive/30 bg-destructive/10 text-destructive',
     state === 'warn' && 'border-warning/30 bg-warning/10 text-warning',
-    state === 'ok' && 'border-brand/25 bg-brand/5 text-brand',
+    state === 'ok' && 'border-success/25 bg-success/5 text-success',
     (state === 'none' || state === 'view') && 'border-border-strong bg-muted text-muted-foreground',
   ]}
 >

@@ -40,7 +40,7 @@
         <div class="rounded-2xl bg-well p-4"><dt class="text-sm text-muted-foreground">{label}</dt><dd class="mt-1 text-xl font-semibold">{value}</dd></div>
       {/each}
     </dl>
-    <ul class="grid gap-2">{#each data.checks as check (check.name)}<li class="flex items-center justify-between gap-4 rounded-2xl border border-border px-4 py-3"><span>{s(check.name) === `server.${check.name}` ? s('unavailable') : s(check.name)}</span><span class={`text-sm font-medium ${check.status === 'failed' ? 'text-destructive' : check.status === 'passed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-300'}`}>{s(check.status)}</span></li>{/each}</ul>
+    <ul class="grid gap-2">{#each data.checks as check (check.name)}<li class="flex items-center justify-between gap-4 rounded-2xl border border-border px-4 py-3"><span>{s(check.name) === `server.${check.name}` ? s('unavailable') : s(check.name)}</span><span class={`text-sm font-medium ${check.status === 'failed' ? 'text-destructive' : check.status === 'passed' ? 'text-success' : 'text-amber-700 dark:text-amber-300'}`}>{s(check.status)}</span></li>{/each}</ul>
   {/if}
   <p class="text-sm text-muted-foreground">{s('pendingUpdate')}</p>
 </section>

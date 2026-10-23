@@ -11,7 +11,7 @@
 				outline: "border-border bg-field hover:bg-accent hover:text-foreground aria-expanded:bg-accent aria-expanded:text-foreground",
 				secondary: "bg-secondary text-secondary-foreground hover:bg-accent aria-expanded:bg-accent aria-expanded:text-secondary-foreground",
 				ghost: "hover:bg-accent hover:text-foreground aria-expanded:bg-accent aria-expanded:text-foreground",
-				destructive: "border-destructive/25 bg-destructive/10 hover:bg-destructive/20 hover:border-destructive/40 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/20 text-destructive focus-visible:border-destructive/40 dark:hover:bg-destructive/30",
+				destructive: "border-destructive/25 bg-destructive/10 hover:bg-destructive/20 hover:border-destructive/40 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/15 text-destructive focus-visible:border-destructive/40 dark:hover:bg-destructive/20",
 				link: "text-brand underline-offset-4 hover:underline",
 			},
 			size: {

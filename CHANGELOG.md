@@ -8,6 +8,17 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ## [Unreleased]
 
+### Changed
+
+- Keep mailer and storage failure context without opaque provider text or
+  identifying storage paths; preserve typed IO metadata and cleanup behavior.
+- Bound request diagnostics and record route templates instead of identifying path
+  values. Keep normal request correlation and HTTP responses unchanged.
+- Classify database/pool failures using stable events and SQLSTATE without opaque
+  database messages in diagnostic logs.
+
+## [0.5.2] — 2026-10-23
+
 ### Added
 
 - Add operator-approved operational email and HTTPS webhook digests for service
@@ -30,13 +41,10 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Changed
 
+- Refresh the panel with a graphite workspace, orange action accents, a compact
+  navigation rail/sidebar and contextual breadcrumbs. Keep light mode, keyboard
+  navigation and mobile controls; show real project resources above API traffic.
 - Update the transitive `ctutils` dependency to 0.4.4 for RUSTSEC-2026-0385.
-- Keep mailer and storage failure context without opaque provider text or
-  identifying storage paths; preserve typed IO metadata and cleanup behavior.
-- Bound request diagnostics and record route templates instead of identifying path
-  values. Keep normal request correlation and HTTP responses unchanged.
-- Classify database/pool failures using stable events and SQLSTATE without opaque
-  database messages in diagnostic logs.
 - Require HTTPS external backup endpoints and read back database/files plus
   AES256-encrypted recovery configuration before CLI/scheduled backup success or
   local retention. Failed verification preserves the local backup pair.
@@ -44,6 +52,11 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Fixed
 
+- Keep pending panel confirmations visible until their operation settles, expose
+  mobile menu state and focus, and distinguish failed overview/project loading
+  from ongoing work. Improve small-text and positive-state contrast in both themes.
+- Reflow resource cards using available workspace width, and wrap error feedback
+  before retry controls compress its message into a narrow column.
 - Read operational alert secrets from one bounded, private, owner-checked file
   descriptor without following symlinks; reject shared-address webhook routes.
 - Refuse inconsistent backup completion receipts and show persistent monitor

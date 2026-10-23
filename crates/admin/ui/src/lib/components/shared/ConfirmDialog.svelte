@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
   import { buttonVariants } from '$lib/components/ui/button'
+  import LoaderCircle from '@lucide/svelte/icons/loader-circle'
   import { t } from '$lib/i18n/index.svelte'
 
   let {
@@ -35,8 +36,11 @@
   }
 </script>
 
-<AlertDialog.Root bind:open>
-  <AlertDialog.Content>
+<AlertDialog.Root bind:open={() => open, (next) => {
+  if (busy) return
+  open = next
+}}>
+  <AlertDialog.Content aria-busy={busy}>
     <AlertDialog.Header>
       <AlertDialog.Title>{title}</AlertDialog.Title>
       {#if description}
@@ -48,8 +52,11 @@
       <AlertDialog.Action
         class={destructive ? buttonVariants({ variant: 'destructive' }) : ''}
         disabled={busy}
-        onclick={confirm}>{confirmLabel ?? t('common.confirm')}</AlertDialog.Action
+        onclick={confirm}
       >
+        {#if busy}<LoaderCircle class="size-4 animate-spin" aria-hidden="true" /><span>{t('common.working')}</span>{/if}
+        {#if !busy}{confirmLabel ?? t('common.confirm')}{/if}
+      </AlertDialog.Action>
     </AlertDialog.Footer>
   </AlertDialog.Content>
 </AlertDialog.Root>

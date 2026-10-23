@@ -13,7 +13,7 @@
   <span class="grid size-10 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive">
     <CircleAlert class="size-5" aria-hidden="true" />
   </span>
-  <div class="grid min-w-0 flex-1 gap-0.5">
+  <div class="grid min-w-0 flex-1 basis-48 gap-0.5">
     <p class="text-sm font-semibold">{t('common.loadFailed')}</p>
     <p class="text-sm break-words text-muted-foreground">{message}</p>
   </div>

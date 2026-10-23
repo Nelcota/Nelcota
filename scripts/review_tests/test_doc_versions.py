@@ -15,6 +15,8 @@ CHECKER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CHECKER)
 FILES = (
     "README.md", "CHANGELOG.md", "Cargo.toml", "Cargo.lock", "docs/quickstart.md", "docs/onboarding/notes.md",
+    "docs/deploy.md", "docs/README.md", "docs/auth-integration.md", "crates/core/README.md",
+    "examples/auth-consumer/Cargo.toml",
     "docs/releases/README.md", "docs/goals/README.md",
     "docs/goals/auth-security-review.md", "docs/goals/auth-security-review-execution.md",
     "sdk/typescript/package.json", "sdk/typescript/package-lock.json",
@@ -43,6 +45,16 @@ class VersionDocumentationTests(unittest.TestCase):
         text = path.read_text()
         path.write_text(re.sub(r"(This guide targets server )\d+\.\d+\.\d+", r"\g<1>0.0.0", text, count=1))
         self.assertTrue(any("docs/quickstart.md" in error for error in CHECKER.check(self.root)))
+
+    def test_stale_deploy_install_target_is_rejected(self):
+        path = self.root / "docs/deploy.md"
+        path.write_text(re.sub(r"(NELCOTA_VERSION=)\d+\.\d+\.\d+", r"\g<1>0.0.0", path.read_text(), count=1))
+        self.assertTrue(any("docs/deploy.md" in error for error in CHECKER.check(self.root)))
+
+    def test_auth_consumer_version_is_checked(self):
+        path = self.root / "examples/auth-consumer/Cargo.toml"
+        path.write_text(re.sub(r'(nelcota-auth = \{[^}]*version = ")[^"]+', r"\g<1>0.0.0", path.read_text()))
+        self.assertTrue(any("auth-consumer" in error for error in CHECKER.check(self.root)))
 
     def test_source_target_must_match_workspace(self):
         path = self.root / "Cargo.toml"

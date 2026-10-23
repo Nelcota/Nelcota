@@ -36,15 +36,15 @@
       <!-- The account chip (D98): photo or initials, who is signed in, settings. -->
       <button
         {...props}
-        class="flex h-11 min-w-11 shrink-0 cursor-pointer items-center gap-3 rounded-full bg-nav p-1.5 text-left whitespace-nowrap transition-colors hover:bg-accent aria-expanded:bg-accent sm:h-14 sm:min-w-14 @min-[80rem]:w-52"
+        class="flex h-11 min-w-11 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-1 text-left whitespace-nowrap transition-colors hover:bg-accent aria-expanded:bg-accent"
         aria-label={t('shell.account.label')}
       >
-        <Avatar class="size-8 text-sm sm:size-11" />
-        <span class="hidden min-w-0 flex-1 flex-col leading-tight @min-[80rem]:flex">
+        <Avatar class="size-8 text-sm" />
+        <span class="hidden min-w-0 max-w-32 flex-1 flex-col leading-tight xl:flex">
           <span class="truncate text-sm font-semibold" title={session.email}>{displayName}</span>
           <span class="truncate text-xs text-muted-foreground">{t('shell.account.role')}</span>
         </span>
-        <ChevronDown class="mr-2 hidden size-4 shrink-0 text-muted-foreground @min-[80rem]:block" aria-hidden="true" />
+        <ChevronDown class="hidden size-3.5 shrink-0 text-muted-foreground xl:block" aria-hidden="true" />
       </button>
     {/snippet}
   </DropdownMenu.Trigger>
