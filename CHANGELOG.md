@@ -30,6 +30,8 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Changed
 
+- Pause controller status polling while the browser tab is hidden; refresh once
+  on return without discarding alert drafts or stopping background operations.
 - Require HTTPS external backup endpoints and read back database/files plus
   AES256-encrypted recovery configuration before CLI/scheduled backup success or
   local retention. Failed verification preserves the local backup pair.

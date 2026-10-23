@@ -36,12 +36,12 @@
   }
   function schedule() {
     clearTimeout(timer)
-    if (!alive || signedOut) return
+    if (!alive || signedOut || document.hidden) return
     const delay = offline ? Math.min(30000, 2000 * 2 ** Math.min(attempts, 4)) : active || status?.checking ? 2000 : 10000
     timer = setTimeout(() => void refresh(), delay)
   }
   async function refresh() {
-    if (!alive || polling === generation) return
+    if (!alive || document.hidden || polling === generation) return
     clearTimeout(timer); polling = generation
     const revision = generation
     try {
@@ -91,6 +91,7 @@
   function blocker(code: string) { const value = translate(i18n.locale, `updates.${code}`); return value === `updates.${code}` ? t('updates.blocked') : value }
   const progress: Record<string, number> = { preparing: 0, pausing: 1, capturing: 2, backup_verified: 3, activating: 4, validating: 5, committing: 6, succeeded: 7 }
 </script>
+<svelte:document onvisibilitychange={() => { clearTimeout(timer); if (!document.hidden && !signedOut) void refresh() }} />
 <svelte:window ononline={() => void refresh()} onfocus={() => { if (!signedOut) void refresh() }} />
 <main class="min-h-dvh bg-background px-4 py-6 sm:px-8">
   <div class="mx-auto grid w-full max-w-4xl gap-6">

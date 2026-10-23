@@ -117,3 +117,35 @@ test('leaving host management releases its pollers', async ({ page }) => {
   await pollingSeconds(page, 60)
   expect(actions).toHaveLength(before)
 })
+
+async function pollingVisibility(page: Page, hidden: boolean) {
+  await page.evaluate(value => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => value })
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => value ? 'hidden' : 'visible' })
+    document.dispatchEvent(new Event('visibilitychange'))
+  }, hidden)
+}
+test('hidden controller pauses polling and resumes once without discarding drafts', async ({ page }) => {
+  await pollingClock(page)
+  const requests: string[] = []
+  page.on('request', request => {
+    if (!request.url().endsWith('/admin/api/updates')) return
+    requests.push(request.method() === 'GET' ? 'updates' : String(request.postDataJSON().action))
+  })
+  await mount(page, [])
+  await page.getByLabel('Avisar abaixo de espaço livre (%)', { exact: true }).fill('20')
+  await page.waitForTimeout(100)
+  await pollingVisibility(page, true)
+  const before = requests.length
+  await pollingSeconds(page, 120)
+  expect(requests).toHaveLength(before)
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false })
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' })
+    document.dispatchEvent(new Event('visibilitychange'))
+    document.dispatchEvent(new Event('visibilitychange'))
+  })
+  await expect.poll(() => requests.slice(before).length).toBe(3)
+  expect(requests.slice(before).sort()).toEqual(['host_alerts', 'host_status', 'updates'])
+  await expect(page.getByLabel('Avisar abaixo de espaço livre (%)', { exact: true })).toHaveValue('20')
+})
