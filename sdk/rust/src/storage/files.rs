@@ -50,10 +50,10 @@ impl BucketFiles {
             .trim_end_matches([' ', '\t']);
         let valid = media.split_once('/').is_some_and(|(kind, subtype)| {
             [kind, subtype].iter().all(|part| {
-                !part.is_empty()
+                (1..=127).contains(&part.len())
                     && part
                         .bytes()
-                        .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b))
+                        .all(|b| b.is_ascii_alphanumeric() || b"!#$&-^_.+".contains(&b))
             })
         });
         if !valid {

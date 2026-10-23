@@ -7,7 +7,7 @@ import { item, listing } from './validation.js';
 
 function contentTypeOf(body: FileBody, explicit: string | undefined): string {
   if (explicit !== undefined) {
-    if (!/^[\w!#$&^.+-]+\/[\w!#$&^.+-]+(\s*;.*)?$/.test(explicit) || /[\r\n]/.test(explicit)) {
+    if (!/^[\w!#$&^.+-]{1,127}\/[\w!#$&^.+-]{1,127}([ \t]*;.*)?$/.test(explicit) || /[\r\n]/.test(explicit)) {
       throw new NelcotaUsageError(`Invalid content type ${JSON.stringify(explicit)}`);
     }
     return explicit;

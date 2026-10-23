@@ -1,0 +1,76 @@
+{
+  "mime": [
+    {
+      "value": "text/plain",
+      "valid": true
+    },
+    {
+      "value": "text/plain ; charset=utf-8",
+      "valid": true
+    },
+    {
+      "value": "text/plain\t; charset=utf-8",
+      "valid": true
+    },
+    {
+      "value": "application/vnd.example+json",
+      "valid": true
+    },
+    {
+      "value": "APPLICATION/X_CUSTOM",
+      "valid": true
+    },
+    {
+      "value": "application/x%custom",
+      "valid": false
+    },
+    {
+      "value": "application/x'custom",
+      "valid": false
+    },
+    {
+      "value": "application/x|custom",
+      "valid": false
+    },
+    {
+      "value": "text/",
+      "valid": false
+    },
+    {
+      "value": "/plain",
+      "valid": false
+    },
+    {
+      "value": "text /plain",
+      "valid": false
+    },
+    {
+      "value": "text/plain\r\nx-other: value",
+      "valid": false
+    },
+    {
+      "value": "text/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "valid": false
+    }
+  ],
+  "rows": [
+    [],
+    [
+      {
+        "id": "9007199254740993",
+        "nullable": null
+      }
+    ]
+  ],
+  "http_error": {
+    "status": 429,
+    "body": {
+      "code": "rate_limited",
+      "message": "Try later"
+    },
+    "retry_after": "17"
+  },
+  "numeric_rows": "[{\"id\":9007199254740993,\"decimal\":1234567890.123456789}]",
+  "exact_id": "9007199254740993",
+  "exact_decimal": "1234567890.123456789"
+}
