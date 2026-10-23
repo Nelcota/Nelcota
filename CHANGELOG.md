@@ -31,7 +31,6 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 ### Changed
 
 - Update the transitive `ctutils` dependency to 0.4.4 for RUSTSEC-2026-0385.
-
 - Require HTTPS external backup endpoints and read back database/files plus
   AES256-encrypted recovery configuration before CLI/scheduled backup success or
   local retention. Failed verification preserves the local backup pair.
