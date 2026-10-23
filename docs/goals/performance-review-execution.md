@@ -1,6 +1,6 @@
 # G09: Performance review execution record
 
-Status: planned; no G09 audit, benchmark or optimization has run.
+Status: running; preparation and baseline selection started. No optimization or performance approval yet.
 Follow [the goal](performance-review.md). This template is not performance evidence.
 
 ## Artifact and environment
@@ -49,3 +49,12 @@ Pending execution: final-artifact validation, 30-minute stability verdict,
 environment blockers, raw-evidence manifest, Portuguese report, remaining
 regressions/trade-offs, prioritized follow-up and owned-fixture cleanup result.
 Performance review completion and release/VPS readiness are separate decisions.
+
+## Initial checkpoint
+
+- Start: 2026-10-23 01:33:45 UTC; hard deadline 09:33:45 UTC.
+- Verified main source: 4d4034835ebc55538dabf3c2df109faea4cc8e13.
+- Published server: 0.5.1. PR #125 is merged; it is included in this main source.
+- Isolated branch local/g09-performance-review; no VPS access or public writes.
+- Resource/command logs and raw evidence: ignored target/g09/20261023T013345Z.
+- P01-P12 remain not run pending actual measurements; historical CI is not reused.
