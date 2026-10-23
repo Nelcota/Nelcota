@@ -338,3 +338,12 @@ describe('headers and tokens', () => {
     expect(String(error)).not.toContain('secret-token');
   });
 });
+
+
+it('retains rate-limit delay when serializing an error without its cause', async () => {
+  const mock = mockFetch(json({ code: 'rate_limited', message: 'Try later' }, 429, { 'retry-after': '17' }));
+  const result = await client(mock, { retries: 0 }).from('notes').select();
+  expect(JSON.parse(JSON.stringify(result.error))).toEqual({
+    name: 'NelcotaError', status: 429, code: 'rate_limited', message: 'Try later', retryAfter: 17,
+  });
+});

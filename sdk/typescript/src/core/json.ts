@@ -23,9 +23,12 @@ function decimal(source: string): string {
  */
 export function parseJson(text: string): unknown {
   const parsed: unknown = JSON.parse(text);
-  let changed = false;
-  const preserved = text.replace(/"(?:[^"\\]|\\.)*"|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/g, token => {
-    if (token.startsWith('"')) return token;
+  let changed = false, quoted = false;
+  // Match escapes separately: a repeated full-string regex can exhaust the
+  // engine stack on valid large strings. Only unquoted numbers are rewritten.
+  const preserved = text.replace(/\\.|"|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/g, token => {
+    if (token === '"') { quoted = !quoted; return token; }
+    if (quoted) return token;
     const value = Number(token);
     if (Number.isFinite(value) && (!Number.isInteger(value) || Number.isSafeInteger(value)) && decimal(token) === decimal(String(value))) return token;
     changed = true;

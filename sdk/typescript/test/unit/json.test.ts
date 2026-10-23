@@ -26,3 +26,10 @@ describe('lossless numeric responses', () => {
     expect(() => parseJson(input)).toThrow(SyntaxError);
   });
 });
+
+
+it.each(['x', '\\"12345678901234567890'])('decodes large strings without regex stack growth (%s)', fragment => {
+  const body = fragment.repeat(Math.ceil(10 * 1024 * 1024 / fragment.length));
+  const wire = `{"body":${JSON.stringify(body)},"id":9007199254740993}`;
+  expect(parseJson(wire)).toEqual({ body, id: '9007199254740993' });
+});
