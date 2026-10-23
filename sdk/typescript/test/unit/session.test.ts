@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createClient, NelcotaUsageError } from '../../src/index.js';
 import { isSession, isUser, parseSession } from '../../src/auth/session.js';
 import { json, mockFetch, session } from './helpers.js';
@@ -61,4 +61,56 @@ describe('session boundaries', () => {
     const client = createClient('https://api.example.com', { auth: { refreshMargin, autoRefresh: false } });
     client.dispose();
   });
+});
+
+
+describe('auth event delivery', () => {
+  it('observes async listener failures without blocking reentrant listeners', async () => {
+    const failure = new Error('listener failed');
+    const onBackgroundError = vi.fn();
+    const client = createClient('https://api.example.com', { auth: { autoRefresh: false, onBackgroundError } });
+    let observed: string | undefined;
+    client.auth.onChange(async () => { throw failure; });
+    client.auth.onChange(async () => { observed = (await client.auth.getSession()).data?.user.id; });
+    try {
+      await client.auth.setSession(session());
+      await vi.waitFor(() => {
+        expect(onBackgroundError).toHaveBeenCalledWith(failure);
+        expect(observed).toBe(session().user.id);
+      });
+    } finally { client.dispose(); }
+  });
+});
+
+
+it('isolates synchronous listener and error-handler failures without stopping refresh', async () => {
+  vi.useFakeTimers();
+  const failure = new Error('listener failed');
+  const onBackgroundError = vi.fn(async () => { throw new Error('handler failed'); });
+  const mock = mockFetch(() => json(session(900, 'replacement')));
+  const client = createClient('https://api.example.com', { fetch: mock.fetch, auth: { autoRefresh: true, onBackgroundError } });
+  const events: string[] = [];
+  client.auth.onChange(() => { throw failure; });
+  client.auth.onChange(event => { events.push(event); });
+  try {
+    await client.auth.setSession(session());
+    await vi.advanceTimersByTimeAsync(850_000);
+    expect(onBackgroundError).toHaveBeenCalledWith(failure);
+    expect(events).toEqual(['signed_in', 'refreshed']);
+    expect(mock.calls).toHaveLength(1);
+    expect((await client.auth.getSession()).data?.refresh_token).toBe('replacement');
+  } finally { client.dispose(); vi.useRealTimers(); }
+});
+
+
+it('preserves synchronous listener unsubscription order', async () => {
+  const client = createClient('https://api.example.com', { auth: { autoRefresh: false } });
+  const later = vi.fn();
+  let unsubscribe = (): void => {};
+  client.auth.onChange(() => { unsubscribe(); });
+  unsubscribe = client.auth.onChange(later);
+  try {
+    await client.auth.setSession(session());
+    expect(later).not.toHaveBeenCalled();
+  } finally { client.dispose(); }
 });

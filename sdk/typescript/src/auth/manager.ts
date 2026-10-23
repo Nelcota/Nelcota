@@ -70,10 +70,11 @@ export class SessionManager {
   }
   #emit(event: AuthEvent, session: Session | null): void {
     for (const listener of this.#listeners) {
-      try { listener(event, session); }
-      catch (error) { queueMicrotask(() => { throw error; }); }
+      // Invoke now, preserving unsubscribe order; adopt both throws and promises.
+      this.#background((async () => listener(event, session))(), false);
     }
   }
+
   #locked<T>(task: () => Promise<T>): Promise<T> {
     return withLock(this.#lockName, task);
   }
@@ -285,14 +286,13 @@ export class SessionManager {
     }, Math.min(due, 2 ** 31 - 1));
     (this.#timer as { unref?: () => void }).unref?.();
   }
-  #background(operation: Promise<unknown>): void {
-    void operation.catch(error => {
+  #background(operation: Promise<unknown>, pause = true): void {
+    void operation.catch(async error => {
       if (this.#disposed) return;
-      this.#schedule(null);
-      // A caller can observe and repair its adapter. Neither the operation nor
-      // a throwing error handler may create an unhandled background rejection.
-      try { void Promise.resolve(this.#onBackgroundError?.(error)).catch(() => {}); }
-      catch { /* Error handlers are isolated. */ }
+      if (pause) this.#schedule(null);
+      // Listener failures do not pause refresh. Error handlers are isolated.
+      try { await this.#onBackgroundError?.(error); }
+      catch { /* Includes asynchronous handler failures. */ }
     });
   }
   dispose(): void {

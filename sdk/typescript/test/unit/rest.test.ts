@@ -272,3 +272,23 @@ describe('rpc', () => {
     expect(calls[1]!.body).toBe('{}');
   });
 });
+
+
+describe('row representations', () => {
+  it.each([null, 1, 'row', []])('refuses a non-object row %j', async row => {
+    const { nelcota, calls } = client(() => json([row]));
+    try {
+      expect((await nelcota.from('notes').select()).error?.code).toBe('invalid_response');
+      expect((await nelcota.from('notes').select().single()).error?.code).toBe('invalid_response');
+      await expect(nelcota.from('notes').select().pages(10).next()).rejects.toMatchObject({ code: 'invalid_response' });
+      expect(calls).toHaveLength(3);
+    } finally { nelcota.dispose(); }
+  });
+  it('retains empty results and nullable fields', async () => {
+    const { nelcota } = client(json([]), json([{ field: null }]));
+    try {
+      expect((await nelcota.from('notes').select().maybeSingle()).data).toBeNull();
+      expect((await nelcota.from('notes').select().single()).data).toEqual({ field: null });
+    } finally { nelcota.dispose(); }
+  });
+});

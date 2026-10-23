@@ -143,7 +143,9 @@ type EmbedValue<S extends GenericSchema, From extends string, Target extends str
     ? [Outgoing<S, From, Target, Hint>] extends [never]
       ? [Incoming<S, From, Target, Hint>] extends [never]
         ? SelectError<`no relationship between '${From}' and '${Target}'`>
-        : ParseSelect<S, Target, Inner>[]
+        : true extends IsUnion<Incoming<S, From, Target, Hint>>
+          ? SelectError<`more than one relationship between '${From}' and '${Target}': add !column`>
+          : ParseSelect<S, Target, Inner>[]
       : [Incoming<S, From, Target, Hint>] extends [never]
         ? true extends IsUnion<Outgoing<S, From, Target, Hint>>
           ? SelectError<`more than one relationship between '${From}' and '${Target}': add !column`>
