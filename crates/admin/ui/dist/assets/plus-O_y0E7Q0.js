@@ -1,1 +1,0 @@
-import{b as e,y as t}from"./index.svelte-C5nOvyM8.js";import{E as n}from"./index-Di5HTAxs.js";var r=new Set([`$$slots`,`$$events`,`$$legacy`]);function i(i,a){let o=t(a,r),s={name:`plus`,size:24,node:[[`path`,{d:`M5 12h14`}],[`path`,{d:`M12 5v14`}]]};n(i,e(()=>o,{get icon(){return s}}))}export{i as t};
