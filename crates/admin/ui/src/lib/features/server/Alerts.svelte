@@ -30,7 +30,7 @@
     webhookUrl = ''; heartbeatUrl = ''; stale = false; mark(false)
   }
   async function load(replace = false) {
-    if (!alive || document.hidden) return
+    if (!alive) return
     clearTimeout(poll); abort?.abort(); abort = new AbortController(); const current = abort, id = ++generation
     const timeout = setTimeout(() => current.abort(), 20000)
     loading = true
@@ -42,7 +42,7 @@
       if (dirty && JSON.stringify(next.settings) !== saved) stale = true
       view = next; failure = ''
     } catch (e) { if (alive && id === generation) { if (e instanceof ControllerError && e.status === 401) { expired(); return }; failure = a('loadFailed') } }
-    finally { clearTimeout(timeout); if (alive && id === generation) { loading = false; if (!document.hidden) poll = setTimeout(() => void load(), 30000) } }
+    finally { clearTimeout(timeout); if (alive && id === generation) { loading = false; poll = setTimeout(() => { if (!document.hidden) void load(); if (document.hidden) poll = setTimeout(() => void load(), 30000) }, 30000) } }
   }
   $effect(() => { const changed = revision; untrack(() => { void load() }); void changed })
   onDestroy(() => { alive = false; generation++; clearTimeout(poll); abort?.abort(); webhookUrl = ''; heartbeatUrl = '' })
@@ -55,7 +55,6 @@
     finally { webhookUrl = ''; heartbeatUrl = '' }
   }
 </script>
-<svelte:document onvisibilitychange={() => { clearTimeout(poll); if (!document.hidden && !loading) void load() }} />
 <section class="grid gap-5 rounded-3xl border border-border bg-card p-6" aria-labelledby="alerts-title" aria-busy={loading && !view}>
   <div class="flex flex-wrap items-center justify-between gap-3"><h2 id="alerts-title" class="text-xl font-semibold">{a('title')}</h2><Button variant="outline" disabled={disabled || loading} onclick={() => navigate(() => { mark(false); void load(true) })}>{a('reload')}</Button></div>
   <p class="text-sm text-muted-foreground">{a('description')}</p>

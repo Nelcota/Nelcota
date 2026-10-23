@@ -131,7 +131,7 @@
   }
   function schedule() {
     clearTimeout(timer)
-    if (!alive || document.hidden) return
+    if (!alive) return
     const delay = offline
       ? Math.min(30000, 2000 * 2 ** Math.min(attempts, 4))
       : active || pending
@@ -140,7 +140,7 @@
     timer = setTimeout(() => void refresh(), delay)
   }
   async function refresh() {
-    if (!alive || document.hidden || polling || busy) {
+    if (!alive || polling || busy) {
       schedule()
       return
     }
@@ -392,7 +392,6 @@
   }
 </script>
 
-<svelte:document onvisibilitychange={() => { clearTimeout(timer); if (!document.hidden) void refresh() }} />
 <svelte:window ononline={() => void refresh()} onfocus={() => void refresh()} />
 <section class="grid gap-6" aria-labelledby="host-title">
   <header class="flex flex-wrap items-start justify-between gap-4">
