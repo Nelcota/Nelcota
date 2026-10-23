@@ -182,7 +182,11 @@ impl ApiError {
         let db = match err.as_db_error() {
             Some(db) => db,
             _ => {
-                tracing::error!(error = %err, "failed to communicate with Postgres");
+                tracing::error!(
+                    event = "database.transport_failed",
+                    closed = err.is_closed(),
+                    "failed to communicate with Postgres"
+                );
                 return Self::unavailable();
             }
         };
@@ -197,11 +201,19 @@ impl ApiError {
         let (status, api_code) = match classify(db.code(), role) {
             Class::Client(status) => (status, "db_error"),
             Class::Transient => {
-                tracing::warn!(code, error = %db, "transient Postgres error");
+                tracing::warn!(
+                    event = "database.transient_failure",
+                    code,
+                    "transient Postgres error"
+                );
                 (StatusCode::SERVICE_UNAVAILABLE, "unavailable")
             }
             Class::Internal => {
-                tracing::error!(code, error = %db, "unexpected Postgres error");
+                tracing::error!(
+                    event = "database.internal_failure",
+                    code,
+                    "unexpected Postgres error"
+                );
                 return Self::internal();
             }
         };
@@ -219,7 +231,22 @@ impl ApiError {
     }
 
     pub fn from_pool(err: deadpool_postgres::PoolError) -> Self {
-        tracing::error!(error = %err, "could not get a connection from the pool");
+        use deadpool_postgres::{PoolError, TimeoutType};
+        let (kind, sqlstate) = match &err {
+            PoolError::Timeout(TimeoutType::Wait) => ("wait_timeout", None),
+            PoolError::Timeout(TimeoutType::Create) => ("create_timeout", None),
+            PoolError::Timeout(TimeoutType::Recycle) => ("recycle_timeout", None),
+            PoolError::Backend(error) => ("backend", error.code().map(|code| code.code())),
+            PoolError::Closed => ("closed", None),
+            PoolError::NoRuntimeSpecified => ("runtime", None),
+            PoolError::PostCreateHook(_) => ("post_create_hook", None),
+        };
+        tracing::error!(
+            event = "database.pool_acquire_failed",
+            error_kind = kind,
+            sqlstate,
+            "could not get a connection from the pool"
+        );
         Self::unavailable()
     }
 }

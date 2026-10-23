@@ -111,7 +111,11 @@ async fn query_as<T: DeserializeOwned>(
     let result = row
         .map(|row| {
             serde_json::from_str(row.get::<_, &str>(0)).map_err(|error| {
-                tracing::error!(%error, "invalid bucket record");
+                tracing::error!(
+                    event = "storage.invalid_bucket",
+                    error_type = std::any::type_name_of_val(&error),
+                    "invalid bucket record"
+                );
                 BucketError::Request(ApiError::internal())
             })
         })

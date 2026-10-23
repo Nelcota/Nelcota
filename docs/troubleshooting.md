@@ -112,3 +112,33 @@ hops deliberately; otherwise the quota may identify the proxy instead of a user.
 A 503 `unavailable` means the database could not be reached or is
 overloaded; it may also carry `Retry-After`. The SDKs retry reads on 429 and
 503 by themselves; writes are never retried automatically.
+
+## Operational logs and safe support bundles
+
+Use `NELCOTA_LOG_FORMAT=json` for structured server output and `RUST_LOG=info,tower_http=info` for normal operation. The existing text format remains available. Keep UTC timestamps and record the server version, project and incident time window before investigating.
+
+Read only the affected service first. These commands select the project in the existing host layout; replace the example project name before running them. They do not change configuration or restart services.
+
+```sh
+nelcota -C /opt/nelcota -p base logs app
+nelcota -C /opt/nelcota -p base logs postgres
+```
+
+The server records method, route template, status and `latency_ms` to the response head. This is not the time to finish streaming a download. The `path` field contains a route such as `/rest/v1/{table}`, not a table name, object key or query string; unmatched routes use `[unmatched]` and extension methods use `OTHER`.
+
+Correlate the response `x-request-id` with the request span. Ordinary non-secret proxy IDs remain usable; log values are limited to 128 ASCII letters, digits, dots, underscores, colons and hyphens. Other IDs appear as `[redacted]` in logs; the response header is unchanged. Never put credentials or personal data in a request ID.
+
+Database failures use stable `event` categories and SQLSTATE `code`; pool failures include `error_kind` and a `sqlstate` when available. Opaque database/provider text is not required to classify these database events. Authorized client error responses retain their existing fields; never paste those bodies into public reports without review.
+
+For `database.pool_acquire_failed`, distinguish `wait_timeout` (pool pressure), `create_timeout` or `recycle_timeout` (connection lifecycle), `backend` (inspect SQLSTATE), and `closed` (shutdown). For `database.transient_failure`, inspect contention, connection limits and recovery state before a controlled retry. A log is diagnostic evidence, not authorization to retry a mutation or clear a restore fence.
+
+Logs, panel incident state and external alerts have different purposes. Host jobs already have operation/job IDs and explicit approval. Keep that durable state as the source of truth; a browser tab or a successful log write does not establish that a backup, restore or update completed.
+
+Restrict log access to operators. Server output goes to its existing stdout/stderr sink; systemd and Docker control storage and rotation. Inspect `journalctl --disk-usage` and the container logging driver before choosing a retention policy. Configure and test size, age and disk reserves in the deployment owner; this guide does not assert automatic rotation or change the host daemon. Do not give the panel a privileged raw-log endpoint.
+
+Collect only a short incident window into a private file with `umask 077`. Include version, UTC interval, sanitized request/job IDs, event categories, status and counts. Review every line before sharing: remove credentials, cookies, signed URLs, email/IP/account identifiers, SQL values and file contents. A grep filter or hashing identifiers alone does not guarantee anonymization. Do not include environment dumps, configuration files, raw database dumps or complete browser storage.
+
+Enable detailed logging only briefly on an owned staging reproduction. Existing auth/storage/provider diagnostics and external sinks still require a privacy review; structured JSON alone does not make all messages safe. This bounded logging review does not establish a complete audit ledger, a compliance guarantee or measured zero overhead.
+
+
+Mail delivery failures retain a stable event, message kind and `error_type`; storage failures retain a stable event, error type and typed `io_kind` where available. Missing-byte diagnostics retain the opaque object version, not its bucket name. These events omit opaque provider messages and storage keys/paths. Type names are implementation context, not a public parsing contract; investigate provider-specific causes through a private reproduction.

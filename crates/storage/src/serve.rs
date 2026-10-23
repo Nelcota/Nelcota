@@ -135,7 +135,7 @@ where
             Err(error) if error.code() == "object_not_found" => {
                 let (current, current_access) = resolve().await?;
                 if current.version == object.version {
-                    tracing::error!(bucket, version = %object.version, "a row points to missing bytes");
+                    tracing::error!(event = "storage.bytes_missing", version = %object.version, "a row points to missing bytes");
                     return Err(error);
                 }
                 object = current;
@@ -175,7 +175,11 @@ async fn respond(
             .presigned_get(&key, ttl, &content_type, &disposition)
             .await
             .map_err(|err| {
-                tracing::error!(error = %err, "could not presign a download");
+                tracing::error!(
+                    event = "storage.presign_failed",
+                    error_type = std::any::type_name_of_val(&err),
+                    "could not presign a download"
+                );
                 ApiError::internal()
             })?
             .expect("S3 store presigns");
@@ -254,7 +258,11 @@ async fn respond(
             return Err(not_found());
         }
         Err(err) => {
-            tracing::error!(error = %err, "could not read stored bytes");
+            tracing::error!(
+                event = "storage.read_failed",
+                error_type = std::any::type_name_of_val(&err),
+                "could not read stored bytes"
+            );
             return Err(ApiError::internal());
         }
     };

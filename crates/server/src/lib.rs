@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use axum::{
     Json, Router,
-    extract::{DefaultBodyLimit, FromRef, Request, State},
+    extract::{DefaultBodyLimit, FromRef, MatchedPath, Request, State},
     http::{HeaderName, Method, StatusCode, header},
     middleware::{self, Next},
     response::{IntoResponse, Response},
@@ -133,18 +133,25 @@ pub fn app(
     }
     router
         .layer(middleware::from_fn(access_log))
-        // Query strings can contain signed download tokens. Record paths only.
+        // Route templates exclude both signed queries and identifying path values.
         .layer(
             TraceLayer::new_for_http().make_span_with(|request: &Request| {
                 let request_id = request
                     .headers()
                     .get(&REQUEST_ID)
                     .and_then(|v| v.to_str().ok())
-                    .unwrap_or_default();
+                    .filter(|id| {
+                        id.len() <= 128
+                            && !id.is_empty()
+                            && id.bytes().all(|b| {
+                                b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b':')
+                            })
+                    })
+                    .unwrap_or("[redacted]");
                 tracing::info_span!(
                     "request",
-                    method = %request.method(),
-                    path = %request.uri().path(),
+                    method = diagnostic_method(request.method()),
+                    path = diagnostic_route(request),
                     request_id,
                 )
             }),
@@ -159,17 +166,18 @@ pub fn app(
 /// Header that identifies a request in the logs and in its response.
 const REQUEST_ID: HeaderName = HeaderName::from_static("x-request-id");
 
-/// One INFO line per response: method, path (never the query string, which
-/// can carry signed download tokens), status and time to the response head.
+/// One INFO line per response: method, route template, status and time to the
+/// response head. Raw paths and queries can carry identifying/signed values.
 /// Health probes log at DEBUG so they do not drown the rest.
 async fn access_log(request: Request, next: Next) -> Response {
-    let method = request.method().clone();
-    let path = request.uri().path().to_owned();
+    let method = diagnostic_method(request.method());
+    let path = diagnostic_route(&request).to_owned();
+    let health = request.uri().path() == "/health";
     let started = std::time::Instant::now();
     let response = next.run(request).await;
     let status = response.status().as_u16();
     let latency_ms = started.elapsed().as_secs_f64() * 1000.0;
-    match path == "/health" {
+    match health {
         true => {
             tracing::debug!(%method, path, status, latency_ms, "response");
         }
@@ -178,6 +186,29 @@ async fn access_log(request: Request, next: Next) -> Response {
         }
     }
     response
+}
+
+fn diagnostic_route(request: &Request) -> &str {
+    request
+        .extensions()
+        .get::<MatchedPath>()
+        .map(MatchedPath::as_str)
+        .unwrap_or("[unmatched]")
+}
+
+fn diagnostic_method(method: &Method) -> &'static str {
+    match *method {
+        Method::GET => "GET",
+        Method::HEAD => "HEAD",
+        Method::POST => "POST",
+        Method::PUT => "PUT",
+        Method::PATCH => "PATCH",
+        Method::DELETE => "DELETE",
+        Method::OPTIONS => "OPTIONS",
+        Method::CONNECT => "CONNECT",
+        Method::TRACE => "TRACE",
+        _ => "OTHER",
+    }
 }
 
 /// Where API traffic is recorded for the panel.

@@ -14,6 +14,12 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
   subcategories, shared with the mobile menu. Move server areas into the
   operator sidebar while preserving unsaved-change confirmations. Keep
   table views, example languages and filters beside their content.
+- Keep mailer and storage failure context without opaque provider text or
+  identifying storage paths; preserve typed IO metadata and cleanup behavior.
+- Bound request diagnostics and record route templates instead of identifying path
+  values. Keep normal request correlation and HTTP responses unchanged.
+- Classify database/pool failures using stable events and SQLSTATE without opaque
+  database messages in diagnostic logs.
 
 ## [0.5.2] — 2026-10-23
 
