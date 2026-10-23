@@ -1,8 +1,9 @@
 # G09: Evidence-based performance review
 
-Status: planned; not executed. Record actual work in
-[the execution record](performance-review-execution.md). Creating this goal
-does not establish a performance result or production capacity.
+Status: bounded execution finished with open gates and environment limitations.
+See [the execution record](performance-review-execution.md) and
+[Portuguese report](results/g09-performance-report.pt-BR.md). The polling proposal
+was withdrawn; no performance approval or production capacity is established.
 
 ## Objective
 

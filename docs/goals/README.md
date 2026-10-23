@@ -22,9 +22,10 @@ G08 was started but remains incomplete: preliminary tests and a failed targeted
 regression do not close its three-pass coverage. Its
 [partial execution record](security-data-race-review-execution.md) preserves that
 status; no security or release approval was established.
-G09 is planned: a bounded performance review with reproducible baselines,
-at most five measured optimizations and final-artifact comparisons. Its
-[execution template](performance-review-execution.md) contains no results yet.
+G09 completed a bounded investigation with open gates: the polling proposal was
+withdrawn after a failed full-profile comparison; final original-artifact disk/S3
+and 30-minute stability evidence and limits are in the
+[execution record](performance-review-execution.md). No performance approval.
 
 | Goal | Outcome |
 |---|---|
@@ -36,7 +37,7 @@ at most five measured optimizations and final-artifact comparisons. Its
 | [G06: Authentication and session security](auth-security-review.md) | Finalized: all seven findings have merged resolutions; public disclosure and server 0.5.0 are recorded, including the F07 trade-off. |
 | [G07: Targeted maintainability refactoring](maintainability-refactor-execution.md) | Completed bounded pass: PRs #107/#108 and the inventory #106 merged; excluded areas and remaining hotspots are future work. |
 | [G08: Security, data exposure and concurrency](security-data-race-review.md) | Incomplete: preliminary evidence only; three-pass coverage and correction/revalidation remain unfinished. Private evidence retained, owned fixture removed, no production approval. |
-| [G09: Evidence-based performance review](performance-review.md) | Planned: three passes across 12 areas; comparable latency/throughput/resource measurements, bounded optimizations and a Portuguese report; no production benchmark or automatic publication. |
+| [G09: Evidence-based performance review](performance-review.md) | Executed with limitations: polling proposal withdrawn, failed comparisons retained, original-artifact S3/30-minute stability verified; no performance or production approval. |
 
 Subsequent [module ownership](solid-module-ownership-execution.md),
 [SDK responsibility](sdk-srp-execution.md), [SDK corrections](sdk-review-fixes-execution.md)
