@@ -260,9 +260,15 @@ Tests cover memory and PostgreSQL stores (mocked pool with two store instances,
 and real PostgreSQL with two pools/instances): reordered responses for
 different and identical users, publication withheld for a later winner, a
 delayed sign-out with an older cookie, no clearing by stale requests, the
-proxy bootstrap, and the cookie-less residual. Do not claim production
-readiness until final-source backend tests, package installation,
-compatibility and the full auth-flow matrix are resolved. See the execution
+proxy bootstrap, and the cookie-less residual. A real browser run (Next
+production build, Chromium, 2026-10-24) has two tabs with one cookie jar that
+loaded the login page sign in concurrently. With the responses delivered in
+reverse order, or with the winning response lost, the browser reads as signed
+out, never as the older identity. In natural order it shows the newer one. A
+lost winner's row stops working after the next sign-in in that browser. Tabs
+that skipped the bootstrap path showed the older identity, which is the
+residual above. Do not claim production readiness until compatibility, the
+full auth-flow matrix and a released base SDK are resolved. See the execution
 ledger.
 
 ## Local verification
@@ -282,6 +288,26 @@ the repository's disposable fixture, never a production/shared database. The
 example is **loopback-only development**, not a production deployment template.
 Framework/backend scripts require bounded disposable environments; the latter
 records the explicit binary SHA and does not claim it matches newer source.
+
+Smoke scripts, run one at a time from `sdk/nextjs` after `run build`:
+
+```sh
+node scripts/package-smoke.mjs     # packed tarballs in an external consumer
+node scripts/boundary-smoke.mjs    # Client Component importing /server must fail
+CHROMIUM_PATH=/path/to/chrome node scripts/framework-smoke.mjs
+NELCOTA_NEXT_TEST_BINARY=/abs/target/debug/nelcota \
+NELCOTA_NEXT_TEST_DATABASE_URL=postgres://postgres@127.0.0.1:55432/postgres \
+  node --conditions=react-server scripts/backend-smoke.mjs
+# same two variables plus a disposable loopback S3 provider and its bucket-admin key:
+NELCOTA_NEXT_TEST_S3_ENDPOINT=http://127.0.0.1:9100 \
+NELCOTA_NEXT_TEST_S3_ACCESS_KEY_ID=... NELCOTA_NEXT_TEST_S3_SECRET_ACCESS_KEY=... \
+  node --conditions=react-server scripts/storage-smoke.mjs
+```
+
+The boundary and framework smokes link the package into its own
+`node_modules` (so the example shares one `next`/`react`) and run a production
+build of the example. The framework smoke starts `next start` against a local
+transport fixture: it is not RLS evidence.
 
 ## Storage downloads and S3 redirects
 
@@ -310,6 +336,13 @@ createNelcotaNext<Database>({
   code is `storage_redirect_refused` and the destination is never contacted.
   Too many hops give `storage_redirect_limit`.
 
-Unit tests and a real loopback HTTP redirect cover this. A real S3/MinIO
-provider run with the Nelcota server has **not** been performed for this
-adapter.
+Unit tests and a real loopback HTTP redirect cover this. On 2026-10-24,
+`scripts/storage-smoke.mjs` ran a current-source Nelcota server on the S3
+backend against a loopback RustFS 1.0.1 provider, the S3-compatible service
+CI uses. MinIO community binaries are no longer distributed. The API answered
+302 to a presigned provider URL. With the provider origin listed, the download
+returned the uploaded bytes and a range request returned 206. Only allow-listed
+headers reached the provider, with no `Authorization`, cookie or `apikey`.
+Without the option, or with another origin listed, the result was
+`storage_redirect_refused` and the provider was never contacted. AWS S3, R2
+and other providers, and HTTPS endpoints, were not exercised.

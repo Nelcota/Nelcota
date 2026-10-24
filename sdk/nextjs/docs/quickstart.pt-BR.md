@@ -147,11 +147,20 @@ a resposta da cabeça vencedora: ela dura até o próximo login/logout da
 linhagem ou até expirar. A lápide só apaga estado local; não revoga o refresh
 token substituído no servidor de auth. Os testes cobrem store em memória,
 PostgreSQL com pool simulado e duas instâncias, e PostgreSQL real com dois
-pools, além do residual sem cookie.
+pools, além do residual sem cookie. Em 2026-10-24, um navegador real (build de
+produção do Next e Chromium) fez login ao mesmo tempo em duas abas que
+compartilham o mesmo conjunto de cookies e carregaram a página de login. Com as
+respostas entregues em ordem inversa, ou com a resposta vencedora perdida, o
+navegador ficou sem sessão, nunca com a identidade mais antiga. Na ordem
+natural, ficou com a mais nova. A linha da vencedora perdida deixou de valer
+no login seguinte desse navegador. Abas que não passaram pelo caminho de
+bootstrap ficaram com a identidade mais antiga, que é o limite residual acima.
 
-Também faltam matriz completa de fluxos, pacote instalado por consumidor externo,
-versões adicionais, recursos e backend compilado do código final. O teste de RLS
-atual é de compatibilidade com um binário identificado, não aprovação final.
+Na mesma data passaram o pacote empacotado num consumidor externo, o build
+negativo de fronteira e os testes de backend/RLS e de storage S3 com um binário
+compilado do código atual. Ainda faltam a matriz completa de fluxos de auth,
+versões adicionais de Node/Next/navegador, medições de recursos e uma versão
+publicada do SDK base com as correções exigidas.
 
 Use o PostgreSQL descartável do repositório e rode Rust, Vitest e auditorias em
 sequência, conforme AGENTS.md. `npm --prefix sdk/nextjs run check`, `npm --prefix
@@ -159,6 +168,15 @@ sdk/nextjs test` e `npm --prefix sdk/nextjs run build` verificam o candidato. O 
 PostgreSQL exige `NELCOTA_NEXT_TEST_DATABASE_URL` e cria/remove um banco próprio.
 Não use dados nem credenciais de produção. O exemplo App Router é loopback de
 desenvolvimento; não deve ser publicado como configuração de produção.
+
+Os scripts `package-smoke`, `boundary-smoke`, `framework-smoke` (com
+`CHROMIUM_PATH`), `backend-smoke` e `storage-smoke` ficam em `sdk/nextjs/scripts`.
+Rode um de cada vez, depois de `run build`. Os dois últimos usam `node
+--conditions=react-server` e exigem `NELCOTA_NEXT_TEST_BINARY` e
+`NELCOTA_NEXT_TEST_DATABASE_URL`. O de storage também exige
+`NELCOTA_NEXT_TEST_S3_ENDPOINT`, `NELCOTA_NEXT_TEST_S3_ACCESS_KEY_ID` e
+`NELCOTA_NEXT_TEST_S3_SECRET_ACCESS_KEY` de um provedor S3 descartável em
+loopback. Veja os comandos completos no README.
 
 ## Downloads do storage e redirecionamentos S3
 
@@ -178,5 +196,13 @@ explícita com `storageRedirectOrigins: ['https://meu-bucket.s3.sa-east-1.amazon
   `storage_redirect_refused`, e o destino nunca é contatado. Saltos demais
   resultam em `storage_redirect_limit`.
 
-Testes unitários e um redirecionamento HTTP real em loopback cobrem isso. Ainda
-não houve execução com um provedor S3/MinIO real junto do servidor Nelcota.
+Testes unitários e um redirecionamento HTTP real em loopback cobrem isso. Em
+2026-10-24, `scripts/storage-smoke.mjs` rodou um servidor Nelcota do código
+atual com backend S3 e um provedor RustFS 1.0.1 em loopback, o mesmo serviço
+compatível com S3 usado na CI. Os binários comunitários do MinIO não são mais
+distribuídos. A API respondeu 302 para uma URL pré-assinada do provedor. Com a
+origem do provedor na lista, o download devolveu os bytes enviados e um pedido
+com `range` recebeu 206. Só cabeçalhos permitidos chegaram ao provedor, sem
+`Authorization`, cookie ou `apikey`. Sem a opção, ou com outra origem na lista,
+o erro foi `storage_redirect_refused` e o provedor não foi contatado. AWS S3,
+R2, outros provedores e endpoints HTTPS não foram testados.
