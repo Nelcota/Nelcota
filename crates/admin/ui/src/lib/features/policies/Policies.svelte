@@ -6,6 +6,7 @@
   import Pencil from '@lucide/svelte/icons/pencil'
   import Trash2 from '@lucide/svelte/icons/trash-2'
   import ShieldOff from '@lucide/svelte/icons/shield-off'
+  import ShieldAlert from '@lucide/svelte/icons/shield-alert'
   import CircleAlert from '@lucide/svelte/icons/circle-alert'
   import ShieldCheck from '@lucide/svelte/icons/shield-check'
   import Search from '@lucide/svelte/icons/search'
@@ -43,6 +44,12 @@
   type Filter = 'all' | 'enabled' | 'disabled' | 'attention'
   const filterIcons = { all: Rows3, enabled: ShieldCheck, disabled: ShieldOff, attention: CircleAlert }
   const FILTERS: Filter[] = ['all', 'enabled', 'disabled', 'attention']
+  // The badge states spelled out on the page: their hints are tooltips, which touch screens never open.
+  const LEGEND = [
+    { state: 'ok', icon: ShieldCheck, tone: 'text-success' },
+    { state: 'warn', icon: ShieldAlert, tone: 'text-warning' },
+    { state: 'danger', icon: ShieldAlert, tone: 'text-destructive' },
+  ] as const
   const rlsFilter = $derived<Filter>(FILTERS.find(filter => filter === route.query.get('filter')) ?? 'all')
   $effect(() => { search = appliedSearch })
   let debounce: ReturnType<typeof setTimeout>
@@ -198,13 +205,32 @@
       </div>
     </div>
 
+    {#if data.tables.length}
+      <section class="grid gap-3 rounded-3xl bg-card p-5" aria-labelledby="rls-legend">
+        <div class="grid gap-0.5">
+          <h2 id="rls-legend" class="text-sm font-semibold">{t('policies.legend.title')}</h2>
+          <p class="text-xs text-muted-foreground">{t('policies.legend.intro')}</p>
+        </div>
+        <dl class="grid gap-3 sm:grid-cols-3">
+          {#each LEGEND as item (item.state)}
+            <div class="grid content-start gap-1">
+              <dt class={['flex items-center gap-1.5 text-sm font-medium', item.tone]}><item.icon class="size-4 shrink-0" aria-hidden="true" />{t(`policies.plain.state.${item.state}`)}</dt>
+              <dd class="text-xs text-muted-foreground">{t(`policies.plain.stateHint.${item.state}`)}</dd>
+            </div>
+          {/each}
+        </dl>
+      </section>
+    {/if}
+
     <div class="grid gap-6 *:min-w-0 xl:grid-cols-[minmax(0,1fr)_24rem] xl:items-start">
     <div class="grid min-w-0 gap-4">
     {#if (data.tables.length === 0)}
       <EmptyState class="rounded-3xl bg-card" icon={ShieldCheck} title={t('policies.noTables')} description={t('policies.noTablesHint')}>{#snippet actions()}<Button href={href('/tables?create=true')}><Plus data-icon="inline-start" aria-hidden="true" />{t('tables.editor.newTable')}</Button>{/snippet}</EmptyState>
     {/if}
     {#if !(data.tables.length === 0)}
-      <div class="flex flex-wrap items-center justify-between gap-3">
+      <!-- List toolbar: search on the left, filters beside it; the header keeps only buttons. -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="w-full sm:w-72"><SearchField bind:value={search} oninput={onSearch} label={t('policies.search')} /></div>
         <!-- Wraps on a phone instead of hiding the last filters behind a scroll. -->
         <div class="panel-segments" role="group" aria-label={t('policies.filterLabel')}>
           {#each FILTERS as option (option)}
@@ -213,7 +239,6 @@
             <button type="button" class="panel-segment" aria-pressed={on} onclick={() => setFilters(option)}><Icon class="size-4" aria-hidden="true" />{t(`policies.filters.${option}`)}<span class={['text-xs tabular-nums', on ? 'opacity-70' : 'text-muted-foreground/80']}>{filterCounts[option]}</span></button>
           {/each}
         </div>
-        <div class="w-full sm:w-72"><SearchField bind:value={search} oninput={onSearch} label={t('policies.search')} /></div>
       </div>
       {#if !visible.length}
         {#if ((rlsFilter === 'all' || rlsFilter === 'attention') && exposedRelations.some(name => name.toLowerCase().includes(search.trim().toLowerCase())))}

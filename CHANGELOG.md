@@ -20,6 +20,18 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 - Apply the saved light or dark theme before the first paint, through a hashed
   script file allowed by the CSP, instead of flashing the dark default.
 - Share the login's header with the offline screen and preload the panel font.
+- Return primary buttons to the regular size; the large size is now opt-in
+  for the login and onboarding. Positive states (on, active, delivered) are
+  green instead of brand orange, and a zero error meter is neutral.
+- Ask before issuing a `service_role` token or making a bucket public, keep
+  webhook signing keys open until copied, and mask issued tokens on screen.
+- Give webhooks in-page tabs, phone-friendly delivery cards, a "table
+  missing" state and specific confirmations. Use "Storage", "access rules"
+  and "row protection (RLS)" consistently, explain RLS states on the policies
+  page and replace database jargon with plain language.
+- Fit the table toolbar and migrations list to common desktop widths, show
+  the tables overview and file details on phones, show where SQL results
+  appear, and make the table cell editor clearly visible.
 
 ### Fixed
 

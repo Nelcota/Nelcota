@@ -14,10 +14,9 @@
   import type { Overview, TableSummary } from '$lib/contracts/types'
   import { intlLocale, t } from '$lib/i18n/index.svelte'
 
-  // What the editor shows with no table open (wide screens; phones show the
-  // list instead). The sidebar already lists names, so this adds what it
-  // lacks: size, protection, a way straight to the structure, and the table
-  // the person was last working on.
+  // What the editor shows with no table open. Beside the sidebar's list of
+  // names it adds size, protection, a way straight to the structure and the
+  // table the person was last working on; on phones it replaces the list.
   let {
     tables,
     loading,
@@ -62,7 +61,9 @@
     <TablesWelcome {oncreate} />
   {/if}
   {#if !(loading && !tables.length) && !(!tables.length)}
-    <div class="grid gap-6 p-6 lg:p-8">
+    <div class="grid gap-6 p-4 sm:p-6 lg:p-8">
+      <!-- Wide screens title the page in the sidebar, which phones hide here. -->
+      <h1 class="sr-only lg:hidden">{t('tables.sidebar.heading')}</h1>
       <header class="flex flex-wrap items-end justify-between gap-4">
         <div class="min-w-0">
           <h2 class="flex items-baseline gap-2">

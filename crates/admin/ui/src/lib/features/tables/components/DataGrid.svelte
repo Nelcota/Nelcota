@@ -250,9 +250,9 @@
       {@const row = gridRow.original}
       {@const i = gridRow.index}
       {@const isSelected = gridRow.getIsSelected()}
-      <tr aria-selected={editable ? isSelected : undefined} class={['group transition-colors', isSelected ? 'bg-brand/[0.07]' : 'hover:bg-muted/60']}>
+      <tr aria-selected={editable ? isSelected : undefined} class={['group transition-colors', isSelected ? 'bg-primary/[0.07]' : 'hover:bg-muted/60']}>
         {#if editable}
-          <td role="gridcell" class={[stickyCell, 'px-3.5 py-2', isSelected ? 'bg-[color-mix(in_oklch,var(--brand)_7%,var(--background))]' : 'group-hover:bg-[color-mix(in_oklch,var(--muted)_60%,var(--background))]']}>
+          <td role="gridcell" class={[stickyCell, 'px-3.5 py-2', isSelected ? 'bg-[color-mix(in_oklch,var(--primary)_7%,var(--background))]' : 'group-hover:bg-[color-mix(in_oklch,var(--muted)_60%,var(--background))]']}>
             <div class="flex items-center gap-2">
               <Checkbox checked={isSelected} {disabled} onCheckedChange={(v) => toggleRow(i, v === true)} aria-label={t('tables.grid.selectRow', { n: i + 1 })} />
               <button

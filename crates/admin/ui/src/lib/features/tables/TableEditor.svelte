@@ -246,10 +246,12 @@
 
 <div class={cn("mx-auto flex h-full min-h-0 w-full max-w-page px-4 pt-1 pb-4 sm:px-6 lg:px-8", emptyCatalog ? "flex-col" : "gap-3")}>
   {#if !emptyCatalog}
-    <TableSidebar {tables} current={name} loading={tablesLoading} error={tablesError} onretry={loadTables} oncreate={() => (createOpen = true)} />
+    <!-- Phones show one pane: the open table, or the home cards (the list
+         itself only when it failed to load, to offer the retry). -->
+    <TableSidebar {tables} current={name} phone={!name && !!tablesError} loading={tablesLoading} error={tablesError} onretry={loadTables} oncreate={() => (createOpen = true)} />
   {/if}
 
-  <section class={cn('min-h-0 min-w-0 flex-1 flex-col overflow-hidden', emptyCatalog ? 'flex' : 'rounded-3xl bg-card', !emptyCatalog && (name ? 'flex' : 'hidden lg:flex'))}>
+  <section class={cn('min-h-0 min-w-0 flex-1 flex-col overflow-hidden', emptyCatalog ? 'flex' : 'rounded-3xl bg-card', !emptyCatalog && (name || !tablesError ? 'flex' : 'hidden lg:flex'))}>
     {#if !name && !tablesError}
       <TablesHome {tables} loading={tablesLoading || !tablesResource.loaded} last={lastTable} oncreate={() => (createOpen = true)} />
     {/if}

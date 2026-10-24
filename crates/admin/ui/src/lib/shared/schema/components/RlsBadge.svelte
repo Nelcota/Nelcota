@@ -2,6 +2,7 @@
   import type { Rls } from '$lib/contracts/types'
   import { t } from '$lib/i18n/index.svelte'
   import { Badge } from '$lib/components/ui/badge'
+  import * as Tooltip from '$lib/components/ui/tooltip'
   import { technical } from '$lib/shared/schema/technical.svelte'
   import ShieldCheck from '@lucide/svelte/icons/shield-check'
   import ShieldAlert from '@lucide/svelte/icons/shield-alert'
@@ -34,20 +35,29 @@
 </script>
 
 <!-- Access states keep semantic colours independent of action accents. -->
-<Badge
-  variant="outline"
-  title={hint}
-  class={[
-    'gap-1 whitespace-nowrap',
-    state === 'danger' && 'border-destructive/30 bg-destructive/10 text-destructive',
-    state === 'warn' && 'border-warning/30 bg-warning/10 text-warning',
-    state === 'ok' && 'border-success/25 bg-success/5 text-success',
-    (state === 'none' || state === 'view') && 'border-border-strong bg-muted text-muted-foreground',
-  ]}
->
-  {#if (state === 'ok')}<ShieldCheck aria-hidden="true" />{/if}
-  {#if !(state === 'ok') && (state === 'warn' || state === 'danger')}<ShieldAlert aria-hidden="true" />{/if}
-  {#if !(state === 'ok') && !(state === 'warn' || state === 'danger') && (state === 'view')}<Rows3 aria-hidden="true" />{/if}
-  {#if !(state === 'ok') && !(state === 'warn' || state === 'danger') && !(state === 'view')}<ShieldOff aria-hidden="true" />{/if}
-  {label}
-</Badge>
+<!-- The hint opens on keyboard focus too; `relative` lifts it above card-wide link overlays. -->
+<Tooltip.Root>
+  <Tooltip.Trigger>
+    {#snippet child({ props })}
+      <Badge
+        {...props}
+        variant="outline"
+        tabindex={0}
+        class={[
+          'relative cursor-help gap-1 whitespace-nowrap',
+          state === 'danger' && 'border-destructive/30 bg-destructive/10 text-destructive',
+          state === 'warn' && 'border-warning/30 bg-warning/10 text-warning',
+          state === 'ok' && 'border-success/25 bg-success/5 text-success',
+          (state === 'none' || state === 'view') && 'border-border-strong bg-muted text-muted-foreground',
+        ]}
+      >
+        {#if (state === 'ok')}<ShieldCheck aria-hidden="true" />{/if}
+        {#if !(state === 'ok') && (state === 'warn' || state === 'danger')}<ShieldAlert aria-hidden="true" />{/if}
+        {#if !(state === 'ok') && !(state === 'warn' || state === 'danger') && (state === 'view')}<Rows3 aria-hidden="true" />{/if}
+        {#if !(state === 'ok') && !(state === 'warn' || state === 'danger') && !(state === 'view')}<ShieldOff aria-hidden="true" />{/if}
+        {label}
+      </Badge>
+    {/snippet}
+  </Tooltip.Trigger>
+  <Tooltip.Content>{hint}</Tooltip.Content>
+</Tooltip.Root>

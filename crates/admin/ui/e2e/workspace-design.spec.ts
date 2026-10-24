@@ -33,7 +33,7 @@ test('mobile menu closes on navigation and returns focus to the page', async ({ 
   await expect(menu).toBeVisible()
   await menu.getByRole('link', { name: 'Armazenamento', exact: true }).click()
   await expect(menu).toHaveCount(0)
-  await expect(page.getByRole('heading', { name: 'Arquivos', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Armazenamento', exact: true })).toBeVisible()
   await expect(page.locator('main')).toBeFocused()
   await expect(page.getByRole('button', { name: /Buscar \(/ })).toBeVisible()
 })

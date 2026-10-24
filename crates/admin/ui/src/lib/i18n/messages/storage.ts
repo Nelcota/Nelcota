@@ -2,7 +2,7 @@
 import type { Messages } from '../index.svelte'
 
 const ptBR = {
-  title: 'Arquivos',
+  title: 'Armazenamento',
   bucketHint: 'Abra um bucket para ver e enviar arquivos. Buckets organizam arquivos com as mesmas regras de acesso.',
   search: 'Buscar buckets',
   diskSummary: {
@@ -57,7 +57,19 @@ const ptBR = {
     nameHint: 'Letras minúsculas, números, - e _. Faz parte da URL dos arquivos.',
     nameInvalid: 'Use até 63 caracteres e comece com uma letra minúscula ou número. Depois, pode usar - e _. Os nomes public, sign e list são reservados.',
     public: 'Público',
-    publicHint: 'Qualquer pessoa lê os arquivos pela URL pública. Escrever continua dependendo das políticas.',
+    publicHint: 'Qualquer pessoa lê os arquivos pela URL pública. Enviar e apagar continua dependendo das regras de acesso.',
+    publicWarning: 'Este bucket vai nascer público: qualquer pessoa com o link baixa os arquivos enviados a ele, sem login.',
+    nameRequired: 'Informe um nome válido para liberar o botão Criar bucket.',
+    namePlaceholder: 'ex.: avatars',
+    confirmPublic: {
+      title: "Tornar o bucket '{bucket}' público?",
+      empty: 'Qualquer pessoa com o link vai poder baixar os arquivos enviados a ele, sem login.',
+      description: {
+        one: 'O arquivo que já está nele e os próximos ficam acessíveis pela URL pública: qualquer pessoa com o link baixa, sem login.',
+        other: 'Os {count} arquivos que já estão nele e os próximos ficam acessíveis pela URL pública: qualquer pessoa com o link baixa, sem login.',
+      },
+      confirm: 'Tornar público',
+    },
     limit: 'Limite por arquivo (MiB)',
     limitHint: 'Vazio usa o limite do servidor ({size}).',
     limitInvalid: 'Informe um número maior que zero ou deixe vazio para usar o limite do servidor.',
@@ -71,7 +83,7 @@ const ptBR = {
   access: {
     title: 'Quem acessa os arquivos',
     hint: 'Quem pode baixar e enviar arquivos deste bucket pelo app.',
-    technicalHint: 'Cada regra é uma política em storage.objects e entra nas migrações geradas pelo painel.',
+    technicalHint: 'Cada regra é uma policy do Postgres em storage.objects e entra nas migrações geradas pelo painel.',
     add: 'Adicionar regra',
     locked: 'Ninguém acessa estes arquivos pelo app: só o painel e o seu backend (service_role). Adicione uma regra para liberar.',
     publicNote: 'Bucket público: qualquer pessoa baixa pelo link público, mesmo sem regra. Envios e listagens seguem as regras abaixo.',
@@ -82,7 +94,7 @@ const ptBR = {
     removeTitle: 'Remover esta regra?',
     removeText: 'Quem dependia dela perde o acesso aos arquivos na hora.',
     addTitle: 'Adicionar esta regra?',
-    addText: 'A política é criada agora no banco e registrada para a próxima migração.',
+    addText: 'A regra é criada agora no banco (como uma policy do Postgres) e registrada para a próxima migração.',
     added: 'Regra adicionada.',
     removed: 'Regra removida.',
     templates: {
@@ -114,6 +126,7 @@ const ptBR = {
     uploaded: { one: '{count} arquivo enviado', other: '{count} arquivos enviados' },
     emptyFolder: 'Pasta vazia',
     emptyFolderDescription: 'Envie arquivos para cá. Uma pasta existe enquanto tiver arquivos.',
+    foldersHint: 'Pastas não são criadas à parte: elas vêm do caminho dos arquivos (ex.: fotos/perfil.png) e somem quando ficam vazias. Os envios daqui vão para a pasta aberta; para uma pasta nova, envie pelo app ou SDK com o caminho no nome.',
     emptyBucket: 'Bucket vazio',
     columns: { name: 'Nome', size: 'Tamanho', type: 'Tipo', updated: 'Alterado' },
     download: 'Baixar',
@@ -210,7 +223,19 @@ const en: Messages<typeof ptBR> = {
     nameHint: 'Lowercase letters, digits, - and _. Part of every file URL.',
     nameInvalid: 'Use up to 63 characters, starting with a lowercase letter or digit. After that, - and _ are allowed. The names public, sign and list are reserved.',
     public: 'Public',
-    publicHint: 'Anyone reads the files through the public URL. Writing still goes through the policies.',
+    publicHint: 'Anyone reads the files through the public URL. Uploading and deleting still go through the access rules.',
+    publicWarning: 'This bucket will start out public: anyone with the link downloads the files uploaded to it, without signing in.',
+    nameRequired: 'Enter a valid name to enable the Create bucket button.',
+    namePlaceholder: 'e.g. avatars',
+    confirmPublic: {
+      title: "Make bucket '{bucket}' public?",
+      empty: 'Anyone with the link will be able to download the files uploaded to it, without signing in.',
+      description: {
+        one: 'The file already in it and any new ones become reachable through the public URL: anyone with the link downloads them, without signing in.',
+        other: 'The {count} files already in it and any new ones become reachable through the public URL: anyone with the link downloads them, without signing in.',
+      },
+      confirm: 'Make public',
+    },
     limit: 'Per-file limit (MiB)',
     limitHint: "Empty uses the server's limit ({size}).",
     limitInvalid: 'Enter a number greater than zero, or leave it empty to use the server limit.',
@@ -224,7 +249,7 @@ const en: Messages<typeof ptBR> = {
   access: {
     title: 'Who reaches the files',
     hint: "Who can download and upload this bucket's files from the app.",
-    technicalHint: "Each rule is a policy on storage.objects and goes into the panel's generated migrations.",
+    technicalHint: "Each rule is a Postgres policy on storage.objects and goes into the panel's generated migrations.",
     add: 'Add rule',
     locked: 'Nobody reaches these files from the app: only the panel and your backend (service_role). Add a rule to open them up.',
     publicNote: 'Public bucket: anyone downloads through the public link, even without a rule. Uploads and listings follow the rules below.',
@@ -235,7 +260,7 @@ const en: Messages<typeof ptBR> = {
     removeTitle: 'Remove this rule?',
     removeText: 'Whoever relied on it loses access to the files right away.',
     addTitle: 'Add this rule?',
-    addText: 'The policy is created in the database now and recorded for the next migration.',
+    addText: 'The rule is created in the database now (as a Postgres policy) and recorded for the next migration.',
     added: 'Rule added.',
     removed: 'Rule removed.',
     templates: {
@@ -267,6 +292,7 @@ const en: Messages<typeof ptBR> = {
     uploaded: { one: '{count} file uploaded', other: '{count} files uploaded' },
     emptyFolder: 'Empty folder',
     emptyFolderDescription: 'Upload files here. A folder exists while it holds files.',
+    foldersHint: 'Folders are not created on their own: they come from file paths (e.g. photos/profile.png) and disappear once empty. Uploads from here go to the open folder; for a new folder, upload from your app or SDK with the path in the name.',
     emptyBucket: 'Empty bucket',
     columns: { name: 'Name', size: 'Size', type: 'Type', updated: 'Changed' },
     download: 'Download',

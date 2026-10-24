@@ -34,7 +34,7 @@ const ptBR = {
   revokeSessions: 'Encerrar sessões',
   confirmEmail: 'Confirmar email',
   unconfirmed: 'Não confirmado',
-  unconfirmedHint: 'O email ainda não foi confirmado',
+  unconfirmedHint: 'A pessoa ainda não abriu o link de confirmação enviado por email. Você pode confirmar pelo menu de ações.',
   emailConfirmed: 'Email de {email} confirmado',
   delete: 'Apagar usuário',
   pagination: 'Paginação',
@@ -42,7 +42,7 @@ const ptBR = {
   deleted: 'Usuário {email} apagado',
   confirmRevoke: {
     title: 'Encerrar as sessões?',
-    description: '{email} vai precisar entrar de novo. JWTs já emitidos valem até expirar.',
+    description: '{email} vai precisar entrar de novo. Os tokens de acesso já emitidos (JWT) continuam valendo até expirar (veja a duração do acesso em Login dos usuários).',
   },
   confirmDelete: {
     title: 'Apagar o usuário?',
@@ -111,7 +111,7 @@ const en: Messages<typeof ptBR> = {
   revokeSessions: 'End sessions',
   confirmEmail: 'Confirm email',
   unconfirmed: 'Unconfirmed',
-  unconfirmedHint: 'The email has not been confirmed yet',
+  unconfirmedHint: 'They have not opened the confirmation link sent by email yet. You can confirm it from the actions menu.',
   emailConfirmed: "{email}'s email confirmed",
   delete: 'Delete user',
   pagination: 'Pagination',
@@ -119,7 +119,7 @@ const en: Messages<typeof ptBR> = {
   deleted: 'User {email} deleted',
   confirmRevoke: {
     title: 'End the sessions?',
-    description: '{email} will have to sign in again. JWTs already issued stay valid until they expire.',
+    description: '{email} will have to sign in again. Access tokens already issued (JWT) stay valid until they expire (see how long access lasts in User sign-in).',
   },
   confirmDelete: {
     title: 'Delete the user?',

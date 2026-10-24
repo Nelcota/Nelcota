@@ -1,7 +1,7 @@
 <script lang="ts">
   import { mode, toggleMode } from 'mode-watcher'
   import * as Tooltip from '$lib/components/ui/tooltip'
-  import LayoutGrid from '@lucide/svelte/icons/layout-grid'
+  import House from '@lucide/svelte/icons/house'
   import Boxes from '@lucide/svelte/icons/boxes'
   import BookOpen from '@lucide/svelte/icons/book-open'
   import ArrowUpCircle from '@lucide/svelte/icons/arrow-up-circle'
@@ -13,7 +13,7 @@
   import { t } from '$lib/i18n/index.svelte'
 
   const links = [
-    { path: '/', title: 'shell.pages.overview', icon: LayoutGrid },
+    { path: '/', title: 'shell.pages.overview', icon: House },
     { path: '/projects', title: 'shell.pages.projects', icon: Boxes },
     { path: '/guides', title: 'shell.pages.guides', icon: BookOpen },
   ] as const
@@ -36,7 +36,7 @@
     {/each}
   </nav>
   <div class="mt-auto grid gap-2 pt-5">
-    <a href={href('/updates')} class={['panel-rail-link panel-updates-link', isActive('/updates') && 'is-active']} aria-label={t('shell.pages.updates')} title={t('shell.pages.updates')}><ArrowUpCircle class="size-5" strokeWidth={1.6} aria-hidden="true" /></a>
+    <a href={href('/updates')} class={['panel-rail-link', isActive('/updates') && 'is-active']} aria-label={t('shell.pages.updates')} title={t('shell.pages.updates')}><ArrowUpCircle class="size-5" strokeWidth={1.6} aria-hidden="true" /></a>
     <button type="button" class="panel-rail-link" onclick={toggleMode} aria-label={mode.current === 'dark' ? t('shell.account.lightTheme') : t('shell.account.darkTheme')} title={mode.current === 'dark' ? t('shell.account.lightTheme') : t('shell.account.darkTheme')}>
       {#if mode.current === 'dark'}<Sun class="size-5" strokeWidth={1.6} aria-hidden="true" />{/if}
       {#if mode.current !== 'dark'}<Moon class="size-5" strokeWidth={1.6} aria-hidden="true" />{/if}

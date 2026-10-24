@@ -5,7 +5,12 @@
   import Webhook from '@lucide/svelte/icons/webhook'
   import Plus from '@lucide/svelte/icons/plus'
   import Pencil from '@lucide/svelte/icons/pencil'
+  import Ellipsis from '@lucide/svelte/icons/ellipsis'
+  import KeyRound from '@lucide/svelte/icons/key-round'
+  import Trash2 from '@lucide/svelte/icons/trash-2'
+  import History from '@lucide/svelte/icons/history'
   import { Button } from '$lib/components/ui/button'
+  import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
@@ -36,12 +41,18 @@
     return params.size ? `?${params}` : ''
   })
   let editorOpen = $state(false), editing = $state<WebhookEndpoint | null>(null), secret = $state<WebhookSecret | null>(null)
-  let busy = $state<string | null>(null), confirmOpen = $state(false)
+  let busy = $state<string | null>(null), confirmOpen = $state(false), refreshing = $state(false)
   let confirm = $state<{ kind: 'delete' | 'rotate' | 'pause' | 'clear'; endpoint?: WebhookEndpoint } | null>(null)
 
   async function loadConfig() { await config.load(signal => webhooks.list(signal)) }
   async function loadHistory() { await history.load(signal => webhooks.history(query, signal)) }
   async function reload() { await Promise.all([loadConfig(), tab === 'deliveries' ? loadHistory() : Promise.resolve()]) }
+  // Only a manual refresh disables the button; background polling would make it flicker.
+  async function refresh() {
+    if (refreshing) return
+    refreshing = true
+    try { await reload() } finally { refreshing = false }
+  }
   $effect(() => {
     const currentTab = tab, currentQuery = query
     if (currentTab === 'deliveries') { untrack(() => { void history.load(signal => webhooks.history(currentQuery, signal)) }); return }
@@ -65,8 +76,13 @@
   }
   function edit(endpoint: WebhookEndpoint | null) { editing = endpoint; editorOpen = true }
   function request(kind: 'delete' | 'rotate' | 'pause' | 'clear', endpoint?: WebhookEndpoint) { confirm = { kind, endpoint }; confirmOpen = true }
-  const confirmTitle = $derived(confirm?.kind === 'delete' ? t('webhooks.deleteTitle', { name: confirm.endpoint?.name ?? '' }) : confirm?.kind === 'rotate' ? t('webhooks.rotateTitle') : confirm?.kind === 'clear' ? t('webhooks.clearTitle') : t('webhooks.pause'))
-  const confirmHint = $derived(confirm?.kind === 'delete' ? t('webhooks.deleteHint') : confirm?.kind === 'rotate' ? t('webhooks.rotateHint') : confirm?.kind === 'clear' ? t('webhooks.clearHint') : t('webhooks.pauseHint'))
+  const confirmText = {
+    delete: { title: 'webhooks.deleteTitle', hint: 'webhooks.deleteHint', action: 'webhooks.deleteConfirm' },
+    rotate: { title: 'webhooks.rotateTitle', hint: 'webhooks.rotateHint', action: 'webhooks.rotate' },
+    pause: { title: 'webhooks.pauseTitle', hint: 'webhooks.pauseHint', action: 'webhooks.pauseConfirm' },
+    clear: { title: 'webhooks.clearTitle', hint: 'webhooks.clearHint', action: 'webhooks.clear' },
+  } as const
+  const confirmCopy = $derived(confirmText[confirm?.kind ?? 'pause'])
   function input(endpoint: WebhookEndpoint, enabled = endpoint.enabled): EndpointInput {
     return { name: endpoint.name, table: endpoint.table, url: endpoint.url, events: endpoint.events, max_attempts: endpoint.max_attempts, enabled }
   }
@@ -105,8 +121,12 @@
 
 <div class="mx-auto grid w-full max-w-page gap-6 px-4 pt-2 pb-12 *:min-w-0 sm:px-6 lg:px-8">
   <PageHeader title={t('webhooks.title')} description={t('webhooks.description')}>
-    {#snippet actions()}<Button variant="outline" onclick={reload} disabled={config.loading || history.loading}><RefreshCw data-icon="inline-start" aria-hidden="true" />{t('common.refresh')}</Button><Button onclick={() => edit(null)} disabled={!config.data?.tables.length}><Plus data-icon="inline-start" aria-hidden="true" />{t('webhooks.create')}</Button>{/snippet}
+    {#snippet actions()}<Button variant="outline" onclick={refresh} disabled={refreshing}><RefreshCw data-icon="inline-start" aria-hidden="true" class={refreshing ? 'animate-spin' : ''} />{t('common.refresh')}</Button>{#if tab === 'configuration'}<Button onclick={() => edit(null)} disabled={!config.data?.tables.length}><Plus data-icon="inline-start" aria-hidden="true" />{t('webhooks.create')}</Button>{/if}{/snippet}
   </PageHeader>
+  <nav class="panel-segments" aria-label={t('webhooks.views')}>
+    <a href={href('/webhooks')} aria-current={tab === 'configuration' ? 'page' : undefined} class="panel-segment"><Webhook aria-hidden="true" />{t('webhooks.configuration')}</a>
+    <a href={href('/webhooks?tab=deliveries')} aria-current={tab === 'deliveries' ? 'page' : undefined} class="panel-segment"><History aria-hidden="true" />{t('webhooks.deliveries')}</a>
+  </nav>
   {#if config.error}<LoadError message={errorMessage(config.error)} onretry={loadConfig} busy={config.loading} />{/if}
   {#if !config.data && config.loading}<Skeleton class="h-40 rounded-3xl" />{/if}
   {#if config.data}
@@ -124,17 +144,30 @@
       <div class="grid gap-4 lg:grid-cols-2">
         {#each config.data.endpoints as hook (hook.id)}
           <section class="grid min-w-0 content-start gap-4 rounded-3xl bg-card p-5">
-            <header class="flex flex-wrap items-center justify-between gap-2"><h2 class="min-w-0 break-words font-semibold">{hook.name}</h2><span class={['rounded-full px-2.5 py-1 text-xs font-medium', hook.enabled ? 'bg-primary/10 text-brand' : 'bg-muted text-muted-foreground']}>{t(hook.enabled ? 'webhooks.enabled' : 'webhooks.paused')}</span></header>
+            <header class="flex flex-wrap items-center justify-between gap-2"><h2 class="min-w-0 break-words font-semibold">{hook.name}</h2>
+              {#if !hook.table_available}<span class="rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive">{t('webhooks.tableMissing')}</span>{/if}
+              {#if hook.table_available}<span class={['rounded-full px-2.5 py-1 text-xs font-medium', hook.enabled ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground']}>{t(hook.enabled ? 'webhooks.enabled' : 'webhooks.paused')}</span>{/if}
+            </header>
             <p class="font-mono text-sm text-muted-foreground">{hook.schema}.{hook.table}</p>
             {#if !hook.table_available}<p class="text-sm text-warning">{t('webhooks.missingTable')}</p>{/if}
             <p class="break-all text-sm text-muted-foreground">{hook.url}</p>
             <div class="flex flex-wrap gap-2">{#each hook.events as event}<span class="rounded-full bg-well px-3 py-1 text-xs">{eventLabel(event)}</span>{/each}</div>
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap items-center gap-2">
               <Button variant="outline" size="sm" onclick={() => edit(hook)} disabled={busy !== null}><Pencil data-icon="inline-start" aria-hidden="true" />{t('common.edit')}</Button>
-              <Button variant="outline" size="sm" onclick={() => hook.enabled ? request('pause', hook) : enable(hook)} disabled={busy !== null || (!hook.enabled && !hook.table_available)}>{t(hook.enabled ? 'webhooks.pause' : 'webhooks.resume')}</Button>
+              <!-- Without its table no new changes are captured, but pausing still holds the
+                   pending deliveries; only resuming needs the table back (the server refuses it). -->
+              {#if hook.enabled || hook.table_available}<Button variant="outline" size="sm" onclick={() => hook.enabled ? request('pause', hook) : enable(hook)} disabled={busy !== null}>{t(hook.enabled ? 'webhooks.pause' : 'webhooks.resume')}</Button>{/if}
               <Button variant="outline" size="sm" onclick={() => filters(hook.id, '')}>{t('webhooks.deliveries')}</Button>
-              <Button variant="ghost" size="sm" onclick={() => request('rotate', hook)} disabled={busy !== null}>{t('webhooks.rotate')}</Button>
-              <Button variant="ghost" size="sm" class="text-destructive" onclick={() => request('delete', hook)} disabled={busy !== null}>{t('common.delete')}</Button>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger disabled={busy !== null}>
+                  {#snippet child({ props })}<Button variant="ghost" size="icon-sm" aria-label={t('common.actionsFor', { name: hook.name })} {...props}><Ellipsis aria-hidden="true" /></Button>{/snippet}
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content align="end" class="w-48">
+                  <DropdownMenu.Item onclick={() => request('rotate', hook)}><KeyRound aria-hidden="true" />{t('webhooks.rotate')}</DropdownMenu.Item>
+                  <DropdownMenu.Separator />
+                  <DropdownMenu.Item variant="destructive" onclick={() => request('delete', hook)}><Trash2 aria-hidden="true" />{t('webhooks.remove')}</DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
             </div>
           </section>
         {/each}
@@ -151,4 +184,4 @@
   {/if}
 </div>
 <SecretDialog bind:value={secret} />
-<ConfirmDialog bind:open={confirmOpen} title={confirmTitle} description={confirmHint} destructive={confirm?.kind === 'delete' || confirm?.kind === 'clear'} onconfirm={apply} />
+<ConfirmDialog bind:open={confirmOpen} title={t(confirmCopy.title, { name: confirm?.endpoint?.name ?? '' })} description={t(confirmCopy.hint)} confirmLabel={t(confirmCopy.action)} destructive={confirm?.kind === 'delete' || confirm?.kind === 'clear'} onconfirm={apply} />

@@ -39,7 +39,7 @@
         </div>
         <span class="col-start-1 row-start-2 truncate font-mono text-xs text-muted-foreground @3xl:col-start-auto @3xl:row-start-auto">{column.data_type}</span>
         <div class="col-start-1 flex min-w-0 flex-wrap items-center gap-1.5 @3xl:col-start-auto">
-          {#if column.identity}<span class={tag}>identity</span>{/if}
+          {#if column.identity}<span class={tag} title="identity">{t('tables.structure.autoNumbered')}</span>{/if}
           {#if column.generated}<span class={tag}>{t('tables.structure.generated')}</span>{/if}
           {#if !column.nullable}<span class={tag}>{t('tables.structure.required')}</span>{/if}
           {#if column.unique}<span class={tag}>{t('tables.structure.unique')}</span>{/if}

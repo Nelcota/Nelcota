@@ -17,19 +17,19 @@ const ptBR = {
   },
   caller: 'Quem faz a chamada',
   callerHint:
-    'Não existe chave anon: quem não manda token já é anon. O acesso de cada role é definido por tabela, nos GRANTs (aba Estrutura) e nas políticas.',
+    'Não existe chave anon: quem não manda token já é anon. O acesso de cada papel (role) é definido por tabela, nas permissões da tabela (GRANTs, na aba Estrutura) e nas regras de acesso (RLS).',
   roles: {
     anon: {
       title: 'Visitante',
-      text: 'Request sem header Authorization. Vê o que os GRANTs e as políticas liberam para anon.',
+      text: 'Requisição sem o cabeçalho Authorization. Vê o que as permissões da tabela (GRANTs) e as regras de acesso (RLS) liberam para o papel (role) anon.',
     },
     authenticated: {
       title: 'Usuário logado',
-      text: 'Authorization: Bearer com o access_token do login. auth.uid() é o id dele nas políticas.',
+      text: 'Authorization: Bearer com o access_token do login. auth.uid() é o id dele nas regras de acesso.',
     },
     service_role: {
       title: 'Seu backend',
-      text: 'Bearer com o token service_role. Ignora o RLS (mas precisa de GRANT na tabela): só em código que roda no servidor.',
+      text: 'Bearer com o token service_role. Ignora o RLS (mas precisa de permissão na tabela, o GRANT): só em código que roda no servidor.',
     },
   },
   neverInBrowser: 'Nunca use no navegador.',
@@ -57,7 +57,7 @@ const ptBR = {
   snippets: {
     list: {
       label: 'Listar linhas',
-      description: 'As 20 primeiras (order=coluna.desc ordena). Sem token, vale o que a role anon pode ver.',
+      description: 'As 20 primeiras (order=coluna.desc ordena). Sem token, vale o que o papel (role) anon pode ver.',
       sdk: 'As 20 primeiras. Sem login, vale o que um visitante pode ver.',
     },
     filter: {
@@ -87,8 +87,8 @@ const ptBR = {
     },
     login: {
       label: 'Entrar',
-      description: 'O access_token vai no header Authorization das chamadas à API (role authenticated).',
-      sdk: 'Depois disso, toda chamada vai com o token do usuário (role authenticated).',
+      description: 'O access_token vai no cabeçalho Authorization das chamadas à API (papel authenticated).',
+      sdk: 'Depois disso, toda chamada vai com o token do usuário (papel authenticated).',
     },
     refresh: {
       label: 'Renovar a sessão',
@@ -107,6 +107,11 @@ const ptBR = {
     details:
       'O token não fica guardado no servidor: vale até expirar, e gerar outro não invalida os anteriores. Ainda depende de GRANT em cada tabela (as criadas pelo painel já dão acesso total ao service_role).',
     copy: 'Copiar token',
+    reveal: 'Mostrar token',
+    hidden: 'Token oculto',
+    confirmTitle: 'Gerar um token service_role?',
+    confirmDescription:
+      'Ele vale por {validity}, ignora a proteção de linhas (RLS) de todas as tabelas e não pode ser revogado: só deixa de valer quando expira. Gere apenas para o código do seu servidor.',
     copyNow: 'Copie agora: ele não será mostrado de novo. Vale até {date}.',
     validity: 'Validade',
     days: { one: '{count} dia', other: '{count} dias' },
@@ -134,11 +139,11 @@ const en: Messages<typeof ptBR> = {
   },
   caller: 'Who makes the call',
   callerHint:
-    'There is no anon key: whoever sends no token is already anon. Each role’s access is defined per table, in the GRANTs (Structure tab) and in the policies.',
+    'There is no anon key: whoever sends no token is already anon. Each role’s access is defined per table, in the table permissions (GRANTs, on the Structure tab) and in the policies.',
   roles: {
     anon: {
       title: 'Visitor',
-      text: 'Request without an Authorization header. Sees what the GRANTs and policies allow for anon.',
+      text: 'Request without an Authorization header. Sees what the table permissions (GRANTs) and policies allow for the anon role.',
     },
     authenticated: {
       title: 'Signed-in user',
@@ -146,7 +151,7 @@ const en: Messages<typeof ptBR> = {
     },
     service_role: {
       title: 'Your backend',
-      text: 'Bearer with the service_role token. Bypasses RLS (but still needs a GRANT on the table): only in code that runs on the server.',
+      text: 'Bearer with the service_role token. Bypasses RLS (but still needs permission on the table, a GRANT): only in code that runs on the server.',
     },
   },
   neverInBrowser: 'Never use it in the browser.',
@@ -224,6 +229,11 @@ const en: Messages<typeof ptBR> = {
     details:
       'The token is not stored on the server: it lasts until it expires, and generating another does not revoke earlier ones. It still depends on a GRANT on each table (tables created by the panel already give service_role full access).',
     copy: 'Copy token',
+    reveal: 'Show token',
+    hidden: 'Token hidden',
+    confirmTitle: 'Generate a service_role token?',
+    confirmDescription:
+      'It lasts {validity}, bypasses row protection (RLS) on every table and cannot be revoked: it only stops working when it expires. Generate it only for your server code.',
     copyNow: 'Copy it now: it will not be shown again. Valid until {date}.',
     validity: 'Validity',
     days: { one: '{count} day', other: '{count} days' },
