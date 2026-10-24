@@ -289,10 +289,9 @@ export class Integration<Database> {
         resetPassword: (input, options) => enqueue(() => operations.resetPassword(input, options)),
       };
       try {
-        if (!callbackRequest) {
-          const current = await auth.getSession();
-          if (current.error) throw current.error;
-        }
+        // Best-effort pre-refresh. A 429/5xx or network failure must not block
+        // sign-out/sign-in: keep the stored state and let `work` decide.
+        if (!callbackRequest) await auth.getSession();
         return await work({ client: this.#data(client), auth: actions });
       } finally {
         accepting = false;

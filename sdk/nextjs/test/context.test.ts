@@ -256,3 +256,32 @@ describe('session fixation', () => {
     expect(stranger.writes).toHaveLength(1); expect(stranger.writes[0]!.options.maxAge).toBe(0);
   });
 });
+describe('refresh outages', () => {
+  async function expiring() {
+    let refresh: Response | undefined;
+    const requests: string[] = [];
+    const fixture = await setup({ fetch: async url => {
+      const target = new URL(String(url)); requests.push(`${target.pathname}${target.search}`);
+      if (target.searchParams.get('grant_type') === 'refresh_token') return refresh ?? Response.json({}, { status: 500 });
+      if (target.pathname === '/auth/v1/token') return Response.json({ ...session(), expires_in: 60, expires_at: Math.floor(Date.now() / 1000) + 1 });
+      return Response.json(target.pathname === '/auth/v1/user' ? user : null);
+    } });
+    await fixture.integration.write(fixture.jar, post(), context => context.auth.signInWithPassword(credentials));
+    refresh = Response.json({ code: 'unavailable', message: 'Unavailable' }, { status: 503 });
+    requests.length = 0;
+    return { ...fixture, requests };
+  }
+  it('signs out locally while the refresh endpoint returns 503', async () => {
+    const { integration, jar, requests } = await expiring();
+    const result = await integration.write(jar, post(), context => context.auth.signOut());
+    expect(result.error?.status).toBe(503);
+    expect(requests.every(path => path.includes('grant_type=refresh_token'))).toBe(true);
+    expect(jar.writes.at(-1)?.options.maxAge).toBe(0); expect(jar.values.size).toBe(0);
+    await integration.read(jar, async context => { expect(context.hasSession).toBe(false); });
+  });
+  it('still runs sign-in when the pre-refresh fails', async () => {
+    const { integration, jar } = await expiring();
+    const result = await integration.write(jar, post(), context => context.auth.signInWithPassword(credentials));
+    expect(result.data?.id).toBe('user-one');
+  });
+});

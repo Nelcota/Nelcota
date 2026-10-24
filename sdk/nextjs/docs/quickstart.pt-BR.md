@@ -77,6 +77,10 @@ tokens ao navegador. Aguarde todas as operações e não reutilize o contexto ap
 seu encerramento. Falhas de persistência/cookie não são sucesso silencioso.
 Mapeie `SessionError.code === 'csrf'` para 403 genérico e falhas de persistência
 para 503 genérico. Não publique causas internas, corpos ou credenciais.
+Cada contexto de escrita tenta antes renovar uma sessão prestes a expirar. Se
+essa renovação falhar com 429/5xx ou erro de rede, o callback roda mesmo assim
+com a sessão armazenada. O logout ainda limpa o estado local, e o resultado de
+auth traz o erro do backend.
 
 Inicie OAuth por POST/Action com `auth.startOAuth({ provider, returnTo })`.
 Na callback, troque o código com `auth.exchangeCode()` e redirecione apenas ao

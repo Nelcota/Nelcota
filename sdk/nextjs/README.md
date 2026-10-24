@@ -131,6 +131,10 @@ third-party calls; see `examples/app-router/app/api/login/route.ts`.
 Map `SessionError.code === 'csrf'` to a generic 403 and persistence errors to a
 generic 503 in your error boundary, logging stable codes only. Do not serialize
 causes, cookies, keys, request bodies or credential-bearing backend messages.
+Each writable context first tries to refresh an expiring session. If that
+refresh fails with a 429/5xx or network error, the callback still runs with the
+stored session. Sign-out still clears local state, and the auth result carries
+the backend error.
 
 An Action uses `(await nelcota).action(async ({ auth }) => { ... })`. Call
 `redirect('/profile')` **after** checking the auth result; Next redirects throw,
