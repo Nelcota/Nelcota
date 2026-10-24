@@ -425,7 +425,7 @@ below works with any framework's cookie API (Next.js `cookies()`, Express
 `req.cookies`/`res.cookie`, Hono, SvelteKit...):
 
 ```ts
-import { createClient, type SessionStorage } from '@nelcota/client';
+import { createClient, type Session, type SessionStorage } from '@nelcota/client';
 
 interface CookieJar {
   get(name: string): string | undefined;
@@ -465,12 +465,39 @@ handlers must be allowed to write/delete cookies with matching path/domain flags
 Protect state-changing routes from CSRF. Never authorize from cached user metadata
 alone; the server must verify the caller's token.
 
-Refreshes from separate requests need shared coordination. An in-process lock
-cannot serialize several server instances; centralize rotation in a shared
-coordinator and let handlers reuse the accepted replacement.
+**Keep one refresh owner.** A refresh token works once. When two requests carry
+the same cookie and both refresh, the server answers both (a retry within a few
+seconds still succeeds), but only the newest token stays valid. The browser
+keeps whichever `Set-Cookie` it processes last. If that is the older one, the
+next refresh presents a rotated token and the server ends the whole session.
+One page load easily sends several requests at once (the document, prefetches,
+data calls), so do not let every handler refresh:
+
+- In render paths, read the cookie and send its access token without
+  refreshing (as below). An expired token then answers 401 instead of rotating.
+- Refresh in one place, such as a POST route the browser calls before the
+  token expires, and serialize it per session with a lock that every server
+  instance shares (for example a PostgreSQL advisory lock keyed by session).
+  An in-process lock only covers one instance.
+- Better, keep the tokens in a server-side store and put only an opaque random
+  ID in the cookie, so a stale response can never bring back an older token.
+
+```ts
+// Render path: read the session cookie, never refresh it.
+const stored = jar.get('nelcota');
+const session = stored === undefined ? null : (JSON.parse(decodeURIComponent(stored)) as Session);
+const nelcota = createClient<Database>(url, { accessToken: () => session?.access_token ?? null });
+```
+
+The repository's [Next.js integration](https://github.com/Nelcota/Nelcota/blob/main/sdk/nextjs/README.md)
+follows this design: read-only Server Components, a refresh route and a shared
+PostgreSQL session store with per-session locks. It is an unreleased
+candidate, but its README documents each trade-off.
+
 `autoRefresh: false` (already the default outside browsers) keeps background
-timers out of a request-scoped client; a token about to expire is still
-refreshed before a request.
+timers out of a request-scoped client. A client with session storage still
+refreshes a token about to expire before a request, so use it only where
+refreshing is allowed.
 
 ## Options
 
