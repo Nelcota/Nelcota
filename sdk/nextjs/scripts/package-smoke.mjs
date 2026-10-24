@@ -13,9 +13,16 @@ function run(command, args, cwd = directory) {
   if (result.status !== 0) throw new Error(result.stdout + result.stderr);
   return result.stdout;
 }
+// npm <= 11 prints an array of pack results; npm 12 prints an object keyed by package name.
+function packed(cwd) {
+  const output = JSON.parse(run('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', directory], cwd));
+  const results = Array.isArray(output) ? output : Object.values(output);
+  assert.equal(results.length, 1, 'expected exactly one packed package');
+  return results[0];
+}
 try {
-  const next = JSON.parse(run('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', directory], root))[0];
-  const client = JSON.parse(run('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', directory], resolve(root, '../typescript')))[0];
+  const next = packed(root);
+  const client = packed(resolve(root, '../typescript'));
   assert(next.files.some(file => file.path === 'dist/server.js'));
   assert(next.files.some(file => file.path === 'sql/session-store.sql'));
   assert(!next.files.some(file => /(^|\/)(node_modules|test|examples|\.env)(\/|$)/.test(file.path)));
