@@ -46,3 +46,10 @@ it('emits signed_out once when sign-out renewal is rejected as invalid_grant', a
   const { auth, mock, events, start } = signOutClient(json({ code: 'invalid_grant', message: 'Spent' }, 400));
   try { await start(session(-60)); expect((await auth.signOut()).error?.code).toBe('invalid_grant'); expect(paths(mock)).toEqual(['/auth/v1/token']); expect(events).toEqual(['signed_out']); } finally { auth.dispose(); }
 });
+it('keeps cross-context Web Locks for caller storage in workers', async () => {
+  const names: unknown[] = []; vi.stubGlobal('window', undefined); vi.stubGlobal('document', undefined);
+  vi.stubGlobal('WorkerGlobalScope', class { static [Symbol.hasInstance](value: unknown) { return value === globalThis; } });
+  vi.stubGlobal('navigator', { locks: { request: <T>(name: string, work: () => Promise<T>) => { names.push(name); return work(); } } });
+  const shared = createAuthClient('https://api.example.com', { auth: { storage: memoryStorage(), autoRefresh: false } }), own = createAuthClient('https://api.example.com', { auth: { autoRefresh: false } });
+  try { await own.getSession(); expect(names).toEqual([]); await shared.getSession(); expect(names).toEqual(['nelcota.api.example.com.session.refresh']); } finally { shared.dispose(); own.dispose(); }
+});

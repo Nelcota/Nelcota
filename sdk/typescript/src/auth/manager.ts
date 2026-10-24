@@ -1,7 +1,7 @@
 /** One owner for session persistence, lifecycle transitions and refresh timers. */
 import { isSession, memoryStorage, parseSession, secondsLeft, type Session, type SessionStorage, type User } from './session.js';
 import { BrowserSessionConflictError, BrowserSessionState } from './browser-state.js';
-import { Broadcast, withLock, adapterLock } from './coordination.js';
+import { Broadcast, withLock, adapterLock, workerScope } from './coordination.js';
 import { NelcotaUsageError, clientError, fail, ok, type Result } from '../core/errors.js';
 import { abortable } from '../core/cancellation.js';
 import { isBrowser } from '../core/jwt.js';
@@ -51,9 +51,10 @@ export class SessionManager {
     const path = pathname.slice(0, end);
     this.key = options.storageKey ?? `nelcota.${url.host}${path}.session`;
     this.#lockName = `${this.key}.refresh`;
-    // Default server memory stores belong to separate requests. Their queues
-    // must stay independent when another client holds a sign-in across HTTP.
-    if (!isBrowser()) this.#lockName = adapterLock(this.storage, this.key);
+    // Server adapters belong to separate requests: queue by adapter identity so
+    // another client's sign-in cannot block them. Worker storage supplied by the
+    // caller may be shared with tabs, so it keeps the cross-context Web Lock.
+    if (!isBrowser() && !(options.storage && workerScope())) this.#lockName = adapterLock(this.storage, this.key);
     if (native && this.storage === native) {
       let factory: IDBFactory | undefined;
       try { factory = globalThis.indexedDB; } catch { /* Report unavailable storage on the first operation. */ }
