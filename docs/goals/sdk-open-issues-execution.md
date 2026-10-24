@@ -12,8 +12,8 @@ its own draft PR; do not merge/publish it with production corrections.
 
 - #132/#133 retain their focused local corrections, before/after proof and
   separately rebuilt embedded guides from the earlier review.
-- New TypeScript regressions on the pre-correction SDK: **27 failed /4 passed**;
-  the new embedded-filter type regression also failed. Failure logs identify
+- New TypeScript regressions on the pre-correction SDK (final32-case set): **29 failed /3 passed**;
+  the embedded-filter and auth-error-code type regressions also failed. Failure logs identify
   actual assertions, not fixture/startup errors. After the first correction
   pass:361 unit tests and19 type tests passed. Final counts are recorded below.
 - #134 and #139 also reproduced in Rust: expired logout failed to revoke and
@@ -92,3 +92,7 @@ a token after a gateway failure whose commit outcome is unknown.
 
 Open draft PR for review with these blockers visible. No merge/release/tag or
 publication is part of this task. The unrelated Dependabot PR130 stays untouched.
+
+The raw-stream regression uses a real clock: native AbortSignal.timeout is not
+controlled by fake timers. It failed before correction and passes with the
+cleared attempt timer; no body deadline is asserted from a fake-clock shortcut.

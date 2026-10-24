@@ -24,7 +24,7 @@ it('retains HTTP status when error body reading fails (#142)', async () => {
   try { const result = await client.storage.listBuckets(); expect(result.error).toMatchObject({ status: 404, code: 'not_found' }); expect(fetch).toHaveBeenCalledTimes(1); } finally { client.dispose(); }
 });
 it('ends timeout at headers for a raw stream (#135)', async () => {
-  vi.useFakeTimers(); let signal: AbortSignal | null | undefined;
+  let signal: AbortSignal | null | undefined;
   const client = createClient('https://api.example.com', { timeout: 20, fetch: async (_url, init) => { signal = init?.signal; return new Response('object'); }, auth: { autoRefresh: false } });
-  try { const result = await client.storage.from('assets').open('file', { timeout: 20 }); expect(result.error).toBeNull(); await vi.advanceTimersByTimeAsync(30); expect(signal?.aborted).toBe(false); expect(await result.data?.text()).toBe('object'); } finally { client.dispose(); }
+  try { const result = await client.storage.from('assets').open('file', { timeout: 20 }); expect(result.error).toBeNull(); await new Promise(resolve => setTimeout(resolve, 40)); expect(signal?.aborted).toBe(false); expect(await result.data?.text()).toBe('object'); } finally { client.dispose(); }
 });
