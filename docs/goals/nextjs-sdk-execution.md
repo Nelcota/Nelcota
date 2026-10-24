@@ -146,8 +146,8 @@ are recorded below. No credentials from the maintainer's VPS were used.
 
 | ID | Status | Evidence / required action |
 |---|---|---|
-| N01 | Corrected in candidate (`b09e1a9a`); documented residual | IDs from one browser cookie share a lineage. A sealed head names the one live key and its generation, and every sign-in/sign-up/OAuth/email-link/reset/sign-out becomes the head under the lineage lock. Superseded rows read as signed out (`superseded`) and become credential-free tombstones. A write re-checks the head before setting or clearing the cookie and withholds a stale publication. The proxy issues a credential-free bootstrap ID on `bootstrapPaths` (default login). Tests: memory store, mocked-pool PostgreSQL with two store instances, and real PostgreSQL with two pools. Covered: reordered responses (different/same user), stale publication withheld, delayed sign-out, no stale clearing, proxy bootstrap. **Residual:** requests without any cookie/bootstrap cannot be linked, so both sessions stay valid and the loser keeps encrypted credentials until expiry (pinned by a test). A lost winning response also lives until a later lineage sign-in/out or expiry. Tombstones do not revoke refresh tokens remotely. No real-browser multi-tab run. |
-| N02 | Corrected in candidate (`688a9ed3`); provider run pending | Opt-in `storageRedirectOrigins` (validated HTTPS, loopback HTTP only in insecure development). Only GET/HEAD `/storage/v1/object/` requests follow redirects, manually, for at most 3 hops, each to a listed origin. From the first hop off the API origin only accept/range/conditional headers are sent. Unset/other destinations give `storage_redirect_refused`; too many hops give `storage_redirect_limit`. All other requests keep `redirect: 'error'`. Unit tests plus a real loopback HTTP redirect with Node fetch pass. **Not run:** real S3/MinIO with the Nelcota server. |
+| N01 | Corrected in candidate (`b09e1a9a`); real-browser verified; documented residual | IDs from one browser cookie share a lineage. A sealed head names the one live key and its generation, and every sign-in/sign-up/OAuth/email-link/reset/sign-out becomes the head under the lineage lock. Superseded rows read as signed out (`superseded`) and become credential-free tombstones. A write re-checks the head before setting or clearing the cookie and withholds a stale publication. The proxy issues a credential-free bootstrap ID on `bootstrapPaths` (default login). Tests: memory store, mocked-pool PostgreSQL with two store instances, and real PostgreSQL with two pools. Covered: reordered responses (different/same user), stale publication withheld, delayed sign-out, no stale clearing, proxy bootstrap. **Residual:** requests without any cookie/bootstrap cannot be linked, so both sessions stay valid and the loser keeps encrypted credentials until expiry (pinned by a test). A lost winning response also lives until a later lineage sign-in/out or expiry. Tombstones do not revoke refresh tokens remotely. Real-browser multi-tab run passed 2026-10-24 (`c04e1597`, see below): reversed and lost-winner deliveries read as signed out, never the older identity; natural order shows the newer identity; a lost winner's row is retired by the next lineage sign-in. Cookie-less tabs reproduced the documented residual (older identity kept). |
+| N02 | Corrected in candidate (`688a9ed3`); provider run passed (RustFS) | Opt-in `storageRedirectOrigins` (validated HTTPS, loopback HTTP only in insecure development). Only GET/HEAD `/storage/v1/object/` requests follow redirects, manually, for at most 3 hops, each to a listed origin. From the first hop off the API origin only accept/range/conditional headers are sent. Unset/other destinations give `storage_redirect_refused`; too many hops give `storage_redirect_limit`. All other requests keep `redirect: 'error'`. Unit tests plus a real loopback HTTP redirect with Node fetch pass. Real provider run passed 2026-10-24 (`3a01bc55`): current-source server on the S3 backend, loopback RustFS 1.0.1 (MinIO binaries are withdrawn), 302 to a presigned URL followed only with the policy, allow-listed headers only, unset/foreign policy refused without contacting the provider. AWS/R2/HTTPS providers not run. |
 | N03 | Corrected in candidate | A killed PostgreSQL connection previously emitted an unhandled error; final provider and event/late-writer regressions pass. |
 | N04 | Corrected in candidate | Inspection found redirect exceptions could skip cookie publication and plain decoded paths could normalize to `//...`; finally publication and canonical-path checks are covered by tests. |
 | N05 | Corrected in candidate | Bind callback to random browser state; wrong state leaves verifier intact, valid exchange consumes it, duplicate callback rejected. Successful replacement login clears pending OAuth and receives a new absolute lifetime; stream consumers retain their accepted transfer. |
@@ -162,16 +162,16 @@ backend or audit work. Keep unrelated worktrees intact.
 | Cell | Verdict | Evidence/remaining work |
 |---|---|---|
 | Base prerequisites | Partial; blocked (environment) | Focused regressions/unit/package checks passed; full-server auth build stopped by disk, local fixes not reviewed/merged |
-| Next read-only | Passed for initial fixture | Actual production Server Component + runtime mutation guard; final-source backend integration still needed |
+| Next read-only | Passed (fixture + final-source backend, 2026-10-24) | Production Server Component + runtime mutation guard; proxy redirect in real Next; backend smoke on a current-source binary |
 | Next writable | Passed for initial fixture | Real Route Handler/Server Action cookie publication, redirect and CSRF checks |
-| Browser boundary | Passed for initial fixture | Real invalid Client Component build refused; HTML credential checks; full client bundle canary/resource matrix remains |
-| Concurrency | Partial | PG instance/lock/loss cases pass. N01 reordering cases pass on memory, mocked-pool and real PostgreSQL (2026-10-24). Cookie-less residual documented. Real-browser tab and lost-response runs not done |
+| Browser boundary | Passed (2026-10-24) | Real invalid Client Component build refused after a passing control build; HTML credential checks; full client bundle canary/resource matrix remains |
+| Concurrency | Passed within documented residual (2026-10-24) | PG instance/lock/loss cases pass. N01 reordering cases pass on memory, mocked-pool and real PostgreSQL. Real Chromium two-tab runs pass for reversed, natural and lost-winner deliveries. Cookie-less residual reproduced, as documented |
 | Auth flows | Partial / not run | Password/logout tested in real Next; PKCE/replacement unit cases pass; complete provider/email/recovery flows not run |
 | Adversarial | Partial | CSRF/redirect/encryption/key rotation/nonce/storage loss tested; full matrix still pending |
-| Backend/RLS | Compatibility passed; final blocked (environment) | Identified older binary passes two-user/anonymous/integrity canaries; disk prevents final-source build |
-| Storage/S3 | Partial; provider not run | N02 redirect policy has unit and loopback-HTTP tests; real storage/S3 integration is not certified |
-| Packaging | Passed initial consumer | Packed install/exports/strict types and Next production build; registry version/minimum-base release still pending |
-| Compatibility | Not run beyond initial versions | Node22, previous supported Next major and other browser engines not certified |
+| Backend/RLS | Passed on current source (2026-10-24) | Binary built from `feat/nextjs-sdk-g11` passes two-user, anonymous, cross-user, reserved-filter and SQL integrity canaries on PostgreSQL 18.4 |
+| Storage/S3 | Passed on one provider (2026-10-24) | Real server + loopback RustFS 1.0.1 over HTTP: presigned redirect, header stripping, range, fail-closed. AWS S3/R2 and HTTPS providers not certified |
+| Packaging | Passed (2026-10-24) | Packed install/exports/strict types and Next production build; registry version/minimum-base release still pending |
+| Compatibility | Not run beyond initial versions | 2026-10-24 smokes ran on Node 26.12.1/npm 12.2.1, Next 16.4.3, Chromium 156. Node 22/24, previous supported Next major and other browser engines not certified |
 | Operations | Partial | EN/PT docs and npm audits pass; latency/memory/leak/soak measurements and ordinary CI not run |
 
 No completion gate has been lowered to label this candidate finished.
@@ -270,3 +270,34 @@ stopped and deleted. The new N01/N02 tests failed when the head check, the
 publication check, header stripping or the hop limit was disabled. Real
 Next/Chromium, the packed consumer, backend smoke and S3/MinIO provider runs
 were not repeated or performed for these corrections.
+
+## Validation matrix run — 2026-10-24
+
+Worktree `feat/nextjs-sdk-g11` after merging main (with #143). Local commits,
+not pushed. Every command ran on its own under `flock /tmp/nelcota-tests.lock`,
+on Node 26.12.1 and npm 12.2.1 (not the Node 24 baseline). Base SDK and Next
+package were rebuilt first.
+
+| Item | Command | Result |
+|---|---|---|
+| Package | `node scripts/package-smoke.mjs` | Pass: five exports, strict TS, 25 files, 36245 B packed. It first failed: npm 12 prints `pack --json` as an object (fixed `e1c87a72`) |
+| Boundary | `node scripts/boundary-smoke.mjs` | Pass: control build, then the probe was refused with the server-only error, then the app was rebuilt. It first failed with module-not-found because nothing installed `@nelcota/nextjs` for the example (fixed `bdd682d1`) |
+| Framework | `CHROMIUM_PATH=… node scripts/framework-smoke.mjs` | Pass twice: the original checks plus the proxy redirect/bootstrap and N01 two-tab reversed, natural and lost-winner cases (`0b8fd586`, `c04e1597`) |
+| Vitest | `NELCOTA_NEXT_TEST_DATABASE_URL=… npm test` | 117 passed, 0 skipped after correction. One refresh-outage test failed: it predated #143's sign-out revocation rule (updated `d478c8aa`) |
+| Backend | `node --conditions=react-server scripts/backend-smoke.mjs` | Pass. Binary from this source, SHA-256 `7332e52b50d9ade321af0b27641f3d1e8725ecf068c98f337ab5f4abaaf6c079`, on disposable PostgreSQL 18.4 with pgcrypto and preloaded pg_stat_statements. The script needs the react-server condition (guard `9c54d26e`) |
+| Storage/S3 | `node --conditions=react-server scripts/storage-smoke.mjs` | Pass against RustFS 1.0.1 (`3a01bc55`). A mutation that kept credentials on the provider hop failed the smoke as required |
+
+MinIO was requested but `dl.min.io` answers 410: the community binaries are
+archived and no longer served. The RustFS 1.0.1 release zip, checked against
+its published SHA256SUMS, ran from its own directory under `/tmp` on
+127.0.0.1 with a temporary data directory. Each smoke removed its own databases
+and the provider bucket. The PostgreSQL cluster, RustFS and their data
+directories were deleted afterwards.
+
+Not covered by this run: the full auth-flow matrix (OAuth provider, email
+links, recovery), adversarial matrix, Node 22/24, earlier Next majors,
+non-Chromium engines, AWS S3/R2/HTTPS providers, resource/soak measurements,
+CI integration of these smokes, and npm audits for the current lockfiles.
+Release gate (maintainer action): publish a base `@nelcota/client` version that
+contains #132/#143 and raise the peer minimum from `^0.2.1`. The package stays
+`private: true`.
