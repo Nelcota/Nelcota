@@ -4,9 +4,9 @@ import { PostgresSessionStore, type SessionConnection } from '../src/postgres.js
 
 const key = 'a'.repeat(64);
 const value = () => ({ sealed: 'encrypted-fixture', expiresAt: Date.now() + 60000 });
-const lockOnly = async (sql: string) => ({ rows: sql.includes('try_advisory_lock') ? [{ locked: true }] : [] });
+const lockOnly = async (sql: string) => ({ rows: sql.includes('current_setting') ? [{ timeout: '0' }] : sql.includes('try_advisory_lock') ? [{ locked: true }] : [] });
 function fixture() {
-  const query = vi.fn<SessionConnection['query']>(async sql => ({ rows: sql.includes('unlock') ? [{ released: true }] : sql.includes('try_advisory_lock') ? [{ locked: true }] : [] }));
+  const query = vi.fn<SessionConnection['query']>(async sql => ({ rows: sql.includes('current_setting') ? [{ timeout: '0' }] : sql.includes('unlock') ? [{ released: true }] : sql.includes('try_advisory_lock') ? [{ locked: true }] : [] }));
   const release = vi.fn<SessionConnection['release']>();
   const events = new EventEmitter();
   const on = events.on.bind(events), removeListener = events.removeListener.bind(events);
@@ -19,7 +19,7 @@ it('commits each save before returning and closes the lease before unlocking', a
   let late: (() => Promise<unknown>) | undefined;
   await store.exclusive(key, async lease => { await lease.save(value()); late = lease.remove; expect(lease.signal.aborted).toBe(false); });
   await expect(late?.()).rejects.toMatchObject({ code: 'closed_context' });
-  expect(query.mock.calls.map(([sql]) => sql.split(' ')[0])).toEqual(['SELECT', 'INSERT', 'SELECT']);
+  expect(query.mock.calls.map(([sql]) => sql.split(' ')[0])).toEqual(['SELECT', 'SELECT', 'SELECT', 'SELECT', 'INSERT', 'SELECT']);
   expect(query.mock.calls.some(([sql]) => /BEGIN|COMMIT/.test(sql))).toBe(false);
   expect(release).toHaveBeenCalledExactlyOnceWith(false);
 });
@@ -107,23 +107,25 @@ it('times out a local waiter without borrowing and keeps later callers ordered',
   open?.(); await owner;
   await expect(next).resolves.toBe('next');
 });
-it('fails a lock held elsewhere within its deadline without a blocking backend wait', async () => {
+it('bounds a queued backend lock with a server deadline and destroys a timed-out connection', async () => {
   const { pool, query, release } = fixture();
-  query.mockImplementation(async sql => ({ rows: sql.includes('try_advisory_lock') ? [{ locked: false }] : [] }));
-  const started = Date.now();
-  await expect(new PostgresSessionStore(pool, 100, 200).exclusive(key, async () => 'never')).rejects.toMatchObject({ code: 'session_store', message: 'Session lock acquisition timed out' });
-  expect(Date.now() - started).toBeLessThan(1000);
-  expect(query.mock.calls.length).toBeGreaterThan(1);
-  for (const [sql] of query.mock.calls) { expect(sql).toContain('pg_try_advisory_lock'); expect(sql).not.toMatch(/pg_advisory_lock\(/); }
-  // No lock is held and no query is pending, so the clean connection returns to the pool.
-  expect(release).toHaveBeenCalledExactlyOnceWith(false);
+  query.mockImplementation(async sql => {
+    if (sql.includes('current_setting')) return { rows: [{ timeout: '3s' }] };
+    if (sql.includes('pg_advisory_lock(')) throw new Error('canceling statement due to statement timeout');
+    return { rows: [] };
+  });
+  await expect(new PostgresSessionStore(pool, 100, 200).exclusive(key, async () => 'never')).rejects.toMatchObject({ code: 'session_store' });
+  const setting = query.mock.calls.find(([sql]) => sql.includes('set_config'));
+  expect(setting?.[1]?.[0]).toMatch(/^\d+ms$/);
+  expect(Number(String(setting?.[1]?.[0]).replace('ms', ''))).toBeLessThan(100);
+  expect(release).toHaveBeenCalledExactlyOnceWith(true);
 });
 it('rotates to a fresh key on the same connection and releases both locks', async () => {
   const { pool, query, release } = fixture();
   const fresh = 'c'.repeat(64);
   await new PostgresSessionStore(pool).exclusive(key, async lease => { await lease.rotate(fresh); await lease.save(value()); });
-  const calls = query.mock.calls.map(([sql, values]) => [sql.split(/[ (]/)[0] === 'SELECT' ? sql.match(/pg_\w+/)?.[0] : sql.split(' ')[0], values?.[0]]);
-  expect(calls).toEqual([['pg_try_advisory_lock', key], ['pg_try_advisory_lock', fresh], ['DELETE', key], ['INSERT', fresh], ['pg_advisory_unlock', key], ['pg_advisory_unlock', fresh]]);
+  const calls = query.mock.calls.filter(([sql]) => !sql.includes('current_setting') && !sql.includes('set_config')).map(([sql, values]) => [sql.split(/[ (]/)[0] === 'SELECT' ? sql.match(/pg_\w+/)?.[0] : sql.split(' ')[0], values?.[0]]);
+  expect(calls).toEqual([['pg_advisory_lock', key], ['pg_try_advisory_lock', fresh], ['DELETE', key], ['INSERT', fresh], ['pg_advisory_unlock', key], ['pg_advisory_unlock', fresh]]);
   expect(pool.connect).toHaveBeenCalledTimes(1); expect(release).toHaveBeenCalledExactlyOnceWith(false);
 });
 it('requires a lease that leaves auth time after reserving the final save', async () => {
@@ -143,4 +145,51 @@ it('replaces the rotated-away row with a retained tombstone instead of deleting 
   expect(writes).toEqual([[expect.stringMatching(/^INSERT/), [key, tombstone.sealed, tombstone.expiresAt]]]);
   await expect(new PostgresSessionStore(pool).exclusive(key, lease => lease.rotate(fresh, { sealed: 'x', expiresAt: 1 }))).rejects.toMatchObject({ code: 'invalid_session' });
   expect(release.mock.calls.every(([destroy]) => destroy === false)).toBe(true);
+});
+
+it('reads lineage and takes nested locks without borrowing another connection', async () => {
+  const { pool, query, release } = fixture();
+  const store = new PostgresSessionStore(pool);
+  let late: (() => Promise<unknown>) | undefined;
+  await store.exclusive(key, async lease => {
+    await lease.read!('b'.repeat(64));
+    await lease.exclusive!('b'.repeat(64), async owner => {
+      await owner.save(value()); late = owner.remove;
+      expect(pool.connect).toHaveBeenCalledTimes(1);
+      expect(release).not.toHaveBeenCalled();
+    });
+    await expect(late?.()).rejects.toMatchObject({ code: 'closed_context' });
+    await lease.save(value());
+  });
+  expect(pool.connect).toHaveBeenCalledTimes(1);
+  expect(release).toHaveBeenCalledExactlyOnceWith(false);
+  expect(query.mock.calls.filter(([sql]) => sql.includes('pg_advisory_unlock'))).toHaveLength(2);
+});
+
+it('destroys the parent connection after nested persistence fails', async () => {
+  const { pool, query, release } = fixture();
+  query.mockImplementation(async sql => {
+    if (sql.startsWith('INSERT')) throw new Error('nested persistence failed');
+    return { rows: sql.includes('current_setting') ? [{ timeout: '0' }] : sql.includes('unlock') ? [{ released: true }] : sql.includes('try_advisory_lock') ? [{ locked: true }] : [] };
+  });
+  await expect(new PostgresSessionStore(pool).exclusive(key, async lease => {
+    await expect(lease.exclusive!('b'.repeat(64), owner => owner.save(value()))).rejects.toBeDefined();
+    expect(lease.signal.aborted).toBe(true);
+    await expect(lease.load()).rejects.toMatchObject({ code: 'closed_context' });
+  })).rejects.toMatchObject({ code: 'session_store' });
+  expect(release).toHaveBeenCalledExactlyOnceWith(true);
+});
+
+it('ends a nested lease when its parent times out and refuses late writes', async () => {
+  const { pool, release } = fixture();
+  let late: (() => Promise<unknown>) | undefined;
+  await expect(new PostgresSessionStore(pool, 100, 200).exclusive(key, lease =>
+    lease.exclusive!('b'.repeat(64), async owner => {
+      late = owner.remove;
+      await new Promise(resolve => setTimeout(resolve, 250));
+      await owner.remove();
+    }),
+  )).rejects.toMatchObject({ code: 'session_store' });
+  await expect(late?.()).rejects.toMatchObject({ code: 'closed_context' });
+  expect(release).toHaveBeenCalledExactlyOnceWith(true);
 });

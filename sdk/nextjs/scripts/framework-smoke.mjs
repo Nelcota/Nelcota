@@ -4,11 +4,12 @@ import { randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createWriteStream } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
+import { join } from 'node:path';
 import assert from 'node:assert/strict';
 import { chromium, firefox, webkit } from '../../typescript/node_modules/playwright-core/index.mjs';
 import { Pool } from 'pg';
-import { buildExample, example, linkPackage, nextBin } from './example.mjs';
+import { buildExample, example, linkPackage, nextBin, nextVersion } from './example.mjs';
 
 const output = createWriteStream(process.env.NELCOTA_NEXT_LOG ?? '/tmp/nelcota-next-framework.log', { mode: 0o600 });
 const children = [];
@@ -163,14 +164,26 @@ try {
   try { await installer.query(await readFile(new URL('../sql/session-store.sql', import.meta.url), 'utf8')); }
   finally { await installer.end(); }
   await linkPackage();
-  const build = buildExample();
+  const buildKey = randomBytes(32).toString('base64url');
+  const build = buildExample({ NELCOTA_SESSION_KEY: buildKey });
   output.write(build.stdout + build.stderr);
   assert.equal(build.status, 0, 'example production build failed; see private log');
+  let clientChunks = 0;
+  const staticRoot = join(example, '.next/static');
+  for (const file of await readdir(staticRoot, { recursive: true })) {
+    if (!file.endsWith('.js')) continue;
+    const source = await readFile(join(staticRoot, file), 'utf8'); clientChunks++;
+    assert(!source.includes(buildKey), 'Client chunk exposed the server encryption key');
+    for (const marker of ['NELCOTA_SESSION_KEY', 'NELCOTA_NEXT_SESSION_DATABASE_URL', 'nelcota_next.sessions', 'fixture-access-private-', 'fixture-refresh-private-']) {
+      assert(!source.includes(marker), 'Client chunk contains a server-session or credential canary');
+    }
+  }
+  assert(clientChunks > 0, 'No production client chunks were inspected');
   api.listen(0, '127.0.0.1'); await once(api, 'listening');
   const reservation = createServer(); reservation.listen(0, '127.0.0.1'); await once(reservation, 'listening');
   const port = reservation.address().port; await new Promise(resolve => reservation.close(resolve));
   const origin = `http://localhost:${port}`;
-  const key = randomBytes(32).toString('base64url'), destinations = [];
+  const key = buildKey, destinations = [];
   for (let instance = 0; instance < 2; instance++) {
     const probe = createServer(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
     const nextPort = instance === 0 ? port : probe.address().port;
@@ -348,7 +361,7 @@ try {
     multiTab.cookielessResidual = { browserShows: await shown(one, origin), olderIdentity: older, note: 'documented residual: no lineage without a cookie' };
     await shared.close();
   }
-  console.log(JSON.stringify({ framework: 'Next 16.4.3 production webpack / React 19.3.1', node: process.version, browser: `${engine} ${browser.version()}`, processes: children.length, sessionStore: 'shared disposable PostgreSQL', authFlows: ['password Server Action', 'signup awaiting confirmation', 'resend', 'confirmation and replay', 'update user', 'refresh after 401', 'recovery and replay', 'magic link and replay', 'OAuth S256 PKCE callback, browser binding and replay', 'logout'], resources: { cookieBytes, repeatedReads: 100, repeatedReadMs: Math.round(repeatedReadMs), retainedAdvisoryLocks: 0 }, checks: ['cross-origin request refused before API', 'Route Handler HttpOnly cookie merged', 'private response cache', 'Server Component verified user', 'proxy routes signed-out visitor to login', 'proxy bootstrap ID on login page', 'Server Action redirect retains cookie', 'HTML contains no session credentials', 'logout clears browser session', 'N01 two tabs/processes, reversed delivery: signed out, never the older identity', 'N01 two tabs/processes, natural delivery: newer identity', 'N01 lost winning response: signed out; lost row retired by next lineage sign-in'], multiTab, counts, authorization: 'not tested: local transport fixture' }, null, 2));
+  console.log(JSON.stringify({ framework: `Next ${nextVersion} production webpack / React 19.3.1`, node: process.version, browser: `${engine} ${browser.version()}`, processes: children.length, sessionStore: 'shared disposable PostgreSQL', authFlows: ['password Server Action', 'signup awaiting confirmation', 'resend', 'confirmation and replay', 'update user', 'refresh after 401', 'recovery and replay', 'magic link and replay', 'OAuth S256 PKCE callback, browser binding and replay', 'logout'], resources: { clientChunks, cookieBytes, repeatedReads: 100, repeatedReadMs: Math.round(repeatedReadMs), retainedAdvisoryLocks: 0 }, checks: ['cross-origin request refused before API', 'Route Handler HttpOnly cookie merged', 'private response cache', 'Server Component verified user', 'proxy routes signed-out visitor to login', 'proxy bootstrap ID on login page', 'Server Action redirect retains cookie', 'HTML contains no session credentials', 'all production client chunks exclude build-time key and server-session/credential canaries', 'logout clears browser session', 'N01 two tabs/processes, reversed delivery: signed out, never the older identity', 'N01 two tabs/processes, natural delivery: newer identity', 'N01 lost winning response: signed out; lost row retired by next lineage sign-in'], multiTab, counts, authorization: 'not tested: local transport fixture' }, null, 2));
 } finally {
   await browser?.close();
   for (const child of children.filter(child => child.exitCode === null)) {
