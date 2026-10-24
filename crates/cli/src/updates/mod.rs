@@ -25,6 +25,8 @@ pub const POLICY: &str = "/etc/nelcota-updates/policy.json";
 pub const CONTROLLER: &str = "/etc/nelcota-updates/controller.json";
 pub const WORKER_SOCKET: &str = "/run/nelcota-updates-worker/worker.sock";
 pub const HTTP_SOCKET: &str = "/run/nelcota-updates-http/http.sock";
+/// Where enrollment installs the controller's own copy of the binary.
+pub const CONTROLLER_BIN_DIR: &str = "/usr/local/lib/nelcota-updates";
 #[derive(Args, Debug)]
 pub struct UpdatesArgs {
     #[command(subcommand)]

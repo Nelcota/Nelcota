@@ -158,6 +158,9 @@ pub enum Command {
         /// Only prints the current → target version of each project.
         #[arg(long)]
         dry_run: bool,
+        /// Upgrades with this CLI on a host enrolled in the updates controller.
+        #[arg(long)]
+        without_controller: bool,
     },
     /// Dumps the database to backups/ and uploads it to S3 when host.env has a bucket.
     Backup {
@@ -442,11 +445,17 @@ pub fn run(mut cli: Cli) -> anyhow::Result<Outcome> {
         }
         _ => None,
     };
-    if matches!(cli.command, Some(Command::Upgrade { .. }))
-        && cli.dir.join("updates-controller.json").is_file()
+    let enrolled = cli.dir.join("updates-controller.json").is_file();
+    if matches!(
+        cli.command,
+        Some(Command::Upgrade {
+            without_controller: false,
+            ..
+        })
+    ) && enrolled
     {
         bail!(
-            "enrolled hosts upgrade through the updates controller; use `updates recover` over SSH for recovery"
+            "enrolled hosts upgrade through the updates controller; pass --without-controller to upgrade with this CLI, or use `updates recover` over SSH for recovery"
         );
     }
     let selection = cli.project.as_deref();
@@ -564,6 +573,7 @@ pub fn run(mut cli: Cli) -> anyhow::Result<Outcome> {
             allow_downgrade,
             dry_run,
             reinstall,
+            without_controller: _,
         } => {
             let manifest = host.require()?;
             let options = upgrade::Options {
@@ -577,6 +587,12 @@ pub fn run(mut cli: Cli) -> anyhow::Result<Outcome> {
                     vec![host.select(&manifest, selection)?]
                 }
             };
+            if enrolled {
+                upgrade::require_cli_binary()?;
+                for project in &targets {
+                    upgrade::require_outside_controller(project)?;
+                }
+            }
             let mut failed = Vec::new();
             for project in &targets {
                 // One failed upgrade (already rolled back) does not stop the others.
@@ -733,7 +749,16 @@ mod cli_tests {
                 dry_run: true,
                 allow_downgrade: false,
                 version: None,
-                reinstall: false
+                reinstall: false,
+                without_controller: false
+            })
+        ));
+        let cli = Cli::try_parse_from(["nelcota", "upgrade", "--without-controller"]).unwrap();
+        assert!(matches!(
+            cli.command,
+            Some(Command::Upgrade {
+                without_controller: true,
+                ..
             })
         ));
         let cli = Cli::try_parse_from([
