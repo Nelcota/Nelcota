@@ -51,7 +51,7 @@
     "server-only": "0.0.1"
   },
   "peerDependencies": {
-    "@nelcota/client": "^0.2.1",
+    "@nelcota/client": "^0.2.2",
     "next": "^16.4.3",
     "react": "^19.3.1"
   },
