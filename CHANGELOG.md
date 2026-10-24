@@ -8,6 +8,13 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ## [Unreleased]
 
+### Changed
+
+- `nelcota upgrade --without-controller` upgrades projects on a host enrolled in
+  the updates controller while installation from the panel is unavailable. It is
+  refused while a controller job is unresolved, for projects the controller
+  already activated and when run from the controller's own binary.
+
 ## [0.5.3] — 2026-10-23
 
 ### Changed

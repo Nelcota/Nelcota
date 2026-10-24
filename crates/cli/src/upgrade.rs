@@ -9,6 +9,44 @@ use crate::{
     util::{ok, step, warn},
 };
 use anyhow::{Context, bail};
+
+/// `.env` keys only the updates controller writes. A project carrying any of
+/// them was created or activated by the controller: its image is pinned, so a
+/// CLI version change would not take effect and could fight the controller.
+const CONTROLLER_KEYS: [&str; 4] = [
+    "NELCOTA_APP_IMAGE",
+    "NELCOTA_DEPLOYMENT_ID",
+    "NELCOTA_DEPLOYMENT_GATE",
+    "NELCOTA_DEPLOYMENT_VALIDATION",
+];
+
+/// On an enrolled host, the CLI may only upgrade projects the controller has
+/// never activated. Unresolved controller jobs are refused by the host lease.
+pub fn require_outside_controller(project: &Project) -> anyhow::Result<()> {
+    let env = project.env();
+    for key in CONTROLLER_KEYS {
+        if env.get(key)?.is_some() {
+            bail!(
+                "{} is managed by the updates controller ({key} is set); upgrade it from the controller",
+                project.name
+            );
+        }
+    }
+    Ok(())
+}
+
+/// The controller keeps its own binary; deploying that copy as the app would
+/// tie the project to the controller's version instead of the installed CLI.
+pub fn require_cli_binary() -> anyhow::Result<()> {
+    let exe = std::env::current_exe()?.canonicalize()?;
+    if exe.starts_with(crate::updates::CONTROLLER_BIN_DIR) {
+        bail!(
+            "this is the updates controller's binary; run the installed CLI (`nelcota`) instead"
+        );
+    }
+    Ok(())
+}
+
 /// Backup → new version → healthcheck. On failure: goes back to the previous
 /// version and restores the backup (the new version may have applied
 /// migrations). On Docker the version is the image tag; on systemd, this
@@ -406,5 +444,21 @@ mod tests {
         deploy(&mut app).unwrap();
         assert!(app.accepts_writes());
         assert_eq!(app.database, "new-migration");
+    }
+
+    #[test]
+    fn controller_activated_projects_cannot_be_upgraded_by_the_cli() {
+        let dir = tempfile::tempdir().unwrap();
+        let project = Project::new("shop", dir.path(), Runtime::Docker);
+        std::fs::write(project.path(".env"), "NELCOTA_VERSION=0.5.2\n").unwrap();
+        require_outside_controller(&project).unwrap();
+        for key in CONTROLLER_KEYS {
+            std::fs::write(
+                project.path(".env"),
+                format!("NELCOTA_VERSION=0.5.2\n{key}=value\n"),
+            )
+            .unwrap();
+            assert!(require_outside_controller(&project).is_err());
+        }
     }
 }
