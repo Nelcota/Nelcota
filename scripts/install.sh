@@ -3,6 +3,15 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sh
 #
+# With arguments it sets up a whole VPS in one go, as root: installs the
+# prerequisites (cron, curl, Docker; ufw with --firewall), the binary, then
+# runs `nelcota init <arguments>` and `nelcota up` in /opt/nelcota:
+#
+#   curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo sh -s -- api.yourdomain.com
+#
+# Every argument goes to `nelcota init` (--email, --firewall, --runtime
+# systemd, --s3-*...), except --dir <folder>, the host folder.
+#
 # Optional variables:
 #   NELCOTA_VERSION=0.3.0     version (default: the latest)
 #   NELCOTA_REPO=owner/repo   GitHub repository (default: Nelcota/Nelcota)
@@ -20,6 +29,40 @@ PREFIX="${PREFIX:-/usr/local/bin}"
 say() { printf '%s\n' "→ $*"; }
 die() { printf '%s\n' "error: $*" >&2; exit 1; }
 
+# Setup mode: split --dir from the arguments forwarded to `nelcota init`.
+SETUP=0
+HOST_DIR=/opt/nelcota
+FIREWALL=0
+if [ "$#" -gt 0 ]; then
+  SETUP=1
+  count=$#
+  while [ "$count" -gt 0 ]; do
+    arg=$1
+    shift
+    count=$((count - 1))
+    case "$arg" in
+      --dir)
+        [ "$count" -gt 0 ] || die "--dir needs a folder"
+        HOST_DIR=$1
+        shift
+        count=$((count - 1))
+        ;;
+      --dir=*) HOST_DIR=${arg#--dir=} ;;
+      --runtime)
+        [ "$count" -gt 0 ] || die "--runtime needs a value"
+        [ "$1" = systemd ] && NELCOTA_SKIP_DOCKER=1
+        set -- "$@" "$arg" "$1"
+        shift
+        count=$((count - 1))
+        ;;
+      --runtime=systemd) NELCOTA_SKIP_DOCKER=1; set -- "$@" "$arg" ;;
+      --firewall) FIREWALL=1; set -- "$@" "$arg" ;;
+      *) set -- "$@" "$arg" ;;
+    esac
+  done
+  [ "$(id -u)" -eq 0 ] || die "setting up a VPS needs root: curl -fsSL <this script> | sudo sh -s -- $*"
+fi
+
 [ "$(uname -s)" = "Linux" ] || die "the installer is for Linux (on macOS/Windows use 'cargo install --git https://github.com/$REPO nelcota-server')"
 
 case "$(uname -m)" in
@@ -27,6 +70,36 @@ case "$(uname -m)" in
   aarch64|arm64) TARGET="aarch64-unknown-linux-musl" ;;
   *) die "unsupported architecture: $(uname -m)" ;;
 esac
+
+# Packages init needs before it writes anything: an active cron scheduler
+# reading /etc/cron.d, and ufw when --firewall is requested.
+install_prerequisites() {
+  packages="ca-certificates curl coreutils"
+  [ "$FIREWALL" -eq 1 ] && packages="$packages ufw"
+  if command -v apt-get >/dev/null 2>&1; then
+    say "Installing prerequisites with apt-get"
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq
+    # shellcheck disable=SC2086
+    apt-get install -y -qq $packages cron >/dev/null
+    systemctl enable --now cron.service
+  elif command -v dnf >/dev/null 2>&1; then
+    say "Installing prerequisites with dnf"
+    # shellcheck disable=SC2086
+    dnf install -y -q $packages cronie
+    systemctl enable --now crond.service
+  else
+    say "Unknown package manager: install curl, sha256sum and an active cron scheduler yourself"
+  fi
+  # ufw's OpenSSH rule only covers port 22; keep the port of this session open.
+  ssh_port=$(printf '%s\n' "${SSH_CONNECTION:-}" | awk '{print $4}')
+  if [ "$FIREWALL" -eq 1 ] && [ -n "$ssh_port" ] && [ "$ssh_port" != 22 ]; then
+    say "Allowing SSH port $ssh_port in ufw"
+    ufw allow "$ssh_port/tcp"
+  fi
+}
+
+[ "$SETUP" -eq 1 ] && install_prerequisites
 
 for tool in curl sha256sum; do
   command -v "$tool" >/dev/null 2>&1 || die "$tool not found (apt install curl coreutils, or your distribution's equivalent)"
@@ -76,6 +149,30 @@ if ! command -v docker >/dev/null 2>&1; then
        curl -fsSL https://get.docker.com -o "$TMP/install-docker.sh"
        as_root sh "$TMP/install-docker.sh" ;;
   esac
+fi
+
+if [ "$SETUP" -eq 1 ]; then
+  mkdir -p "$HOST_DIR"
+  if [ -e "$HOST_DIR/nelcota-host.json" ]; then
+    say "A host already exists in $HOST_DIR: skipping init (add projects with 'nelcota -C $HOST_DIR init ...')"
+  else
+    say "Creating the host in $HOST_DIR"
+    # Under `curl | sh` stdin is the script itself: ask questions on the terminal.
+    if (: </dev/tty) 2>/dev/null; then
+      "$PREFIX/nelcota" -C "$HOST_DIR" init "$@" </dev/tty
+    else
+      "$PREFIX/nelcota" -C "$HOST_DIR" init --yes "$@"
+    fi
+  fi
+  say "Starting the projects and Caddy"
+  "$PREFIX/nelcota" -C "$HOST_DIR" up
+  cat <<MSG
+
+Done. Keep the panel password shown above; it is not shown again.
+  cd $HOST_DIR && nelcota status    # health, backups and versions
+  nelcota -C $HOST_DIR doctor       # DNS, ports, backups (after the first nightly backup)
+MSG
+  exit 0
 fi
 
 cat <<'MSG'

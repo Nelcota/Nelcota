@@ -7,6 +7,20 @@ scheduler reads `/etc/cron.d` (Debian/Ubuntu cron or Fedora/RHEL cronie).
 Use an explicitly selected published CLI/image version; source-only features
 require their own release and acceptance. Node is not required.
 
+The quickest path is one command. Point the domain's DNS **A** record at the
+VPS, then run it on Debian/Ubuntu or Fedora/RHEL. It installs cron, Docker and
+the CLI, creates the host in `/opt/nelcota` and starts it:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo NELCOTA_VERSION=0.5.3 sh -s -- api.yourdomain.com
+```
+
+Arguments after the script's `--` go to `nelcota init`, for example `--email`,
+`--firewall`, `--runtime systemd` or `--s3-*`; `--dir <folder>` selects another
+host folder. With `--firewall`, it also installs ufw and allows the port of the
+current SSH session. Run again on an existing host, it skips `init` and only
+runs `up`. The same steps by hand:
+
 ```sh
 sudo -i                                        # enter a root shell; omit if already root
 # Debian/Ubuntu; prepare cron before either Docker or native init:

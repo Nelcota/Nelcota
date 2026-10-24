@@ -40,9 +40,27 @@ cp "$source_file" "$4"
         path.write_text(source)
         path.chmod(0o755)
 
-    def install(self):
-        return subprocess.run(["sh", str(ROOT / "scripts/install.sh")], env=self.environment,
-                              capture_output=True, text=True, timeout=10)
+    def install(self, *arguments):
+        # A new session has no controlling terminal, like `curl | sh` over CI.
+        return subprocess.run(["sh", str(ROOT / "scripts/install.sh"), *arguments],
+                              env=self.environment, capture_output=True, text=True,
+                              timeout=10, start_new_session=True)
+
+    def setup_vps(self, *arguments):
+        """Runs setup mode as a fake root with logging package/service tools."""
+        self.log = self.root / "calls.log"
+        self.environment["CALLS"] = str(self.log)
+        self.binary.write_text('#!/bin/sh\nprintf \'nelcota %s\\n\' "$*" >> "$CALLS"\n')
+        self.checksum.write_text(hashlib.sha256(self.binary.read_bytes()).hexdigest() +
+                                 "  nelcota-x86_64-unknown-linux-musl\n")
+        self.tool("id", "#!/bin/sh\nprintf '0\\n'\n")
+        for name in ("apt-get", "systemctl", "ufw", "docker"):
+            self.tool(name, f'#!/bin/sh\nprintf \'{name} %s\\n\' "$*" >> "$CALLS"\n')
+        self.host = self.root / "host dir"
+        return self.install("--dir", str(self.host), *arguments)
+
+    def calls(self):
+        return self.log.read_text().splitlines()
 
     def test_writable_prefix_needs_no_sudo_and_handles_spaces(self):
         self.environment["PREFIX"] = str(self.root / "user folder/bin")
@@ -62,6 +80,45 @@ cp "$source_file" "$4"
         self.assertIn("checksum does not match", result.stderr)
         self.assertEqual(destination.read_text(), "previous installation")
 
+
+    def test_setup_prepares_the_machine_then_creates_and_starts_the_host(self):
+        self.environment["SSH_CONNECTION"] = "203.0.113.9 51000 198.51.100.4 2222"
+        result = self.setup_vps("api.example.com", "--firewall", "--email", "me@example.com")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self.calls()
+        self.assertIn("systemctl enable --now cron.service", calls)
+        self.assertTrue(any(c.startswith("apt-get install") and " ufw " in c for c in calls), calls)
+        self.assertIn("ufw allow 2222/tcp", calls)
+        nelcota = [c for c in calls if c.startswith("nelcota -C")]
+        self.assertEqual(nelcota, [
+            f"nelcota -C {self.host} init --yes api.example.com --firewall --email me@example.com",
+            f"nelcota -C {self.host} up",
+        ])
+        self.assertLess(calls.index("systemctl enable --now cron.service"),
+                        calls.index(nelcota[0]))
+
+    def test_setup_skips_init_when_the_host_exists(self):
+        self.host = self.root / "host dir"
+        self.host.mkdir()
+        (self.host / "nelcota-host.json").write_text("{}")
+        result = self.setup_vps("api.example.com")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual([c for c in self.calls() if c.startswith("nelcota -C")],
+                         [f"nelcota -C {self.host} up"])
+
+    def test_systemd_runtime_does_not_install_docker(self):
+        result = self.setup_vps("api.example.com", "--runtime", "systemd")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"nelcota -C {self.host} init --yes api.example.com --runtime systemd",
+                      self.calls())
+        self.assertNotIn("get.docker.com", result.stdout)
+
+    def test_setup_requires_root_before_changing_anything(self):
+        self.tool("apt-get", "#!/bin/sh\necho unexpected-apt >&2\nexit 99\n")
+        result = self.install("api.example.com")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("needs root", result.stderr)
+        self.assertNotIn("unexpected-apt", result.stderr)
 
 
 if __name__ == "__main__":

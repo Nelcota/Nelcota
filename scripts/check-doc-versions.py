@@ -41,7 +41,7 @@ def check(root: Path) -> list[str]:
         "CHANGELOG.md": [f"## [{server}]"],
         "docs/quickstart.md": [f"This guide targets server {server}.", f"--tag v{server}", f"@nelcota/client@{ts_version}"],
         "docs/onboarding/notes.md": [f"NELCOTA_VERSION={server}", f"--version {server}"],
-        "docs/deploy.md": [f"NELCOTA_VERSION={server} sh", f"init api.yourdomain.com --version {server} ", f"upgrade --version {server} "],
+        "docs/deploy.md": [f"sudo NELCOTA_VERSION={server} sh -s -- ", f"NELCOTA_VERSION={server} sh", f"init api.yourdomain.com --version {server} ", f"upgrade --version {server} "],
         "docs/README.md": [f"This source targets server {server};"],
         "docs/auth-integration.md": [f"The current source manifests use {server};"],
         "crates/core/README.md": [f"The workspace version is {server};"],
