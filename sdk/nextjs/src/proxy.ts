@@ -40,14 +40,14 @@ export async function createNelcotaProxy(options: NextOptions, policy: ProxyOpti
         if (!user.error) return privateHeaders(NextResponse.next());
         if (user.error.status === 403) return privateHeaders(NextResponse.json({ error: 'access_denied' }, { status: 403 }));
         if (user.error.code !== 'session_missing' && ![401, 404].includes(user.error.status)) return privateHeaders(NextResponse.json({ error: 'auth_service_unavailable' }, { status: 503 }));
-        const target = new URL(context.hasSession && user.error.status === 401 ? refresh : login, owner.origin);
+        const target = new URL(`${owner.basePath}${context.hasSession && user.error.status === 401 ? refresh : login}`, owner.origin);
         target.searchParams.set('next', safeReturnTo(`${request.nextUrl.pathname}${request.nextUrl.search}`));
         const response = NextResponse.redirect(target, 303);
         if (context.staleCookie) owner.expireCookie(response.cookies);
         return privateHeaders(response);
       });
     } catch (error) {
-      if (error instanceof SessionError && error.code === 'invalid_session') { const response = NextResponse.redirect(new URL(login, owner.origin), 303); owner.expireCookie(response.cookies); return privateHeaders(response); }
+      if (error instanceof SessionError && error.code === 'invalid_session') { const response = NextResponse.redirect(new URL(`${owner.basePath}${login}`, owner.origin), 303); owner.expireCookie(response.cookies); return privateHeaders(response); }
       throw error;
     }
   };

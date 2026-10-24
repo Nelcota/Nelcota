@@ -5,9 +5,9 @@ import { createNelcotaProxy } from '../src/proxy.js';
 import { Integration } from '../src/context.js';
 import { DevelopmentSessionStore } from '../src/memory-store.js';
 
-async function setup() {
+async function setup(basePath?: string) {
   const fetch = vi.fn(async () => Response.json({ code: 'invalid_token', message: 'Expired' }, { status: 401 }));
-  const options = { url: 'http://localhost:8000', appOrigin: 'http://localhost:3000', keys: [randomBytes(32).toString('base64url')], store: new DevelopmentSessionStore(), allowInsecureDevelopment: true, fetch };
+  const options = { url: 'http://localhost:8000', appOrigin: 'http://localhost:3000', keys: [randomBytes(32).toString('base64url')], store: new DevelopmentSessionStore(), allowInsecureDevelopment: true, fetch, ...(basePath ? { basePath } : {}) };
   return { options, fetch, proxy: await createNelcotaProxy(options, { protectedPaths: ['/profile', '/auth/private'] }) };
 }
 it('redirects anonymous protected pages to a configured origin without fetching auth', async () => {
@@ -56,4 +56,9 @@ it('signs out a cookie whose row is unreadable and clears that cookie', async ()
   expect(response.status).toBe(303); expect(new URL(response.headers.get('location')!).pathname).toBe('/login');
   expect(response.cookies.get(name!)?.value).toBe('');
   expect(response.headers.get('set-cookie')).toMatch(/Max-Age=0/i);
+});
+it('prefixes basePath on login redirects', async () => {
+  const { proxy } = await setup('/app');
+  const target = new URL((await proxy(new NextRequest('http://localhost:3000/profile'))).headers.get('location')!);
+  expect(target.pathname).toBe('/app/login'); expect(target.searchParams.get('next')).toBe('/profile');
 });

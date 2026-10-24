@@ -73,7 +73,10 @@ restrito a desenvolvimento loopback; não atende múltiplos processos.
   confira o resultado antes de `redirect('/profile')`. O redirecionamento do
   Next lança uma exceção; não a transforme em erro de autenticação.
 - `.callback(request, ...)`: somente GET em `/auth/callback`, com cookie,
-  estado e PKCE de uso único. Somente `auth.exchangeCode()` é permitido;
+  estado e PKCE de uso único. Com `basePath` do Next, informe a opção `basePath`
+  (ex.: `'/app'` resulta em `/app/auth/callback`; os redirecionamentos do proxy
+  também a incluem). A callback é reconhecida só pelo caminho, e `redirectTo` usa
+  a `appOrigin` configurada. Host e cabeçalhos encaminhados não são confiáveis. Somente `auth.exchangeCode()` é permitido;
   mutações comuns e gravações de dados são recusadas nesse contexto GET.
 
 Os métodos de auth cobrem login, cadastro, logout, renovação, usuário, atualização,

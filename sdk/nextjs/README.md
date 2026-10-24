@@ -157,7 +157,13 @@ normal request cancellation and streaming ownership.
 
 Start OAuth from a same-origin POST/Action with `auth.startOAuth({ provider,
 returnTo })`, then redirect to the returned authorization URL. The only GET
-callback context is `/auth/callback`:
+callback context is `/auth/callback`, prefixed by the `basePath` option when the
+app sets Next's `basePath` (for example `basePath: '/app'` gives
+`/app/auth/callback`). `redirectTo` is built from the configured `appOrigin`, and
+the callback is matched by path only: Host and forwarded headers are not trusted,
+so a proxy that rewrites them still works. The host-only cookie plus one-use
+state/PKCE bind it to the initiating browser. Proxy redirects also include
+`basePath`. Pass `endpoint: '/app/auth/session/refresh'` to `refreshSession`.
 
 ```ts
 export async function GET(request: Request): Promise<Response> {

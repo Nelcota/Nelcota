@@ -13,6 +13,8 @@ export interface CookieWriter extends CookieReader {
 export interface NextOptions {
   url: string;
   appOrigin: string;
+  /** Next `basePath`, e.g. '/app'; prefixes the OAuth callback. Default ''. */
+  basePath?: string;
   keys: readonly string[];
   store: SessionStore;
   allowInsecureDevelopment?: boolean;
@@ -65,6 +67,7 @@ function accessToken(state: SessionState | null): string | null {
 export class Integration<Database> {
   readonly #api: URL;
   readonly #origin: string;
+  readonly #basePath: string;
   readonly #name: string;
   readonly #secure: boolean;
   readonly #ttl: number;
@@ -79,6 +82,8 @@ export class Integration<Database> {
     const app = trustedUrl(options.appOrigin, development, true);
     if (development && !['localhost', '127.0.0.1', '[::1]'].includes(app.hostname)) throw new SessionError('configuration', 'Insecure development requires a loopback application origin');
     this.#origin = app.origin; this.#secure = app.protocol === 'https:';
+    this.#basePath = options.basePath ?? '';
+    if (this.#basePath !== '' && (!/^(\/[A-Za-z0-9_~-][A-Za-z0-9._~-]*)+$/.test(this.#basePath))) throw new SessionError('configuration', 'basePath must be empty or a canonical path such as /app');
     this.#namespace = `${this.#origin}\0${this.#api.href}`;
     const scope = createHash('sha256').update(this.#namespace).digest('hex').slice(0, 12);
     this.#name = options.cookieName ?? `${this.#secure ? '__Host-nelcota' : 'nelcota-dev'}-${scope}`;
@@ -92,6 +97,7 @@ export class Integration<Database> {
     return new Integration<Database>({ ...options }, await SessionSealer.create(options.keys));
   }
   get origin(): string { return this.#origin; }
+  get basePath(): string { return this.#basePath; }
   #binding(key: string): string { return `nelcota-next/v1\0${this.#origin}\0${this.#api.href}\0${key}`; }
   /** Unreadable rows (lost keys, tampering, mismatched expiry) count as signed out. */
   async #load(key: string, lease?: SessionLease): Promise<SessionState | null> {
@@ -154,7 +160,9 @@ export class Integration<Database> {
   }
   async write<T>(cookies: CookieWriter, request: Request, work: (context: WritableContext<Database>) => Promise<T>, callback = false): Promise<T> {
     // Callback GET only permits the PKCE exchange method, never general mutations.
-    const callbackRequest = callback && request.method === 'GET' && new URL(request.url).origin === this.#origin && new URL(request.url).pathname === '/auth/callback';
+    // Match the path only: request.url's host comes from an untrusted Host header.
+    // The host-only cookie and one-use state/PKCE bind the callback to its browser.
+    const callbackRequest = callback && request.method === 'GET' && new URL(request.url).pathname === `${this.#basePath}/auth/callback`;
     if (callback && !callbackRequest) throw new SessionError('csrf', 'Use the configured GET OAuth callback');
     if (!callbackRequest) requireMutation(request.headers, request.method, this.#origin);
     const existingId = cookies.get(this.#name)?.value ?? '';
@@ -254,7 +262,7 @@ export class Integration<Database> {
           mutate();
           const next: SessionState = { schema: 1, session: state?.session ?? null, pkce: null, oauthState: newSessionId(), returnTo: safeReturnTo(input.returnTo), expiresAt: state?.expiresAt ?? Date.now() + this.#ttl * 1000 };
           await save(next);
-          return auth.signInWithOAuth({ provider: input.provider, redirect: false, redirectTo: `${this.#origin}/auth/callback?state=${next.oauthState}` });
+          return auth.signInWithOAuth({ provider: input.provider, redirect: false, redirectTo: `${this.#origin}${this.#basePath}/auth/callback?state=${next.oauthState}` });
         },
         exchangeCode: async (code, options) => {
           ensure();
