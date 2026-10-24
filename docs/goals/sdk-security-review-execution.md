@@ -226,3 +226,10 @@ it and the focused test passes. Await the new hosted analysis; no alert was
 suppressed. The new date case, final58 candidate cases, framework/browser and
 packed consumer validations pass. CI still has explicit bundle/dependency gates;
 no green-check or production-approval claim is made.
+
+PR145 review corrections (session-pool DoS, unreadable-row lockout, session
+fixation, refresh-outage writes, lease/auth deadlines, basePath callback, `%25`
+proxy paths, HKDF sealing, Action CSRF note) are recorded in
+[G11's execution record](nextjs-sdk-execution.md#pr145-review-corrections). There
+are 90 Next unit cases. The PostgreSQL integration case was not rerun because no
+database was available.

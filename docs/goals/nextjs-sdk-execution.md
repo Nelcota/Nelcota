@@ -232,3 +232,23 @@ server regression passed again. No suppression was added. The base size gate
 remains failed at18302/17400B root,12102/11300B auth,9878/9550B REST and7896/7700B
 storage gzip. Rebuilt current candidate:58 tests, check/build, real Next/Chromium
 and packed external consumer pass. All earlier unresolved production gates remain.
+
+## PR145 review corrections
+
+Nine review findings were addressed on `feat/nextjs-sdk-g11` as separate commits:
+same-key PostgreSQL owners queue in-process and poll `pg_try_advisory_lock`
+within the store timeout, so waiters hold no pooled connection and no backend
+stays blocked. The example now reads bodies before the lease. Unreadable,
+mismatched or just-expired rows read as signed out, and writes replace them; the
+proxy clears the stale cookie. Writes rotate to a fresh ID for unknown cookies
+and identity changes (`lease.rotate`). A 429/5xx pre-refresh no longer fails a
+write. Auth deadlines derive from the lease budget (`leaseTimeout >= 2 *
+timeout`). There is a validated `basePath` with path-only callback matching.
+Public `%25` paths pass the proxy. Sealing v2 uses HKDF per-message keys and v1
+still opens. The Server Action method/Origin reliance is documented.
+
+Results: the Next package has 90 passed tests, with `check` and `build` passing.
+The real PostgreSQL integration case was **not run**: Docker and a local
+PostgreSQL were unavailable, so it stayed skipped and is not counted as passing.
+Real Next/Chromium, packed-consumer and backend smoke checks were not rerun for
+these corrections. Open gates N01/N02 are unchanged.
