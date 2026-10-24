@@ -23,5 +23,5 @@ export function createHttpClient(url: string | URL, options: TransportOptions = 
     timeout: options.timeout ?? 30_000,
     retries: options.retries ?? 2,
     token: options.accessToken ?? token ?? (() => null),
-  });
+  }, options.accessToken);
 }

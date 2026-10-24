@@ -26,7 +26,7 @@ export class AuthClient {
   constructor(http: HttpClient, options: AuthOptions = {}) {
     this.#http = http;
     this.#manager = new SessionManager(http.url, options, (token, request) =>
-      this.#token('refresh_token', { refresh_token: token }, request));
+      this.#token('refresh_token', { refresh_token: token }, request), http.accessToken);
   }
 
   onChange(listener: AuthListener): () => void { return this.#manager.onChange(listener); }
@@ -204,14 +204,14 @@ export class AuthClient {
   }
 
   async #user(method: 'GET' | 'PUT', body: Record<string, unknown> | undefined, options: AuthRequestOptions): Promise<Result<User>> {
-    const { data: session, error } = await this.getSession(options);
+    // Caller-owned tokens never read or update a different stored session.
+    const { data: session, error } = await (this.#http.accessToken ? ok(null) : this.getSession(options));
     if (error) return fail(error);
-    if (!session) return fail(clientError('session_missing', 'Not signed in'));
-    const remember = this.#manager.rememberUser(session);
-    const result = await this.#http.json<unknown>({ method, path: '/auth/v1/user', json: body, auth: session.access_token, signal: options.signal, timeout: options.timeout });
+    const remember = session ? this.#manager.rememberUser(session) : undefined;
+    const result = await this.#http.json<unknown>({ method, path: '/auth/v1/user', json: body, auth: session?.access_token ?? true, signal: options.signal, timeout: options.timeout });
     if (result.error) return fail(result.error);
     if (!isUser(result.data)) return fail(invalidResponse());
-    await remember(result.data);
+    await remember?.(result.data);
     return ok(result.data);
   }
 

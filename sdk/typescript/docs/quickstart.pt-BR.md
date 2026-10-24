@@ -191,3 +191,12 @@ O MIME explícito de upload usa partes de 1 a 127 caracteres ASCII, com letras,
 dígitos e `!#$&-^_.+`, como o servidor. Parâmetros após ponto e vírgula continuam
 válidos. Valores fora desse conjunto passam a ser recusados antes do upload,
 em vez de depender da substituição do tipo declarado no servidor.
+
+### Token fornecido pelo servidor
+
+Com `accessToken`, `getUser()` e `updateUser()` usam a identidade dessa fonte,
+sem ler ou alterar a sessão armazenada. Uma fonte nula retorna `session_missing`
+sem HTTP; ela não seleciona outra identidade em cache. A renovação automática
+fica desativada nos clientes combinados e de auth independentes. Outros métodos
+de auth chamados explicitamente ainda podem armazenar sessões; separe clientes
+de encaminhamento por requisição dos clientes de login gerenciado.

@@ -35,7 +35,7 @@ export interface RequestSpec {
   signal?: AbortSignal | undefined;
   /** Per-request timeout in ms (`0` disables it). */
   timeout?: number | undefined;
-  /** `false` sends no Authorization header; a string uses that token. */
+  /** `true` requires a source token; `false` omits auth; a string pins a token. */
   auth?: boolean | string | undefined;
   /** Internal response-shape check, after decoding and before publication. */
   validate?: (value: unknown) => boolean;
@@ -166,7 +166,7 @@ export class HttpClient {
   /** The base URL without trailing slashes. */
   readonly #base: string;
 
-  constructor(options: HttpOptions) {
+  constructor(options: HttpOptions, readonly accessToken?: TokenSource) {
     nonNegativeInteger(options.timeout, 'timeout', 2 ** 31 - 1);
     nonNegativeInteger(options.retries, 'retries');
     this.url = options.url;
@@ -213,6 +213,7 @@ export class HttpClient {
       assertTokenAllowed(token);
       headers.set('authorization', `Bearer ${token}`);
     }
+    if (spec.auth === true && !token) return { data: null, response: null, error: clientError('session_missing', 'Not signed in') };
     const bearer = headers.get('authorization');
     if (bearer?.toLowerCase().startsWith('bearer ')) assertTokenAllowed(bearer.slice(7));
 

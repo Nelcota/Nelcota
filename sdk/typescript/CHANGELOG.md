@@ -7,6 +7,10 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Fixed
 
+- Honor caller-provided tokens in `getUser()` and `updateUser()` without selecting
+  or modifying another stored session; disable automatic refresh consistently
+  for standalone and combined caller-token clients.
+
 - Decode large JSON strings without regex stack exhaustion, preserving exact numbers.
 - Observe synchronous and asynchronous auth listener failures through
   `onBackgroundError`, without stopping refresh or blocking reentrant callbacks.

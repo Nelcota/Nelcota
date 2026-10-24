@@ -6,6 +6,7 @@ import { NelcotaUsageError, clientError, fail, ok, type Result } from '../core/e
 import { abortable } from '../core/cancellation.js';
 import { isBrowser } from '../core/jwt.js';
 import { encodeJson } from '../core/json.js';
+import type { TokenSource } from '../core/http.js';
 
 import type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions } from './types.js';
 export type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions } from './types.js';
@@ -37,7 +38,7 @@ export class SessionManager {
   #disposed = false;
   #revision = 0;
 
-  constructor(url: URL, options: AuthOptions, private rotate: (token: string, options: AuthRequestOptions) => Promise<Result<Session>>) {
+  constructor(url: URL, options: AuthOptions, private rotate: (token: string, options: AuthRequestOptions) => Promise<Result<Session>>, accessToken?: TokenSource) {
     const margin = options.refreshMargin ?? 60;
     if (!Number.isFinite(margin) || margin < 0) throw new NelcotaUsageError('refreshMargin must be a finite non-negative number');
     const native = browserStorage();
@@ -58,7 +59,7 @@ export class SessionManager {
       this.#pkce = new BrowserSessionState(`${this.key}.pkce`, factory);
     }
     this.#margin = margin;
-    this.#autoRefresh = options.autoRefresh ?? isBrowser();
+    this.#autoRefresh = !accessToken && (options.autoRefresh ?? isBrowser());
     this.#onBackgroundError = options.onBackgroundError;
     if (isBrowser()) this.#broadcast = new Broadcast(`${this.key}.channel`, () => this.#background(this.#reload()));
     if (this.#autoRefresh) this.#background(this.current().then(session => this.#schedule(session)));

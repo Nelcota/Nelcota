@@ -195,9 +195,11 @@ unfinished reservation; an accepted replacement remains with its owner until
 it can be persisted or a newer committed session or logout supersedes it.
 Custom adapters require repair before sharing state that failed to persist.
 
-An explicit `accessToken` controls REST/storage requests and disables automatic
-session refresh in the combined client. Auth methods remain available and may
-store a session when called explicitly.
+An explicit `accessToken` controls REST/storage and `getUser()`/`updateUser()`
+identity. Those user operations do not consult or update stored sessions; null
+returns `session_missing` without HTTP. Automatic refresh is disabled for both
+combined and standalone auth clients. Other explicit auth methods may still
+store sessions; separate managed-login clients from caller-forwarding clients.
 
 ## Bucket settings
 
