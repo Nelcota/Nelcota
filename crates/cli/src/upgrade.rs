@@ -40,9 +40,7 @@ pub fn require_outside_controller(project: &Project) -> anyhow::Result<()> {
 pub fn require_cli_binary() -> anyhow::Result<()> {
     let exe = std::env::current_exe()?.canonicalize()?;
     if exe.starts_with(crate::updates::CONTROLLER_BIN_DIR) {
-        bail!(
-            "this is the updates controller's binary; run the installed CLI (`nelcota`) instead"
-        );
+        bail!("this is the updates controller's binary; run the installed CLI (`nelcota`) instead");
     }
     Ok(())
 }
