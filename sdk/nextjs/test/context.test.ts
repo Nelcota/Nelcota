@@ -129,7 +129,7 @@ it('supports an explicit local reset without decrypting unavailable state', asyn
   const original = await setup({ store });
   await original.integration.write(original.jar, post(), context => context.auth.signInWithPassword(credentials));
   const rotated = await setup({ store });
-  await expect(rotated.integration.read(original.jar, context => context.getUser())).rejects.toMatchObject({ code: 'invalid_session' });
+  await rotated.integration.read(original.jar, async context => { expect(context.hasSession).toBe(false); expect(context.staleCookie).toBe(true); });
   await rotated.integration.forget(original.jar, post());
   await rotated.integration.read(original.jar, async context => { expect(context.hasSession).toBe(false); });
   expect(original.jar.values.size).toBe(0);
@@ -173,4 +173,38 @@ it('ends the adapter header deadline before handing a stream to its caller', asy
   await new Promise(resolve => setTimeout(resolve, 150));
   expect(signal?.aborted).toBe(false);
   expect(await result.data?.text()).toBe('accepted object');
+});
+it('treats rows sealed with lost keys as signed out and lets login replace them', async () => {
+  const store = new DevelopmentSessionStore();
+  const original = await setup({ store });
+  await original.integration.write(original.jar, post(), context => context.auth.signInWithPassword(credentials));
+  const rotated = await setup({ store });
+  await rotated.integration.read(original.jar, async context => {
+    expect(context.hasSession).toBe(false); expect(context.staleCookie).toBe(true);
+    expect((await context.getUser()).error?.code).toBe('session_missing');
+  });
+  const result = await rotated.integration.write(original.jar, post(), context => context.auth.signInWithPassword(credentials));
+  expect(result.data?.id).toBe('user-one');
+  await rotated.integration.read(original.jar, async context => { expect(context.hasSession).toBe(true); expect((await context.getUser()).data?.id).toBe('user-one'); });
+});
+it('removes an unreadable row and clears its cookie when a write saves nothing', async () => {
+  const store = new DevelopmentSessionStore();
+  const original = await setup({ store });
+  const ownership = vi.spyOn(store, 'exclusive');
+  await original.integration.write(original.jar, post(), context => context.auth.signInWithPassword(credentials));
+  const key = ownership.mock.calls[0]![0];
+  const rotated = await setup({ store });
+  await rotated.integration.write(original.jar, post(), async () => undefined);
+  expect(await store.read(key)).toBeNull();
+  expect(original.jar.writes.at(-1)?.options.maxAge).toBe(0); expect(original.jar.values.size).toBe(0);
+  expect(rotated.requests).toHaveLength(0);
+});
+it('counts a row that expires between the store check and decryption as expired', async () => {
+  const { integration, jar, store } = await setup({ sessionTtlSeconds: 300 });
+  await integration.write(jar, post(), context => context.auth.signInWithPassword(credentials));
+  const read = store.read.bind(store), now = Date.now();
+  const clock = vi.spyOn(Date, 'now');
+  vi.spyOn(store, 'read').mockImplementation(async key => { const row = await read(key); clock.mockReturnValue(now + 301000); return row; });
+  try { await integration.read(jar, async context => { expect(context.hasSession).toBe(false); expect(context.staleCookie).toBe(true); }); }
+  finally { clock.mockRestore(); }
 });

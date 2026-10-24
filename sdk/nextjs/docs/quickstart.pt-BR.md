@@ -36,7 +36,10 @@ persistência local; perder a resposta pode exigir novo login.
 Gere uma chave com `openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n'`.
 Guarde no ambiente secreto do servidor, sem prefixo `NEXT_PUBLIC_`. Durante a
 rotação informe a chave atual e até duas anteriores, mantendo-as durante a
-validade máxima das sessões. Não coloque chaves, tokens ou cookies em logs,
+validade máxima das sessões. Perder todas as chaves antigas encerra essas sessões:
+uma linha ilegível ou com expiração divergente é lida como sem sessão
+(`staleCookie` verdadeiro), a próxima gravação a remove e segue sem sessão, e o
+proxy limpa o cookie ao redirecionar para o login. Não coloque chaves, tokens ou cookies em logs,
 props, URLs de redirecionamento ou bundles públicos.
 
 O cookie contém somente um ID aleatório opaco; é HttpOnly, SameSite=Lax,

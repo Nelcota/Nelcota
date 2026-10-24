@@ -55,7 +55,9 @@ Generate each key with `openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n'`.
 Keep it in server secret storage; no `NEXT_PUBLIC_` prefix. Supply current then
 previous keys (at most three) during rotation, retaining old keys through the
 maximum session lifetime. Losing all old keys signs those sessions out; it does
-not permit decrypting or adopting them. `forgetLocalSession()` provides an
+not permit decrypting or adopting them. An unreadable or mismatched row reads as
+no session (`staleCookie` is true), the next write deletes it and continues
+signed out, and the proxy clears the cookie when it redirects to login. `forgetLocalSession()` provides an
 explicit same-origin POST reset without requiring successful decryption.
 
 Use durable PostgreSQL commits and direct/session pooling. **Transaction pooling

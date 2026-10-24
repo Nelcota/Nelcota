@@ -25,6 +25,8 @@ export type DataClient<Database> = Pick<NelcotaClient<Database, DefaultSchemaNam
 export interface VerifiedContext<Database> {
   client: DataClient<Database>;
   hasSession: boolean;
+  /** A cookie was presented without usable state (missing, expired or unreadable). */
+  staleCookie: boolean;
   getUser(options?: AuthRequestOptions): Promise<Result<User>>;
 }
 export type MutationOptions = Pick<AuthRequestOptions, 'timeout'>;
@@ -91,12 +93,21 @@ export class Integration<Database> {
   }
   get origin(): string { return this.#origin; }
   #binding(key: string): string { return `nelcota-next/v1\0${this.#origin}\0${this.#api.href}\0${key}`; }
-  async #load(key: string, lease?: SessionLease): Promise<SessionState | null> {
+  /** Unreadable rows (lost keys, tampering, mismatched expiry) count as signed out. */
+  async #load(key: string, lease?: SessionLease): Promise<{ state: SessionState | null; unreadable: boolean }> {
     const row = await (lease ? lease.load() : this.#options.store.read(key));
-    if (!row) return null;
-    const state = await this.#sealer.open(row.sealed, this.#binding(key));
-    if (row.expiresAt !== state.expiresAt) throw new SessionError('invalid_session', 'Session expiry could not be verified');
-    return state;
+    if (!row) return { state: null, unreadable: false };
+    try {
+      const state = await this.#sealer.open(row.sealed, this.#binding(key));
+      if (row.expiresAt === state.expiresAt) return { state, unreadable: false };
+    } catch (cause) { if (!(cause instanceof SessionError)) throw cause; }
+    // A row expiring between the store check and open() is expired, not unreadable.
+    return { state: null, unreadable: row.expiresAt > Date.now() };
+  }
+  /** Clears this integration's cookie, e.g. on a proxy redirect for a stale session. */
+  expireCookie(cookies: CookieWriter): void {
+    try { cookies.set(this.#name, '', { httpOnly: true, secure: this.#secure, sameSite: 'lax', path: '/', maxAge: 0 }); }
+    catch (cause) { throw new SessionError('session_store', 'Session cookie publication failed', cause); }
   }
   #client(token: () => string | null, alive: () => boolean, readOnly: boolean, lifetime?: AbortSignal): NelcotaClient<Database> {
     const send = this.#options.fetch ?? globalThis.fetch.bind(globalThis);
@@ -128,10 +139,10 @@ export class Integration<Database> {
   }
   async read<T>(cookies: CookieReader, work: (context: VerifiedContext<Database>) => Promise<T>): Promise<T> {
     const id = cookies.get(this.#name)?.value ?? '', key = sessionKey(id, this.#namespace);
-    const state = key ? await this.#load(key) : null;
+    const state = key ? (await this.#load(key)).state : null;
     let alive = true;
     const client = this.#client(() => accessToken(state), () => alive, true);
-    try { return await work({ client: this.#data(client), hasSession: state?.session !== null && state?.session !== undefined, getUser: options => client.auth.getUser(options) }); }
+    try { return await work({ client: this.#data(client), hasSession: state?.session !== null && state?.session !== undefined, staleCookie: id !== '' && state === null, getUser: options => client.auth.getUser(options) }); }
     finally { alive = false; client.dispose(); }
   }
   /** Explicit same-origin local reset, usable even when old keys/state are unavailable. */
@@ -139,8 +150,7 @@ export class Integration<Database> {
     requireMutation(request.headers, request.method, this.#origin);
     const key = sessionKey(cookies.get(this.#name)?.value ?? '', this.#namespace);
     if (key) await this.#options.store.exclusive(key, lease => lease.remove());
-    try { cookies.set(this.#name, '', { httpOnly: true, secure: this.#secure, sameSite: 'lax', path: '/', maxAge: 0 }); }
-    catch (cause) { throw new SessionError('session_store', 'Session cookie publication failed', cause); }
+    this.expireCookie(cookies);
   }
   async write<T>(cookies: CookieWriter, request: Request, work: (context: WritableContext<Database>) => Promise<T>, callback = false): Promise<T> {
     // Callback GET only permits the PKCE exchange method, never general mutations.
@@ -152,7 +162,10 @@ export class Integration<Database> {
     const key = sessionKey(id, this.#namespace);
     if (!key) throw new SessionError('invalid_session', 'Invalid generated session id');
     return this.#options.store.exclusive(key, async lease => {
-      let state = await this.#load(key, lease);
+      const loaded = await this.#load(key, lease);
+      let state = loaded.state;
+      // Proceed signed out: an unreadable row must not lock the browser out of login.
+      if (loaded.unreadable) await lease.remove();
       let alive = true, accepting = true, failed = false, cookieNeeded = false;
       let identityMutation = false;
       let queued = 0, tail: Promise<void> = Promise.resolve();
@@ -285,6 +298,7 @@ export class Integration<Database> {
             try { cookies.set(this.#name, keep ? id : '', { httpOnly: true, secure: this.#secure, sameSite: 'lax', path: '/', maxAge: keep && state ? Math.max(0, Math.floor((state.expiresAt - Date.now()) / 1000)) : 0 }); }
             catch (cause) { throw new SessionError('session_store', 'Session cookie publication failed', cause); }
           }
+          if (!cookieNeeded && loaded.unreadable) this.expireCookie(cookies);
         } finally { alive = false; client.dispose(); authClient.dispose(); }
       }
     });

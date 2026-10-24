@@ -45,3 +45,15 @@ it('preserves service errors instead of converting every failure to a login redi
   const expired = await proxy(request());
   expect(new URL(expired.headers.get('location')!).pathname).toBe('/auth/refresh');
 });
+it('signs out a cookie whose row is unreadable and clears that cookie', async () => {
+  const { options, proxy } = await setup();
+  const jar = new Map<string, string>();
+  const writer = { get: (name: string) => jar.has(name) ? { value: jar.get(name)! } : undefined, set: (name: string, value: string) => { jar.set(name, value); } };
+  const other = await Integration.create({ ...options, keys: [randomBytes(32).toString('base64url')], fetch: async () => Response.json({ access_token: 'fixture', refresh_token: 'fixture-refresh', token_type: 'bearer', expires_in: 900, expires_at: Math.floor(Date.now() / 1000) + 900, user: { id: 'one', email: 'one@example.test', user_metadata: {}, created_at: '', email_confirmed_at: null, last_sign_in_at: null } }) });
+  await other.write(writer, new Request('http://localhost:3000/login', { method: 'POST', headers: { origin: 'http://localhost:3000' } }), context => context.auth.signInWithPassword({ email: 'one@example.test', password: 'fixture-password' }));
+  const [name] = [...jar.keys()];
+  const response = await proxy(new NextRequest('http://localhost:3000/profile', { headers: { cookie: [...jar].map(([key, value]) => `${key}=${value}`).join('; ') } }));
+  expect(response.status).toBe(303); expect(new URL(response.headers.get('location')!).pathname).toBe('/login');
+  expect(response.cookies.get(name!)?.value).toBe('');
+  expect(response.headers.get('set-cookie')).toMatch(/Max-Age=0/i);
+});
