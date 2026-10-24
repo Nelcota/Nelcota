@@ -153,6 +153,14 @@ jobs:
       - run: npm run test:memory
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - name: e2e traces
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: admin-ui-e2e-traces
+          path: crates/admin/ui/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
       - run: npm run build
       # status (not diff): also catches a new file that was not versioned or a
       # versioned file the build no longer produces.
