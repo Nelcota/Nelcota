@@ -74,6 +74,23 @@ async fn embedded_spa_with_security_headers() {
             .contains("immutable")
     );
 
+    // The theme is set by a blocking script file before the first paint.
+    let theme = index
+        .text
+        .split("src=\"")
+        .filter_map(|s| s.split('"').next())
+        .find(|src| src.starts_with("/admin/assets/theme-init-"))
+        .expect("index.html loads the theme script");
+    let js = app.raw(Method::GET, theme, &[], String::new()).await;
+    assert_eq!(js.status, StatusCode::OK);
+    assert!(js.text.contains("mode-watcher-mode"));
+    assert!(
+        js.headers[header::CACHE_CONTROL]
+            .to_str()
+            .unwrap()
+            .contains("immutable")
+    );
+
     let reply = app
         .raw(
             Method::GET,
