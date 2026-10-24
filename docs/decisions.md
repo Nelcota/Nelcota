@@ -974,6 +974,14 @@ Blue primary actions remain distinct from neutral selection, secondary controls
 and destructive actions. Contextual icons supplement visible labels and remain
 hidden from assistive technology.
 
+**D104. `crypto-bigint` 0.5 ignored in `cargo audit`/`cargo deny`
+(RUSTSEC-2026-0387).** It comes through `p256`/`p384` 0.13, which the latest
+`jsonwebtoken` and `openidconnect` still require; the fix exists only in
+`crypto-bigint` 0.7. The timing issues affect operations on secret integers.
+Nelcota signs with EdDSA or HS256 (D16) and uses these curves only to verify
+provider signatures with public keys. Remove the ignore once both crates move to
+`elliptic-curve` 0.14, or revisit if ECDSA is ever used for signing.
+
 ### Known pending items
 
 - Filtering parent rows by their embeds (`!inner`) and self-referencing embeds.
