@@ -109,7 +109,7 @@ invalid immediately. That failed assertion was corrected to the documented
 stateless-token contract and replaced with direct refresh-revocation and local
 cookie-replay checks; no backend revocation behavior was changed.
 
-- Final SDK revision `af64ebe781001abfaa617feb3e19322fd0f7ac1c`: a separate
+- Earlier SDK revision `af64ebe781001abfaa617feb3e19322fd0f7ac1c`: a separate
   120.03-second load passed 180,101 operations (1,500.84/second), p95 23.09 ms,
   p99 161.70 ms, at most four connections, zero errors and zero retained locks.
   RSS growth after warmup was 249,856 bytes. See the
@@ -129,3 +129,35 @@ successful run. Hosted checks for the final PR revision are available from
 The final Next 15 local rerun also inspected every production client JavaScript
 chunk for a build-time random server key, server-session implementation markers
 and credential canaries; all chunks passed.
+
+## Hosted contention finding and correction
+
+Hosted run [40138721616](https://github.com/Nelcota/Nelcota/actions/runs/40138721616)
+on `cb477130` passed all eight framework jobs, including Next 15 on all three
+browser engines, but its backend load failed within nine seconds with
+`Session lock acquisition timed out`. Earlier local load passes remain historical
+evidence, not proof that the polling variant handles continuous contention on
+every host. Resource acceptance was reopened in issue 151.
+
+A hot per-instance queue can immediately reacquire a released lock before another
+instance's next polling attempt. Replace polling acquisition with PostgreSQL's
+blocking advisory-lock queue, bounded by a server-side `statement_timeout` set
+below the remaining acquisition deadline. Restore the caller's previous timeout
+before running work. Query failure destroys the connection, so a cancelled lock
+wait or failed restore never returns a lock-holding/modified connection to the
+pool. Client deadlines and parent cancellation remain enforced independently.
+
+A real PostgreSQL regression holds the lock, queues a competing instance, then
+verifies it acquires before the first instance's queued follower. Another case
+checks that server timeout leaves no blocked advisory-lock wait. The one-connection
+regression also checks restoration of a nondefault statement timeout.
+
+The queued-lock correction passed 122 tests with zero skips, types/build, and
+another 120.01-second run: **166,000 operations**, 1,383.33/second, p50 13.02 ms,
+p95 16.48 ms, p99 19.16 ms, zero errors, at most four connections, and zero
+retained advisory locks. RSS growth after warmup was 237,568 bytes. All 22
+negative controls passed in the same run. The
+[queued-lock report](results/nextjs-151-fair-soak.json) records source Git blob
+identities as well as compiled module and backend hashes. Earlier polling
+measurements remain above for comparison; only a successful hosted rerun can
+clear the reopened resource gate.

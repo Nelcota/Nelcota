@@ -75,8 +75,10 @@ Set pool connection/query limits, close the pool during your application's
 shutdown, and handle pool idle errors. Saves are separate autocommits, not a
 transaction spanning HTTP. The store bounds connection attempts, query time and
 lease lifetime; a failed owner cannot write again. Same-key requests queue in
-the process before borrowing a connection, and the lock is polled with
-`pg_try_advisory_lock` within the store `timeout` (default 5 s). A request that
+the process before borrowing a connection. Cross-instance waiters join
+PostgreSQL's lock queue with a server-side statement timeout within the store
+`timeout` (default 5 s), preventing a hot polling owner from starving another
+instance. The previous statement timeout is restored before running work. A request that
 cannot obtain it fails with `SessionError` `session_store` instead of leaving a
 backend waiting in PostgreSQL. `new PostgresSessionStore(pool, timeout, leaseTimeout)`
 defaults to 5 s / 60 s and requires `leaseTimeout >= 2 * timeout`. Each auth

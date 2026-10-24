@@ -9,6 +9,8 @@ successful publication; a source version or Git tag alone is insufficient.
 
 - Reuse the PostgreSQL session owner's connection for lineage reads and nested
   lineage locks, preventing pool starvation under concurrent writable requests.
+- Queue cross-instance advisory-lock waiters on PostgreSQL with a server-side
+  acquisition timeout, preventing starvation by a hot polling instance.
 - Inherit parent cancellation for nested owners and destroy failed connections.
 
 ### Added

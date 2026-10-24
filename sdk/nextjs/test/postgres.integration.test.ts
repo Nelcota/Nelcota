@@ -118,6 +118,7 @@ it.skipIf(!process.env['NELCOTA_NEXT_TEST_DATABASE_URL'])('makes progress with o
   try {
     await admin.query(`CREATE DATABASE "${name}"`); created = true;
     await pool.query(await readFile(new URL('../sql/session-store.sql', import.meta.url), 'utf8'));
+    await pool.query("SET statement_timeout='4321ms'");
     const store = new PostgresSessionStore(pool);
     await Promise.all(Array.from({ length: 8 }, async (_, index) => {
       const key = index.toString(16).padStart(64, '0'), lineage = 'f'.repeat(64);
@@ -131,10 +132,56 @@ it.skipIf(!process.env['NELCOTA_NEXT_TEST_DATABASE_URL'])('makes progress with o
       });
     }));
     expect(pool.totalCount).toBe(1); expect(pool.idleCount).toBe(1); expect(pool.waitingCount).toBe(0);
+    expect((await pool.query('SHOW statement_timeout')).rows[0].statement_timeout).toBe('4321ms');
     const locks = await pool.query("SELECT count(*) FROM pg_locks WHERE locktype='advisory' AND pid=pg_backend_pid()");
     expect(locks.rows[0].count).toBe('0');
   } finally {
     await pool.end();
+    if (created) await admin.query(`DROP DATABASE "${name}" WITH (FORCE)`);
+    await admin.end();
+  }
+}, 20000);
+
+it.skipIf(!process.env['NELCOTA_NEXT_TEST_DATABASE_URL'])('queues competing app instances fairly and cancels blocked locks on the server', async () => {
+  const connectionString = process.env['NELCOTA_NEXT_TEST_DATABASE_URL']!;
+  const name = `nelcota_next_test_${randomBytes(8).toString('hex')}`;
+  const url = new URL(connectionString); url.pathname = `/${name}`;
+  const admin = new Pool({ connectionString, max: 1, connectionTimeoutMillis: 1000 });
+  const pools = [0, 1].map(() => new Pool({ connectionString: url.href, max: 1, connectionTimeoutMillis: 1000 }));
+  for (const pool of [admin, ...pools]) pool.on('error', () => undefined);
+  let created = false, release: (() => void) | undefined;
+  try {
+    await admin.query(`CREATE DATABASE "${name}"`); created = true;
+    const one = new PostgresSessionStore(pools[0]!), two = new PostgresSessionStore(pools[1]!);
+    const key = 'e'.repeat(64), order: string[] = [];
+    let entered!: () => void;
+    const ready = new Promise<void>(resolve => { entered = resolve; });
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const owner = one.exclusive(key, async () => { entered(); await gate; });
+    await ready;
+    const local = one.exclusive(key, async () => { order.push('local'); });
+    const remote = two.exclusive(key, async () => { order.push('remote'); });
+    for (let attempt = 0; ; attempt++) {
+      const queued = await admin.query("SELECT count(*) FROM pg_locks WHERE locktype='advisory' AND NOT granted AND database=(SELECT oid FROM pg_database WHERE datname=$1)", [name]);
+      if (queued.rows[0].count === '1') break;
+      if (attempt > 100) throw new Error('Competing app did not join the server lock queue');
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    release!(); await owner; await remote; await local;
+    expect(order).toEqual(['remote', 'local']);
+    expect((await pools[1]!.query('SHOW statement_timeout')).rows[0].statement_timeout).toBe('0');
+    let unblock!: () => void, acquired!: () => void;
+    const acquiredGate = new Promise<void>(resolve => { acquired = resolve; });
+    const held = one.exclusive(key, async () => { acquired(); await new Promise<void>(resolve => { unblock = resolve; }); });
+    await acquiredGate;
+    try {
+      await expect(new PostgresSessionStore(pools[1]!, 100, 200).exclusive(key, async () => true)).rejects.toMatchObject({ code: 'session_store' });
+      const waiting = await admin.query("SELECT count(*) FROM pg_locks WHERE locktype='advisory' AND NOT granted AND database=(SELECT oid FROM pg_database WHERE datname=$1)", [name]);
+      expect(waiting.rows[0].count).toBe('0');
+    } finally { unblock(); await held; }
+  } finally {
+    release?.();
+    for (const pool of pools) await pool.end();
     if (created) await admin.query(`DROP DATABASE "${name}" WITH (FORCE)`);
     await admin.end();
   }

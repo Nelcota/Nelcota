@@ -1,6 +1,6 @@
 import type { SessionConnection, SessionPool } from '../src/postgres.js';
 
-/** In-memory stand-in for the five statements PostgresSessionStore issues.
+/** In-memory stand-in for the statements PostgresSessionStore issues.
  * Session advisory locks are owned per connection (re-entrant, counted) and
  * are dropped when a connection is destroyed, as in PostgreSQL.
  */
@@ -12,10 +12,19 @@ export class FakePostgres {
     return { connect: async () => this.#connection(++this.#next) };
   }
   #connection(id: number): SessionConnection {
+    let timeout = '0';
     return {
       query: async (text, values = []) => {
         await Promise.resolve();
         const key = String(values[0]);
+        if (text.includes('current_setting')) return { rows: [{ timeout }] };
+        if (text.includes('set_config')) { timeout = key; return { rows: [] }; }
+        if (text.includes('pg_advisory_lock(')) {
+          while (this.#locks.has(key) && this.#locks.get(key)?.owner !== id) await new Promise(resolve => setTimeout(resolve, 1));
+          const held = this.#locks.get(key);
+          this.#locks.set(key, { owner: id, count: (held?.count ?? 0) + 1 });
+          return { rows: [] };
+        }
         if (text.includes('pg_try_advisory_lock')) {
           const held = this.#locks.get(key);
           if (held && held.owner !== id) return { rows: [{ locked: false }] };
