@@ -95,14 +95,49 @@ credentials locally from `.nelcota/dev.env`.
 | Transactional events and signed delivery with retries | [Webhooks](docs/webhooks.md) |
 | Embedded English/Portuguese database and account administration | [Panel](docs/panel.md) |
 | Docker/systemd deployment, isolated projects, backups and database PITR | [Deploy](docs/deploy.md), [Backup](docs/backup.md) |
-| JavaScript/TypeScript and native Rust clients | [TypeScript SDK](sdk/typescript/README.md), [Rust SDK](sdk/rust/README.md) |
+| TypeScript, Rust and Next.js App Router clients | [SDK overview](sdk/README.md) |
+
+## Deploy a VPS
+
+Point your domain's DNS A record at a Linux VPS, then run on Debian/Ubuntu or
+Fedora/RHEL:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo NELCOTA_VERSION=0.5.3 sh -s -- api.yourdomain.com
+```
+
+The current installer prepares cron, Docker and the CLI, initializes the host
+in `/opt/nelcota` and starts its projects and Caddy. Add `--firewall` to install
+and configure ufw, or `--dir <folder>` to choose the host directory. Keep the
+panel password shown during setup. Read [deployment](docs/deploy.md) for DNS,
+ports, runtime choices and backups. The installer comes from `main`; the version
+pin selects the published CLI and image, not a snapshot of the installer.
+
+## Application SDKs
+
+| Application | Package | Guide |
+| --- | --- | --- |
+| JavaScript / TypeScript | `@nelcota/client@0.2.2` | [REST, auth and storage](sdk/typescript/README.md) |
+| Native Rust / Tokio | `nelcota-client = "0.1.5"` | [Rust client](sdk/rust/README.md) |
+| Next.js App Router / Node.js | `@nelcota/nextjs@0.1.0` with `@nelcota/client@0.2.2` | [Server Components, Actions, Route Handlers and OAuth](sdk/nextjs/README.md) |
+
+Publication and registry-consumer checks for these versions are recorded in the
+[October 24 checkpoint](docs/goals/sdk-release-completion.md#publication-checkpoint--2026-10-24).
+Next.js uses a dedicated PostgreSQL session store and request-scoped clients;
+Server Components only read sessions. Its supported matrix is Next 16.4.3 /
+React 19.3.1 on Node 22, 24 and 26. Source now targets Next.js SDK 0.1.1 with
+additional session-concurrency corrections; see [version availability](docs/releases/README.md)
+and the guide before configuring sessions.
 
 ## Status and roadmap
 
 This source targets server **0.5.3**. SDKs have independent versions.
 Confirm published artifacts on the [release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.3).
-This patch includes installation, authentication and panel corrections; controlled
-updates, host project management and durable PITR recovery fencing remain available.
+Changes after the 0.5.3 tag remain in [Unreleased](CHANGELOG.md#unreleased),
+including the latest panel usability improvements, guarded CLI upgrades on
+controller-enrolled hosts and the oversized-refresh-token correction. The
+[current status](docs/current-status.md) separates these changes from published
+artifacts. Host project management and durable PITR recovery fencing remain available.
 See the [changelog](CHANGELOG.md), [version and upgrade guide](docs/releases/README.md)
 and [release handoff](docs/onboarding/release.md) for source/package distinctions.
 A source build can report the same binary version as a published release until

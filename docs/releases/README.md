@@ -14,12 +14,22 @@ does not itself publish a package.
 | Rust SDK | 0.1.5 | [crates.io version](https://crates.io/crates/nelcota-client/0.1.5); confirm the version before updating Cargo.lock |
 | Next.js integration | 0.1.0 | [npm version](https://www.npmjs.com/package/@nelcota/nextjs/v/0.1.0); [release procedure](../../sdk/nextjs/docs/releasing.md) and [verification evidence](../goals/sdk-release-completion.md) |
 
+The [October 24 publication checkpoint](../goals/sdk-release-completion.md#publication-checkpoint--2026-10-24)
+records publication and clean registry consumers for all three SDK versions.
 TypeScript 0.2.1 and Rust 0.1.4 are the previous published SDK baselines. The
 TypeScript patch includes the session, query and transport corrections from
 PRs #143 and #155; the Rust patch includes logout, reserved-filter, file-store cancellation,
 timeout and MIME corrections, together with private module organization. Release workflows verify the tagged
-source before publication. Before a new package is available, use a reviewed
-local archive rather than assuming an older package contains these changes.
+source before publication. For future unreleased changes, use a reviewed
+local archive rather than assuming a published package contains them.
+
+Next.js source now targets **0.1.1**, which fixes PostgreSQL session contention
+and adds a pinned Next 15 compatibility consumer. The table above retains the
+confirmed 0.1.0 publication checkpoint. A registry query during this update
+returned no 0.1.1 version; confirm with `npm view @nelcota/nextjs@0.1.1 version`
+before selecting it. Until publication, use a reviewed local archive for these
+corrections. See [the changelog](../../sdk/nextjs/CHANGELOG.md) and
+[validation follow-up](../goals/nextjs-151-validation.md).
 
 ## Update an application
 
@@ -37,6 +47,19 @@ For Rust, update the dependency to `nelcota-client = "0.1.5"`, then:
 cargo update -p nelcota-client --precise 0.1.5
 cargo tree -p nelcota-client
 ```
+
+For a supported Next.js App Router application, install the adapter and its base
+SDK together (the production PostgreSQL store also needs application-owned `pg`):
+
+```sh
+npm install --save-exact @nelcota/nextjs@0.1.0 @nelcota/client@0.2.2
+npm install pg
+npm ls @nelcota/nextjs @nelcota/client
+```
+
+Follow [the Next.js guide](../../sdk/nextjs/README.md) for the dedicated session
+schema, encryption keys, same-origin auth routes and supported pooling mode.
+Installing the adapter alone does not configure server-side sessions.
 
 Run the application's type/build/tests and exercise sign-in, refresh/sign-out,
 row writes and a file transfer against staging. Read the
@@ -68,6 +91,16 @@ in [the update guide](../panel-updates.md#enablement-and-acceptance-evidence).
 PITR fencing uses matching CLI/app artifacts and explicit `pitr recover`;
 ordinary `up` does not clear a restore fence. The controller's V1 layout limits
 and the existing F07 rate-limit trade-off remain unchanged.
+
+## Changes after the server tag
+
+The workspace still reports 0.5.3 while `main` includes changes after that tag.
+The latest installer adds one-command VPS preparation independently of the
+selected binary version. Recent panel usability, CLI controller-fallback and
+auth validation changes are listed under [Unreleased](../../CHANGELOG.md#unreleased).
+They require an artifact built from the corresponding source revision; selecting
+`--version 0.5.3` does not add them to the existing release. See
+[current status](../current-status.md) for the dated scope and references.
 
 ## Documentation source and historical evidence
 

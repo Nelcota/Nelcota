@@ -1,11 +1,14 @@
 # Nelcota for Next.js
 
 App Router integration targeting `@nelcota/nextjs` **0.1.1**. It requires
-`@nelcota/client` 0.2.2 or later, which is available on npm. Package publication
-is separate from source verification: confirm the selected version with
-`npm view @nelcota/nextjs@0.1.1 version` before installing. Before publication,
-use a reviewed local tarball. See [releasing](docs/releasing.md) and the
-[execution record](../../docs/goals/nextjs-sdk-execution.md).
+`@nelcota/client` 0.2.2 or later. Confirm the selected version with
+`npm view @nelcota/nextjs@0.1.1 version` before installing; use a reviewed local
+tarball until publication. The
+[October 24 publication checkpoint](../../docs/goals/sdk-release-completion.md#publication-checkpoint--2026-10-24)
+records the previous 0.1.0 package's registry consumers, not publication of 0.1.1.
+See [releasing](docs/releasing.md), the
+[execution record](../../docs/goals/nextjs-sdk-execution.md) and the
+[0.1.1 concurrency and compatibility evidence](../../docs/goals/nextjs-151-validation.md).
 
 Install in a compatible Next App Router application:
 
