@@ -1,17 +1,46 @@
 /// <reference types="vitest/config" />
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import tailwindcss from '@tailwindcss/vite'
+import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 
 // .env.example exports NELCOTA_API_URL empty, which is not a proxy target.
 const apiTarget = process.env.NELCOTA_API_URL || 'http://127.0.0.1:8000'
+
+// src/theme-init.js must run before the first paint, so it is a classic
+// blocking script at the end of <head> (after the bundle's module script,
+// which the server tests expect first). Vite only bundles module scripts, and the CSP
+// forbids inline ones: emit it as a hashed file under assets/ (served as
+// immutable) and point a <script> tag at it.
+function themeInit(): Plugin {
+  const source = readFileSync(fileURLToPath(new URL('./src/theme-init.js', import.meta.url)), 'utf8')
+  const fileName = `assets/theme-init-${createHash('sha256').update(source).digest('hex').slice(0, 8)}.js`
+  let base = '/'
+  let dev = false
+  return {
+    name: 'nelcota-theme-init',
+    configResolved(config) {
+      base = config.base
+      dev = config.command === 'serve'
+    },
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName, source })
+    },
+    transformIndexHtml: {
+      order: 'post',
+      // Only the panel; the API reference page has its own look.
+      handler: (_html, ctx) => (ctx.filename.endsWith('assets/reference.html') ? [] : [{ tag: 'script', attrs: { src: `${base}${dev ? 'src/theme-init.js' : fileName}` }, injectTo: 'head' }]),
+    },
+  }
+}
 
 // The build goes to dist/ and is embedded in the binary (rust-embed) under /admin/.
 export default defineConfig({
   base: '/admin/',
   define: { __VUE_OPTIONS_API__: false, __VUE_PROD_DEVTOOLS__: false, __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false },
-  plugins: [tailwindcss(), svelte()],
+  plugins: [themeInit(), tailwindcss(), svelte()],
   resolve: {
     alias: { $lib: fileURLToPath(new URL('./src/lib', import.meta.url)) },
   },

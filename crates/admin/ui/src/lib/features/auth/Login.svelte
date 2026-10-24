@@ -13,7 +13,7 @@
   import { api } from '$lib/transport/api'
   import { session } from '$lib/resources/session.svelte'
   import Flag from '$lib/shell/components/Flag.svelte'
-  import Logo from '$lib/shell/components/Logo.svelte'
+  import EntryLayout from '$lib/shell/components/EntryLayout.svelte'
   import { LOCALES, errorMessage, i18n, setLocale, t, type Locale } from '$lib/i18n/index.svelte'
 
   // Short codes on the switch; each option names its language in full for
@@ -70,47 +70,40 @@
 
 </script>
 
-<div class="flex min-h-dvh flex-col bg-background px-4 py-4 sm:px-6 sm:py-6">
-  <!-- The same bar as the signed-in panel: who this server is on the left,
-       language and theme on the right (the account menu is not there yet). -->
-  <header class="flex flex-wrap items-center justify-between gap-3">
-    <div class="flex min-w-0 items-center gap-2 rounded-full bg-card py-1.5 ps-1.5 pe-4">
-      <!-- On a phone the mark alone, so the project name has the room. -->
-      <span class="flex shrink-0 sm:hidden"><Logo mark /></span>
-      <span class="hidden shrink-0 sm:flex"><Logo /></span>
-      {#if project}
-        <span class="mx-1 h-5 w-px shrink-0 bg-border-strong" aria-hidden="true"></span>
-        <span class="hidden text-sm text-muted-foreground sm:inline">{t('login.project')}</span>
-        <span class="text-sm font-semibold [overflow-wrap:anywhere]" translate="no">{project}</span>
-      {/if}
+<EntryLayout>
+  {#snippet brand()}
+    {#if project}
+      <span class="mx-1 h-5 w-px shrink-0 bg-border-strong" aria-hidden="true"></span>
+      <span class="hidden text-sm text-muted-foreground sm:inline">{t('login.project')}</span>
+      <span class="text-sm font-semibold [overflow-wrap:anywhere]" translate="no">{project}</span>
+    {/if}
+  {/snippet}
+  {#snippet actions()}
+    <div class="panel-segments" role="group" aria-label={t('shell.account.language')}>
+      {#each LOCALES as locale (locale)}
+        {@const current = i18n.locale === locale}
+        <button
+          type="button"
+          lang={locale}
+          aria-pressed={current}
+          aria-label={t(`shell.languages.${locale}`)}
+          title={t(`shell.languages.${locale}`)}
+          class="panel-segment"
+          onclick={() => setLocale(locale)}><Flag {locale} class="size-[18px]" />{CODES[locale]}</button
+        >
+      {/each}
     </div>
-    <div class="flex shrink-0 items-center gap-2">
-      <div class="panel-segments" role="group" aria-label={t('shell.account.language')}>
-        {#each LOCALES as locale (locale)}
-          {@const current = i18n.locale === locale}
-          <button
-            type="button"
-            lang={locale}
-            aria-pressed={current}
-            aria-label={t(`shell.languages.${locale}`)}
-            title={t(`shell.languages.${locale}`)}
-            class="panel-segment"
-            onclick={() => setLocale(locale)}><Flag {locale} class="size-[18px]" />{CODES[locale]}</button
-          >
-        {/each}
-      </div>
-      <button
-        type="button"
-        class="grid size-11 cursor-pointer place-items-center rounded-full bg-card text-muted-foreground transition-colors hover:text-foreground"
-        onclick={toggleMode}
-        aria-label={mode.current === 'dark' ? t('shell.account.lightTheme') : t('shell.account.darkTheme')}
-        title={mode.current === 'dark' ? t('shell.account.lightTheme') : t('shell.account.darkTheme')}
-      >
-        {#if (mode.current === 'dark')}<Sun class="size-[18px]" aria-hidden="true" />{/if}
-        {#if !(mode.current === 'dark')}<Moon class="size-[18px]" aria-hidden="true" />{/if}
-      </button>
-    </div>
-  </header>
+    <button
+      type="button"
+      class="grid size-11 cursor-pointer place-items-center rounded-full bg-card text-muted-foreground transition-colors hover:text-foreground"
+      onclick={toggleMode}
+      aria-label={mode.current === 'dark' ? t('shell.account.lightTheme') : t('shell.account.darkTheme')}
+      title={mode.current === 'dark' ? t('shell.account.lightTheme') : t('shell.account.darkTheme')}
+    >
+      {#if (mode.current === 'dark')}<Sun class="size-[18px]" aria-hidden="true" />{/if}
+      {#if !(mode.current === 'dark')}<Moon class="size-[18px]" aria-hidden="true" />{/if}
+    </button>
+  {/snippet}
 
   <main class="flex flex-1 flex-col items-center justify-center gap-5 pt-6 pb-10">
     <div class="relative w-full max-w-[440px]">
@@ -200,4 +193,4 @@
     </div>
     <p class="text-center text-sm text-muted-foreground">{t('login.restricted')}</p>
   </main>
-</div>
+</EntryLayout>
