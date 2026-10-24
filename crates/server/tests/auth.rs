@@ -1221,7 +1221,8 @@ async fn refresh_rejects_oversized_grants_but_preserves_required_field_errors() 
         assert_eq!(reply.status, StatusCode::BAD_REQUEST, "{}", reply.body);
         assert_eq!(reply.body["code"], "invalid_grant");
     }
-    let first = signup(&app, "refresh-boundary@example.com", "strong-pass-123").await;
+    let password = Uuid::new_v4().to_string();
+    let first = signup(&app, "refresh-boundary@example.com", &password).await;
     assert_eq!(first.status, StatusCode::CREATED, "{}", first.body);
     let rotated = refresh(&app, str_field(&first.body, "refresh_token")).await;
     assert_eq!(rotated.status, StatusCode::OK, "{}", rotated.body);

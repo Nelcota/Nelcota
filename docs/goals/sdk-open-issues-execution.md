@@ -64,7 +64,7 @@ its own draft PR; do not merge/publish it with production corrections.
 
 ## Final local correction checkpoint
 
-- TypeScript: **362 unit tests,20 type tests passed**; check/build and external
+- TypeScript: **363 unit tests,20 type tests passed**; check/build and external
   packed JS/TS consumer passed. Node24 runtime smoke passed. The memory suite
   passed three1000-caller cancellation rounds and two200-call queued auth cases.
 - Rust SDK: **46 executable tests +10 doctests passed**; scoped all-target
@@ -75,8 +75,8 @@ its own draft PR; do not merge/publish it with production corrections.
   The earlier disk-blocked server test is now unblocked; no threshold changed.
 - Portuguese catalogs match source fragments;37 guide tests and panel production
   build passed. Generated assets are rebuilt in a separate commit.
-- Blocking size check (main limits retained): root18275/17400B,
-  auth12077/11300B, REST9857/9550B, storage7875/7700B gzip.
+- Blocking size check (main limits retained): root18302/17400B,
+  auth12102/11300B, REST9878/9550B, storage7896/7700B gzip.
 - Workspace RustSec advisory remains a separate failing supply-chain gate;
   no ignore, workflow change or incompatible dependency override was added.
 
@@ -96,3 +96,10 @@ publication is part of this task. The unrelated Dependabot PR130 stays untouched
 The raw-stream regression uses a real clock: native AbortSignal.timeout is not
 controlled by fake timers. It failed before correction and passes with the
 cleared attempt timer; no body deadline is asserted from a fake-clock shortcut.
+
+Additional final review: obsolete asctime HTTP dates must be interpreted as UTC,
+not the host timezone. A Sao Paulo timezone regression failed before correction
+and passed afterwards. This adds one unit case, bringing the final suite to363.
+CodeQL identified a literal password in the new server test fixture. Replace it
+with a runtime random UUID password; no real credential was exposed and no
+suppression was added. Await the new CodeQL result rather than calling it passed.
