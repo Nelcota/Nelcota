@@ -92,3 +92,11 @@ O MIME explícito de upload usa partes de 1 a 127 caracteres ASCII, com letras,
 dígitos e `!#$&-^_.+`, como o servidor. Parâmetros após ponto e vírgula continuam
 válidos. Valores fora desse conjunto passam a ser recusados antes do upload,
 em vez de depender da substituição do tipo declarado no servidor.
+
+### Encerramento de sessões e filtros reservados
+
+O logout renova uma sessão expirada antes de tentar revogá-la, sob o controle
+existente de ciclo de vida. O estado local é limpo mesmo se a revogação falhar;
+essa falha não representa confirmação de encerramento remoto. Filtros em
+colunas com nomes reservados usam grupos lógicos para que paginação e ordenação
+não descartem a condição, inclusive em caminhos de tabelas relacionadas.

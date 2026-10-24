@@ -7,6 +7,18 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Fixed
 
+- Renew expired sessions before logout; isolate server auth locks by adapter/key,
+  label cross-tab account/profile changes and ignore unchanged per-tab state.
+- Release browser refresh reservations after explicit pre-grant rate limiting,
+  while retaining uncertain-outcome fences for network and gateway failures.
+- Stop raw-response attempt timers at headers; preserve caller cancellation and
+  buffered deadlines, HTTP error status after failed body reads, strict HTTP
+  Retry-After parsing and usage errors for malformed URLs/headers.
+- Keep reserved-column filters separate from modifiers, align cardinality error
+  status/query strings, and accept embedded columns in logic callbacks.
+- Return structured errors for empty OAuth callback values and include current
+  backend auth error codes in the TypeScript union.
+
 - Honor caller-provided tokens in `getUser()` and `updateUser()` without selecting
   or modifying another stored session; disable automatic refresh consistently
   for standalone and combined caller-token clients.

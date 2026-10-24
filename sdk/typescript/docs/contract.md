@@ -262,3 +262,23 @@ signal. This returns `aborted` when the caller deadline expires and withdraws it
 wait without cancelling another caller's refresh. Uploads/downloads still have
 no transfer deadline by default. Use `open()` and cancel or finish its body for
 large files; `download()` deliberately buffers the entire file.
+
+## SDK issue corrections
+
+Raw-response attempt deadlines stop when headers arrive; caller cancellation
+still owns an accepted stream. Buffered responses retain their body deadline.
+Invalid HTTP header values are usage errors, and an unreadable error body keeps
+its known HTTP status. Retry-After accepts integer seconds or HTTP date formats;
+empty query/fragment delimiters are invalid in API base URLs.
+
+An expired logout renews under its lifecycle owner before revoking. An uncertain
+native refresh is never rotated a second time to clear it; logout can still
+clear local state. Only an explicit pre-grant rate-limit rejection releases a
+refresh reservation. A network or gateway failure keeps its uncertainty fence.
+Separate server adapters use independent locks; sharing an adapter and key
+coordinates its clients. Explicit sessionStorage remains local to its tab.
+
+Cross-tab notifications preserve account/profile event kinds without sending
+credentials; unchanged reloads emit nothing. Reserved modifier column filters
+use logic groups, including embedded paths, and cardinality errors report406.
+The query string returned by toString includes the same implicit limit as HTTP.
