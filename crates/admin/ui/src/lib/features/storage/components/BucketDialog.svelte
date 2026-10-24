@@ -2,6 +2,8 @@
   import { untrack } from 'svelte'
   import { CloseGuard } from '$lib/forms/close-guard.svelte'
   import UnsavedChangesDialog from '$lib/components/shared/UnsavedChangesDialog.svelte'
+  import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte'
+  import Callout from '$lib/components/shared/Callout.svelte'
   import Save from '@lucide/svelte/icons/save'
   import HardDrive from '@lucide/svelte/icons/hard-drive'
   import LoaderCircle from '@lucide/svelte/icons/loader-circle'
@@ -34,6 +36,7 @@
   let types = $state('')
   let saving = $state(false)
   let failure = $state('')
+  let confirmPublicOpen = $state(false)
   let initialValue = $state('')
   const snapshot = () => JSON.stringify([id, isPublic, limitMb, types])
   const guard = new CloseGuard(() => snapshot() !== initialValue, () => saving, () => (open = false), () => open)
@@ -58,9 +61,20 @@
   const limitOk = $derived(limit === null || (Number.isFinite(limit) && limit > 0))
   const ready = $derived((bucket !== null || validBucketName(id)) && limitOk)
   const nameInvalid = $derived(id !== '' && !validBucketName(id))
+  // Opening an existing bucket exposes every file already in it: ask first.
+  const goingPublic = $derived(bucket !== null && !bucket.public && isPublic)
 
-  async function submit(event: SubmitEvent) {
+  function submit(event: SubmitEvent) {
     event.preventDefault()
+    if (saving || !ready) return
+    if (goingPublic) {
+      confirmPublicOpen = true
+      return
+    }
+    void save()
+  }
+
+  async function save() {
     if (saving || !ready) return
     saving = true
     failure = ''
@@ -102,7 +116,7 @@
               id="bucket-id"
               name="bucket-name"
               bind:value={id}
-              placeholder="avatars"
+              placeholder={t('storage.dialog.namePlaceholder')}
               autocomplete="off"
               spellcheck={false}
               class="font-mono"
@@ -121,6 +135,7 @@
             <Field.Label for="bucket-public">{t('storage.dialog.public')}</Field.Label>
           </Field.Field>
           <Field.Description id="bucket-public-hint">{t('storage.dialog.publicHint')}</Field.Description>
+          {#if !bucket && isPublic}<Callout>{t('storage.dialog.publicWarning')}</Callout>{/if}
         </Field.Field>
         <Field.Field data-invalid={!limitOk}>
           <Field.Label for="bucket-limit">{t('storage.dialog.limit')}</Field.Label>
@@ -147,9 +162,10 @@
         </Field.Field>
         </Field.Group>
         {#if failure}<Field.Error>{failure}</Field.Error>{/if}
+        {#if !bucket && !validBucketName(id)}<p id="bucket-submit-hint" class="text-xs text-muted-foreground">{t('storage.dialog.nameRequired')}</p>{/if}
         <Dialog.Footer>
           <Button variant="outline" disabled={saving} onclick={guard.request}>{t('common.cancel')}</Button>
-          <Button type="submit" disabled={saving || !ready}>
+          <Button type="submit" disabled={saving || !ready} aria-describedby={!bucket && !validBucketName(id) ? 'bucket-submit-hint' : undefined}>
             {#if (saving)}<LoaderCircle data-icon="inline-start" class="animate-spin" aria-hidden="true" />{/if}
             {#if !(saving) && (bucket)}<Save data-icon="inline-start" aria-hidden="true" />{/if}
             {#if !(saving) && !(bucket)}<HardDrive data-icon="inline-start" aria-hidden="true" />{/if}
@@ -161,3 +177,13 @@
   </Dialog.Content>
 </Dialog.Root>
 <UnsavedChangesDialog bind:open={guard.pending} ondiscard={guard.discard} />
+{#if bucket}
+  <ConfirmDialog
+    bind:open={confirmPublicOpen}
+    title={t('storage.dialog.confirmPublic.title', { bucket: bucket.id })}
+    description={bucket.files ? t('storage.dialog.confirmPublic.description', { count: bucket.files }) : t('storage.dialog.confirmPublic.empty')}
+    confirmLabel={t('storage.dialog.confirmPublic.confirm')}
+    destructive
+    onconfirm={save}
+  />
+{/if}

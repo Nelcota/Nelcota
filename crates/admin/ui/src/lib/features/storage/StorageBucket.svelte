@@ -163,16 +163,16 @@
 
   const date = $derived(new Intl.DateTimeFormat(intlLocale(), { dateStyle: 'short', timeStyle: 'short' }))
   const size = (bytes: number) => formatBytes(bytes, intlLocale())
+  // A 16px box with a 40px pointer target around it.
+  const HIT_AREA = 'after:-inset-3'
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="mx-auto w-full max-w-page px-4 pt-2 pb-12 sm:px-6 lg:px-8" ondragenter={(event) => { if (event.dataTransfer?.types.includes('Files')) { event.preventDefault(); dragDepth++; dragging = true } }} ondragleave={() => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) dragging = false }} ondragover={(event) => { if (event.dataTransfer?.types.includes('Files')) event.preventDefault() }} ondrop={dropped}>
+  <!-- The top bar already shows Storage > bucket: only a folder path needs its own trail. -->
+  {#if prefix}
   <nav class="mb-4 flex flex-wrap items-center gap-2 text-sm [overflow-wrap:anywhere]" aria-label={t('storage.browser.path')}>
-    <a class="text-muted-foreground hover:text-foreground hover:underline" href={href('/storage')}>{t('storage.title')}</a>
-    <ChevronRight class="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-    {#if (prefix)}<a class="font-mono text-muted-foreground hover:text-foreground hover:underline" href={folderHref('')}>{bucket}</a>
-    {/if}
-    {#if !(prefix)}<span class="font-mono" aria-current="page">{bucket}</span>{/if}
+    <a class="font-mono text-muted-foreground hover:text-foreground hover:underline" href={folderHref('')}>{bucket}</a>
     {#each trail as folder, index (folder.prefix)}
       <ChevronRight class="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
       {#if (index === trail.length - 1)}<span class="font-mono" aria-current="page">{folder.name}</span>
@@ -180,6 +180,7 @@
       {#if !(index === trail.length - 1)}<a class="font-mono text-muted-foreground hover:text-foreground hover:underline" href={folderHref(folder.prefix)}>{folder.name}</a>{/if}
     {/each}
   </nav>
+  {/if}
   <PageHeader
     title={bucket}
     description={info ? [info.bucket.public ? t('storage.public') : t('storage.private'), t('storage.browser.fileCount', { count: info.bucket.files }), size(info.bucket.bytes)].join(' · ') : undefined}
@@ -192,7 +193,8 @@
           {#if !(uploading)}<Upload data-icon="inline-start" aria-hidden="true" />{/if}
           {uploading ? t('storage.browser.uploading', uploading) : t('storage.browser.upload')}
         </Button>
-        <Button variant="outline" href="#bucket-access" aria-label={t('storage.browser.access')}><ShieldCheck data-icon="inline-start" aria-hidden="true" /><span class="sm:hidden">{t('storage.browser.accessShort')}</span><span class="hidden sm:inline">{t('storage.browser.access')}</span></Button>
+        <!-- From xl the access panel sits beside the files: the jump link is only for narrower screens. -->
+        <Button variant="outline" class="xl:hidden" href="#bucket-access" aria-label={t('storage.browser.access')}><ShieldCheck data-icon="inline-start" aria-hidden="true" /><span class="sm:hidden">{t('storage.browser.accessShort')}</span><span class="hidden sm:inline">{t('storage.browser.access')}</span></Button>
         <Button variant="outline" size="icon" aria-label={t('storage.browser.settings')} title={t('storage.browser.settings')} onclick={() => (settingsOpen = true)}><Settings aria-hidden="true" /></Button>
       {/if}
     {/snippet}
@@ -234,7 +236,7 @@
         class="rounded-3xl bg-card"
         icon={Folder}
         title={prefix ? t('storage.browser.emptyFolder') : t('storage.browser.emptyBucket')}
-        description={t('storage.browser.emptyFolderDescription')}
+        description={prefix ? t('storage.browser.emptyFolderDescription') : t('storage.browser.foldersHint')}
       >{#snippet actions()}<Button variant="outline" disabled={!info || uploading !== null} onclick={() => picker?.click()}><Upload data-icon="inline-start" aria-hidden="true" />{t('storage.browser.upload')}</Button>{/snippet}</EmptyState>
     {/if}
     {#if !(files === null) && !(files.length === 0 && folders.length === 0)}
@@ -251,8 +253,9 @@
         <Table.Root class="table-fixed md:table-auto">
           <Table.Header>
             <Table.Row class="hover:bg-transparent">
-              <Table.Head class="w-10">
+              <Table.Head class="w-12">
                 <Checkbox
+                  class={HIT_AREA}
                   checked={allSelected}
                   indeterminate={selectedNames.length > 0 && !allSelected}
                   disabled={!files.length}
@@ -261,10 +264,10 @@
                 />
               </Table.Head>
               <Table.Head>{t('storage.browser.columns.name')}</Table.Head>
-              <Table.Head class="w-20 text-right 2xl:w-auto">{t('storage.browser.columns.size')}</Table.Head>
+              <Table.Head class="hidden w-24 text-right sm:table-cell 2xl:w-auto">{t('storage.browser.columns.size')}</Table.Head>
               <Table.Head class="hidden 2xl:table-cell">{t('storage.browser.columns.type')}</Table.Head>
-              <Table.Head class="hidden md:table-cell xl:hidden 2xl:table-cell">{t('storage.browser.columns.updated')}</Table.Head>
-              <Table.Head class="w-24"><span class="sr-only">{t('common.actions')}</span></Table.Head>
+              <Table.Head class="hidden w-36 md:table-cell 2xl:w-auto">{t('storage.browser.columns.updated')}</Table.Head>
+              <Table.Head class="w-12 2xl:w-24"><span class="sr-only">{t('common.actions')}</span></Table.Head>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -276,22 +279,23 @@
                     <Folder class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /><span class="truncate">{folder}/</span>
                   </a>
                 </Table.Cell>
-                <Table.Cell></Table.Cell><Table.Cell class="hidden 2xl:table-cell"></Table.Cell><Table.Cell class="hidden md:table-cell xl:hidden 2xl:table-cell"></Table.Cell><Table.Cell></Table.Cell>
+                <Table.Cell class="hidden sm:table-cell"></Table.Cell><Table.Cell class="hidden 2xl:table-cell"></Table.Cell><Table.Cell class="hidden md:table-cell"></Table.Cell><Table.Cell></Table.Cell>
               </Table.Row>
             {/each}
             {#each files as file (file.id)}
               {@const Icon = fileIcon(file)}
               <Table.Row data-state={selected.has(file.name) ? 'selected' : undefined}>
                 <Table.Cell>
-                  <Checkbox checked={selected.has(file.name)} onCheckedChange={(v) => toggleFile(file.name, v === true)} aria-label={t('storage.browser.selection.selectFile', { name: baseName(file.name) })} />
+                  <Checkbox class={HIT_AREA} checked={selected.has(file.name)} onCheckedChange={(v) => toggleFile(file.name, v === true)} aria-label={t('storage.browser.selection.selectFile', { name: baseName(file.name) })} />
                 </Table.Cell>
-                <Table.Cell class="max-w-0 font-medium"><button type="button" class="flex w-full min-w-0 cursor-pointer items-center gap-2 text-left hover:text-brand" onclick={() => showPreview(file)} title={file.name}><Icon class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /><span class="truncate">{baseName(file.name)}</span></button></Table.Cell>
-                <Table.Cell class="text-right tabular-nums text-muted-foreground">{size(file.size)}</Table.Cell>
+                <Table.Cell class="max-w-0 font-medium"><button type="button" class="flex w-full min-w-0 cursor-pointer items-center gap-2 text-left hover:text-brand" onclick={() => showPreview(file)} title={file.name}><Icon class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /><span class="grid min-w-0"><span class="truncate">{baseName(file.name)}</span><span class="text-xs font-normal tabular-nums text-muted-foreground sm:hidden">{size(file.size)}</span></span></button></Table.Cell>
+                <Table.Cell class="hidden text-right tabular-nums text-muted-foreground sm:table-cell">{size(file.size)}</Table.Cell>
                 <Table.Cell class="hidden font-mono text-xs text-muted-foreground 2xl:table-cell">{file.mime_type}</Table.Cell>
-                <Table.Cell class="hidden text-muted-foreground md:table-cell xl:hidden 2xl:table-cell">{dateText(file.updated_at, date.format)}</Table.Cell>
+                <Table.Cell class="hidden text-muted-foreground tabular-nums md:table-cell">{dateText(file.updated_at, date.format)}</Table.Cell>
                 <Table.Cell class="text-right">
                   <div class="flex items-center justify-end gap-1">
-                  <Button variant="ghost" size="icon-sm" href={fileHref(file.name)} download title={t('storage.browser.downloadFile', { name: baseName(file.name) })} aria-label={t('storage.browser.downloadFile', { name: baseName(file.name) })}><Download aria-hidden="true" /></Button>
+                  <!-- The menu downloads too: the shortcut only shows when the type column fits. -->
+                  <Button variant="ghost" size="icon-sm" class="hidden 2xl:inline-flex" href={fileHref(file.name)} download title={t('storage.browser.downloadFile', { name: baseName(file.name) })} aria-label={t('storage.browser.downloadFile', { name: baseName(file.name) })}><Download aria-hidden="true" /></Button>
                   <DropdownMenu.Root>
                     <DropdownMenu.Trigger>
                       {#snippet child({ props })}
@@ -338,6 +342,8 @@
           </Table.Body>
         </Table.Root>
       </div>
+      <!-- Folders have no actions of their own: say where they come from. -->
+      <p class="mt-3 px-1 text-xs text-muted-foreground">{t('storage.browser.foldersHint')}</p>
       {#if hasNext}
         <div class="mt-4 flex justify-center">
           <Button variant="outline" size="sm" disabled={loading} onclick={() => load(true)}>{t('storage.browser.more')}</Button>
