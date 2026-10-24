@@ -3,6 +3,7 @@
   import * as Dialog from '$lib/components/ui/dialog'
   import * as Field from '$lib/components/ui/field'
   import { Input } from '$lib/components/ui/input'
+  import * as Select from '$lib/components/ui/select'
   import { Button } from '$lib/components/ui/button'
   import { Checkbox } from '$lib/components/ui/checkbox'
   import { CloseGuard } from '$lib/forms/close-guard.svelte'
@@ -47,10 +48,12 @@
         <Field.Group class="gap-5">
           <Field.Field><Field.Label for="webhook-name">{t('webhooks.name')}</Field.Label><Input id="webhook-name" bind:value={name} maxlength={80} placeholder={t('webhooks.namePlaceholder')} required autocomplete="off" /></Field.Field>
           <Field.Field><Field.Label for="webhook-table">{t('webhooks.table')}</Field.Label>
-            <select id="webhook-table" bind:value={table} disabled={!!endpoint} required class="h-10 w-full min-w-0 rounded-xl border border-input bg-background px-3 text-sm">
-              <option value="">{t('webhooks.chooseTable')}</option>
-              {#each [...new Set([...tables, ...(endpoint ? [endpoint.table] : [])])] as value}<option value={value}>{value}</option>{/each}
-            </select>
+            <Select.Root type="single" bind:value={table} disabled={!!endpoint} required>
+              <Select.Trigger id="webhook-table" class="w-full min-w-0" aria-required="true"><span class={['truncate', !table && 'text-muted-foreground']}>{table || t('webhooks.chooseTable')}</span></Select.Trigger>
+              <Select.Content>
+                {#each [...new Set([...tables, ...(endpoint ? [endpoint.table] : [])])] as value (value)}<Select.Item {value} label={value}>{value}</Select.Item>{/each}
+              </Select.Content>
+            </Select.Root>
           </Field.Field>
           <Field.Field><Field.Label for="webhook-url">{t('webhooks.destination')}</Field.Label><Input id="webhook-url" type="url" bind:value={url} maxlength={2048} placeholder="https://app.example.com/webhooks/orders" required autocomplete="off" spellcheck={false} aria-describedby="webhook-url-hint" />
             <Field.Description id="webhook-url-hint">{t('webhooks.urlHint')} {#if allowLoopback}{t('webhooks.localHint')}{/if} {#if endpoint}{t('webhooks.destinationHint')}{/if}</Field.Description>
