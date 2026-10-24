@@ -21,7 +21,14 @@ const admin = new Pool({ connectionString, max: 1, connectionTimeoutMillis: 2000
 database.pathname = `/${name}`;
 const pool = new Pool({ connectionString: database.href, max: 4, connectionTimeoutMillis: 2000 });
 const directory = await mkdtemp(join(tmpdir(), 'nelcota-next-backend-'));
-let server, created = false;
+let server, created = false, cleaning = false, report;
+const unexpectedPoolErrors = [];
+for (const connectionPool of [admin, pool]) connectionPool.on('error', error => {
+  // DROP DATABASE FORCE can finish terminating an already-closed idle socket.
+  if (cleaning && error.code === '57P01') return;
+  unexpectedPoolErrors.push(error.code ?? 'pool_error');
+  process.exitCode = 1; // observe background failure without printing credentials
+});
 const probe = createServer(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
 const port = probe.address().port; await new Promise(resolve => probe.close(resolve));
 const origin = 'http://localhost:3000';
@@ -47,7 +54,7 @@ try {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
   await pool.query(await readFile(new URL('../sql/session-store.sql', import.meta.url), 'utf8'));
-  await pool.query(`CREATE TABLE public.next_notes (id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, owner uuid NOT NULL DEFAULT auth.uid(), body text NOT NULL);
+  await pool.query(`CREATE TABLE public.next_notes (id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, owner uuid NOT NULL DEFAULT auth.uid(), body text NOT NULL, "limit" integer NOT NULL DEFAULT 5, "order" integer NOT NULL DEFAULT 2);
     ALTER TABLE public.next_notes ENABLE ROW LEVEL SECURITY;
     GRANT SELECT, INSERT, UPDATE, DELETE ON public.next_notes TO anon, authenticated;
     GRANT USAGE, SELECT ON SEQUENCE public.next_notes_id_seq TO authenticated;
@@ -74,16 +81,24 @@ try {
     return { email: user.data.email, bodies: rows.data.map(row => row.body) };
   })));
   assert.deepEqual(both, [{ email: 'alice@example.test', bodies: ['alice-private'] }, { email: 'bob@example.test', bodies: ['bob-private'] }]);
+  const reserved = await integration.read(a, context => context.client.from('next_notes').select().eq('limit', 500).limit(10));
+  assert.equal(reserved.error, null); assert.deepEqual(reserved.data, []);
+  const ordered = await integration.read(a, context => context.client.from('next_notes').select().eq('order', 99).order('id'));
+  assert.equal(ordered.error, null); assert.deepEqual(ordered.data, []);
   const anonymous = await integration.read(new Jar(), context => context.client.from('next_notes').select());
   assert.equal(anonymous.error, null); assert.deepEqual(anonymous.data, []);
   const crossing = await integration.write(a, request(), context => context.client.from('next_notes').update({ body: 'cross-user' }).eq('body', 'bob-private').select());
   assert.equal(crossing.error, null); assert.deepEqual(crossing.data, []);
   assert.equal((await pool.query('SELECT count(*) FROM public.next_notes')).rows[0].count, '2');
   assert.equal((await pool.query("SELECT count(*) FROM public.next_notes WHERE body='cross-user'")).rows[0].count, '0');
-  console.log(JSON.stringify({ binary, sha256, checks: ['two real signups', 'verified users', 'two request identities', 'isolated RLS reads', 'anonymous canary empty', 'cross-user update empty', 'SQL integrity'], database: 'disposable; removed in finally', provenance: 'compatibility only; supplied binary must match the final source before the completion gate passes' }, null, 2));
+  report = { binary, sha256, checks: ['two real signups', 'verified users', 'two request identities', 'isolated RLS reads', 'anonymous canary empty', 'cross-user update empty', 'SQL integrity', 'reserved filters remain predicates'], database: 'disposable; removed in finally', provenance: 'supplied binary identity recorded; caller must establish its source revision' };
 } finally {
+  cleaning = true;
   if (server && server.exitCode === null) { const stopped = once(server, 'close'); server.kill('SIGTERM'); const timer = setTimeout(() => server.kill('SIGKILL'), 3000); await stopped; clearTimeout(timer); }
   await pool.end();
   if (created) await admin.query(`DROP DATABASE "${name}" WITH (FORCE)`);
   await admin.end(); await rm(directory, { recursive: true, force: true });
 }
+
+assert.deepEqual(unexpectedPoolErrors, [], 'Unexpected session pool background failure');
+console.log(JSON.stringify(report, null, 2));
