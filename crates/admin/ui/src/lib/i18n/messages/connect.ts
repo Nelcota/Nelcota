@@ -17,15 +17,15 @@ const ptBR = {
   },
   caller: 'Quem faz a chamada',
   callerHint:
-    'Não existe chave anon: quem não manda token já é anon. O acesso de cada papel (role) é definido por tabela, nas permissões da tabela (GRANTs, na aba Estrutura) e nas políticas.',
+    'Não existe chave anon: quem não manda token já é anon. O acesso de cada papel (role) é definido por tabela, nas permissões da tabela (GRANTs, na aba Estrutura) e nas regras de acesso (RLS).',
   roles: {
     anon: {
       title: 'Visitante',
-      text: 'Requisição sem o cabeçalho Authorization. Vê o que as permissões da tabela (GRANTs) e as políticas liberam para o papel (role) anon.',
+      text: 'Requisição sem o cabeçalho Authorization. Vê o que as permissões da tabela (GRANTs) e as regras de acesso (RLS) liberam para o papel (role) anon.',
     },
     authenticated: {
       title: 'Usuário logado',
-      text: 'Authorization: Bearer com o access_token do login. auth.uid() é o id dele nas políticas.',
+      text: 'Authorization: Bearer com o access_token do login. auth.uid() é o id dele nas regras de acesso.',
     },
     service_role: {
       title: 'Seu backend',
