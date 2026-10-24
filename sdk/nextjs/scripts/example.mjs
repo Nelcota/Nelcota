@@ -1,10 +1,12 @@
 // Shared setup for the real-Next smoke scripts.
 import { lstat, mkdir, readlink, symlink } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 export const root = fileURLToPath(new URL('../', import.meta.url));
 export const example = fileURLToPath(new URL('../examples/app-router/', import.meta.url));
+export const nextVersion = createRequire(import.meta.url)('next/package.json').version;
 export const nextBin = fileURLToPath(new URL('../node_modules/next/dist/bin/next', import.meta.url));
 
 /** The example imports `@nelcota/nextjs`. Resolve it from the package's own
@@ -23,8 +25,9 @@ export async function linkPackage() {
 }
 
 /** Real production webpack build of the example; returns the spawn result. */
-export function buildExample() {
-  const result = spawnSync(process.execPath, [nextBin, 'build', '--webpack'], { cwd: example, env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' }, encoding: 'utf8', timeout: 180000, maxBuffer: 4 * 1024 * 1024 });
+export function buildExample(environment = {}) {
+  const major = Number(nextVersion.split('.')[0]);
+  const result = spawnSync(process.execPath, [nextBin, 'build', ...(major >= 16 ? ['--webpack'] : [])], { cwd: example, env: { ...process.env, ...environment, NEXT_TELEMETRY_DISABLED: '1' }, encoding: 'utf8', timeout: 180000, maxBuffer: 4 * 1024 * 1024 });
   if (result.error) throw result.error;
   return result;
 }

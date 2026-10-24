@@ -1,16 +1,19 @@
 # Nelcota for Next.js
 
-App Router integration for `@nelcota/nextjs` **0.1.0**, published on npm.
-It requires `@nelcota/client` 0.2.2 or later. The
+App Router integration targeting `@nelcota/nextjs` **0.1.1**. It requires
+`@nelcota/client` 0.2.2 or later. Confirm the selected version with
+`npm view @nelcota/nextjs@0.1.1 version` before installing; use a reviewed local
+tarball until publication. The
 [October 24 publication checkpoint](../../docs/goals/sdk-release-completion.md#publication-checkpoint--2026-10-24)
-records registry installation, export loading and strict TypeScript checks.
-See [releasing](docs/releasing.md) for future publication gates and the
-[execution record](../../docs/goals/nextjs-sdk-execution.md) for implementation evidence.
+records the previous 0.1.0 package's registry consumers, not publication of 0.1.1.
+See [releasing](docs/releasing.md), the
+[execution record](../../docs/goals/nextjs-sdk-execution.md) and the
+[0.1.1 concurrency and compatibility evidence](../../docs/goals/nextjs-151-validation.md).
 
 Install in a compatible Next App Router application:
 
 ```sh
-npm install @nelcota/nextjs@0.1.0 @nelcota/client@0.2.2 pg
+npm install @nelcota/nextjs@0.1.1 @nelcota/client@0.2.2 pg
 ```
 
 [Português](docs/quickstart.pt-BR.md).
@@ -75,8 +78,10 @@ Set pool connection/query limits, close the pool during your application's
 shutdown, and handle pool idle errors. Saves are separate autocommits, not a
 transaction spanning HTTP. The store bounds connection attempts, query time and
 lease lifetime; a failed owner cannot write again. Same-key requests queue in
-the process before borrowing a connection, and the lock is polled with
-`pg_try_advisory_lock` within the store `timeout` (default 5 s). A request that
+the process before borrowing a connection. Cross-instance waiters join
+PostgreSQL's lock queue with a server-side statement timeout within the store
+`timeout` (default 5 s), preventing a hot polling owner from starving another
+instance. The previous statement timeout is restored before running work. A request that
 cannot obtain it fails with `SessionError` `session_store` instead of leaving a
 backend waiting in PostgreSQL. `new PostgresSessionStore(pool, timeout, leaseTimeout)`
 defaults to 5 s / 60 s and requires `leaseTimeout >= 2 * timeout`. Each auth
@@ -85,6 +90,12 @@ which is reserved for saving its result. A request that cannot fit returns the
 `lease_exhausted` auth error before it is sent. A lost HTTP reply after a
 remote rotation can still require signing in again. It cannot be made atomic
 with a separate auth server by a local SQL transaction.
+
+Related lineage reads and nested lineage locks reuse the PostgreSQL lease's
+connection. This prevents an owner from exhausting a small pool while waiting
+for another connection. Custom store adapters may implement the optional lease
+`read` and `exclusive` capabilities for the same behavior. Nested ownership must
+finish before the parent continues; keep a consistent lock order.
 
 Expired rows need application-owned housekeeping. For example run this bounded
 statement periodically with the dedicated session role, recording counts only:

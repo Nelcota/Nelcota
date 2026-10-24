@@ -1,7 +1,7 @@
-# Next.js 0.1.0
+# Next.js 0.1.1
 
 This integration requires the published `@nelcota/client` 0.2.2 or later.
-Confirm `@nelcota/nextjs@0.1.0` registry availability before installation;
+Confirm `@nelcota/nextjs@0.1.1` registry availability before installation;
 source verification does not publish a package. See the
 [release instructions](releasing.md) and [G11 execution record](../../../docs/goals/nextjs-sdk-execution.md).
 

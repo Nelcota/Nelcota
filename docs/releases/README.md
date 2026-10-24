@@ -23,6 +23,14 @@ timeout and MIME corrections, together with private module organization. Release
 source before publication. For future unreleased changes, use a reviewed
 local archive rather than assuming a published package contains them.
 
+Next.js source now targets **0.1.1**, which fixes PostgreSQL session contention
+and adds a pinned Next 15 compatibility consumer. The table above retains the
+confirmed 0.1.0 publication checkpoint. A registry query during this update
+returned no 0.1.1 version; confirm with `npm view @nelcota/nextjs@0.1.1 version`
+before selecting it. Until publication, use a reviewed local archive for these
+corrections. See [the changelog](../../sdk/nextjs/CHANGELOG.md) and
+[validation follow-up](../goals/nextjs-151-validation.md).
+
 ## Update an application
 
 For TypeScript, install the exact selected version and commit the dependency

@@ -125,7 +125,9 @@ Publication and registry-consumer checks for these versions are recorded in the
 [October 24 checkpoint](docs/goals/sdk-release-completion.md#publication-checkpoint--2026-10-24).
 Next.js uses a dedicated PostgreSQL session store and request-scoped clients;
 Server Components only read sessions. Its supported matrix is Next 16.4.3 /
-React 19.3.1 on Node 22, 24 and 26. See the guide before configuring sessions.
+React 19.3.1 on Node 22, 24 and 26. Source now targets Next.js SDK 0.1.1 with
+additional session-concurrency corrections; see [version availability](docs/releases/README.md)
+and the guide before configuring sessions.
 
 ## Status and roadmap
 

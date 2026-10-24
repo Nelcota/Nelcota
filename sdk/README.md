@@ -13,6 +13,9 @@ application dependencies.
 The [publication checkpoint](../docs/goals/sdk-release-completion.md#publication-checkpoint--2026-10-24)
 records registry installation of these versions. Read the
 [upgrade guide](../docs/releases/README.md) before changing application lockfiles.
+Next.js source now targets 0.1.1; the table records the confirmed 0.1.0
+publication checkpoint. See [the follow-up evidence](../docs/goals/nextjs-151-validation.md)
+for session-concurrency corrections and the additional pinned Next 15 consumer.
 All clients retain PostgreSQL grants/RLS as the authorization boundary.
 
 ## Source ownership
