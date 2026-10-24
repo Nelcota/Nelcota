@@ -39,7 +39,10 @@ pub fn require_outside_controller(project: &Project) -> anyhow::Result<()> {
 /// tie the project to the controller's version instead of the installed CLI.
 pub fn require_cli_binary() -> anyhow::Result<()> {
     let exe = std::env::current_exe()?.canonicalize()?;
-    if exe.starts_with(crate::updates::CONTROLLER_BIN_DIR) {
+    let dir = std::path::Path::new(crate::updates::CONTROLLER_BIN_DIR);
+    // Compared resolved too: a symlinked /usr/local/lib would otherwise slip past.
+    let resolved = dir.canonicalize().unwrap_or_else(|_| dir.to_path_buf());
+    if exe.starts_with(dir) || exe.starts_with(&resolved) {
         bail!("this is the updates controller's binary; run the installed CLI (`nelcota`) instead");
     }
     Ok(())
