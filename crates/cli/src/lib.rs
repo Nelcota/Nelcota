@@ -749,7 +749,16 @@ mod cli_tests {
                 dry_run: true,
                 allow_downgrade: false,
                 version: None,
-                reinstall: false
+                reinstall: false,
+                without_controller: false
+            })
+        ));
+        let cli = Cli::try_parse_from(["nelcota", "upgrade", "--without-controller"]).unwrap();
+        assert!(matches!(
+            cli.command,
+            Some(Command::Upgrade {
+                without_controller: true,
+                ..
             })
         ));
         let cli = Cli::try_parse_from([
