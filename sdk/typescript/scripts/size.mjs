@@ -35,11 +35,13 @@ const BUDGETS = {
   // Open-issue corrections (#132-#142) add about 1 KiB gzip to root/auth and
   // 200-350 B to REST/storage: per-adapter refresh queues, cross-tab identity
   // checks, reserved-column filters, post-header deadlines and sign-out revocation.
-  'index.js': 18_500,
+  // Splitting the session lifecycle into store, scheduler and manager modules
+  // (one responsibility each) adds about 400 B gzip to root/auth.
+  'index.js': 18_900,
   // Standalone factories include HTTP and keep the other feature modules out.
   'rest/index.js': 9_900,
   // Failed persistence must retain rotated tokens; background failures are observed.
-  'auth/index.js': 12_300,
+  'auth/index.js': 12_700,
   'storage/index.js': 7_950,
 };
 

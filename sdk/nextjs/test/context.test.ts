@@ -262,7 +262,9 @@ describe('session fixation', () => {
 });
 describe('refresh outages', () => {
   /** Signs in with a session that has `left` seconds of validity, then makes refresh fail with 503. */
-  async function expiring(left = 1) {
+  // Whole seconds: `left = 1` could leave a few milliseconds and let the token
+  // expire mid-test. 3 s stays inside the 5 s sign-out renewal skew.
+  async function expiring(left = 3) {
     let refresh: Response | undefined;
     const requests: string[] = [];
     const fixture = await setup({ fetch: async url => {

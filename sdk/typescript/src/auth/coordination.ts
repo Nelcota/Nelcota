@@ -31,6 +31,16 @@ export function adapterLock(storage: SessionStorage, key: string): symbol {
   return lock;
 }
 
+/**
+ * The lock that serializes one session's lifecycle. Server adapters belong to
+ * separate requests: queue by adapter identity so another client's sign-in
+ * cannot block them. Worker storage supplied by the caller may be shared with
+ * tabs, so it keeps the cross-context Web Lock, like browsers.
+ */
+export function sessionLock(storage: SessionStorage, key: string, browser: boolean, supplied: boolean): string | symbol {
+  return browser || (supplied && workerScope()) ? `${key}.refresh` : adapterLock(storage, key);
+}
+
 const pending = new Map<string | symbol, Promise<void>>();
 
 /** Web Locks across tabs, or a queue shared by clients in this module instance. */
