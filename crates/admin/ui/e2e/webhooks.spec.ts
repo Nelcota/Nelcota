@@ -130,6 +130,31 @@ test('unsaved configuration and server errors keep the editor open', async ({ pa
   await expect(page.getByRole('dialog').getByLabel('Nome', { exact: true })).toHaveValue('Rascunho')
 })
 
+test('the signing key survives Escape, outside clicks and navigation until acknowledged', async ({ page }) => {
+  await setup(page)
+  // Two in-app entries, so Back stays inside the panel's router.
+  const views = page.locator('main nav.panel-segments')
+  await views.getByRole('link', { name: 'Histórico de entregas', exact: true }).click()
+  await views.getByRole('link', { name: 'Webhooks', exact: true }).click()
+  await page.getByRole('button', { name: 'Ações de Pedidos pagos', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Trocar chave', exact: true }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Trocar chave', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Guarde a chave de assinatura' })
+  await expect(dialog.getByText(secret, { exact: true })).toBeVisible()
+  await page.mouse.click(5, 5)
+  await page.keyboard.press('Escape')
+  await expect(dialog.getByText(secret, { exact: true })).toBeVisible()
+  // The guide opens in a new tab instead of unmounting the page with the key.
+  await expect(dialog.getByRole('link', { name: 'Como receber e verificar eventos' })).toHaveAttribute('target', '_blank')
+  // Back would unmount the page: it gets the same one-time warning instead.
+  await page.goBack()
+  await expect(dialog.getByRole('alert')).toContainText('ainda não copiou')
+  await expect(dialog.getByRole('button', { name: 'Copiar chave', exact: true })).toBeFocused()
+  await expect(page).toHaveURL(/\/admin\/webhooks$/)
+  await dialog.getByRole('button', { name: 'Fechar sem copiar', exact: true }).click()
+  await expect(page.getByText(secret, { exact: true })).toHaveCount(0)
+})
+
 test('a webhook whose table was dropped says so and can still be paused, not resumed', async ({ page }) => {
   await setup(page)
   let enabled = true
