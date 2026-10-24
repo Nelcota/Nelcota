@@ -73,8 +73,10 @@ export class PostgresSessionStore implements SessionStore {
         release: (destroy?: boolean): void => {
           if (released) throw new SessionError('closed_context', 'Session connection already released');
           released = true; this.#borrowed--;
-          try { client.release(destroy === true || connection.signal.aborted); }
-          finally { client.removeListener('error', lost); }
+          const destroyed = destroy === true || connection.signal.aborted;
+          // A destroyed client can still emit its terminal FATAL; keep it observed.
+          try { client.release(destroyed); }
+          finally { if (!destroyed) client.removeListener('error', lost); }
         },
       };
     }, error => { this.#connecting--; throw error; });

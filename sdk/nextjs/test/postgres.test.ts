@@ -76,7 +76,8 @@ it('handles asynchronous connection errors without an uncaught event or stale le
     await expect(lease.save(value())).rejects.toMatchObject({ code: 'closed_context' });
   })).rejects.toMatchObject({ code: 'session_store' });
   expect(release).toHaveBeenCalledExactlyOnceWith(true);
-  expect(events.listenerCount('error')).toBe(0);
+  // The destroyed client's terminal FATAL arrives after release and stays observed.
+  expect(() => events.emit('error', new Error('terminating connection'))).not.toThrow();
 });
 it('queues a busy key locally so its waiter holds no pooled connection', async () => {
   const { pool, release } = fixture();
