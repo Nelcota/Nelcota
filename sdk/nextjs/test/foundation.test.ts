@@ -43,6 +43,12 @@ describe('development ownership', () => {
     await expect(oldLease?.remove()).rejects.toMatchObject({ code: 'closed_context' });
     expect((await store.read('two'))?.sealed).toBe('other');
   });
+  it('rotates a lease to a fresh key and removes the previous row', async () => {
+    const store = new DevelopmentSessionStore(), row = { sealed: 'one', expiresAt: Date.now() + 60000 };
+    await store.exclusive('one', lease => lease.save(row));
+    await store.exclusive('one', async lease => { await lease.rotate('two'); expect(await lease.load()).toBeNull(); await lease.save(row); });
+    expect(await store.read('one')).toBeNull(); expect(await store.read('two')).toEqual(row);
+  });
   it('bounds storage and does not retain a failed owner', async () => {
     const store = new DevelopmentSessionStore(1), row = { sealed: 'one', expiresAt: Date.now() + 60000 };
     await expect(store.exclusive('one', async lease => { await lease.save(row); throw new Error('failure'); })).rejects.toThrow('failure');

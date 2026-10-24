@@ -114,7 +114,8 @@ export class PostgresSessionStore implements SessionStore {
   }
   async #owned<T>(key: string, work: (lease: SessionLease) => Promise<T>, deadline: number): Promise<T> {
     const client = await this.#connect(Math.max(1, deadline - Date.now()));
-    let active = true, locked = false, failed = false, workFailed = false;
+    let active = true, locked = false, failed = false, workFailed = false, current = key;
+    const held = [key];
     const lifetime = new AbortController();
     const lost = (): void => { failed = true; lifetime.abort(); };
     client.signal.addEventListener('abort', lost, { once: true });
@@ -126,12 +127,19 @@ export class PostgresSessionStore implements SessionStore {
     };
     const lease: SessionLease = {
       signal: lifetime.signal,
-      load: async () => stored((await query('SELECT sealed, expires_at FROM nelcota_next.sessions WHERE key = $1', [key])).rows[0]),
+      load: async () => stored((await query('SELECT sealed, expires_at FROM nelcota_next.sessions WHERE key = $1', [current])).rows[0]),
       save: async value => {
         if (!Number.isSafeInteger(value.expiresAt) || value.expiresAt <= Date.now() || value.sealed.length > 131072) throw new SessionError('invalid_session', 'Invalid bounded session state');
-        await query('INSERT INTO nelcota_next.sessions (key, sealed, expires_at) VALUES ($1, $2, $3) ON CONFLICT (key) DO UPDATE SET sealed = EXCLUDED.sealed, expires_at = EXCLUDED.expires_at', [key, value.sealed, value.expiresAt]);
+        await query('INSERT INTO nelcota_next.sessions (key, sealed, expires_at) VALUES ($1, $2, $3) ON CONFLICT (key) DO UPDATE SET sealed = EXCLUDED.sealed, expires_at = EXCLUDED.expires_at', [current, value.sealed, value.expiresAt]);
       },
-      remove: async () => { await query('DELETE FROM nelcota_next.sessions WHERE key = $1', [key]); },
+      remove: async () => { await query('DELETE FROM nelcota_next.sessions WHERE key = $1', [current]); },
+      rotate: async next => {
+        keyCheck(next);
+        if ((await query('SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS locked', [next])).rows[0]?.['locked'] !== true) throw new SessionError('session_store', 'Fresh session key is already owned');
+        held.push(next);
+        await query('DELETE FROM nelcota_next.sessions WHERE key = $1', [current]);
+        current = next;
+      },
     };
     try {
       // Never leave a backend blocked in pg_advisory_lock after a client-side deadline.
@@ -152,8 +160,10 @@ export class PostgresSessionStore implements SessionStore {
       let cleanupError: unknown;
       if (locked && !failed) {
         try {
-          const result = await this.#bounded(client.query('SELECT pg_advisory_unlock(hashtextextended($1, 0)) AS released', [key]));
-          if (result.rows[0]?.['released'] !== true) throw new SessionError('session_store', 'Session lock ownership was lost');
+          for (const owned of held) {
+            const result = await this.#bounded(client.query('SELECT pg_advisory_unlock(hashtextextended($1, 0)) AS released', [owned]));
+            if (result.rows[0]?.['released'] !== true) throw new SessionError('session_store', 'Session lock ownership was lost');
+          }
         } catch (cause) { failed = true; cleanupError = cause; }
       }
       // A failed query/unlock must not return a lock-holding connection to a pool.

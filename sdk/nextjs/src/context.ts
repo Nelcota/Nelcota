@@ -94,15 +94,15 @@ export class Integration<Database> {
   get origin(): string { return this.#origin; }
   #binding(key: string): string { return `nelcota-next/v1\0${this.#origin}\0${this.#api.href}\0${key}`; }
   /** Unreadable rows (lost keys, tampering, mismatched expiry) count as signed out. */
-  async #load(key: string, lease?: SessionLease): Promise<{ state: SessionState | null; unreadable: boolean }> {
+  async #load(key: string, lease?: SessionLease): Promise<SessionState | null> {
     const row = await (lease ? lease.load() : this.#options.store.read(key));
-    if (!row) return { state: null, unreadable: false };
+    if (!row) return null;
     try {
       const state = await this.#sealer.open(row.sealed, this.#binding(key));
-      if (row.expiresAt === state.expiresAt) return { state, unreadable: false };
+      if (row.expiresAt === state.expiresAt) return state;
     } catch (cause) { if (!(cause instanceof SessionError)) throw cause; }
-    // A row expiring between the store check and open() is expired, not unreadable.
-    return { state: null, unreadable: row.expiresAt > Date.now() };
+    // Expired after the store check, unreadable or mismatched: all are no session.
+    return null;
   }
   /** Clears this integration's cookie, e.g. on a proxy redirect for a stale session. */
   expireCookie(cookies: CookieWriter): void {
@@ -139,7 +139,7 @@ export class Integration<Database> {
   }
   async read<T>(cookies: CookieReader, work: (context: VerifiedContext<Database>) => Promise<T>): Promise<T> {
     const id = cookies.get(this.#name)?.value ?? '', key = sessionKey(id, this.#namespace);
-    const state = key ? (await this.#load(key)).state : null;
+    const state = key ? await this.#load(key) : null;
     let alive = true;
     const client = this.#client(() => accessToken(state), () => alive, true);
     try { return await work({ client: this.#data(client), hasSession: state?.session !== null && state?.session !== undefined, staleCookie: id !== '' && state === null, getUser: options => client.auth.getUser(options) }); }
@@ -158,19 +158,26 @@ export class Integration<Database> {
     if (callback && !callbackRequest) throw new SessionError('csrf', 'Use the configured GET OAuth callback');
     if (!callbackRequest) requireMutation(request.headers, request.method, this.#origin);
     const existingId = cookies.get(this.#name)?.value ?? '';
-    const id = sessionKey(existingId, this.#namespace) ? existingId : newSessionId();
-    const key = sessionKey(id, this.#namespace);
-    if (!key) throw new SessionError('invalid_session', 'Invalid generated session id');
-    return this.#options.store.exclusive(key, async lease => {
-      const loaded = await this.#load(key, lease);
-      let state = loaded.state;
-      // Proceed signed out: an unreadable row must not lock the browser out of login.
-      if (loaded.unreadable) await lease.remove();
+    let id = sessionKey(existingId, this.#namespace) ? existingId : newSessionId();
+    const initialKey = sessionKey(id, this.#namespace);
+    if (!initialKey) throw new SessionError('invalid_session', 'Invalid generated session id');
+    return this.#options.store.exclusive(initialKey, async lease => {
+      let key = initialKey;
+      let state = await this.#load(key, lease);
       let alive = true, accepting = true, failed = false, cookieNeeded = false;
-      let identityMutation = false;
+      let identityMutation = false, published = id === existingId;
       let queued = 0, tail: Promise<void> = Promise.resolve();
-      const storageKey = `nelcota-next.${key}.session`;
+      const storageKey = `nelcota-next.${initialKey}.session`;
       const ensure = (): void => { if (!alive || failed || lease.signal.aborted) throw new SessionError('closed_context', 'The session context is no longer writable'); };
+      // Never adopt a browser-chosen or pre-login ID: move to a fresh unpublished one.
+      const rotate = async (): Promise<void> => {
+        const nextId = newSessionId(), nextKey = sessionKey(nextId, this.#namespace);
+        if (!nextKey) throw new SessionError('invalid_session', 'Invalid generated session id');
+        try { await lease.rotate(nextKey); id = nextId; key = nextKey; published = false; }
+        catch (cause) { failed = true; throw new SessionError('session_store', 'Session publication failed', cause); }
+      };
+      // Unknown, expired or unreadable rows are removed and proceed signed out under a fresh ID.
+      if (!state && published) await rotate();
       const mutate = (): void => { ensure(); if (callbackRequest) throw new SessionError('csrf', 'OAuth callbacks only permit code exchange'); };
       const save = async (next: SessionState): Promise<void> => {
         ensure();
@@ -182,6 +189,7 @@ export class Integration<Database> {
         setItem: async (name, value) => {
           ensure();
           const next: SessionState = { schema: 1, session: state?.session ?? null, pkce: state?.pkce ?? null, oauthState: state?.oauthState ?? null, returnTo: state?.returnTo ?? '/', expiresAt: state?.expiresAt ?? Date.now() + this.#ttl * 1000 };
+          if (name === storageKey && identityMutation && published) { ensure(); await rotate(); }
           if (name === storageKey) {
             next.session = value;
             if (identityMutation) { next.expiresAt = Date.now() + this.#ttl * 1000; next.pkce = null; next.oauthState = null; }
@@ -298,7 +306,7 @@ export class Integration<Database> {
             try { cookies.set(this.#name, keep ? id : '', { httpOnly: true, secure: this.#secure, sameSite: 'lax', path: '/', maxAge: keep && state ? Math.max(0, Math.floor((state.expiresAt - Date.now()) / 1000)) : 0 }); }
             catch (cause) { throw new SessionError('session_store', 'Session cookie publication failed', cause); }
           }
-          if (!cookieNeeded && loaded.unreadable) this.expireCookie(cookies);
+          if (!cookieNeeded && existingId !== '' && id !== existingId) this.expireCookie(cookies);
         } finally { alive = false; client.dispose(); authClient.dispose(); }
       }
     });

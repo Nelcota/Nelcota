@@ -117,3 +117,11 @@ it('fails a lock held elsewhere within its deadline without a blocking backend w
   // No lock is held and no query is pending, so the clean connection returns to the pool.
   expect(release).toHaveBeenCalledExactlyOnceWith(false);
 });
+it('rotates to a fresh key on the same connection and releases both locks', async () => {
+  const { pool, query, release } = fixture();
+  const fresh = 'c'.repeat(64);
+  await new PostgresSessionStore(pool).exclusive(key, async lease => { await lease.rotate(fresh); await lease.save(value()); });
+  const calls = query.mock.calls.map(([sql, values]) => [sql.split(/[ (]/)[0] === 'SELECT' ? sql.match(/pg_\w+/)?.[0] : sql.split(' ')[0], values?.[0]]);
+  expect(calls).toEqual([['pg_try_advisory_lock', key], ['pg_try_advisory_lock', fresh], ['DELETE', key], ['INSERT', fresh], ['pg_advisory_unlock', key], ['pg_advisory_unlock', fresh]]);
+  expect(pool.connect).toHaveBeenCalledTimes(1); expect(release).toHaveBeenCalledExactlyOnceWith(false);
+});

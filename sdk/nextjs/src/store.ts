@@ -11,6 +11,10 @@ export interface SessionLease {
   load(): Promise<StoredSession | null>;
   save(value: StoredSession): Promise<void>;
   remove(): Promise<void>;
+  /** Owns a fresh, never-published key until this lease ends, removes the
+   * current row, and directs later load/save/remove calls to the new key.
+   */
+  rotate(key: string): Promise<void>;
 }
 
 export interface SessionStore {

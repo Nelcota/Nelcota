@@ -45,7 +45,10 @@ props, URLs de redirecionamento ou bundles públicos.
 O cookie contém somente um ID aleatório opaco; é HttpOnly, SameSite=Lax,
 host-only, Secure e `__Host-` em produção. Estado no banco usa AES-256-GCM,
 expiração e vínculo com a aplicação/API. O cookie recebido nunca é encaminhado
-à API. Agende a remoção limitada de linhas expiradas conforme o SQL do README;
+à API. Uma gravação nunca adota um ID sem linha armazenada; login, cadastro,
+troca OAuth, verificação por link e redefinição de senha movem o estado para um
+ID novo e removem a linha antiga (leases de `SessionStore` próprios implementam
+`rotate(key)`). Agende a remoção limitada de linhas expiradas conforme o SQL do README;
 registre apenas contagens. `DevelopmentSessionStore` é explícito, volátil e
 restrito a desenvolvimento loopback; não atende múltiplos processos.
 

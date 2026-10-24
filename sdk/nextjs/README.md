@@ -181,7 +181,10 @@ A host-only HttpOnly SameSite=Lax cookie contains one random 32-byte opaque ID,
 not JWTs. Production uses Secure and the `__Host-` prefix. Default names and
 storage bindings include application/API identity. Server state is AES-256-GCM
 authenticated encryption, with key rotation and expiry. No incoming browser
-cookie is forwarded to the API.
+cookie is forwarded to the API. A write never adopts a presented ID without a
+stored row, and sign-in, sign-up, OAuth exchange, email-link verification and
+password reset move the state to a fresh ID, deleting the old row. Custom
+`SessionStore` leases implement `rotate(key)` for this.
 
 Shared-store tests cover two independent owners, lock release and connection
 loss. **Simultaneous first logins before a browser has a cookie remain an open

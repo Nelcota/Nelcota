@@ -23,26 +23,27 @@ export class DevelopmentSessionStore implements SessionStore {
     if (this.#waiting >= 256) throw new SessionError('session_capacity', 'Development owner capacity reached');
     this.#waiting++;
     const previous = this.#pending.get(key) ?? Promise.resolve();
-    let active = true;
+    let active = true, current = key;
     const lifetime = new AbortController();
     const requireOwner = (): void => {
       if (!active) throw new SessionError('closed_context', 'The session context has ended');
     };
     const lease: SessionLease = {
       signal: lifetime.signal,
-      load: async () => { requireOwner(); return this.read(key); },
+      load: async () => { requireOwner(); return this.read(current); },
       save: async value => {
         requireOwner();
         if (!Number.isSafeInteger(value.expiresAt) || value.expiresAt <= Date.now() || value.sealed.length > 131072) {
           throw new SessionError('invalid_session', 'Invalid bounded session state');
         }
-        if (!this.#sessions.has(key) && this.#sessions.size >= this.capacity) {
+        if (!this.#sessions.has(current) && this.#sessions.size >= this.capacity) {
           for (const [id, row] of this.#sessions) if (row.expiresAt <= Date.now()) this.#sessions.delete(id);
           if (this.#sessions.size >= this.capacity) throw new SessionError('session_capacity', 'Development session capacity reached');
         }
-        this.#sessions.set(key, { ...value });
+        this.#sessions.set(current, { ...value });
       },
-      remove: async () => { requireOwner(); this.#sessions.delete(key); },
+      remove: async () => { requireOwner(); this.#sessions.delete(current); },
+      rotate: async next => { requireOwner(); this.#sessions.delete(current); current = next; },
     };
     const running = previous.then(() => work(lease));
     const tail = running.then(() => undefined, () => undefined);
