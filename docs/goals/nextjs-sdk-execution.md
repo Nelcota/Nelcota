@@ -222,3 +222,13 @@ branch. Main's budgets are retained and currently fail; earlier measurements are
 historical, not current acceptance. Admin UI npm audit also has existing undici
 advisories in main's unchanged lockfile. The workspace crypto-bigint advisory is
 backend-only; no ignore rule or blind incompatible upgrade was introduced.
+
+Final stacked update: PR145 is open against `fix/sdk-open-issues` (PR143).
+The last base correction makes obsolete HTTP-date parsing UTC-independent; its
+Sao Paulo timezone regression failed before correction and now passes. Final
+base totals are363 unit tests and20 type tests. A CodeQL finding on a literal
+server-test password was replaced with a runtime random password; the focused
+server regression passed again. No suppression was added. The base size gate
+remains failed at18302/17400B root,12102/11300B auth,9878/9550B REST and7896/7700B
+storage gzip. Rebuilt current candidate:58 tests, check/build, real Next/Chromium
+and packed external consumer pass. All earlier unresolved production gates remain.

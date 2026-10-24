@@ -217,3 +217,12 @@ identified the failing steps without bypassing access checks.
 Supplemental private logs remain under `/workspace/artifacts/g12/`; versioned
 commands/results are the durable review record. No main merge, release, tag,
 package publication or VPS operation was performed.
+
+Final PR pointers:143 contains production corrections;145 contains the private,
+unpublished candidate/goals as a stacked draft. The last HTTP-date timezone
+case brings the base unit total to363 (20 type tests). CodeQL flagged a literal
+password in the new isolated server fixture; runtime password generation replaces
+it and the focused test passes. Await the new hosted analysis; no alert was
+suppressed. The new date case, final58 candidate cases, framework/browser and
+packed consumer validations pass. CI still has explicit bundle/dependency gates;
+no green-check or production-approval claim is made.
