@@ -10,6 +10,9 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Changed
 
+- `install.sh` sets up a whole VPS when given `nelcota init` arguments:
+  `curl ... | sudo sh -s -- api.yourdomain.com` installs cron, Docker and the
+  CLI, then runs `init` and `up` in `/opt/nelcota`.
 - `nelcota upgrade --without-controller` upgrades projects on a host enrolled in
   the updates controller while installation from the panel is unavailable. It is
   refused while a controller job is unresolved, for projects the controller
