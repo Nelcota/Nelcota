@@ -27,7 +27,10 @@
   })
 </script>
 
-<main class="flex min-h-dvh items-center justify-center bg-background px-4 py-12" aria-busy="true">
+<!-- aria-busy sits on the step list, not on <main>: screen readers hold back
+     live-region updates inside a busy element, and the step changes below
+     must be announced. -->
+<main class="flex min-h-dvh items-center justify-center bg-background px-4 py-12">
   <!-- Fades in only after a short wait, so a fast start does not flash it. -->
   <div class="loading-screen-indicator flex w-full max-w-sm flex-col items-center text-center">
     <div class="relative grid size-28 place-items-center" aria-hidden="true">
@@ -49,7 +52,7 @@
       {/key}
     </div>
 
-    <ol class="mt-7 grid w-full gap-1 rounded-2xl bg-card p-2 text-start" aria-label={t('shell.app.boot.steps')}>
+    <ol class="mt-7 grid w-full gap-1 rounded-2xl bg-card p-2 text-start" aria-label={t('shell.app.boot.steps')} aria-busy="true">
       {#each STAGES as step, index (step)}
         {@const status = index < current ? 'done' : index === current ? 'current' : 'pending'}
         <li class={['flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-300', status === 'current' && 'bg-well font-medium', status === 'pending' && 'text-muted-foreground']}>
@@ -62,8 +65,10 @@
       {/each}
     </ol>
 
-    {#if slow}
-      <p class="loading-screen-swap mt-5 text-sm text-muted-foreground" role="status">{t('shell.app.boot.slow')}</p>
-    {/if}
+    <!-- Always in the page, so the note is announced when it fills in (a live
+         region added together with its text is often not read). -->
+    <div role="status">
+      {#if slow}<p class="loading-screen-swap mt-5 text-sm text-muted-foreground">{t('shell.app.boot.slow')}</p>{/if}
+    </div>
   </div>
 </main>

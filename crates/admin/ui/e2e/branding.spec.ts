@@ -60,7 +60,9 @@ for (const state of ['loading', 'offline']) {
     try {
       await page.reload({ waitUntil: 'domcontentloaded' })
       const main = page.getByRole('main')
-      if (state === 'loading') await expect(main).toHaveAttribute('aria-busy', 'true')
+      // Busy on the step list, not on <main>, so the step changes inside it are announced.
+      if (state === 'loading') await expect(main).not.toHaveAttribute('aria-busy')
+      if (state === 'loading') await expect(page.getByRole('list', { name: 'Etapas do carregamento' })).toHaveAttribute('aria-busy', 'true')
       if (state === 'offline') await expect(page.getByRole('alert')).toBeVisible()
       // Offline keeps the login's header; loading has the mark at its centre.
       await expect(page.locator('img[src*="nelcota-"]:visible')).toHaveCount(1)
