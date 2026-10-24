@@ -18,7 +18,8 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  # Formatting, architecture/doc scripts and clippy: fast feedback without tests.
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -29,12 +30,60 @@ jobs:
           toolchain: '1.99.0'
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: lint
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo fmt --all --check
       - run: python3 scripts/check-boundaries.py
       - run: python3 scripts/check-doc-versions.py
       - run: cargo clippy --all-targets -- -D warnings
-      # Integration tests start Postgres 17 via testcontainers (the runner's Docker).
-      - run: cargo test --all
+
+  # The whole workspace test suite, split across runners. Integration tests
+  # start Postgres 17 via testcontainers (the runner's Docker), one cluster per
+  # TestApp as before; only the test-to-runner assignment changes.
+  test:
+    name: test (${{ matrix.partition }}/3)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        partition: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d
+        with:
+          toolchain: '1.99.0'
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: test
+          save-if: ${{ github.ref == 'refs/heads/main' && matrix.partition == 1 }}
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: cargo-nextest
+      # Two concurrent tests per runner, as RUST_TEST_THREADS sets for cargo test.
+      - run: cargo nextest run --workspace --partition slice:${{ matrix.partition }}/3 --test-threads 2
+      # nextest does not run doctests.
+      - if: matrix.partition == 1
+        run: cargo test --workspace --doc
+
+  # Scripted end-to-end checks against the built binary.
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d
+        with:
+          toolchain: '1.99.0'
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: test
+          save-if: false
+      # Build first so the timeout below covers only the controls.
+      - run: cargo test --locked -p nelcota-server --test sql_cancellation --no-run
       - name: Dedicated SQL and export cancellation ownership controls
         timeout-minutes: 2
         run: nice -n19 ionice -c3 cargo test --locked -p nelcota-server --test sql_cancellation -- --nocapture
@@ -56,10 +105,6 @@ jobs:
           cargo package -p nelcota-core -p nelcota-auth --no-verify
           python3 scripts/test-auth-package.py --run
 
-      - name: host project lifecycle and interrupted restore
-        timeout-minutes: 12
-        run: python3 scripts/test-host-management.py --binary target/debug/nelcota
-
       # Storage on a real S3-compatible service (presigned URLs, multipart).
       - name: storage on S3
         env:
@@ -79,6 +124,41 @@ jobs:
             sleep 1
           done
           cargo test -p nelcota-server --test storage_s3 -- --ignored
+
+  # The longest scripted scenario runs on its own runner.
+  host-lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d
+        with:
+          toolchain: '1.99.0'
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: test
+          save-if: false
+      - run: cargo build --locked -p nelcota-server
+      - name: host project lifecycle and interrupted restore
+        timeout-minutes: 12
+        run: python3 scripts/test-host-management.py --binary target/debug/nelcota
+
+  # The required status check: passes only when every Rust job above passed.
+  # `always()` keeps a failed or cancelled dependency from turning this job
+  # into "skipped", which branch protection would accept as passing.
+  check:
+    if: always()
+    needs: [lint, test, integration, host-lifecycle]
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$RESULTS"
+          for result in $RESULTS; do
+            [ "$result" = success ] || exit 1
+          done
 
   native-lint:
     runs-on: ubuntu-latest
