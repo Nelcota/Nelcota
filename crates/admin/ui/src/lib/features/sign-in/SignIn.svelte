@@ -68,7 +68,7 @@
       <h2 id="signin-session" class="text-lg font-semibold">{t('signIn.session.title')}</h2>
       <div class="grid gap-4 sm:grid-cols-3">
         {#each session as item (item.id)}
-          <div class="grid gap-1 rounded-3xl bg-card p-5">
+          <div class="grid content-start gap-1 rounded-3xl bg-card p-5">
             <p class="text-sm text-muted-foreground">{t(`signIn.session.${item.id}.label`)}</p>
             <p class="text-3xl font-semibold tracking-tight tabular-nums">
               {fmt.format(item.value)}<span class="ml-1.5 text-base font-medium text-muted-foreground">{t(`signIn.session.${item.id}.unit`, { count: item.value })}</span>
