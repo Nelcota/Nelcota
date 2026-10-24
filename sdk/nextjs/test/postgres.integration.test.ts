@@ -11,6 +11,8 @@ it.skipIf(!process.env['NELCOTA_NEXT_TEST_DATABASE_URL'])('serializes two indepe
   const url = new URL(connectionString); url.pathname = `/${name}`;
   const first = new Pool({ connectionString: url.href, max: 2, connectionTimeoutMillis: 2000 });
   const second = new Pool({ connectionString: url.href, max: 2, connectionTimeoutMillis: 2000 });
+  // node-postgres requires pool error listeners: a terminated idle backend reports FATAL there.
+  for (const pool of [admin, first, second]) pool.on('error', () => undefined);
   let created = false;
   try {
     await admin.query(`CREATE DATABASE "${name}"`); created = true;
