@@ -299,3 +299,40 @@ async fn update_bucket_sends_every_setting_including_cleared_limits() {
     );
     task.abort();
 }
+
+#[tokio::test]
+async fn mime_grammar_matches_the_shared_server_fixture() {
+    let fixture: Value = serde_json::from_str(include_str!("fixtures/protocol.json")).unwrap();
+    let (url, task) = serve(Router::new().fallback(any(|| async {
+        axum::Json(
+            json!({"id":"fixture", "bucket":"files", "name":"empty.txt", "size":0,
+            "mime_type":"text/plain", "etag":"fixture"}),
+        )
+    })))
+    .await;
+    let files = Client::builder(url)
+        .build()
+        .unwrap()
+        .storage()
+        .from("files")
+        .unwrap();
+    for case in fixture["mime"].as_array().unwrap() {
+        let result = files
+            .upload(
+                "empty.txt",
+                "",
+                UploadOptions {
+                    content_type: Some(case["value"].as_str().unwrap().into()),
+                    ..Default::default()
+                },
+            )
+            .await;
+        assert_eq!(
+            result.is_ok(),
+            case["valid"].as_bool().unwrap(),
+            "{}",
+            case["value"]
+        );
+    }
+    task.abort();
+}

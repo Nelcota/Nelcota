@@ -44,3 +44,10 @@ cargo run -p nelcota-client --example https_smoke
 
 That makes one anonymous GET to example.com; an HTTP response proves TLS
 initialized in the consumer process without Nelcota server startup.
+
+
+Real-server tests in the current workspace validate the current server source,
+not every historical version in the compatibility matrix. For each historical
+baseline, start an isolated server of that exact version and run the packaged
+consumer against it. Record the server version/digest and supported capability
+coverage; a mock transport, MSRV build or package install alone is insufficient.

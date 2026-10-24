@@ -532,3 +532,21 @@ and dynamically assigned ports, so it can coexist with development services.
 
 See [releasing.md](https://github.com/Nelcota/Nelcota/blob/main/sdk/typescript/docs/releasing.md) (in the repository) for the account setup, candidate checks
 and tagged release procedure. [CHANGELOG.md](CHANGELOG.md) tracks SDK changes.
+
+
+## Reliable lifecycle and streaming
+
+Create a server-side client per request or provide a per-request token source;
+never share a user's mutable auth session across server requests. Dispose clients
+when their owner ends. The next SDK package observes async auth listener errors
+through `onBackgroundError`; listeners can call auth without holding its lock.
+If a custom session adapter fails, repair it and explicitly persist the retained
+session before sharing it with other clients. Never log the session to diagnose
+storage failures.
+
+For a total request deadline, pass `AbortSignal.timeout(15_000)` to
+`.abortSignal(...)`. The per-attempt timeout remains separate. For large files,
+use `storage.from(bucket).open(name, { signal })`, consume `response.body` with
+backpressure and cancel the body in `finally` if consumption stops early.
+`download()` intentionally buffers a Blob. These patterns do not change the
+server's upload limits or authorization rules.

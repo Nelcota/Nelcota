@@ -274,7 +274,7 @@ export class Query<S extends GenericSchema, Name extends string, Row, Out, Head 
     const contentRange = response.headers.get('content-range');
     const count = countFromRange(contentRange);
     const range = rangeFromHeader(contentRange);
-    if (state.returnsRows && !Array.isArray(rows)) {
+    if (state.returnsRows && (!Array.isArray(rows) || !rows.every(isRecord))) {
       const error = new NelcotaError({ status: response.status, code: 'invalid_response', message: 'The server answered with something that is not an array of rows' });
       return { data: null, error, count: null, range: null, status: response.status };
     }

@@ -193,3 +193,15 @@ describe('bucket settings', () => {
     void nelcota.storage.updateBucket('avatars', { public: true, file_size_limit: null });
   });
 });
+
+
+it('reports ambiguous inverse relationships and preserves explicit hints', () => {
+  const ambiguous = nelcota.from('customers').select('orders(id)');
+  expectTypeOf<Result<typeof ambiguous>[number]['orders']>().toMatchTypeOf<SelectError<string>>();
+  const column = nelcota.from('customers').select('orders!customer_id(id)');
+  const constraint = nelcota.from('customers').select('orders!orders_seller_id_fkey(id)');
+  expectTypeOf<Result<typeof column>[number]['orders']>().toEqualTypeOf<{ id: number | string }[]>();
+  expectTypeOf<Result<typeof constraint>[number]['orders']>().toEqualTypeOf<{ id: number | string }[]>();
+  const missing = nelcota.from('customers').select('orders!missing(id)');
+  expectTypeOf<Result<typeof missing>[number]['orders']>().toMatchTypeOf<SelectError<string>>();
+});

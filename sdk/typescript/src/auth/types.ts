@@ -12,7 +12,7 @@ export interface AuthOptions {
   autoRefresh?: boolean;
   /** Refresh when fewer than this many seconds remain, capped at half the token lifetime. Default 60. */
   refreshMargin?: number;
-  /** Unexpected storage/adapter failures in background auth. Automatic refresh pauses until a session is written successfully. */
+  /** Background storage/adapter and auth listener failures. Storage failures pause refresh; listener failures do not. Handler failures are isolated. */
   onBackgroundError?: (error: unknown) => void | Promise<void>;
 }
 export interface AuthRequestOptions {

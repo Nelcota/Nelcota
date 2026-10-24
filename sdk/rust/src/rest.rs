@@ -2,6 +2,7 @@
 mod conditions;
 mod options;
 mod query;
+mod response;
 
 pub use conditions::{Condition, IsValue, Operator};
 pub use options::{Order, UpsertOptions};

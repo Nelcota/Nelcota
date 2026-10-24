@@ -5,6 +5,20 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## Unreleased
 
+### Fixed
+
+- Clean up owned FileStorage temporary files when a save is cancelled, preserving
+  the previous session and other writers' files; sync its directory on Unix.
+- Let explicit query timeouts override scoped client defaults, including zero.
+- Refuse explicit MIME types the server cannot preserve, using shared SDK fixtures.
+
+### Changed
+
+- Separate private auth persistence, OAuth and refresh-task ownership, and REST
+  request preparation and response decoding, preserving public imports and APIs.
+- Decode single-row representations by ownership instead of copying their JSON.
+
+
 ## 0.1.4 — 2026-10-19
 
 ### Changed

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createClient, NelcotaUsageError } from '../../src/index.js';
 import { empty, json, mockFetch } from './helpers.js';
@@ -148,4 +149,25 @@ describe('buckets', () => {
     await nelcota.storage.updateBucket('avatars', { public: false, file_size_limit: null, allowed_mime_types: null });
     expect(JSON.parse(calls[0]!.body!)).toEqual({ public: false, file_size_limit: null, allowed_mime_types: null });
   });
+});
+
+
+it('uses the same explicit MIME grammar as the Rust SDK and server', async () => {
+  const fixture = JSON.parse(readFileSync(new URL('../../../rust/tests/fixtures/protocol.json', import.meta.url), 'utf8')) as {
+    mime: { value: string; valid: boolean }[];
+  };
+  const { nelcota, calls } = client(() => json(stored));
+  try {
+    for (const { value, valid } of fixture.mime) {
+      const before = calls.length;
+      const result = nelcota.storage.from('files').upload('empty.txt', '', { contentType: value });
+      if (!valid) {
+        await expect(result).rejects.toBeInstanceOf(NelcotaUsageError);
+        expect(calls).toHaveLength(before);
+        continue;
+      }
+      expect((await result).error).toBeNull();
+      expect(calls.at(-1)?.headers.get('content-type')).toBe(value);
+    }
+  } finally { nelcota.dispose(); }
 });

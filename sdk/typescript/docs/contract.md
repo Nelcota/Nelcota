@@ -222,3 +222,41 @@ Run `check`, unit/type tests, `build`, `size`, `test:package`, runtime smoke tes
 and `test:contract -- --browser`. CI tests Node 22/24/26, Bun, Deno and
 Chromium/Firefox/WebKit. Edge hosts may consume the Web API implementation but
 are not included in this compatibility guarantee until tested on that host.
+
+
+## Unreleased hardening
+
+These changes belong to the next SDK package, not the already published 0.2.1.
+Updating the server does not update application SDKs.
+
+Table/view representations require an array of non-null objects. `single()`,
+`maybeSingle()` and `pages()` return or throw `invalid_response` for null, scalar
+or array elements. Empty result arrays and null fields inside rows remain valid.
+RPC results may still be scalars or contain scalar/null array elements. Select
+inference reports ambiguous relationships in both directions; use a column or
+foreign-key constraint hint to choose one.
+
+Auth listeners run in registration order and may return promises. Their completion
+is not awaited inside the lifecycle lock, so an async listener can call auth.
+Synchronous throws and asynchronous rejections are sent to `onBackgroundError`;
+they do not stop refresh or reject an accepted sign-in. Error-handler failures
+are isolated. Without a handler, listener errors are observed and discarded.
+Background storage errors still pause refresh as documented above.
+
+Serialized errors include `retryAfter` when present, but never include `cause`.
+Do not log login bodies, bearer tokens, session objects or signed URLs. Server
+error messages and database details can contain application data; redact them
+before sending telemetry outside the application's trust boundary.
+
+Explicit upload MIME parts use ASCII letters/digits and `!#$&-^_.+`, with 1–127
+characters per part, matching the server's preserved type/subtype grammar.
+Parameters after a semicolon and space/tab before it remain valid; header bytes
+are sent unchanged. HTTP token characters outside this subset are refused before
+upload instead of relying on the server to replace the declaration.
+
+The timeout still covers each HTTP attempt, not token-source/refresh waits or
+backoff. For a total caller deadline use `AbortSignal.timeout(ms)` as the request's
+signal. This returns `aborted` when the caller deadline expires and withdraws its
+wait without cancelling another caller's refresh. Uploads/downloads still have
+no transfer deadline by default. Use `open()` and cancel or finish its body for
+large files; `download()` deliberately buffers the entire file.

@@ -5,6 +5,17 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## Unreleased
 
+### Fixed
+
+- Decode large JSON strings without regex stack exhaustion, preserving exact numbers.
+- Observe synchronous and asynchronous auth listener failures through
+  `onBackgroundError`, without stopping refresh or blocking reentrant callbacks.
+- Reject non-object REST rows and report ambiguous inverse relationships in
+  generated-schema select inference; scalar RPC results remain supported.
+- Preserve `retryAfter` in serialized errors and align explicit MIME validation
+  with the server's supported type/subtype characters and 127-byte parts.
+
+
 ## 0.2.1 — 2026-10-19
 
 ### Changed

@@ -161,3 +161,33 @@ inválida pode lançar uma exceção. Para liberar timers e listeners, use
 
 Os demais métodos e opções estão no [README](../README.md) e no
 [contrato do cliente](contract.md).
+
+
+## Ciclo de vida e operações longas
+
+A atualização do servidor não atualiza o SDK instalado no aplicativo. As
+correções em `Unreleased` exigem a próxima versão do pacote. Não registre
+senhas, tokens, sessões nem URLs assinadas nos logs. Erros do banco também
+podem conter dados do aplicativo; remova informações sensíveis da telemetria.
+
+No servidor, crie um cliente por requisição ou forneça o token daquela
+requisição. Não compartilhe uma sessão de usuário entre requisições. Na próxima
+versão, falhas síncronas e assíncronas em `onChange` chegam a
+`onBackgroundError`, sem interromper o refresh. O callback pode consultar auth;
+o SDK não aguarda sua conclusão dentro da trava da sessão.
+
+Para limitar a espera total, use `.abortSignal(AbortSignal.timeout(15_000))`.
+O timeout por tentativa não inclui a espera pelo token nem o intervalo entre
+retries. Para arquivos grandes, use `open()`, consuma o stream e cancele o body
+em `finally` se parar antes do fim. `download()` armazena o arquivo inteiro em
+memória. Corrija um adapter de sessão com falha e persista explicitamente a
+sessão retida antes de compartilhá-la novamente.
+
+A próxima versão valida linhas REST como objetos não nulos e exige hints em
+relações ambíguas nos dois sentidos. Arrays vazios e campos nulos continuam
+válidos. Erros serializados passam a preservar `retryAfter`.
+
+O MIME explícito de upload usa partes de 1 a 127 caracteres ASCII, com letras,
+dígitos e `!#$&-^_.+`, como o servidor. Parâmetros após ponto e vírgula continuam
+válidos. Valores fora desse conjunto passam a ser recusados antes do upload,
+em vez de depender da substituição do tipo declarado no servidor.

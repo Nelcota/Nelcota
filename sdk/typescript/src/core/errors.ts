@@ -124,6 +124,7 @@ export class NelcotaError extends Error {
 
   toJSON(): NelcotaErrorJson {
     const json: NelcotaErrorJson = { name: this.name, status: this.status, code: this.code, message: this.message };
+    if (this.retryAfter !== undefined) json.retryAfter = this.retryAfter;
     if (this.sqlstate !== undefined) json.sqlstate = this.sqlstate;
     if (this.details !== undefined) json.details = this.details;
     if (this.hint !== undefined) json.hint = this.hint;
@@ -133,6 +134,7 @@ export class NelcotaError extends Error {
 }
 
 export interface NelcotaErrorJson {
+  retryAfter?: number;
   name: string;
   status: number;
   code: NelcotaErrorCode;
