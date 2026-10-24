@@ -169,10 +169,13 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="mx-auto w-full max-w-page px-4 pt-2 pb-12 sm:px-6 lg:px-8" ondragenter={(event) => { if (event.dataTransfer?.types.includes('Files')) { event.preventDefault(); dragDepth++; dragging = true } }} ondragleave={() => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) dragging = false }} ondragover={(event) => { if (event.dataTransfer?.types.includes('Files')) event.preventDefault() }} ondrop={dropped}>
-  <!-- The top bar already shows Storage > bucket: only a folder path needs its own trail. -->
-  {#if prefix}
-  <nav class="mb-4 flex flex-wrap items-center gap-2 text-sm [overflow-wrap:anywhere]" aria-label={t('storage.browser.path')}>
-    <a class="font-mono text-muted-foreground hover:text-foreground hover:underline" href={folderHref('')}>{bucket}</a>
+  <!-- From md the top bar already shows Storage > bucket, so only a folder path
+       needs its own trail; phones hide that bar and keep the way back here. -->
+  <nav class={['mb-4 flex-wrap items-center gap-2 text-sm [overflow-wrap:anywhere]', prefix ? 'flex' : 'flex md:hidden']} aria-label={t('storage.browser.path')}>
+    <a class="text-muted-foreground hover:text-foreground hover:underline md:hidden" href={href('/storage')}>{t('storage.title')}</a>
+    <ChevronRight class="size-3.5 shrink-0 text-muted-foreground md:hidden" aria-hidden="true" />
+    {#if (prefix)}<a class="font-mono text-muted-foreground hover:text-foreground hover:underline" href={folderHref('')}>{bucket}</a>{/if}
+    {#if !(prefix)}<span class="font-mono" aria-current="page">{bucket}</span>{/if}
     {#each trail as folder, index (folder.prefix)}
       <ChevronRight class="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
       {#if (index === trail.length - 1)}<span class="font-mono" aria-current="page">{folder.name}</span>
@@ -180,7 +183,6 @@
       {#if !(index === trail.length - 1)}<a class="font-mono text-muted-foreground hover:text-foreground hover:underline" href={folderHref(folder.prefix)}>{folder.name}</a>{/if}
     {/each}
   </nav>
-  {/if}
   <PageHeader
     title={bucket}
     description={info ? [info.bucket.public ? t('storage.public') : t('storage.private'), t('storage.browser.fileCount', { count: info.bucket.files }), size(info.bucket.bytes)].join(' · ') : undefined}
