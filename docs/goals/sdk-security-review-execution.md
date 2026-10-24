@@ -180,3 +180,40 @@ Next: resolve initial-cookie identity ownership with a distributed/browser
 reproducer, design/test safe S3 redirect destinations, provide disk/tooling for
 final-source backend/Rust license checks, and complete the remaining runtime,
 provider and hostile-state matrix. G12 remains **in progress**, not complete.
+
+## Third checkpoint — production issue PR and candidate revalidation
+
+Draft PR143 (`fix/sdk-open-issues`) contains the production SDK/refresh fixes;
+this goal/candidate is a separate stacked draft. Issues132–142 were reviewed.
+Ten have closing references in143;137 is deliberately only addressed for the
+explicit pre-grant rate-limit rejection, retaining the fence for uncertain
+network/gateway outcomes. Issues stay open until reviewed fixes merge.
+
+Current local results supersede prior test/resource blockers where stated:
+362 TS unit +20 type tests;46 executable Rust +10 doctests;57 auth library and
+28 server auth tests passed. The final32-case issue regression set failed29
+assertions on the baseline; both new Rust regressions failed before correction.
+The Next candidate has58 passing cases and fresh real Next/Chromium, packed
+consumer and current-source backend/RLS evidence in G11's latest checkpoint.
+The reserved-filter predicate was also verified against the real backend with
+before/after failure/pass. No production data, deployment or publication used.
+
+New candidate corrections: clear the adapter's header timer before handing over
+an accepted stream, and reject empty query/fragment delimiters at configuration.
+The auth HTTP fixture now generates its signing key at runtime. No real credential
+or private security-review bundle was staged or pushed.
+
+The initial-login ordering finding remains open and publication blocking. Safe
+S3 redirect handling and the full matrix remain incomplete. Do not present this
+as a completed G11/G12 security certification.
+
+Three ordinary CI blockers have been identified in143: SDK bundle caps, backend
+RustSec supply-chain advisory, and existing admin UI npm-audit undici advisories
+through Scalar. The UI lockfile is identical to main; unrelated Dependabot PR130
+is untouched. Keep strict checks enabled and the PR draft. Raw hosted job-log
+storage returned403 in this environment; GitHub job metadata and local npm audit
+identified the failing steps without bypassing access checks.
+
+Supplemental private logs remain under `/workspace/artifacts/g12/`; versioned
+commands/results are the durable review record. No main merge, release, tag,
+package publication or VPS operation was performed.

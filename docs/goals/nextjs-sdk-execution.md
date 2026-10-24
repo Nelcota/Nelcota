@@ -175,3 +175,50 @@ backend or audit work. Keep unrelated worktrees intact.
 | Operations | Partial | EN/PT docs and npm audits pass; latency/memory/leak/soak measurements and ordinary CI not run |
 
 No completion gate has been lowered to label this candidate finished.
+
+## Correction/review checkpoint — stacked PR preparation
+
+Production prerequisites are now in draft PR143, branch `fix/sdk-open-issues`.
+This candidate merges that branch without rewriting history and targets it for
+review, so the new package/goals remain separate from production corrections.
+Main is unchanged. This checkpoint supersedes earlier disk-blocked server cells.
+
+- Base SDK corrections:362 TS unit tests,20 type tests;46 executable Rust tests
+  +10 doctests. Auth library57 passed and final-source server auth28 passed on
+  disposable databases. The original32-case issue set produced29 failures before
+  correction, plus two failing type regressions. Source size/security checks have
+  not been weakened; the base PR remains draft for its explicit failed gates.
+- Next58 tests passed, including real shared PostgreSQL and three new regressions:
+  accepted-stream deadline ownership and empty URL query/fragment delimiters.
+  The new cases failed on the prior candidate before correction. Build/check pass.
+- Real Next16.4.3 production build/start and Chromium login/Action redirect,
+  cookie merge, cache, credential-absence and logout checks passed again. The
+  real negative Client Component import build failed as required; the valid
+  application was rebuilt after deleting the owned probe route.
+- Packed consumer: actual installation, all five entry points and strict TS
+  declarations passed with the corrected local base SDK. Package stays private;
+  a released base SDK version/minimum peer dependency is still a release gate.
+- Scoped real backend/RLS and reserved-filter checks passed on a newly compiled
+  current-source binary, SHA-256
+  `2f2e8299d6f1bc26fc42e0e7dcb771a104494bd42850f42f2254018921cb550d`.
+  The original REST filter implementation failed the actual backend assertion;
+  the correction passed. Two users, anonymous isolation, forbidden cross-user
+  update and SQL integrity checks passed. Storage stayed off; no disk SLO changed.
+- A provider-fixture run initially passed its assertions but failed during forced
+  database cleanup with an unhandled idle-pool termination event. The fixture now
+  observes pool errors with stable codes, permits only its own expected cleanup
+  termination, and prints success after cleanup. Other background errors set a
+  failing exit code. Both before/after runs were repeated with the corrected
+  fixture; the recorded pass is the zero-exit rerun, not the failed attempt.
+
+Open gates remain: first-login intent/cookie ordering (N01), safe S3 redirect
+policy/provider support (N02), full email/provider/auth/resource/runtime matrix,
+base bundle caps and dependency audit blockers. Ordinary CI does not currently
+run the new package's whole matrix; local framework/provider checks are separate
+and cannot make a green inherited job into Next production approval.
+
+The prior exploratory +100B base bundle allowance was reverted in the correction
+branch. Main's budgets are retained and currently fail; earlier measurements are
+historical, not current acceptance. Admin UI npm audit also has existing undici
+advisories in main's unchanged lockfile. The workspace crypto-bigint advisory is
+backend-only; no ignore rule or blind incompatible upgrade was introduced.
