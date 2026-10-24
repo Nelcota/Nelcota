@@ -245,9 +245,12 @@ export class SessionManager {
     const result = await this.rotate(current.refresh_token, options.timeout === undefined ? {} : { timeout: options.timeout });
     if (result.error) {
       if (publish && result.error.code === 'invalid_grant') await this.#write(null, 'signed_out', true);
-      // This endpoint rejects rate-limited requests before reading the grant.
-      // A gateway 5xx or lost response is uncertain: preserve its reservation.
-      if (result.error.status === 429 && result.error.code === 'rate_limited') await this.#native?.write(encodeJson(current), true);
+      // Every other 4xx is returned before the rotation commits (rate limit,
+      // malformed request), so the stored token is still valid. A 5xx can
+      // follow an ambiguous commit and a lost response has no answer at all:
+      // preserve their reservation.
+      const { code, status } = result.error;
+      if (code !== 'invalid_grant' && status >= 400 && status < 500) await this.#native?.write(encodeJson(current), true);
       return result;
     }
     if (publish) await this.#write(result.data, 'refreshed', true);

@@ -11,8 +11,8 @@ Dates identify release entries; registry availability requires a successful publ
   never persist or announce that renewal. Isolate server auth locks by
   adapter/key while caller storage in workers keeps Web Locks, label cross-tab
   account/profile changes and ignore unchanged per-tab state.
-- Release browser refresh reservations after explicit pre-grant rate limiting,
-  while retaining uncertain-outcome fences for network and gateway failures.
+- Release browser refresh reservations after rate limiting and every other
+  definite 4xx rejection other than `invalid_grant`, while retaining uncertain-outcome fences for network and gateway failures.
 - Stop raw-response attempt timers at headers; preserve caller cancellation and
   buffered deadlines, HTTP error status after failed body reads, strict HTTP
   Retry-After parsing and usage errors for malformed URLs/headers.
