@@ -163,3 +163,14 @@ it('does not abort an accepted storage response stream when its session lease cl
   stream?.enqueue(new TextEncoder().encode('accepted stream')); stream?.close();
   expect(await result.data?.text()).toBe('accepted stream');
 });
+it('ends the adapter header deadline before handing a stream to its caller', async () => {
+  let signal: AbortSignal | null | undefined;
+  const { integration, jar } = await setup({ timeout: 100, fetch: async (_url, init) => {
+    signal = init?.signal; return new Response('accepted object');
+  } });
+  const result = await integration.write(jar, post(), context => context.client.storage.from('assets').open('file'));
+  expect(result.error).toBeNull();
+  await new Promise(resolve => setTimeout(resolve, 150));
+  expect(signal?.aborted).toBe(false);
+  expect(await result.data?.text()).toBe('accepted object');
+});

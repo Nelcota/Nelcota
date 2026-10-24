@@ -112,12 +112,14 @@ export class Integration<Database> {
         const lost = (): void => ownership.abort();
         lifetime?.addEventListener('abort', lost, { once: true });
         if (lifetime?.aborted) lost();
-        const signal = AbortSignal.any([...(init?.signal ? [init.signal] : []), ownership.signal, AbortSignal.timeout(this.#options.timeout ?? 30000)]);
+        const deadline = new AbortController();
+        const timer = setTimeout(() => deadline.abort(new DOMException('Header deadline exceeded', 'TimeoutError')), this.#options.timeout ?? 30000);
+        const signal = AbortSignal.any([...(init?.signal ? [init.signal] : []), ownership.signal, deadline.signal]);
         try {
           // Once headers arrive, the response/body consumer owns the accepted
           // transfer. Closing a session lease must not truncate a returned stream.
           return await send(input, { ...init, signal, cache: 'no-store', redirect: 'error' });
-        } finally { lifetime?.removeEventListener('abort', lost); }
+        } finally { clearTimeout(timer); lifetime?.removeEventListener('abort', lost); }
       },
     });
   }
