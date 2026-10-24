@@ -10,6 +10,10 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Changed
 
+- `nelcota upgrade --without-controller` upgrades projects on a host enrolled in
+  the updates controller while installation from the panel is unavailable. It is
+  refused while a controller job is unresolved, for projects the controller
+  already activated and when run from the controller's own binary.
 - Show the panel's startup as animated steps (connecting to the server, then
   opening the panel) around the brand mark, with a note when it takes longer
   than usual. Fast starts skip the screen instead of flashing it.
