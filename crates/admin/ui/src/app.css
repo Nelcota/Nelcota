@@ -477,7 +477,6 @@
   color: var(--muted-foreground);
   transition: color 150ms, background-color 150ms;
 }
-.panel-updates-link { color: var(--brand); background: var(--brand-soft); }
 .panel-search {
   display: flex;
   height: 36px;
