@@ -16,14 +16,17 @@
   let {
     tables,
     current,
+    phone = false,
     oncreate,
     loading = false,
     error = '',
     onretry,
   }: {
     tables: TableSummary[]
-    /** Open table (`undefined` = none: on phones the list fills the screen). */
+    /** Open table, if any. */
     current?: string
+    /** Fills the screen below `lg`; otherwise the list only shows on wide screens. */
+    phone?: boolean
     oncreate: () => void
     loading?: boolean
     error?: string
@@ -42,7 +45,7 @@
 
 <aside
   aria-label={t('tables.sidebar.label')}
-  class={cn('w-full shrink-0 flex-col overflow-hidden lg:flex lg:w-64 xl:w-72', !tables.length && !loading && !error ? 'border-b border-border lg:border-r lg:border-b-0' : 'rounded-3xl bg-card', current ? 'hidden' : 'flex')}
+  class={cn('w-full shrink-0 flex-col overflow-hidden lg:flex lg:w-64 2xl:w-72', !tables.length && !loading && !error ? 'border-b border-border lg:border-r lg:border-b-0' : 'rounded-3xl bg-card', phone ? 'flex' : 'hidden')}
 >
   <div class="grid gap-3 border-b p-4">
     <div class="flex items-center justify-between gap-2">

@@ -477,7 +477,6 @@
   color: var(--muted-foreground);
   transition: color 150ms, background-color 150ms;
 }
-.panel-updates-link { color: var(--brand); background: var(--brand-soft); }
 .panel-search {
   display: flex;
   height: 36px;
@@ -492,7 +491,10 @@
   cursor: pointer;
 }
 .panel-search:hover { color: var(--foreground); background: var(--accent); }
-.panel-content :where(.bg-card) { box-shadow: inset 0 0 0 1px var(--border); }
+/* Layered so ring/shadow utilities (e.g. the cell editor's ring) still win. */
+@layer components {
+  .panel-content :where(.bg-card) { box-shadow: inset 0 0 0 1px var(--border); }
+}
 .resource-canvas {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

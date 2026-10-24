@@ -1,0 +1,1 @@
+import{b as e,f as t,x as n}from"./index.svelte-Bxc08j0j.js";var r=new Set([`$$slots`,`$$events`,`$$legacy`]);function i(i,a){let o=e(a,r),s={name:`ellipsis`,size:24,node:[[`circle`,{cx:`12`,cy:`12`,r:`1`}],[`circle`,{cx:`19`,cy:`12`,r:`1`}],[`circle`,{cx:`5`,cy:`12`,r:`1`}]],aliases:[`more-horizontal`]};t(i,n(()=>o,{get icon(){return s}}))}export{i as t};

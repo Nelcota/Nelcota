@@ -25,6 +25,8 @@
   const source = $derived(guideSource(selected))
   const blocks = $derived('code' in selected ? [] : readMarkdown(source, selected.source, guideTranslation(selected, i18n.locale)))
   const headings = $derived(blocks.filter(block => block.type === 'heading'))
+  const notes = $derived('versionNotes' in selected ? blocks.slice(0, selected.versionNotes) : [])
+  const body = $derived(blocks.slice(notes.length))
   const visible = $derived(guides.filter(guide => commandScore(`${t(`guides.entries.${guide.id}.title`)} ${t(`guides.entries.${guide.id}.description`)} ${guideSearchText(guide, i18n.locale)}`, search) > 0))
 
   // Query-based section links survive the SPA router, reload and browser back.
@@ -105,7 +107,15 @@
           </details>
         {/if}
         <div class="grid min-w-0 gap-4" lang={'language' in selected ? selected.language : i18n.locale}>
-          {#each blocks as block, index (`${selected.id}:${index}`)}
+          {#if notes.length}
+            <details class="rounded-2xl bg-well p-4">
+              <summary class="cursor-pointer text-sm font-medium" lang={i18n.locale}>{t('guides.versionNotes')}</summary>
+              {#each notes as block, index (`${selected.id}:notes:${index}`)}
+                {#if block.type === 'html'}<div class="guide-prose mt-3 min-w-0">{@html block.html}</div>{/if}
+              {/each}
+            </details>
+          {/if}
+          {#each body as block, index (`${selected.id}:${index}`)}
             {#if (block.type === 'code')}
               <CodeBlock code={block.code} lang={block.lang} />
             {/if}

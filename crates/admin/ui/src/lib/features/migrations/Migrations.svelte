@@ -230,35 +230,40 @@
             </article>
           {/each}
         </div>
-        <div class="-mx-5 hidden md:block">
+        <!-- Edge cells drop their outer padding so the table lines up with the
+             heading without bleeding past the card; tighter cells and a
+             truncating name keep it within the card beside the side column. -->
+        <div class="hidden md:block">
           <Table.Root>
             <Table.Header>
               <Table.Row class="hover:bg-transparent">
-                <Table.Head class="w-20">{t('migrations.columns.version')}</Table.Head>
-                <Table.Head>{t('migrations.columns.name')}</Table.Head>
-                <Table.Head>{t('migrations.columns.status')}</Table.Head>
-                <Table.Head>{t('migrations.columns.appliedOn')}</Table.Head>
-                <Table.Head class="w-28"><span class="sr-only">{t('common.actions')}</span></Table.Head>
+                <Table.Head class="pr-3 pl-0">{t('migrations.columns.version')}</Table.Head>
+                <Table.Head class="w-full px-3">{t('migrations.columns.name')}</Table.Head>
+                <Table.Head class="px-3">{t('migrations.columns.status')}</Table.Head>
+                <Table.Head class="px-3">{t('migrations.columns.appliedOn')}</Table.Head>
+                <Table.Head class="pr-0 pl-3"><span class="sr-only">{t('common.actions')}</span></Table.Head>
               </Table.Row>
             </Table.Header>
             <Table.Body>
               {#each data.migrations as migration (migration.version)}
                 {@const situation = status(migration)}
                 <Table.Row>
-                  <Table.Cell class="font-mono text-xs tabular-nums">V{migration.version}</Table.Cell>
-                  <Table.Cell>
-                    <span class="font-mono text-xs">{migration.name}</span>
-                    {#if migration.from_panel}<span class="ml-2 text-xs text-muted-foreground">{t('migrations.fromPanel')}</span>{/if}
+                  <Table.Cell class="pr-3 pl-0 font-mono text-xs tabular-nums">V{migration.version}</Table.Cell>
+                  <Table.Cell class="max-w-0 min-w-32 px-3">
+                    <span class="block truncate font-mono text-xs" title={migration.name}>{migration.name}</span>
+                    {#if migration.from_panel}<span class="block truncate text-xs text-muted-foreground">{t('migrations.fromPanel')}</span>{/if}
                   </Table.Cell>
-                  <Table.Cell><Badge variant="outline" class={situation.warn ? 'border-warning/30 text-warning' : 'text-muted-foreground'}>{#if (situation.warn)}<CircleAlert aria-hidden="true" />{/if}{#if !(situation.warn)}<CircleCheck aria-hidden="true" />{/if}{situation.label}</Badge></Table.Cell>
-                  <Table.Cell class="text-muted-foreground">{date(migration.applied_on)}</Table.Cell>
-                  <Table.Cell class="text-right">
+                  <Table.Cell class="px-3"><Badge variant="outline" class={situation.warn ? 'border-warning/30 text-warning' : 'text-muted-foreground'}>{#if (situation.warn)}<CircleAlert aria-hidden="true" />{/if}{#if !(situation.warn)}<CircleCheck aria-hidden="true" />{/if}{situation.label}</Badge></Table.Cell>
+                  <Table.Cell class="px-3 whitespace-normal text-muted-foreground">{date(migration.applied_on)}</Table.Cell>
+                  <Table.Cell class="pr-0 pl-3 text-right">
                     {#if migration.from_panel}
+                      <!-- Icon-only until 2xl; the hidden text keeps the accessible name. -->
                       <Button
                         variant="ghost"
                         size="sm"
                         href={`/admin/api/migrations/${migration.version}/file`}
-                        download><Download data-icon="inline-start" aria-hidden="true" />{t('common.download')}</Button
+                        title={t('common.download')}
+                        download><Download data-icon="inline-start" aria-hidden="true" /><span class="sr-only 2xl:not-sr-only">{t('common.download')}</span></Button
                       >
                     {/if}
                   </Table.Cell>

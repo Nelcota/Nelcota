@@ -24,7 +24,7 @@
       <div class="welcome-icon" aria-hidden="true"><Rows3 class="size-7" strokeWidth={1.5} /></div>
       <h2 id="first-table-title">{t('tables.home.emptyTitle')}</h2>
       <p class="welcome-description">{t('tables.home.emptyHint')}</p>
-      <Button onclick={oncreate}><Plus aria-hidden="true" />{t('tables.editor.newTable')}</Button>
+      <Button size="hero" onclick={oncreate}><Plus aria-hidden="true" />{t('tables.editor.newTable')}</Button>
       <p class="welcome-note">{t('tables.home.visualEditor')}</p>
     </div>
   </section>

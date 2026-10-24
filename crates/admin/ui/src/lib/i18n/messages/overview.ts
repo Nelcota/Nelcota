@@ -46,6 +46,7 @@ const ptBR = {
     usersRing: '{percent}% dos usuários já entraram pelo app',
     refused: 'Recusadas',
     refusedBars: 'Recusadas ao longo do período',
+    open: 'Abrir {page}',
   },
   traffic: {
     title: 'Tráfego da API',
@@ -152,6 +153,7 @@ const en: Messages<typeof ptBR> = {
     usersRing: '{percent}% of users have signed in from the app',
     refused: 'Refused',
     refusedBars: 'Refused across the period',
+    open: 'Open {page}',
   },
   traffic: {
     title: 'API traffic',

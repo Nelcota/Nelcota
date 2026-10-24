@@ -10,6 +10,16 @@ describe('bundled guides', () => {
     }
   })
 
+  it('folds only leading paragraphs that still describe a release', () => {
+    for (const guide of guides.filter(guide => 'versionNotes' in guide)) {
+      const notes = readMarkdown(guideSource(guide), guide.source).slice(0, 'versionNotes' in guide ? guide.versionNotes : 0)
+      for (const block of notes) {
+        expect(block.type, guide.source).toBe('html')
+        if (block.type === 'html') expect(block.html, guide.source).toMatch(/\d+\.\d+\.\d+/)
+      }
+    }
+  })
+
   it('keeps relative and GitHub documentation links in the panel, including sections', () => {
     expect(guideLink('api.md#errors', 'docs/storage.md')).toBe('/admin/guides/api?section=errors')
     expect(guideLink('docs/contract.md', 'sdk/typescript/README.md')).toBe('/admin/guides/sdk-contract')

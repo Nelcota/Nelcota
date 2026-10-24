@@ -61,7 +61,7 @@
     aria-label={label ?? t('common.copy')}
     onclick={copy}
   >
-    {#if (copied)}<Check class="size-4 text-brand" />{/if}
+    {#if (copied)}<Check class="size-4 text-success" />{/if}
     {#if !(copied)}<Copy class="size-4" />{/if}
   </button>
 </div>

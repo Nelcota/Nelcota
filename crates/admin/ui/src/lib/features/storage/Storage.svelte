@@ -95,10 +95,10 @@
   <PageHeader
     title={t('storage.title')}
     description={data?.enabled
-      ? t(data.backend === 's3' ? 'storage.s3Summary' : 'storage.diskSummary', {
+      ? `${t(data.backend === 's3' ? 'storage.s3Summary' : 'storage.diskSummary', {
           count: data.buckets.length,
           size: size(total),
-        })
+        })}${data.buckets.length ? ` ${t('storage.bucketHint')}` : ''}`
       : undefined}
   >
     {#snippet actions()}
@@ -124,9 +124,9 @@
       </EmptyState>
     {/if}
     {#if !(data.buckets.length === 0)}
-      <div class="mb-4 grid gap-3 sm:flex sm:items-center sm:justify-between">
-        <p class="text-sm text-muted-foreground">{t('storage.bucketHint')}</p>
-        <div class="w-full shrink-0 sm:w-72"><SearchField bind:value={search} label={t('storage.search')} /></div>
+      <!-- List toolbar: search on the left, filters beside it; the header keeps only buttons. -->
+      <div class="mb-4 flex flex-wrap items-center gap-3">
+        <div class="w-full sm:w-72"><SearchField bind:value={search} label={t('storage.search')} /></div>
       </div>
       {#if (!visible.length)}
         <EmptyState icon={Search} class="rounded-3xl bg-card" title={t('common.noMatches')}>

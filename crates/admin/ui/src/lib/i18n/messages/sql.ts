@@ -135,7 +135,7 @@ order by created_at desc
 limit 20;`,
     },
     slowQueries: {
-      label: 'Queries mais lentas (pg_stat_statements)',
+      label: 'Consultas mais lentas',
       sql: `select round(mean_exec_time::numeric, 2) as ms_medio, calls, query
 from extensions.pg_stat_statements
 order by mean_exec_time desc
@@ -278,7 +278,7 @@ order by created_at desc
 limit 20;`,
     },
     slowQueries: {
-      label: 'Slowest queries (pg_stat_statements)',
+      label: 'Slowest queries',
       sql: `select round(mean_exec_time::numeric, 2) as mean_ms, calls, query
 from extensions.pg_stat_statements
 order by mean_exec_time desc

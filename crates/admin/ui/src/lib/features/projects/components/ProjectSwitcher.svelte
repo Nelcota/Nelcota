@@ -83,7 +83,8 @@
           role="img"
           aria-label={status}
         ></span>
-        <span id={hintId} class={cn('truncate text-xs font-normal', health.status === 'offline' ? 'text-destructive' : 'text-muted-foreground')}>{health.status === 'offline' ? status : data ? where : t(loading ? 'shell.projects.loading' : 'shell.projects.unavailable')}</span>
+        <!-- Offline is an alert: wrap it instead of truncating it in a narrow sidebar. -->
+        <span id={hintId} class={cn('text-xs font-normal', health.status === 'offline' ? 'whitespace-normal text-destructive [overflow-wrap:anywhere]' : 'truncate text-muted-foreground')}>{health.status === 'offline' ? status : data ? where : t(loading ? 'shell.projects.loading' : 'shell.projects.unavailable')}</span>
       </span>
     </span>
     <ChevronDown data-icon="inline-end" class="hidden text-muted-foreground transition-transform duration-150 group-aria-expanded/project:rotate-180 sm:block" aria-hidden="true" />

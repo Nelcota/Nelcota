@@ -16,6 +16,7 @@
   import MailCheck from '@lucide/svelte/icons/mail-check'
   import Trash2 from '@lucide/svelte/icons/trash-2'
   import { Badge } from '$lib/components/ui/badge'
+  import * as Tooltip from '$lib/components/ui/tooltip'
   import { toast } from 'svelte-sonner'
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
@@ -127,7 +128,15 @@
 
 {#snippet unconfirmed(user: User)}
   {#if !user.email_confirmed_at}
-    <Badge variant="outline" class="ml-2 align-middle font-normal text-muted-foreground" title={t('users.unconfirmedHint')}>{t('users.unconfirmed')}</Badge>
+    <!-- Focusable so keyboard users reach the hint, not only mouse hover. -->
+    <Tooltip.Root>
+      <Tooltip.Trigger>
+        {#snippet child({ props })}
+          <Badge {...props} variant="outline" tabindex={0} class="ml-2 cursor-help align-middle font-normal text-muted-foreground">{t('users.unconfirmed')}</Badge>
+        {/snippet}
+      </Tooltip.Trigger>
+      <Tooltip.Content>{t('users.unconfirmedHint')}</Tooltip.Content>
+    </Tooltip.Root>
   {/if}
 {/snippet}
 
@@ -135,7 +144,7 @@
   <!-- The id is what policies and support tickets use: shown whole on hover, one click to copy. -->
   <span class="group/id flex min-w-0 items-center gap-1">
     <span class="min-w-0 truncate font-mono text-xs text-muted-foreground" title={user.id}>{user.id}</span>
-    <button type="button" class="grid size-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" aria-label={t('users.copyIdOf', { email: user.email })} title={t('users.copyId')} onclick={() => copyText(user.id, t('users.idCopied'))}><Copy class="size-3.5" aria-hidden="true" /></button>
+    <button type="button" class="-my-2 grid size-9 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" aria-label={t('users.copyIdOf', { email: user.email })} title={t('users.copyId')} onclick={() => copyText(user.id, t('users.idCopied'))}><Copy class="size-3.5" aria-hidden="true" /></button>
   </span>
 {/snippet}
 
@@ -174,10 +183,14 @@
     description={users ? (appliedQuery ? t('users.matchCount', { count: total, query: appliedQuery }) : t('users.count', { count: total })) : t('users.description')}
   >
     {#snippet actions()}
-      <div class="w-full sm:w-72"><SearchField bind:value={query} oninput={onSearch} placeholder={t('users.searchPlaceholder')} label={t('users.searchLabel')} /></div>
       <Button onclick={() => (createOpen = true)}><UserPlus data-icon="inline-start" aria-hidden="true" />{t('users.new')}</Button>
     {/snippet}
   </PageHeader>
+
+  <!-- List toolbar: search on the left, filters beside it; the header keeps only buttons. -->
+  <div class="mb-4 flex flex-wrap items-center gap-3">
+    <div class="w-full sm:w-72"><SearchField bind:value={query} oninput={onSearch} placeholder={t('users.searchPlaceholder')} label={t('users.searchLabel')} /></div>
+  </div>
 
   {#if error}<LoadError message={error} onretry={load} busy={loading} />{/if}
   {#if (users === null)}

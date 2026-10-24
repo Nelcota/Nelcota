@@ -17,6 +17,7 @@ import UserRound from '@lucide/svelte/icons/user-round'
 import Package from '@lucide/svelte/icons/package'
 import CodeXml from '@lucide/svelte/icons/code-xml'
 import KeyRound from '@lucide/svelte/icons/key-round'
+import ArrowUpCircle from '@lucide/svelte/icons/arrow-up-circle'
 import { apiSectionLocation } from '$lib/navigation/api-sections.svelte'
 import type { MessageKey } from '$lib/i18n/index.svelte'
 import { route } from '$lib/navigation/router.svelte'
@@ -78,7 +79,7 @@ export const navItems: NavItem[] = [
   ...navPills.slice(2),
   { title: 'shell.pages.userSignIn', path: '/sign-in', icon: LogIn },
   { title: 'shell.pages.projects', path: '/projects', icon: Boxes },
-  { title: 'shell.pages.updates', path: '/updates', icon: History },
+  { title: 'shell.pages.updates', path: '/updates', icon: ArrowUpCircle },
   { title: 'shell.pages.guides', path: '/guides', icon: BookOpen },
 ]
 

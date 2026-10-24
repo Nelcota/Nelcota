@@ -6,7 +6,8 @@
   import RefreshCw from '@lucide/svelte/icons/refresh-cw'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import { RemoteResource } from '$lib/resources/remote-resource.svelte'
-  import { api } from '$lib/transport/api'
+  import { api, enc } from '$lib/transport/api'
+  import { href } from '$lib/navigation/router.svelte'
   import { technical } from '$lib/shared/schema/technical.svelte'
   import { blockReason, blockTarget } from '$lib/features/policies/blocked'
   import type { DeniedRequest, DeniedRequests } from '$lib/contracts/types'
@@ -41,6 +42,14 @@
     const found = blockTarget(request.path)
     return found ? t(`policies.blocked.target.${found.kind}`, { name: found.name }) : request.path
   }
+
+  /** Where the target's access is fixed: a table's grants and rules, or a bucket's rules. */
+  function targetHref(request: DeniedRequest) {
+    const found = blockTarget(request.path)
+    if (found?.kind === 'table') return href(`/tables/${enc(found.name)}/structure`)
+    if (found?.kind === 'bucket') return href(`/storage/${enc(found.name)}`)
+    return null
+  }
 </script>
 
 <section class="grid gap-4 rounded-3xl bg-card p-5" aria-labelledby="recently-blocked">
@@ -67,11 +76,13 @@
   {#if !(resource.error) && !(!data) && !(data.requests.length === 0)}
     <ul class="divide-y overflow-hidden rounded-2xl bg-well">
       {#each shown as request, index (`${request.at}-${index}`)}
+        {@const link = targetHref(request)}
         <li class="grid gap-1 px-4 py-3">
           <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
             <span class="font-medium">{who(request)}</span>
             <span class="text-muted-foreground">·</span>
-            <span>{target(request)}</span>
+            {#if link}<a class="underline decoration-muted-foreground/60 underline-offset-4 hover:decoration-foreground" href={link}>{target(request)}</a>{/if}
+            {#if !link}<span>{target(request)}</span>{/if}
             <span class="w-full text-xs text-muted-foreground tabular-nums">{time(request.at)}</span>
           </div>
           <p class="text-xs text-muted-foreground">{t(`policies.blocked.reasons.${blockReason(request)}`)}</p>

@@ -130,7 +130,11 @@
   }
 
   const card = 'min-w-0 rounded-xl bg-card p-5'
+  // The arrow repeats the card's first footer link: a pointer shortcut kept out
+  // of the tab order and the accessibility tree, so the destination is reached once.
   const statLink = 'grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
+  // 24px tall at least: a comfortable target for small text links (WCAG 2.5.8).
+  const footerLink = 'inline-flex min-h-6 items-center py-1 hover:text-foreground'
 </script>
 
 {#snippet cardHeader(title: string, path: string)}
@@ -165,7 +169,7 @@
         </div>
         <div class="grid min-w-0 gap-2">
           <p class="text-sm text-muted-foreground">{t('overview.hero.errors')}</p>
-          <Meter label={t('overview.hero.errors')} part={traffic.totals.errors} whole={traffic.totals.requests} {format} />
+          <Meter label={t('overview.hero.errors')} part={traffic.totals.errors} whole={traffic.totals.requests} {format} tone="destructive" />
         </div>
       </div>
     {/if}
@@ -188,7 +192,7 @@
         <article class={card}>
           <div class="flex items-center justify-between text-xs text-muted-foreground">
             <span class="flex items-center gap-2 font-medium text-foreground"><Database class="size-4 text-sky-500 dark:text-sky-400" aria-hidden="true" />{t('overview.cards.database')}</span>
-            <a href={href('/tables')} class={statLink} aria-label={t('overview.cards.tables')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
+            <a href={href('/tables')} class={statLink} tabindex="-1" aria-hidden="true" title={t('overview.cards.open', { page: t('shell.pages.tables') })}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
           </div>
           <div class="mt-4 flex items-end justify-between gap-4">
             <div class="grid gap-1">
@@ -198,16 +202,16 @@
             </div>
             <Ring value={protectedShare} label={t('overview.cards.tablesRing', { percent: protectedShare })} />
           </div>
-          <div class="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t pt-3 text-xs text-muted-foreground">
-            <a class="hover:text-foreground" href={href('/tables')}>{t('overview.tables.openEditor')}</a>
-            <a class="hover:text-foreground" href={href('/sql')}>{t('shell.pills.sql')}</a>
-            <a class="hover:text-foreground" href={href('/migrations')}>{t('shell.pills.migrations')}</a>
+          <div class="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-t pt-2 text-xs text-muted-foreground">
+            <a class={footerLink} href={href('/tables')}>{t('overview.tables.openEditor')}</a>
+            <a class={footerLink} href={href('/sql')}>{t('shell.pills.sql')}</a>
+            <a class={footerLink} href={href('/migrations')}>{t('shell.pills.migrations')}</a>
           </div>
         </article>
         <article class={card}>
           <div class="flex items-center justify-between text-xs text-muted-foreground">
             <span class="flex items-center gap-2 font-medium text-foreground"><Users class="size-4 text-violet-600 dark:text-violet-400" aria-hidden="true" />{t('overview.cards.auth')}</span>
-            <a href={href('/users')} class={statLink} aria-label={t('overview.cards.users')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
+            <a href={href('/users')} class={statLink} tabindex="-1" aria-hidden="true" title={t('overview.cards.open', { page: t('shell.pages.users') })}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
           </div>
           <div class="mt-4 flex items-end justify-between gap-4">
             <div class="grid gap-1">
@@ -217,9 +221,9 @@
             </div>
             <Ring value={signedInShare} label={t('overview.cards.usersRing', { percent: signedInShare })} />
           </div>
-          <div class="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t pt-3 text-xs text-muted-foreground">
-            <a class="hover:text-foreground" href={href('/users')}>{t('shell.pages.users')}</a>
-            <a class="hover:text-foreground" href={href('/sign-in')}>{t('shell.pages.userSignIn')}</a>
+          <div class="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-t pt-2 text-xs text-muted-foreground">
+            <a class={footerLink} href={href('/users')}>{t('shell.pages.users')}</a>
+            <a class={footerLink} href={href('/sign-in')}>{t('shell.pages.userSignIn')}</a>
           </div>
         </article>
       {/if}
@@ -231,7 +235,7 @@
         <article class={card}>
           <div class="flex items-center justify-between text-xs text-muted-foreground">
             <span class="flex items-center gap-2 font-medium text-foreground"><ShieldCheck class="size-4 text-success" aria-hidden="true" />{t('overview.resourcesAccess')}</span>
-            <a href={href('/policies')} class={statLink} aria-label={t('overview.cards.refused')}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
+            <a href={href('/policies')} class={statLink} tabindex="-1" aria-hidden="true" title={t('overview.cards.open', { page: t('shell.pages.policies') })}><ArrowUpRight class="size-4" aria-hidden="true" /></a>
           </div>
           <div class="mt-4 flex items-end justify-between gap-4">
             <div class="grid gap-1">
@@ -240,9 +244,9 @@
             </div>
             <MiniBars values={refusedBars} labels={refusedLabels} describe={t('overview.cards.refusedBars')} />
           </div>
-          <div class="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t pt-3 text-xs text-muted-foreground">
-            <a class="hover:text-foreground" href={href('/policies')}>{t('shell.pages.policies')}</a>
-            <a class="hover:text-foreground" href={href('/connect')}>{t('shell.pages.connect')}</a>
+          <div class="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-t pt-2 text-xs text-muted-foreground">
+            <a class={footerLink} href={href('/policies')}>{t('shell.pages.policies')}</a>
+            <a class={footerLink} href={href('/connect')}>{t('shell.pages.connect')}</a>
           </div>
         </article>
       {/if}
