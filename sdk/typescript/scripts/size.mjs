@@ -32,12 +32,15 @@ const BUDGETS = {
   // Removable cancellation waiters add 187–204 B gzip to the shared HTTP closure.
   // Maintainer-approved input/representation guards: +300 B maximum root/storage,
   // +50 B auth. Covers null storage replies, missing bodies and blank OAuth codes.
-  'index.js': 17_400,
+  // Open-issue corrections (#132-#142) add about 1 KiB gzip to root/auth and
+  // 200-350 B to REST/storage: per-adapter refresh queues, cross-tab identity
+  // checks, reserved-column filters, post-header deadlines and sign-out revocation.
+  'index.js': 18_500,
   // Standalone factories include HTTP and keep the other feature modules out.
-  'rest/index.js': 9_550,
+  'rest/index.js': 9_900,
   // Failed persistence must retain rotated tokens; background failures are observed.
-  'auth/index.js': 11_300,
-  'storage/index.js': 7_700,
+  'auth/index.js': 12_300,
+  'storage/index.js': 7_950,
 };
 
 function closure(entry, seen = new Set()) {
