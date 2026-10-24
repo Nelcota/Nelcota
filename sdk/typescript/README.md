@@ -310,8 +310,11 @@ Create this client per request. `validatedCallerToken` is a token or null from
 middleware that validates Bearer syntax and returns 401 for malformed headers.
 Only an absent header means anonymous; do not turn malformed auth into a visitor.
 The runnable [server example](examples/server.mjs) demonstrates validation and
-forwarding to RLS. `accessToken` disables automatic session refresh; explicitly
-called auth methods still store sessions.
+forwarding to RLS. `accessToken` disables automatic session refresh in both
+combined and standalone auth clients. `getUser()` and `updateUser()` use that
+source without reading or updating a stored session; a null source returns
+`session_missing` without HTTP. Other explicitly called auth methods can still
+store sessions. Use separate clients for caller forwarding and managed login.
 
 Auth HTTP methods take `{ signal, timeout }` as their last argument. Concurrent
 refresh calls share the first caller's timeout; each caller can cancel its own

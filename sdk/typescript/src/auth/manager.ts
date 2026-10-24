@@ -1,16 +1,19 @@
 /** One owner for session persistence, lifecycle transitions and refresh timers. */
 import { isSession, memoryStorage, parseSession, secondsLeft, type Session, type SessionStorage, type User } from './session.js';
 import { BrowserSessionConflictError, BrowserSessionState } from './browser-state.js';
-import { Broadcast, withLock } from './coordination.js';
+import { Broadcast, withLock, adapterLock, workerScope } from './coordination.js';
 import { NelcotaUsageError, clientError, fail, ok, type Result } from '../core/errors.js';
 import { abortable } from '../core/cancellation.js';
 import { isBrowser } from '../core/jwt.js';
 import { encodeJson } from '../core/json.js';
+import type { TokenSource } from '../core/http.js';
 
 import type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions } from './types.js';
 export type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions } from './types.js';
 
 const RETRY_REFRESH_MS = 10_000;
+// Sign-out renews only an expired token, allowing this much clock skew.
+const SIGN_OUT_SKEW = 5;
 type Authentication = Session | { user: User; session: Session | null };
 
 function browserStorage(): SessionStorage | undefined {
@@ -37,7 +40,7 @@ export class SessionManager {
   #disposed = false;
   #revision = 0;
 
-  constructor(url: URL, options: AuthOptions, private rotate: (token: string, options: AuthRequestOptions) => Promise<Result<Session>>) {
+  constructor(url: URL, options: AuthOptions, private rotate: (token: string, options: AuthRequestOptions) => Promise<Result<Session>>, accessToken?: TokenSource) {
     const margin = options.refreshMargin ?? 60;
     if (!Number.isFinite(margin) || margin < 0) throw new NelcotaUsageError('refreshMargin must be a finite non-negative number');
     const native = browserStorage();
@@ -48,9 +51,10 @@ export class SessionManager {
     const path = pathname.slice(0, end);
     this.key = options.storageKey ?? `nelcota.${url.host}${path}.session`;
     this.#lockName = `${this.key}.refresh`;
-    // Default server memory stores belong to separate requests. Their queues
-    // must stay independent when another client holds a sign-in across HTTP.
-    if (!isBrowser() && !options.storage) this.#lockName = Symbol();
+    // Server adapters belong to separate requests: queue by adapter identity so
+    // another client's sign-in cannot block them. Worker storage supplied by the
+    // caller may be shared with tabs, so it keeps the cross-context Web Lock.
+    if (!isBrowser() && !(options.storage && workerScope())) this.#lockName = adapterLock(this.storage, this.key);
     if (native && this.storage === native) {
       let factory: IDBFactory | undefined;
       try { factory = globalThis.indexedDB; } catch { /* Report unavailable storage on the first operation. */ }
@@ -58,9 +62,13 @@ export class SessionManager {
       this.#pkce = new BrowserSessionState(`${this.key}.pkce`, factory);
     }
     this.#margin = margin;
-    this.#autoRefresh = options.autoRefresh ?? isBrowser();
+    this.#autoRefresh = !accessToken && (options.autoRefresh ?? isBrowser());
     this.#onBackgroundError = options.onBackgroundError;
-    if (isBrowser()) this.#broadcast = new Broadcast(`${this.key}.channel`, () => this.#background(this.#reload()));
+    if (isBrowser()) {
+      let privateStorage = false;
+      try { privateStorage = this.storage === globalThis.sessionStorage; } catch { /* Sandboxed storage. */ }
+      if (!privateStorage) this.#broadcast = new Broadcast(`${this.key}.channel`, (event, revision) => this.#background(this.#reload(event, revision)));
+    }
     if (this.#autoRefresh) this.#background(this.current().then(session => this.#schedule(session)));
   }
 
@@ -118,17 +126,20 @@ export class SessionManager {
     // request (or every background tick) rotate a freshly issued token.
     return Math.min(this.#margin, session.expires_in / 2);
   }
-  async #reload(): Promise<void> {
+  async #reload(event?: AuthEvent, revision?: string): Promise<void> {
     await this.#locked(async () => {
       if (this.#dirty && !this.#native) return;
       const before = this.#session;
       const after = await this.#read(true);
+      if (revision !== this.#native?.revision) event = undefined;
       this.#schedule(this.#dirty ? null : after);
+      if (before !== undefined && encodeJson(before) === encodeJson(after)) return;
       if (after === null) {
-        if (before) this.#emit('signed_out', null);
+        if (before || event === 'signed_out') this.#emit('signed_out', null);
         return;
       }
-      this.#emit(before ? 'refreshed' : 'signed_in', after);
+      const inferred = !before || before.user.id !== after.user.id ? 'signed_in' : before.refresh_token !== after.refresh_token ? 'refreshed' : 'user_updated';
+      this.#emit(before && before.user.id !== after.user.id ? 'signed_in' : event ?? inferred, after);
     });
   }
   async #write(session: Session | null, event: AuthEvent, completingRefresh = false): Promise<void> {
@@ -138,7 +149,7 @@ export class SessionManager {
     this.#dirty = true;
     this.#schedule(null);
     try {
-      await this.#persist(encoded, completingRefresh);
+      await this.#persist(encoded, completingRefresh, event);
       this.#schedule(session);
     }
     catch (error) {
@@ -157,12 +168,12 @@ export class SessionManager {
       this.#emit(event, this.#session ?? null);
     }
   }
-  async #persist(encoded?: string, completingRefresh = false): Promise<void> {
+  async #persist(encoded?: string, completingRefresh = false, event?: AuthEvent): Promise<void> {
     const session = this.#session;
     await this.#native?.write(session ? encoded ?? encodeJson(session) : null, completingRefresh);
     await (session ? this.storage.setItem(this.key, encoded ?? encodeJson(session)) : this.storage.removeItem(this.key));
     this.#dirty = false;
-    this.#broadcast?.notify();
+    this.#broadcast?.notify(event, this.#native?.revision);
   }
   set(session: Session): Promise<void> {
     if (!isSession(session)) throw new NelcotaUsageError('Not a Nelcota session');
@@ -223,19 +234,24 @@ export class SessionManager {
         const current = await this.#read(true);
         if (!current) return fail(clientError('session_missing', 'Not signed in'));
         if (current.refresh_token !== known.refresh_token && secondsLeft(current) > this.#marginFor(current)) return ok(current);
-        await this.#native?.reserve(current);
-        // Once started, rotation owns its lifetime. A cancelled waiter must
-        // not discard the replacement for a token already spent by the server.
-        const result = await this.rotate(current.refresh_token, options.timeout === undefined ? {} : { timeout: options.timeout });
-        if (result.error) {
-          if (result.error.code === 'invalid_grant') await this.#write(null, 'signed_out', true);
-          return result;
-        }
-        await this.#write(result.data, 'refreshed', true);
-        return result;
+        return this.#rotate(current, options);
       });
     })().finally(() => { this.#refreshing = null; });
     return abortable(this.#refreshing, options.signal).then(result => result.data ?? result);
+  }
+  async #rotate(current: Session, options: AuthRequestOptions, publish = true): Promise<Result<Session>> {
+    await this.#native?.reserve(current);
+    // Accepted rotation owns publication independently of a cancelled waiter.
+    const result = await this.rotate(current.refresh_token, options.timeout === undefined ? {} : { timeout: options.timeout });
+    if (result.error) {
+      if (publish && result.error.code === 'invalid_grant') await this.#write(null, 'signed_out', true);
+      // This endpoint rejects rate-limited requests before reading the grant.
+      // A gateway 5xx or lost response is uncertain: preserve its reservation.
+      if (result.error.status === 429 && result.error.code === 'rate_limited') await this.#native?.write(encodeJson(current), true);
+      return result;
+    }
+    if (publish) await this.#write(result.data, 'refreshed', true);
+    return result;
   }
   rememberUser(snapshot: Session): (user: User) => Promise<void> {
     const revision = snapshot === this.#session && `${this.#revision}/${this.#native?.revision}`;
@@ -247,15 +263,12 @@ export class SessionManager {
       await this.#write({ ...current, user }, 'user_updated');
     });
   }
-  signOut(request: (session: Session) => Promise<Result<null>>): Promise<Result<null>> {
+  signOut(request: (session: Session) => Promise<Result<null>>, options: AuthRequestOptions = {}): Promise<Result<null>> {
     return this.#locked(async () => {
       try {
         const session = await this.#read(true, true);
-        if (session) {
-          const result = await request(session);
-          await this.#write(null, 'signed_out');
-          return result;
-        }
+        // The only transition: sign-out never publishes or announces a renewal.
+        if (session) try { return await this.#revoke(session, request, options); } finally { await this.#write(null, 'signed_out'); }
         if (this.#dirty) await this.#persist();
         this.#schedule(null);
         return ok(null);
@@ -266,6 +279,16 @@ export class SessionManager {
         await withLock(`${this.key}.pkce`, () => this.consumeVerifier());
       }
     });
+  }
+  async #revoke(session: Session, request: (session: Session) => Promise<Result<null>>, options: AuthRequestOptions): Promise<Result<null>> {
+    if (this.#native?.pending || options.signal?.aborted || secondsLeft(session) > SIGN_OUT_SKEW) return request(session);
+    // Renew an expired token only to revoke its replacement, which stays in memory.
+    let renewed: Result<Session> | undefined, failure: unknown;
+    try { renewed = await this.#rotate(session, options, false); } catch (error) { failure = error; }
+    if (renewed && !renewed.error) return request(renewed.data);
+    if (secondsLeft(session) > 0) return request(session);
+    if (renewed) return fail(renewed.error);
+    throw failure;
   }
   #schedule(session: Session | null, delayMs?: number): void {
     clearTimeout(this.#timer);

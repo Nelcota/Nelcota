@@ -35,7 +35,7 @@ export interface RequestSpec {
   signal?: AbortSignal | undefined;
   /** Per-request timeout in ms (`0` disables it). */
   timeout?: number | undefined;
-  /** `false` sends no Authorization header; a string uses that token. */
+  /** `true` requires a source token; `false` omits auth; a string pins a token. */
   auth?: boolean | string | undefined;
   /** Internal response-shape check, after decoding and before publication. */
   validate?: (value: unknown) => boolean;
@@ -67,7 +67,8 @@ async function errorBody(response: Response): Promise<string | null> {
       }
       parts.push(decoder.decode(value, { stream: true }));
     }
-  } finally { reader.releaseLock(); }
+  } catch { return null; }
+  finally { reader.releaseLock(); }
 }
 
 function nonNegativeInteger(value: number, name: string, maximum = Number.MAX_SAFE_INTEGER): void {
@@ -84,7 +85,9 @@ export function parseRetryAfter(value: string | null): number | undefined {
     const seconds = Number(trimmed);
     return Number.isSafeInteger(seconds) ? seconds : undefined;
   }
-  const date = Date.parse(trimmed);
+  // RFC 9110 recipients accept IMF-fixdate and the two obsolete HTTP dates.
+  if (!/^(?:[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT|[A-Z][a-z]+, \d{2}-[A-Z][a-z]{2}-\d{2} \d{2}:\d{2}:\d{2} GMT|[A-Z][a-z]{2} [A-Z][a-z]{2} [ \d]\d \d{2}:\d{2}:\d{2} \d{4})$/.test(trimmed)) return undefined;
+  const date = Date.parse(trimmed.endsWith('GMT') ? trimmed : `${trimmed} GMT`);
   if (Number.isNaN(date)) return undefined;
   return Math.max(0, Math.ceil((date - Date.now()) / 1000));
 }
@@ -166,7 +169,7 @@ export class HttpClient {
   /** The base URL without trailing slashes. */
   readonly #base: string;
 
-  constructor(options: HttpOptions) {
+  constructor(options: HttpOptions, readonly accessToken?: TokenSource) {
     nonNegativeInteger(options.timeout, 'timeout', 2 ** 31 - 1);
     nonNegativeInteger(options.retries, 'retries');
     this.url = options.url;
@@ -196,8 +199,11 @@ export class HttpClient {
     }
     if (spec.json !== undefined && spec.body !== undefined) throw new NelcotaUsageError('A request has either json or body, not both');
     const encodedBody = spec.json === undefined ? spec.body : encodeJson(spec.json);
-    const headers = new Headers(this.#options.headers);
-    for (const [name, value] of Object.entries(spec.headers ?? {})) headers.set(name, value);
+    let headers: Headers;
+    try {
+      headers = new Headers(this.#options.headers);
+      for (const [name, value] of Object.entries(spec.headers ?? {})) headers.set(name, value);
+    } catch { throw new NelcotaUsageError('Invalid HTTP header name or value'); }
     if (spec.auth === false) headers.delete('authorization');
 
     let token: string | null = typeof spec.auth === 'string' ? spec.auth : null;
@@ -211,8 +217,10 @@ export class HttpClient {
     }
     if (token) {
       assertTokenAllowed(token);
-      headers.set('authorization', `Bearer ${token}`);
+      try { headers.set('authorization', `Bearer ${token}`); }
+      catch { throw new NelcotaUsageError('Invalid access token header'); }
     }
+    if (spec.auth === true && !token) return { data: null, response: null, error: clientError('session_missing', 'Not signed in') };
     const bearer = headers.get('authorization');
     if (bearer?.toLowerCase().startsWith('bearer ')) assertTokenAllowed(bearer.slice(7));
 
@@ -229,7 +237,9 @@ export class HttpClient {
     for (let attempt = 0; ; attempt++) {
       const signals: AbortSignal[] = [];
       if (spec.signal) signals.push(spec.signal);
-      if (timeout > 0) signals.push(AbortSignal.timeout(timeout));
+      const deadline = new AbortController();
+      const timer = timeout > 0 ? setTimeout(() => deadline.abort(new DOMException('Attempt timed out', 'TimeoutError')), timeout) : undefined;
+      if (timeout > 0) signals.push(deadline.signal);
       const signal = signals.length > 1 ? AbortSignal.any(signals) : signals[0];
       const init: RequestInit & { duplex?: 'half' } = { method: spec.method, headers, body: body ?? null, redirect: 'follow' };
       if (signal) init.signal = signal;
@@ -260,6 +270,7 @@ export class HttpClient {
           : clientError('network_error', 'The server could not be reached', cause);
         if (attempt >= retries) return { data: null, response: null, error: failure };
       }
+      finally { clearTimeout(timer); }
       try {
         await sleep(backoff(attempt, failure.retryAfter), spec.signal);
       } catch (cause) {
@@ -311,7 +322,7 @@ export function baseUrl(input: string | URL): URL {
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
     throw new NelcotaUsageError('The Nelcota URL must be http or https');
   }
-  if (url.username || url.password || url.search || url.hash) {
+  if (url.username || url.password || url.href.includes('?') || url.href.includes('#')) {
     throw new NelcotaUsageError('The Nelcota URL cannot carry credentials, a query or a fragment');
   }
   return url;

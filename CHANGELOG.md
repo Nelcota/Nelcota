@@ -21,6 +21,12 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
   script file allowed by the CSP, instead of flashing the dark default.
 - Share the login's header with the offline screen and preload the panel font.
 
+### Fixed
+
+- Return `400 invalid_grant` for oversized present refresh tokens, allowing SDKs
+  to discard invalid sessions; absent/empty tokens retain their required-field
+  validation response.
+
 ## [0.5.3] — 2026-10-23
 
 ### Changed

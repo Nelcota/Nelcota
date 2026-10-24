@@ -191,3 +191,35 @@ O MIME explícito de upload usa partes de 1 a 127 caracteres ASCII, com letras,
 dígitos e `!#$&-^_.+`, como o servidor. Parâmetros após ponto e vírgula continuam
 válidos. Valores fora desse conjunto passam a ser recusados antes do upload,
 em vez de depender da substituição do tipo declarado no servidor.
+
+### Token fornecido pelo servidor
+
+Com `accessToken`, `getUser()` e `updateUser()` usam a identidade dessa fonte,
+sem ler ou alterar a sessão armazenada. Uma fonte nula retorna `session_missing`
+sem HTTP; ela não seleciona outra identidade em cache. A renovação automática
+fica desativada nos clientes combinados e de auth independentes. Outros métodos
+de auth chamados explicitamente ainda podem armazenar sessões; separe clientes
+de encaminhamento por requisição dos clientes de login gerenciado.
+
+### Correções de sessão, consultas e transporte
+
+O logout renova apenas uma sessão expirada (com tolerância de cinco segundos para
+diferença de relógio) antes de revogá-la, sob o mesmo controle de ciclo de vida;
+um token ainda válido é revogado diretamente, mesmo se a renovação falhar. A
+renovação serve apenas para a revogação: não é salva nem emite `refreshed`, e o
+logout emite um único `signed_out`. Falhas ainda podem impedir a revogação
+remota; o estado local é limpo. Uma rotação de resultado incerto não é repetida para tentar encerrá-la.
+Somente uma rejeição explícita por limite de tentativas libera a reserva de
+refresh; falhas de rede ou gateway mantêm o bloqueio preventivo.
+
+Adaptadores distintos no servidor não compartilham a fila de autenticação.
+Clientes com o mesmo adaptador e chave continuam coordenados, e o storage do
+chamador em Web e Service Workers mantém Web Locks. Mudanças de conta
+e perfil entre abas preservam os eventos corretos; estado inalterado não emite
+evento, e sessionStorage explícito permanece isolado por aba.
+
+Filtros em colunas com nomes reservados não são descartados por paginação ou
+ordenação. Erros de cardinalidade reportam406. O timeout de uma resposta bruta
+termina nos cabeçalhos; o cancelamento do chamador continua válido para o stream.
+O corpo de respostas em buffer continua sob prazo. Valores inválidos de headers
+e URLs são erros de uso; falha ao ler um corpo de erro preserva o status HTTP.

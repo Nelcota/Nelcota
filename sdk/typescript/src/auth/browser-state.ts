@@ -24,6 +24,7 @@ function receipt(value: unknown): Receipt {
 export class BrowserSessionState {
   readonly #owner = createVerifier();
   revision: string | undefined;
+  pending = false;
   constructor(readonly key: string, private readonly factory: IDBFactory | undefined) {}
 
   async #open(): Promise<IDBDatabase> {
@@ -89,7 +90,7 @@ export class BrowserSessionState {
         const value = dirty !== undefined ? dirty : legacy();
         const state = this.#record('ready', value);
         store.put(state, this.key);
-        return { value, retainDirty: dirty !== undefined, revision: state.revision };
+        return { value, retainDirty: dirty !== undefined, revision: state.revision, pending: false };
       }
       const state = receipt(previous);
       // Upgrade the original receipt format in the same committed transaction.
@@ -100,9 +101,10 @@ export class BrowserSessionState {
       const owned = state.owner === this.#owner;
       const retainDirty = dirty !== undefined && (owned || state.revision === this.revision);
       if (state.kind === 'refreshing' && !owned && !allowPending && !retainDirty) throw new Error('Browser session refresh was interrupted; sign in again');
-      return { value: retainDirty ? dirty : state.value, retainDirty, revision: state.revision };
+      return { value: retainDirty ? dirty : state.value, retainDirty, revision: state.revision, pending: state.kind === 'refreshing' };
     });
     this.revision = result.revision;
+    this.pending = result.pending;
     return { value: result.value, retainDirty: result.retainDirty };
   }
 
