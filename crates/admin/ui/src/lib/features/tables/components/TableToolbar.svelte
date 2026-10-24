@@ -62,8 +62,10 @@
 </script>
 
 <!-- Phones: name on top, then the views with "Insert row", then the tools
-     (icon-only) on their own row. Wider screens keep everything on one line. -->
-<div class="flex min-h-16 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b bg-card px-4 py-3 sm:px-5">
+     on their own row. Wider screens keep everything on one line: the tools and
+     "Insert row" stay icon-only (named for screen readers, titled for pointers)
+     until the toolbar itself has room for their labels. -->
+<div class="@container flex min-h-16 shrink-0 flex-wrap items-center gap-x-2 gap-y-2 border-b bg-card px-4 py-3 sm:px-5 @5xl:gap-x-3">
   <div class="flex min-w-0 items-center gap-2 max-sm:basis-full">
     <a
       href={href('/tables')}
@@ -96,14 +98,14 @@
         aria-expanded={filterOpen}
         title={t('tables.toolbar.filter')}
       >
-        <Funnel /><span class="max-sm:sr-only">{t('tables.toolbar.filter')}</span>{#if filterCount}<span class="text-muted-foreground tabular-nums">{filterCount}</span>{/if}
+        <Funnel /><span class="sr-only @5xl:not-sr-only">{t('tables.toolbar.filter')}</span>{#if filterCount}<span class="text-muted-foreground tabular-nums">{filterCount}</span>{/if}
       </Button>
       {#if data}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger>
             {#snippet child({ props })}
               <Button variant={hiddenColumns.length ? 'secondary' : 'ghost'} size="sm" title={t('tables.toolbar.columns')} {...props}>
-                <Columns3 /><span class="max-sm:sr-only">{t('tables.toolbar.columns')}</span>{#if hiddenColumns.length}<span
+                <Columns3 /><span class="sr-only @5xl:not-sr-only">{t('tables.toolbar.columns')}</span>{#if hiddenColumns.length}<span
                     class="text-muted-foreground tabular-nums"
                     title={t('tables.toolbar.hidden', { count: hiddenColumns.length })}>{hiddenColumns.length}</span
                   >{/if}
@@ -130,7 +132,7 @@
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>
           {#snippet child({ props })}
-            <Button variant="ghost" size="sm" title={t('tables.toolbar.export')} {...props}><Download /><span class="max-sm:sr-only">{t('tables.toolbar.export')}</span></Button>
+            <Button variant="ghost" size="sm" title={t('tables.toolbar.export')} {...props}><Download /><span class="sr-only @5xl:not-sr-only">{t('tables.toolbar.export')}</span></Button>
           {/snippet}
         </DropdownMenu.Trigger>
         <DropdownMenu.Content align="end" class="w-72">
@@ -153,7 +155,9 @@
       </div>
     </div>
     {#if data?.table.insertable}
-      <Button size="sm" class="max-sm:ml-auto" disabled={loading} onclick={oninsert}><Plus />{t('tables.toolbar.insertRow')}</Button>
+      <Button size="sm" class="max-sm:ml-auto sm:@max-5xl:px-2.5" disabled={loading} onclick={oninsert} title={t('tables.toolbar.insertRow')}
+        ><Plus aria-hidden="true" /><span class="sm:@max-5xl:sr-only">{t('tables.toolbar.insertRow')}</span></Button
+      >
     {/if}
   {/if}
 </div>

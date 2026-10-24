@@ -90,10 +90,16 @@
   const runsSelection = $derived(selection.trim() !== '')
   /** Where the last run failed, as an offset in the editor text. */
   let errorAt = $state<number | null>(null)
-  // The results pane stays folded until there is something to show.
+  // Before the first run the results pane stays short, its empty state showing
+  // where results will appear; the first run gives it room unless resized.
+  const PREVIEW_SIZE = 25
+  const RESULTS_SIZE = 58
   let resultsPane = $state<Pane>()
+  let previewing = true
   $effect(() => {
-    if (resultsPane && !execution.response && !execution.error && !execution.running) resultsPane.collapse()
+    if (!resultsPane || !previewing) return
+    if (execution.response || execution.error || execution.running) return
+    resultsPane.resize(PREVIEW_SIZE)
   })
 
   async function run() {
@@ -101,6 +107,8 @@
     const offset = runsSelection ? cursor.from : 0
     errorAt = null
     resultsPane?.expand()
+    if (previewing && resultsPane && resultsPane.getSize() <= PREVIEW_SIZE) resultsPane.resize(RESULTS_SIZE)
+    previewing = false
     if (await execution.run(code, runAsRequest())) {
       sqlStore.remember(code)
       // New or changed tables and columns show up in autocomplete right away.
@@ -307,7 +315,7 @@
     </div>
     </Resizable.Pane>
     <Resizable.Handle withHandle aria-label={t('sql.editor.resize')} />
-    <Resizable.Pane bind:this={resultsPane} defaultSize={58} minSize={20} collapsible collapsedSize={0}>
+    <Resizable.Pane bind:this={resultsPane} defaultSize={RESULTS_SIZE} minSize={20} collapsible collapsedSize={0}>
 
     <p class="sr-only" role="status" aria-atomic="true">{running ? t('sql.editor.running') : response && 'results' in response ? t('sql.results.completed', { ms: elapsed }) : ''}</p>
     <!-- Keyboard users need a Tab stop to scroll results, including the empty
