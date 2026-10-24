@@ -270,14 +270,15 @@ Updates the app image, with a backup first and a rollback if it fails
 Usage: nelcota upgrade [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-      --version <VERSION>  Target version (default: this binary's version)
-      --all                All projects, one at a time
-  -p, --project <PROJECT>  Project (required when the host has more than one)
-      --allow-downgrade    Allows a target older than the running version
-      --reinstall          Redeploys even when the project is already on the target version
-      --dry-run            Only prints the current → target version of each project
-  -h, --help               Print help
+  -C, --dir <DIR>           Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+      --version <VERSION>   Target version (default: this binary's version)
+      --all                 All projects, one at a time
+  -p, --project <PROJECT>   Project (required when the host has more than one)
+      --allow-downgrade     Allows a target older than the running version
+      --reinstall           Redeploys even when the project is already on the target version
+      --dry-run             Only prints the current → target version of each project
+      --without-controller  Upgrades with this CLI on a host enrolled in the updates controller
+  -h, --help                Print help
 ```
 
 ### nelcota down
@@ -705,7 +706,10 @@ Options:
 ## Operational guarantees and limits
 
 - `upgrade` targets the installed CLI version unless you provide a version. Install
-  that CLI first; upgrades on enrolled hosts must use the separate controller.
+  that CLI first. On hosts enrolled in the updates controller, `upgrade` needs
+  `--without-controller`; it is refused while a controller job is unresolved,
+  for projects the controller already activated and from the controller's own
+  binary.
 - Ordinary upgrade/restore maintenance, paired snapshots and rollback are in
   [deploy](deploy.md) and [backup](backup.md). Database PITR has different failure
   and file-recovery limits; do not infer dump-restore guarantees from it.

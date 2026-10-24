@@ -1,5 +1,5 @@
 use super::{
-    CONTROLLER, HTTP_SOCKET, POLICY, WORKER_SOCKET,
+    CONTROLLER, CONTROLLER_BIN_DIR, HTTP_SOCKET, POLICY, WORKER_SOCKET,
     policy::{Operator, Policy},
 };
 use anyhow::{Context, bail};
@@ -192,7 +192,7 @@ pub fn run(
         use std::os::unix::fs::PermissionsExt;
         fs::set_permissions(conf, fs::Permissions::from_mode(0o755))?;
     }
-    let bin = Path::new("/usr/local/lib/nelcota-updates");
+    let bin = Path::new(CONTROLLER_BIN_DIR);
     fs::create_dir_all(bin)?;
     {
         use std::os::unix::fs::PermissionsExt;
