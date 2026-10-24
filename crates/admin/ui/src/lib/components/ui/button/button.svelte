@@ -23,20 +23,10 @@
 				"icon-xs": "size-7 [&_svg:not([class*='size-'])]:size-3",
 				"icon-sm": "size-9",
 				"icon-lg": "size-12",
+				// Onboarding and sign-in calls to action only; regular primary actions keep `default`.
+				hero: "h-15 min-w-[min(15.75rem,100%)] max-w-full gap-3 rounded-[16px] px-5 text-lg leading-tight whitespace-normal sm:px-6 sm:text-xl [&_svg]:size-5",
 			},
 		},
-		compoundVariants: [
-			{
-				variant: "default",
-				size: "default",
-				class: "h-15 min-w-[min(15.75rem,100%)] max-w-full gap-3 rounded-[16px] px-5 text-lg leading-tight whitespace-normal sm:px-6 sm:text-xl [&_svg]:size-5",
-			},
-			{
-				variant: "default",
-				size: "lg",
-				class: "h-15 min-w-[min(15.75rem,100%)] max-w-full gap-3 rounded-[16px] px-5 text-lg leading-tight whitespace-normal sm:px-6 sm:text-xl [&_svg]:size-5",
-			},
-		],
 		defaultVariants: {
 			variant: "default",
 			size: "default",
