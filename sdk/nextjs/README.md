@@ -63,7 +63,11 @@ is unsupported:** session advisory locks require the same physical connection.
 Set pool connection/query limits, close the pool during your application's
 shutdown, and handle pool idle errors. Saves are separate autocommits, not a
 transaction spanning HTTP. The store bounds connection attempts, query time and
-lease lifetime; a failed owner cannot write again. A lost HTTP reply after a
+lease lifetime; a failed owner cannot write again. Same-key requests queue in
+the process before borrowing a connection, and the lock is polled with
+`pg_try_advisory_lock` within the store `timeout` (default 5 s). A request that
+cannot obtain it fails with `SessionError` `session_store` instead of leaving a
+backend waiting in PostgreSQL. A lost HTTP reply after a
 remote rotation can still require signing in again. It cannot be made atomic
 with a separate auth server by a local SQL transaction.
 
@@ -118,6 +122,10 @@ Route/Action mutation requires an unsafe method and an exact Origin matching
 configured `appOrigin`; missing/foreign Origin is refused before HTTP/state
 mutation. Host and forwarded headers do not define trust. For forms, read and
 validate bounded fields yourself; do not pass arbitrary JSON to an auth method.
+Read the request body **before** `route()`: the callback holds the browser
+session's lease (and, with PostgreSQL, a pooled connection) until it returns.
+Do no slow I/O unrelated to auth inside it, such as bodies, uploads or
+third-party calls; see `examples/app-router/app/api/login/route.ts`.
 Map `SessionError.code === 'csrf'` to a generic 403 and persistence errors to a
 generic 503 in your error boundary, logging stable codes only. Do not serialize
 causes, cookies, keys, request bodies or credential-bearing backend messages.

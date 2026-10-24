@@ -26,6 +26,10 @@ a aplicação. Consulte o exemplo de configuração no README em inglês.
 
 Use conexão direta ou pool de sessão; pool por transação é incompatível com
 advisory locks de sessão. Cada gravação é confirmada antes de resolver a Promise.
+Requisições da mesma sessão aguardam numa fila do processo antes de usar uma
+conexão do pool, e o lock é tentado com `pg_try_advisory_lock` dentro do
+`timeout` do store (5 s por padrão). Se não for obtido, a operação falha com
+`SessionError` `session_store` sem deixar um backend esperando no PostgreSQL.
 Uma transação SQL não torna atômicas uma rotação no servidor de auth e sua
 persistência local; perder a resposta pode exigir novo login.
 
@@ -50,7 +54,10 @@ restrito a desenvolvimento loopback; não atende múltiplos processos.
   dinâmica; não use cache compartilhado/ISR para resultados autenticados.
 - `.route(request, async ({ auth, client }) => Response)`: contexto de escrita
   para Route Handler. Métodos inseguros exigem Origin exata configurada. Origin
-  ausente/estrangeira é recusada antes de mudar estado ou chamar a API.
+  ausente/estrangeira é recusada antes de mudar estado ou chamar a API. Leia o
+  corpo da requisição **antes** de `route()`: o callback mantém o lease da
+  sessão (e, com PostgreSQL, uma conexão do pool) até terminar. Não faça nele
+  I/O lento alheio à autenticação, como corpos, uploads ou chamadas externas.
 - `.action(async ({ auth }) => ...)`: Server Action. Valide campos/tamanhos e
   confira o resultado antes de `redirect('/profile')`. O redirecionamento do
   Next lança uma exceção; não a transforme em erro de autenticação.

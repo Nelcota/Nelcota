@@ -30,25 +30,29 @@ function stored(row: Record<string, unknown> | undefined): StoredSession | null 
 /** Session-scoped PG locks survive awaits, and release when the connection dies.
  * Each state save commits independently before its promise resolves. Do not wrap
  * this store in an outer SQL transaction or a transaction-pooling proxy.
+ * Same-key callers queue in-process before borrowing; the lock is polled with
+ * pg_try_advisory_lock inside `timeout`, so no backend is left blocked waiting.
  */
 export class PostgresSessionStore implements SessionStore {
   readonly durability = 'shared' as const;
   readonly #pool: SessionPool;
   #connecting = 0;
   #borrowed = 0;
+  #queued = 0;
+  readonly #queues = new Map<string, Promise<void>>();
   constructor(pool: SessionPool, private readonly timeout = 5000, private readonly leaseTimeout = 60000) {
     this.#pool = pool;
     if (!Number.isSafeInteger(timeout) || timeout < 100 || timeout > 30000 || !Number.isSafeInteger(leaseTimeout) || leaseTimeout < timeout || leaseTimeout > 120000) throw new SessionError('configuration', 'Invalid session store deadlines');
   }
-  async #bounded<T>(operation: Promise<T>, timeout = this.timeout): Promise<T> {
+  async #bounded<T>(operation: Promise<T>, timeout = this.timeout, message = 'Session store deadline exceeded'): Promise<T> {
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       return await Promise.race([operation, new Promise<never>((_resolve, reject) => {
-        timer = setTimeout(() => reject(new SessionError('session_store', 'Session store deadline exceeded')), timeout);
+        timer = setTimeout(() => reject(new SessionError('session_store', message)), timeout);
       })]);
     } finally { clearTimeout(timer); }
   }
-  async #connect(): Promise<OwnedConnection> {
+  async #connect(timeout = this.timeout): Promise<OwnedConnection> {
     if (this.#connecting + this.#borrowed >= 32) throw new SessionError('session_capacity', 'Session store connection capacity reached');
     this.#connecting++;
     let connect: Promise<SessionConnection>;
@@ -74,7 +78,7 @@ export class PostgresSessionStore implements SessionStore {
         },
       };
     }, error => { this.#connecting--; throw error; });
-    try { return await this.#bounded(pending); }
+    try { return await this.#bounded(pending, Math.min(timeout, this.timeout)); }
     catch (cause) {
       // Keep the pending attempt counted until it settles; destroy a late borrow.
       void pending.then(client => client.release(true), () => undefined);
@@ -95,7 +99,21 @@ export class PostgresSessionStore implements SessionStore {
 
   async exclusive<T>(key: string, work: (lease: SessionLease) => Promise<T>): Promise<T> {
     keyCheck(key);
-    const client = await this.#connect();
+    // One local caller per key borrows a connection; later callers wait here, not in the pool.
+    if (this.#queued >= 256) throw new SessionError('session_capacity', 'Session owner queue capacity reached');
+    this.#queued++;
+    const deadline = Date.now() + this.timeout, previous = this.#queues.get(key) ?? Promise.resolve();
+    let finish!: () => void;
+    const tail = previous.then(() => new Promise<void>(resolve => { finish = resolve; }));
+    this.#queues.set(key, tail);
+    void tail.then(() => { if (this.#queues.get(key) === tail) this.#queues.delete(key); });
+    try {
+      await this.#bounded(previous, this.timeout, 'Session lock acquisition timed out');
+      return await this.#owned(key, work, deadline);
+    } finally { this.#queued--; void previous.then(() => finish()); }
+  }
+  async #owned<T>(key: string, work: (lease: SessionLease) => Promise<T>, deadline: number): Promise<T> {
+    const client = await this.#connect(Math.max(1, deadline - Date.now()));
     let active = true, locked = false, failed = false, workFailed = false;
     const lifetime = new AbortController();
     const lost = (): void => { failed = true; lifetime.abort(); };
@@ -116,12 +134,17 @@ export class PostgresSessionStore implements SessionStore {
       remove: async () => { await query('DELETE FROM nelcota_next.sessions WHERE key = $1', [key]); },
     };
     try {
-      await query('SELECT pg_advisory_lock(hashtextextended($1, 0))', [key]);
+      // Never leave a backend blocked in pg_advisory_lock after a client-side deadline.
+      for (let delay = 5; ; delay = Math.min(delay * 2, 100)) {
+        if ((await query('SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS locked', [key])).rows[0]?.['locked'] === true) break;
+        if (Date.now() + delay >= deadline) throw new SessionError('session_store', 'Session lock acquisition timed out');
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
       locked = true;
       return await this.#bounded(Promise.resolve().then(() => work(lease)), this.leaseTimeout);
     } catch (cause) {
       workFailed = true;
-      if (cause instanceof SessionError && cause.code === 'session_store') failed = true;
+      if (locked && cause instanceof SessionError && cause.code === 'session_store') failed = true;
       throw cause;
     } finally {
       active = false; lifetime.abort();
@@ -134,7 +157,7 @@ export class PostgresSessionStore implements SessionStore {
         } catch (cause) { failed = true; cleanupError = cause; }
       }
       // A failed query/unlock must not return a lock-holding connection to a pool.
-      client.release(failed || !locked);
+      client.release(failed);
       if (failed && !workFailed && !cleanupError) throw new SessionError('session_store', 'Session owner lost persistence');
       if (cleanupError && !workFailed) throw new SessionError('session_store', 'Session lock release failed', cleanupError);
     }
