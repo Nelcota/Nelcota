@@ -1,10 +1,11 @@
-# Nelcota for Next.js — G11 candidate
+# Nelcota for Next.js
 
-**Unreleased prototype, not yet approved for production.** G11 completion gates
-are tracked in [the execution record](../../docs/goals/nextjs-sdk-execution.md).
-Do not install a registry package or deploy this candidate as if it were final.
-It requires `@nelcota/client` 0.2.2 or later, the first base SDK release with
-the #132 correction.
+App Router integration targeting `@nelcota/nextjs` **0.1.0**. It requires
+`@nelcota/client` 0.2.2 or later, which is available on npm. Package publication
+is separate from source verification: confirm the selected version with
+`npm view @nelcota/nextjs@0.1.0 version` before installing. Before publication,
+use a reviewed local tarball. See [releasing](docs/releasing.md) and the
+[execution record](../../docs/goals/nextjs-sdk-execution.md).
 
 [Português](docs/quickstart.pt-BR.md).
 
@@ -12,8 +13,9 @@ the #132 correction.
 
 App Router on the Node.js runtime: Server Components, Route Handlers, Server
 Actions, OAuth callback, optional authentication proxy, and a browser refresh
-helper. Next 16.4.3 / React 19.3.1 / Node 24 are the initial tested candidates.
-Node 22, previous Next majors, Pages Router and Edge are not certified.
+helper. The verification matrix uses Next 16.4.3 / React 19.3.1 on Node
+22, 24 and 26 with Chromium, plus Firefox and WebKit on Node 24. Previous Next
+majors, Pages Router and Edge are outside the supported scope.
 
 This composes `@nelcota/client`; its REST/RPC/storage types and backend grants/RLS
 remain the data contract. The proxy is navigation assistance, never authorization.
@@ -260,16 +262,15 @@ Tests cover memory and PostgreSQL stores (mocked pool with two store instances,
 and real PostgreSQL with two pools/instances): reordered responses for
 different and identical users, publication withheld for a later winner, a
 delayed sign-out with an older cookie, no clearing by stale requests, the
-proxy bootstrap, and the cookie-less residual. A real browser run (Next
-production build, Chromium, 2026-10-24) has two tabs with one cookie jar that
-loaded the login page sign in concurrently. With the responses delivered in
-reverse order, or with the winning response lost, the browser reads as signed
-out, never as the older identity. In natural order it shows the newer one. A
-lost winner's row stops working after the next sign-in in that browser. Tabs
-that skipped the bootstrap path showed the older identity, which is the
-residual above. Do not claim production readiness until compatibility, the
-full auth-flow matrix and a released base SDK are resolved. See the execution
-ledger.
+proxy bootstrap, and the cookie-less residual. The production framework smoke
+uses two Next processes and a shared disposable PostgreSQL store. Two tabs
+with one cookie jar sign in concurrently after loading the bootstrap path.
+Reversed or lost replies leave the browser signed out; natural order shows the
+newer identity. The next lineage sign-in retires a lost winner. WebKit's
+provisional intercepted requests omit Cookie, so their controlled replay uses
+the browser's cookie jar for that exact URL. Tabs that skip bootstrap retain
+the cookie-less residual above. These checks run in the documented browser and
+Node matrix; the execution ledger retains each artifact and result.
 
 ## Local verification
 
@@ -286,6 +287,9 @@ npm --prefix sdk/nextjs run build
 The PostgreSQL integration creates/drops its own random test database. It needs
 the repository's disposable fixture, never a production/shared database. The
 example is **loopback-only development**, not a production deployment template.
+Set `NELCOTA_NEXT_SESSION_DATABASE_URL` to use a shared PostgreSQL session store
+in the example; install `sql/session-store.sql` first. Without it the example
+explicitly selects its development store.
 Framework/backend scripts require bounded disposable environments; the latter
 records the explicit binary SHA and does not claim it matches newer source.
 
@@ -294,7 +298,9 @@ Smoke scripts, run one at a time from `sdk/nextjs` after `run build`:
 ```sh
 node scripts/package-smoke.mjs     # packed tarballs in an external consumer
 node scripts/boundary-smoke.mjs    # Client Component importing /server must fail
-CHROMIUM_PATH=/path/to/chrome node scripts/framework-smoke.mjs
+NELCOTA_NEXT_TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/postgres \
+  node scripts/framework-smoke.mjs
+node scripts/package-smoke.mjs --published-base # actual npm base SDK dependency
 NELCOTA_NEXT_TEST_BINARY=/abs/target/debug/nelcota \
 NELCOTA_NEXT_TEST_DATABASE_URL=postgres://postgres@127.0.0.1:55432/postgres \
   node --conditions=react-server scripts/backend-smoke.mjs
@@ -306,8 +312,29 @@ NELCOTA_NEXT_TEST_S3_ACCESS_KEY_ID=... NELCOTA_NEXT_TEST_S3_SECRET_ACCESS_KEY=..
 
 The boundary and framework smokes link the package into its own
 `node_modules` (so the example shares one `next`/`react`) and run a production
-build of the example. The framework smoke starts `next start` against a local
-transport fixture: it is not RLS evidence.
+build of the example. Set `NELCOTA_NEXT_BROWSER=firefox` or `webkit` to select
+another installed Playwright engine; Chromium is the default. `CHROMIUM_PATH`
+optionally overrides its executable. The framework smoke starts two `next start`
+processes sharing PostgreSQL against a local transport fixture: it is not RLS
+evidence. It exercises password, signup/confirmation, resend, user update,
+refresh, recovery, magic links and OAuth callbacks, including replay rejection.
+The example's `/api/auth` POST handler demonstrates these operations without
+returning session tokens. Email-link tokens belong in the POST body.
+
+After building the server and both SDK packages, run the real auth/email
+contract from the repository root:
+
+```sh
+node sdk/typescript/scripts/contract.mjs --nextjs test/contract/auth.test.ts
+```
+
+This owns disposable PostgreSQL and STARTTLS Mailpit fixtures, tests real
+recovery/magic-link delivery and token consumption, and verifies eight
+concurrent refresh contexts through independent session stores. The reusable
+Next verification workflow runs these checks, backend/RLS, storage/S3 and the
+server OAuth contract before release publication. Live OAuth-provider accounts,
+historical Next majors and arbitrary production provider configurations are
+outside this matrix.
 
 ## Storage downloads and S3 redirects
 

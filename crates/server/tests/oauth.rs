@@ -77,6 +77,43 @@ async fn rust_sdk_finishes_a_real_pkce_flow() {
     task.abort();
 }
 
+#[tokio::test]
+#[ignore = "requires built TypeScript/Next SDKs and Node; selected by Next SDK CI"]
+async fn nextjs_sdk_finishes_a_real_pkce_flow() {
+    let harness =
+        Harness::spawn_with_redirect(Options::default(), "http://localhost:3000/auth/callback")
+            .await;
+    harness.account(9901, Some("next-oauth@example.test"), true);
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    let router = harness.app.router.clone();
+    let task = tokio::spawn(async move {
+        axum::serve(
+            listener,
+            router.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+        )
+        .await
+        .unwrap();
+    });
+    let script = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../sdk/nextjs/scripts/oauth-smoke.mjs");
+    let output = tokio::process::Command::new("node")
+        .arg("--conditions=react-server")
+        .arg(script)
+        .env("NELCOTA_NEXT_OAUTH_TEST_URL", url)
+        .kill_on_drop(true)
+        .output();
+    let output = tokio::time::timeout(std::time::Duration::from_secs(30), output).await;
+    task.abort();
+    let output = output.expect("Next OAuth contract timed out").unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("PASS: Next SDK"));
+}
+
 /// What the fake provider answers and what it was sent.
 #[derive(Default)]
 struct Fake {
@@ -145,6 +182,10 @@ impl Harness {
     }
 
     async fn spawn_with(options: Options) -> Self {
+        Self::spawn_with_redirect(options, APP).await
+    }
+
+    async fn spawn_with_redirect(options: Options, redirect: &str) -> Self {
         let fake: Shared = Arc::default();
         let router = Router::new()
             .route("/token", post(token))
@@ -162,7 +203,7 @@ impl Harness {
                 profile: format!("{base}/user"),
                 emails: Some(format!("{base}/emails")),
             });
-        let oauth = OAuth::new("https://api.example.com/", [APP], vec![provider]).unwrap();
+        let oauth = OAuth::new("https://api.example.com/", [redirect], vec![provider]).unwrap();
         let app = TestApp::spawn_with(Options {
             oauth: Some(Arc::new(oauth)),
             ..options

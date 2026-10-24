@@ -1,7 +1,7 @@
 {
   "name": "@nelcota/nextjs",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "description": "Request-scoped Nelcota integration for the Next.js App Router",
   "license": "Apache-2.0",
   "type": "module",
@@ -11,7 +11,7 @@
     "./dist/proxy.js"
   ],
   "engines": {
-    "node": ">=22"
+    "node": "^22.0.0 || ^24.0.0 || ^26.0.0"
   },
   "exports": {
     "./server": {
@@ -38,6 +38,7 @@
   "files": [
     "dist",
     "README.md",
+    "CHANGELOG.md",
     "docs",
     "sql",
     "LICENSE"
@@ -45,7 +46,8 @@
   "scripts": {
     "check": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
-    "test": "vitest run --maxWorkers=2"
+    "test": "vitest run --maxWorkers=2",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "server-only": "0.0.1"
@@ -66,5 +68,15 @@
     "react-dom": "19.3.1",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitest": "^5.0.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nelcota/Nelcota.git",
+    "directory": "sdk/nextjs"
+  },
+  "homepage": "https://github.com/Nelcota/Nelcota/tree/main/sdk/nextjs",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

@@ -11,12 +11,13 @@ does not itself publish a package.
 | --- | --- | --- |
 | Server | 0.5.3 | [Official release](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.3), verified binary or OCI image |
 | TypeScript SDK | 0.2.2 | [npm version](https://www.npmjs.com/package/@nelcota/client/v/0.2.2); confirm with `npm view @nelcota/client@0.2.2 version` |
-| Rust SDK | 0.1.4 | [crates.io version](https://crates.io/crates/nelcota-client/0.1.4); confirm the version before updating Cargo.lock |
+| Rust SDK | 0.1.5 | [crates.io version](https://crates.io/crates/nelcota-client/0.1.5); confirm the version before updating Cargo.lock |
+| Next.js integration | 0.1.0 | Initial npm publication pending; [release procedure](../../sdk/nextjs/docs/releasing.md) and [verification evidence](../goals/nextjs-sdk-execution.md) |
 
-TypeScript 0.2.1 and Rust 0.1.3 are the previous published SDK baselines. The
+TypeScript 0.2.1 and Rust 0.1.4 are the previous published SDK baselines. The
 TypeScript patch includes the session, query and transport corrections from
-PRs #143 and #155; the Rust patch includes the corrections from PRs #109, #112
-and #113 and the internal organization from #111. Release workflows verify the tagged
+PRs #143 and #155; the Rust patch includes logout, reserved-filter, file-store cancellation,
+timeout and MIME corrections, together with private module organization. Release workflows verify the tagged
 source before publication. Before a new package is available, use a reviewed
 local archive rather than assuming an older package contains these changes.
 
@@ -30,17 +31,17 @@ npm install --save-exact @nelcota/client@0.2.2
 npm ls @nelcota/client
 ```
 
-For Rust, update the dependency to `nelcota-client = "0.1.4"`, then:
+For Rust, update the dependency to `nelcota-client = "0.1.5"`, then:
 
 ```sh
-cargo update -p nelcota-client --precise 0.1.4
+cargo update -p nelcota-client --precise 0.1.5
 cargo tree -p nelcota-client
 ```
 
 Run the application's type/build/tests and exercise sign-in, refresh/sign-out,
 row writes and a file transfer against staging. Read the
 [TypeScript upgrade notes](../../sdk/typescript/docs/contract.md#upgrading-from-020)
-and [Rust upgrade notes](../../sdk/rust/docs/contract.md#upgrading-from-013).
+and [Rust upgrade notes](../../sdk/rust/docs/contract.md#upgrading-from-014).
 Portuguese application instructions are maintained in the
 [TypeScript quickstart](../../sdk/typescript/docs/quickstart.pt-BR.md) and
 [Rust quickstart](../../sdk/rust/docs/quickstart.pt-BR.md).

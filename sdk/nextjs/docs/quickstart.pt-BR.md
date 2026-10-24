@@ -1,12 +1,13 @@
-# Next.js — candidato do G11
+# Next.js 0.1.0
 
-**Protótipo não publicado e ainda não aprovado para produção.** Consulte a
-[execução do G11](../../../docs/goals/nextjs-sdk-execution.md). O adaptador exige
-o `@nelcota/client` 0.2.2 ou posterior, a primeira versão do SDK base com a
-correção de #132. A publicação está bloqueada pelos critérios do goal.
+This integration requires the published `@nelcota/client` 0.2.2 or later.
+Confirm `@nelcota/nextjs@0.1.0` registry availability before installation;
+source verification does not publish a package. See the
+[release instructions](releasing.md) and [G11 execution record](../../../docs/goals/nextjs-sdk-execution.md).
 
-Escopo inicial: App Router no runtime Node.js, Next 16.4.3, React 19.3.1 e Node 24.
-Não há certificação de Node 22, Next anterior, Pages Router ou Edge.
+The verification matrix covers App Router, Next 16.4.3 / React 19.3.1,
+Node 22/24/26 with Chromium, and Node 24 with Firefox/WebKit. Previous Next
+majors, Pages Router and Edge are outside the supported scope.
 
 ## Organização e configuração
 
