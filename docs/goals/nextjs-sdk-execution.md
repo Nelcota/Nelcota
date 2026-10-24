@@ -146,8 +146,8 @@ are recorded below. No credentials from the maintainer's VPS were used.
 
 | ID | Status | Evidence / required action |
 |---|---|---|
-| N01 | Open — publication blocking | Two first logins without a pre-existing SID get separate store keys; response cookie ordering can select an older identity. Define bootstrap/ownership and reject stale identity publication, then test tabs/processes/response reordering. Existing stable-SID tests do not prove this case. |
-| N02 | Open — completion blocking | `Integration.#client()` enforces `redirect: error`; storage redirects to presigned S3 URLs therefore fail. Add an explicit destination policy and credential stripping with provider/redirect tests; never enable unrestricted credential-bearing redirects. |
+| N01 | Corrected in candidate (`b09e1a9a`); documented residual | IDs from one browser cookie share a lineage. A sealed head names the one live key and its generation, and every sign-in/sign-up/OAuth/email-link/reset/sign-out becomes the head under the lineage lock. Superseded rows read as signed out (`superseded`) and become credential-free tombstones. A write re-checks the head before setting or clearing the cookie and withholds a stale publication. The proxy issues a credential-free bootstrap ID on `bootstrapPaths` (default login). Tests: memory store, mocked-pool PostgreSQL with two store instances, and real PostgreSQL with two pools. Covered: reordered responses (different/same user), stale publication withheld, delayed sign-out, no stale clearing, proxy bootstrap. **Residual:** requests without any cookie/bootstrap cannot be linked, so both sessions stay valid and the loser keeps encrypted credentials until expiry (pinned by a test). A lost winning response also lives until a later lineage sign-in/out or expiry. Tombstones do not revoke refresh tokens remotely. No real-browser multi-tab run. |
+| N02 | Corrected in candidate (`688a9ed3`); provider run pending | Opt-in `storageRedirectOrigins` (validated HTTPS, loopback HTTP only in insecure development). Only GET/HEAD `/storage/v1/object/` requests follow redirects, manually, for at most 3 hops, each to a listed origin. From the first hop off the API origin only accept/range/conditional headers are sent. Unset/other destinations give `storage_redirect_refused`; too many hops give `storage_redirect_limit`. All other requests keep `redirect: 'error'`. Unit tests plus a real loopback HTTP redirect with Node fetch pass. **Not run:** real S3/MinIO with the Nelcota server. |
 | N03 | Corrected in candidate | A killed PostgreSQL connection previously emitted an unhandled error; final provider and event/late-writer regressions pass. |
 | N04 | Corrected in candidate | Inspection found redirect exceptions could skip cookie publication and plain decoded paths could normalize to `//...`; finally publication and canonical-path checks are covered by tests. |
 | N05 | Corrected in candidate | Bind callback to random browser state; wrong state leaves verifier intact, valid exchange consumes it, duplicate callback rejected. Successful replacement login clears pending OAuth and receives a new absolute lifetime; stream consumers retain their accepted transfer. |
@@ -165,11 +165,11 @@ backend or audit work. Keep unrelated worktrees intact.
 | Next read-only | Passed for initial fixture | Actual production Server Component + runtime mutation guard; final-source backend integration still needed |
 | Next writable | Passed for initial fixture | Real Route Handler/Server Action cookie publication, redirect and CSRF checks |
 | Browser boundary | Passed for initial fixture | Real invalid Client Component build refused; HTML credential checks; full client bundle canary/resource matrix remains |
-| Concurrency | Failed completion gate | PG instance/lock/loss cases pass, but N01 and full tab/process/lost-response matrix remain |
+| Concurrency | Partial | PG instance/lock/loss cases pass. N01 reordering cases pass on memory, mocked-pool and real PostgreSQL (2026-10-24). Cookie-less residual documented. Real-browser tab and lost-response runs not done |
 | Auth flows | Partial / not run | Password/logout tested in real Next; PKCE/replacement unit cases pass; complete provider/email/recovery flows not run |
 | Adversarial | Partial | CSRF/redirect/encryption/key rotation/nonce/storage loss tested; full matrix still pending |
 | Backend/RLS | Compatibility passed; final blocked (environment) | Identified older binary passes two-user/anonymous/integrity canaries; disk prevents final-source build |
-| Storage/S3 | Not run; N02 open | Streaming unit case passes; real storage/S3 integration is not certified |
+| Storage/S3 | Partial; provider not run | N02 redirect policy has unit and loopback-HTTP tests; real storage/S3 integration is not certified |
 | Packaging | Passed initial consumer | Packed install/exports/strict types and Next production build; registry version/minimum-base release still pending |
 | Compatibility | Not run beyond initial versions | Node22, previous supported Next major and other browser engines not certified |
 | Operations | Partial | EN/PT docs and npm audits pass; latency/memory/leak/soak measurements and ordinary CI not run |
@@ -252,3 +252,21 @@ The real PostgreSQL integration case was **not run**: Docker and a local
 PostgreSQL were unavailable, so it stayed skipped and is not counted as passing.
 Real Next/Chromium, packed-consumer and backend smoke checks were not rerun for
 these corrections. Open gates N01/N02 are unchanged.
+
+## N01/N02 corrections — 2026-10-24
+
+`b09e1a9a` resolves N01 within the limits recorded above, and `688a9ed3`
+resolves N02 apart from the provider run. Both are local commits on
+`feat/nextjs-sdk-g11` and have not been pushed. Behaviour changes: a row-less
+well-formed cookie is no longer cleared by a write that publishes nothing (it
+may be a bootstrap ID). A login now replaces the old row with a tombstone
+instead of deleting it. `SessionLease.rotate` accepts an optional retained row.
+Session-bearing reads perform one more store read (the lineage head).
+
+Results: `NELCOTA_NEXT_TEST_DATABASE_URL=<disposable PostgreSQL on 127.0.0.1>
+npm test` gave **116 passed, zero skipped**, including both real PostgreSQL
+cases. `npm run check` and `npm run build` pass. The temporary cluster was
+stopped and deleted. The new N01/N02 tests failed when the head check, the
+publication check, header stripping or the hop limit was disabled. Real
+Next/Chromium, the packed consumer, backend smoke and S3/MinIO provider runs
+were not repeated or performed for these corrections.
