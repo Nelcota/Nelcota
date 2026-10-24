@@ -9,3 +9,9 @@ export const eventLabel = (value: string) => value === 'INSERT' ? t('webhooks.in
 export const dateLabel = (value: string | null) => dateText(value, date => date.toLocaleString(intlLocale()))
 export const canReplay = (delivery: WebhookDelivery) => delivery.endpoint_enabled && ['failed', 'succeeded'].includes(delivery.status) && delivery.last_error !== 'payload_too_large'
 export const statusClass = (value: string) => value === 'succeeded' ? 'bg-success/10 text-success' : value === 'failed' ? 'bg-destructive/10 text-destructive' : value === 'pending' || value === 'processing' ? 'bg-warning/10 text-warning' : 'bg-muted text-muted-foreground'
+/** Milliseconds below one second, seconds (one decimal at most) from there on: "250 ms", "10 s". */
+export function durationLabel(ms: number | null) {
+  if (ms === null) return '—'
+  if (ms < 1000) return `${new Intl.NumberFormat(intlLocale()).format(ms)} ms`
+  return `${new Intl.NumberFormat(intlLocale(), { maximumFractionDigits: 1 }).format(ms / 1000)} s`
+}
