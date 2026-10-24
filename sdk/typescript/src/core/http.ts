@@ -87,7 +87,7 @@ export function parseRetryAfter(value: string | null): number | undefined {
   }
   // RFC 9110 recipients accept IMF-fixdate and the two obsolete HTTP dates.
   if (!/^(?:[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT|[A-Z][a-z]+, \d{2}-[A-Z][a-z]{2}-\d{2} \d{2}:\d{2}:\d{2} GMT|[A-Z][a-z]{2} [A-Z][a-z]{2} [ \d]\d \d{2}:\d{2}:\d{2} \d{4})$/.test(trimmed)) return undefined;
-  const date = Date.parse(trimmed);
+  const date = Date.parse(trimmed.endsWith('GMT') ? trimmed : `${trimmed} GMT`);
   if (Number.isNaN(date)) return undefined;
   return Math.max(0, Math.ceil((date - Date.now()) / 1000));
 }

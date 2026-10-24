@@ -28,3 +28,9 @@ it('ends timeout at headers for a raw stream (#135)', async () => {
   const client = createClient('https://api.example.com', { timeout: 20, fetch: async (_url, init) => { signal = init?.signal; return new Response('object'); }, auth: { autoRefresh: false } });
   try { const result = await client.storage.from('assets').open('file', { timeout: 20 }); expect(result.error).toBeNull(); await new Promise(resolve => setTimeout(resolve, 40)); expect(signal?.aborted).toBe(false); expect(await result.data?.text()).toBe('object'); } finally { client.dispose(); }
 });
+it('interprets obsolete HTTP dates as UTC independently of the host timezone (#142)', () => {
+  vi.stubEnv('TZ', 'America/Sao_Paulo');
+  vi.useFakeTimers(); vi.setSystemTime(new Date('1994-11-06T08:49:30Z'));
+  try { expect(parseRetryAfter('Sun Nov  6 08:49:37 1994')).toBe(7); }
+  finally { vi.unstubAllEnvs(); }
+});
