@@ -30,6 +30,7 @@ export class DevelopmentSessionStore implements SessionStore {
     };
     const lease: SessionLease = {
       signal: lifetime.signal,
+      deadline: Number.POSITIVE_INFINITY,
       load: async () => { requireOwner(); return this.read(current); },
       save: async value => {
         requireOwner();

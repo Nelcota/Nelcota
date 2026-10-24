@@ -69,7 +69,11 @@ lease lifetime; a failed owner cannot write again. Same-key requests queue in
 the process before borrowing a connection, and the lock is polled with
 `pg_try_advisory_lock` within the store `timeout` (default 5 s). A request that
 cannot obtain it fails with `SessionError` `session_store` instead of leaving a
-backend waiting in PostgreSQL. A lost HTTP reply after a
+backend waiting in PostgreSQL. `new PostgresSessionStore(pool, timeout, leaseTimeout)`
+defaults to 5 s / 60 s and requires `leaseTimeout >= 2 * timeout`. Each auth
+request in a lease gets at most the remaining lease time minus one store timeout,
+which is reserved for saving its result. A request that cannot fit returns the
+`lease_exhausted` auth error before it is sent. A lost HTTP reply after a
 remote rotation can still require signing in again. It cannot be made atomic
 with a separate auth server by a local SQL transaction.
 

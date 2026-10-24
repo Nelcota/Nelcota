@@ -210,7 +210,10 @@ export class Integration<Database> {
         auth: { autoRefresh: false, storage, storageKey }, timeout: this.#options.timeout ?? 30000, retries: 0,
         fetch: async (input, init) => {
           ensure();
-          const signal = AbortSignal.any([...(init?.signal ? [init.signal] : []), lease.signal, AbortSignal.timeout(this.#options.timeout ?? 30000)]);
+          // Each auth call ends before the lease can no longer save its result.
+          const budget = Math.min(this.#options.timeout ?? 30000, lease.deadline - Date.now());
+          if (budget < 100) throw new NelcotaError({ status: 0, code: 'lease_exhausted', message: 'The session lease cannot fit another auth request' });
+          const signal = AbortSignal.any([...(init?.signal ? [init.signal] : []), lease.signal, AbortSignal.timeout(budget)]);
           return (this.#options.fetch ?? globalThis.fetch.bind(globalThis))(input, { ...init, signal, cache: 'no-store', redirect: 'error' });
         },
       });

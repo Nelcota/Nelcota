@@ -42,7 +42,7 @@ export class PostgresSessionStore implements SessionStore {
   readonly #queues = new Map<string, Promise<void>>();
   constructor(pool: SessionPool, private readonly timeout = 5000, private readonly leaseTimeout = 60000) {
     this.#pool = pool;
-    if (!Number.isSafeInteger(timeout) || timeout < 100 || timeout > 30000 || !Number.isSafeInteger(leaseTimeout) || leaseTimeout < timeout || leaseTimeout > 120000) throw new SessionError('configuration', 'Invalid session store deadlines');
+    if (!Number.isSafeInteger(timeout) || timeout < 100 || timeout > 30000 || !Number.isSafeInteger(leaseTimeout) || leaseTimeout < 2 * timeout || leaseTimeout > 120000) throw new SessionError('configuration', 'Invalid session store deadlines');
   }
   async #bounded<T>(operation: Promise<T>, timeout = this.timeout, message = 'Session store deadline exceeded'): Promise<T> {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -116,6 +116,7 @@ export class PostgresSessionStore implements SessionStore {
     const client = await this.#connect(Math.max(1, deadline - Date.now()));
     let active = true, locked = false, failed = false, workFailed = false, current = key;
     const held = [key];
+    let authDeadline = Number.POSITIVE_INFINITY;
     const lifetime = new AbortController();
     const lost = (): void => { failed = true; lifetime.abort(); };
     client.signal.addEventListener('abort', lost, { once: true });
@@ -127,6 +128,8 @@ export class PostgresSessionStore implements SessionStore {
     };
     const lease: SessionLease = {
       signal: lifetime.signal,
+      // Reserve one query deadline after the last auth response for its save.
+      get deadline() { return authDeadline; },
       load: async () => stored((await query('SELECT sealed, expires_at FROM nelcota_next.sessions WHERE key = $1', [current])).rows[0]),
       save: async value => {
         if (!Number.isSafeInteger(value.expiresAt) || value.expiresAt <= Date.now() || value.sealed.length > 131072) throw new SessionError('invalid_session', 'Invalid bounded session state');
@@ -148,7 +151,7 @@ export class PostgresSessionStore implements SessionStore {
         if (Date.now() + delay >= deadline) throw new SessionError('session_store', 'Session lock acquisition timed out');
         await new Promise(resolve => setTimeout(resolve, delay));
       }
-      locked = true;
+      locked = true; authDeadline = Date.now() + this.leaseTimeout - this.timeout;
       return await this.#bounded(Promise.resolve().then(() => work(lease)), this.leaseTimeout);
     } catch (cause) {
       workFailed = true;

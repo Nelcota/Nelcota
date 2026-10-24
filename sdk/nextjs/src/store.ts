@@ -8,6 +8,10 @@ export interface StoredSession {
 export interface SessionLease {
   /** Aborts when ownership ends; late auth/data operations must stop. */
   readonly signal: AbortSignal;
+  /** Epoch ms by which an auth request must end so its result can still be
+   * saved inside this lease; Infinity when the store has no lease deadline.
+   */
+  readonly deadline: number;
   load(): Promise<StoredSession | null>;
   save(value: StoredSession): Promise<void>;
   remove(): Promise<void>;

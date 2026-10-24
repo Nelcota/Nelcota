@@ -58,7 +58,7 @@ it('destroys a late connection after its deadline', async () => {
 it('bounds a stalled owner and prevents late persistence', async () => {
   const { pool, release } = fixture();
   let late: (() => Promise<unknown>) | undefined;
-  await expect(new PostgresSessionStore(pool, 100, 100).exclusive(key, lease => { late = lease.remove; return new Promise(() => undefined); })).rejects.toMatchObject({ code: 'session_store' });
+  await expect(new PostgresSessionStore(pool, 100, 200).exclusive(key, lease => { late = lease.remove; return new Promise(() => undefined); })).rejects.toMatchObject({ code: 'session_store' });
   await expect(late?.()).rejects.toMatchObject({ code: 'closed_context' });
   expect(release).toHaveBeenCalledExactlyOnceWith(true);
 });
@@ -124,4 +124,13 @@ it('rotates to a fresh key on the same connection and releases both locks', asyn
   const calls = query.mock.calls.map(([sql, values]) => [sql.split(/[ (]/)[0] === 'SELECT' ? sql.match(/pg_\w+/)?.[0] : sql.split(' ')[0], values?.[0]]);
   expect(calls).toEqual([['pg_try_advisory_lock', key], ['pg_try_advisory_lock', fresh], ['DELETE', key], ['INSERT', fresh], ['pg_advisory_unlock', key], ['pg_advisory_unlock', fresh]]);
   expect(pool.connect).toHaveBeenCalledTimes(1); expect(release).toHaveBeenCalledExactlyOnceWith(false);
+});
+it('requires a lease that leaves auth time after reserving the final save', async () => {
+  const { pool } = fixture();
+  expect(() => new PostgresSessionStore(pool, 5000, 9999)).toThrow(expect.objectContaining({ code: 'configuration' }));
+  const store = new PostgresSessionStore(pool, 5000, 10000), started = Date.now();
+  await store.exclusive(key, async lease => {
+    expect(lease.deadline).toBeGreaterThanOrEqual(started + 5000);
+    expect(lease.deadline).toBeLessThanOrEqual(Date.now() + 5000);
+  });
 });

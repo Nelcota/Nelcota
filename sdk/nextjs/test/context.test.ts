@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { randomBytes } from 'node:crypto';
 import { Integration, type CookieWriter, type NextOptions } from '../src/context.js';
+import type { SessionStore } from '../src/store.js';
 import { DevelopmentSessionStore } from '../src/memory-store.js';
 import { newSessionId } from '../src/seal.js';
 
@@ -283,5 +284,26 @@ describe('refresh outages', () => {
     const { integration, jar } = await expiring();
     const result = await integration.write(jar, post(), context => context.auth.signInWithPassword(credentials));
     expect(result.data?.id).toBe('user-one');
+  });
+});
+describe('lease budget', () => {
+  const bounded = (inner: DevelopmentSessionStore, budget: number): SessionStore => ({
+    durability: 'development', read: key => inner.read(key),
+    exclusive: (key, work) => inner.exclusive(key, lease => work({ signal: lease.signal, deadline: Date.now() + budget, load: lease.load, save: lease.save, remove: lease.remove, rotate: lease.rotate })),
+  });
+  it('refuses an auth request that cannot finish inside the lease', async () => {
+    const { integration, jar, requests } = await setup({ store: bounded(new DevelopmentSessionStore(), 50) });
+    const result = await integration.write(jar, post(), context => context.auth.signInWithPassword(credentials));
+    expect(result.error?.code).toBe('lease_exhausted'); expect(requests).toHaveLength(0); expect(jar.writes).toHaveLength(0);
+  });
+  it('shortens each auth deadline to the remaining lease budget', async () => {
+    let aborted = 0;
+    const { integration, jar } = await setup({ store: bounded(new DevelopmentSessionStore(), 300), fetch: async (_url, init) => new Promise<Response>((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => { aborted = Date.now(); reject(init.signal?.reason); });
+    }) });
+    const started = Date.now();
+    const result = await integration.write(jar, post(), context => context.auth.signInWithPassword(credentials));
+    expect(result.error?.code).toBe('timeout');
+    expect(aborted - started).toBeLessThan(2000);
   });
 });

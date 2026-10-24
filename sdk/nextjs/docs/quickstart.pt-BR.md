@@ -30,6 +30,11 @@ Requisições da mesma sessão aguardam numa fila do processo antes de usar uma
 conexão do pool, e o lock é tentado com `pg_try_advisory_lock` dentro do
 `timeout` do store (5 s por padrão). Se não for obtido, a operação falha com
 `SessionError` `session_store` sem deixar um backend esperando no PostgreSQL.
+`new PostgresSessionStore(pool, timeout, leaseTimeout)` usa 5 s / 60 s por padrão
+e exige `leaseTimeout >= 2 * timeout`. Cada chamada de auth dentro do lease recebe
+no máximo o tempo restante do lease menos um `timeout` do store, reservado para
+gravar o resultado. Se não couber, retorna o erro de auth `lease_exhausted` antes
+de ser enviada.
 Uma transação SQL não torna atômicas uma rotação no servidor de auth e sua
 persistência local; perder a resposta pode exigir novo login.
 
