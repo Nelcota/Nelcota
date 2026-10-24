@@ -323,3 +323,16 @@ The public package metadata is prepared for 0.1.0. Hosted verification and
 initial npm authentication/publication remain distinct release steps. The
 cookie-less/lost-response limits remain documented and tested; this pass does
 not claim live OAuth-provider accounts or arbitrary production S3 coverage.
+
+## Publication checkpoint — 2026-10-24
+
+[PR #162](https://github.com/Nelcota/Nelcota/pull/162) passed all 29 checks and
+merged as `e7b5b352b55fd2d8151aa847a079e2ba92356a24`. The npm registry now serves
+`@nelcota/nextjs@0.1.0` with that `gitHead`; its fresh external registry consumer
+passed runtime exports/configuration and strict TypeScript checks. The base
+0.2.2 package was installed from npm in that same consumer. npm trusted publishing
+is configured for the dedicated release workflow. See the
+[publication checkpoint](sdk-release-completion.md#publication-checkpoint--2026-10-24)
+for immutable package identifiers, release runs and the separate Rust release.
+G11 is complete for the documented supported matrix; its explicit provider,
+cookie-lineage and deployment limits remain in force.

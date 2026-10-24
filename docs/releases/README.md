@@ -12,7 +12,7 @@ does not itself publish a package.
 | Server | 0.5.3 | [Official release](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.3), verified binary or OCI image |
 | TypeScript SDK | 0.2.2 | [npm version](https://www.npmjs.com/package/@nelcota/client/v/0.2.2); confirm with `npm view @nelcota/client@0.2.2 version` |
 | Rust SDK | 0.1.5 | [crates.io version](https://crates.io/crates/nelcota-client/0.1.5); confirm the version before updating Cargo.lock |
-| Next.js integration | 0.1.0 | Initial npm publication pending; [release procedure](../../sdk/nextjs/docs/releasing.md) and [verification evidence](../goals/nextjs-sdk-execution.md) |
+| Next.js integration | 0.1.0 | [npm version](https://www.npmjs.com/package/@nelcota/nextjs/v/0.1.0); [release procedure](../../sdk/nextjs/docs/releasing.md) and [verification evidence](../goals/sdk-release-completion.md) |
 
 TypeScript 0.2.1 and Rust 0.1.4 are the previous published SDK baselines. The
 TypeScript patch includes the session, query and transport corrections from

@@ -113,3 +113,34 @@ and is not closed by this release-verification pass.
 
 Local logs are under `/tmp/nelcota-*`; fixtures own random databases/buckets and
 remove them after each test. No production data or deployment was used.
+
+## Publication checkpoint — 2026-10-24
+
+This checkpoint supersedes the initial publication/authentication states above.
+[PR #162](https://github.com/Nelcota/Nelcota/pull/162) passed all 29 checks and
+merged as `e7b5b352b55fd2d8151aa847a079e2ba92356a24`. Both SDK release tags point
+to that exact commit. The final rebuilt backend used by the local RLS/S3 smokes
+had SHA-256 `992e013d3122dcdcf6ca169223035d4c76dbf170501ee87055e2f36b50a9619a`.
+
+- **TypeScript 0.2.2:** publication remains confirmed; it was also installed as
+  the actual dependency of a clean registry Next consumer.
+- **Rust 0.1.5:** the [tagged release workflow](https://github.com/Nelcota/Nelcota/actions/runs/40133251850)
+  passed, including all three OS checks, MSRV, real contracts and trusted
+  publication. The registry reports 0.1.5, not yanked, with crate checksum
+  `d204cfc6b6e6aa45e2286dd10e5dd60358c39499618f9c561dc780779faf9d77`.
+  A fresh external consumer installed exactly 0.1.5 from crates.io and compiled
+  and ran its query-construction smoke without a local path override.
+- **Next.js 0.1.0:** the authenticated initial npm publication completed after
+  npm's account verification and processing. The registry reports `latest`
+  0.1.0, `gitHead` matching the merge above and tarball SHA-1
+  `6f6058da9181b87d2ee16e03f655eb679f4a0471`. A fresh external consumer installed
+  exactly `@nelcota/nextjs@0.1.0` with `@nelcota/client@0.2.2`, loaded all five
+  exports, created isolated configurations and passed strict TypeScript checks.
+  The initial bootstrap used maintainer authentication; it was not an OIDC
+  publication. npm now lists the package's GitHub trusted publisher for
+  `Nelcota/Nelcota`, `sdk-nextjs-release.yml`, environment `npm`.
+
+The first attempt to configure npm trust before creating the package returned
+404; configuring it after the initial publication succeeded. No credentials
+were stored in the repository. The [Next tagged workflow](https://github.com/Nelcota/Nelcota/actions/runs/40133586762)
+repeats verification and deliberately skips an already published version.

@@ -36,6 +36,14 @@ For the initial publication, use `npm publish --access public` from `sdk/nextjs`
 only after the final commit passed the complete verification workflow. Inspect
 `npm pack --dry-run` first. Configure npm trusted publishing for owner `Nelcota`,
 repository `Nelcota`, workflow `sdk-nextjs-release.yml`, environment `npm`.
+With a current npm CLI, configure it after the package exists:
+
+```sh
+npm trust github @nelcota/nextjs --file sdk-nextjs-release.yml \
+  --repo Nelcota/Nelcota --env npm --allow-publish
+npm trust list @nelcota/nextjs
+```
+
 See the [official npm instructions](https://docs.npmjs.com/trusted-publishers/)
 for account requirements and configuration expiry.
 

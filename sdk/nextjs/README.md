@@ -7,6 +7,12 @@ is separate from source verification: confirm the selected version with
 use a reviewed local tarball. See [releasing](docs/releasing.md) and the
 [execution record](../../docs/goals/nextjs-sdk-execution.md).
 
+Install in a compatible Next App Router application:
+
+```sh
+npm install @nelcota/nextjs@0.1.0 @nelcota/client@0.2.2 pg
+```
+
 [Português](docs/quickstart.pt-BR.md).
 
 ## Scope
