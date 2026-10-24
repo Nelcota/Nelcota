@@ -12,7 +12,11 @@ use crate::{Client, Error, Result, TokenMode, http::Spec};
 use reqwest::Method;
 use serde_json::{Value, json};
 use std::sync::atomic::Ordering;
+use std::time::Duration;
 use tokio::sync::{broadcast, watch};
+
+/// Sign-out renews only an expired token, allowing this much clock skew.
+const SIGN_OUT_SKEW: Duration = Duration::from_secs(5);
 
 #[derive(Clone, Debug)]
 pub struct AuthClient {
@@ -332,28 +336,28 @@ impl AuthClient {
         let mut state = manager.gate.lock().await;
         manager.load(&mut state).await?;
         let result = async {
-            let session = match state.session.clone() {
-                Some(session) => session,
-                None => return Ok(()),
+            let Some(session) = state.session.clone() else {
+                return Ok(());
             };
-            let session = match session.expires_in_now() <= manager.margin_for(&session) {
-                true => {
-                    // Already under the lifecycle gate: do not recursively refresh.
-                    let renewed = self
-                        .token(
-                            "refresh_token",
-                            json!({"refresh_token":session.refresh_token}),
-                        )
-                        .await?;
-                    manager
-                        .save(&mut state, Some(renewed.clone()), AuthEventKind::Refreshed)
-                        .await?;
-                    renewed
-                }
-                false => session,
+            let left = session.expires_in_now();
+            let token = match left <= SIGN_OUT_SKEW {
+                // Already under the lifecycle gate: do not recursively refresh.
+                // The replacement only revokes itself; it is never published.
+                true => match self
+                    .token(
+                        "refresh_token",
+                        json!({"refresh_token":session.refresh_token}),
+                    )
+                    .await
+                {
+                    Ok(renewed) => renewed.access_token,
+                    Err(error) if left.is_zero() => return Err(error),
+                    Err(_) => session.access_token,
+                },
+                false => session.access_token,
             };
             self.client
-                .bytes(Spec::new(Method::POST, "/auth/v1/logout").token(&session.access_token))
+                .bytes(Spec::new(Method::POST, "/auth/v1/logout").token(&token))
                 .await
                 .map(|_| ())
         }

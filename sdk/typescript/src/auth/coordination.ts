@@ -16,6 +16,12 @@ function locks(): LockManagerLike | undefined {
   return nav?.locks;
 }
 
+/** Web and Service Workers share Web Locks with same-origin tabs; servers do not. */
+export function workerScope(): boolean {
+  const scope = (globalThis as { WorkerGlobalScope?: abstract new () => unknown }).WorkerGlobalScope;
+  return typeof scope === 'function' && globalThis instanceof scope && locks() !== undefined;
+}
+
 const adapters = new WeakMap<SessionStorage, Map<string, symbol>>();
 export function adapterLock(storage: SessionStorage, key: string): symbol {
   let keys = adapters.get(storage);

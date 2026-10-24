@@ -7,8 +7,10 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Fixed
 
-- Renew expired sessions before logout; isolate server auth locks by adapter/key,
-  label cross-tab account/profile changes and ignore unchanged per-tab state.
+- Renew only expired sessions before logout and revoke any still-valid token;
+  never persist or announce that renewal. Isolate server auth locks by
+  adapter/key while caller storage in workers keeps Web Locks, label cross-tab
+  account/profile changes and ignore unchanged per-tab state.
 - Release browser refresh reservations after explicit pre-grant rate limiting,
   while retaining uncertain-outcome fences for network and gateway failures.
 - Stop raw-response attempt timers at headers; preserve caller cancellation and

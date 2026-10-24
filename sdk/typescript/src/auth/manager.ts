@@ -1,7 +1,7 @@
 /** One owner for session persistence, lifecycle transitions and refresh timers. */
 import { isSession, memoryStorage, parseSession, secondsLeft, type Session, type SessionStorage, type User } from './session.js';
 import { BrowserSessionConflictError, BrowserSessionState } from './browser-state.js';
-import { Broadcast, withLock, adapterLock } from './coordination.js';
+import { Broadcast, withLock, adapterLock, workerScope } from './coordination.js';
 import { NelcotaUsageError, clientError, fail, ok, type Result } from '../core/errors.js';
 import { abortable } from '../core/cancellation.js';
 import { isBrowser } from '../core/jwt.js';
@@ -12,6 +12,8 @@ import type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions } from '.
 export type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions } from './types.js';
 
 const RETRY_REFRESH_MS = 10_000;
+// Sign-out renews only an expired token, allowing this much clock skew.
+const SIGN_OUT_SKEW = 5;
 type Authentication = Session | { user: User; session: Session | null };
 
 function browserStorage(): SessionStorage | undefined {
@@ -49,9 +51,10 @@ export class SessionManager {
     const path = pathname.slice(0, end);
     this.key = options.storageKey ?? `nelcota.${url.host}${path}.session`;
     this.#lockName = `${this.key}.refresh`;
-    // Default server memory stores belong to separate requests. Their queues
-    // must stay independent when another client holds a sign-in across HTTP.
-    if (!isBrowser()) this.#lockName = adapterLock(this.storage, this.key);
+    // Server adapters belong to separate requests: queue by adapter identity so
+    // another client's sign-in cannot block them. Worker storage supplied by the
+    // caller may be shared with tabs, so it keeps the cross-context Web Lock.
+    if (!isBrowser() && !(options.storage && workerScope())) this.#lockName = adapterLock(this.storage, this.key);
     if (native && this.storage === native) {
       let factory: IDBFactory | undefined;
       try { factory = globalThis.indexedDB; } catch { /* Report unavailable storage on the first operation. */ }
@@ -236,18 +239,18 @@ export class SessionManager {
     })().finally(() => { this.#refreshing = null; });
     return abortable(this.#refreshing, options.signal).then(result => result.data ?? result);
   }
-  async #rotate(current: Session, options: AuthRequestOptions): Promise<Result<Session>> {
+  async #rotate(current: Session, options: AuthRequestOptions, publish = true): Promise<Result<Session>> {
     await this.#native?.reserve(current);
     // Accepted rotation owns publication independently of a cancelled waiter.
     const result = await this.rotate(current.refresh_token, options.timeout === undefined ? {} : { timeout: options.timeout });
     if (result.error) {
-      if (result.error.code === 'invalid_grant') await this.#write(null, 'signed_out', true);
+      if (publish && result.error.code === 'invalid_grant') await this.#write(null, 'signed_out', true);
       // This endpoint rejects rate-limited requests before reading the grant.
       // A gateway 5xx or lost response is uncertain: preserve its reservation.
       if (result.error.status === 429 && result.error.code === 'rate_limited') await this.#native?.write(encodeJson(current), true);
       return result;
     }
-    await this.#write(result.data, 'refreshed', true);
+    if (publish) await this.#write(result.data, 'refreshed', true);
     return result;
   }
   rememberUser(snapshot: Session): (user: User) => Promise<void> {
@@ -263,17 +266,9 @@ export class SessionManager {
   signOut(request: (session: Session) => Promise<Result<null>>, options: AuthRequestOptions = {}): Promise<Result<null>> {
     return this.#locked(async () => {
       try {
-        let session = await this.#read(true, true);
-        if (session) {
-          try {
-            if (!this.#native?.pending && !options.signal?.aborted && secondsLeft(session) <= this.#marginFor(session)) {
-              const renewed = await this.#rotate(session, options);
-              if (renewed.error) return fail(renewed.error);
-              session = renewed.data;
-            }
-            return await request(session);
-          } finally { await this.#write(null, 'signed_out'); }
-        }
+        const session = await this.#read(true, true);
+        // The only transition: sign-out never publishes or announces a renewal.
+        if (session) try { return await this.#revoke(session, request, options); } finally { await this.#write(null, 'signed_out'); }
         if (this.#dirty) await this.#persist();
         this.#schedule(null);
         return ok(null);
@@ -284,6 +279,16 @@ export class SessionManager {
         await withLock(`${this.key}.pkce`, () => this.consumeVerifier());
       }
     });
+  }
+  async #revoke(session: Session, request: (session: Session) => Promise<Result<null>>, options: AuthRequestOptions): Promise<Result<null>> {
+    if (this.#native?.pending || options.signal?.aborted || secondsLeft(session) > SIGN_OUT_SKEW) return request(session);
+    // Renew an expired token only to revoke its replacement, which stays in memory.
+    let renewed: Result<Session> | undefined, failure: unknown;
+    try { renewed = await this.#rotate(session, options, false); } catch (error) { failure = error; }
+    if (renewed && !renewed.error) return request(renewed.data);
+    if (secondsLeft(session) > 0) return request(session);
+    if (renewed) return fail(renewed.error);
+    throw failure;
   }
   #schedule(session: Session | null, delayMs?: number): void {
     clearTimeout(this.#timer);

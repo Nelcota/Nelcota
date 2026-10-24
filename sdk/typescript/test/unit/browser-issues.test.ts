@@ -71,3 +71,10 @@ it('does not label a newer identity with a delayed old logout event (#138)', asy
   await vi.waitFor(() => expect(events).toEqual(['signed_in']));
   expect((await unread.auth.getSession()).data?.user.id).toBe('bob');
 });
+
+it.each(['rotated', 'invalid_grant'] as const)('broadcasts only signed_out when sign-out renewal is %s', async outcome => {
+  const reply = outcome === 'rotated' ? json(session(900, 'rotated', 'fresh')) : json({ code: 'invalid_grant', message: 'Spent' }, 400);
+  const environment = browser(); const first = client(mockFetch(reply, new Response(null, { status: 204 })).fetch);
+  await first.auth.setSession(session(-60)); environment.messages.length = 0; await first.auth.signOut();
+  expect(environment.messages.filter(value => typeof value === 'object')).toEqual([{ event: 'signed_out', revision: expect.any(String) }]);
+});

@@ -37,14 +37,16 @@ its own draft PR; do not merge/publish it with production corrections.
    headers, retain caller cancellation and buffered-body deadlines. Do not
    claim the default30s behavior existed in this exact source snapshot.
 4. Keep native pending-refresh logout behavior: another tab can clear an uncertain
-   reservation without attempting another rotation. Normal expired logout renews
-   under the existing lifecycle gate before revoking and always clears locally.
+   reservation without attempting another rotation. Logout renews only an expired
+   token (5 s clock skew) under the existing lifecycle gate, revokes any
+   still-valid token, never publishes the renewal and always clears locally.
 5. Native/shared auth messages carry event kinds only, never credentials; legacy
    `changed` messages still work. Explicit sessionStorage is private to its tab;
    unchanged custom-adapter reloads emit no misleading event.
 6. Non-browser lifecycle locks are scoped by storage adapter identity and key;
    separate request adapters do not block one another. Same-adapter clients
-   continue to coordinate. This is not cross-process storage coordination.
+   continue to coordinate. Caller storage in Web/Service Workers keeps the
+   string Web Lock shared with tabs. This is not cross-process storage coordination.
 7. Reserved modifier columns use quoted one-leaf logic groups, including embeds,
    instead of colliding with pagination/sort/selection. Fix both language SDKs.
 8. The current workspace RustSec audit has a backend-only crypto-bigint advisory
