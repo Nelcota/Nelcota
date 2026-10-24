@@ -144,3 +144,11 @@ The first attempt to configure npm trust before creating the package returned
 404; configuring it after the initial publication succeeded. No credentials
 were stored in the repository. The [Next tagged workflow](https://github.com/Nelcota/Nelcota/actions/runs/40133586762)
 repeats verification and deliberately skips an already published version.
+
+The tagged run initially passed all verification jobs but GitHub refused the
+publish job: the existing `npm` environment allowed only `sdk-v*` tags. Adding
+the specific `nextjs-sdk-v*` tag rule preserved the TypeScript rule and allowed
+the failed publish job to be rerun. This was an environment configuration fix;
+no package version was overwritten and no verification gate was disabled.
+Attempt 2 completed successfully, including the publish job's existing-version
+guard. Both tagged release workflows are green.
