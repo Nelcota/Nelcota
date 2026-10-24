@@ -761,3 +761,54 @@ async fn shared_row_precision_and_error_fixtures_preserve_the_wire_contract() {
     assert_eq!(error.retry_after(), Some(Duration::from_secs(17)));
     task.abort();
 }
+
+#[tokio::test]
+async fn reserved_filter_columns_are_kept_separate_from_modifiers() {
+    let observed = Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+    let router = Router::new().fallback(any({
+        let observed = observed.clone();
+        move |request: Request| {
+            observed
+                .lock()
+                .unwrap()
+                .push(request.uri().query().unwrap_or_default().to_owned());
+            async { axum::Json(json!([])) }
+        }
+    }));
+    let (url, task) = serve(router).await;
+    let client = Client::builder(url).build().unwrap();
+    client
+        .from("notes")
+        .select("*")
+        .eq("limit", 5)
+        .limit(10)
+        .execute::<Value>()
+        .await
+        .unwrap();
+    client
+        .from("notes")
+        .select("items(limit)")
+        .is_null("items.limit")
+        .execute::<Value>()
+        .await
+        .unwrap();
+    task.abort();
+    let paths = observed.lock().unwrap();
+    let first: Vec<_> = url::form_urlencoded::parse(paths[0].as_bytes()).collect();
+    let second: Vec<_> = url::form_urlencoded::parse(paths[1].as_bytes()).collect();
+    assert!(
+        first
+            .iter()
+            .any(|(key, value)| key == "and" && value == "(limit.eq.\"5\")")
+    );
+    assert!(
+        first
+            .iter()
+            .any(|(key, value)| key == "limit" && value == "10")
+    );
+    assert!(
+        second
+            .iter()
+            .any(|(key, value)| key == "items.and" && value == "(limit.is.null)")
+    );
+}

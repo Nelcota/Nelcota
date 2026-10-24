@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, it } from 'vitest';
-import { createClient, unwrap, type Bucket, type BucketSettings, type SelectError, type SelectOptions } from '../../src/index.js';
+import { createClient, unwrap, type Bucket, type BucketSettings, type SelectError, type SelectOptions, type ReferencedOption } from '../../src/index.js';
 import type { Database, Json } from './database.js';
 
 const nelcota = createClient<Database>('https://api.example.com');
@@ -204,4 +204,13 @@ it('reports ambiguous inverse relationships and preserves explicit hints', () =>
   expectTypeOf<Result<typeof constraint>[number]['orders']>().toEqualTypeOf<{ id: number | string }[]>();
   const missing = nelcota.from('customers').select('orders!missing(id)');
   expectTypeOf<Result<typeof missing>[number]['orders']>().toMatchTypeOf<SelectError<string>>();
+});
+
+it('accepts embedded logic columns while retaining parent filter validation (#141)', () => {
+  nelcota.from('orders').select('id,items(qty)').or(c => [c.gt('qty', 5)], { referencedTable: 'items' });
+  nelcota.from('orders').select().and(c => [c.eq('product', 'book')], { referencedTable: 'items' });
+  const options: ReferencedOption = { referencedTable: 'items' };
+  nelcota.from('orders').select().or(c => [c.gt('qty', 5)], options);
+  // @ts-expect-error without a referenced table, qty is not an orders column
+  nelcota.from('orders').select().or(c => [c.gt('qty', 5)]);
 });
