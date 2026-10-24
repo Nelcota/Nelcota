@@ -3,8 +3,8 @@
 **Unreleased prototype, not yet approved for production.** G11 completion gates
 are tracked in [the execution record](../../docs/goals/nextjs-sdk-execution.md).
 Do not install a registry package or deploy this candidate as if it were final.
-It currently requires the local TypeScript SDK correction for #132. A new base
-SDK version and matching minimum peer dependency are release prerequisites.
+It requires `@nelcota/client` 0.2.2 or later, the first base SDK release with
+the #132 correction.
 
 [Português](docs/quickstart.pt-BR.md).
 
