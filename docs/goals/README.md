@@ -39,6 +39,7 @@ and 30-minute stability evidence and limits are in the
 | [G08: Security, data exposure and concurrency](security-data-race-review.md) | Incomplete: preliminary evidence only; three-pass coverage and correction/revalidation remain unfinished. Private evidence retained, owned fixture removed, no production approval. |
 | [G09: Evidence-based performance review](performance-review.md) | Executed with limitations: polling proposal withdrawn, failed comparisons retained, original-artifact S3/30-minute stability verified; no performance or production approval. |
 | [G10: Safe operational logging](operational-logging.md) | Executed bounded pass: HTTP/database/mail/storage diagnostics corrected and locally validated; disk latency gate failed, local S3 passed, deployment sinks remain unverified. No performance or production approval. |
+| [G11: Complete Next.js SDK](nextjs-sdk.md) | In progress: request-scoped App Router integration, explicit session ownership, adversarial review and real-framework/package gates; see the [execution record](nextjs-sdk-execution.md). |
 
 Subsequent [module ownership](solid-module-ownership-execution.md),
 [SDK responsibility](sdk-srp-execution.md), [SDK corrections](sdk-review-fixes-execution.md)
