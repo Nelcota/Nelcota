@@ -25,9 +25,9 @@ export async function linkPackage() {
 }
 
 /** Real production webpack build of the example; returns the spawn result. */
-export function buildExample() {
+export function buildExample(environment = {}) {
   const major = Number(nextVersion.split('.')[0]);
-  const result = spawnSync(process.execPath, [nextBin, 'build', ...(major >= 16 ? ['--webpack'] : [])], { cwd: example, env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' }, encoding: 'utf8', timeout: 180000, maxBuffer: 4 * 1024 * 1024 });
+  const result = spawnSync(process.execPath, [nextBin, 'build', ...(major >= 16 ? ['--webpack'] : [])], { cwd: example, env: { ...process.env, ...environment, NEXT_TELEMETRY_DISABLED: '1' }, encoding: 'utf8', timeout: 180000, maxBuffer: 4 * 1024 * 1024 });
   if (result.error) throw result.error;
   return result;
 }

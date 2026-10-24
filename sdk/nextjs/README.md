@@ -86,6 +86,12 @@ which is reserved for saving its result. A request that cannot fit returns the
 remote rotation can still require signing in again. It cannot be made atomic
 with a separate auth server by a local SQL transaction.
 
+Related lineage reads and nested lineage locks reuse the PostgreSQL lease's
+connection. This prevents an owner from exhausting a small pool while waiting
+for another connection. Custom store adapters may implement the optional lease
+`read` and `exclusive` capabilities for the same behavior. Nested ownership must
+finish before the parent continues; keep a consistent lock order.
+
 Expired rows need application-owned housekeeping. For example run this bounded
 statement periodically with the dedicated session role, recording counts only:
 

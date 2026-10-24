@@ -189,9 +189,29 @@ try {
   assert.equal(state.returnTo, '/', 'Unsafe return path was retained');
   const revoked = await fetch(`http://127.0.0.1:${port}/auth/v1/logout`, { method: 'POST', headers: { authorization: `Bearer ${JSON.parse(state.session).access_token}` } });
   assert(revoked.ok, 'Backend logout control failed');
-  const verified = await integration.read(a, context => context.getUser());
-  assert.equal(verified.data, null); assert.equal(verified.error?.status, 401);
-  report = { binary, sha256, soak, checks: ['two real signups', 'verified users', 'two request identities', 'isolated RLS reads', 'anonymous canary empty', 'cross-user update empty', 'SQL integrity', 'reserved filters remain predicates', 'hostile/missing/cross-site Origin rejected without session mutation', 'forged cookie has no RLS access', 'forged owner insert rejected', 'cross-user delete empty', 'read-only mutation rejected', 'escaped context rejected', 'tampered and expired envelopes cannot access RLS data', 'backend-revoked token fails verified-user lookup', 'foreign callback path and malformed state rejected', 'unsafe OAuth return path normalizes to local root'], database: 'disposable; removed in finally', provenance: 'supplied binary identity recorded; caller must establish its source revision' };
+  // Backend logout revokes refresh immediately; access JWTs are stateless until expiry.
+  assert.equal((await integration.read(a, context => context.getUser())).data.email, 'alice@example.test');
+  const refresh = await fetch(`http://127.0.0.1:${port}/auth/v1/token?grant_type=refresh_token`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ refresh_token: JSON.parse(state.session).refresh_token }) });
+  assert.equal(refresh.status, 400); assert.equal((await refresh.json()).code, 'invalid_grant');
+  const oldCookie = new Jar(); for (const [name, value] of a.values) oldCookie.values.set(name, value);
+  assert.equal((await integration.write(a, request(), context => context.auth.signOut())).error, null);
+  assert.equal(a.values.size, 0);
+  const afterLogout = await integration.read(oldCookie, context => context.client.from('next_notes').select());
+  assert.equal(afterLogout.error, null); assert.deepEqual(afterLogout.data, []);
+  const unwritable = new Jar(); for (const [name, value] of b.values) unwritable.values.set(name, value);
+  unwritable.set = () => { throw new Error('Injected cookie publication failure'); };
+  await assert.rejects(integration.write(unwritable, request(), context => context.auth.updateUser({ data: { marker: 'accepted-before-cookie-failure' } })), { code: 'session_store' });
+  assert.equal((await integration.read(b, context => context.getUser())).data.user_metadata.marker, 'accepted-before-cookie-failure');
+  const stopped = once(server, 'close'); server.kill('SIGTERM');
+  const killTimer = setTimeout(() => server.kill('SIGKILL'), 3000);
+  await stopped; clearTimeout(killTimer);
+  const unavailable = await integration.read(b, context => context.getUser());
+  assert.equal(unavailable.data, null); assert.equal(unavailable.error?.status, 0);
+  const offlineLogout = await integration.write(b, request(), context => context.auth.signOut());
+  assert(offlineLogout.error, 'Remote logout must expose transport failure'); assert.equal(b.values.size, 0);
+  const afterFailureLocks = await pool.query("SELECT count(*) FROM pg_locks WHERE locktype='advisory' AND pid IN (SELECT pid FROM pg_stat_activity WHERE datname=current_database())");
+  assert.equal(afterFailureLocks.rows[0].count, '0');
+  report = { binary, sha256, soak, checks: ['two real signups', 'verified users', 'two request identities', 'isolated RLS reads', 'anonymous canary empty', 'cross-user update empty', 'SQL integrity', 'reserved filters remain predicates', 'hostile/missing/cross-site Origin rejected without session mutation', 'forged cookie has no RLS access', 'forged owner insert rejected', 'cross-user delete empty', 'read-only mutation rejected', 'escaped context rejected', 'tampered and expired envelopes cannot access RLS data', 'backend-revoked refresh rejected; stateless access JWT remains valid until expiry', 'local logout clears cookie and fences replayed browser state', 'foreign callback path and malformed state rejected', 'unsafe OAuth return path normalizes to local root', 'cookie publication failure surfaces after accepted backend update', 'stopped backend returns transport failure; offline logout clears local cookie', 'no advisory locks remain after failure paths'], database: 'disposable; removed in finally', provenance: 'supplied binary identity recorded; caller must establish its source revision' };
 } finally {
   cleaning = true;
   if (server && server.exitCode === null) { const stopped = once(server, 'close'); server.kill('SIGTERM'); const timer = setTimeout(() => server.kill('SIGKILL'), 3000); await stopped; clearTimeout(timer); }
