@@ -1,7 +1,6 @@
 {
   "Changelog": "Histórico de alterações",
   "Package releases use Semantic Versioning and Keep a Changelog categories.\nDates identify release entries; registry availability requires a successful publish.": "Os pacotes usam Semantic Versioning e categorias de Keep a Changelog. As datas identificam entradas de versão; a disponibilidade no registro exige publicação bem-sucedida.",
-  "Unreleased": "Não lançado",
   "Changed": "Alterado",
   "Separate authentication/query contracts and storage transfers into their own\nmodules, preserving all package entry points and existing client behavior.": "Separar contratos de autenticação/consultas e transferências de storage em módulos\npróprios, preservando todos os pontos de entrada do pacote e o comportamento existente do cliente.",
   "Fixed": "Corrigido",

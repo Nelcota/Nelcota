@@ -3,7 +3,7 @@
 Package releases use Semantic Versioning and Keep a Changelog categories.
 Dates identify release entries; registry availability requires a successful publish.
 
-## Unreleased
+## 0.2.2 — 2026-10-24
 
 ### Fixed
 

@@ -10,12 +10,13 @@ does not itself publish a package.
 | Component | Documented version | Distribution and availability |
 | --- | --- | --- |
 | Server | 0.5.3 | [Official release](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.3), verified binary or OCI image |
-| TypeScript SDK | 0.2.1 | [npm version](https://www.npmjs.com/package/@nelcota/client/v/0.2.1); confirm with `npm view @nelcota/client@0.2.1 version` |
+| TypeScript SDK | 0.2.2 | [npm version](https://www.npmjs.com/package/@nelcota/client/v/0.2.2); confirm with `npm view @nelcota/client@0.2.2 version` |
 | Rust SDK | 0.1.4 | [crates.io version](https://crates.io/crates/nelcota-client/0.1.4); confirm the version before updating Cargo.lock |
 
-TypeScript 0.2.0 and Rust 0.1.3 are the previous published SDK baselines. The
-patches above include the subsequent corrections from PRs #109, #112 and #113
-and the internal organization from #111. Release workflows verify the tagged
+TypeScript 0.2.1 and Rust 0.1.3 are the previous published SDK baselines. The
+TypeScript patch includes the session, query and transport corrections from
+PRs #143 and #155; the Rust patch includes the corrections from PRs #109, #112
+and #113 and the internal organization from #111. Release workflows verify the tagged
 source before publication. Before a new package is available, use a reviewed
 local archive rather than assuming an older package contains these changes.
 
@@ -25,7 +26,7 @@ For TypeScript, install the exact selected version and commit the dependency
 and lockfile changes:
 
 ```sh
-npm install --save-exact @nelcota/client@0.2.1
+npm install --save-exact @nelcota/client@0.2.2
 npm ls @nelcota/client
 ```
 

@@ -6,16 +6,17 @@ by the endpoints and features below, not by matching package version numbers.
 
 ## Version scope
 
-This is the 0.2.1 package contract. It includes queued-auth cancellation, exact
+This is the 0.2.2 package contract. It includes queued-auth cancellation, exact
 bucket-limit writes, profile ordering and the input/response guards below.
-Version 0.2.0 predates these corrections. Registry installation requires
-successful publication of 0.2.1; a server update does not install the client.
+Version 0.2.0 predates these corrections, and 0.2.1 predates the
+[0.2.2 hardening](#hardening-in-022). Registry installation requires
+successful publication of 0.2.2; a server update does not install the client.
 See the [upgrade notes](#upgrading-from-020). Older packages keep the contract in their
 own bundled documentation.
 
 ## Upgrading from 0.2.0
 
-Install 0.2.1 explicitly, update the application lockfile and run its type check,
+Install 0.2.2 explicitly, update the application lockfile and run its type check,
 build and tests. Server and SDK versions remain independent. Existing package
 entrypoints, result/error codes, timeouts and HTTP routes are preserved.
 
@@ -226,9 +227,9 @@ Chromium/Firefox/WebKit. Edge hosts may consume the Web API implementation but
 are not included in this compatibility guarantee until tested on that host.
 
 
-## Unreleased hardening
+## Hardening in 0.2.2
 
-These changes belong to the next SDK package, not the already published 0.2.1.
+These changes are in 0.2.2; the published 0.2.1 and earlier packages lack them.
 Updating the server does not update application SDKs.
 
 Table/view representations require an array of non-null objects. `single()`,

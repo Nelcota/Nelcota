@@ -2,8 +2,8 @@
 
 **Protótipo não publicado e ainda não aprovado para produção.** Consulte a
 [execução do G11](../../../docs/goals/nextjs-sdk-execution.md). O adaptador exige
-a correção local do SDK TypeScript para #132; a versão publicada 0.2.1 ainda não
-é uma dependência suficiente. A publicação está bloqueada pelos critérios do goal.
+o `@nelcota/client` 0.2.2 ou posterior, a primeira versão do SDK base com a
+correção de #132. A publicação está bloqueada pelos critérios do goal.
 
 Escopo inicial: App Router no runtime Node.js, Next 16.4.3, React 19.3.1 e Node 24.
 Não há certificação de Node 22, Next anterior, Pages Router ou Edge.
