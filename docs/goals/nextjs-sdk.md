@@ -1,6 +1,8 @@
 # G11: Complete Next.js SDK and security verification
 
-Status: in progress. Execution evidence belongs in
+Status: supported App Router matrix validated locally; hosted release verification
+and initial npm publication are tracked in [the completion record](sdk-release-completion.md).
+Execution evidence belongs in
 [nextjs-sdk-execution.md](nextjs-sdk-execution.md). Planning baseline:
 `84a55c3bb8c7698a0f8d0f6dd1a01153b748b925`.
 

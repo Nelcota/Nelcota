@@ -270,39 +270,5 @@ jobs:
   sdk:
     uses: ./.github/workflows/sdk-check.yml
 
-  # Private Next.js candidate: unit, real PostgreSQL store and packed consumer.
   nextjs-sdk:
-    runs-on: ubuntu-latest
-    env:
-      NELCOTA_NEXT_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:55432/postgres
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: |
-            sdk/typescript/package-lock.json
-            sdk/nextjs/package-lock.json
-      - name: disposable PostgreSQL
-        run: |
-          docker run -d --name pg -p 127.0.0.1:55432:5432 -e POSTGRES_PASSWORD=postgres postgres:17-alpine
-          for _ in $(seq 1 30); do docker exec pg pg_isready -U postgres && break; sleep 1; done
-      # The candidate links the base SDK through file:../typescript.
-      - name: base SDK build
-        working-directory: sdk/typescript
-        run: npm ci && npm run build
-      - working-directory: sdk/nextjs
-        run: npm ci
-      - working-directory: sdk/nextjs
-        run: npm audit --audit-level=high
-      - working-directory: sdk/nextjs
-        run: npm run check
-      - working-directory: sdk/nextjs
-        run: npm test
-      - working-directory: sdk/nextjs
-        run: npm run build
-      - working-directory: sdk/nextjs
-        run: node scripts/package-smoke.mjs
+    uses: ./.github/workflows/sdk-nextjs-check.yml

@@ -7,6 +7,7 @@ import { spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const directory = await mkdtemp(join(tmpdir(), 'nelcota-next-package-'));
+const publishedBase = process.argv.includes('--published-base');
 function run(command, args, cwd = directory) {
   const result = spawnSync(command, args, { cwd, encoding: 'utf8', timeout: 90000, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, npm_config_cache: join(directory, '.npm-cache') } });
   if (result.error) throw result.error;
@@ -22,12 +23,12 @@ function packed(cwd) {
 }
 try {
   const next = packed(root);
-  const client = packed(resolve(root, '../typescript'));
+  const client = publishedBase ? null : packed(resolve(root, '../typescript'));
   assert(next.files.some(file => file.path === 'dist/server.js'));
   assert(next.files.some(file => file.path === 'sql/session-store.sql'));
   assert(!next.files.some(file => /(^|\/)(node_modules|test|examples|\.env)(\/|$)/.test(file.path)));
   await writeFile(join(directory, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
-  run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', '--omit=optional', join(directory, next.filename), join(directory, client.filename), 'next@16.4.3', 'react@19.3.1', '@types/react@19.3.0']);
+  run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', '--omit=optional', join(directory, next.filename), client ? join(directory, client.filename) : '@nelcota/client@0.2.2', 'next@16.4.3', 'react@19.3.1', '@types/react@19.3.0']);
   await writeFile(join(directory, 'consumer.mjs'), `import { createNelcotaNext, SessionError } from '@nelcota/nextjs/server';
 import { PostgresSessionStore } from '@nelcota/nextjs/postgres';
 import { createNelcotaProxy } from '@nelcota/nextjs/proxy';
@@ -64,6 +65,8 @@ void memory; void PostgresSessionStore; void createNelcotaProxy; void refreshSes
 `);
   run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc6'), '--ignoreConfig', '--noEmit', '--strict', '--skipLibCheck', '--module', 'NodeNext', '--target', 'ES2022', 'consumer.ts']);
   const packageData = JSON.parse(await readFile(join(directory, 'node_modules/@nelcota/nextjs/package.json'), 'utf8'));
-  assert.equal(packageData.private, true);
-  console.log(JSON.stringify({ exports: Object.keys(packageData.exports), files: next.files.length, packedBytes: next.size, private: true, consumer: 'actual external npm install, all exports and strict TypeScript declarations; Next server-only condition explicit' }, null, 2));
+  assert.equal(packageData.private, false);
+  assert.equal(packageData.publishConfig.access, 'public');
+  assert.equal(packageData.publishConfig.registry, 'https://registry.npmjs.org/');
+  console.log(JSON.stringify({ exports: Object.keys(packageData.exports), files: next.files.length, packedBytes: next.size, private: packageData.private, base: publishedBase ? 'npm @nelcota/client@0.2.2' : 'local packed base SDK', consumer: 'actual external npm install, all exports and strict TypeScript declarations; Next server-only condition explicit' }, null, 2));
 } finally { await rm(directory, { recursive: true, force: true }); }

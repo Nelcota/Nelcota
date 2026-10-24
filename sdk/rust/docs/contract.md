@@ -1,6 +1,6 @@
 # Rust SDK contract
 
-`nelcota-client` 0.1.4 supports Nelcota server 0.3.0 or later; its release
+`nelcota-client` 0.1.5 supports Nelcota server 0.3.0 or later; its release
 checks run against the server source in the same checkout (currently 0.5.3). The released v0.2.0 tag is a legacy baseline
 without the newer OAuth routes and generators; see the README compatibility
 matrix. Package and server versions are independent. Native Tokio on Linux,
@@ -67,6 +67,26 @@ of 0.1.3. Its corrections require an updated client build/package. Registry
 availability requires successful publication; server and SDK releases remain
 independent. See the [upgrade notes](#upgrading-from-013).
 
+## Upgrading from 0.1.4
+
+Set `nelcota-client = "0.1.5"` and run
+`cargo update -p nelcota-client --precise 0.1.5`. Public imports, Rust 1.88+,
+native Tokio and the server protocol are unchanged. Exercise these corrected
+boundaries in your application:
+
+- Logout revokes a still-valid token without refreshing it. An expired session
+  is renewed only for revocation; that renewal is never persisted or announced.
+- Filters for reserved columns such as `limit` and `order` remain predicates
+  when pagination or ordering is also configured.
+- Cancelling a file-store save removes only that operation's temporary file;
+  the previous session and concurrent writers' files remain intact.
+- An explicit query timeout takes precedence over a scoped default, including
+  zero when disabling the per-attempt timeout.
+- Explicit MIME types must match the server's validation contract.
+
+The package also reorganizes private modules and decodes single rows without
+copying their JSON; public entry points and wire formats remain unchanged.
+
 ## Upgrading from 0.1.3
 
 Set `nelcota-client = "0.1.4"`, update Cargo.lock with
@@ -89,9 +109,9 @@ transfer in staging. Registry installation requires the selected version to be
 published; before then, use a reviewed local path or packaged archive.
 
 
-## Unreleased hardening
+## Version 0.1.5 hardening
 
-These changes require the next crate package; server updates do not replace the
+These changes require crate 0.1.5; server updates do not replace the
 0.1.4 crate already compiled into consumer applications.
 
 Timeout precedence is explicit query timeout, scoped `RequestOptions.timeout`,

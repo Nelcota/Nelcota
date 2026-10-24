@@ -26,9 +26,9 @@ jobs:
         with:
           toolchain: '1.99.0'
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
-      - run: cargo test -p nelcota-api --lib rust::tests
-      - run: cargo test -p nelcota-server --test sdk_rust
-      - run: cargo test -p nelcota-server --test oauth rust_sdk_finishes_a_real_pkce_flow
+      - run: scripts/test.sh rust --locked -p nelcota-api --lib rust::tests
+      - run: scripts/test.sh rust --locked -p nelcota-server --test sdk_rust
+      - run: scripts/test.sh rust --locked -p nelcota-server --test oauth rust_sdk_finishes_a_real_pkce_flow
   publish:
     needs: [checks, contract]
     runs-on: ubuntu-latest

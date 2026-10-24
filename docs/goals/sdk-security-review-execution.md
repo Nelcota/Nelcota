@@ -233,3 +233,17 @@ proxy paths, HKDF sealing, Action CSRF note) are recorded in
 [G11's execution record](nextjs-sdk-execution.md#pr145-review-corrections). There
 are 90 Next unit cases. The PostgreSQL integration case was not rerun because no
 database was available.
+
+## Subsequent release verification — 2026-10-24
+
+The [SDK release completion record](sdk-release-completion.md) supersedes the
+historical runtime, provider, packaging, N01/N02 and base-publication blockers
+where its new evidence is explicit. It adds the supported Node/browser matrix,
+two real Next processes sharing PostgreSQL, real STARTTLS email and Next SDK
+OAuth/backend contracts, RLS/S3 evidence and release automation. The first
+WebKit replay failure was traced to missing provisional Cookie headers and
+corrected without weakening stale-identity assertions.
+
+This is release verification of the selected supported surface. It does not
+claim completion of G12's broader export traceability, hostile-state and
+long-duration resource review, and does not rewrite the checkpoints above.

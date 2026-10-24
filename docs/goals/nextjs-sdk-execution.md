@@ -308,3 +308,18 @@ and audit blockers above are historical. CI gains a `nextjs-sdk` job: base SDK
 build, `npm audit`, check, the full Vitest suite against a disposable PostgreSQL 17
 and the packed external consumer. The framework, boundary, backend and storage
 smokes still run locally only.
+
+## Release completion pass — 2026-10-24
+
+The [release completion record](sdk-release-completion.md) supersedes the
+historical open runtime/auth/CI/base-release gates above. It records Node
+22/24/26, Chromium/Firefox/WebKit, two real Next processes sharing PostgreSQL,
+all auth operations, real STARTTLS email and real Next SDK/backend OAuth,
+RLS/storage, package and server-only boundary evidence. The published base
+0.2.2 was installed in a fresh external consumer. A reusable verification
+workflow now runs these checks for PRs and tagged Next releases.
+
+The public package metadata is prepared for 0.1.0. Hosted verification and
+initial npm authentication/publication remain distinct release steps. The
+cookie-less/lost-response limits remain documented and tested; this pass does
+not claim live OAuth-provider accounts or arbitrary production S3 coverage.

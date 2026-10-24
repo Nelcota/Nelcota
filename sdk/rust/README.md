@@ -5,7 +5,7 @@ and file storage under PostgreSQL RLS. For native applications using Tokio.
 
 ```toml
 [dependencies]
-nelcota-client = "0.1.4"
+nelcota-client = "0.1.5"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
@@ -37,12 +37,12 @@ for note in response.data { println!("{}: {}", note.id, note.body); }
 
 ## Version scope
 
-This guide targets 0.1.4. Version 0.1.3 is the previous published baseline;
-0.1.4 adds queued-auth cancellation, profile ordering, cardinality preflight
-and OAuth/MIME input checks. Registry installation requires successful
-publication of that version; use a local path/archive before it is available.
-See the [upgrade notes](docs/contract.md#upgrading-from-013). Installing a server release does not
-update clients. Rust 1.88+, server 0.3.0+ and the HTTP contract remain unchanged.
+This guide targets 0.1.5. Version 0.1.4 is the previous published baseline.
+The patch corrects logout renewal, reserved-column filters, cancelled file-store
+saves, query timeout precedence and MIME validation. It preserves public imports,
+Rust 1.88+, native Tokio and the server protocol. See the
+[upgrade notes](docs/contract.md#upgrading-from-014). Registry availability requires
+a successful release; a server upgrade does not update installed clients.
 
 ## REST
 
@@ -295,8 +295,7 @@ external rotation coordination. Keep its parent directory private and handle
 storage errors without logging session credentials.
 
 Use `tokio::time::timeout` around the complete operation for a caller deadline;
-query and scoped timeouts cover individual HTTP attempts. With the next crate
-package, an explicit query timeout overrides the scoped default. For large
+query and scoped timeouts cover individual HTTP attempts. In 0.1.5, an explicit query timeout overrides the scoped default. For large
 files, use `storage().from(bucket)?.open(...)` and consume response chunks with
 backpressure; dropping the response stops reading it. `download()` deliberately
 buffers bytes. Background refresh is opt-in: retain its handle while needed and

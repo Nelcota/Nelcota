@@ -1,0 +1,114 @@
+name: Next.js SDK verification
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  framework:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { node: 22, browser: chromium }
+          - { node: 24, browser: chromium }
+          - { node: 26, browser: chromium }
+          - { node: 24, browser: firefox }
+          - { node: 24, browser: webkit }
+    env:
+      NELCOTA_NEXT_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:55432/postgres
+      NELCOTA_NEXT_BROWSER: ${{ matrix.browser }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: |
+            sdk/typescript/package-lock.json
+            sdk/nextjs/package-lock.json
+      - run: scripts/test.sh db
+      - name: Build base SDK
+        run: npm --prefix sdk/typescript ci && npm --prefix sdk/typescript run build
+      - run: npm ci
+        working-directory: sdk/nextjs
+      - run: npm audit --audit-level=high
+        working-directory: sdk/nextjs
+      - run: npm run check && npm test && npm run build
+        working-directory: sdk/nextjs
+      - run: node scripts/package-smoke.mjs
+        working-directory: sdk/nextjs
+      - name: Published base SDK consumer
+        if: matrix.node == 24 && matrix.browser == 'chromium'
+        run: node scripts/package-smoke.mjs --published-base
+        working-directory: sdk/nextjs
+      - name: Install browser
+        run: node sdk/typescript/node_modules/playwright-core/cli.js install --with-deps "${NELCOTA_NEXT_BROWSER}"
+      - name: Server-only production boundary
+        if: matrix.node == 24 && matrix.browser == 'chromium'
+        run: node scripts/boundary-smoke.mjs
+        working-directory: sdk/nextjs
+      - name: Production framework, auth flows and two-process sessions
+        working-directory: sdk/nextjs
+        run: node scripts/framework-smoke.mjs
+      - name: Remove disposable services
+        if: always()
+        run: docker rm -f nelcota-test-postgres || true
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CARGO_PROFILE_DEV_DEBUG: line-tables-only
+      NELCOTA_NEXT_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:55432/postgres
+      NELCOTA_NEXT_TEST_S3_ENDPOINT: http://127.0.0.1:9100
+      NELCOTA_NEXT_TEST_S3_ACCESS_KEY_ID: nelcotatest
+      NELCOTA_NEXT_TEST_S3_SECRET_ACCESS_KEY: nelcotatestsecret
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d
+        with:
+          toolchain: '1.99.0'
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: scripts/test.sh db
+      - run: npm --prefix sdk/typescript ci && npm --prefix sdk/typescript run build
+      - run: npm ci && npm run build
+        working-directory: sdk/nextjs
+      - run: cargo build --locked -p nelcota-server
+      - name: Real auth and STARTTLS email contracts
+        run: node scripts/contract.mjs --nextjs test/contract/auth.test.ts
+        working-directory: sdk/typescript
+      - name: Real OAuth provider and PKCE contract
+        run: scripts/test.sh rust --locked -p nelcota-server --test oauth rust_sdk_finishes_a_real_pkce_flow
+      - name: Next SDK OAuth against the real backend
+        run: scripts/test.sh rust --locked -p nelcota-server --test oauth nextjs_sdk_finishes_a_real_pkce_flow -- --ignored
+      - name: Real backend and RLS
+        run: NELCOTA_NEXT_TEST_BINARY="$GITHUB_WORKSPACE/target/debug/nelcota" node --conditions=react-server scripts/backend-smoke.mjs
+        working-directory: sdk/nextjs
+      - name: Start disposable S3 provider
+        run: |
+          docker run -d --name nelcota-next-s3 -p 127.0.0.1:9100:9000 \
+            -e RUSTFS_ACCESS_KEY=nelcotatest -e RUSTFS_SECRET_KEY=nelcotatestsecret \
+            rustfs/rustfs:1.0.1
+          for _ in $(seq 1 60); do
+            if curl --fail --silent "$NELCOTA_NEXT_TEST_S3_ENDPOINT/health" >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+      - name: S3 redirects, credential stripping and range reads
+        run: NELCOTA_NEXT_TEST_BINARY="$GITHUB_WORKSPACE/target/debug/nelcota" node --conditions=react-server scripts/storage-smoke.mjs
+        working-directory: sdk/nextjs
+      - name: Remove disposable services
+        if: always()
+        run: docker rm -f nelcota-test-postgres nelcota-next-s3 || true

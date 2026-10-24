@@ -5,6 +5,8 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## Unreleased
 
+## 0.1.5 — 2026-10-24
+
 ### Fixed
 
 - Renew only expired sessions under the lifecycle owner before logout, revoking a

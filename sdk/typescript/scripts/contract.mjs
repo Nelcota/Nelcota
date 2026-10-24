@@ -7,6 +7,7 @@
 //
 // NELCOTA_BIN points at another binary; --keep leaves everything running;
 // --browser also builds the package and runs test/browser/smoke.mjs in Chromium.
+// --nextjs additionally runs the built Next adapter against the same auth/email fixture.
 
 import { spawn, spawnSync } from 'node:child_process';
 import { createHmac, randomUUID } from 'node:crypto';
@@ -20,7 +21,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repo = resolve(root, '../..');
 const keep = process.argv.includes('--keep');
 const browser = process.argv.includes('--browser');
-const vitestArgs = process.argv.slice(2).filter((a) => a !== '--keep' && a !== '--browser');
+const nextjs = process.argv.includes('--nextjs');
+const vitestArgs = process.argv.slice(2).filter((a) => !['--keep', '--browser', '--nextjs'].includes(a));
 const exe = process.platform === 'win32' ? 'nelcota.exe' : 'nelcota';
 const bin = process.env.NELCOTA_BIN ?? join(repo, 'target', 'debug', exe);
 
@@ -188,6 +190,12 @@ try {
   );
   status = tests.status ?? 1;
 
+  if (nextjs && status === 0) {
+    run(process.execPath, ['--conditions=react-server', join(repo, 'sdk/nextjs/scripts/auth-smoke.mjs')], {
+      env: { ...process.env, NELCOTA_SDK_TEST_URL: url, NELCOTA_SDK_TEST_MAIL: `http://127.0.0.1:${MAIL_PORT}`, NELCOTA_SDK_TEST_DATABASE_URL: env.NELCOTA_DATABASE_URL },
+    });
+  }
+
   if (browser && status === 0) {
     run(process.execPath, [join(root, 'scripts/clean.mjs')]);
     run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '-p', join(root, 'tsconfig.build.json')]);
@@ -205,6 +213,7 @@ try {
   }
   if (keep) console.log(`\nKept running: ${url} (containers ${PG}, ${MAIL}; stop the server with Ctrl+C)`);
 } catch (error) {
+  status = 1;
   console.error(error instanceof Error ? error.message : error);
 } finally {
   teardown();
