@@ -35,7 +35,7 @@ export class NelcotaClient<Database = any, SchemaName extends string = DefaultSc
     let auth: AuthClient | undefined;
     const http = createHttpClient(url, options, () => auth?.accessToken() ?? null);
     super(http);
-    auth = new AuthClient(http, options.accessToken ? { ...options.auth, autoRefresh: false } : options.auth);
+    auth = new AuthClient(http, options.auth);
     this.auth = auth;
     this.storage = new StorageClient(http);
     this.url = http.url;

@@ -7,7 +7,7 @@ import { NelcotaUsageError } from '../core/errors.js';
 import { identifier, inList, quote, scalar, type FilterScalar } from '../core/encoding.js';
 
 /** A filter value for a column of type `T`. */
-export type FilterValue<T> = 0 extends 1 & T
+export type FilterValue<T> = unknown extends T ? FilterScalar : 0 extends 1 & T
   ? FilterScalar
   : [NonNullable<T>] extends [never]
     ? FilterScalar

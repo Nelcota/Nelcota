@@ -7,6 +7,11 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Fixed
 
+- Renew only expired sessions under the lifecycle owner before logout, revoking a
+  still-valid token directly. The renewal only revokes itself and is never saved
+  or emitted; local clearing is retained on revocation failure. Keep reserved-column filters inside logic
+  groups so modifiers cannot silently discard their predicates.
+
 - Clean up owned FileStorage temporary files when a save is cancelled, preserving
   the previous session and other writers' files; sync its directory on Unix.
 - Let explicit query timeouts override scoped client defaults, including zero.

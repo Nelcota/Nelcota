@@ -60,7 +60,9 @@ for (const state of ['loading', 'offline']) {
     try {
       await page.reload({ waitUntil: 'domcontentloaded' })
       const main = page.getByRole('main')
-      if (state === 'loading') await expect(main).toHaveAttribute('aria-busy', 'true')
+      // Busy on the step list, not on <main>, so the step changes inside it are announced.
+      if (state === 'loading') await expect(main).not.toHaveAttribute('aria-busy')
+      if (state === 'loading') await expect(page.getByRole('list', { name: 'Etapas do carregamento' })).toHaveAttribute('aria-busy', 'true')
       if (state === 'offline') await expect(page.getByRole('alert')).toBeVisible()
       // Offline keeps the login's header; loading has the mark at its centre.
       await expect(page.locator('img[src*="nelcota-"]:visible')).toHaveCount(1)
@@ -82,7 +84,20 @@ test('the loading indicator waits before showing, so a fast start does not flash
     await page.reload({ waitUntil: 'domcontentloaded' })
     const indicator = page.locator('.loading-screen-indicator')
     await expect(indicator).toBeAttached()
-    expect(Number(await indicator.evaluate(el => getComputedStyle(el).opacity))).toBeLessThan(0.1)
+    // Seek the reveal itself instead of racing the clock: a slow runner can be
+    // past the 300 ms delay before the first read.
+    const hidden = await indicator.evaluate(el => {
+      const reveal = el.getAnimations().find(a => (a as CSSAnimation).animationName === 'loading-screen-reveal')
+      if (!reveal) return null
+      reveal.pause()
+      const opacityAt = (ms: number) => { reveal.currentTime = ms; return Number(getComputedStyle(el).opacity) }
+      const result = { start: opacityAt(0), beforeDelay: opacityAt(290) }
+      reveal.play()
+      return result
+    })
+    expect(hidden).not.toBeNull()
+    expect(hidden!.start).toBeLessThan(0.1)
+    expect(hidden!.beforeDelay).toBeLessThan(0.1)
     await expect.poll(() => indicator.evaluate(el => Number(getComputedStyle(el).opacity))).toBe(1)
   } finally { release() }
 })
@@ -133,7 +148,7 @@ test('a long start explains the wait', async ({ page }) => {
   await expect(page.getByText('Está demorando mais que o normal')).toBeVisible()
 })
 
-for (const [stored, prefersLight, dark] of [['light', false, false], ['dark', true, true], ['system', true, false], [null, true, true]] as const) {
+for (const [stored, prefersLight, dark] of [['light', false, false], ['dark', true, true], ['system', true, false], ['bogus', true, true], [null, true, true]] as const) {
   test(`theme ${stored ?? 'unset'} is applied before the app runs (system ${prefersLight ? 'light' : 'dark'})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: prefersLight ? 'light' : 'dark' })
     if (stored) await page.addInitScript(value => localStorage.setItem('mode-watcher-mode', value), stored)

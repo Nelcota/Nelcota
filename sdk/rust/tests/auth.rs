@@ -469,3 +469,186 @@ async fn file_storage_round_trips_atomically_and_privately() {
     );
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+#[tokio::test]
+async fn expired_logout_renews_before_revoking_and_always_clears_local_state() {
+    let count = Arc::new(AtomicUsize::new(0));
+    let router = Router::new()
+        .route(
+            "/auth/v1/token",
+            post({
+                let count = count.clone();
+                move || {
+                    count.fetch_add(1, Ordering::SeqCst);
+                    async { Json(session("fresh-access", "fresh-refresh")) }
+                }
+            }),
+        )
+        .route(
+            "/auth/v1/logout",
+            post(|headers: axum::http::HeaderMap| async move {
+                match headers
+                    .get("authorization")
+                    .and_then(|value| value.to_str().ok())
+                {
+                    Some("Bearer fresh-access") => StatusCode::NO_CONTENT,
+                    _ => StatusCode::UNAUTHORIZED,
+                }
+            }),
+        );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let client = Client::builder(format!("http://{}", listener.local_addr().unwrap()))
+        .build()
+        .unwrap();
+    let task = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    let mut expired = session("expired-access", "expired-refresh");
+    expired.expires_at = 1;
+    client.auth().set_session(expired).await.unwrap();
+    let result = client.auth().sign_out().await;
+    let local = client.auth().get_session().await.unwrap();
+    task.abort();
+    assert!(
+        result.is_ok(),
+        "logout did not revoke the renewed session: {result:?}"
+    );
+    assert_eq!(count.load(Ordering::SeqCst), 1);
+    assert!(local.is_none());
+}
+
+type Revocations = Arc<std::sync::Mutex<Vec<String>>>;
+
+async fn revocation_server(
+    status: StatusCode,
+    body: Value,
+) -> (
+    String,
+    Arc<AtomicUsize>,
+    Revocations,
+    tokio::task::JoinHandle<()>,
+) {
+    let renewals = Arc::new(AtomicUsize::new(0));
+    let revoked = Revocations::default();
+    let router = Router::new()
+        .route(
+            "/auth/v1/token",
+            post({
+                let renewals = renewals.clone();
+                move || {
+                    renewals.fetch_add(1, Ordering::SeqCst);
+                    async move { (status, Json(body)) }
+                }
+            }),
+        )
+        .route(
+            "/auth/v1/logout",
+            post({
+                let revoked = revoked.clone();
+                move |headers: axum::http::HeaderMap| {
+                    let token = headers
+                        .get("authorization")
+                        .and_then(|value| value.to_str().ok())
+                        .unwrap_or_default()
+                        .to_owned();
+                    revoked.lock().unwrap().push(token);
+                    async { StatusCode::NO_CONTENT }
+                }
+            }),
+        );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    let task = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    (url, renewals, revoked, task)
+}
+
+fn expiring_in(seconds: i64) -> Session {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let mut session = session("a0", "r0");
+    session.expires_at = now.saturating_add_signed(seconds);
+    session
+}
+
+fn kinds(
+    events: &mut tokio::sync::broadcast::Receiver<nelcota_client::auth::AuthEvent>,
+) -> Vec<AuthEventKind> {
+    std::iter::from_fn(|| events.try_recv().ok().map(|event| event.kind)).collect()
+}
+
+#[tokio::test]
+async fn logout_revokes_a_valid_near_expiry_token_without_renewing() {
+    let fresh = serde_json::to_value(session("fresh-access", "fresh-refresh")).unwrap();
+    let (url, renewals, revoked, task) = revocation_server(StatusCode::OK, fresh).await;
+    let client = Client::builder(url).build().unwrap();
+    client.auth().set_session(expiring_in(30)).await.unwrap();
+    let mut events = client.auth().subscribe();
+    client.auth().sign_out().await.unwrap();
+    task.abort();
+    assert_eq!(renewals.load(Ordering::SeqCst), 0);
+    assert_eq!(*revoked.lock().unwrap(), ["Bearer a0"]);
+    assert_eq!(kinds(&mut events), [AuthEventKind::SignedOut]);
+}
+
+#[tokio::test]
+async fn logout_revokes_the_current_token_when_renewal_inside_clock_skew_fails() {
+    let failure = json!({"code":"unavailable","message":"gateway failure"});
+    let (url, renewals, revoked, task) =
+        revocation_server(StatusCode::SERVICE_UNAVAILABLE, failure).await;
+    let client = Client::builder(url).build().unwrap();
+    client.auth().set_session(expiring_in(3)).await.unwrap();
+    client.auth().sign_out().await.unwrap();
+    task.abort();
+    assert_eq!(renewals.load(Ordering::SeqCst), 1);
+    assert_eq!(*revoked.lock().unwrap(), ["Bearer a0"]);
+}
+
+#[tokio::test]
+async fn expired_logout_does_not_revoke_with_a_token_whose_renewal_failed() {
+    for (status, code) in [
+        (StatusCode::SERVICE_UNAVAILABLE, "unavailable"),
+        (StatusCode::BAD_REQUEST, "invalid_grant"),
+    ] {
+        let failure = json!({"code":code,"message":"renewal failed"});
+        let (url, renewals, revoked, task) = revocation_server(status, failure).await;
+        let client = Client::builder(url).build().unwrap();
+        client.auth().set_session(expiring_in(-60)).await.unwrap();
+        let mut events = client.auth().subscribe();
+        let error = client.auth().sign_out().await.unwrap_err();
+        let local = client.auth().get_session().await.unwrap();
+        task.abort();
+        assert_eq!(error.code(), code);
+        assert_eq!(renewals.load(Ordering::SeqCst), 1);
+        assert!(revoked.lock().unwrap().is_empty());
+        assert!(local.is_none());
+        assert_eq!(kinds(&mut events), [AuthEventKind::SignedOut]);
+    }
+}
+
+#[tokio::test]
+async fn logout_revokes_a_renewal_held_in_memory_when_storage_fails() {
+    use nelcota_client::auth::{SessionStorage, StorageFuture};
+    struct Failing(Session);
+    impl SessionStorage for Failing {
+        fn load(&self) -> StorageFuture<'_, Option<Session>> {
+            Box::pin(async { Ok(Some(self.0.clone())) })
+        }
+        fn save<'a>(&'a self, session: Option<&'a Session>) -> StorageFuture<'a, ()> {
+            assert!(session.is_none(), "sign-out must not persist its renewal");
+            Box::pin(async { Err(nelcota_client::Error::SessionStorage("unavailable".into())) })
+        }
+    }
+    let fresh = serde_json::to_value(session("fresh-access", "fresh-refresh")).unwrap();
+    let (url, renewals, revoked, task) = revocation_server(StatusCode::OK, fresh).await;
+    let client = Client::builder(url)
+        .session_storage(Arc::new(Failing(expiring_in(-60))))
+        .build()
+        .unwrap();
+    let mut events = client.auth().subscribe();
+    let error = client.auth().sign_out().await.unwrap_err();
+    task.abort();
+    assert!(matches!(error, nelcota_client::Error::SessionStorage(_)));
+    assert_eq!(renewals.load(Ordering::SeqCst), 1);
+    assert_eq!(*revoked.lock().unwrap(), ["Bearer fresh-access"]);
+    assert_eq!(kinds(&mut events), [AuthEventKind::SignedOut]);
+}

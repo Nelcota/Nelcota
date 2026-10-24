@@ -10,6 +10,10 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ### Changed
 
+- `nelcota upgrade --without-controller` upgrades projects on a host enrolled in
+  the updates controller while installation from the panel is unavailable. It is
+  refused while a controller job is unresolved, for projects the controller
+  already activated and when run from the controller's own binary.
 - Show the panel's startup as animated steps (connecting to the server, then
   opening the panel) around the brand mark, with a note when it takes longer
   than usual. Fast starts skip the screen instead of flashing it.
@@ -28,6 +32,12 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 - Fit the table toolbar and migrations list to common desktop widths, show
   the tables overview and file details on phones, show where SQL results
   appear, and make the table cell editor clearly visible.
+
+### Fixed
+
+- Return `400 invalid_grant` for oversized present refresh tokens, allowing SDKs
+  to discard invalid sessions; absent/empty tokens retain their required-field
+  validation response.
 
 ## [0.5.3] — 2026-10-23
 

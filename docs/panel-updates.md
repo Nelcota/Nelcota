@@ -127,8 +127,11 @@ Prepare a five-minute plan, inspect target/digest/requirements and confirm the
 operator password again. Installation rechecks the configuration and manifest
 identities. A durable idempotency key binds retries to the accepted operation.
 There is one mutation lease per host; ordinary CLI mutations use the same lease
-and refuse unresolved jobs. On enrolled hosts, legacy `upgrade` is blocked so it
-cannot override a pinned image or accidentally deploy the controller as the app.
+and refuse unresolved jobs. On enrolled hosts, legacy `upgrade` requires
+`--without-controller`. It still refuses projects carrying controller-written
+`.env` keys (`NELCOTA_APP_IMAGE`, `NELCOTA_DEPLOYMENT_*`), so it cannot override a
+pinned image, and refuses to run from the controller's own binary. It keeps the
+controller route in the proxy configuration.
 
 The worker prepares verified artifacts, persists previous runtime/configuration
 identities, closes and syncs maintenance, stops the app and checks that its DB

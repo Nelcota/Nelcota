@@ -2,4 +2,6 @@
 # rsa (via jsonwebtoken/rust_crypto): the Marvin Attack affects operations with
 # the PRIVATE RSA key. Nelcota never signs with RSA (HS256 in milestone 1, EdDSA
 # in milestone 2). Revisit if RS256 is adopted for signing. See docs/decisions.md.
-ignore = ["RUSTSEC-2023-0071"]
+# crypto-bigint 0.5 (via p256/p384 in jsonwebtoken/openidconnect): timing issues
+# affect secret integers; ECDSA here only verifies public signatures. See D104.
+ignore = ["RUSTSEC-2023-0071", "RUSTSEC-2026-0387"]

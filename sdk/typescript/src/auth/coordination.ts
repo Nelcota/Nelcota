@@ -1,3 +1,5 @@
+import type { SessionStorage } from './session.js';
+import type { AuthEvent } from './types.js';
 /**
  * Coordination between tabs of the same app. The server ends a session when a
  * refresh token is used twice (reuse detection), so two tabs refreshing the
@@ -12,6 +14,21 @@ interface LockManagerLike {
 function locks(): LockManagerLike | undefined {
   const nav = (globalThis as { navigator?: { locks?: LockManagerLike } }).navigator;
   return nav?.locks;
+}
+
+/** Web and Service Workers share Web Locks with same-origin tabs; servers do not. */
+export function workerScope(): boolean {
+  const scope = (globalThis as { WorkerGlobalScope?: abstract new () => unknown }).WorkerGlobalScope;
+  return typeof scope === 'function' && globalThis instanceof scope && locks() !== undefined;
+}
+
+const adapters = new WeakMap<SessionStorage, Map<string, symbol>>();
+export function adapterLock(storage: SessionStorage, key: string): symbol {
+  let keys = adapters.get(storage);
+  if (!keys) { keys = new Map(); adapters.set(storage, keys); }
+  let lock = keys.get(key);
+  if (!lock) { lock = Symbol(); keys.set(key, lock); }
+  return lock;
 }
 
 const pending = new Map<string | symbol, Promise<void>>();
@@ -36,18 +53,22 @@ export type SessionSignal = 'changed';
 export class Broadcast {
   #channel: BroadcastChannel | undefined;
 
-  constructor(name: string, onMessage: () => void) {
+  constructor(name: string, onMessage: (event?: AuthEvent, revision?: string) => void) {
     if (typeof BroadcastChannel === 'undefined') return;
     this.#channel = new BroadcastChannel(name);
     this.#channel.onmessage = (event: MessageEvent<unknown>) => {
-      if (event.data === 'changed') onMessage();
+      if (event.data === 'changed') { onMessage(); return; }
+      const data = event.data as { event?: unknown; revision?: unknown } | null;
+      if (data && typeof data === 'object' && ['signed_in', 'signed_out', 'refreshed', 'user_updated'].includes(data.event as string) && typeof data.revision === 'string' && data.revision.length === 64) onMessage(data.event as AuthEvent, data.revision);
     };
     // Node keeps the process alive while a channel is open.
     (this.#channel as { unref?: () => void }).unref?.();
   }
 
-  notify(): void {
-    this.#channel?.postMessage('changed' satisfies SessionSignal);
+  notify(event?: AuthEvent, revision?: string): void {
+    if (event && revision) this.#channel?.postMessage({ event, revision });
+    // Older tabs only recognize this signal. New receivers deduplicate by state.
+    this.#channel?.postMessage('changed');
   }
 
   close(): void {
