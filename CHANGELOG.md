@@ -8,6 +8,12 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ## [Unreleased]
 
+### Fixed
+
+- Return `400 invalid_grant` for oversized present refresh tokens, allowing SDKs
+  to discard invalid sessions; absent/empty tokens retain their required-field
+  validation response.
+
 ## [0.5.3] — 2026-10-23
 
 ### Changed

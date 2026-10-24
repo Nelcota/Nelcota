@@ -117,13 +117,18 @@ async fn issue_tokens(
     }))
 }
 
+fn required_refresh_token(token: Option<String>) -> Result<String, ApiError> {
+    let token = token
+        .filter(|token| !token.is_empty())
+        .ok_or_else(|| validation("refresh_token is required"))?;
+    if token.len() > 128 {
+        return Err(invalid_grant("invalid refresh token"));
+    }
+    Ok(token)
+}
+
 pub(crate) async fn refresh(state: &AuthState, token: Option<String>) -> Result<Value, ApiError> {
-    let token = match token.filter(|t| !t.is_empty() && t.len() <= 128) {
-        Some(token) => token,
-        _ => {
-            return Err(validation("refresh_token is required"));
-        }
-    };
+    let token = required_refresh_token(token)?;
     let hash = Sha256::digest(token.as_bytes()).to_vec();
 
     let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
@@ -272,4 +277,127 @@ pub(crate) async fn logout(
     .map_err(db_error)?;
     tx.commit().await.map_err(db_error)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod refresh_validation_tests {
+    use super::required_refresh_token;
+    use axum::http::StatusCode;
+
+    #[test]
+    fn absent_and_empty_tokens_remain_required_field_errors() {
+        for token in [None, Some(String::new())] {
+            let error = required_refresh_token(token).unwrap_err();
+            assert_eq!(error.status(), StatusCode::UNPROCESSABLE_ENTITY);
+            assert_eq!(error.code(), "validation_failed");
+        }
+    }
+
+    #[test]
+    fn oversized_present_tokens_are_invalid_grants() {
+        for token in ["a".repeat(129), "a".repeat(1024), "é".repeat(65)] {
+            let error = required_refresh_token(Some(token)).unwrap_err();
+            assert_eq!(error.status(), StatusCode::BAD_REQUEST);
+            assert_eq!(error.code(), "invalid_grant");
+        }
+    }
+
+    #[test]
+    fn bounded_tokens_continue_to_database_validation() {
+        for token in ["a".to_owned(), "a".repeat(128)] {
+            assert_eq!(required_refresh_token(Some(token.clone())).unwrap(), token);
+        }
+    }
+}
+
+#[cfg(test)]
+mod refresh_http_tests {
+    use crate::{AuthSettings, AuthState, EmailLinks, Keys, Passwords};
+    use std::{net::SocketAddr, sync::Arc, time::Duration};
+
+    #[tokio::test]
+    async fn required_and_oversized_refresh_errors_are_distinct_over_http() {
+        let mut database = tokio_postgres::Config::new();
+        database.host("127.0.0.1").port(9).user("unused");
+        let pool = deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
+            database,
+            tokio_postgres::NoTls,
+        ))
+        .max_size(1)
+        .build()
+        .unwrap();
+        let keys =
+            Arc::new(Keys::new(None, Some(b"local-boundary-fixture-key-with-32-bytes")).unwrap());
+        let state = AuthState::new(
+            pool,
+            keys,
+            Arc::new(Passwords::new(1)),
+            AuthSettings {
+                issuer: "local-boundary-test".into(),
+                access_ttl_secs: 900,
+                refresh_ttl_days: 7,
+                signup_enabled: false,
+                trust_proxy: false,
+                links: EmailLinks::default(),
+            },
+            60,
+        )
+        .unwrap();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let (stop, stopped) = tokio::sync::oneshot::channel::<()>();
+        let server = tokio::spawn(async move {
+            axum::serve(
+                listener,
+                crate::router(state).into_make_service_with_connect_info::<SocketAddr>(),
+            )
+            .with_graceful_shutdown(async {
+                let _ = stopped.await;
+            })
+            .await
+            .unwrap();
+        });
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        let http = reqwest::Client::builder()
+            .timeout(Duration::from_secs(3))
+            .build()
+            .unwrap();
+        for (body, status, code) in [
+            (serde_json::json!({}), 422, "validation_failed"),
+            (
+                serde_json::json!({"refresh_token":""}),
+                422,
+                "validation_failed",
+            ),
+            (
+                serde_json::json!({"refresh_token":"a".repeat(129)}),
+                400,
+                "invalid_grant",
+            ),
+            (
+                serde_json::json!({"refresh_token":"é".repeat(65)}),
+                400,
+                "invalid_grant",
+            ),
+        ] {
+            let response = http
+                .post(format!(
+                    "http://{address}/auth/v1/token?grant_type=refresh_token"
+                ))
+                .header("content-type", "application/json")
+                .body(body.to_string())
+                .send()
+                .await
+                .unwrap();
+            assert_eq!(response.status().as_u16(), status);
+            assert_eq!(response.headers()["cache-control"], "no-store");
+            assert_eq!(
+                serde_json::from_str::<serde_json::Value>(&response.text().await.unwrap()).unwrap()
+                    ["code"],
+                code
+            );
+        }
+        stop.send(()).unwrap();
+        server.await.unwrap();
+    }
 }

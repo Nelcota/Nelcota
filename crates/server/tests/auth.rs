@@ -1195,3 +1195,34 @@ async fn magic_link_expires_and_is_off_without_smtp() {
     assert_eq!(reply.status, StatusCode::FORBIDDEN);
     assert_eq!(reply.body["code"], "magiclink_disabled");
 }
+
+#[tokio::test]
+async fn refresh_rejects_oversized_grants_but_preserves_required_field_errors() {
+    let app = TestApp::spawn().await;
+    for body in [json!({}), json!({ "refresh_token": "" })] {
+        let reply = app
+            .post("/auth/v1/token?grant_type=refresh_token", None, body)
+            .await;
+        assert_eq!(
+            reply.status,
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "{}",
+            reply.body
+        );
+        assert_eq!(reply.body["code"], "validation_failed");
+    }
+    for token in [
+        "a".repeat(128),
+        "a".repeat(129),
+        "a".repeat(1024),
+        "é".repeat(65),
+    ] {
+        let reply = refresh(&app, &token).await;
+        assert_eq!(reply.status, StatusCode::BAD_REQUEST, "{}", reply.body);
+        assert_eq!(reply.body["code"], "invalid_grant");
+    }
+    let first = signup(&app, "refresh-boundary@example.com", "strong-pass-123").await;
+    assert_eq!(first.status, StatusCode::CREATED, "{}", first.body);
+    let rotated = refresh(&app, str_field(&first.body, "refresh_token")).await;
+    assert_eq!(rotated.status, StatusCode::OK, "{}", rotated.body);
+}
