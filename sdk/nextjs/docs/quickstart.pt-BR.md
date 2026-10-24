@@ -98,3 +98,8 @@ sdk/nextjs test` e `npm --prefix sdk/nextjs run build` verificam o candidato. O 
 PostgreSQL exige `NELCOTA_NEXT_TEST_DATABASE_URL` e cria/remove um banco próprio.
 Não use dados nem credenciais de produção. O exemplo App Router é loopback de
 desenvolvimento; não deve ser publicado como configuração de produção.
+
+O download S3 por redirecionamento pré-assinado também está pendente: o adaptador
+atual recusa redirecionamentos da API. É necessária uma política explícita de
+destinos, remoção de credenciais e testes com o provedor. Não libere todos os
+redirecionamentos para contornar essa limitação.

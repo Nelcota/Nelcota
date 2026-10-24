@@ -134,3 +134,32 @@ it('supports an explicit local reset without decrypting unavailable state', asyn
   await rotated.integration.read(original.jar, async context => { expect(context.hasSession).toBe(false); });
   expect(original.jar.values.size).toBe(0);
 });
+it('cancels a pending OAuth identity when a password login succeeds', async () => {
+  const { integration, jar, requests } = await setup();
+  const start = await integration.write(jar, post(), context => context.auth.startOAuth({ provider: 'github' }));
+  const callback = new URL(new URL(start.data!.url).searchParams.get('redirect_to')!);
+  await integration.write(jar, post(), context => context.auth.signInWithPassword(credentials));
+  await expect(integration.write(jar, new Request(callback), context => context.auth.exchangeCode('old-pending-code'), true)).rejects.toMatchObject({ code: 'csrf' });
+  expect(requests).toHaveLength(1);
+});
+it('grants a new absolute lifetime to a successful replacement login', async () => {
+  const { integration, jar } = await setup({ sessionTtlSeconds: 300 });
+  await integration.write(jar, post(), context => context.auth.signInWithPassword(credentials));
+  const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 290000);
+  try {
+    await integration.write(jar, post(), context => context.auth.signInWithPassword(credentials));
+    expect(jar.writes.at(-1)?.options.maxAge).toBe(300);
+  } finally { clock.mockRestore(); }
+});
+it('does not abort an accepted storage response stream when its session lease closes', async () => {
+  let stream: ReadableStreamDefaultController<Uint8Array> | undefined;
+  let signal: AbortSignal | null | undefined;
+  const { integration, jar } = await setup({ fetch: async (_url, init) => {
+    signal = init?.signal;
+    return new Response(new ReadableStream<Uint8Array>({ start(controller) { stream = controller; } }));
+  } });
+  const result = await integration.write(jar, post(), context => context.client.storage.from('assets').open('file'));
+  expect(result.error).toBeNull(); expect(signal?.aborted).toBe(false);
+  stream?.enqueue(new TextEncoder().encode('accepted stream')); stream?.close();
+  expect(await result.data?.text()).toBe('accepted stream');
+});

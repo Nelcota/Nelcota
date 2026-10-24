@@ -197,3 +197,8 @@ the repository's disposable fixture, never a production/shared database. The
 example is **loopback-only development**, not a production deployment template.
 Framework/backend scripts require bounded disposable environments; the latter
 records the explicit binary SHA and does not claim it matches newer source.
+
+Storage redirect compatibility is also open: the adapter currently rejects API
+redirects. S3 downloads that use presigned redirect responses are not supported
+yet. An explicit destination policy, credential stripping and provider tests
+are required; do not weaken redirect handling globally as a workaround.
