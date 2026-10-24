@@ -153,7 +153,7 @@ const ptBR = {
     view: 'view',
   },
   grants: {
-    role: 'Role',
+    role: 'Papel (role)',
     privilegeFor: '{privilege} para {role}',
     hints: {
       anon: 'chamadas sem token',

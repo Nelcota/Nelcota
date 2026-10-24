@@ -17,11 +17,11 @@ const ptBR = {
   },
   caller: 'Quem faz a chamada',
   callerHint:
-    'Não existe chave anon: quem não manda token já é anon. O acesso de cada role é definido por tabela, nos GRANTs (aba Estrutura) e nas políticas.',
+    'Não existe chave anon: quem não manda token já é anon. O acesso de cada papel (role) é definido por tabela, nas permissões da tabela (GRANTs, na aba Estrutura) e nas políticas.',
   roles: {
     anon: {
       title: 'Visitante',
-      text: 'Request sem header Authorization. Vê o que os GRANTs e as políticas liberam para anon.',
+      text: 'Requisição sem o cabeçalho Authorization. Vê o que as permissões da tabela (GRANTs) e as políticas liberam para o papel (role) anon.',
     },
     authenticated: {
       title: 'Usuário logado',
@@ -29,7 +29,7 @@ const ptBR = {
     },
     service_role: {
       title: 'Seu backend',
-      text: 'Bearer com o token service_role. Ignora o RLS (mas precisa de GRANT na tabela): só em código que roda no servidor.',
+      text: 'Bearer com o token service_role. Ignora o RLS (mas precisa de permissão na tabela, o GRANT): só em código que roda no servidor.',
     },
   },
   neverInBrowser: 'Nunca use no navegador.',
@@ -57,7 +57,7 @@ const ptBR = {
   snippets: {
     list: {
       label: 'Listar linhas',
-      description: 'As 20 primeiras (order=coluna.desc ordena). Sem token, vale o que a role anon pode ver.',
+      description: 'As 20 primeiras (order=coluna.desc ordena). Sem token, vale o que o papel (role) anon pode ver.',
       sdk: 'As 20 primeiras. Sem login, vale o que um visitante pode ver.',
     },
     filter: {
@@ -87,8 +87,8 @@ const ptBR = {
     },
     login: {
       label: 'Entrar',
-      description: 'O access_token vai no header Authorization das chamadas à API (role authenticated).',
-      sdk: 'Depois disso, toda chamada vai com o token do usuário (role authenticated).',
+      description: 'O access_token vai no cabeçalho Authorization das chamadas à API (papel authenticated).',
+      sdk: 'Depois disso, toda chamada vai com o token do usuário (papel authenticated).',
     },
     refresh: {
       label: 'Renovar a sessão',
@@ -139,11 +139,11 @@ const en: Messages<typeof ptBR> = {
   },
   caller: 'Who makes the call',
   callerHint:
-    'There is no anon key: whoever sends no token is already anon. Each role’s access is defined per table, in the GRANTs (Structure tab) and in the policies.',
+    'There is no anon key: whoever sends no token is already anon. Each role’s access is defined per table, in the table permissions (GRANTs, on the Structure tab) and in the policies.',
   roles: {
     anon: {
       title: 'Visitor',
-      text: 'Request without an Authorization header. Sees what the GRANTs and policies allow for anon.',
+      text: 'Request without an Authorization header. Sees what the table permissions (GRANTs) and policies allow for the anon role.',
     },
     authenticated: {
       title: 'Signed-in user',
@@ -151,7 +151,7 @@ const en: Messages<typeof ptBR> = {
     },
     service_role: {
       title: 'Your backend',
-      text: 'Bearer with the service_role token. Bypasses RLS (but still needs a GRANT on the table): only in code that runs on the server.',
+      text: 'Bearer with the service_role token. Bypasses RLS (but still needs permission on the table, a GRANT): only in code that runs on the server.',
     },
   },
   neverInBrowser: 'Never use it in the browser.',
