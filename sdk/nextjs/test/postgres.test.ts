@@ -135,3 +135,12 @@ it('requires a lease that leaves auth time after reserving the final save', asyn
     expect(lease.deadline).toBeLessThanOrEqual(Date.now() + 5000);
   });
 });
+it('replaces the rotated-away row with a retained tombstone instead of deleting it', async () => {
+  const { pool, query, release } = fixture();
+  const fresh = 'c'.repeat(64), tombstone = value();
+  await new PostgresSessionStore(pool).exclusive(key, async lease => { await lease.rotate(fresh, tombstone); });
+  const writes = query.mock.calls.filter(([sql]) => !sql.startsWith('SELECT'));
+  expect(writes).toEqual([[expect.stringMatching(/^INSERT/), [key, tombstone.sealed, tombstone.expiresAt]]]);
+  await expect(new PostgresSessionStore(pool).exclusive(key, lease => lease.rotate(fresh, { sealed: 'x', expiresAt: 1 }))).rejects.toMatchObject({ code: 'invalid_session' });
+  expect(release.mock.calls.every(([destroy]) => destroy === false)).toBe(true);
+});

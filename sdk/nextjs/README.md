@@ -57,7 +57,8 @@ previous keys (at most three) during rotation, retaining old keys through the
 maximum session lifetime. Losing all old keys signs those sessions out; it does
 not permit decrypting or adopting them. An unreadable or mismatched row reads as
 no session (`staleCookie` is true), the next write deletes it and continues
-signed out, and the proxy clears the cookie when it redirects to login. `forgetLocalSession()` provides an
+signed out, and the proxy clears the cookie when it redirects to login. The
+proxy does not clear a superseded cookie (see concurrent sign-ins below). `forgetLocalSession()` provides an
 explicit same-origin POST reset without requiring successful decryption.
 
 Use durable PostgreSQL commits and direct/session pooling. **Transaction pooling
@@ -204,15 +205,65 @@ AES key with HKDF-SHA-256 from the primary key and a random salt (format `v2`);
 rows sealed in the earlier `v1` format still open. No incoming browser
 cookie is forwarded to the API. A write never adopts a presented ID without a
 stored row, and sign-in, sign-up, OAuth exchange, email-link verification and
-password reset move the state to a fresh ID, deleting the old row. Custom
-`SessionStore` leases implement `rotate(key)` for this.
+password reset move the state to a fresh ID. The old row becomes a
+credential-free tombstone. Custom `SessionStore` leases implement
+`rotate(key, retain?)` for this: replace the current row with `retain` when it
+is given, otherwise delete it.
 
-Shared-store tests cover two independent owners, lock release and connection
-loss. **Simultaneous first logins before a browser has a cookie remain an open
-design/verification gate.** Their separate cookie responses can race. Do not
-claim complete session replacement/tab/process safety or production readiness
-until that gate, final-source backend tests, package installation, compatibility
-and the full auth-flow matrix are resolved. See the execution ledger.
+### Concurrent sign-ins and response ordering
+
+A browser keeps whichever `Set-Cookie` it processes last. If two tabs sign in
+at the same time, the older identity could end up as the one the browser keeps.
+The adapter orders identities per **lineage**, meaning every ID that descends
+from one browser cookie:
+
+- Each stored state records its lineage. A lineage head record (same table,
+  sealed, keyed by a derived hash) names the one live key and a monotonic
+  generation. A sign-in, sign-up, OAuth exchange, email-link verification,
+  password reset or sign-out makes its key the new head under the lineage's
+  store lock.
+- A session row is live only while the head names its key and generation.
+  Reads and writes check this, so a superseded cookie reads as signed out
+  (`staleCookie` and `superseded` are true). It never reads as the older user.
+- Before setting or clearing the cookie, a write checks the head again. If a
+  later identity won while the write was running, it sets no cookie, clears
+  nothing, and tombstones its own row. The auth result it already returned
+  describes that losing attempt.
+- Superseded session rows are replaced by tombstones after the winning request
+  releases its lock. They are also replaced lazily when their ID is presented.
+  A tombstone keeps only the lineage link, so a delayed request that carries
+  the old ID still joins the lineage. Writes that publish nothing do not clear
+  a superseded or row-less cookie, because the browser may already hold the
+  replacement.
+- **Bootstrap:** the optional proxy gives a cookie-less browser a random,
+  credential-free ID on `bootstrapPaths` (default `[loginPath]`). No row is
+  stored for it and a write never adopts it, but it seeds the lineage, so
+  concurrent first sign-ins from tabs that loaded the login page share one.
+
+Results: the newest sign-in or sign-out wins, or the browser ends up signed out
+with `superseded: true`. It is never silently signed in as the older identity.
+The cost is one more store read per session-bearing request (the head) and two
+rows per lineage.
+
+**Residual limits, by HTTP cookie semantics.** Requests that carry *no* session
+cookie share nothing the server can link. Without a bootstrap ID (no proxy, a
+path outside `bootstrapPaths`, or bootstrap responses that are themselves still
+in flight when the sign-ins are sent), two concurrent first sign-ins remain
+independent sessions. The browser keeps the last one it receives, and the other
+row is unreachable but keeps its encrypted credentials until its absolute
+expiry and housekeeping. The same applies when a winning head's response is
+lost: that row lives until a later sign-in or sign-out in the lineage, or until
+it expires. Tombstoning only deletes local state. It does not revoke a
+superseded refresh token at the auth server.
+
+Tests cover memory and PostgreSQL stores (mocked pool with two store instances,
+and real PostgreSQL with two pools/instances): reordered responses for
+different and identical users, publication withheld for a later winner, a
+delayed sign-out with an older cookie, no clearing by stale requests, the
+proxy bootstrap, and the cookie-less residual. Do not claim production
+readiness until final-source backend tests, package installation,
+compatibility and the full auth-flow matrix are resolved. See the execution
+ledger.
 
 ## Local verification
 

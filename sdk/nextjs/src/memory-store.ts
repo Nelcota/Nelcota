@@ -19,6 +19,16 @@ export class DevelopmentSessionStore implements SessionStore {
     if (value.expiresAt <= Date.now()) { this.#sessions.delete(key); return null; }
     return { ...value };
   }
+  #put(key: string, value: StoredSession): void {
+    if (!Number.isSafeInteger(value.expiresAt) || value.expiresAt <= Date.now() || value.sealed.length > 131072) {
+      throw new SessionError('invalid_session', 'Invalid bounded session state');
+    }
+    if (!this.#sessions.has(key) && this.#sessions.size >= this.capacity) {
+      for (const [id, row] of this.#sessions) if (row.expiresAt <= Date.now()) this.#sessions.delete(id);
+      if (this.#sessions.size >= this.capacity) throw new SessionError('session_capacity', 'Development session capacity reached');
+    }
+    this.#sessions.set(key, { ...value });
+  }
   async exclusive<T>(key: string, work: (lease: SessionLease) => Promise<T>): Promise<T> {
     if (this.#waiting >= 256) throw new SessionError('session_capacity', 'Development owner capacity reached');
     this.#waiting++;
@@ -32,19 +42,14 @@ export class DevelopmentSessionStore implements SessionStore {
       signal: lifetime.signal,
       deadline: Number.POSITIVE_INFINITY,
       load: async () => { requireOwner(); return this.read(current); },
-      save: async value => {
-        requireOwner();
-        if (!Number.isSafeInteger(value.expiresAt) || value.expiresAt <= Date.now() || value.sealed.length > 131072) {
-          throw new SessionError('invalid_session', 'Invalid bounded session state');
-        }
-        if (!this.#sessions.has(current) && this.#sessions.size >= this.capacity) {
-          for (const [id, row] of this.#sessions) if (row.expiresAt <= Date.now()) this.#sessions.delete(id);
-          if (this.#sessions.size >= this.capacity) throw new SessionError('session_capacity', 'Development session capacity reached');
-        }
-        this.#sessions.set(current, { ...value });
-      },
+      save: async value => { requireOwner(); this.#put(current, value); },
       remove: async () => { requireOwner(); this.#sessions.delete(current); },
-      rotate: async next => { requireOwner(); this.#sessions.delete(current); current = next; },
+      rotate: async (next, retain) => {
+        requireOwner();
+        if (retain) this.#put(current, retain);
+        if (!retain) this.#sessions.delete(current);
+        current = next;
+      },
     };
     const running = previous.then(() => work(lease));
     const tail = running.then(() => undefined, () => undefined);

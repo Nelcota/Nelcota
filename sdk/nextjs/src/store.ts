@@ -15,10 +15,12 @@ export interface SessionLease {
   load(): Promise<StoredSession | null>;
   save(value: StoredSession): Promise<void>;
   remove(): Promise<void>;
-  /** Owns a fresh, never-published key until this lease ends, removes the
-   * current row, and directs later load/save/remove calls to the new key.
+  /** Owns a fresh, never-published key until this lease ends, then replaces
+   * the current row with `retain` (a credential-free tombstone) or removes it
+   * when `retain` is omitted, and directs later load/save/remove calls to the
+   * new key. `retain` has the same bounds as `save`.
    */
-  rotate(key: string): Promise<void>;
+  rotate(key: string, retain?: StoredSession): Promise<void>;
 }
 
 export interface SessionStore {

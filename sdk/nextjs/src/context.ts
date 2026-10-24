@@ -4,7 +4,7 @@ import { createClient, type AuthRequestOptions, NelcotaError, type Credentials, 
 import { SessionError } from './errors.js';
 import { requireMutation, safeReturnTo, trustedUrl } from './policy.js';
 import { newSessionId, sessionKey, SessionSealer, type SessionState } from './seal.js';
-import type { SessionLease, SessionStore } from './store.js';
+import type { SessionLease, SessionStore, StoredSession } from './store.js';
 
 export interface CookieReader { get(name: string): { value: string } | undefined }
 export interface CookieWriter extends CookieReader {
@@ -29,6 +29,8 @@ export interface VerifiedContext<Database> {
   hasSession: boolean;
   /** A cookie was presented without usable state (missing, expired or unreadable). */
   staleCookie: boolean;
+  /** The presented cookie belongs to an identity a later sign-in/out in this browser replaced. */
+  superseded: boolean;
   getUser(options?: AuthRequestOptions): Promise<Result<User>>;
 }
 export type MutationOptions = Pick<AuthRequestOptions, 'timeout'>;
@@ -62,6 +64,19 @@ function accessToken(state: SessionState | null): string | null {
   if (typeof token !== 'string' || token.length === 0 || token.length > 16384) throw new SessionError('invalid_session', 'Invalid stored access token');
   return token;
 }
+
+/** Rows that share one browser cookie history share a lineage record. */
+function lineageOf(key: string): string { return createHash('sha256').update('nelcota-next/lineage\0').update(key).digest('hex'); }
+interface Loaded {
+  state: SessionState | null;
+  /** A row existed at the key, readable or not. */
+  row: boolean;
+  lineage: string | null;
+  /** Retired by a later identity of the same lineage (tombstone or dead session row). */
+  superseded: boolean;
+  tombstone: boolean;
+}
+interface LineageHead { current: string; generation: number }
 
 /** Configuration/store/key capabilities can be shared; each context is request-owned. */
 export class Integration<Database> {
@@ -99,16 +114,61 @@ export class Integration<Database> {
   get origin(): string { return this.#origin; }
   get basePath(): string { return this.#basePath; }
   #binding(key: string): string { return `nelcota-next/v1\0${this.#origin}\0${this.#api.href}\0${key}`; }
-  /** Unreadable rows (lost keys, tampering, mismatched expiry) count as signed out. */
-  async #load(key: string, lease?: SessionLease): Promise<SessionState | null> {
+  #lineageBinding(lineage: string): string { return `nelcota-next/lineage/v1\0${this.#origin}\0${this.#api.href}\0${lineage}`; }
+  /** Unreadable rows (lost keys, tampering, mismatched expiry) count as signed out.
+   * A session-bearing row is live only while its lineage head names its key and
+   * generation; otherwise a later sign-in/out in the same browser replaced it.
+   */
+  async #load(key: string, lease?: SessionLease): Promise<Loaded> {
     const row = await (lease ? lease.load() : this.#options.store.read(key));
-    if (!row) return null;
-    try {
-      const state = await this.#sealer.open(row.sealed, this.#binding(key));
-      if (row.expiresAt === state.expiresAt) return state;
-    } catch (cause) { if (!(cause instanceof SessionError)) throw cause; }
+    const unusable: Loaded = { state: null, row: row !== null, lineage: null, superseded: false, tombstone: false };
+    if (!row) return unusable;
+    let state: SessionState;
+    try { state = await this.#sealer.open(row.sealed, this.#binding(key)); }
+    catch (cause) { if (!(cause instanceof SessionError)) throw cause; return unusable; }
     // Expired after the store check, unreadable or mismatched: all are no session.
-    return null;
+    if (row.expiresAt !== state.expiresAt) return unusable;
+    const lineage = state.lineage ?? null;
+    if (state.superseded) return { state: null, row: true, lineage, superseded: true, tombstone: true };
+    if (state.session !== null && lineage !== null && state.generation !== undefined) {
+      const head = await this.#head(lineage);
+      if (head?.current !== key || head.generation !== state.generation) return { state: null, row: true, lineage, superseded: true, tombstone: false };
+    }
+    return { state, row: true, lineage, superseded: false, tombstone: false };
+  }
+  /** A missing or unreadable head fails closed: no generation of that lineage is live. */
+  async #head(lineage: string, lease?: SessionLease): Promise<LineageHead | null> {
+    const row = await (lease ? lease.load() : this.#options.store.read(lineage));
+    if (!row) return null;
+    let value: Record<string, unknown>;
+    try { value = await this.#sealer.openRecord(row.sealed, this.#lineageBinding(lineage)); }
+    catch (cause) { if (!(cause instanceof SessionError)) throw cause; return null; }
+    const current = value['current'], generation = value['generation'];
+    if (value['kind'] !== 'lineage' || typeof current !== 'string' || !/^[a-f0-9]{64}$/.test(current) || typeof generation !== 'number' || !Number.isSafeInteger(generation) || generation < 1) return null;
+    return { current, generation };
+  }
+  /** Credential-free marker that keeps a retired key linked to its lineage. */
+  async #tombstone(key: string, lineage: string): Promise<StoredSession> {
+    const expiresAt = Date.now() + this.#ttl * 1000;
+    return { sealed: await this.#sealer.seal({ schema: 1, session: null, pkce: null, oauthState: null, returnTo: '/', expiresAt, lineage, superseded: true }, this.#binding(key)), expiresAt };
+  }
+  /** Replaces a superseded session row (an orphan) with a tombstone under its own lock. */
+  async #retire(key: string): Promise<void> {
+    await this.#options.store.exclusive(key, async lease => {
+      const loaded = await this.#load(key, lease);
+      if (!loaded.superseded || loaded.tombstone || loaded.lineage === null) return;
+      await lease.save(await this.#tombstone(key, loaded.lineage));
+    });
+  }
+  /** Gives a cookie-less browser a credential-free ID before it signs in, so that
+   * concurrent first sign-ins from its tabs share one lineage. No row is stored;
+   * a write never adopts it and moves to a fresh ID. Returns whether it was set.
+   */
+  bootstrap(request: CookieReader, response: CookieWriter): boolean {
+    if (request.get(this.#name)?.value) return false;
+    try { response.set(this.#name, newSessionId(), { httpOnly: true, secure: this.#secure, sameSite: 'lax', path: '/', maxAge: this.#ttl }); }
+    catch (cause) { throw new SessionError('session_store', 'Session cookie publication failed', cause); }
+    return true;
   }
   /** Clears this integration's cookie, e.g. on a proxy redirect for a stale session. */
   expireCookie(cookies: CookieWriter): void {
@@ -145,10 +205,10 @@ export class Integration<Database> {
   }
   async read<T>(cookies: CookieReader, work: (context: VerifiedContext<Database>) => Promise<T>): Promise<T> {
     const id = cookies.get(this.#name)?.value ?? '', key = sessionKey(id, this.#namespace);
-    const state = key ? await this.#load(key) : null;
+    const loaded = key ? await this.#load(key) : null, state = loaded?.state ?? null;
     let alive = true;
     const client = this.#client(() => accessToken(state), () => alive, true);
-    try { return await work({ client: this.#data(client), hasSession: state?.session !== null && state?.session !== undefined, staleCookie: id !== '' && state === null, getUser: options => client.auth.getUser(options) }); }
+    try { return await work({ client: this.#data(client), hasSession: state?.session !== null && state?.session !== undefined, staleCookie: id !== '' && state === null, superseded: loaded?.superseded === true, getUser: options => client.auth.getUser(options) }); }
     finally { alive = false; client.dispose(); }
   }
   /** Explicit same-origin local reset, usable even when old keys/state are unavailable. */
@@ -166,29 +226,58 @@ export class Integration<Database> {
     if (callback && !callbackRequest) throw new SessionError('csrf', 'Use the configured GET OAuth callback');
     if (!callbackRequest) requireMutation(request.headers, request.method, this.#origin);
     const existingId = cookies.get(this.#name)?.value ?? '';
-    let id = sessionKey(existingId, this.#namespace) ? existingId : newSessionId();
+    const presented = sessionKey(existingId, this.#namespace) !== null;
+    let id = presented ? existingId : newSessionId();
     const initialKey = sessionKey(id, this.#namespace);
     if (!initialKey) throw new SessionError('invalid_session', 'Invalid generated session id');
-    return this.#options.store.exclusive(initialKey, async lease => {
+    // Session rows a later lineage head replaced; tombstoned after this lease ends,
+    // so this request never waits for another key while holding its own.
+    const retired = new Set<string>();
+    try { return await this.#options.store.exclusive(initialKey, async lease => {
       let key = initialKey;
-      let state = await this.#load(key, lease);
+      const loaded = await this.#load(key, lease);
+      let state = loaded.state;
+      // Every ID this browser cookie held shares the lineage of the first one: inherited
+      // from stored state/tombstones, or seeded by a presented (bootstrap) or fresh ID.
+      const lineage = loaded.lineage ?? lineageOf(initialKey);
+      // The lineage generation this response publishes; null for pre-lineage or pending-only state.
+      let generation = state?.session !== null && state?.session !== undefined ? state.generation ?? null : null;
       let alive = true, accepting = true, failed = false, cookieNeeded = false;
       let identityMutation = false, published = id === existingId;
+      // Malformed cookies and unreadable rows are cleared; a row-less ID may be a bootstrap
+      // and a superseded one may already be replaced in the browser, so neither is cleared.
+      const clearPresented = existingId !== '' && (!presented || (loaded.row && !loaded.superseded));
       let queued = 0, tail: Promise<void> = Promise.resolve();
       const storageKey = `nelcota-next.${initialKey}.session`;
       const ensure = (): void => { if (!alive || failed || lease.signal.aborted) throw new SessionError('closed_context', 'The session context is no longer writable'); };
       // Never adopt a browser-chosen or pre-login ID: move to a fresh unpublished one.
-      const rotate = async (): Promise<void> => {
+      // `retain` leaves a tombstone so delayed requests with the old ID find the lineage.
+      const rotate = async (retain: boolean): Promise<void> => {
         const nextId = newSessionId(), nextKey = sessionKey(nextId, this.#namespace);
         if (!nextKey) throw new SessionError('invalid_session', 'Invalid generated session id');
-        try { await lease.rotate(nextKey); id = nextId; key = nextKey; published = false; }
+        try { await lease.rotate(nextKey, retain ? await this.#tombstone(key, lineage) : undefined); id = nextId; key = nextKey; published = false; }
         catch (cause) { failed = true; throw new SessionError('session_store', 'Session publication failed', cause); }
       };
       // Unknown, expired or unreadable rows are removed and proceed signed out under a fresh ID.
-      if (!state && published) await rotate();
-      const mutate = (): void => { ensure(); if (callbackRequest) throw new SessionError('csrf', 'OAuth callbacks only permit code exchange'); };
-      const save = async (next: SessionState): Promise<void> => {
+      // Superseded rows become (or stay) tombstones without credentials.
+      if (!state && published) await rotate(loaded.superseded);
+      // Makes this request's key the lineage head; every earlier generation stops being live.
+      const register = async (): Promise<number> => {
         ensure();
+        try {
+          return await this.#options.store.exclusive(lineage, async owner => {
+            const head = await this.#head(lineage, owner);
+            const next = (head?.generation ?? 0) + 1, expiresAt = Date.now() + this.#ttl * 1000;
+            await owner.save({ sealed: await this.#sealer.seal({ kind: 'lineage', current: key, generation: next }, this.#lineageBinding(lineage)), expiresAt });
+            if (head && head.current !== key && head.current !== initialKey) retired.add(head.current);
+            return next;
+          });
+        } catch (cause) { failed = true; throw new SessionError('session_store', 'Session publication failed', cause); }
+      };
+      const mutate = (): void => { ensure(); if (callbackRequest) throw new SessionError('csrf', 'OAuth callbacks only permit code exchange'); };
+      const save = async (value: SessionState): Promise<void> => {
+        ensure();
+        const next: SessionState = { ...value, lineage };
         try { await lease.save({ sealed: await this.#sealer.seal(next, this.#binding(key)), expiresAt: next.expiresAt }); state = next; cookieNeeded = true; }
         catch (cause) { failed = true; throw new SessionError('session_store', 'Session publication failed', cause); }
       };
@@ -197,10 +286,11 @@ export class Integration<Database> {
         setItem: async (name, value) => {
           ensure();
           const next: SessionState = { schema: 1, session: state?.session ?? null, pkce: state?.pkce ?? null, oauthState: state?.oauthState ?? null, returnTo: state?.returnTo ?? '/', expiresAt: state?.expiresAt ?? Date.now() + this.#ttl * 1000 };
-          if (name === storageKey && identityMutation && published) { ensure(); await rotate(); }
+          if (state?.generation !== undefined) next.generation = state.generation;
+          if (name === storageKey && identityMutation && published) { ensure(); await rotate(true); }
           if (name === storageKey) {
             next.session = value;
-            if (identityMutation) { next.expiresAt = Date.now() + this.#ttl * 1000; next.pkce = null; next.oauthState = null; }
+            if (identityMutation) { next.expiresAt = Date.now() + this.#ttl * 1000; next.pkce = null; next.oauthState = null; next.generation = generation = await register(); }
           }
           if (name === `${storageKey}.pkce`) next.pkce = value;
           if (name !== storageKey && name !== `${storageKey}.pkce`) throw new SessionError('session_store', 'Unexpected session storage key');
@@ -236,7 +326,16 @@ export class Integration<Database> {
         getUser: () => { mutate(); return auth.getUser(); },
         signInWithPassword: async (input, options) => { mutate(); return onlyUser(await identity(() => auth.signInWithPassword(input, mutationOptions(options)))); },
         signUp: async (input, options) => { mutate(); const result = await identity(() => auth.signUp(input, mutationOptions(options))); return result.error ? result : { data: { user: result.data.user, confirmationRequired: result.data.session === null }, error: null }; },
-        signOut: async options => { mutate(); return auth.signOut(mutationOptions(options)); },
+        signOut: async options => {
+          mutate();
+          // Ending a live or superseded identity ends the whole lineage in this browser. A
+          // row-less (bootstrap) ID only does so when its lineage already has a head, so
+          // random cookies never create lineage records.
+          const ending = (state?.session !== null && state?.session !== undefined) || loaded.superseded || (presented && (await this.#head(lineage)) !== null);
+          const result = await auth.signOut(mutationOptions(options));
+          if (ending) { generation = await register(); cookieNeeded = true; }
+          return result;
+        },
         refresh: async options => {
           mutate();
           const request = mutationOptions(options);
@@ -261,6 +360,7 @@ export class Integration<Database> {
         startOAuth: async input => {
           mutate();
           const next: SessionState = { schema: 1, session: state?.session ?? null, pkce: null, oauthState: newSessionId(), returnTo: safeReturnTo(input.returnTo), expiresAt: state?.expiresAt ?? Date.now() + this.#ttl * 1000 };
+          if (state?.generation !== undefined) next.generation = state.generation;
           await save(next);
           return auth.signInWithOAuth({ provider: input.provider, redirect: false, redirectTo: `${this.#origin}${this.#basePath}/auth/callback?state=${next.oauthState}` });
         },
@@ -310,15 +410,28 @@ export class Integration<Database> {
           await tail;
           if (failed) throw new SessionError('session_store', 'Session publication failed');
           // Next redirects throw. Accepted session publication still needs its cookie.
-          if (cookieNeeded && !failed) {
+          // A lineage-governed response re-checks its head at publication time: if a later
+          // sign-in/out of this browser won meanwhile, it neither sets nor clears the cookie
+          // (either would overwrite the newer identity) and its own row is tombstoned.
+          const head = cookieNeeded && generation !== null ? await this.#head(lineage) : null;
+          const stale = cookieNeeded && generation !== null && (head?.current !== key || head.generation !== generation);
+          if (stale && state !== null) {
+            try { await lease.save(await this.#tombstone(key, lineage)); }
+            catch (cause) { failed = true; throw new SessionError('session_store', 'Session publication failed', cause); }
+          }
+          if (cookieNeeded && !stale) {
             ensure();
             const keep = state !== null && (state.session !== null || state.pkce !== null);
             try { cookies.set(this.#name, keep ? id : '', { httpOnly: true, secure: this.#secure, sameSite: 'lax', path: '/', maxAge: keep && state ? Math.max(0, Math.floor((state.expiresAt - Date.now()) / 1000)) : 0 }); }
             catch (cause) { throw new SessionError('session_store', 'Session cookie publication failed', cause); }
           }
-          if (!cookieNeeded && existingId !== '' && id !== existingId) this.expireCookie(cookies);
+          if (!cookieNeeded && clearPresented && id !== existingId) this.expireCookie(cookies);
         } finally { alive = false; client.dispose(); authClient.dispose(); }
       }
-    });
+    }); } finally {
+      // Best effort: a superseded row is already dead by the lineage check; this only
+      // removes its credentials early. It also happens lazily when its ID is presented.
+      for (const key of retired) await this.#retire(key).catch(() => undefined);
+    }
   }
 }

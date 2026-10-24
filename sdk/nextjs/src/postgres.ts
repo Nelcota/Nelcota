@@ -128,21 +128,27 @@ export class PostgresSessionStore implements SessionStore {
       try { return await this.#bounded(client.query(sql, values)); }
       catch (cause) { failed = true; lifetime.abort(); throw new SessionError('session_store', 'Session persistence failed', cause); }
     };
+    const bounded = (value: StoredSession): void => {
+      if (!Number.isSafeInteger(value.expiresAt) || value.expiresAt <= Date.now() || value.sealed.length > 131072) throw new SessionError('invalid_session', 'Invalid bounded session state');
+    };
+    const upsert = async (target: string, value: StoredSession): Promise<void> => {
+      bounded(value);
+      await query('INSERT INTO nelcota_next.sessions (key, sealed, expires_at) VALUES ($1, $2, $3) ON CONFLICT (key) DO UPDATE SET sealed = EXCLUDED.sealed, expires_at = EXCLUDED.expires_at', [target, value.sealed, value.expiresAt]);
+    };
     const lease: SessionLease = {
       signal: lifetime.signal,
       // Reserve one query deadline after the last auth response for its save.
       get deadline() { return authDeadline; },
       load: async () => stored((await query('SELECT sealed, expires_at FROM nelcota_next.sessions WHERE key = $1', [current])).rows[0]),
-      save: async value => {
-        if (!Number.isSafeInteger(value.expiresAt) || value.expiresAt <= Date.now() || value.sealed.length > 131072) throw new SessionError('invalid_session', 'Invalid bounded session state');
-        await query('INSERT INTO nelcota_next.sessions (key, sealed, expires_at) VALUES ($1, $2, $3) ON CONFLICT (key) DO UPDATE SET sealed = EXCLUDED.sealed, expires_at = EXCLUDED.expires_at', [current, value.sealed, value.expiresAt]);
-      },
+      save: async value => { await upsert(current, value); },
       remove: async () => { await query('DELETE FROM nelcota_next.sessions WHERE key = $1', [current]); },
-      rotate: async next => {
+      rotate: async (next, retain) => {
         keyCheck(next);
+        if (retain) bounded(retain);
         if ((await query('SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS locked', [next])).rows[0]?.['locked'] !== true) throw new SessionError('session_store', 'Fresh session key is already owned');
         held.push(next);
-        await query('DELETE FROM nelcota_next.sessions WHERE key = $1', [current]);
+        if (retain) await upsert(current, retain);
+        if (!retain) await query('DELETE FROM nelcota_next.sessions WHERE key = $1', [current]);
         current = next;
       },
     };

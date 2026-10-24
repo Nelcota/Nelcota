@@ -224,17 +224,15 @@ describe('session fixation', () => {
     expect(issued.name).toBe(name); expect(issued.value).toHaveLength(43); expect(issued.value).not.toBe(planted); expect(issued.options.maxAge).toBeGreaterThan(0);
     expect(await store.read(ownership.mock.calls[0]![0])).toBeNull();
   });
-  it('rotates the ID when a login replaces an existing session and removes the old row', async () => {
-    const { integration, jar, store } = await setup();
-    const ownership = vi.spyOn(store, 'exclusive');
+  it('rotates the ID when a login replaces an existing session and leaves only a tombstone', async () => {
+    const { integration, jar } = await setup();
     await integration.write(jar, post(), context => context.auth.signInWithPassword(credentials));
     const first = jar.writes.at(-1)!;
     await integration.write(jar, post(), context => context.auth.signInWithPassword(credentials));
     const second = jar.writes.at(-1)!;
     expect(second.name).toBe(first.name); expect(second.value).not.toBe(first.value);
-    expect(await store.read(ownership.mock.calls[1]![0])).toBeNull();
     const stale = new Jar(); stale.values.set(first.name, first.value);
-    await integration.read(stale, async context => { expect(context.hasSession).toBe(false); });
+    await integration.read(stale, async context => { expect(context.hasSession).toBe(false); expect(context.superseded).toBe(true); });
     await integration.read(jar, async context => { expect(context.hasSession).toBe(true); });
   });
   it('rotates the pre-login OAuth ID on code exchange but keeps it for non-identity writes', async () => {
@@ -248,13 +246,18 @@ describe('session fixation', () => {
     expect(exchanged.error).toBeNull();
     expect(jar.writes.at(-1)!.value).not.toBe(initial); expect(jar.writes.at(-1)!.options.maxAge).toBeGreaterThan(0);
   });
-  it('clears an unknown cookie when the write publishes nothing', async () => {
-    const { integration, jar } = await setup();
+  it('keeps a row-less (bootstrap) cookie but clears a malformed one when the write publishes nothing', async () => {
+    const { integration, jar, store } = await setup();
     await integration.write(jar, post(), context => context.auth.signInWithPassword(credentials));
     const name = jar.writes[0]!.name;
+    const ownership = vi.spyOn(store, 'exclusive');
     const stranger = new Jar(); stranger.values.set(name, newSessionId());
     await integration.write(stranger, post(), async () => undefined);
-    expect(stranger.writes).toHaveLength(1); expect(stranger.writes[0]!.options.maxAge).toBe(0);
+    expect(stranger.writes).toHaveLength(0);
+    expect(await store.read(ownership.mock.calls[0]![0])).toBeNull();
+    const malformed = new Jar(); malformed.values.set(name, 'not-a-session-id');
+    await integration.write(malformed, post(), async () => undefined);
+    expect(malformed.writes).toHaveLength(1); expect(malformed.writes[0]!.options.maxAge).toBe(0);
   });
 });
 describe('refresh outages', () => {

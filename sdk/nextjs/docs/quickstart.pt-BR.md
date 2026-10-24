@@ -44,7 +44,8 @@ rotação informe a chave atual e até duas anteriores, mantendo-as durante a
 validade máxima das sessões. Perder todas as chaves antigas encerra essas sessões:
 uma linha ilegível ou com expiração divergente é lida como sem sessão
 (`staleCookie` verdadeiro), a próxima gravação a remove e segue sem sessão, e o
-proxy limpa o cookie ao redirecionar para o login. Não coloque chaves, tokens ou cookies em logs,
+proxy limpa o cookie ao redirecionar para o login (exceto um cookie substituído,
+veja abaixo). Não coloque chaves, tokens ou cookies em logs,
 props, URLs de redirecionamento ou bundles públicos.
 
 O cookie contém somente um ID aleatório opaco; é HttpOnly, SameSite=Lax,
@@ -54,8 +55,9 @@ AES com HKDF-SHA-256 a partir da chave primária e de um salt aleatório (format
 `v2`); linhas no formato anterior `v1` continuam legíveis. O cookie recebido nunca é encaminhado
 à API. Uma gravação nunca adota um ID sem linha armazenada; login, cadastro,
 troca OAuth, verificação por link e redefinição de senha movem o estado para um
-ID novo e removem a linha antiga (leases de `SessionStore` próprios implementam
-`rotate(key)`). Agende a remoção limitada de linhas expiradas conforme o SQL do README;
+ID novo e trocam a linha antiga por uma lápide sem credenciais (leases de
+`SessionStore` próprios implementam `rotate(key, retain?)`: substituem a linha
+atual por `retain` quando informado ou a removem). Agende a remoção limitada de linhas expiradas conforme o SQL do README;
 registre apenas contagens. `DevelopmentSessionStore` é explícito, volátil e
 restrito a desenvolvimento loopback; não atende múltiplos processos.
 
@@ -114,10 +116,38 @@ no backend um token que já não pode ser recuperado.
 ## Limites atuais e testes
 
 Os testes com PostgreSQL cobrem dois proprietários independentes, persistência,
-perda de conexão e recuperação do lock. **Logins iniciais simultâneos, antes de
-existir cookie, ainda têm um critério aberto:** respostas com IDs diferentes
-podem disputar a identidade final do navegador. Não há promessa de segurança
-completa entre abas/processos até resolver e testar esse caso.
+perda de conexão e recuperação do lock.
+
+**Logins simultâneos e ordem das respostas.** O navegador fica com o último
+`Set-Cookie` que processa. Todos os IDs que descendem de um mesmo cookie
+formam uma **linhagem**. Um registro selado de cabeça (mesma tabela) indica a
+única chave viva e uma geração monotônica. Login, cadastro, troca OAuth,
+verificação por link, redefinição de senha e logout tornam sua chave a nova
+cabeça sob o lock da linhagem. Uma linha de sessão só vale enquanto a cabeça
+indica sua chave e geração. Um cookie substituído é lido como sem sessão
+(`staleCookie` e `superseded` verdadeiros), nunca como o usuário antigo. Antes
+de gravar ou limpar o cookie, a escrita confere a cabeça de novo. Se uma
+identidade posterior venceu nesse meio-tempo, ela não grava nem limpa o cookie
+e troca a própria linha por uma lápide. O resultado de auth já devolvido
+descreve essa tentativa perdedora. Linhas substituídas viram lápides depois que
+a requisição vencedora libera o lock, ou quando o ID é apresentado. Escritas
+que não publicam nada não limpam cookies substituídos ou sem linha. O proxy
+opcional entrega a um navegador sem cookie um ID de bootstrap aleatório e sem
+credenciais em `bootstrapPaths` (padrão `[loginPath]`), para que abas que
+carregaram o login compartilhem a linhagem. Custo: uma leitura extra do store
+por requisição com sessão e duas linhas por linhagem.
+
+**Limite residual (semântica de cookies HTTP).** Requisições *sem* cookie de
+sessão não têm nada que o servidor possa ligar. Sem ID de bootstrap (sem proxy,
+caminho fora de `bootstrapPaths`, ou respostas de bootstrap ainda em trânsito),
+dois logins iniciais simultâneos continuam sessões independentes. O navegador
+fica com a última, e a outra linha fica inalcançável, com credenciais
+cifradas, até expirar e ser removida pela limpeza. O mesmo vale quando se perde
+a resposta da cabeça vencedora: ela dura até o próximo login/logout da
+linhagem ou até expirar. A lápide só apaga estado local; não revoga o refresh
+token substituído no servidor de auth. Os testes cobrem store em memória,
+PostgreSQL com pool simulado e duas instâncias, e PostgreSQL real com dois
+pools, além do residual sem cookie.
 
 Também faltam matriz completa de fluxos, pacote instalado por consumidor externo,
 versões adicionais, recursos e backend compilado do código final. O teste de RLS

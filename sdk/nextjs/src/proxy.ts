@@ -8,6 +8,9 @@ export interface ProxyOptions {
   protectedPaths: readonly string[];
   loginPath?: string;
   refreshPath?: string;
+  /** Paths where a cookie-less browser receives a credential-free bootstrap ID, so
+   * concurrent first sign-ins from its tabs are ordered. Default: `[loginPath]`. */
+  bootstrapPaths?: readonly string[];
 }
 function configPath(value: string): string {
   const url = new URL(value, 'https://path.invalid');
@@ -28,10 +31,17 @@ export async function createNelcotaProxy(options: NextOptions, policy: ProxyOpti
   const paths = policy.protectedPaths.map(configPath);
   const login = configPath(policy.loginPath ?? '/login'), refresh = configPath(policy.refreshPath ?? '/auth/refresh');
   const excluded = new Set([login, refresh, '/auth/callback', '/auth/session/refresh']);
+  if (policy.bootstrapPaths !== undefined && (!Array.isArray(policy.bootstrapPaths) || policy.bootstrapPaths.length > 32)) throw new SessionError('configuration', 'Configure at most thirty-two bootstrap paths');
+  const bootstraps = new Set((policy.bootstrapPaths ?? [login]).map(configPath));
   const guarded = (path: string): boolean => paths.some(prefix => prefix === '/' || path === prefix || path.startsWith(`${prefix}/`));
   // Lenient decoding keeps undecodable runs; it only decides if strict checks apply.
   const lenient = (path: string): string => path.replace(/(?:%[0-9a-f]{2})+/gi, run => { try { return decodeURIComponent(run); } catch { return run; } });
   return async request => {
+    const response = await handle(request);
+    if (bootstraps.has(request.nextUrl.pathname) && owner.bootstrap(request.cookies, response.cookies)) return privateHeaders(response);
+    return response;
+  };
+  async function handle(request: NextRequest): Promise<NextResponse> {
     let path = request.nextUrl.pathname, loose = path;
     for (let count = 0; count < 3 && loose.includes('%'); count++) loose = lenient(loose);
     // Paths that cannot reach a protected prefix pass even with literal `%25`.
@@ -49,12 +59,13 @@ export async function createNelcotaProxy(options: NextOptions, policy: ProxyOpti
         const target = new URL(`${owner.basePath}${context.hasSession && user.error.status === 401 ? refresh : login}`, owner.origin);
         target.searchParams.set('next', safeReturnTo(`${request.nextUrl.pathname}${request.nextUrl.search}`));
         const response = NextResponse.redirect(target, 303);
-        if (context.staleCookie) owner.expireCookie(response.cookies);
+        // A superseded cookie may already be replaced by a response in flight; leave it.
+        if (context.staleCookie && !context.superseded) owner.expireCookie(response.cookies);
         return privateHeaders(response);
       });
     } catch (error) {
       if (error instanceof SessionError && error.code === 'invalid_session') { const response = NextResponse.redirect(new URL(`${owner.basePath}${login}`, owner.origin), 303); owner.expireCookie(response.cookies); return privateHeaders(response); }
       throw error;
     }
-  };
+  }
 }
