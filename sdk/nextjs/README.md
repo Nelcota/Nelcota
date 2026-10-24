@@ -1,0 +1,199 @@
+# Nelcota for Next.js — G11 candidate
+
+**Unreleased prototype, not yet approved for production.** G11 completion gates
+are tracked in [the execution record](../../docs/goals/nextjs-sdk-execution.md).
+Do not install a registry package or deploy this candidate as if it were final.
+It currently requires the local TypeScript SDK correction for #132. A new base
+SDK version and matching minimum peer dependency are release prerequisites.
+
+[Português](docs/quickstart.pt-BR.md).
+
+## Scope
+
+App Router on the Node.js runtime: Server Components, Route Handlers, Server
+Actions, OAuth callback, optional authentication proxy, and a browser refresh
+helper. Next 16.4.3 / React 19.3.1 / Node 24 are the initial tested candidates.
+Node 22, previous Next majors, Pages Router and Edge are not certified.
+
+This composes `@nelcota/client`; its REST/RPC/storage types and backend grants/RLS
+remain the data contract. The proxy is navigation assistance, never authorization.
+Never use a service/operator credential as a substitute for a visitor token.
+
+## Production configuration
+
+Keep this module server-only. Share configuration/pool, **never a user client**.
+Provision a dedicated PostgreSQL session database with
+[sql/session-store.sql](sql/session-store.sql), using its owner for installation.
+Give an application role only CONNECT on that database, USAGE on `nelcota_next`
+and SELECT/INSERT/UPDATE/DELETE on `nelcota_next.sessions`. Do not grant these
+privileges to Nelcota `anon`, `authenticated`, or a public API schema. Runtime
+credentials need no superuser, role administration or schema creation rights.
+
+```ts
+import 'server-only';
+import { Pool } from 'pg'; // application-owned dependency
+import { createNelcotaNext } from '@nelcota/nextjs/server';
+import { PostgresSessionStore } from '@nelcota/nextjs/postgres';
+
+const pool = new Pool({
+  connectionString: process.env.SESSION_DATABASE_URL,
+  max: 8,
+  connectionTimeoutMillis: 5000,
+  // Configure TLS with certificate verification for remote PostgreSQL.
+});
+pool.on('error', () => { /* record a stable connection-error event, no raw URL */ });
+const store = new PostgresSessionStore(pool);
+export const nelcota = createNelcotaNext<Database>({
+  url: 'https://api.example.com',
+  appOrigin: 'https://app.example.com',
+  keys: [process.env.NELCOTA_SESSION_KEY!], // validate required environment at boot
+  store,
+});
+```
+
+Generate each key with `openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n'`.
+Keep it in server secret storage; no `NEXT_PUBLIC_` prefix. Supply current then
+previous keys (at most three) during rotation, retaining old keys through the
+maximum session lifetime. Losing all old keys signs those sessions out; it does
+not permit decrypting or adopting them. `forgetLocalSession()` provides an
+explicit same-origin POST reset without requiring successful decryption.
+
+Use durable PostgreSQL commits and direct/session pooling. **Transaction pooling
+is unsupported:** session advisory locks require the same physical connection.
+Set pool connection/query limits, close the pool during your application's
+shutdown, and handle pool idle errors. Saves are separate autocommits, not a
+transaction spanning HTTP. The store bounds connection attempts, query time and
+lease lifetime; a failed owner cannot write again. A lost HTTP reply after a
+remote rotation can still require signing in again. It cannot be made atomic
+with a separate auth server by a local SQL transaction.
+
+Expired rows need application-owned housekeeping. For example run this bounded
+statement periodically with the dedicated session role, recording counts only:
+
+```sql
+DELETE FROM nelcota_next.sessions WHERE key IN (
+  SELECT key FROM nelcota_next.sessions
+  WHERE expires_at <= floor(extract(epoch FROM clock_timestamp()) * 1000)::bigint
+  ORDER BY expires_at LIMIT 1000
+);
+```
+
+`DevelopmentSessionStore` is available from `/testing` only for explicit
+`allowInsecureDevelopment: true` and a loopback application origin. It loses state
+on restart, is not shared between workers, and is refused by default in production.
+
+## Server Components: read only
+
+```tsx
+export default async function Profile() {
+  return (await nelcota).server(async ({ getUser, client }) => {
+    const user = await getUser(); // validates with auth service; not decoded JWT trust
+    if (user.error) return <a href="/login">Sign in</a>;
+    const notes = await client.from('notes').select();
+    if (notes.error) throw new Error('Notes unavailable');
+    return <p>{user.data.email}: {notes.data.length} notes</p>;
+  });
+}
+```
+
+Components do not refresh or mutate cookies/data. Expired sessions need the
+explicit refresh POST flow. Use dynamic, user-specific rendering and never put
+these contexts/results in a shared cache, `unstable_cache`, or public ISR page.
+The adapter forces token-dependent API fetches to `no-store`; applications still
+own their page/CDN cache configuration. Await every operation before the context
+ends; a stored context is not a reusable client.
+
+## Route Handlers and Server Actions
+
+```ts
+export async function POST(request: Request): Promise<Response> {
+  return (await nelcota).route(request, async ({ auth }) => {
+    const result = await auth.refresh();
+    return Response.json(result, { status: result.error ? 401 : 200 });
+  });
+}
+```
+
+Route/Action mutation requires an unsafe method and an exact Origin matching
+configured `appOrigin`; missing/foreign Origin is refused before HTTP/state
+mutation. Host and forwarded headers do not define trust. For forms, read and
+validate bounded fields yourself; do not pass arbitrary JSON to an auth method.
+Map `SessionError.code === 'csrf'` to a generic 403 and persistence errors to a
+generic 503 in your error boundary, logging stable codes only. Do not serialize
+causes, cookies, keys, request bodies or credential-bearing backend messages.
+
+An Action uses `(await nelcota).action(async ({ auth }) => { ... })`. Call
+`redirect('/profile')` **after** checking the auth result; Next redirects throw,
+and the adapter publishes an accepted cookie in its `finally` path. Do not catch
+Next redirect exceptions as ordinary authentication failures.
+
+Writable auth offers password login, sign-up, verified-user read, logout,
+refresh, user update, password reset requests, magic links, confirmation resend,
+email-link verification/reset and OAuth. Results contain users, not session JWTs.
+Auth operations are serialized per request and per shared browser session.
+Their bounded accepted publication completes before releasing the owner;
+cancelling a waiter must not discard accepted credentials. Data calls retain
+normal request cancellation and streaming ownership.
+
+## OAuth and browser helpers
+
+Start OAuth from a same-origin POST/Action with `auth.startOAuth({ provider,
+returnTo })`, then redirect to the returned authorization URL. The only GET
+callback context is `/auth/callback`:
+
+```ts
+export async function GET(request: Request): Promise<Response> {
+  return (await nelcota).callback(request, async ({ auth }) => {
+    const result = await auth.exchangeCode(new URL(request.url).searchParams.get('code') ?? '');
+    if (result.error) return Response.json({ error: 'sign_in_failed' }, { status: 400 });
+    return Response.redirect(new URL(result.data.returnTo, 'https://app.example.com'), 303);
+  });
+}
+```
+
+It requires the initiating browser cookie and one-use state/PKCE verifier.
+Wrong state does not consume a valid verifier. Successful exchange clears state
+before returning and accepts only validated local return paths. Ordinary auth
+and data mutations are refused in this GET context. Use generic failure pages;
+never reflect callback credentials or arbitrary `next` URLs into HTML/logs.
+
+In a Client Component, import **only** `refreshSession` from
+`@nelcota/nextjs/browser`; it POSTs to `/auth/session/refresh`. Provide that Route
+Handler as above. The optional `/proxy` entry redirects expired sessions to
+`/auth/refresh`, a page that owns the POST. Exclude callback/login/refresh pages
+from loops. The example has an explicit Continue button. A proxy never refreshes
+or writes cookies itself; storage failures must surface instead of silently
+adopting another identity.
+
+## Cookies, concurrency and remaining gates
+
+A host-only HttpOnly SameSite=Lax cookie contains one random 32-byte opaque ID,
+not JWTs. Production uses Secure and the `__Host-` prefix. Default names and
+storage bindings include application/API identity. Server state is AES-256-GCM
+authenticated encryption, with key rotation and expiry. No incoming browser
+cookie is forwarded to the API.
+
+Shared-store tests cover two independent owners, lock release and connection
+loss. **Simultaneous first logins before a browser has a cookie remain an open
+design/verification gate.** Their separate cookie responses can race. Do not
+claim complete session replacement/tab/process safety or production readiness
+until that gate, final-source backend tests, package installation, compatibility
+and the full auth-flow matrix are resolved. See the execution ledger.
+
+## Local verification
+
+From the repository root, install/build the base SDK, then `npm ci --prefix
+sdk/nextjs`. Run Rust, Vitest and audits sequentially:
+
+```sh
+npm --prefix sdk/nextjs run check
+NELCOTA_NEXT_TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/postgres \
+  npm --prefix sdk/nextjs test
+npm --prefix sdk/nextjs run build
+```
+
+The PostgreSQL integration creates/drops its own random test database. It needs
+the repository's disposable fixture, never a production/shared database. The
+example is **loopback-only development**, not a production deployment template.
+Framework/backend scripts require bounded disposable environments; the latter
+records the explicit binary SHA and does not claim it matches newer source.
