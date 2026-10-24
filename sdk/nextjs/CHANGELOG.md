@@ -3,7 +3,7 @@
 Package releases use Semantic Versioning. Registry availability requires a
 successful publication; a source version or Git tag alone is insufficient.
 
-## Unreleased
+## 0.1.1 — 2026-10-24
 
 ### Fixed
 
