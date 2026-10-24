@@ -32,12 +32,11 @@ const BUDGETS = {
   // Removable cancellation waiters add 187–204 B gzip to the shared HTTP closure.
   // Maintainer-approved input/representation guards: +300 B maximum root/storage,
   // +50 B auth. Covers null storage replies, missing bodies and blank OAuth codes.
-  // Caller-token auth parity (#132): explicit +100 B feature allowance.
-  'index.js': 17_500,
+  'index.js': 17_400,
   // Standalone factories include HTTP and keep the other feature modules out.
   'rest/index.js': 9_550,
   // Failed persistence must retain rotated tokens; background failures are observed.
-  'auth/index.js': 11_400,
+  'auth/index.js': 11_300,
   'storage/index.js': 7_700,
 };
 
