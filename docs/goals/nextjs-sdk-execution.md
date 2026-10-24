@@ -161,7 +161,7 @@ backend or audit work. Keep unrelated worktrees intact.
 
 | Cell | Verdict | Evidence/remaining work |
 |---|---|---|
-| Base prerequisites | Partial; blocked (environment) | Focused regressions/unit/package checks passed; full-server auth build stopped by disk, local fixes not reviewed/merged |
+| Base prerequisites | Merged (2026-10-24); release pending | PR143 merged to main with deliberate bundle budgets; PR147 cleared the npm/RustSec audits on main. A published `@nelcota/client` with these fixes and a raised peer minimum remain a maintainer release action |
 | Next read-only | Passed (fixture + final-source backend, 2026-10-24) | Production Server Component + runtime mutation guard; proxy redirect in real Next; backend smoke on a current-source binary |
 | Next writable | Passed for initial fixture | Real Route Handler/Server Action cookie publication, redirect and CSRF checks |
 | Browser boundary | Passed (2026-10-24) | Real invalid Client Component build refused after a passing control build; HTML credential checks; full client bundle canary/resource matrix remains |
@@ -301,3 +301,10 @@ CI integration of these smokes, and npm audits for the current lockfiles.
 Release gate (maintainer action): publish a base `@nelcota/client` version that
 contains #132/#143 and raise the peer minimum from `^0.2.1`. The package stays
 `private: true`.
+
+2026-10-24, base and CI: PR143 (base SDK corrections) and PR147 (npm Scalar/undici
+update; RUSTSEC-2026-0387 recorded as decision D104) are merged, so the base bundle
+and audit blockers above are historical. CI gains a `nextjs-sdk` job: base SDK
+build, `npm audit`, check, the full Vitest suite against a disposable PostgreSQL 17
+and the packed external consumer. The framework, boundary, backend and storage
+smokes still run locally only.
