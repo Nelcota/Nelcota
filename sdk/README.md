@@ -1,9 +1,24 @@
-# SDK source ownership
+# Nelcota SDKs
 
-The TypeScript and Rust SDKs retain separate packages and public entry points.
-These directories organize their implementation; they do not add a new API,
-runtime dependency, configuration format or release. Consumer documentation is
-in [TypeScript](typescript/README.md) and [Rust](rust/README.md).
+Choose the base client for your application's runtime, or the Next.js adapter
+for App Router session handling. Server installation does not install or update
+application dependencies.
+
+| Package | Version | Runtime and documentation |
+| --- | --- | --- |
+| `@nelcota/client` | 0.2.2 | [JavaScript/TypeScript](typescript/README.md); Node 22+, browsers, Bun and Deno |
+| `nelcota-client` | 0.1.5 | [Native Rust](rust/README.md); Rust 1.88+, Tokio |
+| `@nelcota/nextjs` | 0.1.0 | [Next.js App Router](nextjs/README.md); Next 16.4.3 / React 19.3.1, Node 22/24/26 |
+
+The [publication checkpoint](../docs/goals/sdk-release-completion.md#publication-checkpoint--2026-10-24)
+records registry installation of these versions. Read the
+[upgrade guide](../docs/releases/README.md) before changing application lockfiles.
+All clients retain PostgreSQL grants/RLS as the authorization boundary.
+
+## Source ownership
+
+Packages retain separate public entry points. Internal module organization does
+not add a public API, runtime dependency or configuration format.
 
 ## TypeScript
 
@@ -13,7 +28,9 @@ in [TypeScript](typescript/README.md) and [Rust](rust/README.md).
 | `core/` | Shared transport, cancellation, errors, encoding and JSON values |
 | `auth/types.ts` | Authentication inputs, events and caller options |
 | `auth/client.ts` | Account/link endpoints adapted to session operations |
-| `auth/manager.ts` | One owner for session transitions, persistence, refresh and cleanup |
+| `auth/manager.ts` | Session transitions, refresh publication and auth events under one lifecycle lock |
+| `auth/store.ts` | Session persistence, browser journal and coordinated refresh reservations |
+| `auth/scheduler.ts` | Refresh timers, retries and timer cleanup |
 | `auth/browser-state.ts`, `coordination.ts`, `pkce.ts` | Existing browser journal, locks/broadcasts and PKCE primitives |
 | `rest/query-types.ts`, `types.ts` | Result/options contracts and generated-schema typing |
 | `rest/query.ts`, `conditions.ts` | Immutable query construction/execution and validated filter grammar |
@@ -54,6 +71,24 @@ local revision even when its values are unchanged. Cancellation withdraws a
 queued authentication payload through the shared cancellation owner; once the
 task acquires the lifecycle lock, accepted publication retains its own lifetime.
 The FIFO control slot can drain later without retaining the cancelled request.
+
+## Next.js
+
+The adapter composes the TypeScript SDK with request-scoped server contexts,
+encrypted server-side sessions, PostgreSQL persistence and browser helpers.
+Public exports are `/server`, `/postgres`, `/proxy`, `/browser` and `/testing`;
+there is no root package import. Server-only exports must stay out of Client
+Components. The application owns the PostgreSQL pool and expired-row cleanup.
+
+Use a shared production session store with direct connections or session
+pooling; transaction pooling does not support the session advisory locks.
+Server Components read only, and same-origin POST Route Handlers or Actions own
+refresh and other auth mutations. The proxy assists navigation; data access
+still requires the visitor's token. See [configuration and concurrency limits](nextjs/README.md).
+
+For custom SSR integrations with the base SDK, appoint one refresh owner across
+requests and workers. A request-local client alone does not coordinate rotating
+refresh tokens. See [the SSR example](typescript/examples/server.mjs).
 
 ## Applying SOLID
 

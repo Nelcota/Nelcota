@@ -8,8 +8,8 @@ needs no Node runtime; JavaScript clients use their own tooling. Start with
 
 Apply `notes.sql` as database owner through the SQL editor, or copy it to the
 next unused `V<n>__notes.sql` in your app migrations and run `nelcota migrate`.
-It creates `notes` with `extra` and a private `files` bucket/policy. Both SDKs
-use this schema. `CREATE TABLE IF NOT EXISTS` does not add missing columns;
+It creates `notes` with `extra` and a private `files` bucket/policy. The
+TypeScript and Rust SDKs use this schema. `CREATE TABLE IF NOT EXISTS` does not add missing columns;
 add them in a new migration for an existing table.
 
 Never edit an applied migration or use Nelcota's internal migrations as app
@@ -39,6 +39,20 @@ Copy `sdk-todos.mjs` into a consumer directory and install the package there;
 Node resolves imports from the script location, not just your working directory.
 The root checkout does not install `@nelcota/client`. It leaves a development account and Todo
 rows, so use a disposable project without email confirmation.
+
+## Next.js App Router
+
+Follow [the Next.js SDK guide](../sdk/nextjs/README.md) and its
+[App Router fixture](../sdk/nextjs/examples/app-router/). The fixture demonstrates
+Server Components, auth POST handlers, OAuth callbacks and browser refresh.
+Use `@nelcota/nextjs@0.1.0` with `@nelcota/client@0.2.2` and a dedicated
+PostgreSQL session store for production. Share the pool/configuration across
+requests while keeping each visitor's client scoped to its request.
+
+The fixture is also the production-build/browser test application; inspect its
+[package scripts](../sdk/nextjs/package.json) and
+[framework smoke](../sdk/nextjs/scripts/framework-smoke.mjs) before running it.
+The development memory store is loopback-only and loses sessions on restart.
 
 ## Rust
 
