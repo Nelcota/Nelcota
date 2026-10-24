@@ -4,7 +4,7 @@
  */
 
 import { NelcotaError, NelcotaUsageError } from '../core/errors.js';
-import { columnPath, identifier, inList, scalar, type FilterScalar } from '../core/encoding.js';
+import { columnPath, identifier, inList, scalar, quote, type FilterScalar } from '../core/encoding.js';
 import type { HttpClient } from '../core/http.js';
 import { isRecord } from '../core/json.js';
 import {
@@ -25,6 +25,9 @@ export type { CountOption, FilterColumn, OrderOptions, QueryOutcome, QueryResult
 type TableRow<S extends GenericSchema, Name extends string> = RowOf<Relation<S, Name>>;
 
 type ValueFor<Row, C> = C extends keyof Row ? FilterValue<Row[C]> : FilterScalar;
+
+const RESERVED = new Set(['select', 'order', 'limit', 'offset', 'or', 'and', 'on_conflict', 'columns']);
+type GroupRow<S extends GenericSchema, Name extends string, Options> = Options extends undefined ? TableRow<S, Name> : 'referencedTable' extends keyof Options ? Record<string, unknown> : TableRow<S, Name>;
 
 type Method = 'GET' | 'HEAD' | 'POST' | 'PATCH' | 'DELETE';
 type Cardinality = 'many' | 'one' | 'maybe';
@@ -84,7 +87,13 @@ export class Query<S extends GenericSchema, Name extends string, Row, Out, Head 
   }
 
   #filter(column: string, op: string, value: string): this {
-    return this.#param(columnPath(column), `${op}.${value}`);
+    const parts = columnPath(column).split('.');
+    const field = parts.pop()!;
+    if (RESERVED.has(field)) {
+      const operand = op.endsWith('in') || op.endsWith('is') ? value : quote(value);
+      return this.#param([...parts, 'and'].join('.'), `(${field}.${op}.${operand})`);
+    }
+    return this.#param(column, `${op}.${value}`);
   }
 
   // ------------------------------------------------------------- filters
@@ -135,12 +144,12 @@ export class Query<S extends GenericSchema, Name extends string, Row, Out, Head 
     return this.#filter(column, `not.${compareOperator(op)}`, scalar(value));
   }
   /** Any of the conditions: `.or((c) => [c.eq('a', 1), c.gt('b', 2)])`. */
-  or(build: (c: Conditions<TableRow<S, Name>>) => readonly Condition[], options?: ReferencedOption): this {
-    return this.#param(referenced('or', options), encodeGroup(build(new Conditions<TableRow<S, Name>>())));
+  or<Options extends ReferencedOption | undefined = undefined>(build: (c: Conditions<GroupRow<S, Name, Options>>) => readonly Condition[], options?: Options): this {
+    return this.#param(referenced('or', options), encodeGroup(build(new Conditions<GroupRow<S, Name, Options>>())));
   }
   /** All of the conditions, as a group (combine with `not` inside `or`). */
-  and(build: (c: Conditions<TableRow<S, Name>>) => readonly Condition[], options?: ReferencedOption): this {
-    return this.#param(referenced('and', options), encodeGroup(build(new Conditions<TableRow<S, Name>>())));
+  and<Options extends ReferencedOption | undefined = undefined>(build: (c: Conditions<GroupRow<S, Name, Options>>) => readonly Condition[], options?: Options): this {
+    return this.#param(referenced('and', options), encodeGroup(build(new Conditions<GroupRow<S, Name, Options>>())));
   }
 
   // ----------------------------------------------------------- modifiers
@@ -230,7 +239,7 @@ export class Query<S extends GenericSchema, Name extends string, Row, Out, Head 
 
   /** The query string this builder sends, for logs and tests. */
   toString(): string {
-    return new URLSearchParams(this.#state.params.map(([k, v]) => [k, v])).toString();
+    return this.#params().toString();
   }
 
   // ------------------------------------------------------------ sending
@@ -251,19 +260,20 @@ export class Query<S extends GenericSchema, Name extends string, Row, Out, Head 
     return result as QueryOutcome<Out, Throws>;
   }
 
+  #params(): URLSearchParams {
+    const state = this.#state;
+    const params = new URLSearchParams(state.params.map(([k, v]) => [k, v]));
+    if (state.cardinality !== 'many' && state.method === 'GET' && !params.has('limit')) params.set('limit', '2');
+    return params;
+  }
   async #run(): Promise<QueryResult<Out>> {
     const state = this.#state;
-    const params = [...state.params];
-    // `single` on a read needs two rows at most to tell one from many.
-    if (state.cardinality !== 'many' && state.method === 'GET' && !params.some(([k]) => k === 'limit')) {
-      params.push(['limit', '2']);
-    }
     const headers: Record<string, string> = {};
     if (state.prefer.length > 0) headers['prefer'] = state.prefer.join(',');
     const { data: rows, response, error } = await state.http.json<unknown>({
       method: state.method,
       path: `/rest/v1/${encodeURIComponent(state.table)}`,
-      query: new URLSearchParams(params.map(([k, v]) => [k, v])),
+      query: this.#params(),
       json: state.body,
       headers,
       signal: state.signal,
@@ -290,7 +300,7 @@ export class Query<S extends GenericSchema, Name extends string, Row, Out, Head 
       code: 'not_single',
       message: `Expected ${state.cardinality === 'one' ? 'exactly one row' : 'at most one row'}, got ${rows.length === 2 && state.method === 'GET' ? 'more than one' : rows.length}`,
     });
-    return { data: null, error: failure, count: null, range: null, status: response.status };
+    return { data: null, error: failure, count: null, range: null, status: failure.status };
   }
 
   /**

@@ -127,25 +127,36 @@ impl Query {
         );
         self
     }
-    pub fn filter(mut self, column: &str, op: Operator, value: impl Serialize) -> Self {
+    fn filter_param(&mut self, column: &str, op: &str, value: String) {
         self.record(encoding::column(column));
-        if let Some(value) = self.record(scalar(value)) {
-            self.params
-                .push((column.into(), format!("{}.{value}", op.as_str())));
-        }
+        let (prefix, field) = match column.rsplit_once('.') {
+            Some((parent, field)) => (format!("{parent}."), field),
+            None => (String::new(), column),
+        };
+        let parameter = match field {
+            "select" | "order" | "limit" | "offset" | "or" | "and" | "on_conflict" | "columns" => {
+                let operand = match op.ends_with("in") || op.ends_with("is") {
+                    true => value,
+                    false => encoding::quote(&value),
+                };
+                (format!("{prefix}and"), format!("({field}.{op}.{operand})"))
+            }
+            _ => (column.into(), format!("{op}.{value}")),
+        };
+        self.params.push(parameter);
         if !column.contains('.') {
             self.filters += 1;
+        }
+    }
+    pub fn filter(mut self, column: &str, op: Operator, value: impl Serialize) -> Self {
+        if let Some(value) = self.record(scalar(value)) {
+            self.filter_param(column, op.as_str(), value);
         }
         self
     }
     pub fn not(mut self, column: &str, op: Operator, value: impl Serialize) -> Self {
-        self.record(encoding::column(column));
         if let Some(value) = self.record(scalar(value)) {
-            self.params
-                .push((column.into(), format!("not.{}.{value}", op.as_str())));
-        }
-        if !column.contains('.') {
-            self.filters += 1;
+            self.filter_param(column, &format!("not.{}", op.as_str()), value);
         }
         self
     }
@@ -174,43 +185,25 @@ impl Query {
         self.filter(column, Operator::Ilike, value)
     }
     pub fn is(mut self, column: &str, value: IsValue) -> Self {
-        self.record(encoding::column(column));
-        self.params
-            .push((column.into(), format!("is.{}", value.as_str())));
-        if !column.contains('.') {
-            self.filters += 1;
-        }
+        self.filter_param(column, "is", value.as_str().into());
         self
     }
     pub fn is_null(self, column: &str) -> Self {
         self.is(column, IsValue::Null)
     }
     pub fn not_is(mut self, column: &str, value: IsValue) -> Self {
-        self.record(encoding::column(column));
-        self.params
-            .push((column.into(), format!("not.is.{}", value.as_str())));
-        if !column.contains('.') {
-            self.filters += 1;
-        }
+        self.filter_param(column, "not.is", value.as_str().into());
         self
     }
     pub fn in_values(mut self, column: &str, values: impl Serialize) -> Self {
-        self.record(encoding::column(column));
         if let Some(list) = self.record(in_list(values)) {
-            self.params.push((column.into(), format!("in.{list}")));
-        }
-        if !column.contains('.') {
-            self.filters += 1;
+            self.filter_param(column, "in", list);
         }
         self
     }
     pub fn not_in(mut self, column: &str, values: impl Serialize) -> Self {
-        self.record(encoding::column(column));
         if let Some(list) = self.record(in_list(values)) {
-            self.params.push((column.into(), format!("not.in.{list}")));
-        }
-        if !column.contains('.') {
-            self.filters += 1;
+            self.filter_param(column, "not.in", list);
         }
         self
     }

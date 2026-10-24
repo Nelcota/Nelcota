@@ -200,3 +200,22 @@ sem HTTP; ela não seleciona outra identidade em cache. A renovação automátic
 fica desativada nos clientes combinados e de auth independentes. Outros métodos
 de auth chamados explicitamente ainda podem armazenar sessões; separe clientes
 de encaminhamento por requisição dos clientes de login gerenciado.
+
+### Correções de sessão, consultas e transporte
+
+O logout renova uma sessão expirada antes de revogá-la, sob o mesmo controle de
+ciclo de vida. Falhas ainda podem impedir a revogação remota; o estado local é
+limpo. Uma rotação de resultado incerto não é repetida para tentar encerrá-la.
+Somente uma rejeição explícita por limite de tentativas libera a reserva de
+refresh; falhas de rede ou gateway mantêm o bloqueio preventivo.
+
+Adaptadores distintos no servidor não compartilham a fila de autenticação.
+Clientes com o mesmo adaptador e chave continuam coordenados. Mudanças de conta
+e perfil entre abas preservam os eventos corretos; estado inalterado não emite
+evento, e sessionStorage explícito permanece isolado por aba.
+
+Filtros em colunas com nomes reservados não são descartados por paginação ou
+ordenação. Erros de cardinalidade reportam406. O timeout de uma resposta bruta
+termina nos cabeçalhos; o cancelamento do chamador continua válido para o stream.
+O corpo de respostas em buffer continua sob prazo. Valores inválidos de headers
+e URLs são erros de uso; falha ao ler um corpo de erro preserva o status HTTP.

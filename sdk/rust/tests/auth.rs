@@ -469,3 +469,48 @@ async fn file_storage_round_trips_atomically_and_privately() {
     );
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+#[tokio::test]
+async fn expired_logout_renews_before_revoking_and_always_clears_local_state() {
+    let count = Arc::new(AtomicUsize::new(0));
+    let router = Router::new()
+        .route(
+            "/auth/v1/token",
+            post({
+                let count = count.clone();
+                move || {
+                    count.fetch_add(1, Ordering::SeqCst);
+                    async { Json(session("fresh-access", "fresh-refresh")) }
+                }
+            }),
+        )
+        .route(
+            "/auth/v1/logout",
+            post(|headers: axum::http::HeaderMap| async move {
+                match headers
+                    .get("authorization")
+                    .and_then(|value| value.to_str().ok())
+                {
+                    Some("Bearer fresh-access") => StatusCode::NO_CONTENT,
+                    _ => StatusCode::UNAUTHORIZED,
+                }
+            }),
+        );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let client = Client::builder(format!("http://{}", listener.local_addr().unwrap()))
+        .build()
+        .unwrap();
+    let task = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    let mut expired = session("expired-access", "expired-refresh");
+    expired.expires_at = 1;
+    client.auth().set_session(expired).await.unwrap();
+    let result = client.auth().sign_out().await;
+    let local = client.auth().get_session().await.unwrap();
+    task.abort();
+    assert!(
+        result.is_ok(),
+        "logout did not revoke the renewed session: {result:?}"
+    );
+    assert_eq!(count.load(Ordering::SeqCst), 1);
+    assert!(local.is_none());
+}

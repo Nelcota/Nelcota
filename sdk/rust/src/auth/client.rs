@@ -331,14 +331,33 @@ impl AuthClient {
         let manager = &self.client.inner.auth;
         let mut state = manager.gate.lock().await;
         manager.load(&mut state).await?;
-        let result = match &state.session {
-            Some(session) => self
-                .client
+        let result = async {
+            let session = match state.session.clone() {
+                Some(session) => session,
+                None => return Ok(()),
+            };
+            let session = match session.expires_in_now() <= manager.margin_for(&session) {
+                true => {
+                    // Already under the lifecycle gate: do not recursively refresh.
+                    let renewed = self
+                        .token(
+                            "refresh_token",
+                            json!({"refresh_token":session.refresh_token}),
+                        )
+                        .await?;
+                    manager
+                        .save(&mut state, Some(renewed.clone()), AuthEventKind::Refreshed)
+                        .await?;
+                    renewed
+                }
+                false => session,
+            };
+            self.client
                 .bytes(Spec::new(Method::POST, "/auth/v1/logout").token(&session.access_token))
                 .await
-                .map(|_| ()),
-            None => Ok(()),
-        };
+                .map(|_| ())
+        }
+        .await;
         let cleared = manager
             .save(&mut state, None, AuthEventKind::SignedOut)
             .await;
