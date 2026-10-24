@@ -11,7 +11,8 @@ test('private modules load only after login, including on a deep link', async ({
   await page.goto('/admin/storage/documents')
   await expect(page.getByRole('heading', { name: 'Entrar no Nelcota' })).toBeVisible()
   await (await identity).finished()
-  expect(modules.some(url => /AuthenticatedShell|(?:TableEditor|StorageBucket|CodeBlock|SqlEditor)(?:\.svelte|-)/.test(url))).toBe(false)
+  // Lists the offending URLs, so an intermittent CI failure says what loaded.
+  expect(modules.filter(url => /AuthenticatedShell|(?:TableEditor|StorageBucket|CodeBlock|SqlEditor)(?:\.svelte|-)/.test(url))).toEqual([])
   await page.getByLabel('Email', { exact: true }).fill('admin@example.test')
   await page.getByLabel('Senha', { exact: true }).fill('test-password')
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
