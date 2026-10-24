@@ -13,6 +13,9 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  # Keep file/line backtraces but drop full debuginfo: the workspace links
+  # dozens of test binaries, and smaller ones link faster and cache smaller.
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
 
 permissions:
   contents: read
