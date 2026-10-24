@@ -1,14 +1,12 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, type Component } from 'svelte'
   import { ModeWatcher } from 'mode-watcher'
   import Login from '$lib/features/auth/Login.svelte'
   import LoadingScreen from '$lib/shell/LoadingScreen.svelte'
   import { takeHandoffToken } from '$lib/features/projects/projects'
   import { api, ApiError } from '$lib/transport/api'
-  import { Button } from '$lib/components/ui/button'
-  import Logo from '$lib/shell/components/Logo.svelte'
+  import OfflineScreen from '$lib/shell/OfflineScreen.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
-  import LoaderCircle from '@lucide/svelte/icons/loader-circle'
   import { session } from '$lib/resources/session.svelte'
   import { route } from '$lib/navigation/router.svelte'
   import { crumbsFor, documentTitle } from '$lib/shell/titles'
@@ -58,6 +56,23 @@
     if (offline && !checking) void checkSession()
   }
 
+  // The signed-in panel's code, fetched once there is a session. Kept in state
+  // rather than an {#await}, so the startup screen stays mounted from the
+  // session check until the panel is ready and moves on to its next step.
+  let Shell = $state<Component | null>(null)
+  let shellError = $state<unknown>(null)
+  let shellRequested = false
+  $effect(() => {
+    if (controller || !session.email || shellRequested) return
+    shellRequested = true
+    import('$lib/shell/AuthenticatedShell.svelte')
+      .then((module) => (Shell = module.default))
+      .catch((error: unknown) => (shellError = error))
+  })
+
+  const unreachable = $derived(session.email === undefined && !!offline)
+  const booting = $derived(!controller && !unreachable && session.email !== null && !Shell && !shellError)
+
   // Tab title: the current page (or the login) followed by the product name.
   const title = $derived(
     controller ? `${t('updates.controller')} · Nelcota` : session.email === null ? `${t('shell.pages.signIn')} · Nelcota` : session.email ? documentTitle(crumbsFor(route.path)) : 'Nelcota',
@@ -66,43 +81,30 @@
 
 <svelte:head><title>{title}</title></svelte:head>
 
-<ModeWatcher defaultMode="dark" />
+<!-- src/theme-init.js already set the theme before the first paint (and the
+     CSP would block the inline script mode-watcher injects for that). -->
+<ModeWatcher defaultMode="dark" disableHeadScriptInjection />
 <!-- While the server is unreachable, try again by itself when the network or
      the window comes back. -->
 <svelte:window ononline={retryWhenOffline} onfocus={retryWhenOffline} />
-{#if !controller && (session.email === undefined && offline)}
-  <!-- On a card like the login and the 404. -->
-  <main class="flex min-h-dvh items-center justify-center bg-background px-4 py-12">
-    <div class="flex w-full max-w-md flex-col items-center gap-6 rounded-3xl bg-card px-8 pt-8 pb-10 text-center" role="alert">
-      <Logo mark size="lg" />
-      <div class="grid gap-2">
-        <h1 class="text-xl font-semibold tracking-tight">{t('shell.app.offlineTitle')}</h1>
-        <p class="text-sm text-muted-foreground">{errorMessage(offline)}</p>
-      </div>
-      <Button disabled={checking} onclick={checkSession}>
-        {#if checking}<LoaderCircle data-icon="inline-start" class="animate-spin" aria-hidden="true" />{/if}{t('common.retry')}
-      </Button>
-    </div>
-  </main>
+{#if booting}
+  <LoadingScreen stage={session.email ? 'panel' : 'session'} />
 {/if}
-{#if !controller && !(session.email === undefined && offline) && (session.email === undefined)}
-  <LoadingScreen />
+{#if !controller && unreachable}
+  <OfflineScreen error={offline} {checking} onretry={checkSession} />
 {/if}
-{#if !controller && !(session.email === undefined && offline) && !(session.email === undefined) && (session.email === null)}
+{#if !controller && session.email === null}
   <Login />
 {/if}
-{#if !controller && !(session.email === undefined && offline) && !(session.email === undefined) && !(session.email === null)}
-  {#await import('$lib/shell/AuthenticatedShell.svelte')}
-    <LoadingScreen />
-  {:then shell}
-    <shell.default />
-  {:catch error}
-    <main class="mx-auto flex min-h-dvh w-full max-w-xl items-center bg-background px-4 py-12">
-      <div class="w-full"><LoadError message={errorMessage(error)} onretry={() => window.location.reload()} /></div>
-    </main>
-  {/await}
+{#if !controller && session.email && Shell}
+  <Shell />
+{/if}
+{#if !controller && session.email && shellError}
+  <main class="mx-auto flex min-h-dvh w-full max-w-xl items-center bg-background px-4 py-12">
+    <div class="w-full"><LoadError message={errorMessage(shellError)} onretry={() => window.location.reload()} /></div>
+  </main>
 {/if}
 
 {#if controller}
-  {#await import('$lib/features/updates/UpdatesConsole.svelte')}<LoadingScreen />{:then updates}<updates.default />{:catch error}<main class="mx-auto max-w-xl p-8"><LoadError message={errorMessage(error)} onretry={() => window.location.reload()} /></main>{/await}
+  {#await import('$lib/features/updates/UpdatesConsole.svelte')}<LoadingScreen stage="panel" />{:then updates}<updates.default />{:catch error}<main class="mx-auto max-w-xl p-8"><LoadError message={errorMessage(error)} onretry={() => window.location.reload()} /></main>{/await}
 {/if}

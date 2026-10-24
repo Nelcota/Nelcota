@@ -8,6 +8,15 @@ and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
 
 ## [Unreleased]
 
+### Changed
+
+- Show the panel's startup as animated steps (connecting to the server, then
+  opening the panel) around the brand mark, with a note when it takes longer
+  than usual. Fast starts skip the screen instead of flashing it.
+- Apply the saved light or dark theme before the first paint, through a hashed
+  script file allowed by the CSP, instead of flashing the dark default.
+- Share the login's header with the offline screen and preload the panel font.
+
 ### Fixed
 
 - Return `400 invalid_grant` for oversized present refresh tokens, allowing SDKs
