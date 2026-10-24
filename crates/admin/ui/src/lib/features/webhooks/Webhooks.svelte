@@ -124,7 +124,7 @@
       <div class="grid gap-4 lg:grid-cols-2">
         {#each config.data.endpoints as hook (hook.id)}
           <section class="grid min-w-0 content-start gap-4 rounded-3xl bg-card p-5">
-            <header class="flex flex-wrap items-center justify-between gap-2"><h2 class="min-w-0 break-words font-semibold">{hook.name}</h2><span class={['rounded-full px-2.5 py-1 text-xs font-medium', hook.enabled ? 'bg-primary/10 text-brand' : 'bg-muted text-muted-foreground']}>{t(hook.enabled ? 'webhooks.enabled' : 'webhooks.paused')}</span></header>
+            <header class="flex flex-wrap items-center justify-between gap-2"><h2 class="min-w-0 break-words font-semibold">{hook.name}</h2><span class={['rounded-full px-2.5 py-1 text-xs font-medium', hook.enabled ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground']}>{t(hook.enabled ? 'webhooks.enabled' : 'webhooks.paused')}</span></header>
             <p class="font-mono text-sm text-muted-foreground">{hook.schema}.{hook.table}</p>
             {#if !hook.table_available}<p class="text-sm text-warning">{t('webhooks.missingTable')}</p>{/if}
             <p class="break-all text-sm text-muted-foreground">{hook.url}</p>

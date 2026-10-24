@@ -165,7 +165,7 @@
         </div>
         <div class="grid min-w-0 gap-2">
           <p class="text-sm text-muted-foreground">{t('overview.hero.errors')}</p>
-          <Meter label={t('overview.hero.errors')} part={traffic.totals.errors} whole={traffic.totals.requests} {format} />
+          <Meter label={t('overview.hero.errors')} part={traffic.totals.errors} whole={traffic.totals.requests} {format} tone="destructive" />
         </div>
       </div>
     {/if}
