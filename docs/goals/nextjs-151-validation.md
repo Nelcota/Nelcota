@@ -50,7 +50,10 @@ node scripts/compatibility-smoke.mjs
 ```
 
 The compatibility runner copies the built SDK to a disposable consumer and
-installs pinned Next 15.5.28. It adapts the example's Next 16 `proxy.ts` to Next
+installs pinned Next 15.5.28 with a PostCSS 8.5.31 override. The first unmodified
+Next 15 install failed the mandatory audit because its pinned PostCSS version
+was vulnerable; the override stays within PostCSS major 8 and the audit gate
+remains enabled. It adapts the example's Next 16 `proxy.ts` to Next
 15 `middleware.ts` with `runtime: 'nodejs'`, then runs type checks, production
 server-only rejection/control builds, and the same full browser/framework smoke.
 The published 0.1.0 peer range remains Next 16; this fixture is compatibility

@@ -100,7 +100,7 @@ try {
   assert.equal((await pool.query("SELECT count(*) FROM public.next_notes WHERE body='cross-user'")).rows[0].count, '0');
   // Negative cases use the same final backend and persisted identities as the controls.
   const snapshot = await pool.query('SELECT key, sealed, expires_at FROM nelcota_next.sessions ORDER BY key');
-  for (const headers of [{ origin: 'https://attacker.invalid' }, {}, { origin, 'sec-fetch-site': 'cross-site' }]) {
+  for (const headers of [{ origin: 'https://attacker.invalid', host: 'localhost:3000', 'x-forwarded-host': 'localhost:3000', 'x-forwarded-proto': 'http' }, {}, { origin, 'sec-fetch-site': 'cross-site' }]) {
     await assert.rejects(integration.write(a, new Request(origin + '/auth/logout', { method: 'POST', headers }), context => context.auth.signOut()), { code: 'csrf' });
   }
   assert.deepEqual((await pool.query('SELECT key, sealed, expires_at FROM nelcota_next.sessions ORDER BY key')).rows, snapshot.rows);
@@ -170,6 +170,11 @@ try {
   let escaped;
   await integration.read(a, async context => { escaped = context.getUser; });
   await assert.rejects(escaped(), { code: 'closed_context' });
+  await assert.rejects(integration.write(a, new Request(origin + '/wrong-callback?code=invalid'), context => context.auth.exchangeCode('invalid'), true), { code: 'csrf' });
+  await assert.rejects(integration.write(a, new Request(origin + '/auth/callback?code=invalid&state=invalid'), context => context.auth.exchangeCode('invalid'), true), { code: 'csrf' });
+  const pending = await integration.write(a, request(), context => context.auth.startOAuth({ provider: 'github', returnTo: '//attacker.invalid' }));
+  assert.equal(pending.error, null);
+  assert.equal(new URL(new URL(pending.data.url).searchParams.get('redirect_to')).origin, origin);
   const namespace = `${origin}\0${new URL(`http://127.0.0.1:${port}`).href}`;
   const storedKey = sessionKey([...a.values.values()][0], namespace);
   const originalRow = (await pool.query('SELECT sealed, expires_at FROM nelcota_next.sessions WHERE key=$1', [storedKey])).rows[0];
@@ -181,11 +186,12 @@ try {
   await pool.query('UPDATE nelcota_next.sessions SET sealed=$2, expires_at=$3 WHERE key=$1', [storedKey, originalRow.sealed, originalRow.expires_at]);
   const sealer = await SessionSealer.create(keys);
   const state = await sealer.open(originalRow.sealed, `nelcota-next/v1\0${namespace}\0${storedKey}`);
+  assert.equal(state.returnTo, '/', 'Unsafe return path was retained');
   const revoked = await fetch(`http://127.0.0.1:${port}/auth/v1/logout`, { method: 'POST', headers: { authorization: `Bearer ${JSON.parse(state.session).access_token}` } });
   assert(revoked.ok, 'Backend logout control failed');
   const verified = await integration.read(a, context => context.getUser());
   assert.equal(verified.data, null); assert.equal(verified.error?.status, 401);
-  report = { binary, sha256, soak, checks: ['two real signups', 'verified users', 'two request identities', 'isolated RLS reads', 'anonymous canary empty', 'cross-user update empty', 'SQL integrity', 'reserved filters remain predicates', 'hostile/missing/cross-site Origin rejected without session mutation', 'forged cookie has no RLS access', 'forged owner insert rejected', 'cross-user delete empty', 'read-only mutation rejected', 'escaped context rejected', 'tampered and expired envelopes cannot access RLS data', 'backend-revoked token fails verified-user lookup'], database: 'disposable; removed in finally', provenance: 'supplied binary identity recorded; caller must establish its source revision' };
+  report = { binary, sha256, soak, checks: ['two real signups', 'verified users', 'two request identities', 'isolated RLS reads', 'anonymous canary empty', 'cross-user update empty', 'SQL integrity', 'reserved filters remain predicates', 'hostile/missing/cross-site Origin rejected without session mutation', 'forged cookie has no RLS access', 'forged owner insert rejected', 'cross-user delete empty', 'read-only mutation rejected', 'escaped context rejected', 'tampered and expired envelopes cannot access RLS data', 'backend-revoked token fails verified-user lookup', 'foreign callback path and malformed state rejected', 'unsafe OAuth return path normalizes to local root'], database: 'disposable; removed in finally', provenance: 'supplied binary identity recorded; caller must establish its source revision' };
 } finally {
   cleaning = true;
   if (server && server.exitCode === null) { const stopped = once(server, 'close'); server.kill('SIGTERM'); const timer = setTimeout(() => server.kill('SIGKILL'), 3000); await stopped; clearTimeout(timer); }
