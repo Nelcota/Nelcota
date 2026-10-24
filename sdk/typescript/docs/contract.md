@@ -271,12 +271,16 @@ Invalid HTTP header values are usage errors, and an unreadable error body keeps
 its known HTTP status. Retry-After accepts integer seconds or HTTP date formats;
 empty query/fragment delimiters are invalid in API base URLs.
 
-An expired logout renews under its lifecycle owner before revoking. An uncertain
-native refresh is never rotated a second time to clear it; logout can still
-clear local state. Only an explicit pre-grant rate-limit rejection releases a
-refresh reservation. A network or gateway failure keeps its uncertainty fence.
+Logout renews under its lifecycle owner only an expired access token (allowing
+five seconds of clock skew) and revokes any still-valid token, even after a
+failed renewal. The renewal only revokes itself: it is never persisted,
+broadcast or emitted as `refreshed`, and logout emits one `signed_out`. An
+uncertain native refresh is never rotated a second time to clear it; logout can
+still clear local state. Only an explicit pre-grant rate-limit rejection releases
+a refresh reservation. A network or gateway failure keeps its uncertainty fence.
 Separate server adapters use independent locks; sharing an adapter and key
-coordinates its clients. Explicit sessionStorage remains local to its tab.
+coordinates its clients. Caller storage in Web and Service Workers keeps Web
+Locks. Explicit sessionStorage remains local to its tab.
 
 Cross-tab notifications preserve account/profile event kinds without sending
 credentials; unchanged reloads emit nothing. Reserved modifier column filters

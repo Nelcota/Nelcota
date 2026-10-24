@@ -203,14 +203,18 @@ de encaminhamento por requisição dos clientes de login gerenciado.
 
 ### Correções de sessão, consultas e transporte
 
-O logout renova uma sessão expirada antes de revogá-la, sob o mesmo controle de
-ciclo de vida. Falhas ainda podem impedir a revogação remota; o estado local é
-limpo. Uma rotação de resultado incerto não é repetida para tentar encerrá-la.
+O logout renova apenas uma sessão expirada (com tolerância de cinco segundos para
+diferença de relógio) antes de revogá-la, sob o mesmo controle de ciclo de vida;
+um token ainda válido é revogado diretamente, mesmo se a renovação falhar. A
+renovação serve apenas para a revogação: não é salva nem emite `refreshed`, e o
+logout emite um único `signed_out`. Falhas ainda podem impedir a revogação
+remota; o estado local é limpo. Uma rotação de resultado incerto não é repetida para tentar encerrá-la.
 Somente uma rejeição explícita por limite de tentativas libera a reserva de
 refresh; falhas de rede ou gateway mantêm o bloqueio preventivo.
 
 Adaptadores distintos no servidor não compartilham a fila de autenticação.
-Clientes com o mesmo adaptador e chave continuam coordenados. Mudanças de conta
+Clientes com o mesmo adaptador e chave continuam coordenados, e o storage do
+chamador em Web e Service Workers mantém Web Locks. Mudanças de conta
 e perfil entre abas preservam os eventos corretos; estado inalterado não emite
 evento, e sessionStorage explícito permanece isolado por aba.
 
