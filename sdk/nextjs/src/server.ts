@@ -28,6 +28,8 @@ export async function createNelcotaNext<Database>(options: NextOptions): Promise
     server: async work => owner.read(await cookies(), work),
     route: async (request, work) => privateResponse(await owner.write(await cookies(), request, work)),
     forgetLocalSession: async request => { await owner.forget(await cookies(), request); return privateResponse(new Response(null, { status: 204 })); },
+    // Next only invokes Server Actions by POST, so the method is fixed here; CSRF
+    // protection comes from the exact Origin check plus Next's own action checks.
     action: async work => owner.write(await cookies(), new Request(owner.origin, { method: 'POST', headers: new Headers(await headers()) }), work),
     callback: async (request, work) => privateResponse(await owner.write(await cookies(), request, work, true)),
   };

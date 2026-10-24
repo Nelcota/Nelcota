@@ -71,7 +71,9 @@ restrito a desenvolvimento loopback; não atende múltiplos processos.
   corpo da requisição **antes** de `route()`: o callback mantém o lease da
   sessão (e, com PostgreSQL, uma conexão do pool) até terminar. Não faça nele
   I/O lento alheio à autenticação, como corpos, uploads ou chamadas externas.
-- `.action(async ({ auth }) => ...)`: Server Action. Valide campos/tamanhos e
+- `.action(async ({ auth }) => ...)`: Server Action. O Next só as chama via
+  POST; a proteção CSRF vem da verificação exata de `Origin` e da checagem de
+  origem do próprio Next. Não amplie `serverActions.allowedOrigins`. Valide campos/tamanhos e
   confira o resultado antes de `redirect('/profile')`. O redirecionamento do
   Next lança uma exceção; não a transforme em erro de autenticação.
 - `.callback(request, ...)`: somente GET em `/auth/callback`, com cookie,

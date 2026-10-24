@@ -140,7 +140,10 @@ refresh fails with a 429/5xx or network error, the callback still runs with the
 stored session. Sign-out still clears local state, and the auth result carries
 the backend error.
 
-An Action uses `(await nelcota).action(async ({ auth }) => { ... })`. Call
+An Action uses `(await nelcota).action(async ({ auth }) => { ... })`. Next only
+invokes Actions by POST, so the method check never fails for them. Their CSRF
+defense is the exact `Origin` check above plus Next's own Server Action origin
+check; do not widen `serverActions.allowedOrigins` beyond your own origin. Call
 `redirect('/profile')` **after** checking the auth result; Next redirects throw,
 and the adapter publishes an accepted cookie in its `finally` path. Do not catch
 Next redirect exceptions as ordinary authentication failures.
