@@ -121,9 +121,10 @@ export class AuthClient {
     url.searchParams.delete('error');
     replaceUrl(href, url);
     if (error !== null) {
-      return fail(new NelcotaError({ status: 0, code: error, message: `Sign-in failed: ${error}` }));
+      return fail(new NelcotaError({ status: 0, code: error.trim() || 'provider_error', message: 'Sign-in failed' }));
     }
-    return this.exchangeCode(code ?? '', options);
+    if (!code?.trim()) return fail(clientError('invalid_response', 'Missing OAuth code'));
+    return this.exchangeCode(code, options);
   }
 
   /**
@@ -223,7 +224,7 @@ export class AuthClient {
     return this.#manager.signOut(async session => {
       const result = await this.#http.send({ method: 'POST', path: '/auth/v1/logout', auth: session.access_token, signal: options.signal, timeout: options.timeout });
       return result.error ? fail(result.error) : ok(null);
-    });
+    }, options);
   }
 }
 
