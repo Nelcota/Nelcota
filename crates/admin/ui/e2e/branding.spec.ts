@@ -84,7 +84,20 @@ test('the loading indicator waits before showing, so a fast start does not flash
     await page.reload({ waitUntil: 'domcontentloaded' })
     const indicator = page.locator('.loading-screen-indicator')
     await expect(indicator).toBeAttached()
-    expect(Number(await indicator.evaluate(el => getComputedStyle(el).opacity))).toBeLessThan(0.1)
+    // Seek the reveal itself instead of racing the clock: a slow runner can be
+    // past the 300 ms delay before the first read.
+    const hidden = await indicator.evaluate(el => {
+      const reveal = el.getAnimations().find(a => (a as CSSAnimation).animationName === 'loading-screen-reveal')
+      if (!reveal) return null
+      reveal.pause()
+      const opacityAt = (ms: number) => { reveal.currentTime = ms; return Number(getComputedStyle(el).opacity) }
+      const result = { start: opacityAt(0), beforeDelay: opacityAt(290) }
+      reveal.play()
+      return result
+    })
+    expect(hidden).not.toBeNull()
+    expect(hidden!.start).toBeLessThan(0.1)
+    expect(hidden!.beforeDelay).toBeLessThan(0.1)
     await expect.poll(() => indicator.evaluate(el => Number(getComputedStyle(el).opacity))).toBe(1)
   } finally { release() }
 })
