@@ -1,8 +1,9 @@
 <div align="center">
 
-<img src="crates/admin/ui/src/assets/mascot.png" alt="Nelcota mascot" width="96" height="96">
-
-# Nelcota
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
+  <img src="docs/assets/logo-light.svg" alt="Nelcota" width="320" height="120">
+</picture>
 
 Open source backend-as-a-service for applications that use PostgreSQL.<br>
 One Rust binary provides REST, authentication, file storage, webhooks and an admin panel.

@@ -1,6 +1,7 @@
 # Documentation assets
 
-Panel overview/table screenshots support the README in light/dark themes. Avatar
+The logo SVGs and panel overview/table screenshots support the README in
+light/dark themes. The logo SVGs are vector masters from the brand kit. Avatar
 images and their generation prompts are retained branding drafts, not operating
 or security guidance.
 
