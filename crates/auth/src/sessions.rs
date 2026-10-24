@@ -326,8 +326,9 @@ mod refresh_http_tests {
         .max_size(1)
         .build()
         .unwrap();
-        let keys =
-            Arc::new(Keys::new(None, Some(b"local-boundary-fixture-key-with-32-bytes")).unwrap());
+        let mut secret = [0u8; 32];
+        getrandom::fill(&mut secret).unwrap();
+        let keys = Arc::new(Keys::new(None, Some(&secret)).unwrap());
         let state = AuthState::new(
             pool,
             keys,
