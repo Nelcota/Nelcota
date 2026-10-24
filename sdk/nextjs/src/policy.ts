@@ -5,7 +5,7 @@ export function trustedUrl(value: string, development: boolean, originOnly = fal
   try { url = new URL(value); }
   catch { throw new SessionError('configuration', 'Invalid application or API URL'); }
   const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
-  if ((url.protocol !== 'https:' && !(development && local && url.protocol === 'http:')) || url.username || url.password || url.search || url.hash || (originOnly && url.pathname !== '/')) {
+  if ((url.protocol !== 'https:' && !(development && local && url.protocol === 'http:')) || url.username || url.password || url.href.includes('?') || url.href.includes('#') || (originOnly && url.pathname !== '/')) {
     throw new SessionError('configuration', 'Use HTTPS URLs without credentials, queries or fragments; insecure development is loopback-only');
   }
   return url;

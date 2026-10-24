@@ -21,3 +21,6 @@ describe('redirect and origin policy', () => {
     expect(() => trustedUrl('http://remote.test', true)).toThrow();
   });
 });
+it.each(['https://app.test/?', 'https://app.test/#'])('rejects empty URL delimiters during configuration: %s', value => {
+  expect(() => trustedUrl(value, false, true)).toThrow();
+});
