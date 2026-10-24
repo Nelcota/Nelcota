@@ -196,7 +196,9 @@ adopting another identity.
 A host-only HttpOnly SameSite=Lax cookie contains one random 32-byte opaque ID,
 not JWTs. Production uses Secure and the `__Host-` prefix. Default names and
 storage bindings include application/API identity. Server state is AES-256-GCM
-authenticated encryption, with key rotation and expiry. No incoming browser
+authenticated encryption, with key rotation and expiry. Each save derives its own
+AES key with HKDF-SHA-256 from the primary key and a random salt (format `v2`);
+rows sealed in the earlier `v1` format still open. No incoming browser
 cookie is forwarded to the API. A write never adopts a presented ID without a
 stored row, and sign-in, sign-up, OAuth exchange, email-link verification and
 password reset move the state to a fresh ID, deleting the old row. Custom

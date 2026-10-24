@@ -49,7 +49,9 @@ props, URLs de redirecionamento ou bundles públicos.
 
 O cookie contém somente um ID aleatório opaco; é HttpOnly, SameSite=Lax,
 host-only, Secure e `__Host-` em produção. Estado no banco usa AES-256-GCM,
-expiração e vínculo com a aplicação/API. O cookie recebido nunca é encaminhado
+expiração e vínculo com a aplicação/API. Cada gravação deriva sua própria chave
+AES com HKDF-SHA-256 a partir da chave primária e de um salt aleatório (formato
+`v2`); linhas no formato anterior `v1` continuam legíveis. O cookie recebido nunca é encaminhado
 à API. Uma gravação nunca adota um ID sem linha armazenada; login, cadastro,
 troca OAuth, verificação por link e redefinição de senha movem o estado para um
 ID novo e removem a linha antiga (leases de `SessionStore` próprios implementam

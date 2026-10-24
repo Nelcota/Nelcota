@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes, webcrypto } from 'node:crypto';
 import { DevelopmentSessionStore } from '../src/memory-store.js';
 import { newSessionId, sessionKey, SessionSealer, type SessionState } from '../src/seal.js';
 
@@ -56,5 +56,27 @@ describe('development ownership', () => {
     await store.exclusive('one', lease => lease.remove());
     await store.exclusive('two', lease => lease.save(row));
     expect(await store.read('two')).toEqual(row);
+  });
+});
+describe('sealed format', () => {
+  it('seals v2 with a fresh per-message salt and still opens v1 rows', async () => {
+    const secret = randomBytes(32).toString('base64url'), sealer = await SessionSealer.create([secret]);
+    const first = await sealer.seal(state(), 'binding'), second = await sealer.seal(state(), 'binding');
+    expect(first).toMatch(/^v2\.[a-f0-9]{16}\./);
+    const salt = (value: string) => Buffer.from(value.split('.')[2]!, 'base64url').subarray(0, 16).toString('hex');
+    expect(salt(first)).not.toBe(salt(second));
+    expect((await sealer.open(first, 'binding')).session).toBe('private-session');
+    await expect(sealer.open(first, 'other')).rejects.toMatchObject({ code: 'invalid_session' });
+    const body = Buffer.from(first.split('.')[2]!, 'base64url'); body[0] = body[0]! ^ 1;
+    await expect(sealer.open(`v2.${first.split('.')[1]}.${body.toString('base64url')}`, 'binding')).rejects.toMatchObject({ code: 'invalid_session' });
+    // Previous format: AES-GCM directly under the primary key, iv || ciphertext.
+    const bytes = Buffer.from(secret, 'base64url'), iv = randomBytes(12);
+    const raw = await webcrypto.subtle.importKey('raw', bytes, { name: 'AES-GCM' }, false, ['encrypt']);
+    const encrypted = await webcrypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: Buffer.from('binding') }, raw, Buffer.from(JSON.stringify(state())));
+    const legacy = `v1.${createHash('sha256').update(bytes).digest('hex').slice(0, 16)}.${Buffer.concat([iv, Buffer.from(encrypted)]).toString('base64url')}`;
+    expect((await sealer.open(legacy, 'binding')).pkce).toBe('private-pkce');
+    await expect(sealer.open(legacy, 'other')).rejects.toMatchObject({ code: 'invalid_session' });
+    await expect(sealer.open(legacy.replace(/^v1/, 'v2'), 'binding')).rejects.toMatchObject({ code: 'invalid_session' });
+    await expect(sealer.open(first.replace(/^v2/, 'v3'), 'binding')).rejects.toMatchObject({ code: 'invalid_session' });
   });
 });
