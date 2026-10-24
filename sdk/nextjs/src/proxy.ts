@@ -28,12 +28,18 @@ export async function createNelcotaProxy(options: NextOptions, policy: ProxyOpti
   const paths = policy.protectedPaths.map(configPath);
   const login = configPath(policy.loginPath ?? '/login'), refresh = configPath(policy.refreshPath ?? '/auth/refresh');
   const excluded = new Set([login, refresh, '/auth/callback', '/auth/session/refresh']);
+  const guarded = (path: string): boolean => paths.some(prefix => prefix === '/' || path === prefix || path.startsWith(`${prefix}/`));
+  // Lenient decoding keeps undecodable runs; it only decides if strict checks apply.
+  const lenient = (path: string): string => path.replace(/(?:%[0-9a-f]{2})+/gi, run => { try { return decodeURIComponent(run); } catch { return run; } });
   return async request => {
-    let path = request.nextUrl.pathname;
+    let path = request.nextUrl.pathname, loose = path;
+    for (let count = 0; count < 3 && loose.includes('%'); count++) loose = lenient(loose);
+    // Paths that cannot reach a protected prefix pass even with literal `%25`.
+    if (!guarded(path) && !guarded(loose.replaceAll('\\', '/'))) return NextResponse.next();
     try { for (let count = 0; count < 3 && path.includes('%'); count++) path = decodeURIComponent(path); }
     catch { return privateHeaders(NextResponse.json({ error: 'invalid_path' }, { status: 400 })); }
     if (/[\\\u0000-\u001f\u007f]/.test(path) || /%[0-9a-f]{2}/i.test(path)) return privateHeaders(NextResponse.json({ error: 'invalid_path' }, { status: 400 }));
-    if (excluded.has(path) || path.startsWith('/_next/') || !paths.some(prefix => prefix === '/' || path === prefix || path.startsWith(`${prefix}/`))) return NextResponse.next();
+    if (excluded.has(path) || path.startsWith('/_next/') || !guarded(path)) return NextResponse.next();
     try {
       return await owner.read(request.cookies, async context => {
         const user = await context.getUser();

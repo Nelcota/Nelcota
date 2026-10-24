@@ -99,7 +99,9 @@ No navegador importe somente `refreshSession` de `@nelcota/nextjs/browser`.
 Crie o POST `/auth/session/refresh` chamando `auth.refresh()`. A página
 `/auth/refresh` pode apresentar um botão Continuar para fazer esse POST. O proxy
 opcional cuida de navegação, não renova sessão nem substitui RLS. Evite loops
-excluindo login, callback e as páginas/rotas de renovação.
+excluindo login, callback e as páginas/rotas de renovação. Codificações ambíguas
+recebem 400 só em caminhos que, decodificados, possam atingir um prefixo
+protegido. Caminhos públicos como `/blog/50%25-off` passam normalmente.
 
 Para remover explicitamente uma sessão local ilegível, use uma rota POST de
 mesma origem chamando `.forgetLocalSession(request)`. Isso não promete revogar

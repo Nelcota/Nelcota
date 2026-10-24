@@ -185,7 +185,9 @@ In a Client Component, import **only** `refreshSession` from
 `@nelcota/nextjs/browser`; it POSTs to `/auth/session/refresh`. Provide that Route
 Handler as above. The optional `/proxy` entry redirects expired sessions to
 `/auth/refresh`, a page that owns the POST. Exclude callback/login/refresh pages
-from loops. The example has an explicit Continue button. A proxy never refreshes
+from loops. The example has an explicit Continue button. Ambiguous encodings
+get a 400 only on paths that could reach a protected prefix after decoding.
+Public paths such as `/blog/50%25-off` pass through. A proxy never refreshes
 or writes cookies itself; storage failures must surface instead of silently
 adopting another identity.
 

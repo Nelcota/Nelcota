@@ -62,3 +62,9 @@ it('prefixes basePath on login redirects', async () => {
   const target = new URL((await proxy(new NextRequest('http://localhost:3000/profile'))).headers.get('location')!);
   expect(target.pathname).toBe('/app/login'); expect(target.searchParams.get('next')).toBe('/profile');
 });
+it('passes literal percent signs on public paths but keeps protected paths strict', async () => {
+  const { proxy } = await setup();
+  for (const path of ['/blog/50%25-off', '/blog/%25zz', '/blog/100%2525']) expect((await proxy(new NextRequest(`http://localhost:3000${path}`))).headers.get('x-middleware-next')).toBe('1');
+  for (const path of ['/profile/50%25-off', '/%70rofile/x%25', '/profile%5c%25zz']) expect((await proxy(new NextRequest(`http://localhost:3000${path}`))).status).toBe(400);
+  for (const path of ['/%70rofile', '/%2570rofile']) expect((await proxy(new NextRequest(`http://localhost:3000${path}`))).status).toBe(303);
+});
