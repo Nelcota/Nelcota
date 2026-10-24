@@ -266,20 +266,60 @@
 	}
 }
 
-/* A quiet activity indicator for the startup screen. */
-@keyframes loading-screen-dot {
-	0%, 70%, 100% { opacity: 0.3; }
-	35% { opacity: 1; }
+/* The startup screen. It stays hidden for the first 300ms, so a fast start
+   goes straight to the next screen without flashing it; then a ring turns
+   around the current step's icon and each new step slides in. */
+@keyframes loading-screen-reveal {
+	from { opacity: 0; transform: translateY(6px); }
 }
-.loading-screen-dot {
-	animation: loading-screen-dot 1.5s ease-in-out infinite;
+.loading-screen-indicator {
+	animation: loading-screen-reveal 320ms cubic-bezier(0.2, 0.8, 0.2, 1) 300ms backwards;
 }
-.loading-screen-dot:nth-child(2) { animation-delay: 160ms; }
-.loading-screen-dot:nth-child(3) { animation-delay: 320ms; }
+@keyframes loading-screen-spin {
+	to { transform: rotate(360deg); }
+}
+.loading-screen-arc {
+	transform-origin: center;
+	animation: loading-screen-spin 1.4s linear infinite;
+}
+@keyframes loading-screen-halo {
+	0%, 100% { box-shadow: 0 0 0 0 var(--brand-soft); }
+	50% { box-shadow: 0 0 0 10px var(--brand-soft); }
+}
+.loading-screen-halo {
+	animation: loading-screen-halo 2.4s ease-in-out infinite;
+}
+.loading-screen-swap {
+	animation: loading-screen-reveal 360ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+@keyframes loading-screen-pop {
+	0% { transform: scale(0.4); opacity: 0; }
+	60% { transform: scale(1.15); opacity: 1; }
+}
+.loading-screen-pop {
+	animation: loading-screen-pop 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+/* "Conectando ao servidor..." with the dots filling in. */
+@keyframes loading-screen-ellipsis {
+	0% { content: ''; }
+	25% { content: '.'; }
+	50% { content: '..'; }
+	75%, 100% { content: '...'; }
+}
+.loading-screen-ellipsis {
+	display: inline-block;
+	width: 1.2em;
+	text-align: start;
+}
+.loading-screen-ellipsis::after {
+	content: '...';
+	animation: loading-screen-ellipsis 1.6s steps(1, end) infinite;
+}
 @media (prefers-reduced-motion: reduce) {
-	.loading-screen-dot {
+	.loading-screen-arc,
+	.loading-screen-halo,
+	.loading-screen-ellipsis::after {
 		animation: none;
-		opacity: 0.6;
 	}
 }
 

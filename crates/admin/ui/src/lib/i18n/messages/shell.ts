@@ -75,6 +75,18 @@ const ptBR = {
     loading: 'Carregando painel…',
     skipToContent: 'Pular para o conteúdo',
     offlineTitle: 'Não foi possível falar com o servidor',
+    // The startup screen: what is happening now, step by step.
+    boot: {
+      steps: 'Etapas do carregamento',
+      session: 'Conectando ao servidor',
+      sessionDetail: 'Verificando sua sessão com segurança.',
+      panel: 'Abrindo o painel',
+      panelDetail: 'Preparando as ferramentas do projeto.',
+      done: 'concluído',
+      current: 'em andamento',
+      pending: 'a seguir',
+      slow: 'Está demorando mais que o normal. O servidor pode estar ocupado ou a conexão pode estar lenta.',
+    },
   },
 }
 
@@ -151,6 +163,17 @@ const en: Messages<typeof ptBR> = {
     loading: 'Loading panel…',
     skipToContent: 'Skip to content',
     offlineTitle: 'Could not reach the server',
+    boot: {
+      steps: 'Loading steps',
+      session: 'Connecting to the server',
+      sessionDetail: 'Checking your session securely.',
+      panel: 'Opening the panel',
+      panelDetail: 'Getting the project tools ready.',
+      done: 'done',
+      current: 'in progress',
+      pending: 'up next',
+      slow: 'This is taking longer than usual. The server may be busy or the connection slow.',
+    },
   },
 }
 
