@@ -8,8 +8,13 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { Pool } from 'pg';
 import assert from 'node:assert/strict';
-import { Integration } from '../dist/context.js';
-import { PostgresSessionStore } from '../dist/postgres.js';
+// The package entries import `server-only`, which only loads under Next's server condition.
+let Integration, PostgresSessionStore;
+try { ({ Integration } = await import('../dist/context.js')); ({ PostgresSessionStore } = await import('../dist/postgres.js')); }
+catch (error) {
+  if (/Client Component/.test(String(error?.message))) throw new Error('Run with: node --conditions=react-server scripts/backend-smoke.mjs');
+  throw error;
+}
 
 const binary = process.env.NELCOTA_NEXT_TEST_BINARY;
 const connectionString = process.env.NELCOTA_NEXT_TEST_DATABASE_URL;
