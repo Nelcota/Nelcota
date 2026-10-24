@@ -135,7 +135,7 @@ test('a long start explains the wait', async ({ page }) => {
   await expect(page.getByText('Está demorando mais que o normal')).toBeVisible()
 })
 
-for (const [stored, prefersLight, dark] of [['light', false, false], ['dark', true, true], ['system', true, false], [null, true, true]] as const) {
+for (const [stored, prefersLight, dark] of [['light', false, false], ['dark', true, true], ['system', true, false], ['bogus', true, true], [null, true, true]] as const) {
   test(`theme ${stored ?? 'unset'} is applied before the app runs (system ${prefersLight ? 'light' : 'dark'})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: prefersLight ? 'light' : 'dark' })
     if (stored) await page.addInitScript(value => localStorage.setItem('mode-watcher-mode', value), stored)
