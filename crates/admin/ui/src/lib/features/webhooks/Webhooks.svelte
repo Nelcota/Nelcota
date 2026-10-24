@@ -154,8 +154,9 @@
             <div class="flex flex-wrap gap-2">{#each hook.events as event}<span class="rounded-full bg-well px-3 py-1 text-xs">{eventLabel(event)}</span>{/each}</div>
             <div class="flex flex-wrap items-center gap-2">
               <Button variant="outline" size="sm" onclick={() => edit(hook)} disabled={busy !== null}><Pencil data-icon="inline-start" aria-hidden="true" />{t('common.edit')}</Button>
-              <!-- Without its table the webhook cannot capture changes, so pausing or resuming it means nothing. -->
-              {#if hook.table_available}<Button variant="outline" size="sm" onclick={() => hook.enabled ? request('pause', hook) : enable(hook)} disabled={busy !== null}>{t(hook.enabled ? 'webhooks.pause' : 'webhooks.resume')}</Button>{/if}
+              <!-- Without its table no new changes are captured, but pausing still holds the
+                   pending deliveries; only resuming needs the table back (the server refuses it). -->
+              {#if hook.enabled || hook.table_available}<Button variant="outline" size="sm" onclick={() => hook.enabled ? request('pause', hook) : enable(hook)} disabled={busy !== null}>{t(hook.enabled ? 'webhooks.pause' : 'webhooks.resume')}</Button>{/if}
               <Button variant="outline" size="sm" onclick={() => filters(hook.id, '')}>{t('webhooks.deliveries')}</Button>
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger disabled={busy !== null}>

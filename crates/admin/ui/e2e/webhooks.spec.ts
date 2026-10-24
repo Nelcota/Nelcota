@@ -130,6 +130,27 @@ test('unsaved configuration and server errors keep the editor open', async ({ pa
   await expect(page.getByRole('dialog').getByLabel('Nome', { exact: true })).toHaveValue('Rascunho')
 })
 
+test('a webhook whose table was dropped says so and can still be paused, not resumed', async ({ page }) => {
+  await setup(page)
+  let enabled = true
+  await page.route('**/admin/api/webhooks', route => route.request().method() === 'GET'
+    ? route.fulfill({ status: 200, json: { endpoints: [{ ...initial, table_available: false, enabled }], tables: ['orders'], allow_loopback: false, outstanding: 3, retained: 3 } })
+    : route.fallback())
+  await page.route(`**/admin/api/webhooks/${endpointId}`, route => {
+    if (route.request().method() !== 'PUT') return route.fallback()
+    enabled = (route.request().postDataJSON() as { enabled: boolean }).enabled
+    return route.fulfill({ status: 200, json: { ...initial, table_available: false, enabled } })
+  })
+  await page.reload()
+  await expect(page.getByText('Sem tabela', { exact: true })).toBeVisible()
+  await expect(page.getByText('Ativo', { exact: true })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Pausar', exact: true }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Pausar webhook', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Pausar', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Ativar', exact: true })).toHaveCount(0)
+  expect(enabled).toBe(false)
+})
+
 for (const locale of ['pt-BR', 'en']) {
   test(`events controls and guide remain usable at 320px in ${locale}`, async ({ page }) => {
     await page.addInitScript(locale => localStorage.setItem('nelcota.locale', locale), locale)
