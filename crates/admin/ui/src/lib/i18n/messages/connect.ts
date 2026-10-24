@@ -107,6 +107,11 @@ const ptBR = {
     details:
       'O token não fica guardado no servidor: vale até expirar, e gerar outro não invalida os anteriores. Ainda depende de GRANT em cada tabela (as criadas pelo painel já dão acesso total ao service_role).',
     copy: 'Copiar token',
+    reveal: 'Mostrar token',
+    hidden: 'Token oculto',
+    confirmTitle: 'Gerar um token service_role?',
+    confirmDescription:
+      'Ele vale por {validity}, ignora a proteção de linhas (RLS) de todas as tabelas e não pode ser revogado: só deixa de valer quando expira. Gere apenas para o código do seu servidor.',
     copyNow: 'Copie agora: ele não será mostrado de novo. Vale até {date}.',
     validity: 'Validade',
     days: { one: '{count} dia', other: '{count} dias' },
@@ -224,6 +229,11 @@ const en: Messages<typeof ptBR> = {
     details:
       'The token is not stored on the server: it lasts until it expires, and generating another does not revoke earlier ones. It still depends on a GRANT on each table (tables created by the panel already give service_role full access).',
     copy: 'Copy token',
+    reveal: 'Show token',
+    hidden: 'Token hidden',
+    confirmTitle: 'Generate a service_role token?',
+    confirmDescription:
+      'It lasts {validity}, bypasses row protection (RLS) on every table and cannot be revoked: it only stops working when it expires. Generate it only for your server code.',
     copyNow: 'Copy it now: it will not be shown again. Valid until {date}.',
     validity: 'Validity',
     days: { one: '{count} day', other: '{count} days' },

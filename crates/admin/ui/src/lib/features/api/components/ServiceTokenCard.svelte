@@ -5,8 +5,12 @@
   import KeyRound from '@lucide/svelte/icons/key-round'
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert'
   import LoaderCircle from '@lucide/svelte/icons/loader-circle'
+  import Eye from '@lucide/svelte/icons/eye'
+  import EyeOff from '@lucide/svelte/icons/eye-off'
+  import Copy from '@lucide/svelte/icons/copy'
   import { toast } from 'svelte-sonner'
-  import CodeBlock from '$lib/components/shared/CodeBlock.svelte'
+  import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte'
+  import { copyText } from '$lib/browser/clipboard'
   import { api } from '$lib/transport/api'
   import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
 
@@ -17,14 +21,22 @@
   let days = $state('90')
   let issued = $state<{ token: string; expires_at: number } | null>(null)
   let busy = $state(false)
+  let confirmOpen = $state(false)
+  let revealed = $state(false)
 
+  // Fixed length, so the mask does not leak the token's size.
+  const MASK = '•'.repeat(48)
+
+  // Runs from the confirmation: rethrowing keeps the dialog open to try again.
   async function issue() {
     if (busy) return
     busy = true
     try {
       issued = await api.post<{ token: string; expires_at: number }>('/tokens/service-role', { days: Number(days) })
+      revealed = false
     } catch (e) {
       toast.error(errorMessage(e))
+      throw e
     } finally {
       busy = false
     }
@@ -49,7 +61,26 @@
 
   {#if issued}
     <div class="grid gap-2">
-      <CodeBlock code={issued.token} label={t('connect.token.copy')} wrap />
+      <!-- Masked until asked: the screen may be shared or recorded. Copy always takes the real value. -->
+      <div class="flex min-w-0 items-start gap-1 rounded-xl bg-well py-1.5 pr-1.5 pl-4">
+        <code class="min-w-0 flex-1 py-2 font-mono text-xs leading-relaxed break-all sm:text-[0.8125rem]">
+          {#if revealed}{issued.token}{/if}
+          {#if !revealed}<span aria-hidden="true">{MASK}</span><span class="sr-only">{t('connect.token.hidden')}</span>{/if}
+        </code>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t('connect.token.reveal')}
+          aria-pressed={revealed}
+          onclick={() => (revealed = !revealed)}
+        >
+          {#if revealed}<EyeOff aria-hidden="true" />{/if}
+          {#if !revealed}<Eye aria-hidden="true" />{/if}
+        </Button>
+        <Button variant="ghost" size="icon-sm" aria-label={t('connect.token.copy')} onclick={() => copyText(issued!.token)}>
+          <Copy aria-hidden="true" />
+        </Button>
+      </div>
       <p class="text-sm text-warning">
         {t('connect.token.copyNow', { date: expires(issued.expires_at) })}
       </p>
@@ -67,7 +98,7 @@
         {/each}
       </Select.Content>
     </Select.Root>
-    <Button variant="outline" disabled={busy} onclick={issue}>
+    <Button variant="outline" disabled={busy} onclick={() => (confirmOpen = true)}>
       {#if (busy)}<LoaderCircle data-icon="inline-start" class="animate-spin" aria-hidden="true" />{/if}
       {#if !(busy)}<KeyRound data-icon="inline-start" aria-hidden="true" />{/if}
       {busy ? t('connect.token.generating') : issued ? t('connect.token.generateAnother') : t('connect.token.generate')}
@@ -77,3 +108,12 @@
     </span>
   </div>
 </section>
+
+<ConfirmDialog
+  bind:open={confirmOpen}
+  title={t('connect.token.confirmTitle')}
+  description={t('connect.token.confirmDescription', { validity: durationLabel(days) })}
+  confirmLabel={t('connect.token.generate')}
+  destructive
+  onconfirm={issue}
+/>
