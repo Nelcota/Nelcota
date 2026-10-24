@@ -87,3 +87,96 @@ consumers still must not indiscriminately log identifying provider/DB payloads.
 No new confirmed security defect was auto-published or labelled resolved by
 this first checkpoint. The goal was created and execution started; it is not
 marked complete merely because regression suites passed.
+
+## Second review checkpoint — 2026-10-24
+
+Request: continue the review across all SDKs. Baseline for this pass:
+`a9b8b265ff989412c403ce501605584ee6e48958`. No production requests, package
+publication, merge or disclosure of unrelated private audit artifacts.
+
+### Review and new evidence
+
+- Examined REST identifier/path encoding and filter quoting in both languages,
+  transport auth headers/retry/deadline/cancellation, session publication and
+  caller identity, native persistence, JSON/exact-number handling, storage
+  validators, Next encryption/key binding/nonce, shared ownership and proxy/CSRF.
+  Source inventory records59 files and their hashes in the private artifacts.
+  This is a targeted security review of those boundaries, not proof that every
+  possible behavior or export is bug-free.
+- Added two TypeScript regressions using actual local HTTP servers. A307
+  cross-origin storage redirect reaches its destination without Bearer or
+  Cookie. Encoded traversal-like table/RPC names remain percent-encoded within
+  their intended REST segment. Both tests passed; no production defect was
+  inferred from a mere suspicious string.
+- **G12-01 reproduced:** two first logins sharing an initially empty browser
+  cookie jar, with the older response delayed, end on the older identity after
+  the newer login succeeded. The private controlled reproducer records the
+  expected identity and actual identity. Completion gate FAILED. This proves
+  stale identity ordering, not an external privilege escalation. Severity:
+  medium correctness/session-integrity risk for the unpublished Next candidate;
+  publication blocking. Remains open: a bootstrap/intent ownership design must
+  work across processes; a module-local mutex is not an adequate correction.
+- G12-02 remains a compatibility limitation of fail-closed redirects; do not
+  weaken the policy to make an S3 test pass. No S3 provider configured here.
+- G12-05 narrowed: standard credentials were stripped in the tested native
+  Node fetch path. Arbitrary custom transports/secret headers and auth-body
+  redirects require separate evidence; the test does not certify them.
+- G12-06 narrowed by inspection: FileStorage is a caller-owned local path,
+  not an untrusted upload destination. Its fresh0600 atomic writes do not make
+  parent directories a security boundary. No proven cross-user file exploit
+  established. Dedicated hostile filesystem tests remain unrun.
+
+### Fresh supply-chain result: workspace audit failed
+
+`cargo audit --json` fetched the current advisory database and exited1:
+**RUSTSEC-2026-0387**, `crypto-bigint0.5.5`, timing variability in operations
+intended to be constant-time. Published2026-10-23; advisory lists0.7.6 as patched.
+
+Dependency attribution was checked with `cargo tree --locked -i crypto-bigint`:
+it is pulled through elliptic-curve/ecdsa/p256/p384 and jsonwebtoken/openidconnect
+in the **backend**. `cargo tree --locked -p nelcota-client -i crypto-bigint`
+reports no matching package in the SDK graph. A separate SDK-only dependency
+inventory confirms absence. Do not attribute this advisory to the Rust SDK,
+claim the workspace audit passed, or infer practical key recovery without
+algorithm/secret-operation reachability analysis.
+
+No ignore rule or blind major-version override added. Backend dependency
+compatibility/reachability remediation requires a separate focused change;
+forcing crypto-bigint0.7 into dependencies expecting0.5 is not a safe fix.
+
+`cargo deny` is unavailable (`no such command: deny`). License strings for the
+SDK graph were inventoried, but this is not an automated license-policy pass.
+Do not install/build extra tooling with the current disk reserve.
+
+### Validation updates
+
+| Check | Result |
+|---|---|
+| TypeScript check | Passed after new security tests |
+| TypeScript full unit suite | **330 passed** (328 prior +2 added) |
+| TypeScript type suite | **18 passed**, no type errors |
+| Node24 runtime smoke | Eight scenarios passed: login/read/encoding/count/PKCE/upload/timeout/abort; fixture transport, not a new real-backend test |
+| TypeScript memory regressions | Three rounds of1000 cancelled callers: zero retained signals before completion; queues of200 with and without Web Locks: zero retained signals |
+| Rust/Next regression suites | Prior G12 results retained:44+10 Rust and55 Next; no corresponding source change this pass; not relabelled as rerun |
+| Current RustSec workspace audit | **Failed**, one new advisory; absent from tested SDK graph |
+| SDK license-policy automation | **Blocked (environment)**: cargo-deny unavailable |
+| Final-source server/provider rebuild | **Blocked (environment)**: approximately443MiB free, too close to300MiB reserve for another large build |
+| Full browser/version/provider/soak matrix | Not run; previous G11 evidence retains its own scope and artifact identity |
+
+An initial Vitest invocation from repository root did not select the SDK project;
+it failed at startup. Re-running from the actual SDK directory passed. This was
+an invocation error, not a product failure or evidence of a fixed vulnerability.
+
+### Assessment and next actions
+
+The released SDK implementations gained security-boundary regression evidence;
+this pass found no newly demonstrated cross-user authorization escape in them.
+That statement is limited to reviewed paths/tests, not blanket security approval.
+The Next candidate **must remain unpublished** while G12-01 and G11 completion
+gates are open. The workspace advisory needs backend triage before treating
+whole-project supply-chain checks as green.
+
+Next: resolve initial-cookie identity ownership with a distributed/browser
+reproducer, design/test safe S3 redirect destinations, provide disk/tooling for
+final-source backend/Rust license checks, and complete the remaining runtime,
+provider and hostile-state matrix. G12 remains **in progress**, not complete.
