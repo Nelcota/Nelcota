@@ -70,3 +70,9 @@ Execution reports and JSON measurements retain their original commit, artifact,
 date and failed/skipped/unrun checks. Completed code reviews do not certify all
 future builds or production deployment. Current behavior belongs in the operating
 references; public security context is in [the review summary](../security/review-summary.md).
+
+## Active SDK security review
+
+[G12 — Comprehensive SDK security review](sdk-security-review.md) covers Rust,
+TypeScript and the unpublished Next.js candidate. See its
+[execution record](sdk-security-review-execution.md) for evidence and open gates.
