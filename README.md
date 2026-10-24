@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
-  <img src="docs/assets/logo-light.svg" alt="Nelcota" width="320" height="120">
+  <img src="docs/assets/logo-light.svg" alt="Nelcota" width="480" height="180">
 </picture>
 
 Open source backend-as-a-service for applications that use PostgreSQL.<br>
