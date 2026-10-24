@@ -32,6 +32,11 @@ it('releases a definite rate-limit reservation for other tabs (#137)', async () 
   expect((await first.auth.refreshSession()).error?.code).toBe('rate_limited'); first.dispose();
   const other = client(); expect((await other.auth.getSession()).data?.refresh_token).toBe('refresh-1'); expect(mock.calls).toHaveLength(1); expect(events).toEqual([]);
 });
+it('releases the reservation after any other definite client error (#137)', async () => {
+  browser(); const first = client(mockFetch(json({ code: 'unsupported_grant_type', message: 'Rejected' }, 400)).fetch);
+  await first.auth.setSession(session()); expect((await first.auth.refreshSession()).error?.status).toBe(400); first.dispose();
+  expect((await client().auth.getSession()).data?.refresh_token).toBe('refresh-1');
+});
 it('keeps a gateway failure fenced because rotation may have committed (#137)', async () => {
   browser(); const first = client(mockFetch(json({ code: 'unavailable', message: 'Gateway failure' }, 503)).fetch);
   await first.auth.setSession(session()); expect((await first.auth.refreshSession()).error?.status).toBe(503); first.dispose();
