@@ -39,6 +39,19 @@ updates:
       sdk:
         patterns: ["*"]
 
+  - package-ecosystem: npm
+    directory: /sdk/nextjs
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      nextjs-sdk:
+        patterns: ["*"]
+    ignore:
+      # Linked from the workspace (file:../typescript); updated with the base SDK.
+      - dependency-name: "@nelcota/client"
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
