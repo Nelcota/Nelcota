@@ -6,6 +6,12 @@ on:
   pull_request:
   workflow_call:
 
+# Only pull requests share a group: release callers and main pushes each get
+# their own, so they are never cancelled.
+concurrency:
+  group: sdk-rust-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 
