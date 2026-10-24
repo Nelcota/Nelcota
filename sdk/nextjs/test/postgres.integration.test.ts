@@ -106,3 +106,36 @@ it.skipIf(!process.env['NELCOTA_NEXT_TEST_DATABASE_URL'])('orders concurrent fir
     await admin.end();
   }
 }, 20000);
+
+it.skipIf(!process.env['NELCOTA_NEXT_TEST_DATABASE_URL'])('makes progress with one pooled connection for session and lineage ownership', async () => {
+  const connectionString = process.env['NELCOTA_NEXT_TEST_DATABASE_URL']!;
+  const name = `nelcota_next_test_${randomBytes(8).toString('hex')}`;
+  const url = new URL(connectionString); url.pathname = `/${name}`;
+  const admin = new Pool({ connectionString, max: 1, connectionTimeoutMillis: 1000 });
+  const pool = new Pool({ connectionString: url.href, max: 1, connectionTimeoutMillis: 500 });
+  for (const connectionPool of [admin, pool]) connectionPool.on('error', () => undefined);
+  let created = false;
+  try {
+    await admin.query(`CREATE DATABASE "${name}"`); created = true;
+    await pool.query(await readFile(new URL('../sql/session-store.sql', import.meta.url), 'utf8'));
+    const store = new PostgresSessionStore(pool);
+    await Promise.all(Array.from({ length: 8 }, async (_, index) => {
+      const key = index.toString(16).padStart(64, '0'), lineage = 'f'.repeat(64);
+      await store.exclusive(key, async lease => {
+        expect(await lease.read!(lineage)).toBeNull();
+        await lease.exclusive!(lineage, async owner => {
+          await owner.save({ sealed: 'fixture', expiresAt: Date.now() + 60000 });
+          await owner.remove();
+        });
+        await lease.save({ sealed: 'fixture', expiresAt: Date.now() + 60000 });
+      });
+    }));
+    expect(pool.totalCount).toBe(1); expect(pool.idleCount).toBe(1); expect(pool.waitingCount).toBe(0);
+    const locks = await pool.query("SELECT count(*) FROM pg_locks WHERE locktype='advisory' AND pid=pg_backend_pid()");
+    expect(locks.rows[0].count).toBe('0');
+  } finally {
+    await pool.end();
+    if (created) await admin.query(`DROP DATABASE "${name}" WITH (FORCE)`);
+    await admin.end();
+  }
+}, 20000);

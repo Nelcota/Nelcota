@@ -8,7 +8,7 @@ import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { chromium, firefox, webkit } from '../../typescript/node_modules/playwright-core/index.mjs';
 import { Pool } from 'pg';
-import { buildExample, example, linkPackage, nextBin } from './example.mjs';
+import { buildExample, example, linkPackage, nextBin, nextVersion } from './example.mjs';
 
 const output = createWriteStream(process.env.NELCOTA_NEXT_LOG ?? '/tmp/nelcota-next-framework.log', { mode: 0o600 });
 const children = [];
@@ -348,7 +348,7 @@ try {
     multiTab.cookielessResidual = { browserShows: await shown(one, origin), olderIdentity: older, note: 'documented residual: no lineage without a cookie' };
     await shared.close();
   }
-  console.log(JSON.stringify({ framework: 'Next 16.4.3 production webpack / React 19.3.1', node: process.version, browser: `${engine} ${browser.version()}`, processes: children.length, sessionStore: 'shared disposable PostgreSQL', authFlows: ['password Server Action', 'signup awaiting confirmation', 'resend', 'confirmation and replay', 'update user', 'refresh after 401', 'recovery and replay', 'magic link and replay', 'OAuth S256 PKCE callback, browser binding and replay', 'logout'], resources: { cookieBytes, repeatedReads: 100, repeatedReadMs: Math.round(repeatedReadMs), retainedAdvisoryLocks: 0 }, checks: ['cross-origin request refused before API', 'Route Handler HttpOnly cookie merged', 'private response cache', 'Server Component verified user', 'proxy routes signed-out visitor to login', 'proxy bootstrap ID on login page', 'Server Action redirect retains cookie', 'HTML contains no session credentials', 'logout clears browser session', 'N01 two tabs/processes, reversed delivery: signed out, never the older identity', 'N01 two tabs/processes, natural delivery: newer identity', 'N01 lost winning response: signed out; lost row retired by next lineage sign-in'], multiTab, counts, authorization: 'not tested: local transport fixture' }, null, 2));
+  console.log(JSON.stringify({ framework: `Next ${nextVersion} production webpack / React 19.3.1`, node: process.version, browser: `${engine} ${browser.version()}`, processes: children.length, sessionStore: 'shared disposable PostgreSQL', authFlows: ['password Server Action', 'signup awaiting confirmation', 'resend', 'confirmation and replay', 'update user', 'refresh after 401', 'recovery and replay', 'magic link and replay', 'OAuth S256 PKCE callback, browser binding and replay', 'logout'], resources: { cookieBytes, repeatedReads: 100, repeatedReadMs: Math.round(repeatedReadMs), retainedAdvisoryLocks: 0 }, checks: ['cross-origin request refused before API', 'Route Handler HttpOnly cookie merged', 'private response cache', 'Server Component verified user', 'proxy routes signed-out visitor to login', 'proxy bootstrap ID on login page', 'Server Action redirect retains cookie', 'HTML contains no session credentials', 'logout clears browser session', 'N01 two tabs/processes, reversed delivery: signed out, never the older identity', 'N01 two tabs/processes, natural delivery: newer identity', 'N01 lost winning response: signed out; lost row retired by next lineage sign-in'], multiTab, counts, authorization: 'not tested: local transport fixture' }, null, 2));
 } finally {
   await browser?.close();
   for (const child of children.filter(child => child.exitCode === null)) {

@@ -150,14 +150,14 @@ export class Integration<Database> {
     const lineage = state.lineage ?? null;
     if (state.superseded) return { state: null, row: true, lineage, superseded: true, tombstone: true };
     if (state.session !== null && lineage !== null && state.generation !== undefined) {
-      const head = await this.#head(lineage);
+      const head = await this.#head(lineage, undefined, lease);
       if (head?.current !== key || head.generation !== state.generation) return { state: null, row: true, lineage, superseded: true, tombstone: false };
     }
     return { state, row: true, lineage, superseded: false, tombstone: false };
   }
   /** A missing or unreadable head fails closed: no generation of that lineage is live. */
-  async #head(lineage: string, lease?: SessionLease): Promise<LineageHead | null> {
-    const row = await (lease ? lease.load() : this.#options.store.read(lineage));
+  async #head(lineage: string, lease?: SessionLease, parent?: SessionLease): Promise<LineageHead | null> {
+    const row = await (lease ? lease.load() : parent?.read ? parent.read(lineage) : this.#options.store.read(lineage));
     if (!row) return null;
     let value: Record<string, unknown>;
     try { value = await this.#sealer.openRecord(row.sealed, this.#lineageBinding(lineage)); }
@@ -313,7 +313,8 @@ export class Integration<Database> {
       const register = async (): Promise<number> => {
         ensure();
         try {
-          return await this.#options.store.exclusive(lineage, async owner => {
+          const exclusive = lease.exclusive?.bind(lease) ?? this.#options.store.exclusive.bind(this.#options.store);
+          return await exclusive(lineage, async owner => {
             const head = await this.#head(lineage, owner);
             const next = (head?.generation ?? 0) + 1, expiresAt = Date.now() + this.#ttl * 1000;
             await owner.save({ sealed: await this.#sealer.seal({ kind: 'lineage', current: key, generation: next }, this.#lineageBinding(lineage)), expiresAt });
@@ -379,7 +380,7 @@ export class Integration<Database> {
           // Ending a live or superseded identity ends the whole lineage in this browser. A
           // row-less (bootstrap) ID only does so when its lineage already has a head, so
           // random cookies never create lineage records.
-          const ending = (state?.session !== null && state?.session !== undefined) || loaded.superseded || (presented && (await this.#head(lineage)) !== null);
+          const ending = (state?.session !== null && state?.session !== undefined) || loaded.superseded || (presented && (await this.#head(lineage, undefined, lease)) !== null);
           const result = await auth.signOut(mutationOptions(options));
           if (ending) { generation = await register(); cookieNeeded = true; }
           return result;
@@ -461,7 +462,7 @@ export class Integration<Database> {
           // A lineage-governed response re-checks its head at publication time: if a later
           // sign-in/out of this browser won meanwhile, it neither sets nor clears the cookie
           // (either would overwrite the newer identity) and its own row is tombstoned.
-          const head = cookieNeeded && generation !== null ? await this.#head(lineage) : null;
+          const head = cookieNeeded && generation !== null ? await this.#head(lineage, undefined, lease) : null;
           const stale = cookieNeeded && generation !== null && (head?.current !== key || head.generation !== generation);
           if (stale && state !== null) {
             try { await lease.save(await this.#tombstone(key, lineage)); }

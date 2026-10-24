@@ -8,6 +8,7 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { Pool } from 'pg';
 import assert from 'node:assert/strict';
+import { SessionSealer, sessionKey } from '../dist/seal.js';
 // The package entries import `server-only`, which only loads under Next's server condition.
 let Integration, PostgresSessionStore;
 try { ({ Integration } = await import('../dist/context.js')); ({ PostgresSessionStore } = await import('../dist/postgres.js')); }
@@ -64,7 +65,8 @@ try {
     GRANT SELECT, INSERT, UPDATE, DELETE ON public.next_notes TO anon, authenticated;
     GRANT USAGE, SELECT ON SEQUENCE public.next_notes_id_seq TO authenticated;
     CREATE POLICY own_notes ON public.next_notes TO authenticated USING (owner=auth.uid()) WITH CHECK (owner=auth.uid());`);
-  const integration = await Integration.create({ url: `http://127.0.0.1:${port}`, appOrigin: origin, keys: [randomBytes(32).toString('base64url')], store: new PostgresSessionStore(pool), allowInsecureDevelopment: true });
+  const keys = [randomBytes(32).toString('base64url')];
+  const integration = await Integration.create({ url: `http://127.0.0.1:${port}`, appOrigin: origin, keys, store: new PostgresSessionStore(pool), allowInsecureDevelopment: true });
   const a = new Jar(), b = new Jar();
   for (const [jar, email] of [[a, 'alice@example.test'], [b, 'bob@example.test']]) {
     const result = await integration.write(jar, request(), context => context.auth.signUp({ email, password: randomBytes(24).toString('base64url') }));
@@ -96,7 +98,94 @@ try {
   assert.equal(crossing.error, null); assert.deepEqual(crossing.data, []);
   assert.equal((await pool.query('SELECT count(*) FROM public.next_notes')).rows[0].count, '2');
   assert.equal((await pool.query("SELECT count(*) FROM public.next_notes WHERE body='cross-user'")).rows[0].count, '0');
-  report = { binary, sha256, checks: ['two real signups', 'verified users', 'two request identities', 'isolated RLS reads', 'anonymous canary empty', 'cross-user update empty', 'SQL integrity', 'reserved filters remain predicates'], database: 'disposable; removed in finally', provenance: 'supplied binary identity recorded; caller must establish its source revision' };
+  // Negative cases use the same final backend and persisted identities as the controls.
+  const snapshot = await pool.query('SELECT key, sealed, expires_at FROM nelcota_next.sessions ORDER BY key');
+  for (const headers of [{ origin: 'https://attacker.invalid' }, {}, { origin, 'sec-fetch-site': 'cross-site' }]) {
+    await assert.rejects(integration.write(a, new Request(origin + '/auth/logout', { method: 'POST', headers }), context => context.auth.signOut()), { code: 'csrf' });
+  }
+  assert.deepEqual((await pool.query('SELECT key, sealed, expires_at FROM nelcota_next.sessions ORDER BY key')).rows, snapshot.rows);
+  const forged = new Jar();
+  for (const [key, value] of a.values) forged.values.set(key, value.slice(0, -1) + (value.endsWith('a') ? 'b' : 'a'));
+  const forgedRows = await integration.read(forged, context => context.client.from('next_notes').select());
+  assert.equal(forgedRows.error, null); assert.deepEqual(forgedRows.data, []);
+  const forbiddenInsert = await integration.write(a, request(), async context => {
+    const bob = await integration.read(b, other => other.getUser());
+    return context.client.from('next_notes').insert({ owner: bob.data.id, body: 'forged-owner' }).select();
+  });
+  assert(forbiddenInsert.error, 'RLS must reject forged ownership');
+  const forbiddenDelete = await integration.write(a, request(), context => context.client.from('next_notes').delete().eq('body', 'bob-private').select());
+  assert.equal(forbiddenDelete.error, null); assert.deepEqual(forbiddenDelete.data, []);
+  assert.equal((await pool.query('SELECT count(*) FROM public.next_notes')).rows[0].count, '2');
+
+  // Opt-in sustained load: two adapters contend for one small pool and shared keys.
+  const seconds = Number(process.env.NELCOTA_NEXT_SOAK_SECONDS ?? 0);
+  assert(Number.isInteger(seconds) && seconds >= 0 && seconds <= 3600, 'Invalid soak duration');
+  let soak;
+  if (seconds) {
+    assert(seconds >= 60, 'A soak must run for at least 60 seconds');
+    const sibling = await Integration.create({ url: `http://127.0.0.1:${port}`, appOrigin: origin, keys: [randomBytes(32).toString('base64url')], store: new PostgresSessionStore(pool), allowInsecureDevelopment: true });
+    // A separate signing key intentionally cannot read the other application's cookies.
+    const wrongKey = await sibling.read(a, context => context.client.from('next_notes').select());
+    assert.equal(wrongKey.error, null); assert.deepEqual(wrongKey.data, []);
+    const peer = await Integration.create({ url: `http://127.0.0.1:${port}`, appOrigin: origin, keys, store: new PostgresSessionStore(pool), allowInsecureDevelopment: true });
+    const latencies = [], samples = [];
+    const start = performance.now(), until = start + seconds * 1000;
+    let operations = 0, maxWaiting = 0, maxConnections = 0;
+    const sample = () => {
+      samples.push({ elapsedSeconds: Math.round((performance.now() - start) / 1000), rssBytes: process.memoryUsage().rss, poolTotal: pool.totalCount, poolIdle: pool.idleCount, poolWaiting: pool.waitingCount });
+      maxWaiting = Math.max(maxWaiting, pool.waitingCount); maxConnections = Math.max(maxConnections, pool.totalCount);
+    };
+    sample(); const timer = setInterval(sample, 1000);
+    try {
+      await Promise.all(Array.from({ length: 16 }, async (_, worker) => {
+        const jar = worker % 2 ? a : b, expected = worker % 2 ? 'alice-private' : 'bob-private';
+        while (performance.now() < until) {
+          const began = performance.now();
+          // The write path acquires/releases advisory locks even for a database read.
+          const result = await (worker % 3 ? integration : peer).write(jar, request(), context => context.client.from('next_notes').select());
+          assert.equal(result.error, null); assert.deepEqual(result.data.map(row => row.body), [expected]);
+          const elapsed = performance.now() - began;
+          assert(elapsed < 5000, 'Request exceeded the session store deadline');
+          operations++;
+          // Bounded reservoir: keep one latency per 100 operations after the first 10k.
+          if (latencies.length < 10000 || operations % 100 === 0) latencies.push(elapsed);
+          if (latencies.length > 20000) latencies.shift();
+        }
+      }));
+    } finally { clearInterval(timer); }
+    sample(); latencies.sort((a, b) => a - b);
+    assert(operations >= seconds, 'Insufficient sustained progress');
+    assert(pool.totalCount <= 4); assert.equal(pool.waitingCount, 0); assert.equal(pool.idleCount, pool.totalCount);
+    const locks = await pool.query("SELECT count(*) FROM pg_locks WHERE locktype='advisory' AND pid IN (SELECT pid FROM pg_stat_activity WHERE datname=current_database())");
+    assert.equal(locks.rows[0].count, '0', 'Advisory locks retained after load');
+    assert.equal((await pool.query('SELECT count(*) FROM public.next_notes')).rows[0].count, '2');
+    const quarter = Math.max(1, Math.floor(samples.length / 4));
+    const peak = values => Math.max(...values.map(value => value.rssBytes));
+    const rssGrowth = peak(samples.slice(-quarter)) - peak(samples.slice(quarter, 2 * quarter));
+    assert(rssGrowth < 128 * 1024 * 1024, 'RSS grew more than 128 MiB after warmup');
+    soak = { seconds: (performance.now() - start) / 1000, workers: 16, poolMax: 4, operations, operationsPerSecond: operations / seconds, p50Ms: latencies[Math.floor(latencies.length * .5)], p95Ms: latencies[Math.floor(latencies.length * .95)], p99Ms: latencies[Math.floor(latencies.length * .99)], maxWaiting, maxConnections, rssGrowthBytesAfterWarmup: rssGrowth, samples, retainedAdvisoryLocks: 0, errors: 0 };
+  }
+  const blockedWrite = await integration.read(a, context => context.client.from('next_notes').insert({ body: 'read-only-write' }).select());
+  assert.equal(blockedWrite.error?.code, 'read_only');
+  let escaped;
+  await integration.read(a, async context => { escaped = context.getUser; });
+  await assert.rejects(escaped(), { code: 'closed_context' });
+  const namespace = `${origin}\0${new URL(`http://127.0.0.1:${port}`).href}`;
+  const storedKey = sessionKey([...a.values.values()][0], namespace);
+  const originalRow = (await pool.query('SELECT sealed, expires_at FROM nelcota_next.sessions WHERE key=$1', [storedKey])).rows[0];
+  for (const [label, sealed, expiry] of [['tampered envelope', originalRow.sealed.slice(0, -4) + 'AAAA', originalRow.expires_at], ['expired envelope', originalRow.sealed, Date.now() - 1]]) {
+    await pool.query('UPDATE nelcota_next.sessions SET sealed=$2, expires_at=$3 WHERE key=$1', [storedKey, sealed, expiry]);
+    const result = await integration.read(a, context => context.client.from('next_notes').select());
+    assert.equal(result.error, null, label); assert.deepEqual(result.data, [], label);
+  }
+  await pool.query('UPDATE nelcota_next.sessions SET sealed=$2, expires_at=$3 WHERE key=$1', [storedKey, originalRow.sealed, originalRow.expires_at]);
+  const sealer = await SessionSealer.create(keys);
+  const state = await sealer.open(originalRow.sealed, `nelcota-next/v1\0${namespace}\0${storedKey}`);
+  const revoked = await fetch(`http://127.0.0.1:${port}/auth/v1/logout`, { method: 'POST', headers: { authorization: `Bearer ${JSON.parse(state.session).access_token}` } });
+  assert(revoked.ok, 'Backend logout control failed');
+  const verified = await integration.read(a, context => context.getUser());
+  assert.equal(verified.data, null); assert.equal(verified.error?.status, 401);
+  report = { binary, sha256, soak, checks: ['two real signups', 'verified users', 'two request identities', 'isolated RLS reads', 'anonymous canary empty', 'cross-user update empty', 'SQL integrity', 'reserved filters remain predicates', 'hostile/missing/cross-site Origin rejected without session mutation', 'forged cookie has no RLS access', 'forged owner insert rejected', 'cross-user delete empty', 'read-only mutation rejected', 'escaped context rejected', 'tampered and expired envelopes cannot access RLS data', 'backend-revoked token fails verified-user lookup'], database: 'disposable; removed in finally', provenance: 'supplied binary identity recorded; caller must establish its source revision' };
 } finally {
   cleaning = true;
   if (server && server.exitCode === null) { const stopped = once(server, 'close'); server.kill('SIGTERM'); const timer = setTimeout(() => server.kill('SIGKILL'), 3000); await stopped; clearTimeout(timer); }

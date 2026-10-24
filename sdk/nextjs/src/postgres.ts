@@ -114,8 +114,8 @@ export class PostgresSessionStore implements SessionStore {
       return await this.#owned(key, work, deadline);
     } finally { this.#queued--; void previous.then(() => finish()); }
   }
-  async #owned<T>(key: string, work: (lease: SessionLease) => Promise<T>, deadline: number): Promise<T> {
-    const client = await this.#connect(Math.max(1, deadline - Date.now()));
+  async #owned<T>(key: string, work: (lease: SessionLease) => Promise<T>, deadline: number, borrowed?: OwnedConnection): Promise<T> {
+    const client = borrowed ?? await this.#connect(Math.max(1, deadline - Date.now()));
     let active = true, locked = false, failed = false, workFailed = false, current = key;
     const held = [key];
     let authDeadline = Number.POSITIVE_INFINITY;
@@ -139,6 +139,14 @@ export class PostgresSessionStore implements SessionStore {
       signal: lifetime.signal,
       // Reserve one query deadline after the last auth response for its save.
       get deadline() { return authDeadline; },
+      read: async target => { keyCheck(target); return stored((await query('SELECT sealed, expires_at FROM nelcota_next.sessions WHERE key = $1', [target])).rows[0]); },
+      exclusive: async (target, nested) => {
+        keyCheck(target);
+        if (!active || failed || lifetime.signal.aborted) throw new SessionError('closed_context', 'The session owner is no longer active');
+        if (held.includes(target)) throw new SessionError('session_store', 'Nested session key is already owned');
+        try { return await this.#owned(target, nested, Math.min(Date.now() + this.timeout, authDeadline), { ...client, signal: AbortSignal.any([client.signal, lifetime.signal]) }); }
+        catch (cause) { failed = true; lifetime.abort(); throw cause; }
+      },
       load: async () => stored((await query('SELECT sealed, expires_at FROM nelcota_next.sessions WHERE key = $1', [current])).rows[0]),
       save: async value => { await upsert(current, value); },
       remove: async () => { await query('DELETE FROM nelcota_next.sessions WHERE key = $1', [current]); },
@@ -178,7 +186,7 @@ export class PostgresSessionStore implements SessionStore {
         } catch (cause) { failed = true; cleanupError = cause; }
       }
       // A failed query/unlock must not return a lock-holding connection to a pool.
-      client.release(failed);
+      if (!borrowed) client.release(failed);
       if (failed && !workFailed && !cleanupError) throw new SessionError('session_store', 'Session owner lost persistence');
       if (cleanupError && !workFailed) throw new SessionError('session_store', 'Session lock release failed', cleanupError);
     }

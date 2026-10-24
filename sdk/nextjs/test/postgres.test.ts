@@ -144,3 +144,50 @@ it('replaces the rotated-away row with a retained tombstone instead of deleting 
   await expect(new PostgresSessionStore(pool).exclusive(key, lease => lease.rotate(fresh, { sealed: 'x', expiresAt: 1 }))).rejects.toMatchObject({ code: 'invalid_session' });
   expect(release.mock.calls.every(([destroy]) => destroy === false)).toBe(true);
 });
+
+it('reads lineage and takes nested locks without borrowing another connection', async () => {
+  const { pool, query, release } = fixture();
+  const store = new PostgresSessionStore(pool);
+  let late: (() => Promise<unknown>) | undefined;
+  await store.exclusive(key, async lease => {
+    await lease.read!('b'.repeat(64));
+    await lease.exclusive!('b'.repeat(64), async owner => {
+      await owner.save(value()); late = owner.remove;
+      expect(pool.connect).toHaveBeenCalledTimes(1);
+      expect(release).not.toHaveBeenCalled();
+    });
+    await expect(late?.()).rejects.toMatchObject({ code: 'closed_context' });
+    await lease.save(value());
+  });
+  expect(pool.connect).toHaveBeenCalledTimes(1);
+  expect(release).toHaveBeenCalledExactlyOnceWith(false);
+  expect(query.mock.calls.filter(([sql]) => sql.includes('pg_advisory_unlock'))).toHaveLength(2);
+});
+
+it('destroys the parent connection after nested persistence fails', async () => {
+  const { pool, query, release } = fixture();
+  query.mockImplementation(async sql => {
+    if (sql.startsWith('INSERT')) throw new Error('nested persistence failed');
+    return { rows: sql.includes('unlock') ? [{ released: true }] : sql.includes('try_advisory_lock') ? [{ locked: true }] : [] };
+  });
+  await expect(new PostgresSessionStore(pool).exclusive(key, async lease => {
+    await expect(lease.exclusive!('b'.repeat(64), owner => owner.save(value()))).rejects.toBeDefined();
+    expect(lease.signal.aborted).toBe(true);
+    await expect(lease.load()).rejects.toMatchObject({ code: 'closed_context' });
+  })).rejects.toMatchObject({ code: 'session_store' });
+  expect(release).toHaveBeenCalledExactlyOnceWith(true);
+});
+
+it('ends a nested lease when its parent times out and refuses late writes', async () => {
+  const { pool, release } = fixture();
+  let late: (() => Promise<unknown>) | undefined;
+  await expect(new PostgresSessionStore(pool, 100, 200).exclusive(key, lease =>
+    lease.exclusive!('b'.repeat(64), async owner => {
+      late = owner.remove;
+      await new Promise(resolve => setTimeout(resolve, 250));
+      await owner.remove();
+    }),
+  )).rejects.toMatchObject({ code: 'session_store' });
+  await expect(late?.()).rejects.toMatchObject({ code: 'closed_context' });
+  expect(release).toHaveBeenCalledExactlyOnceWith(true);
+});
