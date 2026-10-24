@@ -160,7 +160,23 @@ PostgreSQL exige `NELCOTA_NEXT_TEST_DATABASE_URL` e cria/remove um banco própri
 Não use dados nem credenciais de produção. O exemplo App Router é loopback de
 desenvolvimento; não deve ser publicado como configuração de produção.
 
-O download S3 por redirecionamento pré-assinado também está pendente: o adaptador
-atual recusa redirecionamentos da API. É necessária uma política explícita de
-destinos, remoção de credenciais e testes com o provedor. Não libere todos os
-redirecionamentos para contornar essa limitação.
+## Downloads do storage e redirecionamentos S3
+
+Requisições de API, auth e REST/RPC nunca seguem redirecionamentos. Com S3, um
+download pode ser redirecionado para uma URL pré-assinada. Permita isso de forma
+explícita com `storageRedirectOrigins: ['https://meu-bucket.s3.sa-east-1.amazonaws.com']`.
+
+- Só requisições `GET`/`HEAD` de objetos em `/storage/v1/object/` seguem
+  redirecionamentos, com `redirect: 'manual'` e no máximo três saltos. O
+  `Location` de cada salto precisa resolver para uma origem da lista.
+- As origens são HTTPS absolutas, sem caminho, query ou credenciais, no máximo
+  dezesseis. HTTP só é aceito para loopback com `allowInsecureDevelopment`.
+- No primeiro salto para fora da origem da API, a requisição mantém só `accept`,
+  `range` e os cabeçalhos condicionais. `Authorization`, cookies, `apikey` e
+  todo o resto são removidos e não voltam nos saltos seguintes.
+- Sem a opção, ou para um destino fora da lista, o erro é
+  `storage_redirect_refused`, e o destino nunca é contatado. Saltos demais
+  resultam em `storage_redirect_limit`.
+
+Testes unitários e um redirecionamento HTTP real em loopback cobrem isso. Ainda
+não houve execução com um provedor S3/MinIO real junto do servidor Nelcota.

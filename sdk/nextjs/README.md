@@ -283,7 +283,33 @@ example is **loopback-only development**, not a production deployment template.
 Framework/backend scripts require bounded disposable environments; the latter
 records the explicit binary SHA and does not claim it matches newer source.
 
-Storage redirect compatibility is also open: the adapter currently rejects API
-redirects. S3 downloads that use presigned redirect responses are not supported
-yet. An explicit destination policy, credential stripping and provider tests
-are required; do not weaken redirect handling globally as a workaround.
+## Storage downloads and S3 redirects
+
+API, auth and REST/RPC requests never follow redirects (`redirect: 'error'`).
+With an S3 backend, a storage download may answer with a redirect to a
+presigned URL. Allow that explicitly:
+
+```ts
+createNelcotaNext<Database>({
+  // ...
+  storageRedirectOrigins: ['https://my-bucket.s3.eu-west-1.amazonaws.com'],
+});
+```
+
+- Only `GET`/`HEAD` object requests under `/storage/v1/object/` follow
+  redirects. They use `redirect: 'manual'`, with at most three hops, and every
+  hop's `Location` must resolve to a listed origin.
+- Origins are validated absolute HTTPS origins, with no path, query or
+  credentials, and at most sixteen of them. Plain HTTP is accepted only for
+  loopback hosts with `allowInsecureDevelopment`.
+- On the first hop away from the API origin, the request keeps only `accept`,
+  `range` and conditional headers. `Authorization`, cookies, `apikey` and every
+  other header are dropped and are not restored on later hops. The presigned
+  URL carries its own authorization.
+- Without the option, or for a destination outside the list, the result error
+  code is `storage_redirect_refused` and the destination is never contacted.
+  Too many hops give `storage_redirect_limit`.
+
+Unit tests and a real loopback HTTP redirect cover this. A real S3/MinIO
+provider run with the Nelcota server has **not** been performed for this
+adapter.

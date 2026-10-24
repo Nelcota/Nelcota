@@ -22,6 +22,10 @@ export interface NextOptions {
   sessionTtlSeconds?: number;
   timeout?: number;
   fetch?: FetchLike;
+  /** Absolute origins that storage object downloads may be redirected to,
+   * e.g. a presigned S3 endpoint. HTTPS only (loopback HTTP with
+   * `allowInsecureDevelopment`). Unset: storage redirects are refused. */
+  storageRedirectOrigins?: readonly string[];
 }
 export type DataClient<Database> = Pick<NelcotaClient<Database, DefaultSchemaName<Database>>, 'from' | 'rpc' | 'storage' | 'url'>;
 export interface VerifiedContext<Database> {
@@ -65,6 +69,14 @@ function accessToken(state: SessionState | null): string | null {
   return token;
 }
 
+/** Storage-redirect bound; each hop is re-validated against the allow-list. */
+const maxStorageHops = 3;
+/** Only these request headers survive a cross-origin storage hop; credentials never do. */
+const hopHeaders = ['accept', 'range', 'if-none-match', 'if-match', 'if-modified-since', 'if-unmodified-since', 'if-range'];
+function refusedRedirect(code: 'storage_redirect_refused' | 'storage_redirect_limit', message: string): NelcotaError {
+  return new NelcotaError({ status: 0, code, message });
+}
+
 /** Rows that share one browser cookie history share a lineage record. */
 function lineageOf(key: string): string { return createHash('sha256').update('nelcota-next/lineage\0').update(key).digest('hex'); }
 interface Loaded {
@@ -89,6 +101,7 @@ export class Integration<Database> {
   readonly #namespace: string;
   readonly #options: Omit<NextOptions, 'keys'>;
   readonly #sealer: SessionSealer;
+  readonly #redirects: ReadonlySet<string>;
   private constructor(options: NextOptions, sealer: SessionSealer) {
     const { keys: _keys, ...settings } = options;
     this.#options = settings; this.#sealer = sealer;
@@ -107,6 +120,12 @@ export class Integration<Database> {
     if (!Number.isSafeInteger(this.#ttl) || this.#ttl < 300 || this.#ttl > 2592000) throw new SessionError('configuration', 'Session TTL must be between five minutes and thirty days');
     if (!Number.isSafeInteger(options.timeout ?? 30000) || (options.timeout ?? 30000) < 100 || (options.timeout ?? 30000) > 30000) throw new SessionError('configuration', 'Request timeout must be between 100 and 30000 ms');
     if (options.store.durability !== 'shared' && !development) throw new SessionError('configuration', 'Production requires an authoritative shared session store');
+    const redirects = options.storageRedirectOrigins ?? [];
+    if (!Array.isArray(redirects) || redirects.length > 16) throw new SessionError('configuration', 'storageRedirectOrigins must be an array of at most sixteen origins');
+    this.#redirects = new Set(redirects.map(origin => {
+      if (typeof origin !== 'string') throw new SessionError('configuration', 'storageRedirectOrigins must contain origin strings');
+      return trustedUrl(origin, development, true).origin;
+    }));
   }
   static async create<Database>(options: NextOptions): Promise<Integration<Database>> {
     return new Integration<Database>({ ...options }, await SessionSealer.create(options.keys));
@@ -175,6 +194,34 @@ export class Integration<Database> {
     try { cookies.set(this.#name, '', { httpOnly: true, secure: this.#secure, sameSite: 'lax', path: '/', maxAge: 0 }); }
     catch (cause) { throw new SessionError('session_store', 'Session cookie publication failed', cause); }
   }
+  /** GET/HEAD object downloads are the only requests that may follow a redirect. */
+  #storageObject(url: URL, method: string): boolean {
+    const prefix = `${this.#api.pathname.replace(/\/$/, '')}/storage/v1/object/`;
+    return (method === 'GET' || method === 'HEAD') && url.pathname.startsWith(prefix);
+  }
+  /** Follows at most `maxStorageHops` redirects, each to an allow-listed origin.
+   * Credentials are dropped on the first hop away from the API origin and never return.
+   */
+  async #followStorage(send: FetchLike, url: URL, init: RequestInit): Promise<Response> {
+    let target = url, headers = new Headers(init.headers), credentialed = true;
+    for (let hop = 0; ; hop++) {
+      const response = await send(target.href, { ...init, headers, redirect: 'manual' });
+      if (![301, 302, 303, 307, 308].includes(response.status)) return response;
+      const location = response.headers.get('location');
+      void response.body?.cancel().catch(() => undefined);
+      if (this.#redirects.size === 0) throw refusedRedirect('storage_redirect_refused', 'Storage redirects require an explicit storageRedirectOrigins policy');
+      if (hop >= maxStorageHops) throw refusedRedirect('storage_redirect_limit', 'Too many storage redirects');
+      let next: URL;
+      try { next = new URL(location ?? '', target); }
+      catch { throw refusedRedirect('storage_redirect_refused', 'Invalid storage redirect location'); }
+      const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(next.hostname);
+      const transport = next.protocol === 'https:' || (next.protocol === 'http:' && loopback && this.#options.allowInsecureDevelopment === true);
+      if (!location || !transport || next.username || next.password || !this.#redirects.has(next.origin)) throw refusedRedirect('storage_redirect_refused', 'Storage redirect destination is not allowed');
+      if (next.origin !== this.#api.origin) credentialed = false;
+      if (!credentialed) headers = new Headers(hopHeaders.flatMap(name => { const value = headers.get(name); return value === null ? [] : [[name, value] as [string, string]]; }));
+      target = next;
+    }
+  }
   #client(token: () => string | null, alive: () => boolean, readOnly: boolean, lifetime?: AbortSignal): NelcotaClient<Database> {
     const send = this.#options.fetch ?? globalThis.fetch.bind(globalThis);
     return createClient<Database>(this.#api.href, {
@@ -195,6 +242,7 @@ export class Integration<Database> {
         try {
           // Once headers arrive, the response/body consumer owns the accepted
           // transfer. Closing a session lease must not truncate a returned stream.
+          if (this.#storageObject(url, init?.method ?? 'GET')) return await this.#followStorage(send, url, { ...init, signal, cache: 'no-store' });
           return await send(input, { ...init, signal, cache: 'no-store', redirect: 'error' });
         } finally { clearTimeout(timer); lifetime?.removeEventListener('abort', lost); }
       },
