@@ -133,7 +133,25 @@ pub(crate) async fn refresh(state: &AuthState, token: Option<String>) -> Result<
 
     let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
     let tx = begin_auth(&mut client).await?;
-    // FOR UPDATE serializes concurrent refreshes of the same token.
+    // Own the parent before any token row. A retry retires its successors,
+    // so locking two different tokens before their shared session can deadlock.
+    // Use a separate statement: after waiting, the token/state read below gets
+    // a fresh READ COMMITTED snapshot, including intervening revocation.
+    if tx
+        .query_opt(
+            "SELECT s.id FROM auth.sessions s
+             JOIN auth.refresh_tokens rt ON rt.session_id = s.id
+             WHERE rt.token_hash = $1 FOR UPDATE OF s",
+            &[&hash],
+        )
+        .await
+        .map_err(db_error)?
+        .is_none()
+    {
+        return Err(invalid_grant("invalid refresh token"));
+    }
+    // The session is already locked; per-token reads/mutations cannot form
+    // a cycle with another rotation or a parent-first revocation.
     let row = tx
         .query_opt(
             &format!(
