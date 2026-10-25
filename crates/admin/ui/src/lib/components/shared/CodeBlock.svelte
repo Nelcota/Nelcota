@@ -49,6 +49,7 @@
        (WCAG 2.1.1); hence the tabindex on a non-interactive element. -->
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
   <pre
+    role={wrap ? undefined : 'group'}
     tabindex={wrap ? undefined : 0}
     aria-label={wrap ? undefined : t('connect.code.label')}
     class={[
