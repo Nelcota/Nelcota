@@ -869,10 +869,12 @@ async fn interrupted_error_bodies_keep_status_and_retry_after_without_spurious_r
 async fn stalled_error_metadata_still_obeys_deadlines_and_cancellation() {
     let entered = Arc::new(tokio::sync::Notify::new());
     let signal = entered.clone();
-    let router = Router::new().fallback(any(move || {
+    let router = Router::new().fallback(any(move |request: Request| {
         let signal = signal.clone();
         async move {
-            signal.notify_one();
+            if request.uri().path().ends_with("/cancel") {
+                signal.notify_one();
+            }
             Response::builder()
                 .status(401)
                 .body(Body::from_stream(futures_util::stream::pending::<
@@ -891,15 +893,22 @@ async fn stalled_error_metadata_still_obeys_deadlines_and_cancellation() {
         client.from("notes").execute::<Value>().await,
         Err(Error::Timeout)
     ));
-    entered.notified().await;
     let token = nelcota_client::CancellationToken::new();
     let scoped = client.with_options(RequestOptions {
         timeout: Some(Duration::ZERO),
         cancellation: Some(token.clone()),
     });
-    let request = tokio::spawn(async move { scoped.from("notes").execute::<Value>().await });
-    entered.notified().await;
+    let request = tokio::spawn(async move { scoped.from("cancel").execute::<Value>().await });
+    tokio::time::timeout(Duration::from_secs(5), entered.notified())
+        .await
+        .unwrap();
     token.cancel();
-    assert!(matches!(request.await.unwrap(), Err(Error::Cancelled)));
+    assert!(matches!(
+        tokio::time::timeout(Duration::from_secs(5), request)
+            .await
+            .unwrap()
+            .unwrap(),
+        Err(Error::Cancelled)
+    ));
     task.abort();
 }
