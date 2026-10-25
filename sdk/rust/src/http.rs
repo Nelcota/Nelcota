@@ -13,7 +13,7 @@ use std::{
 
 const MAX_ERROR_BYTES: usize = 64 * 1024;
 
-/// Error pages are metadata; drop oversized bodies and keep the HTTP status.
+/// Error pages are metadata; discard oversized or unreadable bodies, keeping status.
 async fn error_body(response: &mut reqwest::Response) -> Result<Option<Bytes>> {
     if response
         .content_length()
@@ -22,13 +22,18 @@ async fn error_body(response: &mut reqwest::Response) -> Result<Option<Bytes>> {
         return Ok(None);
     }
     let mut body = bytes::BytesMut::new();
-    while let Some(chunk) = response.chunk().await.map_err(Error::network)? {
+    loop {
+        let chunk = match response.chunk().await {
+            Ok(Some(chunk)) => chunk,
+            Ok(None) => return Ok(Some(body.freeze())),
+            Err(error) if error.is_timeout() => return Err(Error::Timeout),
+            Err(_) => return Ok(None),
+        };
         if chunk.len() > MAX_ERROR_BYTES - body.len() {
             return Ok(None);
         }
         body.extend_from_slice(&chunk);
     }
-    Ok(Some(body.freeze()))
 }
 
 /// A zero timeout disables the deadline. Cancellation covers retries and buffered bodies.
