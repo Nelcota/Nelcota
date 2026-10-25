@@ -134,6 +134,7 @@ publication. Existing results are dated in
 python3 scripts/test-onboarding.py --binary target/debug/nelcota
 python3 scripts/test-host-management.py --binary target/debug/nelcota
 python3 scripts/check-boundaries.py
+python3 scripts/test-docker-context.py
 python3 scripts/test-auth-package.py --run
 nice -n 19 ionice -c3 python3 scripts/test-upgrade.py
 ```
@@ -142,6 +143,11 @@ Host management acceptance uses owned Docker fixtures and verifies isolated
 PostgreSQL/files, backup, restore, recovery and removal. DNS/provenance, public
 TLS, proxy reload and the unused PITR image extension are explicit doubles;
 see [host management](docs/host-management.md) before production enrollment.
+
+The Docker context check builds a synthetic, network-disabled scratch image.
+It verifies that required sources/assets remain available while private host
+configuration and nested generated dependencies stay outside the context.
+It removes only its own labeled image and container; it reads no real secrets.
 
 Auth packaging requires built core/auth archives; follow
 [auth integration](docs/auth-integration.md). Upgrade tests require Linux amd64,
