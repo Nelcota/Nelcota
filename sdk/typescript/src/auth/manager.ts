@@ -24,6 +24,7 @@ type Authentication = Session | { user: User; session: Session | null };
 export class SessionManager {
   readonly #store: SessionStore;
   readonly #lockName: string | symbol;
+  readonly #pkceLockName: string | symbol;
   readonly #margin: number;
   readonly #scheduler: RefreshScheduler;
   readonly #listeners = new Set<AuthListener>();
@@ -38,6 +39,7 @@ export class SessionManager {
     const browser = isBrowser();
     const store = this.#store = new SessionStore(options.storageKey ?? storageKey(url), options.storage);
     this.#lockName = sessionLock(store.storage, store.key, browser, !!options.storage);
+    this.#pkceLockName = sessionLock(store.storage, store.key, browser, !!options.storage, 'pkce');
     this.#scheduler = new RefreshScheduler(!accessToken && (options.autoRefresh ?? browser), session => this.#marginFor(session), () => this.#tick());
     this.#onBackgroundError = options.onBackgroundError;
     if (browser) {
@@ -48,7 +50,7 @@ export class SessionManager {
     if (this.#scheduler.enabled) this.#background(this.current().then(session => this.#scheduler.schedule(session)));
   }
 
-  get key(): string { return this.#store.key; }
+  withVerifier<T>(task: () => Promise<T>): Promise<T> { return withLock(this.#pkceLockName, task); }
   setVerifier(value: string): Promise<void> { return this.#store.setVerifier(value); }
   consumeVerifier(): Promise<string | null> { return this.#store.consumeVerifier(); }
 
@@ -214,7 +216,7 @@ export class SessionManager {
       finally {
         // Match exchangeCode's lifecycle -> PKCE lock order. Consume commits a
         // null receipt before removing the potentially stale native mirror.
-        await withLock(`${this.key}.pkce`, () => this.consumeVerifier());
+        await this.withVerifier(() => this.consumeVerifier());
       }
     });
   }

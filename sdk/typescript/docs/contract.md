@@ -6,17 +6,17 @@ by the endpoints and features below, not by matching package version numbers.
 
 ## Version scope
 
-This is the 0.2.2 package contract. It includes queued-auth cancellation, exact
+This is the 0.2.3 package contract. It includes queued-auth cancellation, exact
 bucket-limit writes, profile ordering and the input/response guards below.
 Version 0.2.0 predates these corrections, and 0.2.1 predates the
 [0.2.2 hardening](#hardening-in-022). Registry installation requires
-successful publication of 0.2.2; a server update does not install the client.
+successful publication of 0.2.3; a server update does not install the client.
 See the [upgrade notes](#upgrading-from-020). Older packages keep the contract in their
 own bundled documentation.
 
 ## Upgrading from 0.2.0
 
-Install 0.2.2 explicitly, update the application lockfile and run its type check,
+Install 0.2.3 explicitly, update the application lockfile and run its type check,
 build and tests. Server and SDK versions remain independent. Existing package
 entrypoints, result/error codes, timeouts and HTTP routes are preserved.
 

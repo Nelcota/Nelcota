@@ -25,7 +25,7 @@ or the [client contract](docs/contract.md). Empty results, 401/403 or a
   a browser.
 
 ```sh
-npm install @nelcota/client@0.2.2
+npm install @nelcota/client@0.2.3
 nelcota types -o src/database.ts
 ```
 
@@ -45,14 +45,13 @@ const nelcota = createClient('https://api.example.com');
 
 ## Version scope
 
-This guide targets 0.2.2. Version 0.2.1 is the previous published baseline;
-0.2.2 adds the session, refresh, query and transport corrections in the
-[changelog](CHANGELOG.md). Version 0.2.1 added queued-auth cancellation, profile
-ordering, exact bucket-limit writes and input/response guards. Registry installation requires successful publication
-of that version; use a locally packed archive before it is available. See the
-[upgrade notes](docs/contract.md#upgrading-from-020) for compatibility changes and application
-checks. Updating the server does not update installed clients. Node is SDK
-tooling/runtime, not a backend requirement.
+This guide targets 0.2.3. Version 0.2.2 is the previous published baseline.
+The patch isolates server PKCE queues by storage adapter and key while preserving
+browser/worker Web Locks and coordination between clients sharing an adapter.
+Earlier session, refresh, query and transport corrections remain included; see
+the [changelog](CHANGELOG.md) and [upgrade notes](docs/contract.md#upgrading-from-020).
+Registry availability requires a successful release. Updating the server does
+not update installed clients. Node is SDK tooling/runtime, not a backend requirement.
 
 ## Independent modules
 

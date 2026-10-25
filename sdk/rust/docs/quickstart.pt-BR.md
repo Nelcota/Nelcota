@@ -1,13 +1,13 @@
 # Começando com Rust
 
-Este guia descreve o SDK **0.1.5**, com correções posteriores ao 0.1.3 publicado.
+Este guia descreve o SDK **0.1.6**, com correções posteriores ao 0.1.3 publicado.
 Elas recusam `single`/`maybe_single` em HEAD ou escritas sem representação
 antes de enviar HTTP: use `.select(...)` para receber a linha de uma escrita.
 O cancelamento também retira requisições de auth da fila de ciclo de vida;
 uma rotação aceita continua responsável por persistir sua sessão.
 Essas correções exigem atualizar o pacote do cliente.
 
-O SDK usa Tokio e requer Rust 1.88+. Adicione `nelcota-client = "0.1.5"`
+O SDK usa Tokio e requer Rust 1.88+. Adicione `nelcota-client = "0.1.6"`
 ao Cargo.toml depois de confirmar sua publicação, junto de serde, serde_json
 e tokio (veja o README). Antes disso, use uma dependência local `path` para
 `sdk/rust` ou o arquivo validado. Consulte as [notas de atualização](contract.md#upgrading-from-013).
@@ -16,8 +16,8 @@ independentes.
 
 ## Atualizar do 0.1.3
 
-Altere a dependência para `nelcota-client = "0.1.5"` e rode
-`cargo update -p nelcota-client --precise 0.1.5`. Confira a versão com
+Altere a dependência para `nelcota-client = "0.1.6"` e rode
+`cargo update -p nelcota-client --precise 0.1.6`. Confira a versão com
 `cargo tree -p nelcota-client`, versione Cargo.toml/Cargo.lock e execute o build
 e os testes do aplicativo. Rust 1.88+, Tokio, servidor 0.3.0+ e imports públicos
 permanecem compatíveis.

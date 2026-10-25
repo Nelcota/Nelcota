@@ -5,6 +5,15 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## Unreleased
 
+## 0.1.6 — 2026-10-24
+
+### Fixed
+
+- Preserve the received HTTP error status and Retry-After when its response body
+  is interrupted. Discard the unreadable metadata instead of reclassifying a
+  definite rejection as a network failure and retrying it. Successful body
+  failures, cancellation and buffered deadlines retain their existing behavior.
+
 ## 0.1.5 — 2026-10-24
 
 ### Fixed

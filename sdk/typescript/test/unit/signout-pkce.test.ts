@@ -112,3 +112,44 @@ it('retires a native verifier in the journal even if another tab retains its leg
     expect(mock.calls).toHaveLength(1);
   } finally { first.dispose(); second?.dispose(); }
 });
+
+
+it.each([false, true])('isolates server PKCE queues and serializes shared adapters (Web Locks=%s)', async webLocks => {
+  const queues = new Map<string, Promise<unknown>>();
+  vi.stubGlobal('navigator', webLocks ? { locks: { request: <T>(name: string, task: () => Promise<T>) => {
+    const run = (queues.get(name) ?? Promise.resolve()).then(task);
+    queues.set(name, run.then(() => undefined, () => undefined));
+    return run;
+  } } } : undefined);
+  const backing = memoryStorage();
+  let entered!: () => void;
+  let release!: () => void;
+  const started = new Promise<void>(resolve => { entered = resolve; });
+  const held = new Promise<void>(resolve => { release = resolve; });
+  const storage = { ...backing, setItem: async (key: string, value: string) => {
+    if (key === `${KEY}.pkce`) { entered(); await held; }
+    await backing.setItem(key, value);
+  } };
+  const makeClient = (adapter: typeof backing) => createClient('https://api.example.com', { auth: { storage: adapter, autoRefresh: false } });
+  const first = makeClient(storage), shared = makeClient(storage), independent = makeClient(memoryStorage());
+  const input = { provider: 'github' as const, redirectTo: 'https://app.example.com/auth', redirect: false };
+  let signing: Promise<unknown> | undefined;
+  let cleanup: Promise<unknown> | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    signing = first.auth.signInWithOAuth(input);
+    await started;
+    let cleaned = false;
+    cleanup = shared.auth.signOut().then(() => { cleaned = true; });
+    const result = await Promise.race([
+      independent.auth.signInWithOAuth(input).then(() => 'independent'),
+      new Promise<string>(resolve => { timer = setTimeout(() => resolve('blocked'), 250); }),
+    ]);
+    expect(result).toBe('independent');
+    expect(cleaned).toBe(false);
+    release();
+    await signing;
+    await cleanup;
+    expect(await backing.getItem(`${KEY}.pkce`)).toBeNull();
+  } finally { clearTimeout(timer); release(); await signing; await cleanup; first.dispose(); shared.dispose(); independent.dispose(); }
+});
