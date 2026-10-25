@@ -198,11 +198,17 @@ has the API's JSON shape (see [api.md](api.md#errors)).
 
 A file's bytes are stored under a new key (`<bucket>/<uuidv7>`) on every
 upload, and the row is written only after the bytes are complete. Readers
-never see a half-written file, and an upload that fails or is refused leaves
-nothing behind. Replacing or deleting a file removes the old bytes right
-away: **a database restore does not bring deleted files back**. An hourly
-collector removes bytes no row points to once they are a day old (left by a
-crash mid-upload).
+never see a half-written file. Known failures before metadata publication
+attempt to remove the unpublished bytes. If the database's commit reply is
+lost, the request returns an error but retains the new version: PostgreSQL
+may already reference it. Check the current object before retrying a write
+whose outcome is unknown.
+
+Replacing or deleting a file removes the old bytes right away:
+**a database restore does not bring deleted files back**. An hourly collector
+checks authoritative metadata and removes unreferenced versions once they are
+a day old, including bytes left by an interrupted upload or an uncertain
+publication. A version still referenced by a row is retained.
 
 ## Backups
 
