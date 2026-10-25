@@ -5,7 +5,7 @@ and file storage under PostgreSQL RLS. For native applications using Tokio.
 
 ```toml
 [dependencies]
-nelcota-client = "0.1.5"
+nelcota-client = "0.1.6"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
@@ -37,12 +37,13 @@ for note in response.data { println!("{}: {}", note.id, note.body); }
 
 ## Version scope
 
-This guide targets 0.1.5. Version 0.1.4 is the previous published baseline.
-The patch corrects logout renewal, reserved-column filters, cancelled file-store
-saves, query timeout precedence and MIME validation. It preserves public imports,
-Rust 1.88+, native Tokio and the server protocol. See the
-[upgrade notes](docs/contract.md#upgrading-from-014). Registry availability requires
-a successful release; a server upgrade does not update installed clients.
+This guide targets 0.1.6. Version 0.1.5 is the previous published baseline.
+The patch preserves HTTP status and Retry-After after an interrupted error body,
+without replaying definite rejections. Deadlines and cancellation remain effective.
+It preserves public imports, Rust 1.88+, native Tokio and the server protocol.
+See the [changelog](CHANGELOG.md) and [upgrade notes](docs/contract.md#upgrading-from-014).
+Registry availability requires a successful release; a server upgrade does not
+update installed clients.
 
 ## REST
 

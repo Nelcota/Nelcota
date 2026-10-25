@@ -33,7 +33,7 @@ source version numbers alone are not evidence of registry availability.
 - TypeScript: 374 unit tests, 20 type assertions, compiler, build, all four
   entrypoint size budgets and installed-package checks passed. Node 26 runtime
   smoke and memory/cancellation retention checks passed.
-- Rust 1.99: 52 executable tests and 10 doctests passed; the transport suite
+- Rust 1.99 and 1.88: 52 executable tests and 10 doctests passed; the transport suite
   includes 19 passing cases.
   SDK Clippy passes with warnings denied. The new socket cases cover 401, 503
   with Retry-After 90, and truncated successful responses.
@@ -44,5 +44,13 @@ source version numbers alone are not evidence of registry availability.
 These are bounded local regressions, not live-provider or soak evidence.
 
 The bundled guide rebuild keeps version references aligned. Existing localized
-prose only changes version identifiers; the new changelog fragment retains
+prose retains its wording except version identifiers; new fragments retain
 canonical English to honor the repository language preference.
+
+The publish dry run passed without uploading. The first offline invocation
+could not refresh registry metadata; the normal dry run completed successfully.
+The 38 focused guide tests and bundled production build passed.
+
+The external consumer compiled and ran against the Rust crate archive. The
+version-documentation checker and its eight regressions pass after aligning
+current install references; historical publication checkpoints stay dated.

@@ -1,6 +1,6 @@
 # Começando com o SDK JavaScript do Nelcota
 
-Este guia descreve o SDK **0.2.2**. Ele traz as correções de sessão, refresh,
+Este guia descreve o SDK **0.2.3**. Ele traz as correções de sessão, refresh,
 consultas e transporte do [changelog](../CHANGELOG.md), além das que o 0.2.1 trouxe
 sobre o 0.2.0. O cancelamento passa a retirar
 logins pendentes da fila, preservando a conclusão de operações já aceitas.
@@ -16,10 +16,10 @@ com os recursos descritos na [matriz de compatibilidade](../README.md#compatibil
 ## 1. Instale
 
 ```sh
-npm install @nelcota/client@0.2.2
+npm install @nelcota/client@0.2.3
 ```
 
-A instalação pelo registro exige a publicação bem-sucedida do 0.2.2. Consulte
+A instalação pelo registro exige a publicação bem-sucedida do 0.2.3. Consulte
 as [notas de atualização](contract.md#upgrading-from-020); atualizar o servidor não atualiza seu SDK.
 Antes de a versão estar disponível, use um arquivo local validado a partir da
 raiz do repositório:
@@ -36,7 +36,7 @@ npm install "$NELCOTA_SDK_TARBALL"
 
 ## Atualizar do 0.2.0
 
-Execute `npm install --save-exact @nelcota/client@0.2.2`, confira a versão com
+Execute `npm install --save-exact @nelcota/client@0.2.3`, confira a versão com
 `npm ls @nelcota/client` e versione o manifesto/lockfile do aplicativo. Rode seus
 testes, a checagem de tipos e o build. Preserve `number | string | null` nos
 limites de bucket; strings decimais exatas evitam arredondamento de int64.

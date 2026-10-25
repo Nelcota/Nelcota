@@ -28,9 +28,10 @@ Version 0.1.4 cardinality preflight rejects HEAD and minimal writes with
 `single`/`maybe_single` before HTTP. Request write rows with `.select(...)`;
 array-returning RPC calls remain supported. Version 0.1.3 predates this guard.
 
-HTTP error bodies larger than 64 KiB are discarded; status, a generic error
-code and Retry-After remain available. Successful responses keep their existing
-buffering or streaming contract.
+Oversized or interrupted HTTP error bodies are discarded; status, a generic
+error code and Retry-After remain available. Error-body deadlines and cancellation
+remain effective. Successful responses keep their existing buffering or streaming
+contract.
 
 One Client and its clones share lifecycle coordination. Explicit token clones
 control REST/storage and get_user only; other auth methods manage the shared
