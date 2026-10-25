@@ -3,6 +3,21 @@
 Package releases use Semantic Versioning. Registry availability requires a
 successful publication; a source version or Git tag alone is insufficient.
 
+## 0.1.1 — 2026-10-24
+
+### Fixed
+
+- Reuse the PostgreSQL session owner's connection for lineage reads and nested
+  lineage locks, preventing pool starvation under concurrent writable requests.
+- Queue cross-instance advisory-lock waiters on PostgreSQL with a server-side
+  acquisition timeout, preventing starvation by a hot polling instance.
+- Inherit parent cancellation for nested owners and destroy failed connections.
+
+### Added
+
+- A pinned Next 15 compatibility consumer and sustained final-backend pool
+  measurements, with adversarial RLS/session controls and CI evidence artifacts.
+
 ## 0.1.0 — 2026-10-24
 
 ### Added

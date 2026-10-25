@@ -1,0 +1,39 @@
+{
+  "recordedAt": "2026-10-24",
+  "sdkSourceRevision": "af64ebe781001abfaa617feb3e19322fd0f7ac1c",
+  "sdkCompiledSha256": {
+    "context.js": "8b255f3b84711345911e30028afe754a0388572aeec2891013d59f995a1671bc",
+    "postgres.js": "502ed1fbcc6835e44ec148c69000d1c03514ae979f4750697def52be10ca9b7e"
+  },
+  "scenario": "Final negative matrix including accepted backend update with cookie publication failure and actual backend shutdown.",
+  "result": {
+    "binary": "/run/media/haniel/Developer/Nelcota/target/debug/nelcota",
+    "sha256": "992e013d3122dcdcf6ca169223035d4c76dbf170501ee87055e2f36b50a9619a",
+    "checks": [
+      "two real signups",
+      "verified users",
+      "two request identities",
+      "isolated RLS reads",
+      "anonymous canary empty",
+      "cross-user update empty",
+      "SQL integrity",
+      "reserved filters remain predicates",
+      "hostile/missing/cross-site Origin rejected without session mutation",
+      "forged cookie has no RLS access",
+      "forged owner insert rejected",
+      "cross-user delete empty",
+      "read-only mutation rejected",
+      "escaped context rejected",
+      "tampered and expired envelopes cannot access RLS data",
+      "backend-revoked refresh rejected; stateless access JWT remains valid until expiry",
+      "local logout clears cookie and fences replayed browser state",
+      "foreign callback path and malformed state rejected",
+      "unsafe OAuth return path normalizes to local root",
+      "cookie publication failure surfaces after accepted backend update",
+      "stopped backend returns transport failure; offline logout clears local cookie",
+      "no advisory locks remain after failure paths"
+    ],
+    "database": "disposable; removed in finally",
+    "provenance": "supplied binary identity recorded; caller must establish its source revision"
+  }
+}

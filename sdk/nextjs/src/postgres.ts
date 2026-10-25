@@ -30,8 +30,8 @@ function stored(row: Record<string, unknown> | undefined): StoredSession | null 
 /** Session-scoped PG locks survive awaits, and release when the connection dies.
  * Each state save commits independently before its promise resolves. Do not wrap
  * this store in an outer SQL transaction or a transaction-pooling proxy.
- * Same-key callers queue in-process before borrowing; the lock is polled with
- * pg_try_advisory_lock inside `timeout`, so no backend is left blocked waiting.
+ * Same-key callers queue in-process before borrowing. PostgreSQL queues lock
+ * waiters fairly; a server-side statement timeout bounds every acquisition.
  */
 export class PostgresSessionStore implements SessionStore {
   readonly durability = 'shared' as const;
@@ -114,8 +114,8 @@ export class PostgresSessionStore implements SessionStore {
       return await this.#owned(key, work, deadline);
     } finally { this.#queued--; void previous.then(() => finish()); }
   }
-  async #owned<T>(key: string, work: (lease: SessionLease) => Promise<T>, deadline: number): Promise<T> {
-    const client = await this.#connect(Math.max(1, deadline - Date.now()));
+  async #owned<T>(key: string, work: (lease: SessionLease) => Promise<T>, deadline: number, borrowed?: OwnedConnection): Promise<T> {
+    const client = borrowed ?? await this.#connect(Math.max(1, deadline - Date.now()));
     let active = true, locked = false, failed = false, workFailed = false, current = key;
     const held = [key];
     let authDeadline = Number.POSITIVE_INFINITY;
@@ -139,6 +139,14 @@ export class PostgresSessionStore implements SessionStore {
       signal: lifetime.signal,
       // Reserve one query deadline after the last auth response for its save.
       get deadline() { return authDeadline; },
+      read: async target => { keyCheck(target); return stored((await query('SELECT sealed, expires_at FROM nelcota_next.sessions WHERE key = $1', [target])).rows[0]); },
+      exclusive: async (target, nested) => {
+        keyCheck(target);
+        if (!active || failed || lifetime.signal.aborted) throw new SessionError('closed_context', 'The session owner is no longer active');
+        if (held.includes(target)) throw new SessionError('session_store', 'Nested session key is already owned');
+        try { return await this.#owned(target, nested, Math.min(Date.now() + this.timeout, authDeadline), { ...client, signal: AbortSignal.any([client.signal, lifetime.signal]) }); }
+        catch (cause) { failed = true; lifetime.abort(); throw cause; }
+      },
       load: async () => stored((await query('SELECT sealed, expires_at FROM nelcota_next.sessions WHERE key = $1', [current])).rows[0]),
       save: async value => { await upsert(current, value); },
       remove: async () => { await query('DELETE FROM nelcota_next.sessions WHERE key = $1', [current]); },
@@ -153,13 +161,19 @@ export class PostgresSessionStore implements SessionStore {
       },
     };
     try {
-      // Never leave a backend blocked in pg_advisory_lock after a client-side deadline.
-      for (let delay = 5; ; delay = Math.min(delay * 2, 100)) {
-        if ((await query('SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS locked', [key])).rows[0]?.['locked'] === true) break;
-        if (Date.now() + delay >= deadline) throw new SessionError('session_store', 'Session lock acquisition timed out');
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-      locked = true; authDeadline = Date.now() + this.leaseTimeout - this.timeout;
+      // Polling permits a hot local queue to starve other app instances. Join
+      // PostgreSQL's lock wait queue, with its own deadline as well as ours.
+      const previous = (await query("SELECT current_setting('statement_timeout') AS timeout")).rows[0]?.['timeout'];
+      if (typeof previous !== 'string') throw new SessionError('session_store', 'Session statement timeout is unavailable');
+      const remaining = deadline - Date.now() - 25;
+      if (remaining <= 0) throw new SessionError('session_store', 'Session lock acquisition timed out');
+      await query("SELECT set_config('statement_timeout', $1, false)", [`${remaining}ms`]);
+      await query('SELECT pg_advisory_lock(hashtextextended($1, 0))', [key]);
+      locked = true;
+      // Restore the caller's session setting before auth or persistence work.
+      // Any failed query poisons/destroys this connection instead of pooling it.
+      await query("SELECT set_config('statement_timeout', $1, false)", [previous]);
+      authDeadline = Date.now() + this.leaseTimeout - this.timeout;
       return await this.#bounded(Promise.resolve().then(() => work(lease)), this.leaseTimeout);
     } catch (cause) {
       workFailed = true;
@@ -178,7 +192,7 @@ export class PostgresSessionStore implements SessionStore {
         } catch (cause) { failed = true; cleanupError = cause; }
       }
       // A failed query/unlock must not return a lock-holding connection to a pool.
-      client.release(failed);
+      if (!borrowed) client.release(failed);
       if (failed && !workFailed && !cleanupError) throw new SessionError('session_store', 'Session owner lost persistence');
       if (cleanupError && !workFailed) throw new SessionError('session_store', 'Session lock release failed', cleanupError);
     }

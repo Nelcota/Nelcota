@@ -1,0 +1,907 @@
+{
+  "recordedAt": "2026-10-24",
+  "sdkSourceRevision": "af64ebe781001abfaa617feb3e19322fd0f7ac1c",
+  "sdkCompiledSha256": {
+    "context.js": "8b255f3b84711345911e30028afe754a0388572aeec2891013d59f995a1671bc",
+    "postgres.js": "502ed1fbcc6835e44ec148c69000d1c03514ae979f4750697def52be10ca9b7e"
+  },
+  "scenario": "Final SDK revision: 120-second load and negative matrix before adding cookie-publication/outage controls.",
+  "result": {
+    "binary": "/run/media/haniel/Developer/Nelcota/target/debug/nelcota",
+    "sha256": "992e013d3122dcdcf6ca169223035d4c76dbf170501ee87055e2f36b50a9619a",
+    "soak": {
+      "seconds": 120.028169657,
+      "workers": 16,
+      "poolMax": 4,
+      "operations": 180101,
+      "operationsPerSecond": 1500.8416666666667,
+      "p50Ms": 6.26263199999994,
+      "p95Ms": 23.08961199999976,
+      "p99Ms": 161.70405000000028,
+      "maxWaiting": 0,
+      "maxConnections": 4,
+      "rssGrowthBytesAfterWarmup": 249856,
+      "samples": [
+        {
+          "elapsedSeconds": 0,
+          "rssBytes": 496525312,
+          "poolTotal": 2,
+          "poolIdle": 2,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 1,
+          "rssBytes": 163811328,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 2,
+          "rssBytes": 178999296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 3,
+          "rssBytes": 197558272,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 4,
+          "rssBytes": 200544256,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 5,
+          "rssBytes": 200544256,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 6,
+          "rssBytes": 200863744,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 7,
+          "rssBytes": 198602752,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 8,
+          "rssBytes": 198963200,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 9,
+          "rssBytes": 198344704,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 10,
+          "rssBytes": 198500352,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 11,
+          "rssBytes": 190038016,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 12,
+          "rssBytes": 192176128,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 13,
+          "rssBytes": 194949120,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 14,
+          "rssBytes": 198311936,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 15,
+          "rssBytes": 198443008,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 16,
+          "rssBytes": 198217728,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 17,
+          "rssBytes": 198021120,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 18,
+          "rssBytes": 198545408,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 19,
+          "rssBytes": 198545408,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 20,
+          "rssBytes": 198332416,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 21,
+          "rssBytes": 198332416,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 22,
+          "rssBytes": 198463488,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 23,
+          "rssBytes": 193236992,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 24,
+          "rssBytes": 193236992,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 25,
+          "rssBytes": 197431296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 26,
+          "rssBytes": 198103040,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 27,
+          "rssBytes": 198397952,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 28,
+          "rssBytes": 198529024,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 29,
+          "rssBytes": 198529024,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 30,
+          "rssBytes": 198529024,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 31,
+          "rssBytes": 198660096,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 32,
+          "rssBytes": 198660096,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 33,
+          "rssBytes": 198660096,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 34,
+          "rssBytes": 198791168,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 35,
+          "rssBytes": 198791168,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 36,
+          "rssBytes": 198275072,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 37,
+          "rssBytes": 198275072,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 38,
+          "rssBytes": 199192576,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 39,
+          "rssBytes": 199192576,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 40,
+          "rssBytes": 199323648,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 41,
+          "rssBytes": 199323648,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 42,
+          "rssBytes": 199168000,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 43,
+          "rssBytes": 199168000,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 44,
+          "rssBytes": 199430144,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 45,
+          "rssBytes": 199430144,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 46,
+          "rssBytes": 199430144,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 47,
+          "rssBytes": 199430144,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 48,
+          "rssBytes": 198799360,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 49,
+          "rssBytes": 198799360,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 50,
+          "rssBytes": 198799360,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 51,
+          "rssBytes": 199061504,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 52,
+          "rssBytes": 199213056,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 53,
+          "rssBytes": 199213056,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 54,
+          "rssBytes": 199217152,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 55,
+          "rssBytes": 199348224,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 56,
+          "rssBytes": 199610368,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 57,
+          "rssBytes": 199610368,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 58,
+          "rssBytes": 199610368,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 59,
+          "rssBytes": 199610368,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 60,
+          "rssBytes": 199254016,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 61,
+          "rssBytes": 199315456,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 62,
+          "rssBytes": 199315456,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 63,
+          "rssBytes": 199315456,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 64,
+          "rssBytes": 199446528,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 65,
+          "rssBytes": 199446528,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 66,
+          "rssBytes": 199446528,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 67,
+          "rssBytes": 199446528,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 68,
+          "rssBytes": 199446528,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 69,
+          "rssBytes": 199446528,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 70,
+          "rssBytes": 199446528,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 71,
+          "rssBytes": 199577600,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 72,
+          "rssBytes": 198647808,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 73,
+          "rssBytes": 199303168,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 74,
+          "rssBytes": 199303168,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 75,
+          "rssBytes": 199303168,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 76,
+          "rssBytes": 199303168,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 77,
+          "rssBytes": 199303168,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 78,
+          "rssBytes": 199434240,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 79,
+          "rssBytes": 199696384,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 80,
+          "rssBytes": 199696384,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 81,
+          "rssBytes": 199696384,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 82,
+          "rssBytes": 199696384,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 83,
+          "rssBytes": 199634944,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 84,
+          "rssBytes": 199213056,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 85,
+          "rssBytes": 199213056,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 86,
+          "rssBytes": 199606272,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 87,
+          "rssBytes": 199868416,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 88,
+          "rssBytes": 199868416,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 89,
+          "rssBytes": 199868416,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 90,
+          "rssBytes": 199380992,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 91,
+          "rssBytes": 199380992,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 92,
+          "rssBytes": 199380992,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 93,
+          "rssBytes": 199479296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 94,
+          "rssBytes": 199479296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 95,
+          "rssBytes": 199479296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 96,
+          "rssBytes": 199479296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 97,
+          "rssBytes": 199479296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 98,
+          "rssBytes": 199479296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 99,
+          "rssBytes": 199479296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 100,
+          "rssBytes": 199479296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 101,
+          "rssBytes": 199479296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 102,
+          "rssBytes": 199479296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 103,
+          "rssBytes": 199479296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 104,
+          "rssBytes": 199479296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 105,
+          "rssBytes": 199479296,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 106,
+          "rssBytes": 199458816,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 107,
+          "rssBytes": 199458816,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 108,
+          "rssBytes": 195104768,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 109,
+          "rssBytes": 195891200,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 110,
+          "rssBytes": 196153344,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 111,
+          "rssBytes": 198381568,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 112,
+          "rssBytes": 198381568,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 113,
+          "rssBytes": 199462912,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 114,
+          "rssBytes": 199725056,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 115,
+          "rssBytes": 199860224,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 116,
+          "rssBytes": 199860224,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 117,
+          "rssBytes": 199860224,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 118,
+          "rssBytes": 199860224,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 119,
+          "rssBytes": 199860224,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 120,
+          "rssBytes": 198926336,
+          "poolTotal": 4,
+          "poolIdle": 0,
+          "poolWaiting": 0
+        },
+        {
+          "elapsedSeconds": 120,
+          "rssBytes": 199450624,
+          "poolTotal": 4,
+          "poolIdle": 4,
+          "poolWaiting": 0
+        }
+      ],
+      "retainedAdvisoryLocks": 0,
+      "errors": 0
+    },
+    "checks": [
+      "two real signups",
+      "verified users",
+      "two request identities",
+      "isolated RLS reads",
+      "anonymous canary empty",
+      "cross-user update empty",
+      "SQL integrity",
+      "reserved filters remain predicates",
+      "hostile/missing/cross-site Origin rejected without session mutation",
+      "forged cookie has no RLS access",
+      "forged owner insert rejected",
+      "cross-user delete empty",
+      "read-only mutation rejected",
+      "escaped context rejected",
+      "tampered and expired envelopes cannot access RLS data",
+      "backend-revoked refresh rejected; stateless access JWT remains valid until expiry",
+      "local logout clears cookie and fences replayed browser state",
+      "foreign callback path and malformed state rejected",
+      "unsafe OAuth return path normalizes to local root"
+    ],
+    "database": "disposable; removed in finally",
+    "provenance": "supplied binary identity recorded; caller must establish its source revision"
+  }
+}

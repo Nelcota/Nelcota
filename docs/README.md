@@ -9,6 +9,9 @@ renders these same Markdown guides and their existing Portuguese catalogs. Its
 pinned source commit identifies the snapshot being read; website updates do not
 install a server or SDK package.
 
+See [current status](current-status.md) for the October 24 implementation and
+publication checkpoint, including changes after server 0.5.3.
+
 ## Start
 
 - [Local quickstart](quickstart.md): install, migrate and make an authenticated request.
@@ -21,15 +24,17 @@ install a server or SDK package.
 - [Authentication](schema-auth.md) and [JWT/roles](jwt-and-roles.md): identities, sessions and PostgreSQL authorization.
 - [Storage](storage.md): disk/S3, policies, signed URLs and consistency.
 - [Webhooks](webhooks.md): durable events, signatures, retries and destination safety.
+- [SDK overview](../sdk/README.md): packages, runtime requirements and source ownership.
 - [TypeScript SDK](../sdk/typescript/README.md) and [Rust SDK](../sdk/rust/README.md): APIs and lifecycle.
+- [Next.js App Router](../sdk/nextjs/README.md): request-scoped auth, PostgreSQL sessions, OAuth and browser refresh.
 - [Examples](../examples/README.md): schemas and runnable consumers.
 - [Auth integration](auth-integration.md): authentication in another Rust application.
 
 ## Operate
 
-- [Deploy](deploy.md): Docker/systemd, HTTPS and isolated projects.
+- [Deploy](deploy.md): one-command VPS setup, Docker/systemd, HTTPS and isolated projects.
 - [Backup](backup.md): paired snapshots, offsite copies and database PITR.
-- [Controlled updates](panel-updates.md): the 0.5.0 controller and required VPS acceptance.
+- [Controlled updates](panel-updates.md): the 0.5.0 controller, required VPS acceptance and guarded CLI fallback.
 - [Panel](panel.md): administrative UI and its authority.
 - [Host project management](host-management.md): isolated project creation, confirmed backup/restore/removal and persistent recovery.
 - [Security model](security/README.md): protections and deployer responsibilities.

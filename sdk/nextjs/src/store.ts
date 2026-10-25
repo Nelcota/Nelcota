@@ -12,6 +12,17 @@ export interface SessionLease {
    * saved inside this lease; Infinity when the store has no lease deadline.
    */
   readonly deadline: number;
+  /** Reads a related record using this owner's connection when supported.
+   * @remarks
+   * Avoids borrowing another pooled connection while this lease owns one.
+   */
+  read?(key: string): Promise<StoredSession | null>;
+  /** Acquires nested ownership using this owner's connection when supported.
+   * @remarks
+   * Keep a consistent lock order and finish the nested owner before using this
+   * lease. Nested ownership ends when the parent ends, including on failure.
+   */
+  exclusive?<T>(key: string, work: (lease: SessionLease) => Promise<T>): Promise<T>;
   load(): Promise<StoredSession | null>;
   save(value: StoredSession): Promise<void>;
   remove(): Promise<void>;

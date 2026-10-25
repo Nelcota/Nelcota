@@ -108,6 +108,26 @@ are in [Rust releasing](sdk/rust/docs/releasing.md) and
 [TypeScript releasing](sdk/typescript/docs/releasing.md). Do not publish as a side
 effect of a documentation or test change.
 
+### Next.js integration
+
+Build the base SDK first with `npm --prefix sdk/typescript ci` and
+`npm --prefix sdk/typescript run build`, then run `npm ci` in `sdk/nextjs`.
+Use `npm run check`, `npm test`, `npm run build` and
+`node scripts/package-smoke.mjs` there for package changes. PostgreSQL cases
+need the shared disposable test service and
+`NELCOTA_NEXT_TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/postgres`.
+Keep these suites sequential with Rust and panel tests.
+
+The authoritative browser/backend commands and environment are in
+[the Next.js verification workflow](.github/workflows/sdk-nextjs-check.yml).
+It covers Node 22/24/26 with Chromium, Firefox/WebKit on Node 24, two production
+Next processes sharing PostgreSQL sessions, server-only import boundaries,
+real backend/RLS, email/PKCE and disposable S3. Select the affected gate; do not
+run the entire matrix for prose-only edits. The
+[release guide](sdk/nextjs/docs/releasing.md) separates verification from npm
+publication. Existing results are dated in
+[the SDK release record](docs/goals/sdk-release-completion.md).
+
 ### Acceptance, upgrades and stress
 
 ```sh

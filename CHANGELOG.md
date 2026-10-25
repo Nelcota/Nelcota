@@ -4,7 +4,9 @@ This history uses Keep a Changelog categories and Semantic Versioning.
 Dates use UTC.
 
 Server releases are listed here. The [TypeScript SDK](sdk/typescript/CHANGELOG.md)
-and [Rust SDK](sdk/rust/CHANGELOG.md) have independent package versions.
+[Rust SDK](sdk/rust/CHANGELOG.md) and [Next.js integration](sdk/nextjs/CHANGELOG.md)
+have independent package versions. See [current status](docs/current-status.md)
+for the October 24 source and publication checkpoint.
 
 ## [Unreleased]
 

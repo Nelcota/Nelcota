@@ -812,3 +812,103 @@ async fn reserved_filter_columns_are_kept_separate_from_modifiers() {
             .any(|(key, value)| key == "items.and" && value == "(limit.is.null)")
     );
 }
+
+#[tokio::test]
+async fn interrupted_error_bodies_keep_status_and_retry_after_without_spurious_retries() {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    for (status, code) in [
+        (200, "network_error"),
+        (401, "unauthorized"),
+        (503, "unavailable"),
+    ] {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let calls = Arc::new(AtomicUsize::new(0));
+        let count = calls.clone();
+        let task = tokio::spawn(async move {
+            loop {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut request = Vec::new();
+                while !request.ends_with(b"\r\n\r\n") {
+                    assert!(request.len() < 4096);
+                    request.push(socket.read_u8().await.unwrap());
+                }
+                count.fetch_add(1, Ordering::SeqCst);
+                let headers = format!(
+                    "HTTP/1.1 {status} Error\r\nContent-Length: 100\r\nRetry-After: 90\r\nConnection: close\r\n\r\n{{"
+                );
+                socket.write_all(headers.as_bytes()).await.unwrap();
+                socket.shutdown().await.unwrap();
+            }
+        });
+        let mut builder = Client::builder(url);
+        if status == 200 {
+            builder = builder.retries(0);
+        }
+        let error = builder
+            .build()
+            .unwrap()
+            .from("notes")
+            .execute::<Value>()
+            .await
+            .unwrap_err();
+        task.abort();
+        if status == 200 {
+            assert!(matches!(error, Error::Network(_)));
+            assert_eq!(calls.load(Ordering::SeqCst), 1);
+            continue;
+        }
+        assert_eq!(error.status(), Some(status));
+        assert_eq!(error.code(), code);
+        assert_eq!(error.retry_after(), Some(Duration::from_secs(90)));
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
+}
+
+#[tokio::test]
+async fn stalled_error_metadata_still_obeys_deadlines_and_cancellation() {
+    let entered = Arc::new(tokio::sync::Notify::new());
+    let signal = entered.clone();
+    let router = Router::new().fallback(any(move |request: Request| {
+        let signal = signal.clone();
+        async move {
+            if request.uri().path().ends_with("/cancel") {
+                signal.notify_one();
+            }
+            Response::builder()
+                .status(401)
+                .body(Body::from_stream(futures_util::stream::pending::<
+                    std::result::Result<bytes::Bytes, std::io::Error>,
+                >()))
+                .unwrap()
+        }
+    }));
+    let (url, task) = serve(router).await;
+    let client = Client::builder(url)
+        .timeout(Duration::from_millis(40))
+        .retries(0)
+        .build()
+        .unwrap();
+    assert!(matches!(
+        client.from("notes").execute::<Value>().await,
+        Err(Error::Timeout)
+    ));
+    let token = nelcota_client::CancellationToken::new();
+    let scoped = client.with_options(RequestOptions {
+        timeout: Some(Duration::ZERO),
+        cancellation: Some(token.clone()),
+    });
+    let request = tokio::spawn(async move { scoped.from("cancel").execute::<Value>().await });
+    tokio::time::timeout(Duration::from_secs(5), entered.notified())
+        .await
+        .unwrap();
+    token.cancel();
+    assert!(matches!(
+        tokio::time::timeout(Duration::from_secs(5), request)
+            .await
+            .unwrap()
+            .unwrap(),
+        Err(Error::Cancelled)
+    ));
+    task.abort();
+}
