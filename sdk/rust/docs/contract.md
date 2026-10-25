@@ -1,7 +1,7 @@
 # Rust SDK contract
 
 `nelcota-client` 0.1.6 supports Nelcota server 0.3.0 or later; its release
-checks run against the server source in the same checkout (currently 0.5.3). The released v0.2.0 tag is a legacy baseline
+checks run against the server source in the same checkout (currently 0.5.4). The released v0.2.0 tag is a legacy baseline
 without the newer OAuth routes and generators; see the README compatibility
 matrix. Package and server versions are independent. Native Tokio on Linux,
 Windows and macOS is the supported target; blocking and WASM interfaces are

@@ -12,7 +12,7 @@ VPS, then run it on Debian/Ubuntu or Fedora/RHEL. It installs cron, Docker and
 the CLI, creates the host in `/opt/nelcota` and starts it:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo NELCOTA_VERSION=0.5.3 sh -s -- api.yourdomain.com
+curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo NELCOTA_VERSION=0.5.4 sh -s -- api.yourdomain.com
 ```
 
 Arguments after the script's `--` go to `nelcota init`, for example `--email`,
@@ -27,9 +27,9 @@ sudo -i                                        # enter a root shell; omit if alr
 apt-get update
 apt-get install -y ca-certificates curl coreutils cron
 systemctl enable --now cron.service
-curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | NELCOTA_VERSION=0.5.3 sh
+curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | NELCOTA_VERSION=0.5.4 sh
 mkdir -p /opt/nelcota && cd /opt/nelcota
-nelcota init api.yourdomain.com --version 0.5.3  # creates the host and the first project
+nelcota init api.yourdomain.com --version 0.5.4  # creates the host and the first project
 nelcota up                                      # starts projects + Caddy, waits for the healthcheck
 nelcota doctor                                  # optional: checks DNS, ports, backups and health
 ```
@@ -310,7 +310,7 @@ with the project's `NELCOTA_VERSION` first:
 
 ```sh
 nelcota upgrade --all --dry-run
-nelcota -p shop upgrade --version 0.5.3  # published target; already-current projects are skipped
+nelcota -p shop upgrade --version 0.5.4  # published target; already-current projects are skipped
 ```
 
 ## Local development

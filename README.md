@@ -169,7 +169,7 @@ Point your domain's DNS A record at a Linux VPS, then run on Debian/Ubuntu or
 Fedora/RHEL:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo NELCOTA_VERSION=0.5.3 sh -s -- api.yourdomain.com
+curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo NELCOTA_VERSION=0.5.4 sh -s -- api.yourdomain.com
 ```
 
 The current installer prepares cron, Docker and the CLI, initializes the host
@@ -198,13 +198,13 @@ and the guide before configuring sessions.
 
 ## Status and roadmap
 
-This source targets server **0.5.3**. SDKs have independent versions.
-Confirm published artifacts on the [release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.3).
-Changes after the 0.5.3 tag remain in [Unreleased](CHANGELOG.md#unreleased),
-including the redesigned login, panel usability improvements, guarded CLI upgrades on
-controller-enrolled hosts and the oversized-refresh-token correction. The
-[current status](docs/current-status.md) separates these changes from published
-artifacts. Host project management and durable PITR recovery fencing remain available.
+This source targets server **0.5.4**. SDKs have independent versions.
+Confirm published artifacts and signed readiness on the
+[release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.4).
+The [0.5.4 notes](docs/releases/0.5.4.en.md) cover storage integrity, stable refresh
+rotation, literal database identifiers, panel usability and guarded installation.
+[current status](docs/current-status.md) distinguishes source scope, publication
+and validation. Host project management and durable PITR recovery fencing remain available.
 See the [changelog](CHANGELOG.md), [version and upgrade guide](docs/releases/README.md)
 and [release handoff](docs/onboarding/release.md) for source/package distinctions.
 A source build can report the same binary version as a published release until

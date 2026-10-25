@@ -1,7 +1,7 @@
 # Release handoff after Notes acceptance
 
-The 0.5.3 release refines panel branding, grouped navigation and the operator console,
-and improves bounded diagnostic logging
+The 0.5.4 release improves file-publication integrity, database-bound storage
+collection, concurrent refresh, panel usability and installation, as recorded
 in the [server changelog](../../CHANGELOG.md). A local acceptance pass proves
 the selected binary and its Notes workflow; it does not publish binaries,
 container images, Rust crates or either SDK package.
@@ -26,10 +26,10 @@ of the release scope.
 
 ## Upgrade an existing project
 
-The 0.5.2 → 0.5.3 patch retains internal schema V16 with no new migration.
+The 0.5.3 → 0.5.4 patch retains internal schema V16 with no new migration.
 Rehearse that exact upgrade and a paired database/file restore on a disposable
 installation before publishing. Existing legacy-upgrade CI also covers
-0.3.1 → this checkout; that result does not substitute for the 0.5.1 baseline.
+0.3.1 → this checkout; that result does not substitute for the 0.5.3 baseline.
 
 SMTP now requires implicit TLS or mandatory STARTTLS, and Linux initialization
 checks privileges, the cron scheduler and requested UFW operations. Review
