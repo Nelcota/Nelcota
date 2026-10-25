@@ -41,7 +41,7 @@ This guide targets 0.1.6. Version 0.1.5 is the previous published baseline.
 The patch preserves HTTP status and Retry-After after an interrupted error body,
 without replaying definite rejections. Deadlines and cancellation remain effective.
 It preserves public imports, Rust 1.88+, native Tokio and the server protocol.
-See the [changelog](CHANGELOG.md) and [upgrade notes](docs/contract.md#upgrading-from-014).
+See the [changelog](CHANGELOG.md) and [upgrade notes](docs/contract.md#upgrading-from-015).
 Version 0.1.6 is available on crates.io; [registry receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294)
 record its checksum and Rust 1.88/1.99 consumers. A server upgrade does not
 update installed clients.

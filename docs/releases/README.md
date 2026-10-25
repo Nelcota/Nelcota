@@ -64,7 +64,7 @@ Installing the adapter alone does not configure server-side sessions.
 Run the application's type/build/tests and exercise sign-in, refresh/sign-out,
 row writes and a file transfer against staging. Read the
 [TypeScript upgrade notes](../../sdk/typescript/docs/contract.md#upgrading-from-020)
-and [Rust upgrade notes](../../sdk/rust/docs/contract.md#upgrading-from-014).
+and [Rust upgrade notes](../../sdk/rust/docs/contract.md#upgrading-from-015).
 Portuguese application instructions are maintained in the
 [TypeScript quickstart](../../sdk/typescript/docs/quickstart.pt-BR.md) and
 [Rust quickstart](../../sdk/rust/docs/quickstart.pt-BR.md).

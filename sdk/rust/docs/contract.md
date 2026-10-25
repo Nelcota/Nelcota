@@ -79,13 +79,13 @@ failure. Deadlines and cancellation remain effective; successful response-body
 failures keep their existing behavior. Public imports and server requirements
 are unchanged.
 
-The following sections describe earlier upgrade steps; new applications and
-consumers upgrading through those versions should select 0.1.6.
+The following sections describe changes since older baselines. Their install
+commands also select the current 0.1.6 release for a direct upgrade.
 
 ## Upgrading from 0.1.4
 
-Set `nelcota-client = "0.1.5"` and run
-`cargo update -p nelcota-client --precise 0.1.5`. Public imports, Rust 1.88+,
+Set `nelcota-client = "0.1.6"` and run
+`cargo update -p nelcota-client --precise 0.1.6`. Public imports, Rust 1.88+,
 native Tokio and the server protocol are unchanged. Exercise these corrected
 boundaries in your application:
 
@@ -104,8 +104,8 @@ copying their JSON; public entry points and wire formats remain unchanged.
 
 ## Upgrading from 0.1.3
 
-Set `nelcota-client = "0.1.4"`, update Cargo.lock with
-`cargo update -p nelcota-client --precise 0.1.4`, then build and test the
+Set `nelcota-client = "0.1.6"`, update Cargo.lock with
+`cargo update -p nelcota-client --precise 0.1.6`, then build and test the
 application. Rust 1.88+, native Tokio on the supported platforms, server 0.3.0+
 and public Rust imports remain unchanged. Server upgrades do not update this crate.
 
