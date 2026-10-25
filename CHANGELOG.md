@@ -12,6 +12,10 @@ for the October 24 source and publication checkpoint.
 
 ### Changed
 
+- Align SDK install/upgrade guides with published TypeScript 0.2.3, Rust 0.1.6
+  and Next.js 0.1.1. Make the App Router example a locked registry consumer,
+  document its standalone setup, and keep Rust REST demo identities separate.
+
 - `install.sh` sets up a whole VPS when given `nelcota init` arguments:
   `curl ... | sudo sh -s -- api.yourdomain.com` installs cron, Docker and the
   CLI, then runs `init` and `up` in `/opt/nelcota`.

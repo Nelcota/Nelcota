@@ -10,9 +10,19 @@ This is the 0.2.3 package contract. It includes queued-auth cancellation, exact
 bucket-limit writes, profile ordering and the input/response guards below.
 Version 0.2.0 predates these corrections, and 0.2.1 predates the
 [0.2.2 hardening](#hardening-in-022). Registry installation requires
-successful publication of 0.2.3; a server update does not install the client.
+successful publication of 0.2.3, now confirmed in the
+[registry receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294);
+a server update does not install the client.
 See the [upgrade notes](#upgrading-from-020). Older packages keep the contract in their
 own bundled documentation.
+
+## Upgrading from 0.2.2
+
+Install `@nelcota/client@0.2.3` and update the application lockfile. Public
+entrypoints and types are unchanged. PKCE work on one server storage adapter
+no longer blocks clients using independent adapters. Clients sharing an adapter
+and key still serialize, and browser/worker Web Lock names remain compatible.
+Rebuild server consumers and exercise login, callback exchange and logout.
 
 ## Upgrading from 0.2.0
 
@@ -277,8 +287,9 @@ five seconds of clock skew) and revokes any still-valid token, even after a
 failed renewal. The renewal only revokes itself: it is never persisted,
 broadcast or emitted as `refreshed`, and logout emits one `signed_out`. An
 uncertain native refresh is never rotated a second time to clear it; logout can
-still clear local state. Only an explicit pre-grant rate-limit rejection releases
-a refresh reservation. A network or gateway failure keeps its uncertainty fence.
+still clear local state. Every definite 4xx rejection other than `invalid_grant`
+releases its refresh reservation; `invalid_grant` clears the session. Network
+and gateway failures keep their uncertainty fence.
 Separate server adapters use independent locks; sharing an adapter and key
 coordinates its clients. Caller storage in Web and Service Workers keeps Web
 Locks. Explicit sessionStorage remains local to its tab.

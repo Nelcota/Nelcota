@@ -19,10 +19,10 @@ com os recursos descritos na [matriz de compatibilidade](../README.md#compatibil
 npm install @nelcota/client@0.2.3
 ```
 
-A instalação pelo registro exige a publicação bem-sucedida do 0.2.3. Consulte
-as [notas de atualização](contract.md#upgrading-from-020); atualizar o servidor não atualiza seu SDK.
-Antes de a versão estar disponível, use um arquivo local validado a partir da
-raiz do repositório:
+Version 0.2.3 is published on npm. Read the [upgrade notes](contract.md#upgrading-from-020)
+and [publication receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294).
+Server updates do not install client packages. The following commands are only
+for testing future checkout changes as a local archive:
 
 ```sh
 cd sdk/typescript
@@ -211,8 +211,9 @@ um token ainda válido é revogado diretamente, mesmo se a renovação falhar. A
 renovação serve apenas para a revogação: não é salva nem emite `refreshed`, e o
 logout emite um único `signed_out`. Falhas ainda podem impedir a revogação
 remota; o estado local é limpo. Uma rotação de resultado incerto não é repetida para tentar encerrá-la.
-Somente uma rejeição explícita por limite de tentativas libera a reserva de
-refresh; falhas de rede ou gateway mantêm o bloqueio preventivo.
+Every definite 4xx rejection other than `invalid_grant` releases the refresh
+reservation; `invalid_grant` clears the session. Network and gateway failures
+keep their uncertainty fence.
 
 Adaptadores distintos no servidor não compartilham a fila de autenticação.
 Clientes com o mesmo adaptador e chave continuam coordenados, e o storage do

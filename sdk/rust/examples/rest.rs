@@ -15,21 +15,21 @@ struct NewNote<'a> {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let url = std::env::var("NELCOTA_URL").unwrap_or_else(|_| "http://127.0.0.1:8000".into());
+    // Select one identity source. A caller token must not be mixed with a login.
     let builder = Client::builder(url);
-    let builder = match std::env::var("NELCOTA_ACCESS_TOKEN") {
-        Ok(token) => builder.access_token(token),
-        Err(_) => builder,
+    let client = match std::env::var("NELCOTA_ACCESS_TOKEN") {
+        Ok(token) => builder.access_token(token).build()?,
+        Err(_) => {
+            let email = std::env::var("NELCOTA_EMAIL")?;
+            let password = std::env::var("NELCOTA_PASSWORD")?;
+            let client = builder.build()?;
+            client
+                .auth()
+                .sign_in_with_password(&email, &password)
+                .await?;
+            client
+        }
     };
-    let client = builder.build()?;
-    if let (Ok(email), Ok(password)) = (
-        std::env::var("NELCOTA_EMAIL"),
-        std::env::var("NELCOTA_PASSWORD"),
-    ) {
-        client
-            .auth()
-            .sign_in_with_password(&email, &password)
-            .await?;
-    }
     let created = client
         .from("notes")
         .insert(&NewNote {
@@ -65,5 +65,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .eq("id", created.id)
         .execute::<()>()
         .await?;
+    client.auth().sign_out().await?;
     Ok(())
 }

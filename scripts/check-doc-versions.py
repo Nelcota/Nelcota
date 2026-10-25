@@ -14,6 +14,8 @@ def check(root: Path) -> list[str]:
     rust = tomllib.loads((root / "sdk/rust/Cargo.toml").read_text())["package"]
     cargo_lock = tomllib.loads((root / "Cargo.lock").read_text())
     workspace = tomllib.loads((root / "Cargo.toml").read_text())["workspace"]["package"]
+    next_package = json.loads((root / "sdk/nextjs/package.json").read_text())
+    next_version = next_package["version"]
     ts_version = client["version"]
     rust_version = rust["version"]
     readme = (root / "README.md").read_text()
@@ -45,7 +47,9 @@ def check(root: Path) -> list[str]:
         "docs/README.md": [f"This source targets server {server};"],
         "docs/auth-integration.md": [f"The current source manifests use {server};"],
         "crates/core/README.md": [f"The workspace version is {server};"],
-        "docs/releases/README.md": [f"This checkout targets server **{server}**", f"| {ts_version} |", f"| {rust_version} |"],
+        "docs/releases/README.md": [f"This checkout targets server **{server}**", f"| {ts_version} |", f"| {rust_version} |", f"| Next.js integration | {next_version} |"],
+        "sdk/nextjs/README.md": [f"**{next_version}**", f"@nelcota/nextjs@{next_version}"],
+        "sdk/nextjs/docs/quickstart.pt-BR.md": [f"@nelcota/nextjs@{next_version}"],
         "sdk/typescript/README.md": [f"@nelcota/client@{ts_version}", f"This guide targets {ts_version}."],
         "sdk/typescript/docs/quickstart.pt-BR.md": [f"@nelcota/client@{ts_version}", f"SDK **{ts_version}**"],
         "sdk/typescript/docs/contract.md": [f"This is the {ts_version} package contract."],
@@ -58,6 +62,19 @@ def check(root: Path) -> list[str]:
         for fragment in fragments:
             if fragment not in text:
                 errors.append(f"{source}: expected {fragment!r}")
+
+    example_path = "sdk/nextjs/examples/app-router"
+    example = json.loads((root / example_path / "package.json").read_text())
+    example_lock = json.loads((root / example_path / "package-lock.json").read_text())["packages"]
+    for name in ["@nelcota/client", "@nelcota/nextjs"]:
+        selected = example["dependencies"].get(name, "")
+        locked = example_lock.get(f"node_modules/{name}", {})
+        if not re.fullmatch(r"\d+\.\d+\.\d+", selected):
+            errors.append(f"{example_path}: {name} must pin a published registry version")
+        if locked.get("version") != selected or not locked.get("resolved", "").startswith("https://registry.npmjs.org/"):
+            errors.append(f"{example_path}: {name} lock must match its registry version")
+        if example_lock[""]["dependencies"].get(name) != selected:
+            errors.append(f"{example_path}: {name} manifest and lockfile differ")
 
     for sdk, version in [("typescript", ts_version), ("rust", rust_version)]:
         source = f"sdk/{sdk}/CHANGELOG.md"

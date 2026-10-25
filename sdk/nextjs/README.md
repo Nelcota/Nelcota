@@ -1,20 +1,20 @@
 # Nelcota for Next.js
 
-App Router integration targeting `@nelcota/nextjs` **0.1.1**. It requires
-`@nelcota/client` 0.2.2 or later. Confirm the selected version with
-`npm view @nelcota/nextjs@0.1.1 version` before installing; use a reviewed local
-tarball until publication. The
-[October 24 publication checkpoint](../../docs/goals/sdk-release-completion.md#publication-checkpoint--2026-10-24)
-records the previous 0.1.0 package's registry consumers, not publication of 0.1.1.
-See [releasing](docs/releasing.md), the
-[execution record](../../docs/goals/nextjs-sdk-execution.md) and the
-[0.1.1 concurrency and compatibility evidence](../../docs/goals/nextjs-151-validation.md).
+App Router integration published as `@nelcota/nextjs` **0.1.1**. Install it with
+the published `@nelcota/client` **0.2.3**; the supported minimum peer remains
+0.2.2. [Publication and acceptance](https://github.com/Nelcota/Nelcota/issues/151)
+record registry integrity, fresh consumers and the explicitly skipped external
+provider gates. See [releasing](docs/releasing.md) for future releases.
 
 Install in a compatible Next App Router application:
 
 ```sh
-npm install @nelcota/nextjs@0.1.1 @nelcota/client@0.2.2 pg
+npm install --save-exact @nelcota/nextjs@0.1.1 @nelcota/client@0.2.3
+npm install pg
 ```
+
+The [standalone App Router example](https://github.com/Nelcota/Nelcota/blob/main/sdk/nextjs/examples/app-router/README.md) installs these
+published versions and includes configuration and startup commands.
 
 [Português](docs/quickstart.pt-BR.md).
 
@@ -23,8 +23,11 @@ npm install @nelcota/nextjs@0.1.1 @nelcota/client@0.2.2 pg
 App Router on the Node.js runtime: Server Components, Route Handlers, Server
 Actions, OAuth callback, optional authentication proxy, and a browser refresh
 helper. The verification matrix uses Next 16.4.3 / React 19.3.1 on Node
-22, 24 and 26 with Chromium, plus Firefox and WebKit on Node 24. Previous Next
-majors, Pages Router and Edge are outside the supported scope.
+22, 24 and 26 with Chromium, plus Firefox and WebKit on Node 24. The package
+peer range targets Next 16. A pinned Next 15.5.28 compatibility consumer passed
+all three browsers on Node 24 with PostCSS 8.5.31 and Node middleware adaptations;
+see the [compatibility evidence](https://github.com/Nelcota/Nelcota/blob/main/docs/goals/nextjs-151-validation.md).
+Pages Router, Edge and earlier Next majors remain outside the supported scope.
 
 This composes `@nelcota/client`; its REST/RPC/storage types and backend grants/RLS
 remain the data contract. The proxy is navigation assistance, never authorization.
@@ -349,9 +352,9 @@ This owns disposable PostgreSQL and STARTTLS Mailpit fixtures, tests real
 recovery/magic-link delivery and token consumption, and verifies eight
 concurrent refresh contexts through independent session stores. The reusable
 Next verification workflow runs these checks, backend/RLS, storage/S3 and the
-server OAuth contract before release publication. Live OAuth-provider accounts,
-historical Next majors and arbitrary production provider configurations are
-outside this matrix.
+server OAuth contract before release publication. Live Google/GitHub accounts and AWS S3/R2 HTTPS remain explicitly unvalidated
+at the maintainer's request. Controlled provider endpoints and loopback RustFS
+checks do not complete those gates.
 
 ## Storage downloads and S3 redirects
 
