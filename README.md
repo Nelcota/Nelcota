@@ -183,12 +183,13 @@ pin selects the published CLI and image, not a snapshot of the installer.
 
 | Application | Package | Guide |
 | --- | --- | --- |
-| JavaScript / TypeScript | `@nelcota/client@0.2.2` | [REST, auth and storage](sdk/typescript/README.md) |
-| Native Rust / Tokio | `nelcota-client = "0.1.5"` | [Rust client](sdk/rust/README.md) |
-| Next.js App Router / Node.js | `@nelcota/nextjs@0.1.0` with `@nelcota/client@0.2.2` | [Server Components, Actions, Route Handlers and OAuth](sdk/nextjs/README.md) |
+| JavaScript / TypeScript | `@nelcota/client@0.2.3` | [REST, auth and storage](sdk/typescript/README.md) |
+| Native Rust / Tokio | `nelcota-client = "0.1.6"` | [Rust client](sdk/rust/README.md) |
+| Next.js App Router / Node.js | `@nelcota/nextjs@0.1.1` with `@nelcota/client@0.2.3` | [Server Components, Actions, Route Handlers and OAuth](sdk/nextjs/README.md) |
 
-Publication and registry-consumer checks for these versions are recorded in the
-[October 24 checkpoint](docs/goals/sdk-release-completion.md#publication-checkpoint--2026-10-24).
+Publication and registry-consumer checks are recorded in the
+[TypeScript/Rust receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294) and
+[Next.js acceptance ledger](https://github.com/Nelcota/Nelcota/issues/151).
 Next.js uses a dedicated PostgreSQL session store and request-scoped clients;
 Server Components only read sessions. Its supported matrix is Next 16.4.3 /
 React 19.3.1 on Node 22, 24 and 26. Source now targets Next.js SDK 0.1.1 with

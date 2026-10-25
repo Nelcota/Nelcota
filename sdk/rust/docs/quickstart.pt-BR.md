@@ -7,12 +7,11 @@ O cancelamento também retira requisições de auth da fila de ciclo de vida;
 uma rotação aceita continua responsável por persistir sua sessão.
 Essas correções exigem atualizar o pacote do cliente.
 
-O SDK usa Tokio e requer Rust 1.88+. Adicione `nelcota-client = "0.1.6"`
-ao Cargo.toml depois de confirmar sua publicação, junto de serde, serde_json
-e tokio (veja o README). Antes disso, use uma dependência local `path` para
-`sdk/rust` ou o arquivo validado. Consulte as [notas de atualização](contract.md#upgrading-from-013).
-O servidor compilado do repositório exige Rust 1.99.0; ele e o SDK têm versões
-independentes.
+The published SDK requires Rust 1.88+ and native Tokio. Add
+`nelcota-client = "0.1.6"` to Cargo.toml together with serde, serde_json and Tokio
+as shown in the [README](../README.md). [Registry receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294)
+verify this version on Rust 1.88/1.99. See the [upgrade notes](contract.md#upgrading-from-015).
+The server checkout uses Rust 1.99; its version is independent of the SDK.
 
 ## Atualizar do 0.1.3
 

@@ -14,6 +14,9 @@ for the October 24 source and publication checkpoint.
 
 - Redesign the admin login with a centered wordmark, an inset gradient frame,
   larger fields, and language and theme controls in the footer.
+- Align SDK install/upgrade guides with published TypeScript 0.2.3, Rust 0.1.6
+  and Next.js 0.1.1. Make the App Router example a locked registry consumer,
+  document its standalone setup, and keep Rust REST demo identities separate.
 
 - `install.sh` sets up a whole VPS when given `nelcota init` arguments:
   `curl ... | sudo sh -s -- api.yourdomain.com` installs cron, Docker and the

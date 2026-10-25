@@ -50,8 +50,8 @@ The patch isolates server PKCE queues by storage adapter and key while preservin
 browser/worker Web Locks and coordination between clients sharing an adapter.
 Earlier session, refresh, query and transport corrections remain included; see
 the [changelog](CHANGELOG.md) and [upgrade notes](docs/contract.md#upgrading-from-020).
-Registry availability requires a successful release. Updating the server does
-not update installed clients. Node is SDK tooling/runtime, not a backend requirement.
+Version 0.2.3 is available on npm; [registry receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294)
+record integrity and consumer checks. Updating the server does not update installed clients. Node is SDK tooling/runtime, not a backend requirement.
 
 ## Independent modules
 

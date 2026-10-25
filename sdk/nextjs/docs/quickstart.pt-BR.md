@@ -1,13 +1,19 @@
 # Next.js 0.1.1
 
-This integration requires the published `@nelcota/client` 0.2.2 or later.
-Confirm `@nelcota/nextjs@0.1.1` registry availability before installation;
-source verification does not publish a package. See the
-[release instructions](releasing.md) and [G11 execution record](../../../docs/goals/nextjs-sdk-execution.md).
+This guide uses published `@nelcota/nextjs` 0.1.1 and `@nelcota/client` 0.2.3.
+The minimum base peer remains 0.2.2. See the [English guide](../README.md),
+[runnable example](https://github.com/Nelcota/Nelcota/blob/main/sdk/nextjs/examples/app-router/README.md) and
+[publication evidence](https://github.com/Nelcota/Nelcota/issues/151).
 
-The verification matrix covers App Router, Next 16.4.3 / React 19.3.1,
-Node 22/24/26 with Chromium, and Node 24 with Firefox/WebKit. Previous Next
-majors, Pages Router and Edge are outside the supported scope.
+```sh
+npm install --save-exact @nelcota/nextjs@0.1.1 @nelcota/client@0.2.3
+npm install pg
+```
+
+The supported peer range is Next 16 on the Node runtime. The selected matrix
+uses Next 16.4.3 / React 19.3.1 and Node 22/24/26, plus Firefox/WebKit on Node 24.
+Pinned Next 15.5.28 also passed three browser consumers with PostCSS 8.5.31 and
+Node middleware adaptations. Pages Router, Edge and earlier majors are outside scope.
 
 ## Organização e configuração
 
@@ -27,10 +33,11 @@ a aplicação. Consulte o exemplo de configuração no README em inglês.
 
 Use conexão direta ou pool de sessão; pool por transação é incompatível com
 advisory locks de sessão. Cada gravação é confirmada antes de resolver a Promise.
-Requisições da mesma sessão aguardam numa fila do processo antes de usar uma
-conexão do pool, e o lock é tentado com `pg_try_advisory_lock` dentro do
-`timeout` do store (5 s por padrão). Se não for obtido, a operação falha com
-`SessionError` `session_store` sem deixar um backend esperando no PostgreSQL.
+Requests for one session queue locally before borrowing a pool connection.
+Cross-instance owners join PostgreSQL's advisory-lock queue with a server-side
+statement timeout bounded by the store timeout (5 s by default); the previous
+statement timeout is restored. Related lineage reads and nested locks reuse the
+owner's connection. Failure to acquire returns `SessionError` `session_store`.
 `new PostgresSessionStore(pool, timeout, leaseTimeout)` usa 5 s / 60 s por padrão
 e exige `leaseTimeout >= 2 * timeout`. Cada chamada de auth dentro do lease recebe
 no máximo o tempo restante do lease menos um `timeout` do store, reservado para
