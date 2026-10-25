@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-export async function fixture(page: Page) {
+export async function fixture(page: Page, contentLanguage: 'pt-BR' | 'en' = 'pt-BR') {
   const stamp = '2026-10-08T10:30:00Z';
   const rls = { state: 'ok', label: 'RLS enabled', enabled: true, forced: false, policies: 1 };
   const tables = ['notes', 'profiles', 'tasks'].map(name => ({ name, kind: 'table', has_pk: true, rls }));
@@ -11,7 +11,9 @@ export async function fixture(page: Page) {
     { name: 'created_at', type: 'timestamptz', full_type: 'timestamp with time zone', category: 'D', nullable: false, has_default: true, generated: false, enum_values: [], is_pk: false, comment: null, references: null },
   ];
   const grants = { anon: ['SELECT'], authenticated: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'] };
-  const rows = Array.from({ length: 12 }, (_, i) => ({ id: `00000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`, title: ['Planejamento da semana', 'Integração com a API', 'Revisão do painel'][i % 3], body: 'Texto de exemplo para revisão visual da interface.', created_at: stamp }));
+  const noteTitles = contentLanguage === 'en' ? ['Weekly planning', 'API integration', 'Panel review'] : ['Planejamento da semana', 'Integração com a API', 'Revisão do painel'];
+  const noteBody = contentLanguage === 'en' ? 'Example content for reviewing the interface.' : 'Texto de exemplo para revisão visual da interface.';
+  const rows = Array.from({ length: 12 }, (_, i) => ({ id: `00000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`, title: noteTitles[i % 3], body: noteBody, created_at: stamp }));
   const projects = [{ name: 'nelcota-demo', url: null, current: true }, { name: 'loja-demo', url: 'https://shop.example.test', current: false }];
   const bucket = { id: 'documents', public: true, file_size_limit: 10485760, allowed_mime_types: null, created_at: stamp, files: 3, bytes: 1258291 };
   await page.unrouteAll({behavior:'ignoreErrors'});
