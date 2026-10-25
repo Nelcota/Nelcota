@@ -143,15 +143,32 @@ async fn serve(config: Config) -> anyhow::Result<()> {
         Some(store) => {
             let store = Arc::new(store);
             tracing::info!(backend = ?config.storage_backend, "file storage enabled");
-            if !config.deployment_validation {
-                nelcota_storage::spawn_collector(pool.clone(), store.clone());
-            }
-            Some(nelcota_storage::StorageState::new(
+            let storage = nelcota_storage::StorageState::new(
                 pool.clone(),
                 keys.clone(),
                 store,
                 nelcota_storage::StorageSettings::from_config(&config),
-            ))
+            );
+            let identity_pool = db::admin_pool(&admin, 1);
+            let client = identity_pool
+                .get()
+                .await
+                .context("could not identify the storage database")?;
+            let initialized =
+                tokio::time::timeout(Duration::from_secs(30), storage.initialize_store(&client))
+                    .await;
+            drop(client);
+            identity_pool.close();
+            if !matches!(initialized, Ok(Ok(()))) {
+                tracing::warn!(
+                    event = "storage.ownership_unavailable",
+                    "storage ownership initialization unavailable; collection stays disabled and uploads retry before writing"
+                );
+            }
+            if !config.deployment_validation {
+                nelcota_storage::spawn_collector(pool.clone(), storage.store.clone());
+            }
+            Some(storage)
         }
         None => None,
     };

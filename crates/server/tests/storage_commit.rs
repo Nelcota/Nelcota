@@ -66,12 +66,12 @@ async fn commit_reply_cut(
 
 #[tokio::test]
 async fn lost_publication_reply_keeps_the_committed_objects_bytes() {
-    assert_uncertain_publication(TestApp::spawn().await, false).await;
+    assert_uncertain_publication(&TestApp::spawn().await, false).await;
 }
 
 #[tokio::test]
 async fn lost_replacement_reply_keeps_the_new_version_and_reconciles_the_old_one() {
-    assert_uncertain_publication(TestApp::spawn().await, true).await;
+    assert_uncertain_publication(&TestApp::spawn().await, true).await;
 }
 
 #[tokio::test]
@@ -103,19 +103,94 @@ async fn uncertain_s3_publication_preserves_created_and_replaced_bytes() {
         store.list().next().await.is_none(),
         "use an empty dedicated test bucket"
     );
+    let options = Options {
+        store: Some(store.clone()),
+        ..Options::default()
+    };
+    let app = TestApp::spawn_with(options).await;
     for replace in [false, true] {
-        let options = Options {
-            store: Some(store.clone()),
-            ..Options::default()
-        };
-        assert_uncertain_publication(TestApp::spawn_with(options).await, replace).await;
+        assert_uncertain_publication(&app, replace).await;
     }
+    assert!(store.list().next().await.is_none());
+
+    // A second independent metadata database must quarantine this real S3
+    // target durably, including across a fresh Store instance.
+    let other = TestApp::spawn_with(Options {
+        store: Some(Arc::new(Store::from_config(&config).unwrap().unwrap())),
+        ..Options::default()
+    })
+    .await;
+    other
+        .admin_client
+        .batch_execute("INSERT INTO storage.buckets (id) VALUES ('docs')")
+        .await
+        .unwrap();
+    let caller = Claims::from_payload(json!({"role":"service_role"})).unwrap();
+    other
+        .storage
+        .upload(
+            caller,
+            "docs",
+            "retained.txt",
+            UploadOptions::default(),
+            Box::pin(stream::iter([Ok(Bytes::from_static(
+                b"shared provider bytes",
+            ))])),
+        )
+        .await
+        .unwrap();
+    let version = other
+        .admin_client
+        .query_one(
+            "SELECT version FROM storage.objects WHERE name = 'retained.txt'",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    let retained = Store::key("docs", version);
+    let later = std::time::SystemTime::now() + std::time::Duration::from_secs(2 * 86_400);
+    for application in [&app, &other] {
+        assert!(
+            nelcota_storage::collect_orphans(&application.pool, &application.storage.store, later)
+                .await
+                .is_err()
+        );
+        assert_eq!(
+            application
+                .storage
+                .store
+                .get(&retained, None)
+                .await
+                .unwrap()
+                .bytes()
+                .await
+                .unwrap(),
+            "shared provider bytes"
+        );
+    }
+    let restarted = nelcota_storage::StorageState::new(
+        other.pool.clone(),
+        other.keys.clone(),
+        Arc::new(Store::from_config(&config).unwrap().unwrap()),
+        (*other.storage.settings).clone(),
+    );
+    restarted
+        .initialize_store(&other.admin_client)
+        .await
+        .unwrap();
+    assert!(
+        nelcota_storage::collect_orphans(&other.pool, &restarted.store, later)
+            .await
+            .is_err()
+    );
+    restarted.store.delete(&retained).await.unwrap();
     assert!(store.list().next().await.is_none());
 }
 
-async fn assert_uncertain_publication(app: TestApp, replace: bool) {
+async fn assert_uncertain_publication(app: &TestApp, replace: bool) {
     app.admin_client
-        .batch_execute("INSERT INTO storage.buckets (id) VALUES ('docs')")
+        .batch_execute("INSERT INTO storage.buckets (id) VALUES ('docs') ON CONFLICT DO NOTHING")
         .await
         .unwrap();
     let caller = Claims::from_payload(json!({"role":"service_role"})).unwrap();
@@ -199,6 +274,13 @@ async fn assert_uncertain_publication(app: TestApp, replace: bool) {
     // The S3 cases share only an otherwise empty disposable bucket. Remove
     // this case's known version after all persistence/collector assertions.
     app.storage.store.delete(&key).await.unwrap();
+    app.admin_client
+        .execute(
+            "DELETE FROM storage.objects WHERE bucket_id = 'docs' AND name = 'commit.txt'",
+            &[],
+        )
+        .await
+        .unwrap();
 }
 
 #[tokio::test]

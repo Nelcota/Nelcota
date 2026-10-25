@@ -11,6 +11,7 @@ pub mod http;
 mod mime;
 mod multipart;
 mod operations;
+mod ownership;
 mod path;
 mod private_dir;
 mod quota;
@@ -53,6 +54,12 @@ pub struct StorageState {
 }
 
 impl StorageState {
+    /// Bind orphan collection to this database before accepting file writes.
+    /// A provider outage leaves collection disabled; uploads retry initialization.
+    pub async fn initialize_store(&self, admin: &tokio_postgres::Client) -> Result<(), StoreError> {
+        self.store.initialize_owner(admin, &self.pool).await
+    }
+
     pub fn new(pool: Pool, keys: Arc<Keys>, store: Arc<Store>, settings: StorageSettings) -> Self {
         StorageState {
             pool,

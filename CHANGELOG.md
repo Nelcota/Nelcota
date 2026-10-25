@@ -46,6 +46,11 @@ for the October 24 source and publication checkpoint.
 
 ### Fixed
 
+- Bind automatic file collection to a persistent database identity. Keep bytes
+  when independent databases share a physical store or existing versions cannot
+  be attributed, and keep collection disabled after a restart.
+- Exclude private host configuration and nested SDK build/dependency folders
+  from Docker build contexts while retaining example configuration and assets.
 - Retain immutable storage bytes when metadata publication cannot be
   acknowledged, and reconcile unreferenced versions through the existing
   garbage collector instead of risking a committed row with missing bytes.

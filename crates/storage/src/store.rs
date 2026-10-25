@@ -2,7 +2,11 @@
 //! both behind `object_store`. Keys are `<bucket>/<version>` (D78); object
 //! names never reach the store.
 
-use std::{path::PathBuf, sync::Arc, time::Duration};
+use std::{
+    path::PathBuf,
+    sync::{Arc, OnceLock, atomic::AtomicBool},
+    time::Duration,
+};
 
 use futures_util::stream::BoxStream;
 use nelcota_core::{Config, config::StorageBackend};
@@ -28,6 +32,9 @@ pub struct Store {
     backend: Backend,
     /// Includes pending creation and canceled uploads awaiting abort.
     multipart_slots: Arc<tokio::sync::Semaphore>,
+    pub(crate) gc_owner: OnceLock<String>,
+    pub(crate) ownership_ready: tokio::sync::OnceCell<()>,
+    pub(crate) shared: AtomicBool,
 }
 
 #[cfg(all(test, unix))]
@@ -97,6 +104,10 @@ enum Backend {
 
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {
+    #[error("storage ownership could not be established: {0}")]
+    Ownership(&'static str),
+    #[error("could not identify the storage database: {0}")]
+    Database(#[from] tokio_postgres::Error),
     #[error("could not create the storage directory {0}: {1}")]
     Directory(PathBuf, std::io::Error),
     #[error(transparent)]
@@ -147,6 +158,9 @@ impl Store {
                     multipart_slots: Arc::new(tokio::sync::Semaphore::new(
                         crate::CONCURRENT_UPLOADS,
                     )),
+                    gc_owner: OnceLock::new(),
+                    ownership_ready: tokio::sync::OnceCell::new(),
+                    shared: AtomicBool::new(false),
                 }))
             }
         }
@@ -160,6 +174,9 @@ impl Store {
             inner: Arc::new(fs),
             backend: Backend::Disk { root },
             multipart_slots: Arc::new(tokio::sync::Semaphore::new(crate::CONCURRENT_UPLOADS)),
+            gc_owner: OnceLock::new(),
+            ownership_ready: tokio::sync::OnceCell::new(),
+            shared: AtomicBool::new(false),
         })
     }
 
@@ -234,7 +251,105 @@ impl Store {
     }
 
     pub fn list(&self) -> BoxStream<'static, object_store::Result<ObjectMeta>> {
-        self.inner.list(None)
+        use futures_util::StreamExt;
+        self.inner
+            .list(None)
+            .filter(|item| {
+                std::future::ready(
+                    !item
+                        .as_ref()
+                        .is_ok_and(|meta| crate::ownership::is_control(&meta.location)),
+                )
+            })
+            .boxed()
+    }
+
+    pub(crate) async fn control_read(
+        &self,
+        name: &str,
+    ) -> Result<Option<bytes::Bytes>, StoreError> {
+        self.check_control_path(name)?;
+        let result = match self.inner.get(&Key::from(name)).await {
+            Ok(result) => result,
+            Err(object_store::Error::NotFound { .. }) => return Ok(None),
+            Err(error) => return Err(error.into()),
+        };
+        if result.meta.size > 128 {
+            return Err(StoreError::Ownership("oversized ownership marker"));
+        }
+        let bytes = result.bytes().await?;
+        if bytes.len() > 128 {
+            return Err(StoreError::Ownership("oversized ownership marker"));
+        }
+        Ok(Some(bytes))
+    }
+
+    pub(crate) async fn control_create(
+        &self,
+        name: &str,
+        bytes: bytes::Bytes,
+    ) -> Result<(), StoreError> {
+        self.check_control_path(name)?;
+        let options = object_store::PutOptions {
+            mode: object_store::PutMode::Create,
+            ..Default::default()
+        };
+        match self
+            .inner
+            .put_opts(&Key::from(name), bytes.into(), options)
+            .await
+        {
+            Ok(_) | Err(object_store::Error::AlreadyExists { .. }) => {}
+            Err(error) => return Err(error.into()),
+        }
+        if let Backend::Disk { root } = &self.backend {
+            self.check_control_path(name)?;
+            let marker = root.join(name);
+            std::fs::File::open(&marker)
+                .and_then(|file| file.sync_all())
+                .map_err(|error| StoreError::Directory(marker, error))?;
+            #[cfg(unix)]
+            std::fs::File::open(root)
+                .and_then(|directory| directory.sync_all())
+                .map_err(|error| StoreError::Directory(root.clone(), error))?;
+        }
+        Ok(())
+    }
+
+    fn check_control_path(&self, name: &str) -> Result<(), StoreError> {
+        let Backend::Disk { root } = &self.backend else {
+            return Ok(());
+        };
+        let valid = |metadata: &std::fs::Metadata, directory: bool| {
+            if metadata.file_type().is_symlink()
+                || metadata.is_dir() != directory
+                || (!directory && !metadata.is_file())
+            {
+                return false;
+            }
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::MetadataExt;
+                let Ok(owner) = std::fs::metadata(root) else {
+                    return false;
+                };
+                if metadata.uid() != owner.uid() || metadata.mode() & 0o022 != 0 {
+                    return false;
+                }
+            }
+            true
+        };
+        let metadata = std::fs::symlink_metadata(root)
+            .map_err(|error| StoreError::Directory(root.clone(), error))?;
+        if !valid(&metadata, true) {
+            return Err(StoreError::Ownership("unsafe ownership marker directory"));
+        }
+        match std::fs::symlink_metadata(root.join(name)) {
+            Ok(metadata) if valid(&metadata, false) => Ok(()),
+            Ok(_) => Err(StoreError::Ownership("unsafe ownership marker")),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(error) => Err(StoreError::Directory(root.join(name), error)),
+        }
     }
 
     /// S3 only: a presigned GET that also fixes the response's type and

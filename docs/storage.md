@@ -210,6 +210,25 @@ checks authoritative metadata and removes unreferenced versions once they are
 a day old, including bytes left by an interrupted upload or an uncertain
 publication. A version still referenced by a row is retained.
 
+Use a separate physical disk root or S3 bucket for each independent metadata
+database. Replicas of the same database may share it. The server records a
+database identity in `.nelcota-gc-owner-v1`. If another database uses that store,
+or an unmarked store contains versioned files not known to the current database,
+it records `.nelcota-gc-shared-v1` and disables automatic collection. File APIs
+remain available; ambiguous bytes are retained. Missing, changed or unsafe
+ownership markers also prevent collection. These internal markers are not
+objects in the file API and are never automatically removed.
+
+After `storage.collector_quarantined` or `storage.ownership_unavailable`, keep
+the original store and investigate before deleting anything. Stop sharing the
+target, provision a separate empty target for each database, and copy only that
+database's referenced `<bucket>/<version>` objects into its target while writes
+are stopped. Verify the restored files against metadata/backups, then restart
+with that target: it can be adopted when every version is accounted for. Do not
+remove markers to make an ambiguous target collectible. A provider outage or a
+large legacy scan may defer initialization; uploads retry within their existing
+deadline and collection stays disabled until ownership can be verified.
+
 ## Backups
 
 With the disk backend, every dump has its own `<dump>.files/` snapshot and

@@ -37,6 +37,12 @@ fn stored_files(dir: &Path) -> usize {
     };
     entries
         .map(|e| e.unwrap().path())
+        .filter(|p| {
+            !matches!(
+                p.file_name().and_then(|name| name.to_str()),
+                Some(".nelcota-gc-owner-v1" | ".nelcota-gc-shared-v1")
+            )
+        })
         .map(|p| match p.is_dir() {
             true => stored_files(&p),
             false => 1,

@@ -143,6 +143,11 @@ async fn write(
             old_size
         };
 
+        state
+            .store
+            .ensure_ownership(&state.pool)
+            .await
+            .map_err(store_failed)?;
         let reservation = quota::reserve(&state, old_size, declared, limit).await?;
         Ok::<_, ApiError>((settings, limit, reservation, slot))
     })

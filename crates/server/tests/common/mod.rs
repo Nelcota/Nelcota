@@ -385,6 +385,14 @@ impl TestApp {
             store,
             options.storage.clone(),
         );
+        // Provider failure is deliberately non-fatal, as in the real server.
+        // Uploads retry initialization before writing any bytes.
+        if let Err(error) = storage.initialize_store(&admin_client).await {
+            tracing::warn!(
+                event = "test.storage_ownership_unavailable",
+                error_type = std::any::type_name_of_val(&error)
+            );
+        }
         let panel = nelcota_admin::AdminState {
             storage: Some(storage.clone()),
             ..panel

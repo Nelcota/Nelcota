@@ -42,7 +42,7 @@ pub fn spawn_collector(pool: Pool, store: Arc<Store>) {
 }
 
 /// The version a key holds, if the key is one of ours and old enough.
-fn candidate(key: &Key, now: SystemTime) -> Option<Uuid> {
+pub(crate) fn version(key: &Key) -> Option<Uuid> {
     let mut parts = key.parts();
     let bucket = parts.next()?;
     let version = parts.next()?;
@@ -50,6 +50,11 @@ fn candidate(key: &Key, now: SystemTime) -> Option<Uuid> {
         return None;
     }
     let version = Uuid::parse_str(version.as_ref()).ok()?;
+    (version.get_version_num() == 7).then_some(version)
+}
+
+fn candidate(key: &Key, now: SystemTime) -> Option<Uuid> {
+    let version = version(key)?;
     let (secs, nanos) = version.get_timestamp()?.to_unix();
     let created = UNIX_EPOCH + Duration::new(secs, nanos);
     (version.get_version_num() == 7 && created + GRACE <= now).then_some(version)
@@ -57,6 +62,10 @@ fn candidate(key: &Key, now: SystemTime) -> Option<Uuid> {
 
 /// One pass: returns how many keys were removed.
 pub async fn collect(pool: &Pool, store: &Store, now: SystemTime) -> Result<usize, String> {
+    store
+        .verify_collection_owner()
+        .await
+        .map_err(|error| error.to_string())?;
     let mut listing = store.list();
     let mut batch: Vec<(Key, Uuid)> = Vec::new();
     let mut removed = 0;
@@ -82,8 +91,15 @@ async fn sweep(pool: &Pool, store: &Store, batch: Vec<(Key, Uuid)>) -> Result<us
         .map_err(|e| format!("{:?}", e.status()))?;
     let mut removed = 0;
     for (key, version) in batch {
-        if !known.contains(&version) && store.delete(&key).await.is_ok() {
-            removed += 1;
+        if !known.contains(&version) {
+            // Recheck after the metadata round trip and before each deletion.
+            store
+                .verify_collection_owner()
+                .await
+                .map_err(|error| error.to_string())?;
+            if store.delete(&key).await.is_ok() {
+                removed += 1;
+            }
         }
     }
     Ok(removed)
