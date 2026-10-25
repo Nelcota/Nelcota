@@ -12,13 +12,12 @@
   import { mode, toggleMode } from 'mode-watcher'
   import { api } from '$lib/transport/api'
   import { session } from '$lib/resources/session.svelte'
-  import Flag from '$lib/shell/components/Flag.svelte'
-  import EntryLayout from '$lib/shell/components/EntryLayout.svelte'
-  import { LOCALES, errorMessage, i18n, setLocale, t, type Locale } from '$lib/i18n/index.svelte'
+  import Globe from '@lucide/svelte/icons/globe'
+  import CircleHelp from '@lucide/svelte/icons/circle-help'
+  import Logo from '$lib/shell/components/Logo.svelte'
+  import { LOCALES, errorMessage, i18n, setLocale, t } from '$lib/i18n/index.svelte'
 
-  // Short codes on the switch; each option names its language in full for
-  // screen readers and on hover, in that language.
-  const CODES: Record<Locale, string> = { 'pt-BR': 'PT', en: 'EN' }
+  const year = new Date().getFullYear()
 
   let project = $state('')
   onMount(() => {
@@ -70,49 +69,19 @@
 
 </script>
 
-<EntryLayout>
-  {#snippet brand()}
-    {#if project}
-      <span class="mx-1 h-5 w-px shrink-0 bg-border-strong" aria-hidden="true"></span>
-      <span class="hidden text-sm text-muted-foreground sm:inline">{t('login.project')}</span>
-      <span class="text-sm font-semibold [overflow-wrap:anywhere]" translate="no">{project}</span>
-    {/if}
-  {/snippet}
-  {#snippet actions()}
-    <div class="panel-segments" role="group" aria-label={t('shell.account.language')}>
-      {#each LOCALES as locale (locale)}
-        {@const current = i18n.locale === locale}
-        <button
-          type="button"
-          lang={locale}
-          aria-pressed={current}
-          aria-label={t(`shell.languages.${locale}`)}
-          title={t(`shell.languages.${locale}`)}
-          class="panel-segment"
-          onclick={() => setLocale(locale)}><Flag {locale} class="size-[18px]" />{CODES[locale]}</button
-        >
-      {/each}
-    </div>
-    <button
-      type="button"
-      class="grid size-11 cursor-pointer place-items-center rounded-full bg-card text-muted-foreground transition-colors hover:text-foreground"
-      onclick={toggleMode}
-      aria-label={mode.current === 'dark' ? t('shell.account.lightTheme') : t('shell.account.darkTheme')}
-      title={mode.current === 'dark' ? t('shell.account.lightTheme') : t('shell.account.darkTheme')}
-    >
-      {#if (mode.current === 'dark')}<Sun class="size-[18px]" aria-hidden="true" />{/if}
-      {#if !(mode.current === 'dark')}<Moon class="size-[18px]" aria-hidden="true" />{/if}
-    </button>
-  {/snippet}
-
-  <main class="flex flex-1 flex-col items-center justify-center gap-5 pt-6 pb-10">
-    <div class="relative w-full max-w-[440px]">
-
-      <form class="relative flex flex-col gap-5 rounded-3xl bg-card px-6 pt-8 pb-7 sm:px-9 sm:pt-9 sm:pb-8" onsubmit={submit} aria-busy={loading} novalidate>
-        <div>
-          <h1 class="text-2xl font-semibold tracking-tight sm:text-[1.75rem]">{t('login.title')}</h1>
-          <p class="mt-1.5 text-[15px] text-muted-foreground">{t('login.subtitle')}</p>
+<div class="login-page">
+  <div class="login-frame">
+    <main class="login-main">
+      <header class="login-brand"><Logo /></header>
+      <div class="login-content">
+        <div class="login-heading">
+          <h1>{t('login.title')}</h1>
+          <p>{t('login.subtitle')}</p>
+          {#if project}
+            <p class="login-project"><span>{t('login.project')}</span><span translate="no">{project}</span></p>
+          {/if}
         </div>
+        <form class="login-form" onsubmit={submit} aria-busy={loading} novalidate>
         {#if session.expired}
           <p class="rounded-2xl bg-well px-4 py-3 text-sm text-muted-foreground" role="status">{t('login.sessionExpired')}</p>
         {/if}
@@ -127,7 +96,7 @@
               autocomplete="username"
               spellcheck={false}
               placeholder={t('login.emailPlaceholder')}
-              class="h-11"
+              class="h-[54px] rounded-xl border-border-strong text-base md:text-base"
               readonly={loading}
               bind:value={email}
               oninput={() => {
@@ -142,13 +111,13 @@
           </Field.Field>
           <Field.Field data-invalid={failure || missing === 'password' ? true : undefined}>
             <Field.Label for="password">{t('login.password')}</Field.Label>
-            <InputGroup.Root class="h-11">
+            <InputGroup.Root class="h-[54px] rounded-xl border-border-strong text-base md:text-base">
               <InputGroup.Input
                 id="password"
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 autocomplete="current-password"
-                class="h-full"
+                class="h-full text-base md:text-base"
                 readonly={loading}
                 bind:value={password}
                 onblur={() => { capsLock = false }}
@@ -177,20 +146,104 @@
                 </Button>
               </InputGroup.Addon>
             </InputGroup.Root>
-            <!-- One line kept for the error or the Caps Lock hint, so the button
-                 does not jump when either appears; a longer error grows the card. -->
-            <div class="-mt-1 min-h-5 text-sm leading-5">
+            <div class="-mt-1 text-sm leading-5">
               <p id="login-error" class="break-words text-destructive" role="alert">{failure ? errorMessage(failure) : missing === 'password' ? t('login.passwordRequired') : ''}</p>
               <p id="login-caps-lock" class="text-warning" role="status" aria-live="polite">{!failure && !missing && capsLock ? t('login.capsLock') : ''}</p>
             </div>
           </Field.Field>
         </Field.Group>
 
-        <Button type="submit" size="hero" class="mt-1 w-full" disabled={loading}>{#if loading}<LoaderCircle data-icon="inline-start" class="animate-spin" aria-hidden="true" />{/if}{loading ? t('login.signingIn') : t('login.signIn')}</Button>
-      </form>
+        <Button type="submit" size="hero" class="h-[54px] w-full rounded-xl text-base font-medium sm:text-base" disabled={loading}>{#if loading}<LoaderCircle data-icon="inline-start" class="animate-spin" aria-hidden="true" />{/if}{loading ? t('login.signingIn') : t('login.signIn')}</Button>
+        </form>
+        <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{loading ? t('login.signingIn') : ''}</p>
+        <div class="login-support">
+          <p>{t('login.restricted')}</p>
+          <a href="https://github.com/Nelcota/Nelcota/blob/main/docs/README.md" target="_blank" rel="noreferrer">
+            <CircleHelp size={17} aria-hidden="true" />{t('login.help')}
+          </a>
+        </div>
+      </div>
+    </main>
+    <footer class="login-footer">
+      <div class="login-languages" role="group" aria-label={t('shell.account.language')}>
+        <Globe size={16} aria-hidden="true" />
+        {#each LOCALES as locale (locale)}
+          <button type="button" lang={locale} aria-pressed={i18n.locale === locale} onclick={() => setLocale(locale)}>
+            {t(`shell.languages.${locale}`)}
+          </button>
+        {/each}
+      </div>
+      <span aria-hidden="true">·</span>
+      <span>© {year} Nelcota</span>
+      <button
+        type="button"
+        class="login-theme"
+        onclick={toggleMode}
+        aria-label={mode.current === 'dark' ? t('shell.account.lightTheme') : t('shell.account.darkTheme')}
+        title={mode.current === 'dark' ? t('shell.account.lightTheme') : t('shell.account.darkTheme')}
+      >
+        {#if mode.current === 'dark'}<Sun size={16} aria-hidden="true" />{/if}
+        {#if mode.current !== 'dark'}<Moon size={16} aria-hidden="true" />{/if}
+      </button>
+    </footer>
+  </div>
+</div>
 
-      <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{loading ? t('login.signingIn') : ''}</p>
-    </div>
-    <p class="text-center text-sm text-muted-foreground">{t('login.restricted')}</p>
-  </main>
-</EntryLayout>
+<style>
+  .login-page {
+    min-height: 100dvh;
+    padding: 18px 28px 0;
+    background: var(--muted);
+  }
+  .login-frame {
+    display: flex;
+    min-height: calc(100dvh - 18px);
+    flex-direction: column;
+    border-radius: 30px 30px 0 0;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 3%, var(--background)), var(--background) 48%);
+  }
+  :global(.dark) .login-page { background: #2b2b2b; }
+  :global(.dark) .login-frame {
+    --background: #202020;
+    --field: #292929;
+    --border-strong: #555555;
+    --ring: var(--primary);
+    --brand: var(--primary);
+    background: linear-gradient(180deg, #20232b, #202020 48%);
+  }
+  .login-main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    padding: clamp(36px, 8vh, 88px) 24px 64px;
+  }
+  .login-brand { display: flex; justify-content: center; }
+  .login-content { width: 100%; max-width: 494px; margin-top: 36px; }
+  .login-heading { margin-bottom: 32px; text-align: center; }
+  .login-heading h1 { font-size: clamp(26px, 3vw, 32px); font-weight: 600; letter-spacing: -0.045em; line-height: 1.3; }
+  .login-heading > p { margin-top: 10px; font-size: 18px; color: var(--muted-foreground); }
+  .login-heading .login-project { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 16px; font-size: 13px; overflow-wrap: anywhere; }
+  .login-project span:last-child { color: var(--foreground); }
+  .login-form { display: flex; flex-direction: column; gap: 20px; }
+  .login-form :global([data-slot="field-label"]) { font-size: 16px; font-weight: 500; }
+  .login-support { margin-top: 36px; border-top: 1px solid var(--border); padding-top: 24px; text-align: center; font-size: 14px; color: var(--muted-foreground); }
+  .login-support a { display: inline-flex; align-items: center; gap: 8px; margin-top: 32px; }
+  .login-support a:hover { color: var(--foreground); }
+  .login-footer { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; padding: 20px 24px; color: var(--muted-foreground); font-size: 13px; }
+  .login-languages { display: flex; align-items: center; gap: 8px; }
+  .login-footer button { cursor: pointer; }
+  .login-languages button[aria-pressed="true"] { color: var(--foreground); font-weight: 600; }
+  .login-footer button:hover { color: var(--foreground); }
+  .login-footer button:focus-visible, .login-support a:focus-visible { outline: 2px solid var(--primary); outline-offset: 5px; border-radius: 3px; }
+  .login-theme { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; }
+  .login-theme:hover { background: var(--accent); }
+  @media (max-width: 600px) {
+    .login-page { padding: 8px 8px 0; }
+    .login-frame { min-height: calc(100dvh - 8px); border-radius: 22px 22px 0 0; }
+    .login-main { padding: 28px 20px 40px; }
+    .login-content { margin-top: 24px; }
+    .login-heading > p { font-size: 15px; }
+    .login-footer { gap: 8px; padding: 16px 12px; font-size: 12px; }
+  }
+</style>

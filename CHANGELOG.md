@@ -12,6 +12,9 @@ for the October 24 source and publication checkpoint.
 
 ### Changed
 
+- Redesign the admin login with a centered wordmark, an inset gradient frame,
+  larger fields, and language and theme controls in the footer.
+
 - `install.sh` sets up a whole VPS when given `nelcota init` arguments:
   `curl ... | sudo sh -s -- api.yourdomain.com` installs cron, Docker and the
   CLI, then runs `init` and `up` in `/opt/nelcota`.

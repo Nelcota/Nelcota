@@ -3,6 +3,8 @@ import { fixture } from './fixtures'
 
 test('private modules load only after login, including on a deep link', async ({ page }) => {
   await fixture(page)
+  // Finish the fixture's initial authenticated navigation before recording requests.
+  await expect(page.locator('.panel-rail')).toBeVisible()
   await page.route('**/admin/api/session', route => route.fulfill({ status: 401, json: { code: 'session_expired', message: 'Sign in' } }))
   await page.route('**/admin/api/login', route => route.fulfill({ json: { email: 'admin@example.test' } }))
   const modules: string[] = []
@@ -13,7 +15,7 @@ test('private modules load only after login, including on a deep link', async ({
   await (await identity).finished()
   // Lists the offending URLs, so an intermittent CI failure says what loaded.
   expect(modules.filter(url => /AuthenticatedShell|(?:TableEditor|StorageBucket|CodeBlock|SqlEditor)(?:\.svelte|-)/.test(url))).toEqual([])
-  await page.getByLabel('Email', { exact: true }).fill('admin@example.test')
+  await page.getByLabel('E-mail', { exact: true }).fill('admin@example.test')
   await page.getByLabel('Senha', { exact: true }).fill('test-password')
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('documents')
