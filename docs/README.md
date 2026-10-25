@@ -1,6 +1,6 @@
 # Documentation
 
-Choose a guide for your task. This source targets server 0.5.3; confirm its published artifacts on the release page. Examples target the
+Choose a guide for your task. This source targets server 0.5.4; confirm its published artifacts on the release page. Examples target the
 current source unless a published version is specified; server and SDK packages
 have separate versions. See the [version and upgrade guide](releases/README.md).
 
@@ -9,8 +9,8 @@ renders these same Markdown guides and their existing Portuguese catalogs. Its
 pinned source commit identifies the snapshot being read; website updates do not
 install a server or SDK package.
 
-See [current status](current-status.md) for the October 24 implementation and
-publication checkpoint, including changes after server 0.5.3.
+See [current status](current-status.md) for the October 25 server scope and
+independent SDK publication checkpoint.
 
 ## Start
 

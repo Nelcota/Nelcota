@@ -29,14 +29,13 @@ On Linux with Docker already installed, install a specific published release
 into a user-owned directory. Run from the cloned repository:
 
 ```sh
-NELCOTA_VERSION=0.5.3 PREFIX="$HOME/.local/bin" NELCOTA_SKIP_DOCKER=1 sh scripts/install.sh
+NELCOTA_VERSION=0.5.4 PREFIX="$HOME/.local/bin" NELCOTA_SKIP_DOCKER=1 sh scripts/install.sh
 "$HOME/.local/bin/nelcota" --version
 ```
 
-The installer checks the SHA-256 before replacing the binary. The release
-above is the published baseline; it does not contain unreleased changes from
-`main`. To validate this checkout instead, use the repository's pinned Rust
-toolchain and lockfile:
+The installer checks the SHA-256 before replacing the binary. Confirm the pinned release assets and readiness receipt before installing.
+Changes after its tag require another matching artifact. To validate this
+checkout instead, use the repository's pinned Rust toolchain and lockfile:
 
 ```sh
 cargo build --locked -p nelcota-server
@@ -173,7 +172,7 @@ published image version through the existing CLI:
 
 ```sh
 mkdir -p /opt/nelcota-staging && cd /opt/nelcota-staging
-nelcota init staging.example.com --project notes --version 0.5.3
+nelcota init staging.example.com --project notes --version 0.5.4
 nelcota up
 nelcota -p notes status
 ```

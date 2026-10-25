@@ -167,7 +167,7 @@ connector integration; it is not demonstrated by this example.
 
 ## Compatibility and operation
 
-Auth/core versions travel together. The current source manifests use 0.5.3;
+Auth/core versions travel together. The current source manifests use 0.5.4;
 subsequent compatible fixes preserve constructors, routes, error vocabulary,
 claims and additive database history. Breaking Rust changes during 0.x require
 a new minor version and a migration/upgrade note. After 1.0, breaking public

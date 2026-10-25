@@ -1,7 +1,7 @@
 # Versions and upgrades
 
-This checkout targets server **0.5.3**; confirm published artifacts and readiness
-on its [release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.3).
+This checkout targets server **0.5.4**; confirm published artifacts and readiness
+on its [release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.4).
 SDKs are distributed independently: installing
 or updating the server does not update dependencies in a client application.
 This checkout documents the following versions; a version number in source
@@ -9,7 +9,7 @@ does not itself publish a package.
 
 | Component | Documented version | Distribution and availability |
 | --- | --- | --- |
-| Server | 0.5.3 | [Official release](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.3), verified binary or OCI image |
+| Server | 0.5.4 | [Official release](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.4), verified binary or OCI image |
 | TypeScript SDK | 0.2.3 | [npm version](https://www.npmjs.com/package/@nelcota/client/v/0.2.3); confirm with `npm view @nelcota/client@0.2.3 version` |
 | Rust SDK | 0.1.6 | [crates.io version](https://crates.io/crates/nelcota-client/0.1.6); confirm the version before updating Cargo.lock |
 | Next.js integration | 0.1.1 | [npm version](https://www.npmjs.com/package/@nelcota/nextjs/v/0.1.1); [release procedure](../../sdk/nextjs/docs/releasing.md) and [verification evidence](../goals/sdk-release-completion.md) |
@@ -78,8 +78,8 @@ changed by these patch releases.
 
 ## Update a server
 
-Review the [0.5.3 notes in English](0.5.3.en.md) or
-[Portuguese](0.5.3.pt-BR.md). The 0.5.2 → 0.5.3 patch adds no internal
+Review the [0.5.4 notes in English](0.5.4.en.md) or
+[Portuguese](0.5.4.pt-BR.md). The 0.5.3 → 0.5.4 patch adds no internal
 migrations; the schema remains at V16. Upgrading from 0.4.0 applies internal migrations
 V14–V16. Take and restore-test a paired database/file backup and allow a
 maintenance window for large metadata tables. Verify the exact binary/image,
@@ -92,15 +92,15 @@ PITR fencing uses matching CLI/app artifacts and explicit `pitr recover`;
 ordinary `up` does not clear a restore fence. The controller's V1 layout limits
 and the existing F07 rate-limit trade-off remain unchanged.
 
-## Changes after the server tag
+## Source and published artifacts
 
-The workspace still reports 0.5.3 while `main` includes changes after that tag.
-The latest installer adds one-command VPS preparation independently of the
-selected binary version. Recent panel usability, CLI controller-fallback and
-auth validation changes are listed under [Unreleased](../../CHANGELOG.md#unreleased).
-They require an artifact built from the corresponding source revision; selecting
-`--version 0.5.3` does not add them to the existing release. See
-[current status](../current-status.md) for the dated scope and references.
+The 0.5.4 source incorporates changes developed after the 0.5.3 tag, including
+storage-publication/collection safeguards, session rotation, panel usability,
+installation and controller fallback. Selecting `--version 0.5.3` still selects
+that older release. Confirm the exact binary/image and signed readiness receipt
+for the version being installed. Future [Unreleased](../../CHANGELOG.md#unreleased)
+changes require another artifact before deployed projects receive them. See
+[current status](../current-status.md) for the dated source and validation scope.
 
 ## Documentation source and historical evidence
 
