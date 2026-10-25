@@ -317,8 +317,9 @@ impl Store {
     }
 
     fn check_control_path(&self, name: &str) -> Result<(), StoreError> {
-        let Backend::Disk { root } = &self.backend else {
-            return Ok(());
+        let root = match &self.backend {
+            Backend::Disk { root } => root,
+            _ => return Ok(()),
         };
         let valid = |metadata: &std::fs::Metadata, directory: bool| {
             if metadata.file_type().is_symlink()
@@ -330,8 +331,9 @@ impl Store {
             #[cfg(unix)]
             {
                 use std::os::unix::fs::MetadataExt;
-                let Ok(owner) = std::fs::metadata(root) else {
-                    return false;
+                let owner = match std::fs::metadata(root) {
+                    Ok(owner) => owner,
+                    Err(_) => return false,
                 };
                 if metadata.uid() != owner.uid() || metadata.mode() & 0o022 != 0 {
                     return false;
