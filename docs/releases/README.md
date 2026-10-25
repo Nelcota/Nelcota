@@ -12,29 +12,24 @@ does not itself publish a package.
 | Server | 0.5.3 | [Official release](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.3), verified binary or OCI image |
 | TypeScript SDK | 0.2.3 | [npm version](https://www.npmjs.com/package/@nelcota/client/v/0.2.3); confirm with `npm view @nelcota/client@0.2.3 version` |
 | Rust SDK | 0.1.6 | [crates.io version](https://crates.io/crates/nelcota-client/0.1.6); confirm the version before updating Cargo.lock |
-| Next.js integration | 0.1.0 | [npm version](https://www.npmjs.com/package/@nelcota/nextjs/v/0.1.0); [release procedure](../../sdk/nextjs/docs/releasing.md) and [verification evidence](../goals/sdk-release-completion.md) |
+| Next.js integration | 0.1.1 | [npm version](https://www.npmjs.com/package/@nelcota/nextjs/v/0.1.1); [release procedure](../../sdk/nextjs/docs/releasing.md) and [verification evidence](../goals/sdk-release-completion.md) |
 
-The 0.2.3 and 0.1.6 source candidates correct server PKCE coordination and
-interrupted HTTP error metadata. Confirm the tagged releases and registry
-availability before installing; see [the follow-up ledger](../goals/sdk-followup-review.md).
+The published TypeScript 0.2.3 patch isolates server PKCE coordination by storage
+adapter/key. Rust 0.1.6 preserves HTTP rejection status and Retry-After after an
+interrupted error body. [Publication receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294)
+record the tagged workflows, registry integrity and fresh consumers. Previous
+published baselines are TypeScript 0.2.2 and Rust 0.1.5.
 
-The [October 24 publication checkpoint](../goals/sdk-release-completion.md#publication-checkpoint--2026-10-24)
-records publication and clean registry consumers for TypeScript 0.2.2, Rust
-0.1.5 and Next.js 0.1.0.
-TypeScript 0.2.1 and Rust 0.1.4 are the previous published SDK baselines. The
-TypeScript patch includes the session, query and transport corrections from
-PRs #143 and #155; the Rust patch includes logout, reserved-filter, file-store cancellation,
-timeout and MIME corrections, together with private module organization. Release workflows verify the tagged
-source before publication. For future unreleased changes, use a reviewed
-local archive rather than assuming a published package contains them.
+Next.js **0.1.1** is published. It fixes PostgreSQL connection-pool starvation
+and cross-instance lock contention. Its [acceptance ledger](https://github.com/Nelcota/Nelcota/issues/151)
+records registry verification, runtime/framework consumers and the two explicitly
+skipped external-provider gates. The package peer range targets Next 16; pinned
+Next 15.5.28 consumers also passed with the documented adaptations.
 
-Next.js source now targets **0.1.1**, which fixes PostgreSQL session contention
-and adds a pinned Next 15 compatibility consumer. The table above retains the
-confirmed 0.1.0 publication checkpoint. A registry query during this update
-returned no 0.1.1 version; confirm with `npm view @nelcota/nextjs@0.1.1 version`
-before selecting it. Until publication, use a reviewed local archive for these
-corrections. See [the changelog](../../sdk/nextjs/CHANGELOG.md) and
-[validation follow-up](../goals/nextjs-151-validation.md).
+The [original October 24 checkpoint](../goals/sdk-release-completion.md#publication-checkpoint--2026-10-24)
+retains the historical TypeScript 0.2.2, Rust 0.1.5 and Next.js 0.1.0 evidence.
+Future source-only changes require a new package release before registry
+consumers can use them.
 
 ## Update an application
 
@@ -57,7 +52,7 @@ For a supported Next.js App Router application, install the adapter and its base
 SDK together (the production PostgreSQL store also needs application-owned `pg`):
 
 ```sh
-npm install --save-exact @nelcota/nextjs@0.1.0 @nelcota/client@0.2.3
+npm install --save-exact @nelcota/nextjs@0.1.1 @nelcota/client@0.2.3
 npm install pg
 npm ls @nelcota/nextjs @nelcota/client
 ```

@@ -1,0 +1,107 @@
+{
+  "checkpoint": "2026-10-24",
+  "scope": "Documentation and examples; no package publication",
+  "packages": {
+    "@nelcota/client": {
+      "version": "0.2.3",
+      "resolved": "https://registry.npmjs.org/@nelcota/client/-/client-0.2.3.tgz",
+      "integrity": "sha512-xq12G+7iakS08zF/8gnJI85lSaFlNmIlpLHbyCjruIYwmjmv7M9bIHWyMPd3rFLqA+vmIbqkoH4yfIn6GMJjDQ=="
+    },
+    "@nelcota/nextjs": {
+      "version": "0.1.1",
+      "resolved": "https://registry.npmjs.org/@nelcota/nextjs/-/nextjs-0.1.1.tgz",
+      "integrity": "sha512-sPxsgaJ5AltoUE2xQ/ahqHmKJywxHEa5F4l4d7wq4Fkx0/VirCi42VL7U/SPN8lEZ4qZguzSzhTXp6JTu1Ta1Q=="
+    }
+  },
+  "rustRegistryConsumer": {
+    "name": "nelcota-client",
+    "version": "0.1.6",
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "checksum": "e431ee058b3ead53be194289e1fe3035e83dab53e68e1f2fbecdbfea60fec072"
+  },
+  "framework": {
+    "framework": "Next 16.4.3 production webpack / React 19.3.1",
+    "node": "v26.12.1",
+    "browser": "chromium 156.0.8078.4",
+    "processes": 2,
+    "sessionStore": "shared disposable PostgreSQL",
+    "authFlows": [
+      "password Server Action",
+      "signup awaiting confirmation",
+      "resend",
+      "confirmation and replay",
+      "update user",
+      "refresh after 401",
+      "recovery and replay",
+      "magic link and replay",
+      "OAuth S256 PKCE callback, browser binding and replay",
+      "logout"
+    ],
+    "resources": {
+      "clientChunks": 27,
+      "cookieBytes": 68,
+      "repeatedReads": 100,
+      "repeatedReadMs": 375,
+      "retainedAdvisoryLocks": 0
+    },
+    "checks": [
+      "cross-origin request refused before API",
+      "Route Handler HttpOnly cookie merged",
+      "private response cache",
+      "Server Component verified user",
+      "proxy routes signed-out visitor to login",
+      "proxy bootstrap ID on login page",
+      "Server Action redirect retains cookie",
+      "HTML contains no session credentials",
+      "all production client chunks exclude build-time key and server-session/credential canaries",
+      "logout clears browser session",
+      "N01 two tabs/processes, reversed delivery: signed out, never the older identity",
+      "N01 two tabs/processes, natural delivery: newer identity",
+      "N01 lost winning response: signed out; lost row retired by next lineage sign-in"
+    ],
+    "multiTab": {
+      "reversed": {
+        "older": "bob@example.test",
+        "newer": "alice@example.test",
+        "browserShows": "signed out (superseded)"
+      },
+      "natural": {
+        "older": "bob@example.test",
+        "newer": "alice@example.test",
+        "browserShows": "alice@example.test"
+      },
+      "lostResponse": {
+        "older": "alice@example.test",
+        "newer": "bob@example.test",
+        "browserShows": "signed out (superseded)",
+        "lostRowLiveUntilNextLineageSignIn": true
+      },
+      "cookielessResidual": {
+        "browserShows": "bob@example.test",
+        "olderIdentity": "bob@example.test",
+        "note": "documented residual: no lineage without a cookie"
+      }
+    },
+    "counts": {
+      "password": 11,
+      "user": 113,
+      "logout": 2,
+      "refresh": 1,
+      "signup": 1,
+      "verify": 3
+    },
+    "authorization": "not tested: local transport fixture"
+  },
+  "otherChecks": {
+    "standaloneInstall": "npm ci --ignore-scripts, zero audit vulnerabilities",
+    "standaloneBuild": "production webpack build and strict TypeScript check passed",
+    "rustExamples": "all examples build on Rust 1.99; all examples check on Rust 1.88",
+    "realBackendExamples": "two TypeScript example contracts, published npm Todo script and exact-registry Rust 0.1.6 REST consumer passed",
+    "rustIdentityControl": "explicit token plus deliberately invalid password succeeds without login; password-only flow succeeds",
+    "boundary": "valid source app builds; Client Component importing server entry fails; valid app rebuilds"
+  },
+  "excluded": [
+    "Live Google/GitHub OAuth",
+    "AWS S3/R2 HTTPS"
+  ]
+}

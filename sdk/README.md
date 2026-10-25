@@ -6,16 +6,15 @@ application dependencies.
 
 | Package | Version | Runtime and documentation |
 | --- | --- | --- |
-| `@nelcota/client` | 0.2.2 | [JavaScript/TypeScript](typescript/README.md); Node 22+, browsers, Bun and Deno |
-| `nelcota-client` | 0.1.5 | [Native Rust](rust/README.md); Rust 1.88+, Tokio |
-| `@nelcota/nextjs` | 0.1.0 | [Next.js App Router](nextjs/README.md); Next 16.4.3 / React 19.3.1, Node 22/24/26 |
+| `@nelcota/client` | 0.2.3 | [JavaScript/TypeScript](typescript/README.md); Node 22+, browsers, Bun and Deno |
+| `nelcota-client` | 0.1.6 | [Native Rust](rust/README.md); Rust 1.88+, Tokio |
+| `@nelcota/nextjs` | 0.1.1 | [Next.js App Router](nextjs/README.md); Next 16.4.3 / React 19.3.1, Node 22/24/26 |
 
-The [publication checkpoint](../docs/goals/sdk-release-completion.md#publication-checkpoint--2026-10-24)
-records registry installation of these versions. Read the
-[upgrade guide](../docs/releases/README.md) before changing application lockfiles.
-Next.js source now targets 0.1.1; the table records the confirmed 0.1.0
-publication checkpoint. See [the follow-up evidence](../docs/goals/nextjs-151-validation.md)
-for session-concurrency corrections and the additional pinned Next 15 consumer.
+The current releases are available from npm and crates.io. [Publication receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294)
+record TypeScript 0.2.3 and Rust 0.1.6; [Next.js acceptance](https://github.com/Nelcota/Nelcota/issues/151)
+records published 0.1.1, its PostgreSQL contention correction and the pinned
+Next 15 compatibility consumer. The package peer range still targets Next 16.
+Read the [upgrade guide](../docs/releases/README.md) before changing application lockfiles.
 All clients retain PostgreSQL grants/RLS as the authorization boundary.
 
 ## Source ownership

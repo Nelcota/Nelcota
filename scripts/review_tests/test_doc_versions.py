@@ -22,6 +22,8 @@ FILES = (
     "sdk/typescript/package.json", "sdk/typescript/package-lock.json",
     "sdk/typescript/README.md", "sdk/typescript/CHANGELOG.md",
     "sdk/typescript/docs/quickstart.pt-BR.md", "sdk/typescript/docs/contract.md",
+    "sdk/nextjs/package.json", "sdk/nextjs/README.md", "sdk/nextjs/docs/quickstart.pt-BR.md",
+    "sdk/nextjs/examples/app-router/package.json", "sdk/nextjs/examples/app-router/package-lock.json",
     "sdk/rust/Cargo.toml", "sdk/rust/README.md", "sdk/rust/CHANGELOG.md",
     "sdk/rust/docs/quickstart.pt-BR.md", "sdk/rust/docs/contract.md",
 )
@@ -73,6 +75,25 @@ class VersionDocumentationTests(unittest.TestCase):
         lock["packages"][""]["version"] = "0.0.0"
         path.write_text(json.dumps(lock))
         self.assertTrue(any("package-lock" in error for error in CHECKER.check(self.root)))
+
+    def test_stale_nextjs_install_target_is_rejected(self):
+        path = self.root / "sdk/nextjs/README.md"
+        path.write_text(re.sub(r"@nelcota/nextjs@\d+\.\d+\.\d+", "@nelcota/nextjs@0.0.0", path.read_text()))
+        self.assertTrue(any("sdk/nextjs/README.md" in error for error in CHECKER.check(self.root)))
+
+    def test_example_cannot_depend_on_a_checkout_link(self):
+        path = self.root / "sdk/nextjs/examples/app-router/package.json"
+        data = json.loads(path.read_text())
+        data["dependencies"]["@nelcota/nextjs"] = "file:../.."
+        path.write_text(json.dumps(data))
+        self.assertTrue(any("published registry version" in error for error in CHECKER.check(self.root)))
+
+    def test_example_lock_cannot_hide_an_old_package(self):
+        path = self.root / "sdk/nextjs/examples/app-router/package-lock.json"
+        data = json.loads(path.read_text())
+        data["packages"]["node_modules/@nelcota/client"]["version"] = "0.0.0"
+        path.write_text(json.dumps(data))
+        self.assertTrue(any("lock must match" in error for error in CHECKER.check(self.root)))
 
     def test_completed_goal_cannot_still_be_planned(self):
         path = self.root / "docs/goals/README.md"

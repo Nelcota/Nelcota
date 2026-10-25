@@ -1,6 +1,6 @@
 # Current implementation and release status
 
-Documentation checkpoint: **2026-10-24**, through `299d5ffd` on `main`.
+Documentation checkpoint: **2026-10-24**, through SDK release commit `84bc0264` on `main`.
 This page connects the day's changes to their current guides. Publication
 statements refer to the recorded checkpoint; they are not a new registry or
 production validation run.
@@ -26,27 +26,22 @@ controller still needs the exact-binary VPS acceptance gates before activation.
 
 ## Published application SDKs
 
-The [publication checkpoint](goals/sdk-release-completion.md#publication-checkpoint--2026-10-24)
-records successful publication and fresh external consumers for:
+The current published packages and fresh registry consumers are recorded in the
+[TypeScript/Rust receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294) and
+[Next.js acceptance ledger](https://github.com/Nelcota/Nelcota/issues/151).
 
 | SDK | Version | Delivery |
 | --- | --- | --- |
-| TypeScript | 0.2.2 | npm `@nelcota/client`; session, query and transport corrections |
-| Rust | 0.1.5 | crates.io `nelcota-client`; logout, filters, file-store cancellation, timeout and MIME corrections |
-| Next.js | 0.1.0 | npm `@nelcota/nextjs`; App Router integration using TypeScript 0.2.2+ |
+| TypeScript | 0.2.3 | npm `@nelcota/client`; independent server PKCE queues and earlier session/query fixes |
+| Rust | 0.1.6 | crates.io `nelcota-client`; interrupted error bodies preserve HTTP status and Retry-After |
+| Next.js | 0.1.1 | npm `@nelcota/nextjs`; connection reuse and fair PostgreSQL session-lock queueing |
 
 Install commands and upgrade considerations are in [versions and upgrades](releases/README.md).
 The [SDK overview](../sdk/README.md) links runtime requirements and source owners.
-Next.js source now targets 0.1.1 after [PR #166](https://github.com/Nelcota/Nelcota/pull/166),
-with session-connection reuse and bounded PostgreSQL lock queueing to address
-pool starvation and contention. Its [validation follow-up](goals/nextjs-151-validation.md)
-also records a pinned Next 15 consumer and sustained-load measurements. A registry
-query during this update returned no 0.1.1 version; the table above remains the
-confirmed publication checkpoint. Check availability before installing 0.1.1,
-or use a reviewed local archive for those corrections.
-
-Later internal TypeScript session-manager refactoring is source work and does
-not imply a package version beyond the recorded 0.2.2 release.
+[PR #167](https://github.com/Nelcota/Nelcota/pull/167) passed 32 checks and fresh
+npm/crates.io consumers; [PR #166](https://github.com/Nelcota/Nelcota/pull/166)
+records the Next.js correction. The original publication checkpoint remains a
+dated record of the earlier package versions.
 
 Next.js supports Server Components, Route Handlers, Server Actions, OAuth and
 browser refresh on the Node runtime. The selected matrix uses Next 16.4.3 /

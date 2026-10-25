@@ -68,6 +68,20 @@ of 0.1.3. Its corrections require an updated client build/package. Registry
 availability requires successful publication; server and SDK releases remain
 independent. See the [upgrade notes](#upgrading-from-013).
 
+## Upgrading from 0.1.5
+
+Set `nelcota-client = "0.1.6"`, run
+`cargo update -p nelcota-client --precise 0.1.6`, then rebuild. The
+[published registry consumer](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294)
+passed on Rust 1.88 and 1.99. Interrupted HTTP error bodies preserve the received
+status and Retry-After, so a definite rejection is not retried as a network
+failure. Deadlines and cancellation remain effective; successful response-body
+failures keep their existing behavior. Public imports and server requirements
+are unchanged.
+
+The following sections describe earlier upgrade steps; new applications and
+consumers upgrading through those versions should select 0.1.6.
+
 ## Upgrading from 0.1.4
 
 Set `nelcota-client = "0.1.5"` and run
