@@ -140,7 +140,7 @@ for (const locale of ['pt-BR', 'en']) {
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
       expect(await page.locator('main').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
       if (width === 320) {
-        await page.getByRole('button', { name: locale === 'en' ? 'Choose a guide' : 'Escolher um guia' }).click()
+        await page.getByRole('combobox', { name: locale === 'en' ? 'Choose a guide' : 'Escolher um guia', exact: true }).click()
         await page.getByRole('option', { name: locale === 'en' ? 'Files and S3' : 'Arquivos e S3', exact: true }).click()
         await expect(page).toHaveURL(/\/admin\/guides\/storage$/)
       }

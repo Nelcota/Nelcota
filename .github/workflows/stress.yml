@@ -16,9 +16,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
-          toolchain: '1.99.0'
+          toolchain: '1.99.1'
       - run: nice -n19 ionice -c3 cargo build --locked --release -p nelcota-server
       - run: nice -n19 ionice -c3 python3 bench/campaign.py --binary target/release/nelcota --output target/stress-report
       - name: Campaign diagnostics

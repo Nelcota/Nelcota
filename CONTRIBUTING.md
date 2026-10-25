@@ -7,7 +7,7 @@ Follow [the Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Setup
 
-Use Rust **1.99.0** from `rust-toolchain.toml`, Docker and Git. Python 3.11+
+Use Rust **1.99.1** from `rust-toolchain.toml`, Docker and Git. Python 3.11+
 is needed for native review/acceptance scripts (3.11.8+ for auth packaging).
 Node **24** and npm are used for repository UI/TypeScript tooling; SDK consumers
 support Node 22+, and the Rust SDK alone supports Rust 1.88. Neither Node nor

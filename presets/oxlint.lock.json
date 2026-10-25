@@ -1,62 +1,62 @@
 {
-  "version": "1.87.0",
-  "release": "https://github.com/oxc-project/oxc/releases/tag/oxlint_v1.87.0",
+  "version": "1.89.0",
+  "release": "https://github.com/oxc-project/oxc/releases/tag/oxlint_v1.89.0",
   "assets": {
     "aarch64-apple-darwin": {
       "target": "aarch64-apple-darwin",
       "name": "oxlint-aarch64-apple-darwin.tar.gz",
-      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.87.0/oxlint-aarch64-apple-darwin.tar.gz",
-      "sha256": "51e06321b34fde0dd19f7d7c1bc3d44c423aec4f5c86048c9bdc068f9b3e7df8",
-      "size": 5470383
+      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.89.0/oxlint-aarch64-apple-darwin.tar.gz",
+      "sha256": "fa4349f33b24221e2d303ace66de3dac2ff756eab48126b2cb58429ed36bccbc",
+      "size": 5519303
     },
     "aarch64-pc-windows-msvc": {
       "target": "aarch64-pc-windows-msvc",
       "name": "oxlint-aarch64-pc-windows-msvc.zip",
-      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.87.0/oxlint-aarch64-pc-windows-msvc.zip",
-      "sha256": "e97a2eece076bd893923d8a9fc4faf4fc413703331e5b44df61f54b61ecbfeed",
-      "size": 5350373
+      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.89.0/oxlint-aarch64-pc-windows-msvc.zip",
+      "sha256": "95def6682fbf3f0c890848f170c2f1c5824970a0656c82545519f5ee4b0ff8ac",
+      "size": 5402084
     },
     "aarch64-unknown-linux-gnu": {
       "target": "aarch64-unknown-linux-gnu",
       "name": "oxlint-aarch64-unknown-linux-gnu.tar.gz",
-      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.87.0/oxlint-aarch64-unknown-linux-gnu.tar.gz",
-      "sha256": "2226c5ac023135808a391a5f746666ca0fa398f05252b9007c329e4b62ae03c0",
-      "size": 5831690
+      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.89.0/oxlint-aarch64-unknown-linux-gnu.tar.gz",
+      "sha256": "69b3680c38b21395d4ea509fbd1019fa011db0cd717dd7be2ede2575cb6f7915",
+      "size": 5885135
     },
     "aarch64-unknown-linux-musl": {
       "target": "aarch64-unknown-linux-musl",
       "name": "oxlint-aarch64-unknown-linux-musl.tar.gz",
-      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.87.0/oxlint-aarch64-unknown-linux-musl.tar.gz",
-      "sha256": "2453a048f91cb90c2abbd23a9120ffb96970878d3c1e40be56ae0aed462d9d36",
-      "size": 5850042
+      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.89.0/oxlint-aarch64-unknown-linux-musl.tar.gz",
+      "sha256": "2fda2c5365b3e98113e5e449fdd4e1807746c54b58ca62607296c58f482ed105",
+      "size": 5902129
     },
     "x86_64-apple-darwin": {
       "target": "x86_64-apple-darwin",
       "name": "oxlint-x86_64-apple-darwin.tar.gz",
-      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.87.0/oxlint-x86_64-apple-darwin.tar.gz",
-      "sha256": "acb134e9c0f77d1fa2d17010db40c72fd1cbe7bdea228a509d3e96973f70e5d2",
-      "size": 6090565
+      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.89.0/oxlint-x86_64-apple-darwin.tar.gz",
+      "sha256": "198261cfb91c0f0387c55642ba5c2c4aa2c3cf9593188f86187c759f280bae88",
+      "size": 6138992
     },
     "x86_64-pc-windows-msvc": {
       "target": "x86_64-pc-windows-msvc",
       "name": "oxlint-x86_64-pc-windows-msvc.zip",
-      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.87.0/oxlint-x86_64-pc-windows-msvc.zip",
-      "sha256": "ba1661fd40bdb6fdc69fa6d8421d37d8965505015a76a5d8a2e617e6b23c7950",
-      "size": 5755525
+      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.89.0/oxlint-x86_64-pc-windows-msvc.zip",
+      "sha256": "50be9b3d180a48f2a33fb9ab6d92383c6464d38e4df347b08b1bce6b999c8c15",
+      "size": 5805763
     },
     "x86_64-unknown-linux-gnu": {
       "target": "x86_64-unknown-linux-gnu",
       "name": "oxlint-x86_64-unknown-linux-gnu.tar.gz",
-      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.87.0/oxlint-x86_64-unknown-linux-gnu.tar.gz",
-      "sha256": "97a075ac82cd6131641101016f79142ac6765ba79a5a582864450e30d192a425",
-      "size": 6367496
+      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.89.0/oxlint-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "88492c336807a34062fa540416fe75037c04bcce1ed77824e3db3aaec215949a",
+      "size": 6415959
     },
     "x86_64-unknown-linux-musl": {
       "target": "x86_64-unknown-linux-musl",
       "name": "oxlint-x86_64-unknown-linux-musl.tar.gz",
-      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.87.0/oxlint-x86_64-unknown-linux-musl.tar.gz",
-      "sha256": "108351c4b4648eff6f581a0c2d43fa9a9a5bd45fe18779ce387855cf360eea5c",
-      "size": 6433403
+      "url": "https://github.com/oxc-project/oxc/releases/download/oxlint_v1.89.0/oxlint-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "eaccbadd29973d37cedc95ec1f6e889fdae13c694e1cef4b6cbfcfe1c650e7b8",
+      "size": 6481811
     }
   }
 }

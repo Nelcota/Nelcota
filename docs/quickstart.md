@@ -5,7 +5,7 @@ rows through PostgreSQL RLS. For production HTTPS, use [deploy.md](deploy.md).
 
 You need Docker, `curl` and `jq`. The optional JavaScript client needs Node 22+;
 Rust client development needs Rust 1.88+. Building the server from source needs
-the pinned Rust 1.99.0 toolchain. The binary needs no Node runtime.
+the pinned Rust 1.99.1 toolchain. The binary needs no Node runtime.
 
 ## 1. Install the binary
 
