@@ -12,6 +12,9 @@ for the October 24 source and publication checkpoint.
 
 ### Changed
 
+- Refresh Rust 1.99.1, Rust and JavaScript dependencies, native Oxlint 1.89.0,
+  and pinned CI actions; retain the Rust SDK minimum supported version of 1.88.
+
 - Redesign the admin login with a centered wordmark, an inset gradient frame,
   larger fields, and language and theme controls in the footer.
 - Align SDK install/upgrade guides with published TypeScript 0.2.3, Rust 0.1.6

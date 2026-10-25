@@ -145,7 +145,7 @@ class NativeIntegration(unittest.TestCase):
     def test_native_engine_runs_with_no_node_or_npm_on_path(self):
         result = subprocess.run([BIN, "--version"], env={**os.environ, "PATH": ""}, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.strip(), "Version: 1.87.0")
+        self.assertEqual(result.stdout.strip(), "Version: 1.89.0")
         with tempfile.TemporaryDirectory() as temporary:
             source = Path(temporary) / "native.ts"
             source.write_text("const value = NaN;\n")
