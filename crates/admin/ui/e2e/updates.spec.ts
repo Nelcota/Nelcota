@@ -39,8 +39,8 @@ test('controller skips project SSO and uses its own operator login', async ({ pa
     await route.fulfill({ json: { result: 'status', data: status } })
   })
   await page.goto('/admin/#project-sso-token')
-  await expect(page.getByLabel('Email', { exact: true })).toBeVisible()
-  await page.getByLabel('Email', { exact: true }).fill('operator@example.test')
+  await expect(page.getByLabel('E-mail', { exact: true })).toBeVisible()
+  await page.getByLabel('E-mail', { exact: true }).fill('operator@example.test')
   await page.getByLabel('Senha', { exact: true }).fill('operator-test-password')
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Preparar atualização' })).toBeVisible()
@@ -102,7 +102,7 @@ test('login resumes status polling after logout overtakes an older poll', async 
     await page.evaluate(() => window.dispatchEvent(new Event('focus')))
     await pending
     await page.getByRole('button', { name: 'Sair', exact: true }).click()
-    await page.getByLabel('Email', { exact: true }).fill('operator@example.test')
+    await page.getByLabel('E-mail', { exact: true }).fill('operator@example.test')
     await page.getByLabel('Senha', { exact: true }).fill('operator-test-password')
     await page.getByRole('button', { name: 'Entrar', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Entrar', exact: true })).toHaveCount(0)
@@ -158,10 +158,10 @@ test('an expired online poll cannot replace a newly authenticated session', asyn
   })
   try {
     await page.goto('/admin/')
-    await expect(page.getByLabel('Email', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('E-mail', { exact: true })).toBeVisible()
     await page.evaluate(() => window.dispatchEvent(new Event('online')))
     await pending
-    await page.getByLabel('Email', { exact: true }).fill('operator@example.test')
+    await page.getByLabel('E-mail', { exact: true }).fill('operator@example.test')
     await page.getByLabel('Senha', { exact: true }).fill('operator-test-password')
     await page.getByRole('button', { name: 'Entrar', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Preparar atualização' })).toBeVisible()
