@@ -228,7 +228,7 @@ For a complete private Notes/file installation, follow [Notes staging](docs/onbo
 
 ## Development
 
-Source builds use Rust **1.99.0**, pinned in `rust-toolchain.toml`. Node is
+Source builds use Rust **1.99.1**, pinned in `rust-toolchain.toml`. Node is
 needed for UI/TypeScript SDK development, not to run the Rust backend or panel.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, targeted suites, contracts and
 separate generated-panel commits. Read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)

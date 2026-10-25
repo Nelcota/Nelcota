@@ -1,6 +1,6 @@
 # Native code review presets
 
-Oxlint 1.87.0 runs as a native executable. The runner and installer use Python
+Oxlint 1.89.0 runs as a native executable. The runner and installer use Python
 3.11+ and its standard library. Neither requires Node, npm, a Rust build, or a
 global tool installation. This tooling does not change Nelcota's single-binary
 distribution or its committed panel assets.
