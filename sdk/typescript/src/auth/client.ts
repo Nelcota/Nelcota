@@ -11,7 +11,6 @@ import { isBrowser } from '../core/jwt.js';
 import type { AuthListener, AuthOptions, AuthRequestOptions, Credentials, EmailLink, EmailLinkType, OAuthInput, SignUpInput, UserUpdate } from './types.js';
 export type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions, Credentials, EmailLink, EmailLinkType, OAuthInput, OAuthProvider, SignUpInput, UserUpdate } from './types.js';
 import { challengeFor, createVerifier } from './pkce.js';
-import { withLock } from './coordination.js';
 
 const LINK_TYPES = new Set<string>(['recovery', 'signup', 'magiclink']);
 function email(value: unknown): string {
@@ -73,8 +72,7 @@ export class AuthClient {
   async signInWithOAuth(input: OAuthInput): Promise<Result<{ url: string }>> {
     const redirectTo = absoluteUrl(input.redirectTo, 'redirectTo').href;
     const provider = input.provider, redirect = input.redirect ?? true;
-    const key = `${this.#manager.key}.pkce`;
-    return withLock(key, async () => {
+    return this.#manager.withVerifier(async () => {
       const verifier = createVerifier();
       const challenge = await challengeFor(verifier);
       await this.#manager.setVerifier(verifier);
@@ -94,8 +92,7 @@ export class AuthClient {
   async exchangeCode(code: string, options: AuthRequestOptions = {}): Promise<Result<Session>> {
     if (typeof code !== 'string' || code.trim() === '') throw new NelcotaUsageError('An OAuth code is required');
     return this.#manager.authenticate(async () => {
-      const key = `${this.#manager.key}.pkce`;
-      const verifier = await withLock(key, async () => {
+      const verifier = await this.#manager.withVerifier(async () => {
         if (options.signal?.aborted) return null;
         // Claim once before HTTP; the exchange then owns its bounded lifetime.
         return this.#manager.consumeVerifier();

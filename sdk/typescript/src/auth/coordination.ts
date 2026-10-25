@@ -32,13 +32,13 @@ export function adapterLock(storage: SessionStorage, key: string): symbol {
 }
 
 /**
- * The lock that serializes one session's lifecycle. Server adapters belong to
+ * The lock that serializes one session's lifecycle or PKCE state. Server adapters belong to
  * separate requests: queue by adapter identity so another client's sign-in
  * cannot block them. Worker storage supplied by the caller may be shared with
  * tabs, so it keeps the cross-context Web Lock, like browsers.
  */
-export function sessionLock(storage: SessionStorage, key: string, browser: boolean, supplied: boolean): string | symbol {
-  return browser || (supplied && workerScope()) ? `${key}.refresh` : adapterLock(storage, key);
+export function sessionLock(storage: SessionStorage, key: string, browser: boolean, supplied: boolean, kind: 'refresh' | 'pkce' = 'refresh'): string | symbol {
+  return browser || (supplied && workerScope()) ? `${key}.${kind}` : adapterLock(storage, `${key}.${kind}`);
 }
 
 const pending = new Map<string | symbol, Promise<void>>();

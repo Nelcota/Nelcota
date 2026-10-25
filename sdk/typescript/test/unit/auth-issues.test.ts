@@ -51,5 +51,10 @@ it('keeps cross-context Web Locks for caller storage in workers', async () => {
   vi.stubGlobal('WorkerGlobalScope', class { static [Symbol.hasInstance](value: unknown) { return value === globalThis; } });
   vi.stubGlobal('navigator', { locks: { request: <T>(name: string, work: () => Promise<T>) => { names.push(name); return work(); } } });
   const shared = createAuthClient('https://api.example.com', { auth: { storage: memoryStorage(), autoRefresh: false } }), own = createAuthClient('https://api.example.com', { auth: { autoRefresh: false } });
-  try { await own.getSession(); expect(names).toEqual([]); await shared.getSession(); expect(names).toEqual(['nelcota.api.example.com.session.refresh']); } finally { shared.dispose(); own.dispose(); }
+  try { await own.getSession(); expect(names).toEqual([]); await shared.getSession(); expect(names).toEqual(['nelcota.api.example.com.session.refresh']);
+    names.length = 0;
+    await own.signInWithOAuth({ provider: 'github', redirectTo: 'https://app.example.com/auth', redirect: false });
+    expect(names).toEqual([]);
+    await shared.signInWithOAuth({ provider: 'github', redirectTo: 'https://app.example.com/auth', redirect: false });
+    expect(names).toEqual(['nelcota.api.example.com.session.pkce']); } finally { shared.dispose(); own.dispose(); }
 });

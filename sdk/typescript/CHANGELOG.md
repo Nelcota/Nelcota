@@ -3,6 +3,15 @@
 Package releases use Semantic Versioning and Keep a Changelog categories.
 Dates identify release entries; registry availability requires a successful publish.
 
+## Unreleased
+
+### Fixed
+
+- Scope PKCE coordination to each server storage adapter and key, so an unrelated
+  request's stalled verifier write cannot block OAuth setup or logout. Clients
+  sharing an adapter still serialize verifier writes, exchanges and cleanup;
+  browsers and caller-supplied worker storage retain cross-context Web Locks.
+
 ## 0.2.2 — 2026-10-24
 
 ### Fixed
