@@ -4,7 +4,9 @@ export function formatJson(value: string): string {
   const tokens = value.match(/"(?:[^"\\]|\\[\s\S])*"|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null|[{}\[\],:]/g) ?? []
   let depth = 0
   let result = ''
-  const newline = () => { result += '\n' + '  '.repeat(depth) }
+  // Cap visual indentation so a small, deeply nested value cannot expand
+  // quadratically. All JSON tokens, including precise numbers, stay intact.
+  const newline = () => { result += '\n' + '  '.repeat(Math.min(depth, 32)) }
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i]
     if (token === '{' || token === '[') {
