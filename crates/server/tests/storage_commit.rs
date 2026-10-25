@@ -2,7 +2,7 @@
 mod common;
 
 use bytes::Bytes;
-use common::{TestApp, authenticator_password};
+use common::{Options, TestApp, authenticator_password};
 use futures_util::stream;
 use nelcota_core::{Claims, db};
 use nelcota_storage::{Store, UploadOptions};
@@ -66,16 +66,54 @@ async fn commit_reply_cut(
 
 #[tokio::test]
 async fn lost_publication_reply_keeps_the_committed_objects_bytes() {
-    assert_uncertain_publication(false).await;
+    assert_uncertain_publication(TestApp::spawn().await, false).await;
 }
 
 #[tokio::test]
 async fn lost_replacement_reply_keeps_the_new_version_and_reconciles_the_old_one() {
-    assert_uncertain_publication(true).await;
+    assert_uncertain_publication(TestApp::spawn().await, true).await;
 }
 
-async fn assert_uncertain_publication(replace: bool) {
-    let app = TestApp::spawn().await;
+#[tokio::test]
+#[ignore = "needs an empty, dedicated loopback NELCOTA_TEST_S3_COMMIT_BUCKET and provider settings"]
+async fn uncertain_s3_publication_preserves_created_and_replaced_bytes() {
+    use nelcota_core::{Config, Secret, config::StorageBackend};
+
+    let var = |name: &str| std::env::var(name).unwrap_or_else(|_| panic!("set {name}"));
+    let endpoint = var("NELCOTA_TEST_S3_ENDPOINT");
+    let parsed = url::Url::parse(&endpoint).unwrap();
+    // This regression advances the collector's clock. Keep that destructive
+    // fixture operation off remote or shared production providers.
+    assert!(matches!(
+        parsed.host_str(),
+        Some("127.0.0.1" | "localhost" | "[::1]" | "::1")
+    ));
+    let config = Config {
+        storage_backend: StorageBackend::S3,
+        storage_s3_endpoint: Some(endpoint),
+        storage_s3_bucket: Some(var("NELCOTA_TEST_S3_COMMIT_BUCKET")),
+        storage_s3_region: "us-east-1".into(),
+        storage_s3_access_key_id: Some(var("NELCOTA_TEST_S3_ACCESS_KEY_ID")),
+        storage_s3_secret_access_key: Some(Secret::new(var("NELCOTA_TEST_S3_SECRET_ACCESS_KEY"))),
+        ..Config::default()
+    };
+    let store = Arc::new(Store::from_config(&config).unwrap().unwrap());
+    use futures_util::StreamExt;
+    assert!(
+        store.list().next().await.is_none(),
+        "use an empty dedicated test bucket"
+    );
+    for replace in [false, true] {
+        let options = Options {
+            store: Some(store.clone()),
+            ..Options::default()
+        };
+        assert_uncertain_publication(TestApp::spawn_with(options).await, replace).await;
+    }
+    assert!(store.list().next().await.is_none());
+}
+
+async fn assert_uncertain_publication(app: TestApp, replace: bool) {
     app.admin_client
         .batch_execute("INSERT INTO storage.buckets (id) VALUES ('docs')")
         .await
@@ -158,6 +196,9 @@ async fn assert_uncertain_publication(replace: bool) {
         .unwrap();
     assert_eq!(removed, usize::from(replace));
     assert!(app.storage.store.get(&key, None).await.is_ok());
+    // The S3 cases share only an otherwise empty disposable bucket. Remove
+    // this case's known version after all persistence/collector assertions.
+    app.storage.store.delete(&key).await.unwrap();
 }
 
 #[tokio::test]
