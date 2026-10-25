@@ -15,6 +15,12 @@ const col = (
 })
 
 describe('column kind', () => {
+  it.each(['__proto__', 'constructor'])('keeps the custom PostgreSQL type %s instead of an inherited alias', (type) => {
+    expect(canonicalType(type)).toBe(type)
+    expect(columnKind(col('custom', type))).toBe('text')
+    expect(columnKind(col('custom', type, { enum_values: ['open', 'closed'] }))).toBe('enum')
+  })
+
   it('from the Postgres type (format_type name)', () => {
     expect(columnKind(col('a', 'numeric'))).toBe('number')
     expect(columnKind(col('a', 'bigint'))).toBe('number')

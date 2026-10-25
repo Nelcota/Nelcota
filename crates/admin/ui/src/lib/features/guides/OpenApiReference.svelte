@@ -18,7 +18,9 @@
   let frame = $state<HTMLIFrameElement>()
   function sendDocument() {
     if (!resource.data) return
-    const source = $state.snapshot(resource.data as unknown) as OpenApiDocument
+    // The wire document is JSON. Preserve dynamic schema/property keys such
+    // as __proto__, which snapshot's plain-object assignment would discard.
+    const source = JSON.parse(JSON.stringify(resource.data)) as OpenApiDocument
     frame?.contentWindow?.postMessage({ type: 'nelcota:openapi', document: translateOpenApi(source, i18n.locale), dark: document.documentElement.classList.contains('dark'), locale: i18n.locale }, location.origin)
   }
   $effect(() => { if (resource.data) sendDocument() })
