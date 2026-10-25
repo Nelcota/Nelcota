@@ -342,3 +342,20 @@ include successful fixture cleanup. These are publication follow-up results,
 outside the overnight 2,127-case census. No product Rust/panel code, frozen ELF,
 benchmark campaign, migration, threshold or release artifact changed. Hosted CI
 on the additional test/documentation commit remains a separate exact-head gate.
+
+## Subsequent PR review and dependency integration
+
+The maintainer later authorized reviewing and merging the open PRs. PR #170
+updates the dependency/toolchain baseline to Rust 1.99.1; its integration does
+not change the identity of the older frozen audit artifact or certify another
+endurance profile. The measurements above remain specific to their recorded
+source, compiler and binary hashes.
+
+The review replaced two `let ... else` guards with equivalent explicit matches
+to follow the repository convention. It also clarified the storage guide in
+English and Portuguese: sharing is supported for application instances connected
+to the same writable metadata database, not independent physical copies, lagging
+database replicas or older writers. No additional topology support is claimed.
+Generated panel conflicts are resolved by rebuilding the combined sources in a
+separate build commit. The combined PR head must complete all applicable hosted
+checks before merge; earlier green heads are not substituted for that result.
