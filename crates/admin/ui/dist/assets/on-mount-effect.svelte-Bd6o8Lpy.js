@@ -1,0 +1,1 @@
+import{mt as e,yt as t}from"./index.svelte-C25Bjyrn.js";function n(n){t(()=>e(()=>n()))}export{n as t};
