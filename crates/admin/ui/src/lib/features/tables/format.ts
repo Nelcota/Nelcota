@@ -11,7 +11,7 @@ export interface CellDisplay {
 }
 
 /** `2026-10-06T22:26:15.177028` → parts, without any time zone conversion. */
-const WALL_CLOCK = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/
+const WALL_CLOCK = /^(\d{4,6})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,6})?)?)?$/
 
 /**
  * Dates in the viewer's language. `timestamptz` goes to the viewer's time
@@ -40,9 +40,15 @@ export function formatCell(
     if (!m) return { text: value, raw: null }
     const [, year, month, day, hour, minute, second] = m
     // Formatted in UTC from the stored parts, so no conversion happens.
-    const wallClock = new Date(
-      Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour ?? 0), Number(minute ?? 0), Number(second ?? 0)),
-    )
+    const parts = [Number(year), Number(month) - 1, Number(day), Number(hour ?? 0), Number(minute ?? 0), Number(second ?? 0)]
+    if (parts[0] === 0) return { text: value, raw: null }
+    // Date.UTC maps years 0–99 to 1900–1999. Set the literal full year and
+    // reject normalized overflows instead of displaying a different date.
+    const wallClock = new Date(0)
+    wallClock.setUTCFullYear(parts[0], parts[1], parts[2])
+    wallClock.setUTCHours(parts[3], parts[4], parts[5], 0)
+    const actual = [wallClock.getUTCFullYear(), wallClock.getUTCMonth(), wallClock.getUTCDate(), wallClock.getUTCHours(), wallClock.getUTCMinutes(), wallClock.getUTCSeconds()]
+    if (actual.some((part, index) => part !== parts[index])) return { text: value, raw: null }
     const dateOnly = type === 'date' || hour === undefined
     const text = new Intl.DateTimeFormat(locale, {
       dateStyle: 'short',
