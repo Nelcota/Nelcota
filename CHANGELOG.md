@@ -46,6 +46,18 @@ for the October 24 source and publication checkpoint.
 
 ### Fixed
 
+- Retain immutable storage bytes when metadata publication cannot be
+  acknowledged, and reconcile unreferenced versions through the existing
+  garbage collector instead of risking a committed row with missing bytes.
+- Preserve special PostgreSQL column/type names in the panel's row editor,
+  and display early calendar years and unrecognized dates without silently
+  changing their values.
+- Keep structured panel filters, sort terms and primary-key ordering literal
+  when PostgreSQL column names contain reserved words or punctuation.
+- Serialize refresh rotations by session before token-row ownership to avoid
+  deadlocks between retries and their successors.
+- Bound JSON preview indentation and allow keyboard users to reach and scroll
+  pages whose contents are entirely read-only.
 - Return `400 invalid_grant` for oversized present refresh tokens, allowing SDKs
   to discard invalid sessions; absent/empty tokens retain their required-field
   validation response.
