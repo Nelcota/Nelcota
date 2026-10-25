@@ -64,6 +64,8 @@ for the October 24 source and publication checkpoint.
   and state query plans per connection to avoid recurring prepare round trips.
 - Bound JSON preview indentation and allow keyboard users to reach and scroll
   pages whose contents are entirely read-only.
+- Give scrollable code samples a supported accessible name while preserving
+  keyboard focus and copying.
 - Return `400 invalid_grant` for oversized present refresh tokens, allowing SDKs
   to discard invalid sessions; absent/empty tokens retain their required-field
   validation response.

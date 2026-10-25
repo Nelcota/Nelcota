@@ -76,3 +76,11 @@ references; public security context is in [the review summary](../security/revie
 [G12 — Comprehensive SDK security review](sdk-security-review.md) covers Rust,
 TypeScript and the unpublished Next.js candidate. See its
 [execution record](sdk-security-review-execution.md) for evidence and open gates.
+
+## Cross-project verification — 25 October 2026
+
+The [full-project audit record](full-project-audit-20261025.md) tracks current
+source, reproduced corrections, bounded local campaigns and environment/manual
+gates. It distinguishes server 0.5.3 source from TypeScript 0.2.3, Rust 0.1.6 and
+Next.js 0.1.1. Earlier candidate/intake labels retain their historical scope;
+this additional review does not silently close or rewrite the earlier goals.
