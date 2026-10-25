@@ -198,11 +198,38 @@ has the API's JSON shape (see [api.md](api.md#errors)).
 
 A file's bytes are stored under a new key (`<bucket>/<uuidv7>`) on every
 upload, and the row is written only after the bytes are complete. Readers
-never see a half-written file, and an upload that fails or is refused leaves
-nothing behind. Replacing or deleting a file removes the old bytes right
-away: **a database restore does not bring deleted files back**. An hourly
-collector removes bytes no row points to once they are a day old (left by a
-crash mid-upload).
+never see a half-written file. Known failures before metadata publication
+attempt to remove the unpublished bytes. If the database's commit reply is
+lost, the request returns an error but retains the new version: PostgreSQL
+may already reference it. Check the current object before retrying a write
+whose outcome is unknown.
+
+Replacing or deleting a file removes the old bytes right away:
+**a database restore does not bring deleted files back**. An hourly collector
+checks authoritative metadata and removes unreferenced versions once they are
+a day old, including bytes left by an interrupted upload or an uncertain
+publication. A version still referenced by a row is retained.
+
+Use a separate physical disk root or S3 bucket for each independent metadata
+database. Application instances connected to the same writable metadata database
+may share it. Independent physical copies, lagging database replicas and older
+writers that do not enforce ownership must use separate targets. The server
+records a database identity in `.nelcota-gc-owner-v1`. If another database uses
+that store, or an unmarked store contains versioned files not known to the current
+database, it records `.nelcota-gc-shared-v1` and disables automatic collection.
+File APIs remain available; ambiguous bytes are retained. Missing, changed or
+unsafe ownership markers also prevent collection. These internal markers are
+not objects in the file API and are never automatically removed.
+
+After `storage.collector_quarantined` or `storage.ownership_unavailable`, keep
+the original store and investigate before deleting anything. Stop sharing the
+target, provision a separate empty target for each database, and copy only that
+database's referenced `<bucket>/<version>` objects into its target while writes
+are stopped. Verify the restored files against metadata/backups, then restart
+with that target: it can be adopted when every version is accounted for. Do not
+remove markers to make an ambiguous target collectible. A provider outage or a
+large legacy scan may defer initialization; uploads retry within their existing
+deadline and collection stays disabled until ownership can be verified.
 
 ## Backups
 

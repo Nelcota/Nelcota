@@ -607,3 +607,107 @@ async fn folders_and_files_advance_independently_under_the_same_offset() {
     assert_eq!(next.folders, ["c"]);
     assert_eq!(next.objects[0].name, "z.txt");
 }
+
+#[tokio::test]
+async fn refresh_retry_and_successor_use_one_lock_order() {
+    let app = Arc::new(TestApp::spawn().await);
+    for iteration in 0..4 {
+        // Pacing limits request starts; database locks establish the interleaving.
+        tokio::time::sleep(Duration::from_millis(60)).await;
+        let initial = app.post("/auth/v1/signup", None,
+            json!({"email":format!("refresh-overlap-{iteration}@example.test"),"password":Uuid::new_v4().to_string()})).await;
+        assert_eq!(initial.status, StatusCode::CREATED);
+        let predecessor = initial.body["refresh_token"].as_str().unwrap().to_owned();
+        tokio::time::sleep(Duration::from_millis(60)).await;
+        let rotated = app
+            .post(
+                "/auth/v1/token?grant_type=refresh_token",
+                None,
+                json!({"refresh_token":predecessor}),
+            )
+            .await;
+        assert_eq!(rotated.status, StatusCode::OK);
+        let successor = rotated.body["refresh_token"].as_str().unwrap().to_owned();
+        let user: Uuid = initial.body["user"]["id"]
+            .as_str()
+            .unwrap()
+            .parse()
+            .unwrap();
+        let (mut locker, connection) = app.admin.connect(tokio_postgres::NoTls).await.unwrap();
+        let driver = tokio::spawn(connection);
+        let gate = locker.transaction().await.unwrap();
+        gate.query_one(
+            "SELECT id FROM auth.sessions WHERE user_id=$1 FOR UPDATE",
+            &[&user],
+        )
+        .await
+        .unwrap();
+        tokio::time::sleep(Duration::from_millis(60)).await;
+        let a = app.clone();
+        let retry = tokio::spawn(async move {
+            a.post(
+                "/auth/v1/token?grant_type=refresh_token",
+                None,
+                json!({"refresh_token":predecessor}),
+            )
+            .await
+        });
+        wait_for_locks(&app, 1, "query LIKE '%auth.refresh_tokens%'").await;
+        tokio::time::sleep(Duration::from_millis(60)).await;
+        let b = app.clone();
+        let current = tokio::spawn(async move {
+            b.post(
+                "/auth/v1/token?grant_type=refresh_token",
+                None,
+                json!({"refresh_token":successor}),
+            )
+            .await
+        });
+        wait_for_locks(&app, 2, "query LIKE '%auth.refresh_tokens%'").await;
+        gate.commit().await.unwrap();
+        let first = retry.await.unwrap();
+        let second = current.await.unwrap();
+        if first.status.is_server_error() || second.status.is_server_error() {
+            let mut deadlocks = 0i64;
+            for _ in 0..20 {
+                deadlocks = app
+                    .admin_client
+                    .query_one(
+                        "SELECT deadlocks FROM pg_stat_database WHERE datname=current_database()",
+                        &[],
+                    )
+                    .await
+                    .unwrap()
+                    .get(0);
+                if deadlocks > 0 {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(100)).await;
+            }
+            assert_eq!(
+                deadlocks, 0,
+                "refresh overlap produced a PostgreSQL deadlock"
+            );
+        }
+        assert!(
+            !first.status.is_server_error(),
+            "retry failed at interleaving {iteration}: {}",
+            first.status
+        );
+        assert!(
+            !second.status.is_server_error(),
+            "successor failed at interleaving {iteration}: {}",
+            second.status
+        );
+        assert_eq!(first.status, StatusCode::OK);
+        assert!(matches!(
+            second.status,
+            StatusCode::OK | StatusCode::BAD_REQUEST
+        ));
+        let active: i64 = app.admin_client.query_one(
+            "SELECT count(*) FROM auth.refresh_tokens t JOIN auth.sessions s ON s.id=t.session_id WHERE s.user_id=$1 AND s.revoked_at IS NULL AND NOT t.revoked", &[&user]).await.unwrap().get(0);
+        assert!(active <= 1, "only one live successor may remain");
+        drop(locker);
+        driver.await.unwrap().unwrap();
+    }
+}

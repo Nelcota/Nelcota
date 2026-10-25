@@ -4,6 +4,16 @@ import { formatCell } from './format'
 const ptBR = { locale: 'pt-BR' }
 
 describe('dates in the grid', () => {
+  it.each(['0001-01-02', '0099-12-31'])('does not shift the stored year %s into the twentieth century', (raw) => {
+    const instant = new Date(`${raw}T00:00:00Z`)
+    const expected = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: 'UTC' }).format(instant)
+    expect(formatCell(raw, 'date', ptBR)).toEqual({ text: expected, raw })
+  })
+
+  it.each(['2026-02-29', '2026-01-01 trailing text', '0001-01-01 BC'])('preserves unrecognized calendar values without normalizing %s', (raw) => {
+    expect(formatCell(raw, 'date', ptBR)).toEqual({ text: raw, raw: null })
+  })
+
   it("timestamptz goes to the viewer's time zone, exact value in the tooltip", () => {
     const raw = '2026-10-06T22:26:15.177028+00:00'
     expect(formatCell(raw, 'timestamp with time zone', { ...ptBR, timeZone: 'UTC' })).toEqual({

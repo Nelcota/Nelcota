@@ -57,7 +57,8 @@
     <TopNav>
       <!-- Route and skip-link focus identify the page without framing the viewport. -->
       <!-- Keep absolute accessibility labels inside this scroll container. -->
-      <main bind:this={content} id="conteudo" tabindex="-1" aria-label={pageLabel} class="relative min-h-0 min-w-0 flex-1 overflow-auto outline-none">
+      <!-- The page is a keyboard scroll target even when it has no controls. -->
+      <main bind:this={content} id="conteudo" tabindex="0" aria-label={pageLabel} class="relative min-h-0 min-w-0 flex-1 overflow-auto focus-visible:-outline-offset-2">
         {#key pageKey}
           {#if path === '/updates'}
             {#await import('$lib/features/updates/Updates.svelte')}{@render loading()}{:then m}<m.default />{:catch error}{@render failed(error)}{/await}

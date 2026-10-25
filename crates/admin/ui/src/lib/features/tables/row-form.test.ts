@@ -46,6 +46,25 @@ describe('validation', () => {
 })
 
 describe('what goes to the server', () => {
+  it.each([false, true])('preserves a __proto__ column in %s update mode', (editing) => {
+    const special = [col('__proto__', 'text'), col('constructor', 'text')]
+    const original = editing ? JSON.parse('{"__proto__":"before","constructor":"old"}') : null
+    const fields = initialFields(special, original)
+    for (const column of special) {
+      fields[column.name] = { value: column.name === 'constructor' ? 'new' : 'after', isNull: false }
+    }
+    const payload = rowPayload(special, fields, original)
+    expect(Object.hasOwn(payload, '__proto__')).toBe(true)
+    expect(JSON.parse(JSON.stringify(payload))).toEqual(JSON.parse('{"__proto__":"after","constructor":"new"}'))
+  })
+
+  it('preserves explicit NULL for a __proto__ column', () => {
+    const special = [col('__proto__', 'text')]
+    const fields = initialFields(special, null)
+    fields.__proto__ = { value: '', isNull: true }
+    expect(JSON.stringify(rowPayload(special, fields, null))).toBe('{"__proto__":null}')
+  })
+
   it('edit: only what really changed', () => {
     const fields = initialFields(columns, row)
     fields.name = { value: 'Ana', isNull: false } // typed and went back to the original

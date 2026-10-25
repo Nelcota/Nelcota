@@ -7,3 +7,12 @@ crates/admin/ui/node_modules
 output
 .playwright-cli
 sdk/typescript/node_modules
+**/node_modules
+**/target
+**/.next
+**/.nelcota
+.tools
+**/.env
+**/.env.*
+!**/.env.example
+**/host.env

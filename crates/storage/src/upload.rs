@@ -143,6 +143,11 @@ async fn write(
             old_size
         };
 
+        state
+            .store
+            .ensure_ownership(&state.pool)
+            .await
+            .map_err(store_failed)?;
         let reservation = quota::reserve(&state, old_size, declared, limit).await?;
         Ok::<_, ApiError>((settings, limit, reservation, slot))
     })
@@ -191,8 +196,18 @@ async fn write(
                 public: settings.public,
             })
         }
-        Err(err) => {
+        Err(quota::PublicationError::Rejected(err)) => {
             state.store.delete_quietly(&key).await;
+            Err(err)
+        }
+        Err(quota::PublicationError::Uncertain(err)) => {
+            // PostgreSQL may have committed before the connection failed.
+            // Keep this immutable version: the collector checks authoritative
+            // metadata after its grace period before removing any orphan.
+            tracing::warn!(
+                event = "storage.publication_uncertain",
+                "metadata publication could not be acknowledged; bytes retained for reconciliation"
+            );
             Err(err)
         }
     }
@@ -216,7 +231,7 @@ async fn record(
     version: Uuid,
     received: &Received,
     mode: Mode,
-) -> Result<(Uuid, Option<Uuid>), ApiError> {
+) -> Result<(Uuid, Option<Uuid>), quota::PublicationError> {
     let db_err = |e| write_error(e, claims);
     quota::publish(state, claims, async |tx| {
         // Row locks cannot protect a name that does not exist yet. Serialize

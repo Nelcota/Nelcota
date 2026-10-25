@@ -47,23 +47,23 @@ export function rowPayload(
   fields: Record<string, FieldState>,
   original: RowData | null,
 ): Record<string, string | null> {
-  const values: Record<string, string | null> = {}
+  const values = new Map<string, string | null>()
   for (const c of columns) {
     if (c.generated) continue
     const f = fields[c.name]
     if (!f) continue
     const value = f.isNull ? null : f.value
     if (original) {
-      if (value !== original[c.name]) values[c.name] = value
+      if (value !== original[c.name]) values.set(c.name, value)
       continue
     }
     if (f.isNull) {
-      values[c.name] = null
+      values.set(c.name, null)
       continue
     }
     if (f.value !== '') {
-      values[c.name] = f.value
+      values.set(c.name, f.value)
     }
   }
-  return values
+  return Object.fromEntries(values)
 }

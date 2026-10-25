@@ -321,6 +321,20 @@ pub use parse::{parse_request, parse_request_with_relations};
 use sql::*;
 pub use sql::{count, delete, insert, resolve_function, rpc, select, select_rows, update};
 
+/// A structured transport's literal catalog column, not a URL modifier.
+pub fn column_filter(table: &Table, name: &str, value: &str) -> Result<Condition, QueryError> {
+    parse::parse_filter(table, name, value).map(Condition::Filter)
+}
+
+/// Validates an entire column name without interpreting dots/commas as syntax.
+pub fn column_order(table: &Table, name: &str, desc: bool) -> Result<OrderTerm, QueryError> {
+    Ok(OrderTerm {
+        column: parse::column(table, name)?.name.clone(),
+        desc,
+        nulls_first: None,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

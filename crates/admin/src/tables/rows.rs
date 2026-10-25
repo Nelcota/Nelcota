@@ -136,7 +136,16 @@ pub(crate) fn build_request(
                 .params(json!({ "detail": e.to_string() }))
         })?,
     };
-    let mut pairs: Vec<(String, String)> = filters.iter().map(FilterSpec::to_pair).collect();
+    // Structured filters name literal columns, including REST modifier names.
+    // Never round-trip those names through the URL parameter grammar.
+    let filters = filters
+        .iter()
+        .map(|filter| {
+            let (name, value) = filter.to_pair();
+            query::column_filter(table, &name, &value).map_err(invalid_query)
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut pairs = Vec::new();
     if let Some((page, size)) = page {
         let offset = page
             .checked_mul(size)
@@ -145,22 +154,19 @@ pub(crate) fn build_request(
         pairs.push(("limit".into(), (size + 1).to_string()));
         pairs.push(("offset".into(), offset.to_string()));
     }
-    // Sort: the requested column (validated by the parser) or the PK.
+    // Sort: one literal requested column, or each literal primary-key column.
     let order = match &params.sort {
-        Some(col) => Some(format!(
-            "{col}.{}",
-            match params.desc {
-                true => "desc",
-                false => "asc",
-            }
-        )),
-        None if !table.primary_key.is_empty() => Some(table.primary_key.join(",")),
-        None => None,
+        Some(col) => vec![query::column_order(table, col, params.desc).map_err(invalid_query)?],
+        None => table
+            .primary_key
+            .iter()
+            .map(|col| query::column_order(table, col, false).map_err(invalid_query))
+            .collect::<Result<Vec<_>, _>>()?,
     };
-    if let Some(order) = order {
-        pairs.push(("order".into(), order));
-    }
-    query::parse_request(&pairs, table).map_err(invalid_query)
+    let mut request = query::parse_request(&pairs, table).map_err(invalid_query)?;
+    request.filters = filters;
+    request.order = order;
+    Ok(request)
 }
 
 /// The REST API parser refused the request (unknown column, bad operator…).

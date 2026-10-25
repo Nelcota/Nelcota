@@ -36,7 +36,7 @@ const ALIASES: Record<string, string> = {
 
 /** The `format_type` name of a Postgres type, also from its short alias. */
 export function canonicalType(type: string): string {
-  return ALIASES[type] ?? type
+  return Object.hasOwn(ALIASES, type) ? ALIASES[type] : type
 }
 
 export function columnKind(column: Pick<Column, 'type' | 'enum_values'>): ColumnKind {

@@ -131,6 +131,11 @@ jobs:
             sleep 1
           done
           cargo test -p nelcota-server --test storage_s3 -- --ignored
+          # The COMMIT fault cases collect old versions; never mix their
+          # physical object namespace with the other provider fixtures.
+          aws --endpoint-url "$NELCOTA_TEST_S3_ENDPOINT" s3 mb s3://nelcota-commit
+          NELCOTA_TEST_S3_COMMIT_BUCKET=nelcota-commit \
+            cargo test --locked -p nelcota-server --test storage_commit -- --ignored
 
   # The longest scripted scenario runs on its own runner.
   host-lifecycle:

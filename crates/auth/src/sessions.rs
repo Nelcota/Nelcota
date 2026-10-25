@@ -133,22 +133,43 @@ pub(crate) async fn refresh(state: &AuthState, token: Option<String>) -> Result<
 
     let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
     let tx = begin_auth(&mut client).await?;
-    // FOR UPDATE serializes concurrent refreshes of the same token.
-    let row = tx
-        .query_opt(
-            &format!(
-                "SELECT rt.id, rt.revoked, rt.expires_at <= now(), s.id, s.revoked_at IS NOT NULL,
+    // Own the parent before any token row. A retry retires its successors,
+    // so locking two different tokens before their shared session can deadlock.
+    // Use a separate statement: after waiting, the token/state read below gets
+    // a fresh READ COMMITTED snapshot, including intervening revocation.
+    // Reuse each connection's prepared plan: the extra ownership statement
+    // must not add a prepare round trip on every rotation.
+    let parent = tx
+        .prepare_cached(
+            "SELECT s.id FROM auth.sessions s
+             JOIN auth.refresh_tokens rt ON rt.session_id = s.id
+             WHERE rt.token_hash = $1 FOR UPDATE OF s",
+        )
+        .await
+        .map_err(db_error)?;
+    if tx
+        .query_opt(&parent, &[&hash])
+        .await
+        .map_err(db_error)?
+        .is_none()
+    {
+        return Err(invalid_grant("invalid refresh token"));
+    }
+    // The session is already locked; per-token reads/mutations cannot form
+    // a cycle with another rotation or a parent-first revocation.
+    let current = tx
+        .prepare_cached(&format!(
+            "SELECT rt.id, rt.revoked, rt.expires_at <= now(), s.id, s.revoked_at IS NOT NULL,
                         u.id, u.email, {USER_JSON}
                  FROM auth.refresh_tokens rt
                  JOIN auth.sessions s ON s.id = rt.session_id
                  JOIN auth.users u ON u.id = s.user_id
                  WHERE rt.token_hash = $1
                  FOR UPDATE OF rt, s"
-            ),
-            &[&hash],
-        )
+        ))
         .await
         .map_err(db_error)?;
+    let row = tx.query_opt(&current, &[&hash]).await.map_err(db_error)?;
     let row = match row {
         Some(row) => row,
         _ => {

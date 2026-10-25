@@ -75,7 +75,9 @@
     }
     saving = true
     try {
-      const values = $state.snapshot(payload)
+      // This helper returns a fresh flat record of primitives. Svelte's
+      // snapshot copies through assignment and drops an own __proto__ key.
+      const values = rowPayload(columns, fields, row)
       if (row) {
         const res = await api.patch<{ count: number }>(`/tables/${enc(table)}/rows`, {
           pk: Object.fromEntries(primaryKey.map((k) => [k, row![k]])),

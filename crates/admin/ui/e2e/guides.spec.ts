@@ -4,6 +4,18 @@ import { readFile } from 'node:fs/promises'
 
 test.beforeEach(async ({ page }) => { await fixture(page) })
 
+test('scrollable code samples expose a supported accessible name', async ({ page }) => {
+  await page.goto('/admin/connect')
+  const blocks = page.locator('pre[tabindex="0"]')
+  await expect(blocks.first()).toBeVisible()
+  for (const block of await blocks.all()) {
+    await expect(block).toHaveAttribute('role', 'group')
+    await expect(block).toHaveAccessibleName(/\S/)
+  }
+  await blocks.first().focus()
+  await expect(blocks.first()).toBeFocused()
+})
+
 test('SDK and S3 help stay in the panel and repository links open the matching guide', async ({ page, context }) => {
   await page.goto('/admin/connect')
   await page.getByRole('link', { name: 'Documentação do SDK', exact: true }).click()

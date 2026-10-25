@@ -8,6 +8,18 @@ use nelcota_core::{ApiError, Claims, db::begin_request};
 
 use crate::{StorageState, db, error::storage_full};
 
+/// A failed COMMIT reply does not prove that PostgreSQL rolled back the row.
+pub(crate) enum PublicationError {
+    Rejected(ApiError),
+    Uncertain(ApiError),
+}
+
+impl From<ApiError> for PublicationError {
+    fn from(error: ApiError) -> Self {
+        Self::Rejected(error)
+    }
+}
+
 #[derive(Default)]
 struct Reserved {
     total: u128,
@@ -110,7 +122,7 @@ pub(crate) async fn publish<T>(
     state: &StorageState,
     claims: &Claims,
     write: impl AsyncFnOnce(&Transaction<'_>) -> Result<T, ApiError>,
-) -> Result<T, ApiError> {
+) -> Result<T, PublicationError> {
     let db_err = |e| ApiError::from_db(e, claims.role());
     let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
     let tx = begin_request(&mut client, claims).await.map_err(db_err)?;
@@ -139,9 +151,11 @@ pub(crate) async fn publish<T>(
         .await
         .map_err(db_err)?;
         if used.max(0) as u64 > max {
-            return Err(full(false));
+            return Err(full(false).into());
         }
     }
-    tx.commit().await.map_err(db_err)?;
+    tx.commit()
+        .await
+        .map_err(|error| PublicationError::Uncertain(db_err(error)))?;
     Ok(value)
 }
