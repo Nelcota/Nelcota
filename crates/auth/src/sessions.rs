@@ -137,13 +137,18 @@ pub(crate) async fn refresh(state: &AuthState, token: Option<String>) -> Result<
     // so locking two different tokens before their shared session can deadlock.
     // Use a separate statement: after waiting, the token/state read below gets
     // a fresh READ COMMITTED snapshot, including intervening revocation.
-    if tx
-        .query_opt(
+    // Reuse each connection's prepared plan: the extra ownership statement
+    // must not add a prepare round trip on every rotation.
+    let parent = tx
+        .prepare_cached(
             "SELECT s.id FROM auth.sessions s
              JOIN auth.refresh_tokens rt ON rt.session_id = s.id
              WHERE rt.token_hash = $1 FOR UPDATE OF s",
-            &[&hash],
         )
+        .await
+        .map_err(db_error)?;
+    if tx
+        .query_opt(&parent, &[&hash])
         .await
         .map_err(db_error)?
         .is_none()
@@ -152,21 +157,19 @@ pub(crate) async fn refresh(state: &AuthState, token: Option<String>) -> Result<
     }
     // The session is already locked; per-token reads/mutations cannot form
     // a cycle with another rotation or a parent-first revocation.
-    let row = tx
-        .query_opt(
-            &format!(
-                "SELECT rt.id, rt.revoked, rt.expires_at <= now(), s.id, s.revoked_at IS NOT NULL,
+    let current = tx
+        .prepare_cached(&format!(
+            "SELECT rt.id, rt.revoked, rt.expires_at <= now(), s.id, s.revoked_at IS NOT NULL,
                         u.id, u.email, {USER_JSON}
                  FROM auth.refresh_tokens rt
                  JOIN auth.sessions s ON s.id = rt.session_id
                  JOIN auth.users u ON u.id = s.user_id
                  WHERE rt.token_hash = $1
                  FOR UPDATE OF rt, s"
-            ),
-            &[&hash],
-        )
+        ))
         .await
         .map_err(db_error)?;
+    let row = tx.query_opt(&current, &[&hash]).await.map_err(db_error)?;
     let row = match row {
         Some(row) => row,
         _ => {

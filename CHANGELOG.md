@@ -55,7 +55,8 @@ for the October 24 source and publication checkpoint.
 - Keep structured panel filters, sort terms and primary-key ordering literal
   when PostgreSQL column names contain reserved words or punctuation.
 - Serialize refresh rotations by session before token-row ownership to avoid
-  deadlocks between retries and their successors.
+  deadlocks between retries and their successors. Reuse the fixed ownership
+  and state query plans per connection to avoid recurring prepare round trips.
 - Bound JSON preview indentation and allow keyboard users to reach and scroll
   pages whose contents are entirely read-only.
 - Return `400 invalid_grant` for oversized present refresh tokens, allowing SDKs
