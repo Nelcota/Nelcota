@@ -318,3 +318,27 @@ changelog/audit documentation; it does not restart the campaigns, certify the
 unrun cells, change budgets or operate production. Detailed logs, fixture files,
 keys and raw browser traces remain outside Git. A private allowlisted archive
 preserves the available evidence and source bundles separately from the PRs.
+
+## Publication follow-up — upgrade fixture, after 11:05 UTC
+
+The maintainer separately requested committing, pushing and opening PRs after
+the overnight report. Main was unchanged at the recorded baseline. Corrections
+were published in [PR #171](https://github.com/Nelcota/Nelcota/pull/171), with the
+website isolated in [its PR #7](https://github.com/Nelcota/NelcotaWebsite/pull/7).
+Doc versions, boundaries, guide translations, diff checks and both new-commit
+secret scans passed. The website's hosted checks subsequently passed.
+
+The first hosted upgrade job failed because its exact directory snapshot did
+not yet model the new ownership control file. The unchanged frozen ELF reproduced
+the same assertion locally. The fixture now requires exactly that additional
+file, with the SHA-256 of the expected database-bound identity, and rejects a
+symlink. Both exact full-directory hash comparisons remain in place: altered or
+missing original files, unrelated additions, quarantine markers and incorrect
+owner contents still fail. The published-release scenario expects no new marker.
+
+Both real upgrade scenarios subsequently passed all 14 groups each:
+0.3.1 to the frozen checkout ELF and 0.3.1 to published 0.4.0. The recorded reports
+include successful fixture cleanup. These are publication follow-up results,
+outside the overnight 2,127-case census. No product Rust/panel code, frozen ELF,
+benchmark campaign, migration, threshold or release artifact changed. Hosted CI
+on the additional test/documentation commit remains a separate exact-head gate.

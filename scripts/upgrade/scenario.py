@@ -336,6 +336,24 @@ class UpgradeScenario:
             if p.is_file()
         }
 
+    def expected_file_hashes(self, baseline):
+        expected = baseline.disk_hashes.copy()
+        if self.report["target_kind"] == "published":
+            return expected
+        # The checkout adds exactly one control file when adopting this legacy
+        # store. Require its correct identity; retain exact comparison of every
+        # original byte/path and reject extra files, including quarantine state.
+        marker = self.storage_dir / ".nelcota-gc-owner-v1"
+        assert marker.is_file() and not marker.is_symlink()
+        identity = self.sql(
+            "SELECT system_identifier::text || chr(10) || current_database() || chr(10) || "
+            "(SELECT oid::text FROM pg_database WHERE datname = current_database()) "
+            "FROM pg_control_system();"
+        ).strip()
+        owner = b"v1:" + hashlib.sha256(identity.encode()).hexdigest().encode()
+        expected[marker.name] = hashlib.sha256(owner).hexdigest()
+        return expected
+
     def snapshot(self, tables, functions):
         ids = ",".join(str(t["oid"]) for t in tables)
         fnids = ",".join(str(f) for f in functions)
@@ -535,7 +553,7 @@ class UpgradeScenario:
         ]
         self.validate_performance_additions(after, baseline)
         assert after == baseline.schema, "Pre-existing data, sequences or schema changed"
-        assert self.file_hashes() == baseline.disk_hashes
+        assert self.file_hashes() == self.expected_file_hashes(baseline)
         assert int(self.sql("SELECT count(*) FROM nelcota.webhook_deliveries;")) == 0
         (self.root / "after.json").write_text(json.dumps(after, ensure_ascii=False, indent=2))
         self.passed(
@@ -770,7 +788,7 @@ class UpgradeScenario:
             "SELECT jsonb_agg(to_jsonb(t)::text ORDER BY to_jsonb(t)::text) FROM public.upgrade_notes t WHERE id IN (1,2);"
         )
         assert preserved == baseline_notes
-        assert self.file_hashes() == baseline.disk_hashes
+        assert self.file_hashes() == self.expected_file_hashes(baseline)
         assert int(self.sql("SELECT count(*) FROM public.upgrade_audit;")) >= 8
         assert (
             int(
