@@ -7,6 +7,8 @@ mod access;
 mod assets;
 #[path = "admin/auth.rs"]
 mod auth;
+#[path = "admin/filter_columns.rs"]
+mod filter_columns;
 #[path = "admin/migrations.rs"]
 mod migrations;
 #[path = "admin/overview.rs"]
