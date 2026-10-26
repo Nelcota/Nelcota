@@ -15,6 +15,20 @@ pub(super) fn tls() -> anyhow::Result<()> {
     }
     Ok(())
 }
+/// Host to resolve, without the brackets `host_str` keeps around IPv6 literals.
+fn endpoint_host(target: &url::Url) -> anyhow::Result<String> {
+    Ok(match target.host().context("invalid_alert_endpoint")? {
+        url::Host::Domain(domain) => domain.to_owned(),
+        url::Host::Ipv4(ip) => ip.to_string(),
+        url::Host::Ipv6(ip) => ip.to_string(),
+    })
+}
+const MAX_ALERT_ADDRESSES: usize = 32;
+fn allowed_destinations(addresses: &[SocketAddr]) -> bool {
+    !addresses.is_empty()
+        && addresses.len() <= MAX_ALERT_ADDRESSES
+        && addresses.iter().all(|a| is_public_address(a.ip()))
+}
 pub(super) async fn post(
     policy: &Policy,
     url: &str,
@@ -22,17 +36,15 @@ pub(super) async fn post(
     test: bool,
 ) -> anyhow::Result<()> {
     let target = config::endpoint(policy, url)?;
-    let host = target.host_str().context("invalid_alert_endpoint")?;
+    let host = endpoint_host(&target)?;
     let addresses = tokio::time::timeout(
         Duration::from_secs(3),
-        tokio::net::lookup_host((host, target.port_or_known_default().unwrap_or(443))),
+        tokio::net::lookup_host((host.as_str(), target.port_or_known_default().unwrap_or(443))),
     )
     .await??
     .collect::<Vec<SocketAddr>>();
     ensure!(
-        !addresses.is_empty()
-            && addresses.len() <= 32
-            && addresses.iter().all(|a| is_public_address(a.ip())),
+        allowed_destinations(&addresses),
         "invalid_alert_destination"
     );
     // Retain configured HTTP proxy/CA trust. A production egress proxy is a
@@ -43,7 +55,7 @@ pub(super) async fn post(
         .timeout(Duration::from_secs(8))
         .connect_timeout(Duration::from_secs(3))
         .redirect(reqwest::redirect::Policy::none())
-        .resolve_to_addrs(host, &addresses)
+        .resolve_to_addrs(&host, &addresses)
         .pool_max_idle_per_host(0)
         .build()?;
     let mut request = client.post(target);
@@ -136,69 +148,31 @@ pub(super) async fn send(
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn shared_address_space_is_not_a_public_alert_destination() {
-        for ip in ["100.64.0.0", "100.100.100.200", "100.127.255.255"] {
-            assert!(
-                !is_public_address(ip.parse().unwrap()),
-                "shared route accepted: {ip}"
-            );
-        }
-        for ip in ["100.63.255.255", "100.128.0.0"] {
-            assert!(
-                is_public_address(ip.parse().unwrap()),
-                "public neighbor rejected: {ip}"
-            );
-        }
+    fn socket(ip: &str) -> SocketAddr {
+        SocketAddr::new(ip.parse().unwrap(), 443)
     }
     #[test]
-    fn reserved_and_translated_routes_are_not_public_alert_destinations() {
-        for ip in [
-            "192.0.0.1",
-            "192.0.2.1",
-            "198.18.0.1",
-            "198.19.255.255",
-            "203.0.113.1",
-            "::a00:1",
-            "64:ff9b::a00:1",
-            "64:ff9b:1::1",
-            "2001::1",
-            "2001:db8::1",
-            "2002:a00:1::1",
-            // Previously accepted by the alert-only check.
-            "192.88.99.1",
-            "100::1",
-            "2001:2::1",
-            "3fff::1",
-        ] {
-            assert!(
-                !is_public_address(ip.parse().unwrap()),
-                "reserved route accepted: {ip}"
-            );
-        }
-        for ip in ["198.17.255.255", "198.20.0.0", "2001:4860:4860::8888"] {
-            assert!(
-                is_public_address(ip.parse().unwrap()),
-                "public neighbor rejected: {ip}"
-            );
-        }
+    fn destinations_must_all_be_public_and_bounded() {
+        assert!(allowed_destinations(&[
+            socket("1.1.1.1"),
+            socket("2606:4700:4700::1111")
+        ]));
+        assert!(!allowed_destinations(&[]));
+        // One private answer is enough to refuse the whole destination.
+        assert!(!allowed_destinations(&[
+            socket("1.1.1.1"),
+            socket("10.0.0.1")
+        ]));
+        assert!(!allowed_destinations(&[socket("100.64.0.1")]));
+        assert!(!allowed_destinations(&[socket("::ffff:127.0.0.1")]));
+        let many = vec![socket("1.1.1.1"); MAX_ALERT_ADDRESSES + 1];
+        assert!(!allowed_destinations(&many));
     }
     #[test]
-    fn destinations_do_not_accept_private_loopback_mapped_or_link_local_routes() {
-        for ip in [
-            "127.0.0.1",
-            "10.0.0.1",
-            "169.254.169.254",
-            "192.168.0.1",
-            "::1",
-            "::ffff:8.8.8.8",
-            "fc00::1",
-            "fe80::1",
-        ] {
-            assert!(!is_public_address(ip.parse().unwrap()), "{ip}");
-        }
-        for ip in ["1.1.1.1", "2606:4700:4700::1111"] {
-            assert!(is_public_address(ip.parse().unwrap()), "{ip}");
-        }
+    fn ipv6_literal_endpoints_resolve_without_brackets() {
+        let target = url::Url::parse("https://[2606:4700:4700::1111]/hook").unwrap();
+        assert_eq!(endpoint_host(&target).unwrap(), "2606:4700:4700::1111");
+        let target = url::Url::parse("https://alerts.example.com/hook").unwrap();
+        assert_eq!(endpoint_host(&target).unwrap(), "alerts.example.com");
     }
 }

@@ -764,3 +764,28 @@ fn routine_configuration_campaign(
     assert!(!public.contains("argon2id"));
     assert!(!public.contains("SSO_SECRET"));
 }
+#[test]
+fn policy_addresses_refuse_reserved_and_ipv4_embedding_forms() {
+    for ip in [
+        "240.0.0.1",
+        "::a00:1",
+        "64:ff9b::7f00:1",
+        "64:ff9b:1::1",
+        "2002:a00:1::1",
+        "2001:0:a00:1::1",
+        "::ffff:10.0.0.1",
+        "10.0.0.1",
+    ] {
+        assert!(!super::public_ip(ip.parse().unwrap()), "accepted: {ip}");
+    }
+    // CGNAT and documentation addresses stay valid so installed policies keep loading.
+    for ip in [
+        "203.0.113.7",
+        "100.64.0.1",
+        "2001:db8::1",
+        "2606:4700:4700::1111",
+        "8.8.8.8",
+    ] {
+        assert!(super::public_ip(ip.parse().unwrap()), "rejected: {ip}");
+    }
+}

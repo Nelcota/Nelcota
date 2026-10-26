@@ -15,26 +15,56 @@ use std::net::IpAddr;
 /// link-local and multicast addresses.
 pub fn is_public_address(ip: IpAddr) -> bool {
     match ip {
-        IpAddr::V4(ip) => {
-            let [a, b, c, _] = ip.octets();
-            !(matches!(a, 0 | 10 | 127)
-                || a >= 224
-                || (a == 100 && (64..=127).contains(&b))
-                || (a == 169 && b == 254)
-                || (a == 172 && (16..=31).contains(&b))
-                || (a == 192
-                    && (b == 168 || (b == 0 && (c == 0 || c == 2)) || (b == 88 && c == 99)))
-                || (a == 198 && (b == 18 || b == 19 || (b == 51 && c == 100)))
-                || (a == 203 && b == 0 && c == 113))
-        }
-        IpAddr::V6(ip) => {
-            let s = ip.segments();
-            (s[0] & 0xe000) == 0x2000
-                && !(s[0] == 0x2001 && (s[1] < 0x200 || s[1] == 0xdb8))
-                && s[0] != 0x2002
-                && !(s[0] == 0x3fff && s[1] < 0x1000)
-        }
+        IpAddr::V4(ip) => is_public_v4(ip.octets()),
+        IpAddr::V6(ip) => is_public_v6(ip.segments()),
     }
+}
+
+/// First octet from which IPv4 is multicast (224/4), reserved (240/4) or broadcast.
+const IPV4_MULTICAST_AND_ABOVE: u8 = 224;
+/// Global unicast 2000::/3: the top three bits of the first segment are 001.
+const IPV6_GLOBAL_UNICAST_MASK: u16 = 0xe000;
+const IPV6_GLOBAL_UNICAST_PREFIX: u16 = 0x2000;
+/// 2001::/23 (Teredo, benchmarking, ORCHID and other IETF assignments).
+const IPV6_IETF_FIRST_SEGMENT: u16 = 0x2001;
+const IPV6_IETF_SECOND_SEGMENT_END: u16 = 0x0200;
+/// Documentation 2001:db8::/32.
+const IPV6_DOCUMENTATION_SECOND_SEGMENT: u16 = 0x0db8;
+/// 6to4 2002::/16.
+const IPV6_6TO4_FIRST_SEGMENT: u16 = 0x2002;
+/// Documentation 3fff::/20.
+const IPV6_DOCUMENTATION_3FFF_FIRST_SEGMENT: u16 = 0x3fff;
+const IPV6_DOCUMENTATION_3FFF_SECOND_SEGMENT_END: u16 = 0x1000;
+
+fn is_public_v4([a, b, c, _]: [u8; 4]) -> bool {
+    let this_private_or_loopback = matches!(a, 0 | 10 | 127);
+    let multicast_reserved_or_broadcast = a >= IPV4_MULTICAST_AND_ABOVE;
+    let shared_cgnat = a == 100 && (64..=127).contains(&b);
+    let link_local = a == 169 && b == 254;
+    let private_172 = a == 172 && (16..=31).contains(&b);
+    let special_192 =
+        a == 192 && (b == 168 || (b == 0 && (c == 0 || c == 2)) || (b == 88 && c == 99));
+    let special_198 = a == 198 && (b == 18 || b == 19 || (b == 51 && c == 100));
+    let documentation_203 = a == 203 && b == 0 && c == 113;
+    !(this_private_or_loopback
+        || multicast_reserved_or_broadcast
+        || shared_cgnat
+        || link_local
+        || private_172
+        || special_192
+        || special_198
+        || documentation_203)
+}
+
+fn is_public_v6(segments: [u16; 8]) -> bool {
+    let [first, second, ..] = segments;
+    let global_unicast = first & IPV6_GLOBAL_UNICAST_MASK == IPV6_GLOBAL_UNICAST_PREFIX;
+    let ietf_or_documentation = first == IPV6_IETF_FIRST_SEGMENT
+        && (second < IPV6_IETF_SECOND_SEGMENT_END || second == IPV6_DOCUMENTATION_SECOND_SEGMENT);
+    let six_to_four = first == IPV6_6TO4_FIRST_SEGMENT;
+    let documentation_3fff = first == IPV6_DOCUMENTATION_3FFF_FIRST_SEGMENT
+        && second < IPV6_DOCUMENTATION_3FFF_SECOND_SEGMENT_END;
+    global_unicast && !ietf_or_documentation && !six_to_four && !documentation_3fff
 }
 
 #[cfg(test)]
