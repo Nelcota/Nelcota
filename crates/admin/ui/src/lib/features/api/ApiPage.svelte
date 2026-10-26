@@ -10,6 +10,8 @@
   import Rows3 from '@lucide/svelte/icons/rows-3'
   import Plus from '@lucide/svelte/icons/plus'
   import Download from '@lucide/svelte/icons/download'
+  import Copy from '@lucide/svelte/icons/copy'
+  import RefreshCw from '@lucide/svelte/icons/refresh-cw'
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import { Button } from '$lib/components/ui/button'
@@ -23,9 +25,12 @@
   import { apiSectionLocation } from '$lib/navigation/api-sections.svelte'
   import { href, navigate, route } from '$lib/navigation/router.svelte'
   import { RemoteResource } from '$lib/resources/remote-resource.svelte'
-  import { api, enc } from '$lib/transport/api'
+  import { api, enc, expireSession, httpError } from '$lib/transport/api'
+  import { llmContext } from '$lib/features/api/llm-context'
+  import { copyText } from '$lib/browser/clipboard'
+  import { downloadText } from '$lib/browser/download'
   import { authSnippets, sdkSetup, tableSnippets, type Lang, type Snippet } from '$lib/features/api/api-examples'
-  import type { TableData, TablesResponse } from '$lib/contracts/types'
+  import type { PoliciesData, ProjectsData, StorageOverview, TableData, TablesResponse } from '$lib/contracts/types'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
 
   // The panel is served from the same host as the API.
@@ -48,6 +53,29 @@
     await tablesResource.load(signal => api.get<TablesResponse>('/tables', { signal }))
   }
   onMount(() => { void loadTables(); return () => tablesResource.cancel() })
+
+  // Context for AI assistants. Built when the page opens, so the copy button
+  // writes to the clipboard within the click (Safari refuses a late write).
+  const contextResource = new RemoteResource<string>()
+  const context = $derived(contextResource.data)
+  const contextError = $derived(contextResource.error ? errorMessage(contextResource.error) : '')
+  const contextSize = $derived(context ? `${Math.max(1, Math.round(new Blob([context]).size / 1024))} KB` : '')
+  async function loadContext() {
+    await contextResource.load(async signal => {
+      const types = fetch(href('/api/typescript'), { signal, credentials: 'same-origin', cache: 'no-store' }).then(async response => {
+        if (!response.ok) { expireSession(response.status, '/typescript'); throw httpError(response.status) }
+        return response.text()
+      })
+      const [projects, policies, storage, code] = await Promise.all([
+        api.get<ProjectsData>('/projects', { signal }),
+        api.get<PoliciesData>('/policies', { signal }),
+        api.get<StorageOverview>('/storage', { signal }),
+        types,
+      ])
+      return llmContext({ origin: base, project: projects.current, generatedAt: new Date(), types: code, policies, storage })
+    })
+  }
+  onMount(() => { void loadContext(); return () => contextResource.cancel() })
 
   // Scroll position also selects the matching link in the workspace sidebar.
   const sections = apiSectionPages
@@ -223,6 +251,35 @@
             <div class="col-start-2"><CodeBlock code={setup.client} lang="ts" /></div>
           </li>
         </ol>
+      </section>
+
+      <section id="api-ai" class="grid scroll-mt-20 gap-5 rounded-3xl bg-card p-6">
+        <div class="grid gap-1">
+          <h2 class="text-lg font-semibold">{t('connect.ai.title')}</h2>
+          <p class="text-sm text-muted-foreground">{t('connect.ai.text')}</p>
+        </div>
+        {#if contextError}
+          <LoadError message={t('connect.ai.failed', { message: contextError })} onretry={loadContext} busy={contextResource.loading} />
+        {:else}
+          <div class="flex flex-wrap items-center gap-3">
+            <Button disabled={!context} onclick={() => context && copyText(context, t('connect.ai.copied'))}>
+              <Copy data-icon="inline-start" aria-hidden="true" />{context ? t('connect.ai.copy') : t('connect.ai.building')}
+            </Button>
+            <Button variant="outline" disabled={!context} onclick={() => context && downloadText('llms.txt', context, 'text/markdown;charset=utf-8')}>
+              <Download data-icon="inline-start" aria-hidden="true" />{t('connect.ai.download')}
+            </Button>
+            <Button variant="ghost" disabled={contextResource.loading} onclick={loadContext}>
+              <RefreshCw data-icon="inline-start" class={contextResource.loading ? 'animate-spin' : ''} aria-hidden="true" />{t('common.refresh')}
+            </Button>
+          </div>
+        {/if}
+        <p class="text-xs text-muted-foreground">{t('connect.ai.safe')}</p>
+        {#if context}
+          <details class="min-w-0">
+            <summary class="cursor-pointer text-sm text-muted-foreground hover:text-foreground">{t('connect.ai.preview', { size: contextSize })}</summary>
+            <div class="mt-3 max-h-96 overflow-auto"><CodeBlock code={context} label={t('connect.ai.copy')} /></div>
+          </details>
+        {/if}
       </section>
 
       <section id="api-examples" class="grid scroll-mt-20 gap-5 rounded-3xl bg-card p-6">
