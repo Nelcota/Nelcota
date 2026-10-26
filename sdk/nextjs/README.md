@@ -26,7 +26,8 @@ helper. The verification matrix uses Next 16.4.3 / React 19.3.1 on Bun 1.4.3
 (`next build` and `next start` under Bun) with Chromium, Firefox and WebKit,
 plus Node 22, 24 and 26 with Chromium. The package
 peer range targets Next 16. A pinned Next 15.5.28 compatibility consumer passed
-all three browsers on Node 24 with PostCSS 8.5.31 and Node middleware adaptations;
+all three browsers on Node 24 with PostCSS 8.5.31, TypeScript 6 (Next 15 cannot
+use TypeScript 7) and Node middleware adaptations;
 see the [compatibility evidence](https://github.com/Nelcota/Nelcota/blob/main/docs/goals/nextjs-151-validation.md).
 Pages Router, Edge and earlier Next majors remain outside the supported scope.
 
