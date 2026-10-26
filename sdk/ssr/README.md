@@ -36,9 +36,10 @@ Other frameworks call the core directly, as described below.
 ```sh
 npm install --save-exact @nelcota/ssr @nelcota/client
 npm install pg   # for the PostgreSQL store
+# or with Bun: bun add --exact @nelcota/ssr @nelcota/client pg
 ```
 
-Node 22, 24 or 26. Session keys never reach a browser bundle:
+Node 22, 24 or 26, or Bun 1.4.3 or later. Session keys never reach a browser bundle:
 `Integration.create` refuses to run where `document` exists.
 
 ## Session store

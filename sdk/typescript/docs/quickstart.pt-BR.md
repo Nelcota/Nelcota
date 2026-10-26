@@ -16,7 +16,7 @@ com os recursos descritos na [matriz de compatibilidade](../README.md#compatibil
 ## 1. Instale
 
 ```sh
-npm install @nelcota/client@0.2.4
+npm install @nelcota/client@0.2.4   # ou: bun add @nelcota/client@0.2.4
 ```
 
 A versão 0.2.4 está publicada no npm. Leia as [notas de atualização](contract.md#upgrading-from-020)
