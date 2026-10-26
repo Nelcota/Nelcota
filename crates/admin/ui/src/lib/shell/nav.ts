@@ -15,6 +15,7 @@ import Webhook from '@lucide/svelte/icons/webhook'
 import Globe from '@lucide/svelte/icons/globe'
 import UserRound from '@lucide/svelte/icons/user-round'
 import Package from '@lucide/svelte/icons/package'
+import Sparkles from '@lucide/svelte/icons/sparkles'
 import CodeXml from '@lucide/svelte/icons/code-xml'
 import KeyRound from '@lucide/svelte/icons/key-round'
 import ArrowUpCircle from '@lucide/svelte/icons/arrow-up-circle'
@@ -46,6 +47,7 @@ export const apiSectionPages = ([
   { section: 'api-address', title: 'connect.address', icon: Globe },
   { section: 'api-roles', title: 'connect.caller', icon: UserRound },
   { section: 'api-sdk', title: 'connect.sdk.title', icon: Package },
+  { section: 'api-ai', title: 'connect.ai.title', icon: Sparkles },
   { section: 'api-examples', title: 'connect.examples', icon: CodeXml },
   { section: 'api-token', title: 'connect.token.title', icon: KeyRound },
 ] as const).map(item => ({ ...item, path: `/connect?section=${item.section}` })) satisfies NavItem[]

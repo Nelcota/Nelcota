@@ -54,6 +54,17 @@ const ptBR = {
     orCli: 'ou pelo terminal:',
     docs: 'Documentação do SDK',
   },
+  ai: {
+    title: 'Contexto para IA',
+    text: 'Um texto no estilo llms.txt para colar no ChatGPT, Claude, Cursor ou outra IA: traz o endereço deste projeto, o schema com os tipos, as regras de acesso (RLS), os buckets e como usar o SDK. Assim a IA escreve código que funciona aqui, sem inventar tabelas.',
+    safe: 'Não inclui chaves, senhas nem tokens. Gere de novo depois de mudar o schema.',
+    copy: 'Copiar contexto',
+    copied: 'Contexto copiado. Cole na conversa com a IA.',
+    download: 'Baixar llms.txt',
+    building: 'Montando…',
+    failed: 'Não foi possível montar o contexto: {message}',
+    preview: 'Ver o texto ({size})',
+  },
   snippets: {
     list: {
       label: 'Listar linhas',
@@ -175,6 +186,17 @@ const en: Messages<typeof ptBR> = {
     types: 'Generate your tables’ types and save them next to the client',
     orCli: 'or from the terminal:',
     docs: 'SDK documentation',
+  },
+  ai: {
+    title: 'Context for AI',
+    text: 'An llms.txt-style text to paste into ChatGPT, Claude, Cursor or another assistant: this project’s address, the schema as types, the access rules (RLS), the buckets and how to use the SDK. The assistant then writes code that works here instead of inventing tables.',
+    safe: 'Contains no keys, passwords or tokens. Generate it again after changing the schema.',
+    copy: 'Copy context',
+    copied: 'Context copied. Paste it into the conversation.',
+    download: 'Download llms.txt',
+    building: 'Building…',
+    failed: 'Could not build the context: {message}',
+    preview: 'Show the text ({size})',
   },
   snippets: {
     list: {

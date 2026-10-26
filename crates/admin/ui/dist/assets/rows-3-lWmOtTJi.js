@@ -1,1 +1,0 @@
-import{b as e,f as t,x as n}from"./index.svelte-D9FJRqEu.js";var r={name:`rows-3`,size:24,node:[[`rect`,{width:`18`,height:`18`,x:`3`,y:`3`,rx:`2`}],[`path`,{d:`M21 9H3`}],[`path`,{d:`M21 15H3`}]],aliases:[`panels-top-bottom`]};r.node;var i=new Set([`$$slots`,`$$events`,`$$legacy`]);function a(a,o){let s=e(o,i);t(a,n(()=>s,{get icon(){return r}}))}export{a as t};
