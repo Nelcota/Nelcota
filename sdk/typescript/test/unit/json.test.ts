@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseJson } from '../../src/core/json.js';
+import { encodeJson, parseJson } from '../../src/core/json.js';
 import fc from 'fast-check';
 
 describe('lossless numeric responses', () => {
@@ -32,4 +32,13 @@ it.each(['x', '\\"12345678901234567890'])('decodes large strings without regex s
   const body = fragment.repeat(Math.ceil(10 * 1024 * 1024 / fragment.length));
   const wire = `{"body":${JSON.stringify(body)},"id":9007199254740993}`;
   expect(parseJson(wire)).toEqual({ body, id: '9007199254740993' });
+});
+
+describe('request bodies', () => {
+  it('refuses values JSON would silently turn into null or throw on', () => {
+    // Date#toJSON turns an invalid date into null before any replacer sees it.
+    expect(() => encodeJson({ due: new Date('bogus') })).toThrow('JSON dates must be valid');
+    expect(() => encodeJson({ id: 10n })).toThrow('bigint');
+    expect(encodeJson({ due: new Date(0), none: null })).toBe('{"due":"1970-01-01T00:00:00.000Z","none":null}');
+  });
 });

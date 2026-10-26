@@ -10,6 +10,9 @@ impl AuthClient {
         let weak = Arc::downgrade(&self.client.inner);
         let mut events = self.subscribe();
         let handle = tokio::spawn(async move {
+            // The server takes an uncertain rotation's old token back only within 10 s,
+            // so the first retry after a failure must land inside that window.
+            let mut failures = 0u32;
             loop {
                 let inner = match weak.upgrade() {
                     Some(inner) => inner,
@@ -40,7 +43,12 @@ impl AuthClient {
                     _ = tokio::time::sleep(delay.max(Duration::from_secs(1))) => {
                         let inner = match weak.upgrade() { Some(inner) => inner, None => return };
                         let client = Client { inner, token: TokenMode::Session, options: Default::default() };
-                        if client.auth().get_session().await.is_err() { tokio::time::sleep(Duration::from_secs(10)).await; }
+                        if client.auth().get_session().await.is_err() {
+                            failures += 1;
+                            tokio::time::sleep(Duration::from_secs(if failures == 1 { 2 } else { 10 })).await;
+                        } else {
+                            failures = 0;
+                        }
                     }
                     result = events.recv() => { if matches!(result, Err(broadcast::error::RecvError::Closed)) { return; } }
                 }

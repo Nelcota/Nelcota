@@ -51,7 +51,7 @@ export async function createNelcotaProxy(options: NextOptions, policy: ProxyOpti
     if (/[\\\u0000-\u001f\u007f]/.test(path) || /%[0-9a-f]{2}/i.test(path)) return privateHeaders(NextResponse.json({ error: 'invalid_path' }, { status: 400 }));
     if (excluded.has(path) || path.startsWith('/_next/') || !guarded(path)) return NextResponse.next();
     try {
-      return await owner.read(request.cookies, async context => {
+      return await owner.read(request.cookies, async (context, { clearable }) => {
         const user = await context.getUser();
         if (!user.error) return privateHeaders(NextResponse.next());
         if (user.error.status === 403) return privateHeaders(NextResponse.json({ error: 'access_denied' }, { status: 403 }));
@@ -59,8 +59,9 @@ export async function createNelcotaProxy(options: NextOptions, policy: ProxyOpti
         const target = new URL(`${owner.basePath}${context.hasSession && user.error.status === 401 ? refresh : login}`, owner.origin);
         target.searchParams.set('next', safeReturnTo(`${request.nextUrl.pathname}${request.nextUrl.search}`));
         const response = NextResponse.redirect(target, 303);
-        // A superseded cookie may already be replaced by a response in flight; leave it.
-        if (context.staleCookie && !context.superseded) owner.expireCookie(response.cookies);
+        // A superseded or row-less cookie may already be replaced by a response in flight
+        // (a sign-in rotating a bootstrap ID); leave it.
+        if (clearable) owner.expireCookie(response.cookies);
         return privateHeaders(response);
       });
     } catch (error) {

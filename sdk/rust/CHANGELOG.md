@@ -5,6 +5,16 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## Unreleased
 
+### Fixed
+
+- Run a shared session refresh under the client's timeout instead of the first
+  caller's, so a zero (disabled) or very short request timeout can neither hold
+  the lifecycle lock indefinitely nor abandon a rotation the server committed.
+- Rotate a session that is due even when a user update moved the session epoch
+  while the refresh waited, instead of returning the expiring token.
+- Retry background refresh after an uncertain failure within 2 seconds, inside
+  the server's 10-second window for reusing the previous refresh token.
+
 ## 0.1.6 — 2026-10-24
 
 ### Fixed

@@ -287,6 +287,27 @@ async fn rotation_finishes_when_waiter_is_cancelled_and_failed_rotation_is_share
 }
 
 #[tokio::test]
+async fn shared_rotation_ignores_the_first_callers_timeout() {
+    // The server takes 100 ms; a 10 ms caller must not cut short everyone's rotation.
+    let (url, count, server_task) = server(false).await;
+    let client = Client::builder(url).build().unwrap();
+    client
+        .auth()
+        .set_session(session("a0", "r0"))
+        .await
+        .unwrap();
+    let auth = client
+        .with_options(RequestOptions {
+            timeout: Some(Duration::from_millis(10)),
+            cancellation: None,
+        })
+        .auth();
+    assert_eq!(auth.refresh_session().await.unwrap().refresh_token, "r1");
+    assert_eq!(count.load(Ordering::SeqCst), 1);
+    server_task.abort();
+}
+
+#[tokio::test]
 async fn cancelled_refresh_waiters_leave_only_one_background_rotation() {
     struct SlowStorage {
         started: tokio::sync::Notify,

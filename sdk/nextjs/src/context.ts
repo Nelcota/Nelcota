@@ -251,12 +251,17 @@ export class Integration<Database> {
   #data(client: NelcotaClient<Database>): DataClient<Database> {
     return { from: client.from.bind(client), rpc: client.rpc.bind(client), storage: client.storage, url: client.url };
   }
-  async read<T>(cookies: CookieReader, work: (context: VerifiedContext<Database>) => Promise<T>): Promise<T> {
+  /**
+   * `clearable` (for the proxy) tells whether a stale presented cookie may be deleted: like
+   * the write path, a row-less (bootstrap or pre-login) or superseded ID is kept, because the
+   * browser may already hold its replacement from a sign-in response still in flight.
+   */
+  async read<T>(cookies: CookieReader, work: (context: VerifiedContext<Database>, details: { clearable: boolean }) => Promise<T>): Promise<T> {
     const id = cookies.get(this.#name)?.value ?? '', key = sessionKey(id, this.#namespace);
     const loaded = key ? await this.#load(key) : null, state = loaded?.state ?? null;
     let alive = true;
     const client = this.#client(() => accessToken(state), () => alive, true);
-    try { return await work({ client: this.#data(client), hasSession: state?.session !== null && state?.session !== undefined, staleCookie: id !== '' && state === null, superseded: loaded?.superseded === true, getUser: options => client.auth.getUser(options) }); }
+    try { return await work({ client: this.#data(client), hasSession: state?.session !== null && state?.session !== undefined, staleCookie: id !== '' && state === null, superseded: loaded?.superseded === true, getUser: options => client.auth.getUser(options) }, { clearable: id !== '' && state === null && (loaded === null || (loaded.row && !loaded.superseded)) }); }
     finally { alive = false; client.dispose(); }
   }
   /** Explicit same-origin local reset, usable even when old keys/state are unavailable. */

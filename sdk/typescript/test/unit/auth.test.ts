@@ -661,6 +661,23 @@ describe('refresh', () => {
     } finally { nelcota.dispose(); vi.restoreAllMocks(); vi.useRealTimers(); }
   });
 
+  it('retries an uncertain background refresh inside the server reuse window', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-12T12:00:00Z'));
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    // The rotation may have committed before the 503: only a retry under 10 s recovers it.
+    const mock = mockFetch(json({ message: 'gateway' }, 503), json(session(900, 'refresh-2', 'access-2')));
+    const nelcota = createClient('https://api.example.com', { fetch: mock.fetch, auth: { autoRefresh: true, refreshMargin: 60 } });
+    try {
+      await nelcota.auth.setSession(session(61));
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(mock.calls).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(mock.calls).toHaveLength(2);
+      expect((await nelcota.auth.getSession()).data?.access_token).toBe('access-2');
+    } finally { nelcota.dispose(); vi.restoreAllMocks(); vi.useRealTimers(); }
+  });
+
   it('backs off when the server returns an already expired token', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-12T12:00:00Z'));

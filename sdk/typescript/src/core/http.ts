@@ -181,7 +181,8 @@ export class HttpClient {
 
   /** Absolute URL for a path (and query) under the base URL. */
   href(path: string, query?: URLSearchParams): string {
-    const search = query && query.size > 0 ? `?${query.toString()}` : '';
+    // Not `size`: Safari < 17 lacks it.
+    const search = query?.toString() ? `?${query}` : '';
     return `${this.#base}${path}${search}`;
   }
 

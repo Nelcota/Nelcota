@@ -3,6 +3,18 @@
 Package releases use Semantic Versioning and Keep a Changelog categories.
 Dates identify release entries; registry availability requires a successful publish.
 
+## Unreleased
+
+### Fixed
+
+- Retry a background refresh with an uncertain outcome after 2 seconds, inside
+  the server's 10-second window for reusing the previous refresh token, so a
+  lost refresh response no longer signs the user out.
+- Reject an invalid `Date` or a `bigint` in a JSON request body with
+  `NelcotaUsageError`, instead of writing `null` or throwing a raw `TypeError`.
+- Keep query strings on engines without `URLSearchParams.size` (Safari before
+  17), which previously sent requests without their filters.
+
 ## 0.2.3 — 2026-10-24
 
 ### Fixed

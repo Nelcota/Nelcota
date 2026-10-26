@@ -39,9 +39,13 @@ export function parseJson(text: string): unknown {
 
 /** Explicit null is valid; a non-finite number must never silently become null. */
 export function encodeJson(input: unknown): string {
-  const text = JSON.stringify(input, (_key, original: unknown) => {
+  const text = JSON.stringify(input, function (this: Record<string, unknown>, key, original: unknown) {
     const value = original instanceof Number ? original.valueOf() : original;
     if (typeof value === 'number' && !Number.isFinite(value)) throw new NelcotaUsageError('JSON numbers must be finite');
+    // An invalid Date reaches here as null (toJSON ran first).
+    const raw = this[key];
+    if (raw instanceof Date && Number.isNaN(raw.getTime())) throw new NelcotaUsageError('JSON dates must be valid');
+    if (typeof value === 'bigint') throw new NelcotaUsageError('JSON cannot carry a bigint');
     return value;
   });
   if (text === undefined) throw new NelcotaUsageError('Request body must be JSON serializable');

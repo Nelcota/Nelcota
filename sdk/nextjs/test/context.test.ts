@@ -189,6 +189,19 @@ it('treats rows sealed with lost keys as signed out and lets login replace them'
   expect(result.data?.id).toBe('user-one');
   await rotated.integration.read(original.jar, async context => { expect(context.hasSession).toBe(true); expect((await context.getUser()).data?.id).toBe('user-one'); });
 });
+it('lets the proxy clear only a stale cookie that had a row', async () => {
+  const store = new DevelopmentSessionStore();
+  const original = await setup({ store });
+  // A bootstrap/pre-login ID: a sign-in in flight may already have replaced it.
+  const bootstrap = new Jar();
+  await original.integration.write(original.jar, post(), context => context.auth.signInWithPassword(credentials));
+  const name = [...original.jar.values.keys()][0]!;
+  bootstrap.values.set(name, newSessionId());
+  await original.integration.read(bootstrap, async (context, { clearable }) => { expect(context.staleCookie).toBe(true); expect(clearable).toBe(false); });
+  // A row sealed with keys this server no longer has is cleared.
+  const rotated = await setup({ store });
+  await rotated.integration.read(original.jar, async (context, { clearable }) => { expect(context.staleCookie).toBe(true); expect(clearable).toBe(true); });
+});
 it('removes an unreadable row and clears its cookie when a write saves nothing', async () => {
   const store = new DevelopmentSessionStore();
   const original = await setup({ store });
