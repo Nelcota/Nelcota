@@ -1,6 +1,7 @@
 // Display of values in the grid. Display only: editing, export and the
 // tooltip keep the exact text Postgres returned.
 
+import { dateTimeFormat } from '$lib/formatting/intl'
 import { intlLocale } from '$lib/i18n/index.svelte'
 import { canonicalType } from './grid'
 
@@ -28,7 +29,7 @@ export function formatCell(
   if (type === 'timestamp with time zone') {
     const instant = new Date(value)
     if (Number.isNaN(instant.getTime())) return { text: value, raw: null }
-    const text = new Intl.DateTimeFormat(locale, {
+    const text = dateTimeFormat(locale, {
       dateStyle: 'short',
       timeStyle: 'medium',
       timeZone: options.timeZone,
@@ -50,7 +51,7 @@ export function formatCell(
     const actual = [wallClock.getUTCFullYear(), wallClock.getUTCMonth(), wallClock.getUTCDate(), wallClock.getUTCHours(), wallClock.getUTCMinutes(), wallClock.getUTCSeconds()]
     if (actual.some((part, index) => part !== parts[index])) return { text: value, raw: null }
     const dateOnly = type === 'date' || hour === undefined
-    const text = new Intl.DateTimeFormat(locale, {
+    const text = dateTimeFormat(locale, {
       dateStyle: 'short',
       ...(dateOnly ? {} : { timeStyle: 'medium' }),
       timeZone: 'UTC',

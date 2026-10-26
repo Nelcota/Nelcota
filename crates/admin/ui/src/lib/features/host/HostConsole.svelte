@@ -9,7 +9,9 @@
   import { Button } from '$lib/components/ui/button'
   import { Input } from '$lib/components/ui/input'
   import { t, i18n, translate } from '$lib/i18n/index.svelte'
-  import { request, newKey, ControllerError } from '../updates/controller'
+  import { request, newKey, pollDelay, ControllerError } from '../updates/controller'
+  import { dateText } from '$lib/formatting/date'
+  import { formatBytes } from '../storage/files'
   import {
     parseStatus,
     parsePlan,
@@ -63,6 +65,7 @@
   let timer: ReturnType<typeof setTimeout> | undefined,
     clock: ReturnType<typeof setInterval> | undefined
   const requests = new Set<AbortController>()
+  const IDLE_POLL_MS = 8000
   const storageKey = $derived(`nelcota.host.request:${email}`)
   const active = $derived(
     (status?.busy || status?.jobs.some((j) => !terminal(j.stage))) ?? false
@@ -97,7 +100,7 @@
     return server === `server.${key}` ? value : server
   }
   const serverText = (key: string) => translate(i18n.locale, `server.${key}`)
-  const size = (bytes: number) => `${(bytes / 1024 ** 3).toFixed(1)} GiB`
+  const size = (bytes: number) => formatBytes(bytes, i18n.locale)
   function reset() {
     plan = null
     recovery = null
@@ -123,22 +126,16 @@
   async function call(body: object) {
     const abort = new AbortController()
     requests.add(abort)
-    const timeout = setTimeout(() => abort.abort(), 20000)
     try {
       return await request(body, abort.signal)
     } finally {
-      clearTimeout(timeout)
       requests.delete(abort)
     }
   }
   function schedule() {
     clearTimeout(timer)
     if (!alive) return
-    const delay = offline
-      ? Math.min(30000, 2000 * 2 ** Math.min(attempts, 4))
-      : active || pending
-        ? 2000
-        : 8000
+    const delay = pollDelay({ offline, attempts, active: active || pending !== null, idleMs: IDLE_POLL_MS })
     timer = setTimeout(() => void refresh(), delay)
   }
   async function refresh() {
@@ -781,7 +778,7 @@
           <details class="text-xs text-muted-foreground">
             <summary>{h('result')}</summary>
             <p class="mt-2 break-all font-mono" translate="no">{job.id}</p>
-            <p>{new Date(job.updated_at * 1000).toLocaleString(i18n.locale)}</p>
+            <p>{dateText(job.updated_at * 1000, date => date.toLocaleString(i18n.locale))}</p>
           </details>
           {#if job.stage === 'needs_attention'}<p class="text-sm">
               {h('recovery')}

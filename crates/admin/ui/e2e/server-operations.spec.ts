@@ -34,7 +34,7 @@ test('diagnostics are read-only, preserve unknown CPU, and fit a narrow viewport
   const actions: Record<string, unknown>[] = []
   await mount(page, actions)
   await page.getByRole('button', { name: 'Saúde', exact: true }).click()
-  await expect(page.getByText('7.0 GiB / 8.0 GiB')).toBeVisible()
+  await expect(page.getByText('7 GB / 8 GB')).toBeVisible()
   await expectReadable(page.getByText('Verificado', { exact: true }).first())
   await expect(page.getByText('A instalação de atualizações permanece bloqueada', { exact: false })).toBeVisible()
   await expect(page.getByText('Indisponível', { exact: true })).toBeVisible()

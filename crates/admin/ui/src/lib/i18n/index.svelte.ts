@@ -7,6 +7,7 @@
 // Portuguese one, so a missing or extra key is a type error.
 
 import { ApiError } from '$lib/transport/api-error'
+import { pluralRules } from '$lib/formatting/intl'
 import { readText, write } from '$lib/browser/local-storage'
 import common from './messages/common'
 import shell from './messages/shell'
@@ -135,7 +136,7 @@ export function translate(locale: Locale, key: string, params?: Params): string 
   if (typeof entry === 'string') return interpolate(entry, params)
   const count = Number(params?.count ?? 0)
   // CLDR files 0 under `one` in Portuguese, but people write "0 usuários".
-  const form = count !== 0 && new Intl.PluralRules(locale).select(count) === 'one' ? 'one' : 'other'
+  const form = count !== 0 && pluralRules(locale).select(count) === 'one' ? 'one' : 'other'
   return interpolate(entry[form], params)
 }
 

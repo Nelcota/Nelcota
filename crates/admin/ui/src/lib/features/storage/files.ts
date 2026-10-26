@@ -1,5 +1,7 @@
 // Storage page helpers: sizes, folders and file URLs.
 
+import { numberFormat } from '$lib/formatting/intl'
+
 const UNITS = ['byte', 'kilobyte', 'megabyte', 'gigabyte', 'terabyte'] as const
 
 /** `48213` → `47.1 KB`, in the viewer's language. */
@@ -11,8 +13,8 @@ export function formatBytes(bytes: number, locale: string): string {
     unit++
   }
   // Intl's short "byte" reads oddly ("512 byte"): plain bytes use B.
-  if (unit === 0) return `${new Intl.NumberFormat(locale).format(value)} B`
-  return new Intl.NumberFormat(locale, {
+  if (unit === 0) return `${numberFormat(locale).format(value)} B`
+  return numberFormat(locale, {
     style: 'unit',
     unit: UNITS[unit],
     unitDisplay: 'short',

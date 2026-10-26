@@ -3,7 +3,9 @@
   import { Button } from '$lib/components/ui/button'
   import { Input } from '$lib/components/ui/input'
   import { i18n, translate } from '$lib/i18n/index.svelte'
-  import { request, ControllerError } from '../updates/controller'
+  import { dateText } from '$lib/formatting/date'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+  import { request, sessionExpired } from '../updates/controller'
   import { integer, type Configuration } from './contracts'
   import { parseAlertStatus, type AlertSettings, type AlertStatus } from './alerts-contracts'
   import type { Operation } from '../host/controller'
@@ -12,15 +14,18 @@
     action: (operation: Operation) => Promise<boolean>; expired: () => void; ondirty: (value: boolean) => void; navigate: (proceed: () => void) => void
   } = $props()
   const a = (key: string) => translate(i18n.locale, `alerts.${key}`)
-  let view = $state<AlertStatus | null>(null), loading = $state(false), failure = $state(''), dirty = $state(false), stale = $state(false)
+  const POLL_MS = 30000
+  const alertStatus = new RemoteResource<AlertStatus>()
+  const view = $derived(alertStatus.data), loading = $derived(alertStatus.loading)
+  let failure = $state(''), dirty = $state(false), stale = $state(false)
   let enabled = $state(false), email = $state(false), webhook = $state(false), heartbeat = $state(false)
   let smtpProject = $state(''), recipient = $state(''), webhookUrl = $state(''), heartbeatUrl = $state('')
   let diskPercent = $state('15'), diskGib = $state('3'), certDays = $state('14'), backupHours = $state('26'), reminderHours = $state('24')
-  let alive = true, generation = 0, saved = '', poll: ReturnType<typeof setTimeout> | undefined, abort: AbortController | undefined
+  let alive = true, saved = '', poll: ReturnType<typeof setTimeout> | undefined
   const blocked = $derived(disabled || !view || (loading && view === null))
   const active = $derived(view?.incidents.filter(i => i.active) ?? [])
   const clockStale = $derived(view?.last_scan_at === null || (view && Date.now() / 1000 - (view.last_scan_at ?? 0) > 300))
-  function date(value: number | null | undefined): string { if (value == null) return a('never'); return new Date(value * 1000).toLocaleString(i18n.locale) }
+  function date(value: number | null | undefined): string { if (value == null) return a('never'); return dateText(value * 1000, date => date.toLocaleString(i18n.locale)) }
   function mark(value: boolean) { dirty = value; ondirty(value) }
   function populate(v: AlertStatus) {
     const s = v.settings; saved = JSON.stringify(s)
@@ -34,25 +39,26 @@
     poll = setTimeout(() => {
       if (document.hidden) { schedulePoll(); return }
       void load()
-    }, 30000)
+    }, POLL_MS)
+  }
+  function apply(next: AlertStatus, replace: boolean) {
+    if (dirty === false || replace) populate(next)
+    if (dirty && JSON.stringify(next.settings) !== saved) stale = true
+    failure = ''
   }
   async function load(replace = false) {
-    if (!alive) return
-    clearTimeout(poll); abort?.abort(); abort = new AbortController(); const current = abort, id = ++generation
-    const timeout = setTimeout(() => current.abort(), 20000)
-    loading = true
-    try {
-      const reply = await request({ action: 'host_alerts' }, current.signal)
-      if (!alive || id !== generation) return
-      const next = parseAlertStatus(reply.data)
-      if (!dirty || replace) populate(next)
-      if (dirty && JSON.stringify(next.settings) !== saved) stale = true
-      view = next; failure = ''
-    } catch (e) { if (alive && id === generation) { if (e instanceof ControllerError && e.status === 401) { expired(); return }; failure = a('loadFailed') } }
-    finally { clearTimeout(timeout); if (alive && id === generation) { loading = false; schedulePoll() } }
+    if (alive === false) return
+    clearTimeout(poll)
+    const loaded = await alertStatus.load(async signal => parseAlertStatus((await request({ action: 'host_alerts' }, signal)).data))
+    if (loaded && alertStatus.data !== null) { apply(alertStatus.data, replace); schedulePoll(); return }
+    // No error: a newer load replaced this one (and schedules the next poll) or the page closed.
+    if (alertStatus.error === null) return
+    if (sessionExpired(alertStatus.error)) expired()
+    else failure = a('loadFailed')
+    schedulePoll()
   }
   $effect(() => { const changed = revision; untrack(() => { void load() }); void changed })
-  onDestroy(() => { alive = false; generation++; clearTimeout(poll); abort?.abort(); webhookUrl = ''; heartbeatUrl = '' })
+  onDestroy(() => { alive = false; alertStatus.cancel(); clearTimeout(poll); webhookUrl = ''; heartbeatUrl = '' })
   async function submit(event: SubmitEvent) {
     event.preventDefault(); if (blocked || stale) return
     const dp = integer(diskPercent, 5, 50), dg = integer(diskGib, 1, 1024), cd = integer(certDays, 1, 60), bh = integer(backupHours, 1, 168), rh = integer(reminderHours, 1, 168)

@@ -40,7 +40,22 @@ export function message(code: string): string {
   const keys: Record<string, string> = { session_required: 'credentials', session_expired: 'credentials', invalid_credentials: 'credentials', reauthentication_failed: 'reauth', plan_changed: 'plan_changed', release_not_ready: 'release_not_ready' }
   return translate(i18n.locale, `updates.${keys[code] ?? 'blocked'}`)
 }
-export async function request(body?: object, signal?: AbortSignal): Promise<Record<string, unknown>> {
+/** Every controller call gives up after this long, even when the caller never aborts. */
+export const REQUEST_TIMEOUT_MS = 20000
+/** Fastest poll while work runs, and the backoff base and ceiling while unreachable. */
+export const ACTIVE_POLL_MS = 2000
+const MAX_RETRY_POLL_MS = 30000
+const MAX_RETRY_DOUBLINGS = 4
+/** Next poll: exponential backoff while offline, fast while work runs, else the idle interval. */
+export function pollDelay(state: { offline: boolean; attempts: number; active: boolean; idleMs: number }): number {
+  if (state.offline) return Math.min(MAX_RETRY_POLL_MS, ACTIVE_POLL_MS * 2 ** Math.min(state.attempts, MAX_RETRY_DOUBLINGS))
+  if (state.active) return ACTIVE_POLL_MS
+  return state.idleMs
+}
+export const sessionExpired = (error: unknown) => error instanceof ControllerError && error.status === 401
+export async function request(body?: object, caller?: AbortSignal): Promise<Record<string, unknown>> {
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+  const signal = caller === undefined ? timeout : AbortSignal.any([caller, timeout])
   const response = await fetch('/admin/api/updates', { method: body ? 'POST' : 'GET', credentials: 'same-origin', headers: body ? { 'Content-Type': 'application/json', 'X-Nelcota-Updates': '1' } : {}, body: body ? JSON.stringify(body) : undefined, signal })
   const status = response.ok ? 502 : response.status
   const code = response.ok ? 'invalid_response' : 'operation_blocked'

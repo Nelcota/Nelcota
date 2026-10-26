@@ -1,4 +1,5 @@
 import { dateText } from '$lib/formatting/date'
+import { numberFormat } from '$lib/formatting/intl'
 import { hasMessage, intlLocale, translate, i18n, t } from '$lib/i18n/index.svelte'
 import type { WebhookDelivery } from '$lib/contracts/types'
 
@@ -12,6 +13,6 @@ export const statusClass = (value: string) => value === 'succeeded' ? 'bg-succes
 /** Milliseconds below one second, seconds (one decimal at most) from there on: "250 ms", "10 s". */
 export function durationLabel(ms: number | null) {
   if (ms === null) return '—'
-  if (ms < 1000) return `${new Intl.NumberFormat(intlLocale()).format(ms)} ms`
-  return `${new Intl.NumberFormat(intlLocale(), { maximumFractionDigits: 1 }).format(ms / 1000)} s`
+  if (ms < 1000) return `${numberFormat(intlLocale()).format(ms)} ms`
+  return `${numberFormat(intlLocale(), { maximumFractionDigits: 1 }).format(ms / 1000)} s`
 }

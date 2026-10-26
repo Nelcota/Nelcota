@@ -3,7 +3,8 @@
   import { Button } from '$lib/components/ui/button'
   import { Input } from '$lib/components/ui/input'
   import { i18n, translate } from '$lib/i18n/index.svelte'
-  import { request, ControllerError } from '../updates/controller'
+  import { RemoteResource } from '$lib/resources/remote-resource.svelte'
+  import { request, sessionExpired } from '../updates/controller'
   import { parseConfiguration, integer, type Configuration, type ConfigurationView, type Section } from './contracts'
   import type { Operation } from '../host/controller'
   let { project, domain, backups = false, disabled, revision, prepare, action, expired, ondirty, navigate }: {
@@ -12,14 +13,14 @@
     expired: () => void; ondirty: (dirty: boolean) => void; navigate: (proceed: () => void) => void
   } = $props()
   type SettingsSection = Exclude<Section, 'alerts'>
-  let view = $state<ConfigurationView | null>(null), loading = $state(false), failure = $state(''), dirty = $state(false)
+  const configurationView = new RemoteResource<ConfigurationView>()
+  const view = $derived(configurationView.data), loading = $derived(configurationView.loading)
+  let failure = $state(''), dirty = $state(false)
   let section = $state<SettingsSection>('smtp'), enabled = $state(false)
   let smtpUrl = $state(''), from = $state(''), recovery = $state(''), confirmation = $state(''), magic = $state('')
   let clientId = $state(''), clientSecret = $state(''), redirects = $state('')
   let endpoint = $state(''), bucket = $state(''), region = $state('us-east-1'), accessKey = $state(''), secretKey = $state('')
   let hour = $state('3'), minute = $state('0'), keep = $state('7'), password = $state(''), repeat = $state('')
-  let alive = true, generation = 0
-  let abort: AbortController | undefined
   const s = (key: string) => translate(i18n.locale, `server.${key}`)
   const choices = $derived<SettingsSection[]>(backups ? ['backup', 'schedule'] : ['smtp', 'oauth_google', 'oauth_github', 'admin_password'])
   const blocked = $derived(disabled || loading || !view)
@@ -38,18 +39,19 @@
     mark(false)
   }
   async function load() {
-    abort?.abort(); abort = new AbortController()
-    const current = abort, id = ++generation, selected = project
-    const timer = setTimeout(() => current.abort(), 20000)
-    loading = true; failure = ''
-    try {
-      const reply = await request({ action: 'host_configuration', project: selected }, current.signal)
-      if (!alive || id !== generation) return
+    const selected = project
+    failure = ''
+    const loaded = await configurationView.load(async signal => {
+      const reply = await request({ action: 'host_configuration', project: selected }, signal)
       const next = parseConfiguration(reply.data)
       if (next.project !== selected) throw new Error('project mismatch')
-      view = next; populate()
-    } catch (e) { if (alive && id === generation) { if (e instanceof ControllerError && e.status === 401) { expired(); return }; failure = s('error') } }
-    finally { clearTimeout(timer); if (alive && id === generation) loading = false }
+      return next
+    })
+    if (loaded) { populate(); return }
+    // No error: a newer load replaced this one, or the page closed.
+    if (configurationView.error === null) return
+    if (sessionExpired(configurationView.error)) { expired(); return }
+    failure = s('error')
   }
   $effect(() => {
     const selected = project, mode = backups, changed = revision
@@ -58,7 +60,7 @@
     })
     void changed
   })
-  onDestroy(() => { alive = false; generation++; abort?.abort(); clearSecrets() })
+  onDestroy(() => { configurationView.cancel(); clearSecrets() })
   async function submit(event: SubmitEvent) {
     event.preventDefault()
     if (blocked || !valid) return

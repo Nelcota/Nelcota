@@ -24,7 +24,7 @@
   let view = $state<'projects' | 'updates'>('projects')
   let hostConsole = $state<HostConsole>()
   import { t, translate, i18n, setLocale } from '$lib/i18n/index.svelte'
-  import { ControllerError, request, parseStatus, parsePlan, parseJob, mergeStatus, newKey, message, terminal, type Status, type Plan, type Job } from './controller'
+  import { ControllerError, request, pollDelay, parseStatus, parsePlan, parseJob, mergeStatus, newKey, message, terminal, type Status, type Plan, type Job } from './controller'
   let status = $state<Status | null>(null)
   let signedOut = $state(false)
   let email = $state('')
@@ -42,19 +42,19 @@
   let polling: number | null = null
   let timer: ReturnType<typeof setTimeout> | undefined
   let attempts = 0
+  const IDLE_POLL_MS = 10000
   const requests = new Set<AbortController>()
   const active = $derived((status?.host_busy || status?.jobs.some(job => !terminal(job.phase))) ?? false)
   const selected = $derived(status?.projects.find(item => item.name === project))
   function clearApproval() { plan = null; recover = null; approval = ''; key = '' }
   async function call(body?: object) {
     const abort = new AbortController(); requests.add(abort)
-    const timeout = setTimeout(() => abort.abort(), 20000)
-    try { return await request(body, abort.signal) } finally { clearTimeout(timeout); requests.delete(abort) }
+    try { return await request(body, abort.signal) } finally { requests.delete(abort) }
   }
   function schedule() {
     clearTimeout(timer)
     if (!alive || signedOut) return
-    const delay = offline ? Math.min(30000, 2000 * 2 ** Math.min(attempts, 4)) : active || status?.checking ? 2000 : 10000
+    const delay = pollDelay({ offline, attempts, active: active || (status?.checking ?? false), idleMs: IDLE_POLL_MS })
     timer = setTimeout(() => void refresh(), delay)
   }
   async function refresh() {
