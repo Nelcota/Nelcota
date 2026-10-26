@@ -17,7 +17,7 @@ storage redirects. All jobs must pass on the released commit.
 
 Local commands are listed in the README. Keep Rust tests, Vitest and dependency
 audits sequential. Use only disposable fixtures. The auth fixture is started
-with `node sdk/typescript/scripts/contract.mjs --nextjs test/contract/auth.test.ts`
+with `bun sdk/typescript/scripts/contract.ts --nextjs test/contract/auth.test.ts`
 after building the base SDK, Next package and server binary. Its Next consumer
 uses actual recovery/magic-link emails and refresh rotations. The production
 Next callback also runs against a local auth transport fixture. The explicitly

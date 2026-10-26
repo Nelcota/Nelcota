@@ -1,7 +1,7 @@
 // The built package in a real Chromium, on another origin than the API, so
 // CORS is exercised for real: preflights with Prefer, the exposed
 // Content-Range, uploads, the session in localStorage, address-bar cleanup
-// and the service_role refusal. Run by scripts/contract.mjs --browser.
+// and the service_role refusal. Run by scripts/contract.ts --browser.
 //
 //   node test/browser/smoke.mjs <api url> <service_role token>
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 // Size budget per entry point: the gzip size of every module an import pulls
 // in (its static import closure), compiled without comments and before any
 // minifier, which shrinks it further. The budget also keeps the dependency
@@ -21,7 +21,7 @@ const tsc = spawnSync(
 if (tsc.status !== 0) process.exit(tsc.status ?? 1);
 process.on('exit', () => rmSync(dist, { recursive: true, force: true }));
 
-const BUDGETS = {
+const BUDGETS: Record<string, number> = {
   // Includes shared cancellation, explicit row/bucket contract validation and
   // the optional Postgres error fields, pages() and throwOnError()/unwrap().
   // Bounded streaming error reads add about 200 B gzip to the HTTP closure.
@@ -47,13 +47,15 @@ const BUDGETS = {
   'storage/index.js': 8_000,
 };
 
-function closure(entry, seen = new Set()) {
+function closure(entry: string, seen = new Set<string>()): Set<string> {
   if (seen.has(entry)) return seen;
   seen.add(entry);
   const code = readFileSync(entry, 'utf8');
   // Runtime imports only: `import type` is erased by tsc.
   for (const match of code.matchAll(/(?:^|\n)\s*(?:import|export)\s[^'"]*?from\s+['"](\.[^'"]+)['"]/g)) {
-    closure(resolve(dirname(entry), match[1]), seen);
+    const specifier = match[1];
+    if (specifier === undefined) throw new Error(`Import without a specifier in ${entry}`);
+    closure(resolve(dirname(entry), specifier), seen);
   }
   return seen;
 }

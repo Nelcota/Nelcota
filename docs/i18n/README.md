@@ -19,9 +19,9 @@ link destinations intact; sentence order and link labels may change.
 links. Both `bun run check` and `bun run build` include this check, including CI.
 Unit tests also compare all code examples, destinations and heading IDs.
 
-For a new catalog, `node scripts/guides-i18n.mjs --extract <id>` lists all
+For a new catalog, `bun scripts/guides-i18n.ts --extract <id>` lists all
 fragments. Create a JSON array of translations in that order, then run
-`node scripts/guides-i18n.mjs --import <id> /path/to/translations.json` to validate
+`bun scripts/guides-i18n.ts --import <id> /path/to/translations.json` to validate
 and save the catalog.
 
 `pt-BR/openapi.json` tracks the standard prose emitted by

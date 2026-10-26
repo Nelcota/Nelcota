@@ -6,7 +6,7 @@ export const URL_ = process.env['NELCOTA_SDK_TEST_URL'] ?? '';
 export const MAIL = process.env['NELCOTA_SDK_TEST_MAIL'] ?? '';
 const SECRET = process.env['NELCOTA_SDK_TEST_JWT_SECRET'] ?? '';
 
-/** Contract tests only run under scripts/contract.mjs. */
+/** Contract tests only run under scripts/contract.ts. */
 export const skip = URL_ === '';
 
 export type Client = NelcotaClient<Database>;

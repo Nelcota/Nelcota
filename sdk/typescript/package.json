@@ -57,18 +57,18 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "build": "bun scripts/clean.mjs && tsc -p tsconfig.build.json",
-    "check": "tsc -p tsconfig.json",
+    "build": "bun scripts/clean.ts && tsc -p tsconfig.build.json",
+    "check": "tsc -p tsconfig.json && tsc -p tsconfig.scripts.json",
     "test": "bun --bun vitest run --project unit",
     "test:node": "vitest run --project unit",
     "test:types": "bun --bun vitest run --project types",
-    "test:contract": "bun scripts/contract.mjs",
+    "test:contract": "bun scripts/contract.ts",
     "test:package": "node scripts/package-test.mjs",
     "test:runtime": "bun test/runtime/smoke.mjs",
     "test:runtime:node": "node test/runtime/smoke.mjs",
     "test:memory": "node --expose-gc test/runtime/memory.mjs",
-    "example:browser": "bun scripts/example-server.mjs",
-    "size": "bun scripts/size.mjs",
+    "example:browser": "bun scripts/example-server.ts",
+    "size": "bun scripts/size.ts",
     "prepack": "bun run build",
     "prepublishOnly": "bun run check && bun run test && bun run test:types && bun run build && bun run size && npm run test:package"
   },

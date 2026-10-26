@@ -14,8 +14,8 @@ for (const [id, source] of Object.entries(documents)) {
   if (selected && selected !== id) continue
   const markdown = await readFile(new URL(source, root), 'utf8')
   const path = new URL(`${id}.json`, catalogRoot)
-  let catalog = {}
-  try { catalog = JSON.parse(await readFile(path, 'utf8')) } catch (error) { if (error.code !== 'ENOENT') throw error }
+  let catalog: Record<string, string> = {}
+  try { catalog = JSON.parse(await readFile(path, 'utf8')) } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error }
   const fragments = proseFragments(markdown)
   if (mode === '--extract') {
     console.log(JSON.stringify({ id, source, fragments }, null, 2))
