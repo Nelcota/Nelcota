@@ -150,7 +150,7 @@ archive as described in the SDK README:
 
 ```sh
 npm init -y
-npm install @nelcota/client@0.2.3
+npm install @nelcota/client@0.2.4
 cat > client.mjs <<'JS'
 import { createClient, unwrap } from '@nelcota/client';
 const client = createClient('http://127.0.0.1:8000');

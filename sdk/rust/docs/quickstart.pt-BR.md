@@ -1,6 +1,6 @@
 # Começando com Rust
 
-Este guia descreve o SDK **0.1.6**, com as correções publicadas desde a 0.1.3.
+Este guia descreve o SDK **0.1.7**, com as correções publicadas desde a 0.1.3.
 Elas recusam `single`/`maybe_single` em HEAD ou escritas sem representação
 antes de enviar HTTP: use `.select(...)` para receber a linha de uma escrita.
 O cancelamento também retira requisições de auth da fila de ciclo de vida;
@@ -8,15 +8,15 @@ uma rotação aceita continua responsável por persistir sua sessão.
 Essas correções exigem atualizar o pacote do cliente.
 
 O SDK publicado exige Rust 1.88+ e Tokio nativo. Adicione
-`nelcota-client = "0.1.6"` ao Cargo.toml junto com serde, serde_json e Tokio,
-como mostra o [README](../README.md). Os [comprovantes de publicação](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294)
-verificam esta versão no Rust 1.88/1.99. Veja as [notas de atualização](contract.md#upgrading-from-015).
+`nelcota-client = "0.1.7"` ao Cargo.toml junto com serde, serde_json e Tokio,
+como mostra o [README](../README.md). A instalação pelo crates.io depende de o
+workflow de release da tag publicar a 0.1.7. Veja as [notas de atualização](contract.md#upgrading-from-016).
 O checkout do servidor usa Rust 1.99; a versão dele é independente da do SDK.
 
 ## Atualizar do 0.1.3
 
-Altere a dependência para `nelcota-client = "0.1.6"` e rode
-`cargo update -p nelcota-client --precise 0.1.6`. Confira a versão com
+Altere a dependência para `nelcota-client = "0.1.7"` e rode
+`cargo update -p nelcota-client --precise 0.1.7`. Confira a versão com
 `cargo tree -p nelcota-client`, versione Cargo.toml/Cargo.lock e execute o build
 e os testes do aplicativo. Rust 1.88+, Tokio, servidor 0.3.0+ e imports públicos
 permanecem compatíveis.

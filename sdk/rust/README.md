@@ -5,7 +5,7 @@ and file storage under PostgreSQL RLS. For native applications using Tokio.
 
 ```toml
 [dependencies]
-nelcota-client = "0.1.6"
+nelcota-client = "0.1.7"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
@@ -37,14 +37,14 @@ for note in response.data { println!("{}: {}", note.id, note.body); }
 
 ## Version scope
 
-This guide targets 0.1.6. Version 0.1.5 is the previous published baseline.
-The patch preserves HTTP status and Retry-After after an interrupted error body,
-without replaying definite rejections. Deadlines and cancellation remain effective.
+This guide targets 0.1.7. Version 0.1.6 is the previous published baseline.
+The patch runs the shared session refresh under the client's timeout rather than
+the first caller's, rotates a due session after a concurrent user update, and
+retries background refresh inside the server's 10-second reuse window.
 It preserves public imports, Rust 1.88+, native Tokio and the server protocol.
-See the [changelog](CHANGELOG.md) and [upgrade notes](docs/contract.md#upgrading-from-015).
-Version 0.1.6 is available on crates.io; [registry receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294)
-record its checksum and Rust 1.88/1.99 consumers. A server upgrade does not
-update installed clients.
+See the [changelog](CHANGELOG.md) and [upgrade notes](docs/contract.md#upgrading-from-016).
+Registry installation requires the tagged release workflow to publish 0.1.7.
+A server upgrade does not update installed clients.
 
 ## REST
 

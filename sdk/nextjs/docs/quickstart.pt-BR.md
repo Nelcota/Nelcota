@@ -1,12 +1,13 @@
-# Next.js 0.1.1
+# Next.js 0.1.2
 
-This guide uses published `@nelcota/nextjs` 0.1.1 and `@nelcota/client` 0.2.3.
+This guide uses `@nelcota/nextjs` 0.1.2 and `@nelcota/client` 0.2.4, once the
+tagged release workflows publish them.
 The minimum base peer remains 0.2.2. See the [English guide](../README.md),
 [runnable example](https://github.com/Nelcota/Nelcota/blob/main/sdk/nextjs/examples/app-router/README.md) and
 [publication evidence](https://github.com/Nelcota/Nelcota/issues/151).
 
 ```sh
-npm install --save-exact @nelcota/nextjs@0.1.1 @nelcota/client@0.2.3
+npm install --save-exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.4
 npm install pg
 ```
 
