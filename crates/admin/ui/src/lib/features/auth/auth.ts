@@ -8,7 +8,9 @@ export async function logout() {
   // Even if the request fails, the panel returns to the login screen.
   const pending = api.post('/logout'), started = querySession()
   await pending.catch(() => {})
-  if (started !== querySession()) return
+  // A newer sign-in keeps its session. A read that got 401 while logging out
+  // also moves the epoch, but must not leave "your session expired" behind.
+  if (started !== querySession() && session.email) return
   session.email = null
   session.expired = false
   profile.avatar = null

@@ -59,6 +59,8 @@ export function navigate(to: string, replace = false) {
   })
 }
 
+const withoutHash = (url: string) => url.split('#', 1)[0]
+
 function sync() {
   // Returning to the same URL creates a new navigation context as well.
   route.revision++
@@ -93,6 +95,13 @@ addEventListener('popstate', () => {
   approvedPop = null
   if (![...guards].some(guard => guard.blocked())) {
     index = targetIndex ?? index
+    // An in-page `#fragment` link (or going back from one) only scrolls: the
+    // route is the same, so pages must not reload or scroll back to a section.
+    if (withoutHash(location.href) === withoutHash(savedUrl)) {
+      savedUrl = location.href
+      savedState = history.state
+      return
+    }
     sync()
     return
   }

@@ -41,6 +41,8 @@ describe('why a request was refused', () => {
     expect(blockTarget('/rest/v1/todos')).toEqual({ kind: 'table', name: 'todos' })
     expect(blockTarget('/rest/v1/rpc/cart_total')).toEqual({ kind: 'function', name: 'cart_total' })
     expect(blockTarget('/rest/v1/order%20items')).toEqual({ kind: 'table', name: 'order items' })
+    // Paths come from unauthenticated callers: a bad escape is kept as sent.
+    expect(blockTarget('/rest/v1/%ZZ')).toEqual({ kind: 'table', name: '%ZZ' })
     expect(blockTarget('/storage/v1/object/avatars/u1/me.png')).toEqual({ kind: 'bucket', name: 'avatars' })
     expect(blockTarget('/storage/v1/object/sign/docs/a.pdf')).toEqual({ kind: 'bucket', name: 'docs' })
     expect(blockTarget('/auth/v1/user')).toBeNull()
