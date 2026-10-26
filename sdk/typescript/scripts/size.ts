@@ -52,9 +52,7 @@ function closure(entry: string, seen = new Set<string>()): Set<string> {
   seen.add(entry);
   const code = readFileSync(entry, 'utf8');
   // Runtime imports only: `import type` is erased by tsc.
-  for (const match of code.matchAll(/(?:^|\n)\s*(?:import|export)\s[^'"]*?from\s+['"](\.[^'"]+)['"]/g)) {
-    const specifier = match[1];
-    if (specifier === undefined) throw new Error(`Import without a specifier in ${entry}`);
+  for (const [, specifier = ''] of code.matchAll(/(?:^|\n)\s*(?:import|export)\s[^'"]*?from\s+['"](\.[^'"]+)['"]/g)) {
     closure(resolve(dirname(entry), specifier), seen);
   }
   return seen;

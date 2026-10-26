@@ -58,7 +58,8 @@ absent from the final source. The maintainer explicitly selected:
 
 > Manter todas as proteções e ampliar os tetos em até 300 B gzip (recomendado)
 
-Only the budget constants and their explanation changed in `scripts/size.mjs`.
+Only the budget constants and their explanation changed in `scripts/size.mjs`
+(now `scripts/size.ts`).
 The static import-closure calculation, compiler settings and gzip level are
 unchanged. The baseline was rebuilt separately from the recorded commit with
 the same installed toolchain.

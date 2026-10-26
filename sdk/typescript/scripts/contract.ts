@@ -108,12 +108,13 @@ try {
   // Use the unchanged server entrypoint with a test-only native trust loader.
   // The release binary's Mozilla roots cannot trust a disposable local CA.
   // Building an example keeps the supplied CLI binary untouched.
-  const build = run('cargo', [
+  const build = spawnSync('cargo', [
     'build', '--locked', '-p', 'nelcota-auth', '-p', 'nelcota-server',
     '--example', 'sdk-contract-server', '--features', 'lettre/rustls-native-certs',
     '--message-format=json',
   ], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
-  const executable = build.stdout.toString().split('\n').filter((line) => line.trim() !== '')
+  if (build.status !== 0) throw new Error(`cargo build of sdk-contract-server exited with ${build.status}`);
+  const executable = build.stdout.split('\n').filter((line) => line.trim() !== '')
     .map(contractServerExecutable)
     .find((path) => path !== undefined);
   if (executable === undefined) throw new Error('Missing SDK contract server build artifact');
