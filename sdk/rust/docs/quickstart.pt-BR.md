@@ -9,8 +9,8 @@ Essas correções exigem atualizar o pacote do cliente.
 
 O SDK publicado exige Rust 1.88+ e Tokio nativo. Adicione
 `nelcota-client = "0.1.7"` ao Cargo.toml junto com serde, serde_json e Tokio,
-como mostra o [README](../README.md). A instalação pelo crates.io depende de o
-workflow de release da tag publicar a 0.1.7. Veja as [notas de atualização](contract.md#upgrading-from-016).
+como mostra o [README](../README.md). A 0.1.7 está publicada no crates.io; veja os
+[comprovantes de publicação](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169). Veja as [notas de atualização](contract.md#upgrading-from-016).
 O checkout do servidor usa Rust 1.99; a versão dele é independente da do SDK.
 
 ## Atualizar do 0.1.3

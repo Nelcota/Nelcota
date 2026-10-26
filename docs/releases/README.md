@@ -19,8 +19,9 @@ TypeScript and Rust retry an uncertain background refresh inside the server's
 10-second reuse window; TypeScript also rejects invalid `Date`/`bigint` JSON
 bodies, and Rust runs the shared refresh under the client's timeout. Next.js 0.1.2
 stops its proxy from clearing a row-less cookie that a sign-in may have replaced.
-Registry availability requires the tagged release workflows to finish. Previous
-published baselines are TypeScript 0.2.3, Rust 0.1.6 and Next.js 0.1.1, with
+[Registry receipts](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169) record the tagged workflows,
+integrity and fresh consumers. Previous published baselines are TypeScript 0.2.3,
+Rust 0.1.6 and Next.js 0.1.1, with their
 [publication receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294).
 
 Next.js **0.1.1** fixed PostgreSQL connection-pool starvation

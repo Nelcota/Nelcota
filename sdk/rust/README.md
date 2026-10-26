@@ -43,8 +43,9 @@ the first caller's, rotates a due session after a concurrent user update, and
 retries background refresh inside the server's 10-second reuse window.
 It preserves public imports, Rust 1.88+, native Tokio and the server protocol.
 See the [changelog](CHANGELOG.md) and [upgrade notes](docs/contract.md#upgrading-from-016).
-Registry installation requires the tagged release workflow to publish 0.1.7.
-A server upgrade does not update installed clients.
+Version 0.1.7 is available on crates.io; [registry receipts](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169)
+record its checksum and a fresh consumer. A server upgrade does not
+update installed clients.
 
 ## REST
 

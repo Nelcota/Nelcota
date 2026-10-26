@@ -51,7 +51,8 @@ refresh-token reuse window, rejects invalid `Date` and `bigint` JSON bodies, and
 keeps query strings on engines without `URLSearchParams.size`.
 Earlier session, refresh, query and transport corrections remain included; see
 the [changelog](CHANGELOG.md) and [upgrade notes](docs/contract.md#upgrading-from-020).
-Registry installation requires the tagged release workflow to publish 0.2.4. Updating the server does not update installed clients. Node is SDK tooling/runtime, not a backend requirement.
+Version 0.2.4 is available on npm; [registry receipts](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169)
+record integrity and consumer checks. Updating the server does not update installed clients. Node is SDK tooling/runtime, not a backend requirement.
 
 ## Independent modules
 
@@ -491,7 +492,7 @@ const nelcota = createClient<Database>(url, { accessToken: () => session?.access
 The repository's [Next.js integration](https://github.com/Nelcota/Nelcota/blob/main/sdk/nextjs/README.md)
 follows this design: read-only Server Components, a refresh route and a shared
 PostgreSQL session store with per-session locks. It is published as
-`@nelcota/nextjs` 0.1.1, and its README documents each trade-off.
+`@nelcota/nextjs` 0.1.2, and its README documents each trade-off.
 
 `autoRefresh: false` (already the default outside browsers) keeps background
 timers out of a request-scoped client. A client with session storage still

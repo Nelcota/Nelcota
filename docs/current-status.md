@@ -1,9 +1,9 @@
 # Current implementation and release status
 
-Documentation checkpoint: **2026-10-25**, server 0.5.4 scope after the dependency
-refresh (#170) and the file-preservation/session-rotation fix (#171). SDK publication statements retain the
-October 24 receipts; this page does not claim another registry or production
-validation run. Verify server artifact availability and signed readiness on the
+Documentation checkpoint: **2026-10-26**, server 0.5.4 scope after the dependency
+refresh (#170) and the file-preservation/session-rotation fix (#171). SDK publication statements use the
+[October 26 receipts](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169); this page does not
+claim another production validation run. Verify server artifact availability and signed readiness on the
 [release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.4).
 
 ## Server and installation
@@ -36,9 +36,9 @@ The current published packages and fresh registry consumers are recorded in the
 
 | SDK | Version | Delivery |
 | --- | --- | --- |
-| TypeScript | 0.2.3 | npm `@nelcota/client`; independent server PKCE queues and earlier session/query fixes |
-| Rust | 0.1.6 | crates.io `nelcota-client`; interrupted error bodies preserve HTTP status and Retry-After |
-| Next.js | 0.1.1 | npm `@nelcota/nextjs`; connection reuse and fair PostgreSQL session-lock queueing |
+| TypeScript | 0.2.4 | npm `@nelcota/client`; refresh retry inside the server reuse window, Date/bigint JSON guards |
+| Rust | 0.1.7 | crates.io `nelcota-client`; shared refresh under the client timeout, due-session rotation |
+| Next.js | 0.1.2 | npm `@nelcota/nextjs`; proxy keeps row-less cookies a sign-in may have replaced |
 
 Install commands and upgrade considerations are in [versions and upgrades](releases/README.md).
 The [SDK overview](../sdk/README.md) links runtime requirements and source owners.

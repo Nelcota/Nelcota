@@ -2,7 +2,7 @@
 
 The package has independent semver and requires the published
 `@nelcota/client` 0.2.2 or later. Verify the registry prerequisite with
-`npm view @nelcota/client@0.2.3 version`; 0.2.3 is the current published base
+`npm view @nelcota/client@0.2.4 version`; 0.2.4 is the current published base
 used by the examples. The minimum peer remains 0.2.2.
 
 ## Verification
