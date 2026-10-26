@@ -180,15 +180,32 @@ fn configure_firewall(enable: bool) -> anyhow::Result<()> {
         return Ok(());
     }
     require_ufw()?;
-    let rules: [&[&str]; 4] = [
-        &["allow", "OpenSSH"],
-        &["allow", "80/tcp"],
-        &["allow", "443"],
-        &["--force", "enable"],
-    ];
+    // The OpenSSH rule only covers port 22. `sudo` usually drops
+    // SSH_CONNECTION, so also ask sshd which ports it listens on.
+    let sshd = Command::new("sshd")
+        .arg("-T")
+        .output()
+        .ok()
+        .filter(|output| output.status.success())
+        .map(|output| String::from_utf8_lossy(&output.stdout).into_owned())
+        .unwrap_or_default();
+    let session = std::env::var("SSH_CONNECTION").unwrap_or_default();
+    let ports = extra_ssh_ports(&sshd, &session);
+    if sshd.is_empty() && session.is_empty() {
+        warn("could not detect the SSH port; only port 22 is allowed for SSH");
+    }
+    let mut rules: Vec<Vec<String>> = [["allow", "OpenSSH"], ["allow", "80/tcp"], ["allow", "443"]]
+        .map(|rule| rule.map(str::to_owned).to_vec())
+        .to_vec();
+    rules.extend(
+        ports
+            .iter()
+            .map(|port| vec!["allow".to_owned(), format!("{port}/tcp")]),
+    );
+    rules.push(vec!["--force".to_owned(), "enable".to_owned()]);
     for rule in rules {
         let status = Command::new("ufw")
-            .args(rule)
+            .args(&rule)
             .status()
             .context("could not configure ufw; inspect ufw status before retrying init")?;
         if !status.success() {
@@ -202,9 +219,36 @@ fn configure_firewall(enable: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// SSH ports other than 22 from `sshd -T` output and the session's
+/// `SSH_CONNECTION` (`client_ip client_port server_ip server_port`).
+fn extra_ssh_ports(sshd: &str, session: &str) -> Vec<u16> {
+    let configured = sshd.lines().filter_map(|line| line.strip_prefix("port "));
+    let current = session.split_whitespace().nth(3);
+    let mut ports: Vec<u16> = configured
+        .chain(current)
+        .filter_map(|port| port.trim().parse().ok())
+        .filter(|port| *port != 22)
+        .collect();
+    ports.sort_unstable();
+    ports.dedup();
+    ports
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn firewall_keeps_configured_and_session_ssh_ports_open() {
+        let sshd = "port 22\nport 2200\npermitrootlogin no\n";
+        assert_eq!(
+            extra_ssh_ports(sshd, "203.0.113.9 51000 198.51.100.4 2222"),
+            [2200, 2222]
+        );
+        assert_eq!(extra_ssh_ports("port 22\n", ""), Vec::<u16>::new());
+        assert_eq!(extra_ssh_ports("port 2200\n", "1 2 3 2200"), [2200]);
+        assert_eq!(extra_ssh_ports("port x\n", "garbage"), Vec::<u16>::new());
+    }
 
     #[test]
     fn cron_quotes_paths_and_lets_backup_decide_the_upload() {

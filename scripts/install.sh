@@ -91,12 +91,6 @@ install_prerequisites() {
   else
     say "Unknown package manager: install curl, sha256sum and an active cron scheduler yourself"
   fi
-  # ufw's OpenSSH rule only covers port 22; keep the port of this session open.
-  ssh_port=$(printf '%s\n' "${SSH_CONNECTION:-}" | awk '{print $4}')
-  if [ "$FIREWALL" -eq 1 ] && [ -n "$ssh_port" ] && [ "$ssh_port" != 22 ]; then
-    say "Allowing SSH port $ssh_port in ufw"
-    ufw allow "$ssh_port/tcp"
-  fi
 }
 
 [ "$SETUP" -eq 1 ] && install_prerequisites

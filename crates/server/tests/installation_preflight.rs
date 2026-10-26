@@ -27,6 +27,8 @@ impl Installation {
             esac",
         );
         fixture.tool("ufw", "test \"$FIXTURE_UFW\" = 1");
+        // A non-default SSH port that `sudo` hid from SSH_CONNECTION.
+        fixture.tool("sshd", "printf 'port 22\\nport 2200\\n'");
         fixture
     }
 
@@ -46,6 +48,7 @@ impl Installation {
             .env("FIXTURE_CRON_ACTIVE", "1")
             .env("FIXTURE_CRON_ENABLED", "enabled")
             .env("FIXTURE_UFW", "1")
+            .env_remove("SSH_CONNECTION")
             .env("FIXTURE_COMMAND_LOG", self.root.join("commands.log"))
             .arg("-C")
             .arg(self.root.join("host"));
@@ -142,6 +145,7 @@ fn failed_firewall_rule_aborts_before_host_credentials_are_written() {
         "allow OpenSSH",
         "allow 80/tcp",
         "allow 443",
+        "allow 2200/tcp",
         "--force enable",
     ] {
         let fixture = Installation::new();

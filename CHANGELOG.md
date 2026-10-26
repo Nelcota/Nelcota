@@ -15,6 +15,10 @@ for the October 25 server scope and independent SDK publication checkpoint.
 - Check that the caller's session is still active before verifying
   `current_password` on `PUT /auth/v1/user`, so a logged-out access token can no
   longer test passwords until it expires.
+- Keep custom SSH ports open with `init --firewall`: allow every port reported by
+  `sshd -T` and the session's port, since `sudo` usually drops `SSH_CONNECTION`
+  and the `OpenSSH` rule only covers port 22. The installer no longer duplicates
+  this rule.
 
 ## [0.5.4] — 2026-10-25
 
