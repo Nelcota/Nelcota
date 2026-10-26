@@ -1,0 +1,23 @@
+{
+  "name": "nelcota-sveltekit-example",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#lib/*": "./src/lib/*"
+  },
+  "scripts": {
+    "build": "vite build",
+    "start": "node build"
+  },
+  "dependencies": {
+    "@nelcota/client": "file:../../../typescript",
+    "@nelcota/ssr": "file:../.."
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-node": "6.0.0",
+    "@sveltejs/kit": "3.1.0",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "svelte": "5.57.2",
+    "vite": "8.3.5"
+  }
+}

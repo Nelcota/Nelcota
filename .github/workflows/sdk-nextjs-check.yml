@@ -171,3 +171,71 @@ jobs:
       - name: Remove disposable services
         if: always()
         run: docker rm -f nelcota-test-postgres nelcota-next-s3 || true
+
+  # The SvelteKit adapter in a production adapter-node build of examples/sveltekit.
+  sveltekit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    env:
+      NELCOTA_SSR_BROWSER: ${{ matrix.browser }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            sdk/typescript/package-lock.json
+            sdk/ssr/package-lock.json
+            sdk/ssr/examples/sveltekit/package-lock.json
+      - name: Build base SDK
+        run: npm --prefix sdk/typescript ci && npm --prefix sdk/typescript run build
+      - run: npm ci && npm run build
+        working-directory: sdk/ssr
+      - run: npm ci && npm audit --audit-level=high
+        working-directory: sdk/ssr/examples/sveltekit
+      # The apt mirror can be slow enough to time the job out, so the .deb
+      # files fetched by --with-deps are cached next to the browsers. An install
+      # that runs out of time still saves what it downloaded (as a partial
+      # entry), so the next attempt resumes instead of starting over.
+      - name: Restore Playwright browsers and system packages
+        id: playwright-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/.cache/playwright-apt
+          key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/package-lock.json') }}-
+      - name: Install browser
+        id: playwright-install
+        timeout-minutes: 12
+        run: |
+          mkdir -p ~/.cache/playwright-apt
+          sudo find ~/.cache/playwright-apt -name '*.deb' -exec cp -t /var/cache/apt/archives {} +
+          # The runner's default mirror (azure.archive.ubuntu.com) can crawl at
+          # ~100 kB/s, and apt only falls back to the next mirror on errors, not
+          # on slowness, so the main Ubuntu archive goes first here.
+          sudo sed -i 's#http://azure\.archive\.ubuntu\.com/ubuntu/#http://archive.ubuntu.com/ubuntu/#' /etc/apt/apt-mirrors.txt
+          cat /etc/apt/apt-mirrors.txt
+          node sdk/typescript/node_modules/playwright-core/cli.js install --with-deps "${NELCOTA_SSR_BROWSER}"
+      - name: Collect downloaded system packages
+        if: always() && steps.playwright-install.outcome != 'skipped' && steps.playwright-cache.outputs.cache-hit != 'true'
+        run: find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -exec cp -t ~/.cache/playwright-apt {} +
+      - name: Save Playwright browsers and system packages
+        if: always() && steps.playwright-install.outcome != 'skipped' && steps.playwright-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/.cache/playwright-apt
+          key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/package-lock.json') }}${{ steps.playwright-install.outcome != 'success' && format('-partial-{0}-{1}', github.run_id, github.run_attempt) || '' }}
+      - name: SvelteKit sign-in, protected routes and sign-out
+        working-directory: sdk/ssr
+        run: node scripts/sveltekit-smoke.mjs

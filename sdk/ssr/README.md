@@ -10,6 +10,7 @@ Use a framework adapter when one exists:
 | Framework | Package |
 | --- | --- |
 | Next.js App Router | [`@nelcota/nextjs`](../nextjs/README.md), built on this package |
+| SvelteKit 3 | `@nelcota/ssr/sveltekit` (below) |
 
 Other frameworks call the core directly, as described below.
 
@@ -65,6 +66,51 @@ export const sessions = await Integration.create<Database>({
 
 `@nelcota/ssr/testing` provides `DevelopmentSessionStore`, an in-memory store
 that only loads with `allowInsecureDevelopment` and a loopback `appOrigin`.
+
+## SvelteKit
+
+`createNelcotaSvelteKit(options)` returns per-request helpers and a `handle`
+for `hooks.server.ts`. A [runnable example](examples/sveltekit) signs in through
+a form action, protects a page and signs out; CI runs it in a production
+`adapter-node` build with Chromium, Firefox and WebKit.
+
+```js
+// src/lib/server/nelcota.js: one integration per process, created on first use
+// (SvelteKit imports server modules while building, without the runtime env).
+import { createNelcotaSvelteKit } from '@nelcota/ssr/sveltekit';
+let integration;
+export const nelcota = () => (integration ??= createNelcotaSvelteKit(options));
+
+// src/hooks.server.js
+let guard;
+export async function handle(input) {
+  guard ??= (await nelcota()).handle({ protectedPaths: ['/dashboard'] });
+  return guard(input);
+}
+
+// src/routes/dashboard/+page.server.js: rendering never refreshes the session
+export const load = async event => (await nelcota()).server(event, async ({ getUser }) =>
+  ({ email: (await getUser()).data?.email ?? null }));
+
+// src/routes/login/+page.server.js: form actions are same-origin POSTs
+import { fail, redirect } from '@sveltejs/kit';
+import { safeReturnTo } from '@nelcota/ssr';
+export const actions = {
+  default: async event => {
+    const form = await event.request.formData();
+    const result = await (await nelcota()).action(event, ({ auth }) =>
+      auth.signInWithPassword({ email: String(form.get('email')), password: String(form.get('password')) }));
+    if (result.error) return fail(400, { error: 'Invalid email or password' });
+    redirect(303, safeReturnTo(event.url.searchParams.get('next') ?? '/'));
+  },
+};
+```
+
+`route(event, work)` serves `+server.ts` endpoints and `callback(event, work)` the
+OAuth callback. Routing policies are written without `paths.base`, which the
+adapter strips. Set `paths.origin` in the SvelteKit configuration when the
+server cannot derive its public origin (SvelteKit 3 uses it for CSRF checks),
+and read secrets from `process.env` at runtime (the example does).
 
 ## Using the core from a framework
 

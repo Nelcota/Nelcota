@@ -12,8 +12,11 @@ const origin = 'http://localhost:3000';
 class Cookies {
   readonly values = new Map<string, string>();
   readonly writes: { name: string; value: string; maxAge: number }[] = [];
+  /** Like SvelteKit, refuse writes once the response has been generated. */
+  resolved = false;
   get(name: string): string | undefined { return this.values.get(name); }
   set(name: string, value: string, options: { maxAge: number }): void {
+    if (this.resolved) throw new Error('Cannot use cookies.set after the response has been generated');
     this.writes.push({ name, value, maxAge: options.maxAge });
     if (options.maxAge === 0) this.values.delete(name); else this.values.set(name, value);
   }
@@ -72,6 +75,8 @@ describe('SvelteKit adapter', () => {
     const allowed = await handle({ event: event(cookies, '/dashboard'), resolve });
     expect(await allowed.text()).toBe('page');
     expect(allowed.headers.get('vary')).toContain('Cookie');
+    // A native form POST from this page must carry its real Origin (no-referrer sends null).
+    expect(allowed.headers.get('referrer-policy')).toBe('same-origin');
   });
 
   it('applies routing policies without the app base path', async () => {
@@ -86,7 +91,7 @@ describe('SvelteKit adapter', () => {
   it('gives a cookie-less visitor of the login page a bootstrap ID', async () => {
     const { nelcota, cookies } = await setup();
     const handle = nelcota.handle({ protectedPaths: ['/dashboard'] });
-    const response = await handle({ event: event(cookies, '/login'), resolve: async () => new Response('login') });
+    const response = await handle({ event: event(cookies, '/login'), resolve: async () => { cookies.resolved = true; return new Response('login'); } });
     expect(cookies.values.size).toBe(1);
     expect(response.headers.get('cache-control')).toBe('private, no-store, max-age=0');
   });

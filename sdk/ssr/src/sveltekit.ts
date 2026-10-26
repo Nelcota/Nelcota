@@ -42,6 +42,13 @@ const jar = (cookies: SvelteKitCookies): CookieWriter => ({
   set: (name, value, options) => cookies.set(name, value, options),
 });
 const json = (body: unknown, status: number): Response => privateResponse(Response.json(body, { status }));
+// Pages keep the URL from other sites but not from the app itself: under `no-referrer`
+// Chromium sends `Origin: null` with a native form POST, which every CSRF check refuses.
+const privatePage = (response: Response): Response => {
+  const page = privateResponse(response);
+  page.headers.set('referrer-policy', 'same-origin');
+  return page;
+};
 
 export async function createNelcotaSvelteKit<Database>(options: SessionOptions): Promise<SvelteKitIntegration<Database>> {
   const owner = await Integration.create<Database>(options);
@@ -64,10 +71,7 @@ export async function createNelcotaSvelteKit<Database>(options: SessionOptions):
       return async ({ event, resolve }) => {
         const cookies = jar(event.cookies), url = local(event.url);
         const decision = await guard.check(owner, cookies, url);
-        let response: Response;
         switch (decision.kind) {
-          case 'public': response = await resolve(event); break;
-          case 'allow': response = privateResponse(await resolve(event)); break;
           case 'invalid_path': return json({ error: 'invalid_path' }, 400);
           case 'denied': return json({ error: 'access_denied' }, 403);
           case 'unavailable': return json({ error: 'auth_service_unavailable' }, 503);
@@ -75,9 +79,11 @@ export async function createNelcotaSvelteKit<Database>(options: SessionOptions):
             if (decision.clearCookie) owner.expireCookie(cookies);
             return privateResponse(new Response(null, { status: 303, headers: { location: decision.location } }));
         }
-        // SvelteKit applies cookies set through event.cookies to this response.
-        if (guard.bootstraps(url.pathname) && owner.bootstrap(cookies, cookies)) return privateResponse(response);
-        return response;
+        // SvelteKit refuses cookies set after `resolve`, so a bootstrap ID is issued
+        // first; Kit then adds every event.cookies write to the response.
+        const bootstrapped = guard.bootstraps(url.pathname) && owner.bootstrap(cookies, cookies);
+        const response = await resolve(event);
+        return decision.kind === 'allow' || bootstrapped ? privatePage(response) : response;
       };
     },
   };
