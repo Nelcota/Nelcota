@@ -10,6 +10,12 @@ for the October 25 server scope and independent SDK publication checkpoint.
 
 ## [Unreleased]
 
+### Fixed
+
+- Check that the caller's session is still active before verifying
+  `current_password` on `PUT /auth/v1/user`, so a logged-out access token can no
+  longer test passwords until it expires.
+
 ## [0.5.4] — 2026-10-25
 
 ### Changed

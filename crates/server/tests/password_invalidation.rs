@@ -277,3 +277,25 @@ async fn invalidation_error_rolls_back_the_entire_password_replacement() {
     );
     assert_eq!(recover(&app, &p.recovery).await.status, StatusCode::OK);
 }
+
+#[tokio::test]
+async fn logged_out_access_token_cannot_test_the_current_password() {
+    let app = TestApp::spawn().await;
+    let session = account(&app).await;
+    let access = session["access_token"].as_str().unwrap();
+    let logout = app.post("/auth/v1/logout", Some(access), json!({})).await;
+    assert_eq!(logout.status, StatusCode::NO_CONTENT);
+    // Wrong and right guesses must look alike: the session is checked first.
+    for current in ["not-the-password", password(0)] {
+        let reply = app
+            .request(
+                Method::PUT,
+                "/auth/v1/user",
+                Some(access),
+                Some(json!({"password": password(1), "current_password": current})),
+            )
+            .await;
+        assert_eq!(reply.status, StatusCode::UNAUTHORIZED);
+        assert_eq!(reply.body["code"], "invalid_token");
+    }
+}
