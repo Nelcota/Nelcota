@@ -36,16 +36,17 @@ export const UI_OPERATORS: readonly { value: UiOp; label: MessageKey; needsValue
 
 export const needsValue = (op: UiOp) => UI_OPERATORS.find((o) => o.value === op)?.needsValue ?? true
 
-export function fromUi(column: string, op: UiOp, value: string): TableFilter {
+/** `not` negates the operator (a `not.` filter opened in the form keeps it). */
+export function fromUi(column: string, op: UiOp, value: string, not = false): TableFilter {
   switch (op) {
     case 'contains':
-      return { column, op: 'ilike', value: `*${value}*` }
+      return { column, op: 'ilike', value: `*${value}*`, ...(not && { not }) }
     case 'null':
       return { column, op: 'is', value: 'null' }
     case 'notnull':
       return { column, op: 'is', value: 'null', not: true }
     default:
-      return { column, op, value }
+      return { column, op, value, ...(not && { not }) }
   }
 }
 

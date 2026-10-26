@@ -75,6 +75,14 @@ class SqlStore {
     for (const draft of this.drafts) {
       if (draft.queryId && !this.saved.some((query) => query.id === draft.queryId)) draft.queryId = null
     }
+    // Another tab of the panel saved or renamed a query: take its list, or
+    // the next write from this tab would put back the old one and lose it.
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (event) => {
+        if (event.key === SAVED_KEY) this.saved = readJson(SAVED_KEY, parseSaved, [])
+        if (event.key === HISTORY_KEY) this.history = readJson(HISTORY_KEY, parseHistory, [])
+      })
+    }
   }
 
   setDraft(sql: string) {

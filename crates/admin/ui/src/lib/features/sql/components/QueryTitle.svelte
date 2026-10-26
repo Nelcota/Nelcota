@@ -33,6 +33,9 @@
   }
 
   function commit() {
+    // Removing the focused input fires blur in Chromium: after Escape (or
+    // Enter) that blur must not save again.
+    if (!editing) return
     const next = value.trim()
     editing = false
     if (name !== null && next && next !== name) onrename(next)

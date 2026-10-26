@@ -116,6 +116,9 @@ export async function parseResponse<T>(res: Response, path: string, method: stri
     if (!body?.error && !body?.code) throw httpError(res.status)
     throw new ApiError(body?.error ?? `HTTP ${res.status}`, res.status, body?.code, body?.params)
   }
+  // A 200 that isn't JSON is someone else's page (an auth proxy's sign-in
+  // form after a redirect), not this API answering.
+  if (!json) throw new ApiError(t('common.invalidResponse'), 502, 'invalid_response')
   const validate = responseContract(method, path)
   if (validate && !validate(data)) throw new ApiError(t('common.invalidResponse'), 502, 'invalid_response')
   return data as T

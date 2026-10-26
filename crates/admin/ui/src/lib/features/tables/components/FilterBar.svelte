@@ -24,11 +24,15 @@
     onclose: () => void
   } = $props()
 
-  type Row = { key: number; column: string; op: UiOp; value: string }
+  // `not` is carried so that applying again doesn't turn `not.eq.x` into `eq.x`.
+  type Row = { key: number; column: string; op: UiOp; value: string; not: boolean }
 
   let nextKey = 0
-  const toRow = (f: TableFilter): Row => ({ key: nextKey++, column: f.column, ...toUi(f) })
-  const blankRow = (column = columns[0]?.name ?? ''): Row => ({ key: nextKey++, column, op: 'eq', value: '' })
+  const toRow = (f: TableFilter): Row => {
+    const ui = toUi(f)
+    return { key: nextKey++, column: f.column, ...ui, not: !!f.not && ui.op !== 'notnull' }
+  }
+  const blankRow = (column = columns[0]?.name ?? ''): Row => ({ key: nextKey++, column, op: 'eq', value: '', not: false })
 
   // Local draft, copied once on open: it only reaches the URL (and the API)
   // when applied.
@@ -59,7 +63,7 @@
       form?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
       return
     }
-    onapply(rows.filter(complete).map((r) => fromUi(r.column, r.op, r.value)))
+    onapply(rows.filter(complete).map((r) => fromUi(r.column, r.op, r.value, r.not)))
   }
 </script>
 
@@ -88,7 +92,7 @@
         </Select.Content>
       </Select.Root>
       <Select.Root type="single" bind:value={row.op}>
-        <Select.Trigger aria-label={t('tables.filters.operator')} class="w-full text-sm sm:w-48">{opLabel(row.op)}</Select.Trigger>
+        <Select.Trigger aria-label={t('tables.filters.operator')} class="w-full text-sm sm:w-48">{row.not && needsValue(row.op) ? `${t('tables.filters.not')} ` : ''}{opLabel(row.op)}</Select.Trigger>
         <Select.Content>
           {#each UI_OPERATORS as op (op.value)}
             <Select.Item value={op.value}>{t(op.label)}</Select.Item>

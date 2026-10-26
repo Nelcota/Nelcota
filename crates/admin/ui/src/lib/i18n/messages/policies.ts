@@ -40,6 +40,7 @@ const ptBR = {
   noPoliciesRlsAfter: '). Crie uma regra de acesso para liberar.',
   restrictiveTag: '(restritiva)',
   editLabel: 'Editar {name}',
+  customRoles: 'Esta regra usa um papel criado no SQL: edite pelo editor SQL.',
   deleteLabel: 'Apagar {name}',
   blocked: {
     title: 'Bloqueios recentes',
@@ -237,6 +238,7 @@ const en: Messages<typeof ptBR> = {
   noPoliciesRlsAfter: '). Add an access rule to allow access.',
   restrictiveTag: '(restrictive)',
   editLabel: 'Edit {name}',
+  customRoles: 'This rule uses a role created in SQL: edit it in the SQL editor.',
   deleteLabel: 'Delete {name}',
   blocked: {
     title: 'Recently blocked',

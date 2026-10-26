@@ -288,6 +288,7 @@
               {#each table.policies as policy (policy.name)}
                 {@const meaning = describePolicy(policy)}
                 {@const showSql = technical.on || meaning.kind === 'custom'}
+                {@const def = toPolicyDef(policy)}
                 <div class={['grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-well px-4 py-3 text-sm', showSql && '@4xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)_auto] @4xl:items-start']}>
                   <div class="min-w-0">
                     <p class="break-words font-medium">
@@ -319,8 +320,9 @@
                       variant="ghost"
                       size="icon-sm"
                       aria-label={t('policies.editLabel', { name: policy.name })}
-                      title={t('common.edit')}
-                      onclick={() => openSheet(table.name, toPolicyDef(policy))}><Pencil /></Button
+                      title={def ? t('common.edit') : t('policies.customRoles')}
+                      disabled={!def}
+                      onclick={() => def && openSheet(table.name, def)}><Pencil /></Button
                     >
                     <Button
                       variant="ghost"
