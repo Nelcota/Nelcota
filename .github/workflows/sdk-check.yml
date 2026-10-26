@@ -27,6 +27,8 @@ jobs:
           cache: npm
           cache-dependency-path: sdk/typescript/package-lock.json
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.3
       - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
           deno-version: v2.x
@@ -40,6 +42,8 @@ jobs:
       - run: npm run test:package
       - run: node test/runtime/smoke.mjs
       - run: npm run test:memory
+      # Os mesmos testes unitários no runtime do Bun, além do smoke do pacote construído.
+      - run: npm run test:bun
       - run: bun test/runtime/smoke.mjs
       - run: deno run --allow-net --allow-read --allow-env test/runtime/smoke.mjs
       - run: cargo build -p nelcota-server

@@ -46,6 +46,7 @@
     "check": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run --maxWorkers=2",
+    "test:bun": "bun --bun vitest run --maxWorkers=2",
     "prepack": "npm run build"
   },
   "dependencies": {

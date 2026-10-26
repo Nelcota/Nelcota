@@ -10,6 +10,8 @@ import { chromium, firefox, webkit } from '../../typescript/node_modules/playwri
 
 const example = fileURLToPath(new URL('../examples/sveltekit/', import.meta.url));
 const engine = process.env.NELCOTA_SSR_BROWSER ?? 'chromium';
+// O mesmo smoke roda com `node` ou `bun`; o build e o servidor herdam esse runtime.
+const runtimeName = () => (process.versions.bun === undefined ? `node ${process.version}` : `bun ${process.versions.bun}`);
 const user = { id: 'kit-fixture-user', email: 'kit@example.test', email_confirmed_at: null, user_metadata: {}, created_at: '', last_sign_in_at: null };
 const password = randomBytes(24).toString('base64url');
 const access = `fixture-access-private-${randomBytes(8).toString('hex')}`;
@@ -52,7 +54,8 @@ try {
   const build = spawnSync(process.execPath, ['node_modules/vite/bin/vite.js', 'build'], { cwd: example, env: { ...process.env, ORIGIN: origin }, encoding: 'utf8', timeout: 180000 });
   assert.equal(build.status, 0, `SvelteKit build failed:\n${build.stdout}\n${build.stderr}`);
 
-  app = spawn(process.execPath, ['build'], {
+  // Caminho explícito: no Bun, `bun build` é o subcomando do bundler, não a pasta.
+  app = spawn(process.execPath, ['build/index.js'], {
     cwd: example,
     env: { ...process.env, PORT: String(port), HOST: '127.0.0.1', ORIGIN: origin, NELCOTA_URL: `http://127.0.0.1:${api.address().port}`, NELCOTA_SESSION_KEY: randomBytes(32).toString('base64url') },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -112,7 +115,7 @@ try {
   await page.goto(`${origin}/dashboard`);
   assert.equal(new URL(page.url()).pathname, '/login', 'signed out: the dashboard is protected again');
 
-  console.log(JSON.stringify({ framework: 'SvelteKit 3 production adapter-node build', node: process.version, browser: `${engine} ${browser.version()}`, counts, authorization: 'not tested: local auth fixture' }, null, 2));
+  console.log(JSON.stringify({ framework: 'SvelteKit 3 production adapter-node build', runtime: runtimeName(), browser: `${engine} ${browser.version()}`, counts, authorization: 'not tested: local auth fixture' }, null, 2));
 } catch (error) {
   console.error(`server log:\n${log}\npage ${page?.url()}:\n${await page?.content().catch(() => '')}`);
   throw error;

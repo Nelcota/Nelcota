@@ -59,6 +59,7 @@
     "build": "node scripts/clean.mjs && tsc -p tsconfig.build.json",
     "check": "tsc -p tsconfig.json",
     "test": "vitest run --project unit",
+    "test:bun": "bun --bun vitest run --project unit",
     "test:types": "vitest run --project types",
     "test:contract": "node scripts/contract.mjs",
     "test:package": "node scripts/package-test.mjs",

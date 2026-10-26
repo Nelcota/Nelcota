@@ -25,7 +25,7 @@ or the [client contract](docs/contract.md). Empty results, 401/403 or a
   a browser.
 
 ```sh
-npm install @nelcota/client@0.2.4
+npm install @nelcota/client@0.2.4   # or: bun add @nelcota/client@0.2.4
 nelcota types -o src/database.ts
 ```
 
@@ -525,14 +525,15 @@ error immediately with `retryAfter`, allowing the app to decide when to retry.
 | 0.2.x | Server `v0.3.0` or later | Full contract suite, OAuth routes, `updateUser`, exposed CORS headers and generated `Relationships` |
 | 0.2.x | Server `v0.2.0` | Not supported: lacks the OAuth routes, `PUT /auth/v1/user`, the JSON error contract, generated `Relationships` and the newer exposed headers |
 
-Release verification covers Node 22/24/26, Bun, Deno and the Chromium, Firefox
-and WebKit engines. Other runtimes need their own validation.
+Release verification covers Node 22/24/26, Bun 1.4.3 (unit tests and the runtime
+smoke), Deno and the Chromium, Firefox and WebKit engines. Other runtimes need their own validation.
 
 ## Development
 
 ```sh
 npm ci
 npm run check && npm test && npm run test:types   # types, unit and type-level tests
+npm run test:bun                                  # the unit tests on the Bun runtime
 npm run build && npm run size                     # dist/ and the size budget per entry
 npm run test:package                              # install the tarball in JS/TS consumers
 node test/runtime/smoke.mjs
