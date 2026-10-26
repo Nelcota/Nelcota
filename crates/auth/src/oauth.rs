@@ -233,10 +233,20 @@ fn back_to_app(redirect_to: &str, result: Result<String, &str>) -> String {
             return redirect_to.to_owned();
         }
     };
-    match result {
-        Ok(code) => url.query_pairs_mut().append_pair("code", &code),
-        Err(error) => url.query_pairs_mut().append_pair("error", error),
-    };
+    let retained: Vec<(String, String)> = url
+        .query_pairs()
+        .filter(|(k, _)| k != "code" && k != "error")
+        .map(|(k, v)| (k.into_owned(), v.into_owned()))
+        .collect();
+    {
+        let mut pairs = url.query_pairs_mut();
+        pairs.clear();
+        pairs.extend_pairs(&retained);
+        match result {
+            Ok(code) => pairs.append_pair("code", &code),
+            Err(error) => pairs.append_pair("error", error),
+        };
+    }
     url.into()
 }
 

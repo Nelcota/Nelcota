@@ -29,6 +29,13 @@
     diskPercent = String(s.disk_percent); diskGib = String(s.disk_gib); certDays = String(s.certificate_days); backupHours = String(s.backup_hours); reminderHours = String(s.reminder_hours)
     webhookUrl = ''; heartbeatUrl = ''; stale = false; mark(false)
   }
+  function schedulePoll() {
+    clearTimeout(poll)
+    poll = setTimeout(() => {
+      if (document.hidden) { schedulePoll(); return }
+      void load()
+    }, 30000)
+  }
   async function load(replace = false) {
     if (!alive) return
     clearTimeout(poll); abort?.abort(); abort = new AbortController(); const current = abort, id = ++generation
@@ -42,7 +49,7 @@
       if (dirty && JSON.stringify(next.settings) !== saved) stale = true
       view = next; failure = ''
     } catch (e) { if (alive && id === generation) { if (e instanceof ControllerError && e.status === 401) { expired(); return }; failure = a('loadFailed') } }
-    finally { clearTimeout(timeout); if (alive && id === generation) { loading = false; poll = setTimeout(() => { if (!document.hidden) void load(); if (document.hidden) poll = setTimeout(() => void load(), 30000) }, 30000) } }
+    finally { clearTimeout(timeout); if (alive && id === generation) { loading = false; schedulePoll() } }
   }
   $effect(() => { const changed = revision; untrack(() => { void load() }); void changed })
   onDestroy(() => { alive = false; generation++; clearTimeout(poll); abort?.abort(); webhookUrl = ''; heartbeatUrl = '' })

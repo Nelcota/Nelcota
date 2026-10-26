@@ -111,10 +111,16 @@ fn function_returns(
     modules: &BTreeMap<String, String>,
     function: &Function,
 ) -> String {
-    let table_name = function
-        .return_type
-        .strip_prefix(&format!("{schema}."))
-        .unwrap_or(&function.return_type);
+    fn unquote(s: &str) -> &str {
+        s.strip_prefix('"')
+            .and_then(|s| s.strip_suffix('"'))
+            .unwrap_or(s)
+    }
+    let table_name = match function.return_type.split_once('.') {
+        Some((prefix, name)) if unquote(prefix) == schema => unquote(name),
+        Some(_) => function.return_type.as_str(),
+        None => unquote(&function.return_type),
+    };
     let base = modules
         .get(table_name)
         .map(|m| format!("super::super::{m}::Row"))

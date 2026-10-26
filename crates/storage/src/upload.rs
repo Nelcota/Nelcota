@@ -178,7 +178,9 @@ async fn write(
         }
     };
 
-    match record(&state, &claims, bucket, &name, version, &received, mode).await {
+    let published = record(&state, &claims, bucket, &name, version, &received, mode).await;
+    drop(reservation);
+    match published {
         Ok((id, replaced)) => {
             if let Some(old) = replaced.filter(|old| *old != version) {
                 state.store.delete_quietly(&Store::key(bucket, old)).await;

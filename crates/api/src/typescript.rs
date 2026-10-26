@@ -117,11 +117,17 @@ fn function_signature(catalog: &Catalog, function: &Function) -> String {
         })
         .collect::<Vec<_>>()
         .join("; ");
-    let relation = catalog.tables.get(
-        function
-            .return_type
-            .trim_start_matches(&format!("{}.", catalog.schema)),
-    );
+    fn unquote(s: &str) -> &str {
+        s.strip_prefix('"')
+            .and_then(|s| s.strip_suffix('"'))
+            .unwrap_or(s)
+    }
+    let table_name = match function.return_type.split_once('.') {
+        Some((prefix, name)) if unquote(prefix) == catalog.schema => unquote(name),
+        Some(_) => function.return_type.as_str(),
+        None => unquote(&function.return_type),
+    };
+    let relation = catalog.tables.get(table_name);
     let base = relation
         .map(|t| {
             let section = match t.kind == TableKind::Table {

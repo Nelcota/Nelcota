@@ -15,9 +15,28 @@ pub fn effective(head: &[u8], declared: Option<&str>) -> String {
         return kind.mime_type().to_owned();
     }
     match declared.and_then(clean) {
-        Some(declared) if !infer::is_mime_supported(&declared) => declared,
+        Some(declared) if declared == "image/svg+xml" && looks_like_svg(head) => declared,
+        Some(declared)
+            if !infer::is_mime_supported(&declared)
+                && !declared.starts_with("image/")
+                && !declared.starts_with("audio/")
+                && !declared.starts_with("video/") =>
+        {
+            declared
+        }
         _ => OCTET_STREAM.to_owned(),
     }
+}
+
+fn looks_like_svg(head: &[u8]) -> bool {
+    let trimmed = head
+        .strip_prefix(&[0xEF, 0xBB, 0xBF])
+        .unwrap_or(head)
+        .trim_ascii_start();
+    trimmed.starts_with(b"<")
+        && head
+            .windows(4)
+            .any(|window| window.eq_ignore_ascii_case(b"<svg"))
 }
 
 /// `type/subtype` in lowercase, without parameters (`; charset=...`).
@@ -53,8 +72,10 @@ pub fn allowed(mime: &str, list: Option<&[String]>) -> bool {
 /// Types a browser may show in the page: they cannot run scripts. HTML,
 /// SVG, PDF and the rest are downloaded instead.
 pub fn inline(mime: &str) -> bool {
-    let image = mime.starts_with("image/") && mime != "image/svg+xml";
-    image || mime.starts_with("audio/") || mime.starts_with("video/") || mime == "text/plain"
+    let media =
+        (mime.starts_with("image/") || mime.starts_with("audio/") || mime.starts_with("video/"))
+            && infer::is_mime_supported(mime);
+    media || mime == "text/plain"
 }
 
 /// `Content-Type` header: text gets an explicit charset.

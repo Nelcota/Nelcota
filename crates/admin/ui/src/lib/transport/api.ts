@@ -74,7 +74,7 @@ export async function uploadFile<T>(path: string, file: File, onprogress?: (load
   }
 }
 
-function expireSession(status: number, path: string, started: number) {
+export function expireSession(status: number, path = '', started = querySession()) {
   if (started !== querySession() || status !== 401 || path === '/login') return
   clearQuerySession()
   if (session.email) session.expired = true

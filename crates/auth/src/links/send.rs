@@ -59,7 +59,8 @@ pub(crate) async fn send(state: &AuthState, kind: LinkKind, email: &str) -> Resu
     let user: Option<Uuid> = tx
         .query_opt(
             "SELECT id FROM auth.users
-             WHERE email = $1 AND (email_confirmed_at IS NULL OR NOT $2)",
+             WHERE email = $1 AND (email_confirmed_at IS NULL OR NOT $2)
+             FOR UPDATE",
             &[&email, &kind.only_unconfirmed()],
         )
         .await

@@ -74,11 +74,12 @@ pub async fn replay(pool: &Pool, id: &str) -> Result<String, Error> {
         });
     }
     let old = tx
-        .query_one(
-            "SELECT status, last_error FROM nelcota.webhook_deliveries WHERE id=$1 FOR UPDATE",
+        .query_opt(
+            "SELECT status, last_error, endpoint_id, event_id FROM nelcota.webhook_deliveries WHERE id=$1 FOR UPDATE",
             &[&id],
         )
-        .await?;
+        .await?
+        .ok_or(Error::NotFound)?;
     if !matches!(old.get::<_, &str>("status"), "succeeded" | "failed") {
         return Err(Error::Conflict {
             code: "webhook_delivery_active",
@@ -91,8 +92,10 @@ pub async fn replay(pool: &Pool, id: &str) -> Result<String, Error> {
             message: "This event exceeded the payload limit and cannot be resent",
         });
     }
+    let endpoint_id: uuid::Uuid = old.get("endpoint_id");
+    let event_id: uuid::Uuid = old.get("event_id");
     // Serializes duplicate clicks, even across panel sessions or instances.
-    if tx.query_one("SELECT EXISTS (SELECT FROM nelcota.webhook_deliveries WHERE replay_of=$1 AND status IN ('pending','processing'))", &[&id]).await?.get::<_, bool>(0) { return Err(Error::Conflict { code: "webhook_delivery_active", message: "A resend is already queued" }); }
+    if tx.query_one("SELECT EXISTS (SELECT FROM nelcota.webhook_deliveries WHERE (replay_of=$1 OR (endpoint_id=$2 AND event_id=$3)) AND status IN ('pending','processing'))", &[&id, &endpoint_id, &event_id]).await?.get::<_, bool>(0) { return Err(Error::Conflict { code: "webhook_delivery_active", message: "A resend is already queued" }); }
     let new_id: String = tx.query_one("INSERT INTO nelcota.webhook_deliveries (endpoint_id,event_id,replay_of,schema_name,table_name,event,url,payload,max_attempts) SELECT d.endpoint_id,d.event_id,d.id,d.schema_name,d.table_name,d.event,e.url,d.payload,e.max_attempts FROM nelcota.webhook_deliveries d JOIN nelcota.webhook_endpoints e ON e.id=d.endpoint_id WHERE d.id=$1 RETURNING id::text", &[&id]).await?.get(0);
     tx.commit().await?;
     Ok(new_id)

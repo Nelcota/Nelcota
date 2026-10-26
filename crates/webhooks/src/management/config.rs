@@ -200,13 +200,40 @@ pub async fn delete(pool: &Pool, id: &str) -> Result<(), Error> {
     // Lock the watched relation BEFORE cancelling deliveries (and their usage
     // counter). Otherwise a writer holding this table could wait on our counter
     // while DROP TRIGGER waits on that writer, forming a lock cycle.
-    let watched = tx.query_opt("SELECT format('%I.%I',n.nspname,c.relname) AS qualified FROM nelcota.webhook_endpoints e JOIN pg_class c ON c.oid=e.table_oid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE e.id=$1 AND e.deleted_at IS NULL", &[&id]).await?;
-    if let Some(watched) = watched {
-        let qualified: String = watched.get("qualified");
-        tx.batch_execute(&format!(
-            "LOCK TABLE {qualified} IN SHARE ROW EXCLUSIVE MODE"
-        ))
-        .await?;
+    loop {
+        let watched = tx.query_opt("SELECT c.oid, n.nspname, c.relname, format('%I.%I',n.nspname,c.relname) AS qualified FROM nelcota.webhook_endpoints e JOIN pg_class c ON c.oid=e.table_oid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE e.id=$1 AND e.deleted_at IS NULL", &[&id]).await?;
+        let watched = match watched {
+            Some(watched) => watched,
+            None => break,
+        };
+        let oid: u32 = watched.get(0);
+        let schema: String = watched.get(1);
+        let name: String = watched.get(2);
+        let qualified: String = watched.get(3);
+        tx.batch_execute("SAVEPOINT nelcota_webhook_lock").await?;
+        let locked = tx
+            .batch_execute(&format!(
+                "LOCK TABLE {qualified} IN SHARE ROW EXCLUSIVE MODE"
+            ))
+            .await;
+        match locked {
+            Ok(()) => {
+                tx.batch_execute("RELEASE SAVEPOINT nelcota_webhook_lock")
+                    .await?;
+            }
+            Err(err) if err.code() == Some(&tokio_postgres::error::SqlState::UNDEFINED_TABLE) => {
+                tx.batch_execute(
+                    "ROLLBACK TO SAVEPOINT nelcota_webhook_lock; RELEASE SAVEPOINT nelcota_webhook_lock",
+                )
+                .await?;
+                continue;
+            }
+            Err(err) => return Err(err.into()),
+        }
+        let still_same: bool = tx.query_one("SELECT EXISTS (SELECT FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE c.oid=$1 AND n.nspname=$2 AND c.relname=$3)", &[&oid, &schema, &name]).await?.get(0);
+        if still_same {
+            break;
+        }
     }
     if tx.execute("UPDATE nelcota.webhook_endpoints SET enabled=false, deleted_at=clock_timestamp(), signing_secret=NULL WHERE id=$1 AND deleted_at IS NULL", &[&id]).await? == 0 { return Err(Error::NotFound); }
     // Match the queue's delivery-before-attempt lock order.

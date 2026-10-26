@@ -146,11 +146,24 @@ impl SqlExecutor {
         let mut config = config.clone();
         config
             .application_name("nelcota-admin-sql")
+            .connect_timeout(Duration::from_secs(5))
             .options("-c statement_timeout=30s");
-        let (client, connection) = match config.connect(NoTls).await {
-            Ok(connection) => connection,
-            Err(err) => return Ok(query_error(err)),
-        };
+        let (client, connection) =
+            match tokio::time::timeout(Duration::from_secs(5), config.connect(NoTls)).await {
+                Ok(Ok(connection)) => connection,
+                Ok(Err(err)) => return Ok(query_error(err)),
+                Err(_) => {
+                    return Ok(SqlResponse::Failure {
+                        error: SqlError {
+                            message: "database connection timed out".to_owned(),
+                            code: None,
+                            detail: None,
+                            hint: None,
+                            position: None,
+                        },
+                    });
+                }
+            };
         let mut driver = Driver {
             task: Some(tokio::spawn(connection)),
             cancel: client.cancel_token(),

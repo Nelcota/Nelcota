@@ -502,10 +502,12 @@ fn recovery(
     let gate = Maintenance::hold(host, project)?;
     if job.public.committed {
         if job.restored {
+            let dir = journal.directory(&job.public.id)?;
+            restore_previous_artifacts(project, job, &dir)?;
             resume_previous_gate(project)?;
             project.recreate(Service::App)?;
             project.wait_healthy(Service::App, Duration::from_secs(120))?;
-            validate_previous(project, job, &journal.directory(&job.public.id)?)?;
+            validate_previous(project, job, &dir)?;
             if job.public.phase != Phase::ResumingPrevious {
                 journal.advance(job, Phase::ResumingPrevious, None)?;
             }
@@ -567,6 +569,18 @@ fn recovery(
         }
         backup::restore_dump(project, dump)?;
     }
+    restore_previous_artifacts(project, job, &dir)?;
+    job.restored = true;
+    journal.advance(job, Phase::ResumingPrevious, None)?;
+    resume_previous_gate(project)?;
+    project.recreate(Service::App)?;
+    project.wait_healthy(Service::App, Duration::from_secs(120))?;
+    validate_previous(project, job, &dir)?;
+    wait_ready(project)?;
+    gate.finish()?;
+    journal.advance(job, Phase::Recovered, None)
+}
+fn restore_previous_artifacts(project: &Project, job: &Job, dir: &Path) -> anyhow::Result<()> {
     if digest_file(&dir.join("previous.env"), 65536)?
         != job
             .previous_config_sha256
@@ -586,15 +600,7 @@ fn recovery(
         }
         deploy_binary(&path)?;
     }
-    job.restored = true;
-    journal.advance(job, Phase::ResumingPrevious, None)?;
-    resume_previous_gate(project)?;
-    project.recreate(Service::App)?;
-    project.wait_healthy(Service::App, Duration::from_secs(120))?;
-    validate_previous(project, job, &dir)?;
-    wait_ready(project)?;
-    gate.finish()?;
-    journal.advance(job, Phase::Recovered, None)
+    Ok(())
 }
 fn deploy_binary(source: &Path) -> anyhow::Result<()> {
     let path = native::deployed_binary();
@@ -619,13 +625,20 @@ fn write_gate(path: &Path, bytes: &[u8]) -> anyhow::Result<()> {
 }
 
 fn validate_previous(project: &Project, job: &Job, dir: &Path) -> anyhow::Result<()> {
-    if digest_file(&dir.join("previous.env"), 65536)?
-        != job
-            .previous_config_sha256
-            .as_deref()
-            .context("missing config identity")?
-    {
+    let expected = job
+        .previous_config_sha256
+        .as_deref()
+        .context("missing config identity")?;
+    if digest_file(&dir.join("previous.env"), 65536)? != expected {
         bail!("previous configuration corrupt");
+    }
+    if job.previous_image.is_none() && digest_file(&project.path(".env"), 65536)? != expected {
+        bail!("restored configuration mismatch");
+    }
+    if let Some(image) = &job.previous_image
+        && project.env().get("NELCOTA_APP_IMAGE")?.as_deref() != Some(image.as_str())
+    {
+        bail!("restored configuration mismatch");
     }
     validate_binary_identity(
         project,

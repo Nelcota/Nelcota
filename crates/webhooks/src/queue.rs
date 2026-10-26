@@ -11,39 +11,49 @@ pub(crate) async fn claim(pool: &Pool, limit: usize) -> Result<Vec<Job>, Error> 
     let mut client = pool.get().await?;
     let tx = client.transaction().await?;
     tx.batch_execute("SET LOCAL ROLE nelcota_webhooks; SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='3s'").await?;
-    let rows = tx.query("SELECT d.id,d.event_id,d.url,d.payload,d.attempts,d.max_attempts,d.status,e.enabled,e.signing_secret FROM nelcota.webhook_deliveries d JOIN nelcota.webhook_endpoints e ON e.id=d.endpoint_id WHERE e.deleted_at IS NULL AND ((d.status='pending' AND e.enabled AND d.next_attempt_at<=clock_timestamp()) OR (d.status='processing' AND d.locked_until<=clock_timestamp())) ORDER BY d.next_attempt_at,d.id LIMIT $1 FOR UPDATE OF d SKIP LOCKED", &[&(limit as i64)]).await?;
-    let mut jobs = Vec::with_capacity(rows.len());
-    for row in rows {
-        let id: i64 = row.get("id");
-        let previous_attempts: i32 = row.get("attempts");
-        if row.get::<_, &str>("status") == "processing" {
-            tx.execute("UPDATE nelcota.webhook_attempts SET finished_at=clock_timestamp(),error='worker_interrupted' WHERE delivery_id=$1 AND finished_at IS NULL", &[&id]).await?;
-            if previous_attempts >= row.get::<_, i32>("max_attempts") {
-                tx.execute("UPDATE nelcota.webhook_deliveries SET status='failed',finished_at=clock_timestamp(),last_error='worker_interrupted',lease_token=NULL,locked_until=NULL WHERE id=$1", &[&id]).await?;
-                continue;
-            }
-            if !row.get::<_, bool>("enabled") {
-                tx.execute("UPDATE nelcota.webhook_deliveries SET status='pending',last_error='worker_interrupted',lease_token=NULL,locked_until=NULL WHERE id=$1", &[&id]).await?;
-                continue;
-            }
+    let mut jobs = Vec::with_capacity(limit);
+    for _ in 0..4 {
+        let remaining = limit.saturating_sub(jobs.len());
+        if remaining == 0 {
+            break;
         }
-        let lease = Uuid::new_v4();
-        let attempt = previous_attempts + 1;
-        tx.execute("UPDATE nelcota.webhook_deliveries SET status='processing',attempts=$2,lease_token=$3,locked_until=clock_timestamp()+interval '120 seconds',finished_at=NULL WHERE id=$1", &[&id,&attempt,&lease]).await?;
-        tx.execute(
-            "INSERT INTO nelcota.webhook_attempts (delivery_id,number) VALUES ($1,$2)",
-            &[&id, &attempt],
-        )
-        .await?;
-        jobs.push(Job {
-            id,
-            event_id: row.get("event_id"),
-            attempt,
-            lease,
-            url: row.get("url"),
-            payload: row.get("payload"),
-            secret: Secret::new(row.get::<_, String>("signing_secret")),
-        });
+        let rows = tx.query("SELECT d.id,d.event_id,d.url,d.payload,d.attempts,d.max_attempts,d.status,e.enabled,e.signing_secret FROM nelcota.webhook_deliveries d JOIN nelcota.webhook_endpoints e ON e.id=d.endpoint_id WHERE e.deleted_at IS NULL AND ((d.status='pending' AND e.enabled AND d.next_attempt_at<=statement_timestamp()) OR (d.status='processing' AND d.locked_until<=statement_timestamp())) ORDER BY d.next_attempt_at,d.id LIMIT $1 FOR UPDATE OF d SKIP LOCKED", &[&(remaining as i64)]).await?;
+        let fetched = rows.len();
+        for row in rows {
+            let id: i64 = row.get("id");
+            let previous_attempts: i32 = row.get("attempts");
+            if row.get::<_, &str>("status") == "processing" {
+                tx.execute("UPDATE nelcota.webhook_attempts SET finished_at=clock_timestamp(),error='worker_interrupted' WHERE delivery_id=$1 AND finished_at IS NULL", &[&id]).await?;
+                if previous_attempts >= row.get::<_, i32>("max_attempts") {
+                    tx.execute("UPDATE nelcota.webhook_deliveries SET status='failed',finished_at=clock_timestamp(),last_error='worker_interrupted',lease_token=NULL,locked_until=NULL WHERE id=$1", &[&id]).await?;
+                    continue;
+                }
+                if !row.get::<_, bool>("enabled") {
+                    tx.execute("UPDATE nelcota.webhook_deliveries SET status='pending',last_error='worker_interrupted',lease_token=NULL,locked_until=NULL WHERE id=$1", &[&id]).await?;
+                    continue;
+                }
+            }
+            let lease = Uuid::new_v4();
+            let attempt = previous_attempts + 1;
+            tx.execute("UPDATE nelcota.webhook_deliveries SET status='processing',attempts=$2,lease_token=$3,locked_until=clock_timestamp()+interval '120 seconds',finished_at=NULL WHERE id=$1", &[&id,&attempt,&lease]).await?;
+            tx.execute(
+                "INSERT INTO nelcota.webhook_attempts (delivery_id,number) VALUES ($1,$2)",
+                &[&id, &attempt],
+            )
+            .await?;
+            jobs.push(Job {
+                id,
+                event_id: row.get("event_id"),
+                attempt,
+                lease,
+                url: row.get("url"),
+                payload: row.get("payload"),
+                secret: Secret::new(row.get::<_, String>("signing_secret")),
+            });
+        }
+        if fetched < remaining {
+            break;
+        }
     }
     tx.commit().await?;
     Ok(jobs)
@@ -84,7 +94,7 @@ pub(crate) async fn prune(pool: &Pool) -> Result<(), Error> {
     let mut client = pool.get().await?;
     let tx = client.transaction().await?;
     tx.batch_execute("SET LOCAL ROLE nelcota_webhooks; SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='3s'").await?;
-    tx.execute("DELETE FROM nelcota.webhook_deliveries WHERE id IN (SELECT id FROM nelcota.webhook_deliveries WHERE finished_at<clock_timestamp()-interval '7 days' AND status IN ('succeeded','failed','cancelled') ORDER BY finished_at,id LIMIT 500 FOR UPDATE SKIP LOCKED)", &[]).await?;
+    tx.execute("DELETE FROM nelcota.webhook_deliveries WHERE id IN (SELECT id FROM nelcota.webhook_deliveries WHERE finished_at<statement_timestamp()-interval '7 days' AND status IN ('succeeded','failed','cancelled') ORDER BY finished_at,id LIMIT 500 FOR UPDATE SKIP LOCKED)", &[]).await?;
     tx.commit().await?;
     Ok(())
 }

@@ -82,6 +82,17 @@ pub(super) async fn resolve(
         _ => None,
     };
     if let Some(user_id) = linked {
+        if let (true, Some(email)) = (identity.email_verified, email.as_deref()) {
+            tx.execute(
+                "UPDATE auth.users
+                    SET email_confirmed_at = COALESCE(email_confirmed_at, now()),
+                        updated_at = now()
+                  WHERE id = $1 AND email = $2 AND email_confirmed_at IS NULL",
+                &[&user_id, &email],
+            )
+            .await
+            .map_err(db_error)?;
+        }
         return Ok(Ok(user_id));
     }
 

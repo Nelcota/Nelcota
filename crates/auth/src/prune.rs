@@ -78,6 +78,23 @@ pub async fn prune(pool: &Pool) -> Result<Pruned, ApiError> {
         Some(retention),
     )
     .await?;
+    batched(
+        pool,
+        "DELETE FROM auth.one_time_tokens WHERE id IN (
+             SELECT id FROM auth.one_time_tokens
+             WHERE expires_at < now()
+                OR (used_at IS NOT NULL AND created_at <= now() - make_interval(secs => $2))
+             LIMIT $1)",
+        Some(60.0),
+    )
+    .await?;
+    batched(
+        pool,
+        "DELETE FROM auth.flow_states WHERE id IN (
+             SELECT id FROM auth.flow_states WHERE expires_at < now() LIMIT $1)",
+        None,
+    )
+    .await?;
     Ok(Pruned {
         refresh_tokens,
         sessions,

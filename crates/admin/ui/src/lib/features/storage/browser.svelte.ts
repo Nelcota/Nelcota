@@ -62,6 +62,7 @@ export class StorageBrowser {
     if (!destination) return undefined
     const result = await this.uploads.send(files, destination, replace)
     if (result && this.matches(result.target)) await this.refresh()
+    if (result && !this.matches(result.target) && result.sent > 0 && this.target?.bucket === result.target.bucket) await this.loadInfo()
     return result
   }
 

@@ -57,6 +57,7 @@ pub fn alter(ctx: &Context, initial: &Structure, actions: &[AlterAction]) -> Res
             AlterAction::RenameTable { name } => {
                 validate_name("table", name)?;
                 statements.push(alter(format!("RENAME TO {}", ident(name))));
+                current.name.clone_from(name);
                 table = qualified(ctx.schema, name);
             }
             AlterAction::SetComment { comment } => statements.push(format!(
@@ -105,6 +106,13 @@ pub fn alter(ctx: &Context, initial: &Structure, actions: &[AlterAction]) -> Res
             AlterAction::RenameColumn { from, to } => {
                 column_exists(&current, from)?;
                 validate_name("column", to)?;
+                if from != to && current.column(to).is_some() {
+                    return invalid(
+                        "column_already_exists",
+                        format!("column '{to}' already exists"),
+                        json!({ "column": to }),
+                    );
+                }
                 statements.push(alter(format!(
                     "RENAME COLUMN {} TO {}",
                     ident(from),

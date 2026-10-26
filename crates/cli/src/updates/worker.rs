@@ -464,7 +464,7 @@ async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Result<Respon
             let public = job.public.clone();
             drop(lease);
             if launch(state, &public.id, true).await.is_err() {
-                let _lease = HostLock::acquire(&state.policy.root)?;
+                let _lease = acquire_host_lock(&state.policy.root).await?;
                 journal.advance(&mut job, Phase::NeedsOperator, Some("worker_unavailable"))?;
                 return Ok(error("worker_unavailable"));
             }
@@ -609,7 +609,7 @@ async fn start(
     let public = job.public.clone();
     drop(_lease);
     if launch(state, &public.id, false).await.is_err() {
-        let _lease = HostLock::acquire(&state.policy.root)?;
+        let _lease = acquire_host_lock(&state.policy.root).await?;
         journal.advance(
             &mut job,
             Phase::FailedBeforeChange,
@@ -652,16 +652,27 @@ async fn launch(state: &Arc<State>, id: &str, recover: bool) -> anyhow::Result<(
             let _ = child.kill().await;
             let _ = child.wait().await;
         }
-        if let Ok(_lease) = HostLock::acquire(&root)
+        if let Ok(_lease) = acquire_host_lock(&root).await
             && let Ok(journal) = Journal::open(&root)
             && let Ok(jobs) = journal.list()
             && let Some(mut job) = jobs.into_iter().find(|job| job.public.id == id)
             && !job.public.phase.terminal()
+            && job.public.phase != Phase::NeedsOperator
         {
             let _ = journal.advance(&mut job, Phase::NeedsOperator, Some("worker_interrupted"));
         }
     });
     Ok(())
+}
+async fn acquire_host_lock(root: &std::path::Path) -> anyhow::Result<HostLock> {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        match HostLock::acquire(root) {
+            Ok(lease) => return Ok(lease),
+            Err(error) if Instant::now() >= deadline => return Err(error),
+            Err(_) => tokio::time::sleep(Duration::from_millis(50)).await,
+        }
+    }
 }
 use std::os::unix::process::CommandExt;
 

@@ -194,11 +194,12 @@ export class SessionManager {
   }
   rememberUser(snapshot: Session): (user: User) => Promise<void> {
     const store = this.#store;
-    const revision = snapshot === store.session && store.revision;
+    const encoded = encodeJson(snapshot);
+    const revision = store.session !== null && store.session !== undefined && encodeJson(store.session) === encoded && store.revision;
     return user => this.#locked(async () => {
       const current = await store.read(true);
       if (!current || revision !== store.revision
-          || encodeJson(current) !== encodeJson(snapshot)
+          || encodeJson(current) !== encoded
           || encodeJson(current.user) === encodeJson(user)) return;
       await this.#write({ ...current, user }, 'user_updated');
     });

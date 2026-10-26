@@ -435,24 +435,7 @@ pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Re
     }
 }
 async fn launch(state: &Arc<State>, id: &str, recover: bool) -> anyhow::Result<()> {
-    let journal = HostJournal::open(&state.policy.root)?;
-    let log = crate::private_fs::file(&journal.directory(id)?.join("runtime.private.log"))?;
-    let mut command = tokio::process::Command::new(std::env::current_exe()?);
-    command
-        .args(["updates", "host-execute", "--policy"])
-        .arg(&state.policy_path)
-        .arg("--job")
-        .arg(id);
-    if recover {
-        command.arg("--recover");
-    }
-    command
-        .stdin(std::process::Stdio::null())
-        .stdout(log.try_clone()?)
-        .stderr(log)
-        .kill_on_drop(true);
-    command.as_std_mut().process_group(0);
-    let mut child = match command.spawn() {
+    let mut child = match spawn_child(state, id, recover) {
         Ok(child) => child,
         Err(error) => {
             let root = state.policy.root.clone();
@@ -460,7 +443,7 @@ async fn launch(state: &Arc<State>, id: &str, recover: bool) -> anyhow::Result<(
             tokio::spawn(async move {
                 let _ = mark_interrupted(&root, &id).await;
             });
-            return Err(error.into());
+            return Err(error);
         }
     };
     let root = state.policy.root.clone();
@@ -479,6 +462,30 @@ async fn launch(state: &Arc<State>, id: &str, recover: bool) -> anyhow::Result<(
         let _ = mark_interrupted(&root, &id).await;
     });
     Ok(())
+}
+fn spawn_child(
+    state: &Arc<State>,
+    id: &str,
+    recover: bool,
+) -> anyhow::Result<tokio::process::Child> {
+    let journal = HostJournal::open(&state.policy.root)?;
+    let log = crate::private_fs::file(&journal.directory(id)?.join("runtime.private.log"))?;
+    let mut command = tokio::process::Command::new(std::env::current_exe()?);
+    command
+        .args(["updates", "host-execute", "--policy"])
+        .arg(&state.policy_path)
+        .arg("--job")
+        .arg(id);
+    if recover {
+        command.arg("--recover");
+    }
+    command
+        .stdin(std::process::Stdio::null())
+        .stdout(log.try_clone()?)
+        .stderr(log)
+        .kill_on_drop(true);
+    command.as_std_mut().process_group(0);
+    Ok(command.spawn()?)
 }
 async fn mark_interrupted(root: &std::path::Path, id: &str) -> anyhow::Result<()> {
     // CLI refusals and receipt lookups may briefly hold the same lease after
@@ -506,16 +513,30 @@ pub(super) fn reconcile_after_restart(root: &std::path::Path) -> anyhow::Result<
         .filter(|t| !t.public.stage.terminal() && t.public.stage != Stage::NeedsAttention)
         .map(|t| t.public.id)
         .collect::<Vec<_>>();
-    if ids.is_empty() {
+    let update_ids = Journal::open(root)?
+        .list()?
+        .into_iter()
+        .filter(|j| !j.public.phase.terminal() && j.public.phase != Phase::NeedsOperator)
+        .map(|j| j.public.id)
+        .collect::<Vec<_>>();
+    if ids.is_empty() && update_ids.is_empty() {
         return Ok(());
     }
     let root = root.to_path_buf();
     tokio::spawn(async move {
-        let _ = reconcile_pending(&root, &ids).await;
+        let _ = reconcile_pending_all(&root, &ids, &update_ids).await;
     });
     Ok(())
 }
+#[cfg(test)]
 async fn reconcile_pending(root: &std::path::Path, ids: &[String]) -> anyhow::Result<()> {
+    reconcile_pending_all(root, ids, &[]).await
+}
+async fn reconcile_pending_all(
+    root: &std::path::Path,
+    ids: &[String],
+    update_ids: &[String],
+) -> anyhow::Result<()> {
     loop {
         if let Ok(_lease) = HostLock::acquire(root) {
             let journal = HostJournal::open(root)?;
@@ -527,6 +548,20 @@ async fn reconcile_pending(root: &std::path::Path, ids: &[String]) -> anyhow::Re
                     && t.public.stage != Stage::NeedsAttention
             }) {
                 journal.advance(&mut task, Stage::NeedsAttention, Some("worker_interrupted"))?;
+            }
+            if !update_ids.is_empty() {
+                let updates = Journal::open(root)?;
+                for mut job in updates.list()?.into_iter().filter(|j| {
+                    update_ids.contains(&j.public.id)
+                        && !j.public.phase.terminal()
+                        && j.public.phase != Phase::NeedsOperator
+                }) {
+                    let target = match job.public.phase {
+                        Phase::Preparing => (Phase::FailedBeforeChange, "preparation_interrupted"),
+                        _ => (Phase::NeedsOperator, "worker_interrupted"),
+                    };
+                    updates.advance(&mut job, target.0, Some(target.1))?;
+                }
             }
             return Ok(());
         }

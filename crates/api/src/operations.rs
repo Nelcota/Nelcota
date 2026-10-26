@@ -216,6 +216,16 @@ pub(crate) async fn create(
             "POST does not accept filters".into(),
         )));
     }
+    let ignored = [
+        ("order", !request.order.is_empty()),
+        ("limit", request.limit.is_some()),
+        ("offset", request.offset.is_some()),
+    ];
+    if let Some((name, _)) = ignored.iter().find(|(_, set)| *set) {
+        return Err(bad_query(QueryError::Invalid(format!(
+            "POST does not accept {name}"
+        ))));
+    }
     let upsert = match (options.resolution, &request.on_conflict) {
         (Some(resolution), on_conflict) => {
             Some(query::Upsert::new(table, on_conflict.as_deref(), resolution).map_err(bad_query)?)

@@ -348,7 +348,11 @@
       })
       if (alive && selected === name && service === requestedService)
         logs = parseLogs(reply.data)
-    } catch {
+    } catch (error) {
+      if (alive && error instanceof ControllerError && error.status === 401) {
+        expired()
+        return
+      }
       if (alive) failure = h('error')
     } finally {
       busy = false
