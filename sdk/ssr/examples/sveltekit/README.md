@@ -2,7 +2,8 @@
 
 A minimal SvelteKit 3 app using `@nelcota/ssr/sveltekit`: `/login` signs in
 through a form action, `/dashboard` is protected by `hooks.server.js` and shows
-the signed-in user, and the dashboard's form signs out.
+the signed-in user, `/auth/refresh` renews an expired session and returns, and
+the dashboard's form signs out.
 
 It uses the in-memory development store, so it is **loopback development
 only**. Production uses `PostgresSessionStore` from `@nelcota/ssr/postgres` with

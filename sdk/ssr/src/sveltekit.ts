@@ -41,6 +41,9 @@ const jar = (cookies: SvelteKitCookies): CookieWriter => ({
   get: name => { const value = cookies.get(name); return value === undefined ? undefined : { value }; },
   set: (name, value, options) => cookies.set(name, value, options),
 });
+function setCookie(name: string, value: string, options: CookieOptions): string {
+  return `${name}=${value}; Path=${options.path}; Max-Age=${options.maxAge}; HttpOnly; SameSite=Lax${options.secure ? '; Secure' : ''}`;
+}
 const json = (body: unknown, status: number): Response => privateResponse(Response.json(body, { status }));
 // Pages keep the URL from other sites but not from the app itself: under `no-referrer`
 // Chromium sends `Origin: null` with a native form POST, which every CSRF check refuses.
@@ -53,11 +56,17 @@ const privatePage = (response: Response): Response => {
 export async function createNelcotaSvelteKit<Database>(options: SessionOptions): Promise<SvelteKitIntegration<Database>> {
   const owner = await Integration.create<Database>(options);
   // SvelteKit's url.pathname includes `paths.base`; routing policies are written without it.
+  // Kit matches the base and routes on the decoded path (decodeURI, keeping `%25`), so the
+  // base is stripped from that same form: `/%61pp/dashboard` is the `/app` base's dashboard.
   const local = (url: URL): URL => {
     const base = owner.basePath;
-    if (base === '' || !(url.pathname === base || url.pathname.startsWith(`${base}/`))) return url;
+    if (base === '') return url;
+    let decoded: string;
+    try { decoded = url.pathname.split('%25').map(decodeURI).join('%25'); }
+    catch { return url; }
+    if (!(decoded === base || decoded.startsWith(`${base}/`))) return url;
     const stripped = new URL(url.href);
-    stripped.pathname = url.pathname.slice(base.length) || '/';
+    stripped.pathname = decoded.slice(base.length) || '/';
     return stripped;
   };
   return {
@@ -75,9 +84,13 @@ export async function createNelcotaSvelteKit<Database>(options: SessionOptions):
           case 'invalid_path': return json({ error: 'invalid_path' }, 400);
           case 'denied': return json({ error: 'access_denied' }, 403);
           case 'unavailable': return json({ error: 'auth_service_unavailable' }, 503);
-          case 'redirect':
-            if (decision.clearCookie) owner.expireCookie(cookies);
-            return privateResponse(new Response(null, { status: 303, headers: { location: decision.location } }));
+          case 'redirect': {
+            // Kit only applies event.cookies to responses made by `resolve` (or a thrown
+            // redirect), so the cookie this hook clears goes on its own response.
+            const headers = new Headers({ location: decision.location });
+            if (decision.clearCookie) owner.expireCookie({ get: () => undefined, set: (name, value, options) => headers.append('set-cookie', setCookie(name, value, options)) });
+            return privateResponse(new Response(null, { status: 303, headers }));
+          }
         }
         // SvelteKit refuses cookies set after `resolve`, so a bootstrap ID is issued
         // first; Kit then adds every event.cookies write to the response.

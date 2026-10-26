@@ -86,6 +86,18 @@ describe('SvelteKit adapter', () => {
     const response = await handle({ event: event(cookies, '/app/dashboard'), resolve });
     expect(response.headers.get('location')).toBe(`${origin}/app/login?next=%2Fdashboard`);
     expect((await handle({ event: event(cookies, '/app/about'), resolve })).status).toBe(200);
+    // Kit routes on the decoded path: an encoded base must not slip past the guard.
+    expect((await handle({ event: event(cookies, '/%61pp/dashboard'), resolve })).headers.get('location')).toBe(`${origin}/app/login?next=%2Fdashboard`);
+    expect(resolve).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears an unusable cookie on the redirect itself, which Kit does not decorate', async () => {
+    const { nelcota, cookies } = await setup();
+    const name = await signIn(nelcota, cookies).then(() => [...cookies.values.keys()][0]!);
+    cookies.values.set(name, 'malformed');
+    const response = await nelcota.handle({ protectedPaths: ['/dashboard'] })({ event: event(cookies, '/dashboard'), resolve: async () => new Response('page') });
+    expect(response.status).toBe(303);
+    expect(response.headers.get('set-cookie')).toBe(`${name}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`);
   });
 
   it('gives a cookie-less visitor of the login page a bootstrap ID', async () => {

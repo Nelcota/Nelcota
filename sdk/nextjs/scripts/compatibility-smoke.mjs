@@ -25,9 +25,10 @@ try {
   await cp(join(sdk, '../typescript/dist'), join(directory, 'typescript/dist'), { recursive: true });
   await cp(join(sdk, '../typescript/package.json'), join(directory, 'typescript/package.json'));
   await symlink(join(sdk, '../typescript/node_modules'), join(directory, 'typescript/node_modules'), 'dir');
-  // So is the SSR core (`file:../ssr`), with its SQL schema.
+  // So is the SSR core (`file:../ssr`), with its SQL schema; the adapter's type
+  // check also covers tests that import the core's sources and fixtures.
   await mkdir(join(directory, 'ssr'));
-  for (const entry of ['dist', 'sql', 'package.json']) await cp(join(sdk, '../ssr', entry), join(directory, 'ssr', entry), { recursive: true });
+  for (const entry of ['dist', 'sql', 'src', 'test', 'package.json']) await cp(join(sdk, '../ssr', entry), join(directory, 'ssr', entry), { recursive: true });
   // Its only runtime dependency is the base SDK: point it at the same copy as above.
   await mkdir(join(directory, 'ssr/node_modules/@nelcota'), { recursive: true });
   await symlink('../../../typescript', join(directory, 'ssr/node_modules/@nelcota/client'), 'dir');

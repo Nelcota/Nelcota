@@ -101,10 +101,17 @@ export const actions = {
     const result = await (await nelcota()).action(event, ({ auth }) =>
       auth.signInWithPassword({ email: String(form.get('email')), password: String(form.get('password')) }));
     if (result.error) return fail(400, { error: 'Invalid email or password' });
+    // `next` is written without paths.base: prefix it when the app sets one.
     redirect(303, safeReturnTo(event.url.searchParams.get('next') ?? '/'));
   },
 };
 ```
+
+Provide the refresh route too (`refreshPath`, default `/auth/refresh`). The guard
+sends a browser there when its access token expired, and since rendering never
+refreshes, that page POSTs to a form action calling `auth.refresh()` and then
+redirects back to `next`. The example's
+[auth/refresh route](examples/sveltekit/src/routes/auth/refresh) does this.
 
 `route(event, work)` serves `+server.ts` endpoints and `callback(event, work)` the
 OAuth callback. Routing policies are written without `paths.base`, which the

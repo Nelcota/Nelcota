@@ -13,8 +13,8 @@ const engine = process.env.NELCOTA_SSR_BROWSER ?? 'chromium';
 const user = { id: 'kit-fixture-user', email: 'kit@example.test', email_confirmed_at: null, user_metadata: {}, created_at: '', last_sign_in_at: null };
 const password = randomBytes(24).toString('base64url');
 const access = `fixture-access-private-${randomBytes(8).toString('hex')}`;
-const counts = { password: 0, user: 0, logout: 0 };
-let signedOut = false;
+const counts = { password: 0, user: 0, refresh: 0, logout: 0 };
+let signedOut = false, expired = false, current = access;
 
 const api = createServer(async (request, response) => {
   response.setHeader('content-type', 'application/json');
@@ -22,16 +22,22 @@ const api = createServer(async (request, response) => {
   let body = ''; for await (const chunk of request) body += chunk;
   const input = JSON.parse(body || '{}');
   const fail = (status, code) => { response.statusCode = status; response.end(JSON.stringify({ code, message: 'Fixture refusal' })); };
+  const issue = (token, refresh) => { current = token; response.end(JSON.stringify({ access_token: token, refresh_token: refresh, token_type: 'bearer', expires_in: 900, expires_at: Math.floor(Date.now() / 1000) + 900, user })); };
   if (target.pathname === '/auth/v1/token' && target.searchParams.get('grant_type') === 'password') {
     counts.password++;
     if (input.email !== user.email || input.password !== password) return fail(400, 'invalid_credentials');
     signedOut = false;
-    response.end(JSON.stringify({ access_token: access, refresh_token: 'fixture-refresh-private', token_type: 'bearer', expires_in: 900, expires_at: Math.floor(Date.now() / 1000) + 900, user }));
-    return;
+    return issue(access, 'fixture-refresh-private');
+  }
+  if (target.pathname === '/auth/v1/token' && target.searchParams.get('grant_type') === 'refresh_token') {
+    counts.refresh++;
+    if (input.refresh_token !== 'fixture-refresh-private') return fail(400, 'invalid_grant');
+    expired = false;
+    return issue(`${access}-renewed`, 'fixture-refresh-private-renewed');
   }
   if (target.pathname === '/auth/v1/user') {
     counts.user++;
-    if (signedOut || request.headers.authorization !== `Bearer ${access}`) return fail(401, 'invalid_token');
+    if (signedOut || expired || request.headers.authorization !== `Bearer ${current}`) return fail(401, 'invalid_token');
     response.end(JSON.stringify(user)); return;
   }
   if (target.pathname === '/auth/v1/logout') { counts.logout++; signedOut = true; response.statusCode = 204; response.end(); return; }
@@ -86,6 +92,14 @@ try {
   assert(!(await page.content()).includes('private'), 'no token reaches the rendered page');
   const response = await page.request.get(`${origin}/dashboard`);
   assert.match(response.headers()['cache-control'] ?? '', /private, no-store/);
+
+  // An expired access token: the guard sends the browser through the refresh route
+  // (a POST that rotates the session) and back to the page it asked for.
+  expired = true;
+  await page.goto(`${origin}/dashboard`);
+  await page.waitForURL(`${origin}/dashboard`);
+  assert.equal(counts.refresh, 1);
+  assert.equal(await page.textContent('[data-testid=email]'), user.email);
 
   // A cross-site form post is refused by the session core (and SvelteKit's own check).
   const forged = await fetch(`${origin}/logout`, { method: 'POST', headers: { origin: 'https://evil.example', cookie: `${session.name}=${session.value}`, 'content-type': 'application/x-www-form-urlencoded' }, body: '', redirect: 'manual' });
