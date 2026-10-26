@@ -1,0 +1,1 @@
+import{Kt as e}from"./index.svelte-BFaQyora.js";e();
