@@ -63,6 +63,11 @@ jobs:
         run: |
           mkdir -p ~/.cache/playwright-apt
           sudo find ~/.cache/playwright-apt -name '*.deb' -exec cp -t /var/cache/apt/archives {} +
+          # The runner's default mirror (azure.archive.ubuntu.com) can crawl at
+          # ~100 kB/s, and apt only falls back to the next mirror on errors, not
+          # on slowness, so the main Ubuntu archive goes first here.
+          sudo sed -i 's#http://azure\.archive\.ubuntu\.com/ubuntu/#http://archive.ubuntu.com/ubuntu/#' /etc/apt/apt-mirrors.txt
+          cat /etc/apt/apt-mirrors.txt
           npx playwright-core install --with-deps chromium firefox webkit
       - name: Collect downloaded system packages
         if: always() && steps.playwright-install.outcome != 'skipped' && steps.playwright-cache.outputs.cache-hit != 'true'
