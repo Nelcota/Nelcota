@@ -38,11 +38,10 @@ jobs:
       - run: bun run build
       - run: bun run size
       - run: npm run test:package
-      - run: node test/runtime/smoke.mjs
+      - run: bun run test:runtime
+      - run: bun run test:runtime:node
+      # No Node: o coletor preciso do V8 prova a ausência de vazamento; o do Bun é conservador.
       - run: bun run test:memory
-      # Os mesmos testes unitários no runtime do Bun, além do smoke do pacote construído.
-      - run: bun run test:bun
-      - run: bun test/runtime/smoke.mjs
       - run: deno run --allow-net --allow-read --allow-env test/runtime/smoke.mjs
       - run: cargo build -p nelcota-server
         working-directory: .
@@ -86,7 +85,7 @@ jobs:
         id: sdk_contract
         run: |
           set -o pipefail
-          node scripts/contract.mjs --browser 2>&1 | tee "$RUNNER_TEMP/nelcota-sdk-contract.log"
+          bun scripts/contract.mjs --browser 2>&1 | tee "$RUNNER_TEMP/nelcota-sdk-contract.log"
         env:
           NELCOTA_SDK_BROWSERS: chromium,firefox,webkit
       - name: Annotate contract failure diagnostics
@@ -137,9 +136,9 @@ jobs:
         with:
           bun-version: 1.4.3
       - run: bun install --frozen-lockfile
-      - run: bun run test
+      - run: bun run test:node
       - run: bun run test:types
       - run: bun run build
       - run: npm run test:package
-      - run: node test/runtime/smoke.mjs
+      - run: bun run test:runtime:node
       - run: bun run test:memory

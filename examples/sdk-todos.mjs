@@ -1,11 +1,12 @@
-// The todos example (examples/todos.sql) through @nelcota/client, from Node.
+// The todos example (examples/todos.sql) through @nelcota/client, from Bun or Node.
 //
 // 1. Create the table, once, as the database owner. Either copy
 //    examples/todos.sql to your project's migrations/ folder as
 //    V1__todos.sql (or the next free version) and run `nelcota migrate`, or
 //    paste it into the SQL editor of the panel (/admin/).
-// 2. Copy this file into your consumer and run npm install --save-exact @nelcota/client@0.2.4
-// 3. NELCOTA_URL=http://127.0.0.1:8000 node sdk-todos.mjs
+// 2. Copy this file into your consumer and run bun add --exact @nelcota/client@0.2.4
+//    (or npm install --save-exact @nelcota/client@0.2.4)
+// 3. NELCOTA_URL=http://127.0.0.1:8000 bun sdk-todos.mjs (or node sdk-todos.mjs)
 //
 // The demo signs up a fresh account and uses it at once, so the project must
 // not require email confirmation (NELCOTA_EMAIL_CONFIRMATION_URL unset, the

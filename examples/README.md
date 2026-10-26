@@ -35,8 +35,8 @@ production web framework/CSRF/session configuration.
 
 The Todo demo uses [todos.sql](todos.sql) and [sdk-todos.mjs](sdk-todos.mjs).
 Copy `sdk-todos.mjs` into a consumer directory and run
-`npm install --save-exact @nelcota/client@0.2.4` there;
-Node resolves imports from the script location, not just your working directory.
+`bun add --exact @nelcota/client@0.2.4` (or `npm install --save-exact @nelcota/client@0.2.4`) there;
+Bun and Node resolve imports from the script location, not just your working directory.
 The root checkout does not install `@nelcota/client`. It leaves a development account and Todo
 rows, so use a disposable project without email confirmation.
 

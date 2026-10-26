@@ -48,9 +48,9 @@ records the Next.js correction. The original publication checkpoint remains a
 dated record of the earlier package versions.
 
 Next.js supports Server Components, Route Handlers, Server Actions, OAuth and
-browser refresh on the Node runtime. The selected matrix uses Next 16.4.3 /
-React 19.3.1 with Node 22/24/26; Chromium covers those runtimes and Firefox/WebKit
-cover Node 24. The 0.1.1 follow-up adds a separate pinned Next 15 consumer;
+browser refresh on the Node.js-compatible runtime of Bun or Node. The selected
+matrix uses Next 16.4.3 / React 19.3.1 on Bun 1.4.3 with Chromium, Firefox and
+WebKit, plus Node 22/24/26 with Chromium. The 0.1.1 follow-up adds a separate pinned Next 15 consumer;
 it does not validate every previous Next major. Pages Router and Edge remain
 outside the supported scope.
 

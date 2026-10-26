@@ -6,8 +6,8 @@
     "#lib/*": "./src/lib/*"
   },
   "scripts": {
-    "build": "vite build",
-    "start": "node build"
+    "build": "bun --bun vite build",
+    "start": "bun build/index.js"
   },
   "dependencies": {
     "@nelcota/client": "file:../../../typescript",

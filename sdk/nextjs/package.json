@@ -11,7 +11,8 @@
     "./dist/proxy.js"
   ],
   "engines": {
-    "node": "^22.0.0 || ^24.0.0 || ^26.0.0"
+    "node": "^22.0.0 || ^24.0.0 || ^26.0.0",
+    "bun": ">=1.4.3"
   },
   "exports": {
     "./server": {
@@ -45,8 +46,8 @@
   "scripts": {
     "check": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
-    "test": "vitest run --maxWorkers=2",
-    "test:bun": "bun --bun vitest run --maxWorkers=2",
+    "test": "bun --bun vitest run --maxWorkers=2",
+    "test:node": "vitest run --maxWorkers=2",
     "prepack": "bun run build"
   },
   "dependencies": {
@@ -68,7 +69,7 @@
     "pg": "^8.23.1",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "typescript": "^7.0.2",
     "vitest": "^5.0.5"
   },
   "repository": {

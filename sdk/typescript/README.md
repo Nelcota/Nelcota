@@ -14,8 +14,8 @@ or the [client contract](docs/contract.md). Empty results, 401/403 or a
   may add requests. There is no hidden data cache, and
   Postgres (GRANTs and RLS) decides what a call may do.
 - **No runtime dependencies.** It uses `fetch`, Web Crypto, `AbortSignal`,
-  Web Locks and `BroadcastChannel`, and runs in browsers, Node 22+, Deno,
-  Bun. Edge hosts need the same Web APIs and host-specific validation.
+  Web Locks and `BroadcastChannel`, and runs in browsers, Bun, Node 22+ and
+  Deno. Edge hosts need the same Web APIs and host-specific validation.
   ESM only, side-effect free, with subpath exports
   (`/rest`, `/auth`, `/storage`).
 - **Typed from your schema** by `nelcota types`, down to the embeds in a
@@ -25,7 +25,7 @@ or the [client contract](docs/contract.md). Empty results, 401/403 or a
   a browser.
 
 ```sh
-npm install @nelcota/client@0.2.4   # or: bun add @nelcota/client@0.2.4
+bun add @nelcota/client@0.2.4   # or: npm install @nelcota/client@0.2.4
 nelcota types -o src/database.ts
 ```
 
@@ -525,19 +525,18 @@ error immediately with `retryAfter`, allowing the app to decide when to retry.
 | 0.2.x | Server `v0.3.0` or later | Full contract suite, OAuth routes, `updateUser`, exposed CORS headers and generated `Relationships` |
 | 0.2.x | Server `v0.2.0` | Not supported: lacks the OAuth routes, `PUT /auth/v1/user`, the JSON error contract, generated `Relationships` and the newer exposed headers |
 
-Release verification covers Node 22/24/26, Bun 1.4.3 (unit tests and the runtime
-smoke), Deno and the Chromium, Firefox and WebKit engines. Other runtimes need their own validation.
+Release verification covers Bun 1.4.3, the primary runtime, plus Node 22/24/26,
+Deno and the Chromium, Firefox and WebKit engines. Other runtimes need their own validation.
 
 ## Development
 
 ```sh
 bun install --frozen-lockfile
 bun run check && bun run test && bun run test:types   # types, unit and type-level tests
-bun run test:bun                                      # the unit tests on the Bun runtime
+bun run test:node                                     # the same unit tests on Node
 bun run build && bun run size                         # dist/ and the size budget per entry
 npm run test:package                                  # npm pack + install, as npm publishes and consumers install
-node test/runtime/smoke.mjs
-bun test/runtime/smoke.mjs
+bun run test:runtime && bun run test:runtime:node     # the built package on Bun, then Node
 deno run --allow-net --allow-read --allow-env test/runtime/smoke.mjs
 cargo build -p nelcota-server
 bunx playwright-core install chromium firefox webkit

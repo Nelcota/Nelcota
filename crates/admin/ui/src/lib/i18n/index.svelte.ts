@@ -86,7 +86,11 @@ export function detectLocale(saved: string | null, languages: readonly string[])
   return languages.some((l) => l.toLowerCase().startsWith('pt')) ? 'pt-BR' : 'en'
 }
 
-const browserLanguages = typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language])
+// Fora do navegador (Bun, por exemplo) `navigator` pode existir sem idioma nenhum.
+const browserLanguages: readonly string[] =
+  typeof navigator === 'undefined'
+    ? []
+    : (navigator.languages ?? [navigator.language]).filter((language) => typeof language === 'string')
 
 export const i18n = $state<{ locale: Locale }>({
   locale: detectLocale(readText(KEY, '') || null, browserLanguages),

@@ -17,7 +17,7 @@ ORIGIN=http://127.0.0.1:5173 bunx vite build
 PORT=5173 HOST=127.0.0.1 ORIGIN=http://127.0.0.1:5173 \
   NELCOTA_URL=http://127.0.0.1:54321 \
   NELCOTA_SESSION_KEY="$(node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))")" \
-  node build   # or with Bun: bun build/index.js
+  bun build/index.js   # or with Node: node build
 ```
 
 `NELCOTA_URL` is your Nelcota server. `ORIGIN` must be the URL the browser uses,

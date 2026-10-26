@@ -1,7 +1,8 @@
 # App Router example
 
 This runnable application uses published `@nelcota/nextjs` 0.1.2 and
-`@nelcota/client` 0.2.4 with Next 16.4.3 / React 19.3.1. Use Node 22, 24 or 26.
+`@nelcota/client` 0.2.4 with Next 16.4.3 / React 19.3.1. Use Bun 1.4.3 or later (the scripts run Next
+on Bun), or Node 22, 24 or 26 through npx.
 The package manifest and lockfile use registry packages, with no local SDK link.
 
 Copy this directory into a separate application directory, then run:
@@ -17,9 +18,10 @@ explains app migrations and startup. Set server-only environment variables:
 export NELCOTA_URL=http://127.0.0.1:8000
 export APP_ORIGIN=http://localhost:3000
 export NELCOTA_SESSION_KEY="$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n')"
-bun run build   # or with npm: npm run build && npm run check && npm start
+bun run build
 bun run check
 bun run start
+# With Node: npx next build --webpack && npx tsc --noEmit && npx next start
 ```
 
 Open `http://localhost:3000/login` and sign in. Keep the same origin for every

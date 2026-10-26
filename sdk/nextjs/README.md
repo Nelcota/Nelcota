@@ -9,9 +9,8 @@ record the original validation and the explicitly skipped external provider gate
 Install in a compatible Next App Router application:
 
 ```sh
-npm install --save-exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.4
-npm install pg
-# or with Bun: bun add --exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.4 pg
+bun add --exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.4 pg
+# or with npm: npm install --save-exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.4 pg
 ```
 
 The [standalone App Router example](https://github.com/Nelcota/Nelcota/blob/main/sdk/nextjs/examples/app-router/README.md) installs these
@@ -21,11 +20,11 @@ published versions and includes configuration and startup commands.
 
 ## Scope
 
-App Router on the Node.js runtime: Server Components, Route Handlers, Server
+App Router on the Node.js-compatible server runtime, served by Bun or Node: Server Components, Route Handlers, Server
 Actions, OAuth callback, optional authentication proxy, and a browser refresh
-helper. The verification matrix uses Next 16.4.3 / React 19.3.1 on Node
-22, 24 and 26 with Chromium, plus Firefox and WebKit on Node 24, and Bun 1.4.3
-with Chromium (`next build` and `next start` under Bun). The package
+helper. The verification matrix uses Next 16.4.3 / React 19.3.1 on Bun 1.4.3
+(`next build` and `next start` under Bun) with Chromium, Firefox and WebKit,
+plus Node 22, 24 and 26 with Chromium. The package
 peer range targets Next 16. A pinned Next 15.5.28 compatibility consumer passed
 all three browsers on Node 24 with PostCSS 8.5.31 and Node middleware adaptations;
 see the [compatibility evidence](https://github.com/Nelcota/Nelcota/blob/main/docs/goals/nextjs-151-validation.md).

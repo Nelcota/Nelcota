@@ -66,7 +66,7 @@ await integration.route(new Request('https://app.test'), async context => {
 const memory: SessionStore = new DevelopmentSessionStore();
 void memory; void PostgresSessionStore; void createNelcotaProxy; void refreshSession;
 `);
-  run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc6'), '--ignoreConfig', '--noEmit', '--strict', '--skipLibCheck', '--module', 'NodeNext', '--target', 'ES2022', 'consumer.ts']);
+  run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '--ignoreConfig', '--noEmit', '--strict', '--skipLibCheck', '--module', 'NodeNext', '--target', 'ES2022', 'consumer.ts']);
   const packageData = JSON.parse(await readFile(join(directory, 'node_modules/@nelcota/nextjs/package.json'), 'utf8'));
   assert.equal(packageData.private, false);
   assert.equal(packageData.publishConfig.access, 'public');
