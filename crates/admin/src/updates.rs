@@ -103,6 +103,15 @@ fn session_cookie(value: &str, max_age: cookie::time::Duration) -> String {
         .build()
         .to_string()
 }
+fn set_session_cookie(response: &mut Response, cookie: &str) {
+    match HeaderValue::from_str(cookie) {
+        Ok(value) => {
+            response.headers_mut().insert(header::SET_COOKIE, value);
+        }
+        // The token is a validated hex digest, so this would be a bug here.
+        Err(error) => tracing::error!(%error, "controller session cookie is not a valid header"),
+    }
+}
 async fn boundary(
     State(state): State<Controller>,
     request: axum::extract::Request,
@@ -157,12 +166,10 @@ async fn invoke(state: Controller, request: Request) -> Response {
                 return failure(StatusCode::BAD_GATEWAY, "worker_unavailable");
             }
             let mut response = Json(json!({"result":"session","email":email})).into_response();
-            if let Ok(value) = HeaderValue::from_str(&session_cookie(
-                &token,
-                cookie::time::Duration::seconds(3600),
-            )) {
-                response.headers_mut().insert(header::SET_COOKIE, value);
-            }
+            set_session_cookie(
+                &mut response,
+                &session_cookie(&token, cookie::time::Duration::seconds(3600)),
+            );
             response
         }
         Reply::Error { code } => {
@@ -260,10 +267,11 @@ async fn action(
         Input::Login { .. } => unreachable!(),
     };
     let mut response = invoke(state, request).await;
-    if logout
-        && let Ok(value) = HeaderValue::from_str(&session_cookie("", cookie::time::Duration::ZERO))
-    {
-        response.headers_mut().insert(header::SET_COOKIE, value);
+    if logout {
+        set_session_cookie(
+            &mut response,
+            &session_cookie("", cookie::time::Duration::ZERO),
+        );
     }
     response
 }

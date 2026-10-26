@@ -32,11 +32,16 @@ pub fn timestamp() -> String {
     format_timestamp(secs)
 }
 
+/// Last second of the year 9999, the end of four-digit years.
+const LAST_FOUR_DIGIT_YEAR_SECOND: u64 = 253_402_300_799;
+
 fn format_timestamp(secs: u64) -> String {
-    let at = i64::try_from(secs)
+    // Clamp to 9999-12-31T23:59:59Z: a broken clock must not panic a request.
+    let clamped = secs.min(LAST_FOUR_DIGIT_YEAR_SECOND);
+    let at = i64::try_from(clamped)
         .ok()
         .and_then(|secs| time::OffsetDateTime::from_unix_timestamp(secs).ok())
-        .expect("Unix time before the year 10000");
+        .expect("clamped seconds fit an OffsetDateTime");
     format!(
         "{:04}{:02}{:02}T{:02}{:02}{:02}Z",
         at.year(),
@@ -88,6 +93,7 @@ pub fn ask(question: &str, default: &str) -> String {
 
 /// Question whose answer is not echoed (a secret). Without a terminal on stdin
 /// it falls back to [`ask`].
+#[cfg(unix)]
 pub fn ask_secret(question: &str) -> String {
     let Some(_echo) = EchoOff::new() else {
         return ask(question, "");
@@ -97,10 +103,17 @@ pub fn ask_secret(question: &str) -> String {
     answer
 }
 
+#[cfg(not(unix))]
+pub fn ask_secret(question: &str) -> String {
+    ask(question, "")
+}
+
 /// Turns stdin echo off and restores the previous terminal mode on drop, so a
 /// panic while reading does not leave the terminal silent.
+#[cfg(unix)]
 struct EchoOff(rustix::termios::Termios);
 
+#[cfg(unix)]
 impl EchoOff {
     fn new() -> Option<Self> {
         use rustix::termios::{LocalModes, OptionalActions, tcgetattr, tcsetattr};
@@ -113,6 +126,7 @@ impl EchoOff {
     }
 }
 
+#[cfg(unix)]
 impl Drop for EchoOff {
     fn drop(&mut self) {
         use rustix::termios::{OptionalActions, tcsetattr};
@@ -205,5 +219,6 @@ mod tests {
         assert_eq!(format_timestamp(0), "19700101T000000Z");
         assert_eq!(format_timestamp(1_791_308_348), "20261006T173908Z");
         assert_eq!(format_timestamp(951_782_400), "20000229T000000Z");
+        assert_eq!(format_timestamp(u64::MAX), "99991231T235959Z");
     }
 }

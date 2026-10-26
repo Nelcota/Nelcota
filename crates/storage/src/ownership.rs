@@ -40,8 +40,7 @@ impl Store {
             row.get::<_, String>(1),
             row.get::<_, String>(2)
         );
-        let digest = base16ct::lower::encode_string(&Sha256::digest(identity.as_bytes()));
-        let owner = format!("v1:{digest}");
+        let owner = owner_tag(&identity);
         if self.gc_owner.set(owner.clone()).is_err() && self.gc_owner.get() != Some(&owner) {
             self.mark_shared().await?;
         }
@@ -82,8 +81,7 @@ impl Store {
                         row.get::<_, String>(1),
                         row.get::<_, String>(2)
                     );
-                    let digest = base16ct::lower::encode_string(&Sha256::digest(identity.as_bytes()));
-                    let owner = format!("v1:{digest}");
+                    let owner = owner_tag(&identity);
                     if self.gc_owner.set(owner.clone()).is_err()
                         && self.gc_owner.get() != Some(&owner)
                     {
@@ -169,4 +167,11 @@ async fn all_known(pool: &Pool, versions: &[uuid::Uuid]) -> Result<bool, StoreEr
         .await
         .map_err(|_| StoreError::Ownership("could not verify existing file metadata"))?;
     Ok(versions.iter().all(|version| known.contains(version)))
+}
+
+/// Versioned owner tag stored next to the GC marker: the hex SHA-256 of the
+/// database identity.
+fn owner_tag(identity: &str) -> String {
+    let digest = base16ct::lower::encode_string(&Sha256::digest(identity.as_bytes()));
+    format!("v1:{digest}")
 }

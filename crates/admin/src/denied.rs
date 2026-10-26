@@ -53,11 +53,16 @@ pub fn now_rfc3339() -> String {
 }
 
 /// Seconds since the epoch as RFC 3339, UTC.
+/// Last second of the year 9999, the end of four-digit years.
+const LAST_FOUR_DIGIT_YEAR_SECOND: u64 = 253_402_300_799;
+
 pub(crate) fn rfc3339(secs: u64) -> String {
-    let at = i64::try_from(secs)
+    // Clamp to 9999-12-31T23:59:59Z: a broken clock must not panic a request.
+    let clamped = secs.min(LAST_FOUR_DIGIT_YEAR_SECOND);
+    let at = i64::try_from(clamped)
         .ok()
         .and_then(|secs| time::OffsetDateTime::from_unix_timestamp(secs).ok())
-        .expect("Unix time before the year 10000");
+        .expect("clamped seconds fit an OffsetDateTime");
     format!(
         "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
         at.year(),
@@ -100,6 +105,8 @@ mod tests {
         assert_eq!(rfc3339(0), "1970-01-01T00:00:00Z");
         assert_eq!(rfc3339(951_782_400), "2000-02-29T00:00:00Z");
         assert_eq!(rfc3339(1_791_557_012), "2026-10-09T14:43:32Z");
+        // A broken clock clamps to the last four-digit year instead of panicking.
+        assert_eq!(rfc3339(u64::MAX), "9999-12-31T23:59:59Z");
     }
 
     #[test]
