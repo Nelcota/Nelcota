@@ -105,8 +105,8 @@ nelcota types -o src/database.ts
 nelcota types --lang rust -o src/database.rs
 ```
 
-Regenerate after schema changes. Generators describe the running server's schema;
-consumer compilation does not connect to your database.
+Regenerate after schema changes. The generator reads the exposed schema directly from
+the database; consumer compilation does not connect to your database.
 
 ## 6. Use it from the client
 

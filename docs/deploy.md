@@ -17,8 +17,10 @@ curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/instal
 
 Arguments after the script's `--` go to `nelcota init`, for example `--email`,
 `--firewall`, `--runtime systemd` or `--s3-*`; `--dir <folder>` selects another
-host folder. With `--firewall`, it also installs ufw and allows the port of the
-current SSH session. Run again on an existing host, it skips `init` and only
+host folder. With `--firewall`, it also installs ufw and runs `ufw allow OpenSSH` (port 22).
+It also allows the current SSH session's port when `SSH_CONNECTION` reaches the
+script, but `sudo` normally drops that variable: if SSH listens on another port,
+run `ufw allow <port>/tcp` before installing. Run again on an existing host, it skips `init` and only
 runs `up`. The same steps by hand:
 
 ```sh
@@ -169,7 +171,7 @@ On a small VPS that will only ever hold one project, Nelcota can skip Docker:
 sudo -i
 apt-get update && apt-get install -y ca-certificates curl coreutils cron
 systemctl enable --now cron.service
-curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | NELCOTA_SKIP_DOCKER=1 sh
+curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | NELCOTA_SKIP_DOCKER=1 NELCOTA_VERSION=0.5.4 sh
 mkdir -p /opt/nelcota && cd /opt/nelcota
 nelcota init api.yourdomain.com --runtime systemd
 nelcota up

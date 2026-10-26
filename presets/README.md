@@ -75,7 +75,7 @@ Limit Oxlint to selected project files when needed:
 python3 scripts/run-preset.py bugs/nan --paths sdk/typescript/src
 ```
 
-External scanners keep their documented scope: npm audits both package lockfiles,
+External scanners keep their documented scope: npm audits the panel and TypeScript SDK lockfiles,
 Gitleaks scans Git history, and Semgrep scans the checkout. `--paths` limits only
 Oxlint. The runner uses two Oxlint/Semgrep workers and executes presets sequentially.
 

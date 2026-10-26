@@ -2,7 +2,8 @@
 
 This example hosts authentication with Axum, Tokio and PostgreSQL. Its graph
 includes auth/core, not the other server capabilities. It demonstrates
-source/archive packaging from server 0.5.0, not a deployed auth service.
+source/archive packaging (introduced in server 0.5.0; workspace version 0.5.4),
+not a deployed auth service.
 Auth/core registry publication remains separate from the server release.
 
 ## Prerequisites
@@ -55,7 +56,7 @@ Local `--allow-dirty --no-verify` packaging does not publish or prove a release.
 The subsequent regression builds extracted archives offline and tests owned
 PostgreSQL with generated credentials. It needs Docker, OpenSSL and Python
 3.11.8+. Publish matched core before auth only after separate release review;
-workspace version 0.5.0 does not establish registry availability.
+workspace version 0.5.4 does not establish registry availability.
 
 ## Troubleshooting
 

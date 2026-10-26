@@ -51,11 +51,11 @@ executing the request.
   `GET /auth/v1/.well-known/jwks.json` (`kty: OKP`, `crv: Ed25519`, `kid` =
   RFC 7638 thumbprint). Each token's header carries the `kid`.
 - **HS256**, the simple/legacy mode, with `NELCOTA_JWT_SECRET` (≥ 32
-  characters). When there is an EdDSA key, the HS256 secret is only used to
+  bytes). When there is an EdDSA key, the HS256 secret is only used to
   **verify** old tokens, which allows migrating without signing anyone out.
 
-Generate a key: `openssl genpkey -algorithm ed25519` (or `nelcota init`, which
-generates one).
+Generate a key with `nelcota keygen` or `openssl genpkey -algorithm ed25519`
+(or let `nelcota init` generate one).
 
 ## Claims of user tokens (issued by `/auth/v1`)
 
@@ -71,6 +71,8 @@ generates one).
   "exp": 1767226500
 }
 ```
+
+`iss` is `NELCOTA_JWT_ISSUER` (default `nelcota`).
 
 ## Validation rules (any issuer)
 

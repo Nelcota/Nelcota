@@ -3,7 +3,9 @@
 Generated from the exposed schema (`NELCOTA_DB_SCHEMA`, default `public`). Every
 table, view and function in the schema becomes an endpoint, and **Postgres
 decides access**: GRANTs say which roles may use each object and RLS says which
-rows each user sees.
+rows each user sees. Functions are exposed only when every input argument is
+named; procedures, trigger functions and functions that belong to extensions
+are not exposed.
 
 ## Prerequisites
 
@@ -68,7 +70,8 @@ GET /rest/v1/orders?select=id,total,customers(name),items(product,qty)
   the options.
 - Embeds nest, up to 4 levels: `customers?select=name,orders(id,items(product))`.
   A table cannot be embedded into itself (self-reference). A key that repeats
-  a selected column is a 400: rename it with an alias.
+  a selected column is a 400: rename it with an alias. Plain columns cannot be
+  aliased (`alias:column` is a 400); only embeds can be renamed.
 - **RLS applies to the embedded table** too: each embed runs with the request's
   role, so it shows exactly what a direct read of that table would. A related
   row the user cannot see becomes `null` or is left out of the array.
@@ -113,7 +116,8 @@ Same syntax as PostgREST. Inside the parentheses each filter is written
 - A value with commas or parentheses goes in double quotes, with `\"` and `\\`
   as escapes: `or=(name.eq."Ruler, 30cm",name.eq."f(x)")`. `in` lists keep
   their own quoting.
-- At most 8 nested levels and 100 filters per group; beyond that, 400.
+- At most 8 nested levels, and at most 100 items (filters and nested groups,
+  counted across the whole tree) in each `or`/`and` parameter; beyond that, 400.
 - A column literally named `or` or `and` cannot be used as a direct filter,
   only inside a group (`and=(or.eq.1)`), as in PostgREST.
 - RLS still applies: a group can only narrow what the policies allow, never
@@ -122,7 +126,8 @@ Same syntax as PostgREST. Inside the parentheses each filter is written
 ### Responses
 
 - Body: a JSON array built by Postgres (`json_agg`).
-- `Content-Range: 0-19/*`, or `0-19/137` with `Prefer: count=exact`.
+- `Content-Range: 0-19/*`, or `0-19/137` with `Prefer: count=exact` (`*/*` or
+  `*/0` when no row is returned).
 - `NELCOTA_MAX_ROWS` defaults to **1000** and must be positive. It caps the root
   read, each embedded collection, and set-returning RPCs, including explicit
   limits larger than the cap. Embedded collections in write representations
@@ -279,7 +284,7 @@ methods, body limits and timeouts) is JSON with the same shape:
 | 422 | `invalid_body` | an auth or storage JSON body with a missing field or a field of the wrong type |
 | 429 | `rate_limited` | too many attempts (`Retry-After`) |
 | 500 | `internal` | unexpected error; details only in the server log |
-| 503 | `unavailable` | database unreachable, or a transient failure: serialization failure (`40001`), deadlock (`40P01`), lock not available (`55P03`), too many connections (`53300`), server shutting down or starting (`57P01`, `57P02`, `57P03`). Comes with `Retry-After: 1` (and `sqlstate` when Postgres answered): retry the request |
+| 503 | `unavailable` | database unreachable or pool exhausted (no `Retry-After`, no `sqlstate`), or a transient failure reported by Postgres: serialization failure (`40001`), deadlock (`40P01`), lock not available (`55P03`), too many connections (`53300`), server shutting down or starting (`57P01`, `57P02`, `57P03`); these come with `Retry-After: 1` and `sqlstate`. Retry the request |
 | 504 | `db_error` | `statement_timeout` (`NELCOTA_STATEMENT_TIMEOUT_SECS`, default 10 s; `sqlstate` `57014`) |
 | 504 | `timeout` | the whole request took longer than `NELCOTA_REQUEST_TIMEOUT_SECS` (default 15 s, must exceed the statement timeout) |
 
@@ -290,8 +295,10 @@ Auth and storage add their own codes; see [schema-auth.md](schema-auth.md) and
 
 Each response carries an `x-request-id` header: the one the request came with
 (for example from a proxy in front), or a new UUID. The server logs one line
-per response at `INFO` with the method, path (never the query string), status,
-latency and that id, so an error a user reports can be found in the log.
+per response at `INFO` with the method, the route template (for example
+`/rest/v1/{table}`; never the concrete path or query string), status, latency
+and that id (an incoming id that is not 1–128 characters of `[A-Za-z0-9-_.:]`
+is logged as `[redacted]`), so an error a user reports can be found in the log.
 Browsers can read the header (it is in `Access-Control-Expose-Headers`).
 
 ## Out of the MVP

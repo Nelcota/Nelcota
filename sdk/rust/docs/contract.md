@@ -12,7 +12,7 @@ not part of 0.1.
 | REST read | GET/HEAD `/rest/v1/{table}`; select/filter/order/paging, Prefer count, Content-Range |
 | REST write | POST/PATCH/DELETE `/rest/v1/{table}`; minimal/representation, upsert resolution/on_conflict |
 | RPC | POST `/rest/v1/rpc/{name}` with named JSON arguments |
-| Auth | POST signup; token grants password/refresh_token/pkce; GET user; POST logout |
+| Auth | POST signup; token grants password/refresh_token/pkce; GET/PUT user; POST logout |
 | Email | POST recover/magiclink/resend/verify |
 | OAuth | Authorization URL with S256 PKCE; one-use code exchange |
 | Objects | POST/PUT/GET/DELETE `/storage/v1/object/{bucket}/{path}`, raw bytes |
@@ -34,7 +34,7 @@ remain effective. Successful responses keep their existing buffering or streamin
 contract.
 
 One Client and its clones share lifecycle coordination. Explicit token clones
-control REST/storage and get_user only; other auth methods manage the shared
+control REST/storage, get_user and update_user only; other auth methods manage the shared
 login session. Refresh waiters share one background rotation task; cancelling
 or dropping them does not leave a task per waiter or stop an accepted rotation.
 Default sessions never persist outside memory. Shared stores across independently

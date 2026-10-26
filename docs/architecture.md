@@ -303,7 +303,9 @@ sequenceDiagram
 The project panel has separate administrator sessions. Controlled updates add
 separate controller/worker processes using the same binary and a separately
 enrolled operator origin; they do not grant host authority to a project login.
-The controller remains source-only pending a new release and VPS acceptance.
+The controller ships in server 0.5.0 and later; production activation still
+requires SSH enrollment and the VPS acceptance gates in
+[controlled panel updates](panel-updates.md).
 
 ## Related guides
 

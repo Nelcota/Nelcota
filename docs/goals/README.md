@@ -74,7 +74,7 @@ references; public security context is in [the review summary](../security/revie
 ## Active SDK security review
 
 [G12 — Comprehensive SDK security review](sdk-security-review.md) covers Rust,
-TypeScript and the unpublished Next.js candidate. See its
+TypeScript and the Next.js integration (unpublished when the review started). See its
 [execution record](sdk-security-review-execution.md) for evidence and open gates.
 
 ## Cross-project verification — 25 October 2026

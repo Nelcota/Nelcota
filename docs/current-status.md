@@ -1,7 +1,7 @@
 # Current implementation and release status
 
-Documentation checkpoint: **2026-10-25**, server 0.5.4 scope after the reviewed
-dependency and audit PRs #170/#171. SDK publication statements retain the
+Documentation checkpoint: **2026-10-25**, server 0.5.4 scope after the dependency
+refresh (#170) and the file-preservation/session-rotation fix (#171). SDK publication statements retain the
 October 24 receipts; this page does not claim another registry or production
 validation run. Verify server artifact availability and signed readiness on the
 [release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.4).

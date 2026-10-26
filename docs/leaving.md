@@ -17,15 +17,17 @@ docker compose exec -T postgres pg_dump -U postgres -Fc postgres > nelcota.dump
 pg_restore --no-owner -d "postgres://user@new-host/db" nelcota.dump
 ```
 
-The roles `anon`, `authenticated`, `service_role`, `authenticator` and
-`nelcota_auth` are global and not part of `pg_dump`. Create them on the target
-first (the file `migrations/V1__roles_e_auth.sql` does that and is idempotent)
-or use `pg_restore --no-acl` if you will not use them.
+The roles `anon`, `authenticated`, `service_role`, `authenticator`,
+`nelcota_auth`, `nelcota_storage` and `nelcota_webhooks` are global and not part
+of `pg_dump`. Create them on the target first; the role blocks in
+`migrations/V1__roles_e_auth.sql`, `V2__auth_usuarios_e_sessoes.sql`,
+`V8__storage.sql` and `V13__webhooks.sql` are idempotent. `pg_restore --no-acl`
+skips grants only: policies that name these roles still need them.
 
 ## 2. Just the users (with their hashes)
 
 ```sh
-docker compose exec -T postgres psql -U postgres -c "\copy (
+docker compose exec -T postgres psql -U postgres -c "COPY (
   SELECT id, email, encrypted_password, email_confirmed_at,
          raw_user_meta_data, created_at, last_sign_in_at
   FROM auth.users) TO STDOUT WITH CSV HEADER" > users.csv
@@ -50,7 +52,7 @@ same.
 as `<bucket>/<version>`. The name of each one:
 
 ```sh
-docker compose exec -T postgres psql -U postgres -c "\copy (
+docker compose exec -T postgres psql -U postgres -c "COPY (
   SELECT bucket_id || '/' || version AS key, bucket_id || '/' || name AS name
   FROM storage.objects) TO STDOUT WITH CSV HEADER" > files.csv
 ```

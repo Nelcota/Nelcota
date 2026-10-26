@@ -1,7 +1,7 @@
 # App Router example
 
 This runnable application uses published `@nelcota/nextjs` 0.1.1 and
-`@nelcota/client` 0.2.3 with Next 16.4.3 / React 19.3.1. Use Node 22+.
+`@nelcota/client` 0.2.3 with Next 16.4.3 / React 19.3.1. Use Node 22, 24 or 26.
 The package manifest and lockfile use registry packages, with no local SDK link.
 
 Copy this directory into a separate application directory, then run:

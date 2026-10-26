@@ -239,7 +239,7 @@ SHA-256 manifest. `nelcota backup --upload` uploads that immutable snapshot to
 snapshots intact. After losing the server:
 
 ```sh
-nelcota -p shop restore backups/nelcota-shop-<date>.dump --files --yes
+nelcota -p shop restore projects/shop/backups/nelcota-shop-<date>.dump --files --yes
 ```
 
 `--files` verifies and restores that dump's snapshot, locally or from the backup

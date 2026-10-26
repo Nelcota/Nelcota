@@ -72,7 +72,7 @@ maximum session lifetime. Losing all old keys signs those sessions out; it does
 not permit decrypting or adopting them. An unreadable or mismatched row reads as
 no session (`staleCookie` is true), the next write deletes it and continues
 signed out, and the proxy clears the cookie when it redirects to login. The
-proxy does not clear a superseded cookie (see concurrent sign-ins below). `forgetLocalSession()` provides an
+proxy does not clear a superseded cookie (see concurrent sign-ins below). `forgetLocalSession(request)` provides an
 explicit same-origin POST reset without requiring successful decryption.
 
 Use durable PostgreSQL commits and direct/session pooling. **Transaction pooling
@@ -87,7 +87,8 @@ PostgreSQL's lock queue with a server-side statement timeout within the store
 instance. The previous statement timeout is restored before running work. A request that
 cannot obtain it fails with `SessionError` `session_store` instead of leaving a
 backend waiting in PostgreSQL. `new PostgresSessionStore(pool, timeout, leaseTimeout)`
-defaults to 5 s / 60 s and requires `leaseTimeout >= 2 * timeout`. Each auth
+takes milliseconds (defaults 5000 / 60000; `timeout` 100–30000, `leaseTimeout`
+at most 120000 and `>= 2 * timeout`). Each auth
 request in a lease gets at most the remaining lease time minus one store timeout,
 which is reserved for saving its result. A request that cannot fit returns the
 `lease_exhausted` auth error before it is sent. A lost HTTP reply after a
@@ -210,7 +211,10 @@ never reflect callback credentials or arbitrary `next` URLs into HTML/logs.
 In a Client Component, import **only** `refreshSession` from
 `@nelcota/nextjs/browser`; it POSTs to `/auth/session/refresh`. Provide that Route
 Handler as above. The optional `/proxy` entry redirects expired sessions to
-`/auth/refresh`, a page that owns the POST. Exclude callback/login/refresh pages
+`/auth/refresh`, a page that owns the POST. Create it once with
+`createNelcotaProxy(options, { protectedPaths: ['/account'] })` from
+`@nelcota/nextjs/proxy` (1–32 prefixes; `loginPath` defaults to `/login` and
+`refreshPath` to `/auth/refresh`); see `examples/app-router/proxy.ts`. Exclude callback/login/refresh pages
 from loops. The example has an explicit Continue button. Ambiguous encodings
 get a 400 only on paths that could reach a protected prefix after decoding.
 Public paths such as `/blog/50%25-off` pass through. A proxy never refreshes
@@ -322,7 +326,7 @@ NELCOTA_NEXT_TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/post
   node scripts/framework-smoke.mjs
 node scripts/package-smoke.mjs --published-base # actual npm base SDK dependency
 NELCOTA_NEXT_TEST_BINARY=/abs/target/debug/nelcota \
-NELCOTA_NEXT_TEST_DATABASE_URL=postgres://postgres@127.0.0.1:55432/postgres \
+NELCOTA_NEXT_TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/postgres \
   node --conditions=react-server scripts/backend-smoke.mjs
 # same two variables plus a disposable loopback S3 provider and its bucket-admin key:
 NELCOTA_NEXT_TEST_S3_ENDPOINT=http://127.0.0.1:9100 \

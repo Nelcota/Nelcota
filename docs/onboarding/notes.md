@@ -168,7 +168,8 @@ runs when ownership can be established.
 ## Public staging and release handoff
 
 On a dedicated staging VPS, point a real domain at it and use an explicit
-published image version through the existing CLI:
+published image version through the existing CLI. Run as root (`sudo -i`), with
+cron prepared as in [deployment](../deploy.md):
 
 ```sh
 mkdir -p /opt/nelcota-staging && cd /opt/nelcota-staging

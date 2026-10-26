@@ -133,7 +133,7 @@ let client = Client::builder("https://api.example.com")
     .build()?;
 # Ok(()) }
 ```
- Clones share one session,
+Clones share one session,
 lifecycle lock and refresh result. Independent clients/processes sharing a
 persistent store need external coordination: the store interface alone does
 not serialize refresh. A spent refresh token terminates its server session.
@@ -297,7 +297,7 @@ external rotation coordination. Keep its parent directory private and handle
 storage errors without logging session credentials.
 
 Use `tokio::time::timeout` around the complete operation for a caller deadline;
-query and scoped timeouts cover individual HTTP attempts. In 0.1.5, an explicit query timeout overrides the scoped default. For large
+query and scoped timeouts cover individual HTTP attempts. Since 0.1.5, an explicit query timeout overrides the scoped default. For large
 files, use `storage().from(bucket)?.open(...)` and consume response chunks with
 backpressure; dropping the response stops reading it. `download()` deliberately
 buffers bytes. Background refresh is opt-in: retain its handle while needed and

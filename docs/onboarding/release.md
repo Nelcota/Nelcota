@@ -6,8 +6,9 @@ in the [server changelog](../../CHANGELOG.md). A local acceptance pass proves
 the selected binary and its Notes workflow; it does not publish binaries,
 container images, Rust crates or either SDK package.
 
-The completed local checks and artifact hashes are in
-[Notes acceptance evidence](validation.md).
+Historical Notes acceptance evidence for 0.4.0 is in
+[Notes acceptance evidence](validation.md); record new reports for the 0.5.4
+candidate before publishing.
 
 ## Candidate evidence
 
@@ -31,8 +32,9 @@ Rehearse that exact upgrade and a paired database/file restore on a disposable
 installation before publishing. Existing legacy-upgrade CI also covers
 0.3.1 → this checkout; that result does not substitute for the 0.5.3 baseline.
 
-SMTP now requires implicit TLS or mandatory STARTTLS, and Linux initialization
-checks privileges, the cron scheduler and requested UFW operations. Review
+Since 0.5.1, SMTP requires implicit TLS or mandatory STARTTLS, and Linux
+initialization checks privileges, the cron scheduler and requested UFW
+operations; upgrades from 0.5.0 or older must review these. Review
 [the deployment prerequisites](../deploy.md) and [configuration](../configuration.md).
 
 1. Take a database backup and, for disk storage, its paired file snapshot.

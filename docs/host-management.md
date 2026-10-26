@@ -58,9 +58,9 @@ layouts require their CLI/recovery workflows; the interface reports blockers.
 PostgreSQL profiles estimate configuration and do not reserve RAM or guarantee
 capacity. Measure application/database load before filling the host.
 
-## Routine server operations (unreleased)
+## Routine server operations
 
-The source after 0.5.1 extends the same journal/lease to application restart, SMTP/OAuth configuration, external backups, daily schedule/local retention and panel-administrator password changes. These controls require a matching reviewed CLI/controller release; they are not present in published 0.5.1. No terminal, arbitrary command, Docker socket or root password is exposed to the browser.
+Server 0.5.2 extends the same journal/lease to application restart, SMTP/OAuth configuration, external backups, daily schedule/local retention and panel-administrator password changes. These controls require a matching CLI/controller release (0.5.2 or later). No terminal, arbitrary command, Docker socket or root password is exposed to the browser.
 
 Add `service_hosts` to the initial root-owned host-management grant for SMTP and S3 destinations, for example `"service_hosts": ["smtp.example.com", "s3.example.com"]`. The default is empty. Entries are exact lowercase DNS hostnames, not wildcards or IP literals. Preparing and executing the relevant changes rechecks this grant. Existing enrollments need one explicit SSH policy update and worker restart; project sessions cannot grant these permissions.
 
@@ -74,7 +74,7 @@ Configuration execution persists its effects and recovery decision. Failed start
 
 External backup copies verify encrypted configuration plus dump/files after download, with reserve for three times the estimated database/file bytes plus the existing host buffer. The destination test uses a unique probe object and removes it; it never deletes backup history. Daily retention is local and keeps 1–365 copies. Readback evidence is not the off-host restore acceptance required to enable updates. All existing update gates and minimum reserves remain in force.
 
-## Operational alerts (unreleased)
+## Operational alerts
 
 **Server → Alerts** adds host-wide application/database/HTTPS health, disk,
 certificate-expiry and successful-backup monitoring. Enrolled host operators
@@ -87,8 +87,8 @@ must produce successful-outcome receipts; partial dump mtimes do not count.
 A total VPS/worker/network outage requires an independent heartbeat monitor.
 Configure and rehearse that external provider separately. See
 [operational alerts](operational-alerts.md) for thresholds, confirmation,
-retries, payloads, activation and limitations. These controls are not in published
-0.5.1 and do not complete the separate update-installation acceptance.
+retries, payloads, activation and limitations. These controls ship in 0.5.2 and do
+not complete the separate update-installation acceptance.
 
 ## Visual workflow
 
