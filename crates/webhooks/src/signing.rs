@@ -6,7 +6,10 @@ use sha2::Sha256;
 pub fn generate_secret() -> Result<Secret, getrandom::Error> {
     let mut bytes = [0u8; 32];
     getrandom::fill(&mut bytes)?;
-    Ok(Secret::new(format!("whsec_{}", hex(&bytes))))
+    Ok(Secret::new(format!(
+        "whsec_{}",
+        base16ct::lower::encode_string(&bytes)
+    )))
 }
 
 /// Header value: `v1=<hex>`. The key is the literal `whsec_...` string.
@@ -18,17 +21,10 @@ pub fn signature(secret: &str, event_id: &str, timestamp: u64, payload: &[u8]) -
     mac.update(timestamp.to_string().as_bytes());
     mac.update(b".");
     mac.update(payload);
-    format!("v1={}", hex(&mac.finalize().into_bytes()))
-}
-
-fn hex(bytes: &[u8]) -> String {
-    const DIGITS: &[u8; 16] = b"0123456789abcdef";
-    let mut result = String::with_capacity(bytes.len() * 2);
-    for byte in bytes {
-        result.push(DIGITS[(byte >> 4) as usize] as char);
-        result.push(DIGITS[(byte & 15) as usize] as char);
-    }
-    result
+    format!(
+        "v1={}",
+        base16ct::lower::encode_string(&mac.finalize().into_bytes())
+    )
 }
 
 #[cfg(test)]

@@ -95,24 +95,15 @@ pub fn total_ram_mb() -> Option<u64> {
     Some(kb / 1024)
 }
 
-/// Free space (MB) on the filesystem holding `path`, from `df` (Unix).
-pub fn free_disk_mb(path: &Path) -> Option<u64> {
-    let output = Command::new("df").arg("-Pk").arg(path).output().ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    parse_df_available_kb(&String::from_utf8_lossy(&output.stdout)).map(|kb| kb / 1024)
+/// Bytes available to unprivileged users on the filesystem holding `path`.
+pub(crate) fn free_bytes(path: &Path) -> Option<u64> {
+    let stats = rustix::fs::statvfs(path).ok()?;
+    stats.f_bavail.checked_mul(stats.f_frsize)
 }
 
-/// The "Available" column of POSIX `df -Pk` output, in KB.
-fn parse_df_available_kb(output: &str) -> Option<u64> {
-    output
-        .lines()
-        .nth(1)?
-        .split_whitespace()
-        .nth(3)?
-        .parse()
-        .ok()
+/// Free space (MB) on the filesystem holding `path`.
+pub fn free_disk_mb(path: &Path) -> Option<u64> {
+    free_bytes(path).map(|bytes| bytes / (1024 * 1024))
 }
 
 /// Does the domain point at this machine's public IP? False when it does
@@ -173,11 +164,16 @@ mod tests {
     }
 
     #[test]
-    fn reads_available_space_from_df() {
-        let df = "Filesystem     1024-blocks     Used Available Capacity Mounted on\n\
-                  /dev/vda1         40470732 12345678  26062440      33% /\n";
-        assert_eq!(parse_df_available_kb(df), Some(26_062_440));
-        assert_eq!(parse_df_available_kb("Filesystem\n"), None);
+    fn measures_free_space_of_an_existing_path_only() {
+        let dir = tempfile::tempdir().unwrap();
+        let stats = rustix::fs::statvfs(dir.path()).unwrap();
+        assert_eq!(
+            free_bytes(dir.path()),
+            Some(stats.f_bavail * stats.f_frsize)
+        );
+        assert!(free_disk_mb(dir.path()).is_some());
+        assert_eq!(free_bytes(&dir.path().join("missing")), None);
+        assert_eq!(free_disk_mb(&dir.path().join("missing")), None);
     }
 
     #[test]

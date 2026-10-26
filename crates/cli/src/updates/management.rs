@@ -79,11 +79,9 @@ fn public_ip(ip: std::net::IpAddr) -> bool {
         }
     }
 }
+/// Zero when unmeasurable, so disk blockers fail closed.
 pub(super) fn free_bytes(root: &Path) -> u64 {
-    rustix::fs::statvfs(root)
-        .ok()
-        .and_then(|s| s.f_bavail.checked_mul(s.f_frsize))
-        .unwrap_or(0)
+    crate::checks::free_bytes(root).unwrap_or(0)
 }
 pub(super) fn control_project(policy: &Policy, name: &str) -> anyhow::Result<Project> {
     if !nelcota_deployment::valid_project(name) || !policy.project_enrolled(name) {

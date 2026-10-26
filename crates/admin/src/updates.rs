@@ -7,6 +7,7 @@ use axum::{
     response::{IntoResponse, Redirect, Response},
     routing::get,
 };
+use cookie::{Cookie, SameSite};
 use nelcota_deployment::protocol::{ControllerConfig, Request, Response as Reply};
 use serde::Deserialize;
 use serde_json::json;
@@ -80,15 +81,27 @@ fn session(headers: &HeaderMap) -> Option<String> {
         .get_all(header::COOKIE)
         .iter()
         .filter_map(|value| value.to_str().ok())
-        .flat_map(|value| value.split(';'))
-        .filter_map(|part| part.trim().split_once('='))
-        .filter(|(key, _)| *key == COOKIE)
-        .map(|(_, value)| value);
-    let value = matches.next()?;
-    if matches.next().is_some() || !nelcota_deployment::valid_digest(value) {
+        .flat_map(Cookie::split_parse)
+        .filter_map(Result::ok)
+        .filter(|cookie| cookie.name() == COOKIE);
+    let cookie = matches.next()?;
+    // A second copy could be a shadowing cookie; refuse instead of guessing.
+    if matches.next().is_some() || !nelcota_deployment::valid_digest(cookie.value()) {
         return None;
     }
-    Some(value.into())
+    Some(cookie.value().to_owned())
+}
+/// `__Host-` cookie for the controller session; an empty value with a zero
+/// max age clears it.
+fn session_cookie(value: &str, max_age: cookie::time::Duration) -> String {
+    Cookie::build((COOKIE, value))
+        .path("/")
+        .secure(true)
+        .http_only(true)
+        .same_site(SameSite::Strict)
+        .max_age(max_age)
+        .build()
+        .to_string()
 }
 async fn boundary(
     State(state): State<Controller>,
@@ -144,8 +157,9 @@ async fn invoke(state: Controller, request: Request) -> Response {
                 return failure(StatusCode::BAD_GATEWAY, "worker_unavailable");
             }
             let mut response = Json(json!({"result":"session","email":email})).into_response();
-            if let Ok(value) = HeaderValue::from_str(&format!(
-                "{COOKIE}={token}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=3600"
+            if let Ok(value) = HeaderValue::from_str(&session_cookie(
+                &token,
+                cookie::time::Duration::seconds(3600),
             )) {
                 response.headers_mut().insert(header::SET_COOKIE, value);
             }
@@ -246,13 +260,10 @@ async fn action(
         Input::Login { .. } => unreachable!(),
     };
     let mut response = invoke(state, request).await;
-    if logout {
-        response.headers_mut().insert(
-            header::SET_COOKIE,
-            HeaderValue::from_static(
-                "__Host-nelcota_updates=; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=0",
-            ),
-        );
+    if logout
+        && let Ok(value) = HeaderValue::from_str(&session_cookie("", cookie::time::Duration::ZERO))
+    {
+        response.headers_mut().insert(header::SET_COOKIE, value);
     }
     response
 }
@@ -382,6 +393,52 @@ mod tests {
             app.oneshot(request).await.unwrap().status(),
             StatusCode::FORBIDDEN
         );
+    }
+    #[test]
+    fn session_cookie_keeps_the_previous_attributes() {
+        let same = |built: String, previous: &str| {
+            let built = Cookie::parse(built).unwrap();
+            let previous = Cookie::parse(previous).unwrap();
+            assert_eq!(built.name_value(), previous.name_value());
+            assert_eq!(built.path(), previous.path());
+            assert_eq!(built.secure(), previous.secure());
+            assert_eq!(built.http_only(), previous.http_only());
+            assert_eq!(built.same_site(), previous.same_site());
+            assert_eq!(built.max_age(), previous.max_age());
+            assert_eq!(built.domain(), None);
+            assert_eq!(built.expires(), None);
+        };
+        let token = "a".repeat(64);
+        same(
+            session_cookie(&token, cookie::time::Duration::seconds(3600)),
+            &format!("{COOKIE}={token}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=3600"),
+        );
+        same(
+            session_cookie("", cookie::time::Duration::ZERO),
+            "__Host-nelcota_updates=; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=0",
+        );
+    }
+    #[test]
+    fn session_reads_one_valid_cookie_across_headers() {
+        let token = "a".repeat(64);
+        let mut headers = HeaderMap::new();
+        headers.append(header::COOKIE, HeaderValue::from_static("other=1"));
+        headers.append(
+            header::COOKIE,
+            HeaderValue::from_str(&format!("x{COOKIE}=bad; {COOKIE}={token}")).unwrap(),
+        );
+        assert_eq!(session(&headers), Some(token.clone()));
+        headers.append(
+            header::COOKIE,
+            HeaderValue::from_str(&format!("{COOKIE}={token}")).unwrap(),
+        );
+        assert_eq!(session(&headers), None);
+        let mut invalid = HeaderMap::new();
+        invalid.insert(
+            header::COOKIE,
+            HeaderValue::from_str(&format!("{COOKIE}=nothex")).unwrap(),
+        );
+        assert_eq!(session(&invalid), None);
     }
     #[tokio::test]
     async fn project_cookies_bearer_tokens_duplicate_cookies_and_injected_fields_are_rejected() {

@@ -9,7 +9,7 @@ use std::{
 pub fn token() -> anyhow::Result<String> {
     let mut bytes = [0u8; 32];
     getrandom::fill(&mut bytes).map_err(|_| anyhow::anyhow!("randomness unavailable"))?;
-    Ok(bytes.iter().map(|byte| format!("{byte:02x}")).collect())
+    Ok(base16ct::lower::encode_string(&bytes))
 }
 
 pub fn private_dir(path: &Path) -> anyhow::Result<()> {
@@ -99,9 +99,5 @@ pub fn digest_file(path: &Path, maximum: u64) -> anyhow::Result<String> {
         }
         digest.update(&bytes[..read]);
     }
-    Ok(digest
-        .finalize()
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect())
+    Ok(base16ct::lower::encode_string(&digest.finalize()))
 }

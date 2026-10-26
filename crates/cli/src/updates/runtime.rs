@@ -123,24 +123,13 @@ pub fn blockers(policy: &Policy, project: &Project) -> Vec<String> {
         reasons.push("current_app_unhealthy".into());
     }
     let required = estimated_required(policy, project);
-    if required
-        .ok()
-        .is_none_or(|required| free_bytes(&policy.root).is_none_or(|free| free < required))
-    {
+    if required.ok().is_none_or(|required| {
+        crate::checks::free_bytes(&policy.root).is_none_or(|free| free < required)
+    }) {
         reasons.push("insufficient_disk".into());
     }
 
     reasons
-}
-fn free_bytes(root: &Path) -> Option<u64> {
-    let output = probes::output(Command::new("df").args(["-P", "-B1"]).arg(root)).ok()?;
-    output
-        .lines()
-        .nth(1)?
-        .split_whitespace()
-        .nth(3)?
-        .parse()
-        .ok()
 }
 fn estimated_required(policy: &Policy, project: &Project) -> anyhow::Result<u64> {
     let database = probes::database_bytes(project)?;

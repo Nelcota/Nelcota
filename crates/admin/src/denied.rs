@@ -52,28 +52,20 @@ pub fn now_rfc3339() -> String {
     rfc3339(secs)
 }
 
-/// Seconds since the epoch as RFC 3339, UTC (days to civil date, Howard
-/// Hinnant's algorithm).
+/// Seconds since the epoch as RFC 3339, UTC.
 pub(crate) fn rfc3339(secs: u64) -> String {
-    let days = (secs / 86_400) as i64;
-    let rem = secs % 86_400;
-    let z = days + 719_468;
-    let era = z.div_euclid(146_097);
-    let doe = z - era * 146_097;
-    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let day = doy - (153 * mp + 2) / 5 + 1;
-    let month = match mp < 10 {
-        true => mp + 3,
-        false => mp - 9,
-    };
-    let year = yoe + era * 400 + i64::from(month <= 2);
+    let at = i64::try_from(secs)
+        .ok()
+        .and_then(|secs| time::OffsetDateTime::from_unix_timestamp(secs).ok())
+        .expect("Unix time before the year 10000");
     format!(
-        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}Z",
-        rem / 3600,
-        rem % 3600 / 60,
-        rem % 60
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
+        at.year(),
+        u8::from(at.month()),
+        at.day(),
+        at.hour(),
+        at.minute(),
+        at.second()
     )
 }
 

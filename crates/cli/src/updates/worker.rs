@@ -678,10 +678,7 @@ use std::os::unix::process::CommandExt;
 
 fn session_key(value: &str) -> String {
     use sha2::{Digest, Sha256};
-    Sha256::digest(value.as_bytes())
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect()
+    base16ct::lower::encode_string(&Sha256::digest(value.as_bytes()))
 }
 
 #[cfg(test)]

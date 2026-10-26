@@ -31,6 +31,7 @@ rust-embed.workspace = true
 serde.workspace = true
 serde_json = { workspace = true, features = ["raw_value"] }
 sha2.workspace = true
+time.workspace = true
 tokio = { workspace = true, features = ["rt", "net", "time", "io-util", "sync"] }
 tokio-postgres.workspace = true
 tracing.workspace = true
