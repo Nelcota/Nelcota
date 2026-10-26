@@ -5,6 +5,8 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## Unreleased
 
+## 0.1.7 — 2026-10-26
+
 ### Fixed
 
 - Run a shared session refresh under the client's timeout instead of the first
