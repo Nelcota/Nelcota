@@ -39,6 +39,10 @@ group('form operators', () => {
 
   it('NULL and not NULL use is (with and without not)', () => {
     expect(fromUi('x', 'null', '')).toEqual({ column: 'x', op: 'is', value: 'null' })
+    // A negated filter opened in the form and applied again stays negated.
+    expect(fromUi('status', 'eq', 'cancelled', true)).toEqual({ column: 'status', op: 'eq', value: 'cancelled', not: true })
+    expect(fromUi('name', 'contains', 'a', true)).toEqual({ column: 'name', op: 'ilike', value: '*a*', not: true })
+    expect(fromUi('x', 'null', '', true)).toEqual({ column: 'x', op: 'is', value: 'null' })
     expect(toUi(fromUi('x', 'notnull', ''))).toEqual({ op: 'notnull', value: '' })
   })
 

@@ -16,13 +16,19 @@ export function blockReason(request: DeniedRequest): BlockReason {
   return 'other'
 }
 
+// Paths come from anyone who calls the API, so a bad escape (`%ZZ`) must not
+// throw while the page renders: it is shown as sent.
+const decode = (segment: string) => {
+  try { return decodeURIComponent(segment) } catch { return segment }
+}
+
 /** The table (REST) or bucket (storage) a path points at, when there is one. */
 export function blockTarget(path: string): { kind: 'table' | 'function' | 'bucket'; name: string } | null {
   const rpc = /^\/rest\/v1\/rpc\/([^/]+)/.exec(path)
-  if (rpc) return { kind: 'function', name: decodeURIComponent(rpc[1]) }
+  if (rpc) return { kind: 'function', name: decode(rpc[1]) }
   const table = /^\/rest\/v1\/([^/]+)/.exec(path)
-  if (table) return { kind: 'table', name: decodeURIComponent(table[1]) }
+  if (table) return { kind: 'table', name: decode(table[1]) }
   const bucket = /^\/storage\/v1\/object\/(?:(?:public|sign|list)\/)?([^/]+)/.exec(path)
-  if (bucket) return { kind: 'bucket', name: decodeURIComponent(bucket[1]) }
+  if (bucket) return { kind: 'bucket', name: decode(bucket[1]) }
   return null
 }

@@ -110,7 +110,13 @@ export function policyFields(command: PolicyCommand): { using: boolean; check: b
   }
 }
 
-/** A policy as GET /policies returns it, in the form's format. */
+const POLICY_ROLES: readonly string[] = ['public', 'anon', 'authenticated', 'service_role']
+
+/**
+ * A policy as GET /policies returns it, in the form's format, or `null` when
+ * it names a role the form can't keep (one created in SQL, e.g. `TO editor`):
+ * saving it from the form would drop that role and could widen it to PUBLIC.
+ */
 export function toPolicyDef(policy: {
   name: string
   command: string
@@ -118,10 +124,9 @@ export function toPolicyDef(policy: {
   permissive: boolean
   using: string | null
   check: string | null
-}): PolicyDef {
-  const roles = policy.roles.filter((r): r is PolicyRole =>
-    ['public', 'anon', 'authenticated', 'service_role'].includes(r),
-  )
+}): PolicyDef | null {
+  if (!policy.roles.every((r) => POLICY_ROLES.includes(r))) return null
+  const roles = policy.roles as PolicyRole[]
   return {
     name: policy.name,
     command: policy.command.toLowerCase() as PolicyCommand,

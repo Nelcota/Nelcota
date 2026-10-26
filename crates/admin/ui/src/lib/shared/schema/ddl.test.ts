@@ -93,4 +93,10 @@ describe('policies', () => {
       toPolicyDef({ name: 'p', command: 'SELECT', roles: ['public'], permissive: true, using: '(true)', check: null }),
     ).toEqual({ name: 'p', command: 'select', roles: [], permissive: true, using: '(true)', check: null })
   })
+
+  it('refuses a policy with a role the form would drop', () => {
+    const policy = { name: 'p', command: 'SELECT', permissive: true, using: '(true)', check: null }
+    expect(toPolicyDef({ ...policy, roles: ['editor'] })).toBeNull()
+    expect(toPolicyDef({ ...policy, roles: ['authenticated', 'editor'] })).toBeNull()
+  })
 })

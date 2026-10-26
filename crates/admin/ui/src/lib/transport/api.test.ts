@@ -210,4 +210,9 @@ describe('error responses', () => {
     respond('', 500)
     expect((await failure()).code).toBe('unexpected_response')
   })
+
+  it('a 200 that is not JSON (an auth proxy page) is not taken as data', async () => {
+    respond('<html><body>Sign in</body></html>', 200)
+    expect((await failure()).code).toBe('invalid_response')
+  })
 })
