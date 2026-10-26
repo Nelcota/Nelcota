@@ -9,8 +9,9 @@ Follow [the Code of Conduct](CODE_OF_CONDUCT.md).
 
 Use Rust **1.99.1** from `rust-toolchain.toml`, Docker and Git. Python 3.11+
 is needed for native review/acceptance scripts (3.11.8+ for auth packaging).
-Node **24** and npm are used for repository UI/TypeScript tooling; SDK consumers
-support Node 22+, and the Rust SDK alone supports Rust 1.88. Neither Node nor
+Bun **1.4.3** or later installs and runs the repository UI/TypeScript tooling,
+with Node **24** for the Node runtime checks; SDK consumers use Node 22+ or
+Bun, and the Rust SDK alone supports Rust 1.88. Neither Node nor
 Python is a production backend runtime dependency.
 
 From the repository root:
@@ -66,15 +67,15 @@ require Docker; agent execution follows the stricter shared-container rule.
 From `crates/admin/ui`:
 
 ```sh
-npm ci
-npm run dev
-npm run contracts
-npm run check
-npx vitest run src/lib/features/guides --maxWorkers=2
-npm run test:memory
-npx playwright install chromium
-npm run test:e2e
-npm run build
+bun install --frozen-lockfile
+bun run dev
+bun run contracts
+bun run check
+bunx vitest run src/lib/features/guides --maxWorkers=2
+bun run test:memory
+bunx playwright install chromium
+bun run test:e2e
+bun run build
 ```
 
 Vite serves `/admin/` on port 5173 and proxies to `http://127.0.0.1:8000` by
@@ -90,15 +91,15 @@ in [architecture](docs/architecture.md#source-organization).
 `dist/` is tracked and embedded. Rebuild it after UI or bundled-guide changes,
 then rebuild the Rust binary to serve the new assets. Commit generated `dist`
 in its own build commit. CI checks it for drift. For targeted UI tests use
-`npx vitest run <path>` or `scripts/test.sh ui <path>`; appending a path to
-`npm test` still includes the script's full `src` selection.
+`bunx vitest run <path>` or `scripts/test.sh ui <path>`; appending a path to
+`bun run test` still includes the script's full `src` selection.
 
 ### SDKs
 
-From `sdk/typescript`, run `npm ci`, `npm run check`, `npm test`,
-`npm run test:types`, `npm run build`, `npm run size`, `npm run test:package`,
-`npm run test:memory` and `npm run test:runtime` as relevant. The real-server
-contract is `npm run test:contract -- --browser` after building the server and
+From `sdk/typescript`, run `bun install --frozen-lockfile`, `bun run check`, `bun run test`,
+`bun run test:types`, `bun run build`, `bun run size`, `npm run test:package`,
+`bun run test:memory` and `bun run test:runtime` as relevant. The real-server
+contract is `bun run test:contract -- --browser` after building the server and
 installing Playwright browsers. CI also covers Bun/Deno and all three browser
 engines; see [the SDK contract](sdk/typescript/docs/contract.md).
 
@@ -110,9 +111,9 @@ effect of a documentation or test change.
 
 ### Next.js integration
 
-Build the base SDK first with `npm --prefix sdk/typescript ci` and
-`npm --prefix sdk/typescript run build`, then run `npm ci` in `sdk/nextjs`.
-Use `npm run check`, `npm test`, `npm run build` and
+Build the base SDK first with `bun install --cwd sdk/typescript --frozen-lockfile` and
+`bun run --cwd sdk/typescript build`, then run `bun install --frozen-lockfile` in `sdk/nextjs`.
+Use `bun run check`, `bun run test`, `bun run build` and
 `node scripts/package-smoke.mjs` there for package changes. PostgreSQL cases
 need the shared disposable test service and
 `NELCOTA_NEXT_TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/postgres`.
@@ -165,7 +166,7 @@ restore are separate gates; local mocks do not complete them.
 
 English guides are canonical. Existing standalone pt-BR quickstarts and panel
 catalogs are maintained alongside them. After changing bundled prose, run
-`npm run guides:pending` and `npm run guides:check` from the UI directory;
+`bun run guides:pending` and `bun run guides:check` from the UI directory;
 translate new fragments and remove obsolete ones, preserving inline code, URLs
 and source section identifiers. See [translation workflow](docs/i18n/README.md).
 

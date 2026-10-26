@@ -158,12 +158,12 @@ of that format and stay unchanged.
 ## Development
 
 ```sh
-npm --prefix sdk/typescript ci && npm --prefix sdk/typescript run build
-npm --prefix sdk/ssr ci
-npm --prefix sdk/ssr run check
+bun install --cwd sdk/typescript --frozen-lockfile && bun run --cwd sdk/typescript build
+bun install --cwd sdk/ssr --frozen-lockfile
+bun run --cwd sdk/ssr check
 NELCOTA_NEXT_TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/postgres \
-  npm --prefix sdk/ssr test
-npm --prefix sdk/ssr run build
+  bun run --cwd sdk/ssr test
+bun run --cwd sdk/ssr build
 ```
 
 The PostgreSQL integration tests use the repository's disposable fixture

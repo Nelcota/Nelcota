@@ -74,7 +74,7 @@ SQL
 }
 
 run_ui() {
-  (cd "$root/crates/admin/ui" && low npx vitest run "${@:-src}")
+  (cd "$root/crates/admin/ui" && low bunx vitest run "${@:-src}")
 }
 
 cmd="${1:-}"

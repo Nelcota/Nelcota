@@ -19,11 +19,11 @@ FILES = (
     "examples/auth-consumer/Cargo.toml",
     "docs/releases/README.md", "docs/goals/README.md",
     "docs/goals/auth-security-review.md", "docs/goals/auth-security-review-execution.md",
-    "sdk/typescript/package.json", "sdk/typescript/package-lock.json",
+    "sdk/typescript/package.json",
     "sdk/typescript/README.md", "sdk/typescript/CHANGELOG.md",
     "sdk/typescript/docs/quickstart.pt-BR.md", "sdk/typescript/docs/contract.md",
     "sdk/nextjs/package.json", "sdk/nextjs/README.md", "sdk/nextjs/docs/quickstart.pt-BR.md",
-    "sdk/nextjs/examples/app-router/package.json", "sdk/nextjs/examples/app-router/package-lock.json",
+    "sdk/nextjs/examples/app-router/package.json", "sdk/nextjs/examples/app-router/bun.lock",
     "sdk/rust/Cargo.toml", "sdk/rust/README.md", "sdk/rust/CHANGELOG.md",
     "sdk/rust/docs/quickstart.pt-BR.md", "sdk/rust/docs/contract.md",
 )
@@ -69,13 +69,6 @@ class VersionDocumentationTests(unittest.TestCase):
         path.write_text(re.sub(r'(name = "nelcota-server"\nversion = ")[^"]+', r'\g<1>0.0.0', path.read_text()))
         self.assertTrue(any("Server workspace" in error for error in CHECKER.check(self.root)))
 
-    def test_old_lock_version_is_rejected(self):
-        path = self.root / "sdk/typescript/package-lock.json"
-        lock = json.loads(path.read_text())
-        lock["packages"][""]["version"] = "0.0.0"
-        path.write_text(json.dumps(lock))
-        self.assertTrue(any("package-lock" in error for error in CHECKER.check(self.root)))
-
     def test_stale_nextjs_install_target_is_rejected(self):
         path = self.root / "sdk/nextjs/README.md"
         path.write_text(re.sub(r"@nelcota/nextjs@\d+\.\d+\.\d+", "@nelcota/nextjs@0.0.0", path.read_text()))
@@ -89,10 +82,8 @@ class VersionDocumentationTests(unittest.TestCase):
         self.assertTrue(any("published registry version" in error for error in CHECKER.check(self.root)))
 
     def test_example_lock_cannot_hide_an_old_package(self):
-        path = self.root / "sdk/nextjs/examples/app-router/package-lock.json"
-        data = json.loads(path.read_text())
-        data["packages"]["node_modules/@nelcota/client"]["version"] = "0.0.0"
-        path.write_text(json.dumps(data))
+        path = self.root / "sdk/nextjs/examples/app-router/bun.lock"
+        path.write_text(re.sub(r'\["@nelcota/client@\d+\.\d+\.\d+"', '["@nelcota/client@0.0.0"', path.read_text()))
         self.assertTrue(any("lock must match" in error for error in CHECKER.check(self.root)))
 
     def test_completed_goal_cannot_still_be_planned(self):

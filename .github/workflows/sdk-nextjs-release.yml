@@ -29,6 +29,9 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.3
       - name: Verify release metadata and published base dependency
         env:
           RELEASE_TAG: ${{ github.ref_name }}
@@ -48,12 +51,12 @@ jobs:
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
       - if: steps.published.outputs.skip != 'true'
-        run: npm ci && npm run build
+        run: bun install --frozen-lockfile && bun run build
         working-directory: sdk/typescript
       - if: steps.published.outputs.skip != 'true'
-        run: npm ci && npm run build
+        run: bun install --frozen-lockfile && bun run build
         working-directory: sdk/ssr
       - if: steps.published.outputs.skip != 'true'
-        run: npm ci && npm run build
+        run: bun install --frozen-lockfile && bun run build
       - if: steps.published.outputs.skip != 'true'
         run: npm publish --access public --provenance --ignore-scripts

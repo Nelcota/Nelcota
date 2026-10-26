@@ -57,6 +57,6 @@ if (mode === '--check' && !selected) {
   for (const fragment of Object.keys(catalog)) if (!fragments.has(fragment)) { console.error(`OpenAPI outdated translation: ${fragment}`); failures++ }
 }
 if (mode === '--check') {
-  if (failures) { console.error(`Guide translations need updating (${failures} issues). Run npm run guides:pending.`); process.exitCode = 1 }
+  if (failures) { console.error(`Guide translations need updating (${failures} issues). Run bun run guides:pending.`); process.exitCode = 1 }
   if (!failures) console.log('All Portuguese guide translations match the project documentation; inline code and links are unchanged.')
 }

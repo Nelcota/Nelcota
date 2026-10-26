@@ -7,7 +7,7 @@ The package manifest and lockfile use registry packages, with no local SDK link.
 Copy this directory into a separate application directory, then run:
 
 ```sh
-npm ci
+bun install --frozen-lockfile   # or with npm: npm install
 ```
 
 Configure a disposable local Nelcota backend and create a user. The [backend quickstart](https://github.com/Nelcota/Nelcota/blob/main/docs/quickstart.md)
@@ -17,9 +17,9 @@ explains app migrations and startup. Set server-only environment variables:
 export NELCOTA_URL=http://127.0.0.1:8000
 export APP_ORIGIN=http://localhost:3000
 export NELCOTA_SESSION_KEY="$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n')"
-npm run build
-npm run check
-npm start
+bun run build   # or with npm: npm run build && npm run check && npm start
+bun run check
+bun run start
 ```
 
 Open `http://localhost:3000/login` and sign in. Keep the same origin for every

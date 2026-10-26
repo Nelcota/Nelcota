@@ -7,10 +7,14 @@ import tomllib
 from pathlib import Path
 
 
+def read_bun_lock(path: Path) -> dict:
+    # bun.lock é JSONC: só as vírgulas finais o separam de JSON puro.
+    return json.loads(re.sub(r",(\s*[}\]])", r"\1", path.read_text()))
+
+
 def check(root: Path) -> list[str]:
     errors: list[str] = []
     client = json.loads((root / "sdk/typescript/package.json").read_text())
-    npm_lock = json.loads((root / "sdk/typescript/package-lock.json").read_text())
     rust = tomllib.loads((root / "sdk/rust/Cargo.toml").read_text())["package"]
     cargo_lock = tomllib.loads((root / "Cargo.lock").read_text())
     workspace = tomllib.loads((root / "Cargo.toml").read_text())["workspace"]["package"]
@@ -29,8 +33,6 @@ def check(root: Path) -> list[str]:
     if locked_server != [workspace["version"]]:
         errors.append("Server workspace and Cargo.lock versions differ")
 
-    if npm_lock["version"] != ts_version or npm_lock["packages"][""]["version"] != ts_version:
-        errors.append("TypeScript package.json and package-lock.json versions differ")
     consumer = tomllib.loads((root / "examples/auth-consumer/Cargo.toml").read_text())
     if consumer["dependencies"]["nelcota-auth"].get("version") != server:
         errors.append("examples/auth-consumer: nelcota-auth version differs from workspace version")
@@ -65,15 +67,16 @@ def check(root: Path) -> list[str]:
 
     example_path = "sdk/nextjs/examples/app-router"
     example = json.loads((root / example_path / "package.json").read_text())
-    example_lock = json.loads((root / example_path / "package-lock.json").read_text())["packages"]
+    example_lock = read_bun_lock(root / example_path / "bun.lock")
     for name in ["@nelcota/client", "@nelcota/nextjs"]:
         selected = example["dependencies"].get(name, "")
-        locked = example_lock.get(f"node_modules/{name}", {})
+        # Uma entrada do registro padrão é ["nome@versão", "", ...]; link ou arquivo usa outro formato.
+        locked = example_lock["packages"].get(name, ["", None])
         if not re.fullmatch(r"\d+\.\d+\.\d+", selected):
             errors.append(f"{example_path}: {name} must pin a published registry version")
-        if locked.get("version") != selected or not locked.get("resolved", "").startswith("https://registry.npmjs.org/"):
+        if locked[0] != f"{name}@{selected}" or locked[1] != "":
             errors.append(f"{example_path}: {name} lock must match its registry version")
-        if example_lock[""]["dependencies"].get(name) != selected:
+        if example_lock["workspaces"][""]["dependencies"].get(name) != selected:
             errors.append(f"{example_path}: {name} manifest and lockfile differ")
 
     for sdk, version in [("typescript", ts_version), ("rust", rust_version)]:

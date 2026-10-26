@@ -1,7 +1,7 @@
 # Native code review presets
 
 Oxlint 1.89.0 runs as a native executable. The runner and installer use Python
-3.11+ and its standard library. Neither requires Node, npm, a Rust build, or a
+3.11+ and its standard library. Neither requires Node, Bun, a Rust build, or a
 global tool installation. This tooling does not change Nelcota's single-binary
 distribution or its committed panel assets.
 
@@ -75,7 +75,7 @@ Limit Oxlint to selected project files when needed:
 python3 scripts/run-preset.py bugs/nan --paths sdk/typescript/src
 ```
 
-External scanners keep their documented scope: npm audits the panel and TypeScript SDK lockfiles,
+External scanners keep their documented scope: bun audit checks the panel and TypeScript SDK lockfiles,
 Gitleaks scans Git history, and Semgrep scans the checkout. `--paths` limits only
 Oxlint. The runner uses two Oxlint/Semgrep workers and executes presets sequentially.
 
@@ -106,9 +106,9 @@ Every diagnostic has the same shape, including external tools:
 
 File names are relative to the checkout when possible; positions are one-based.
 Project-level diagnostics can have a null file. Dependency advisories point to
-the relevant package-lock.json at line/column 1 because npm does not give source
+the relevant bun.lock at line/column 1 because bun audit does not give source
 positions. Gitleaks secret and match fields are discarded; its command also uses
-`--redact`. npm high/critical advisories are errors; low/moderate advisories are
+`--redact`. High/critical dependency advisories are errors; low/moderate advisories are
 warnings. A shared finding can occur in several presets and is counted per preset.
 
 Preset statuses are `completed`, `failed`, `unavailable`, `disabled`, or
@@ -200,8 +200,8 @@ floating promises are not checked until the typed presets are enabled.
 
   The adapter uses p/javascript, JSON output, two jobs, the root exclusions and
   metrics disabled. It needs network access to obtain that ruleset.
-- `seguranca/dependencias` runs npm audit for the panel and TypeScript SDK. This
-  optional preset requires npm/Node; it is unavailable when npm is absent.
+- `seguranca/dependencias` runs bun audit for the panel and TypeScript SDK. This
+  optional preset requires Bun; it is unavailable when Bun is absent.
   That dependency does not affect the native Oxlint presets.
 
 ## Validation and CI

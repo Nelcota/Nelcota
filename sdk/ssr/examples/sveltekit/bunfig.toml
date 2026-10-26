@@ -1,0 +1,3 @@
+[install]
+# Só instala versões publicadas há pelo menos 14 dias (14 * 24 * 60 * 60).
+minimumReleaseAge = 1209600

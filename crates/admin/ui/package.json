@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run guides:check && vite build",
-    "check": "npm run guides:check && svelte-check --tsconfig ./tsconfig.app.json && node node_modules/typescript-7/bin/tsc -p tsconfig.node.json && node node_modules/typescript-7/bin/tsc -p tsconfig.e2e.json",
+    "build": "bun run guides:check && vite build",
+    "check": "bun run guides:check && svelte-check --tsconfig ./tsconfig.app.json && node node_modules/typescript-7/bin/tsc -p tsconfig.node.json && node node_modules/typescript-7/bin/tsc -p tsconfig.e2e.json",
     "guides:check": "node scripts/guides-i18n.mjs --check",
     "guides:pending": "node scripts/guides-i18n.mjs --pending",
     "test": "vitest run src",

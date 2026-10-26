@@ -18,10 +18,10 @@ SQL. Schema setup is privileged; client requests use a user's token under RLS.
 ## JavaScript and TypeScript
 
 Use the published `@nelcota/client@0.2.4`. See the [upgrade notes](../sdk/typescript/docs/contract.md#upgrading-from-020). For checkout demos, enter
-`sdk/typescript`, run `npm ci` and `npm run build`, then:
+`sdk/typescript`, run `bun install --frozen-lockfile` and `bun run build`, then:
 
 ```sh
-npm run example:browser
+bun run example:browser
 ```
 
 Open the displayed loopback page, set the API origin and sign in. For Node,

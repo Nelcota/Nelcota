@@ -34,27 +34,21 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ matrix.node }}
-          cache: npm
-          cache-dependency-path: |
-            sdk/typescript/package-lock.json
-            sdk/ssr/package-lock.json
-            sdk/nextjs/package-lock.json
-      - if: matrix.runtime == 'bun'
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.4.3
       - run: scripts/test.sh db
       - name: Build base SDK
-        run: npm --prefix sdk/typescript ci && npm --prefix sdk/typescript run build
+        run: bun install --cwd sdk/typescript --frozen-lockfile && bun run --cwd sdk/typescript build
       # The framework-agnostic session core the Next adapter is built on.
       - name: SSR core
         working-directory: sdk/ssr
-        run: npm ci && npm audit --audit-level=high && npm run check && npm run ${{ matrix.runtime == 'bun' && 'test:bun' || 'test' }} && npm run build
-      - run: npm ci
+        run: bun install --frozen-lockfile && bun audit --audit-level=high && bun run check && bun run ${{ matrix.runtime == 'bun' && 'test:bun' || 'test' }} && bun run build
+      - run: bun install --frozen-lockfile
         working-directory: sdk/nextjs
-      - run: npm audit --audit-level=high
+      - run: bun audit --audit-level=high
         working-directory: sdk/nextjs
-      - run: npm run check && npm run ${{ matrix.runtime == 'bun' && 'test:bun' || 'test' }} && npm run build
+      - run: bun run check && bun run ${{ matrix.runtime == 'bun' && 'test:bun' || 'test' }} && bun run build
         working-directory: sdk/nextjs
       - run: node scripts/package-smoke.mjs
         working-directory: sdk/nextjs
@@ -73,8 +67,8 @@ jobs:
           path: |
             ~/.cache/ms-playwright
             ~/.cache/playwright-apt
-          key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/package-lock.json') }}
-          restore-keys: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/package-lock.json') }}-
+          key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/bun.lock') }}
+          restore-keys: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/bun.lock') }}-
       - name: Install browser
         id: playwright-install
         timeout-minutes: 12
@@ -97,7 +91,7 @@ jobs:
           path: |
             ~/.cache/ms-playwright
             ~/.cache/playwright-apt
-          key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/package-lock.json') }}${{ steps.playwright-install.outcome != 'success' && format('-partial-{0}-{1}', github.run_id, github.run_attempt) || '' }}
+          key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/bun.lock') }}${{ steps.playwright-install.outcome != 'success' && format('-partial-{0}-{1}', github.run_id, github.run_attempt) || '' }}
       - name: Server-only production boundary
         if: matrix.node == 24 && matrix.browser == 'chromium' && !matrix.next && !matrix.runtime
         run: node scripts/boundary-smoke.mjs
@@ -132,15 +126,18 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.3
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.99.1'
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: scripts/test.sh db
-      - run: npm --prefix sdk/typescript ci && npm --prefix sdk/typescript run build
-      - run: npm ci && npm run build
+      - run: bun install --cwd sdk/typescript --frozen-lockfile && bun run --cwd sdk/typescript build
+      - run: bun install --frozen-lockfile && bun run build
         working-directory: sdk/ssr
-      - run: npm ci && npm run build
+      - run: bun install --frozen-lockfile && bun run build
         working-directory: sdk/nextjs
       - run: cargo build --locked -p nelcota-server
       - name: Real auth and STARTTLS email contracts
@@ -199,20 +196,14 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: |
-            sdk/typescript/package-lock.json
-            sdk/ssr/package-lock.json
-            sdk/ssr/examples/sveltekit/package-lock.json
-      - if: matrix.runtime == 'bun'
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.4.3
       - name: Build base SDK
-        run: npm --prefix sdk/typescript ci && npm --prefix sdk/typescript run build
-      - run: npm ci && npm run build
+        run: bun install --cwd sdk/typescript --frozen-lockfile && bun run --cwd sdk/typescript build
+      - run: bun install --frozen-lockfile && bun run build
         working-directory: sdk/ssr
-      - run: npm ci && npm audit --audit-level=high
+      - run: bun install --frozen-lockfile && bun audit --audit-level=high
         working-directory: sdk/ssr/examples/sveltekit
       # The apt mirror can be slow enough to time the job out, so the .deb
       # files fetched by --with-deps are cached next to the browsers. An install
@@ -225,8 +216,8 @@ jobs:
           path: |
             ~/.cache/ms-playwright
             ~/.cache/playwright-apt
-          key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/package-lock.json') }}
-          restore-keys: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/package-lock.json') }}-
+          key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/bun.lock') }}
+          restore-keys: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/bun.lock') }}-
       - name: Install browser
         id: playwright-install
         timeout-minutes: 12
@@ -249,7 +240,7 @@ jobs:
           path: |
             ~/.cache/ms-playwright
             ~/.cache/playwright-apt
-          key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/package-lock.json') }}${{ steps.playwright-install.outcome != 'success' && format('-partial-{0}-{1}', github.run_id, github.run_attempt) || '' }}
+          key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/bun.lock') }}${{ steps.playwright-install.outcome != 'success' && format('-partial-{0}-{1}', github.run_id, github.run_attempt) || '' }}
       - name: SvelteKit sign-in, protected routes and sign-out
         working-directory: sdk/ssr
         run: ${{ matrix.runtime }} scripts/sveltekit-smoke.mjs

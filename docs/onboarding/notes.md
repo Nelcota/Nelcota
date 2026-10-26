@@ -96,13 +96,13 @@ existing migration; it does not update an already initialized project.
 ## 4. Use the existing browser example
 
 The example already ships in `sdk/typescript/examples/browser.html`. To build
-its local SDK modules, use Node 22+ and npm only for this optional frontend
+its local SDK modules, use Bun and Node 22+ only for this optional frontend
 step, from the repository root:
 
 ```sh
 cd sdk/typescript
-npm ci
-npm run build
+bun install --frozen-lockfile
+bun run build
 python3 -m http.server 5178 --bind 127.0.0.1
 ```
 
@@ -144,8 +144,8 @@ To exercise the browser example too, build the SDK as above and install the
 browser test dependency:
 
 ```sh
-# From sdk/typescript after npm ci and npm run build:
-npx playwright-core install chromium
+# From sdk/typescript after bun install --frozen-lockfile and bun run build:
+bunx playwright-core install chromium
 cd ../..
 python3 scripts/test-onboarding.py --binary target/debug/nelcota --browser
 ```

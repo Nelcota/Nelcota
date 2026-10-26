@@ -38,7 +38,8 @@ try {
   manifest.overrides = { ...manifest.overrides, postcss: '8.5.31' };
   manifest.peerDependencies.next = `^${version}`;
   await writeFile(join(target, 'package.json'), JSON.stringify(manifest, null, 2) + '\n');
-  await rm(join(target, 'package-lock.json'));
+  // O lock do checkout fixa o Next 16; o consumidor npm resolve o Next 15 do zero.
+  await rm(join(target, 'bun.lock'));
   const example = join(target, 'examples/app-router');
   const app = JSON.parse(await readFile(join(example, 'package.json'), 'utf8'));
   app.dependencies.next = version;

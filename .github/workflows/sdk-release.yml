@@ -35,6 +35,9 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.3
       - name: tag matches the package version
         env:
           TAG: ${{ github.ref_name }}
@@ -54,9 +57,9 @@ jobs:
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
       - if: steps.published.outputs.skip != 'true'
-        run: npm ci
+        run: bun install --frozen-lockfile
       - if: steps.published.outputs.skip != 'true'
-        run: npm run build
+        run: bun run build
       # The complete verification job already checked this tagged commit.
       - if: steps.published.outputs.skip != 'true'
         run: npm publish --access public --provenance --ignore-scripts

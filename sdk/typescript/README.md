@@ -531,17 +531,17 @@ smoke), Deno and the Chromium, Firefox and WebKit engines. Other runtimes need t
 ## Development
 
 ```sh
-npm ci
-npm run check && npm test && npm run test:types   # types, unit and type-level tests
-npm run test:bun                                  # the unit tests on the Bun runtime
-npm run build && npm run size                     # dist/ and the size budget per entry
-npm run test:package                              # install the tarball in JS/TS consumers
+bun install --frozen-lockfile
+bun run check && bun run test && bun run test:types   # types, unit and type-level tests
+bun run test:bun                                      # the unit tests on the Bun runtime
+bun run build && bun run size                         # dist/ and the size budget per entry
+npm run test:package                                  # npm pack + install, as npm publishes and consumers install
 node test/runtime/smoke.mjs
 bun test/runtime/smoke.mjs
 deno run --allow-net --allow-read --allow-env test/runtime/smoke.mjs
 cargo build -p nelcota-server
-npx playwright-core install chromium firefox webkit
-npm run test:contract -- --browser                # against the real binary (Docker), plus Chromium
+bunx playwright-core install chromium firefox webkit
+bun run test:contract -- --browser                    # against the real binary (Docker), plus Chromium
 ```
 
 The contract run needs OpenSSL and builds a contract-only server from the

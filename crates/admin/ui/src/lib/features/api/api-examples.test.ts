@@ -78,7 +78,7 @@ describe('SDK examples', () => {
 
   it('setup points the client at the project', () => {
     const setup = sdkSetup('https://shop.example.com')
-    expect(setup.install).toBe('npm install @nelcota/client')
+    expect(setup.install).toBe('npm install @nelcota/client   # or: bun add @nelcota/client')
     expect(setup.client).toContain("createClient<Database>('https://shop.example.com')")
   })
 

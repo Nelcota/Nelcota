@@ -24,26 +24,24 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: sdk/typescript/package-lock.json
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.4.3
       - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
           deno-version: v2.x
-      - run: npm ci
-      - run: npm audit --audit-level=high
-      - run: npm run check
-      - run: npm test
-      - run: npm run test:types
-      - run: npm run build
-      - run: npm run size
+      - run: bun install --frozen-lockfile
+      - run: bun audit --audit-level=high
+      - run: bun run check
+      - run: bun run test
+      - run: bun run test:types
+      - run: bun run build
+      - run: bun run size
       - run: npm run test:package
       - run: node test/runtime/smoke.mjs
-      - run: npm run test:memory
+      - run: bun run test:memory
       # Os mesmos testes unitários no runtime do Bun, além do smoke do pacote construído.
-      - run: npm run test:bun
+      - run: bun run test:bun
       - run: bun test/runtime/smoke.mjs
       - run: deno run --allow-net --allow-read --allow-env test/runtime/smoke.mjs
       - run: cargo build -p nelcota-server
@@ -59,8 +57,8 @@ jobs:
           path: |
             ~/.cache/ms-playwright
             ~/.cache/playwright-apt
-          key: playwright-${{ runner.os }}-all-${{ hashFiles('sdk/typescript/package-lock.json') }}
-          restore-keys: playwright-${{ runner.os }}-all-${{ hashFiles('sdk/typescript/package-lock.json') }}-
+          key: playwright-${{ runner.os }}-all-${{ hashFiles('sdk/typescript/bun.lock') }}
+          restore-keys: playwright-${{ runner.os }}-all-${{ hashFiles('sdk/typescript/bun.lock') }}-
       - name: Install browsers
         id: playwright-install
         timeout-minutes: 12
@@ -72,7 +70,7 @@ jobs:
           # on slowness, so the main Ubuntu archive goes first here.
           sudo sed -i 's#http://azure\.archive\.ubuntu\.com/ubuntu/#http://archive.ubuntu.com/ubuntu/#' /etc/apt/apt-mirrors.txt
           cat /etc/apt/apt-mirrors.txt
-          npx playwright-core install --with-deps chromium firefox webkit
+          bunx playwright-core install --with-deps chromium firefox webkit
       - name: Collect downloaded system packages
         if: always() && steps.playwright-install.outcome != 'skipped' && steps.playwright-cache.outputs.cache-hit != 'true'
         run: find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -exec cp -t ~/.cache/playwright-apt {} +
@@ -83,7 +81,7 @@ jobs:
           path: |
             ~/.cache/ms-playwright
             ~/.cache/playwright-apt
-          key: playwright-${{ runner.os }}-all-${{ hashFiles('sdk/typescript/package-lock.json') }}${{ steps.playwright-install.outcome != 'success' && format('-partial-{0}-{1}', github.run_id, github.run_attempt) || '' }}
+          key: playwright-${{ runner.os }}-all-${{ hashFiles('sdk/typescript/bun.lock') }}${{ steps.playwright-install.outcome != 'success' && format('-partial-{0}-{1}', github.run_id, github.run_attempt) || '' }}
       - name: SDK server and browser contracts
         id: sdk_contract
         run: |
@@ -135,12 +133,13 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ matrix.node }}
-          cache: npm
-          cache-dependency-path: sdk/typescript/package-lock.json
-      - run: npm ci
-      - run: npm test
-      - run: npm run test:types
-      - run: npm run build
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.3
+      - run: bun install --frozen-lockfile
+      - run: bun run test
+      - run: bun run test:types
+      - run: bun run build
       - run: npm run test:package
       - run: node test/runtime/smoke.mjs
-      - run: npm run test:memory
+      - run: bun run test:memory

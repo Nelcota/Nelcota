@@ -6,7 +6,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use rust_embed::RustEmbed;
-/// Frontend build (`npm run build` in `crates/admin/ui`).
+/// Frontend build (`bun run build` in `crates/admin/ui`).
 #[derive(RustEmbed)]
 #[folder = "ui/dist/"]
 struct Ui;

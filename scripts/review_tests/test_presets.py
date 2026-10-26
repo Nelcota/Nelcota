@@ -41,11 +41,12 @@ class ReviewBoundaries(unittest.TestCase):
         self.assertEqual(result[0]["severity"], "error")
 
     def test_dependency_severity_and_workspace_file_are_preserved(self):
-        payload = {"vulnerabilities": {"critical-lib": {"severity": "critical", "via": [{"source": 42, "title": "Injection"}]},
-                                       "moderate-lib": {"severity": "moderate", "via": ["critical-lib"]}}}
+        payload = {"critical-lib": [{"id": 42, "title": "Injection", "severity": "critical"}],
+                   "moderate-lib": [{"id": 43, "title": "ReDoS", "severity": "moderate"}]}
         result = runner.normalize_audit(payload, self.preset, ROOT / "sdk/typescript", ROOT)
         self.assertEqual([item["severity"] for item in result], ["error", "warning"])
-        self.assertEqual(result[0]["file"], "sdk/typescript/package-lock.json")
+        self.assertEqual(result[0]["file"], "sdk/typescript/bun.lock")
+        self.assertEqual(result[0]["rule"], "bun-audit/42")
         with self.assertRaises(ValueError):
             runner.normalize_audit({"error": {"code": "ENOLOCK"}}, self.preset, ROOT, ROOT)
 

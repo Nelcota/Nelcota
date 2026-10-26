@@ -283,11 +283,11 @@ mod tests {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("ui/src/lib/generated");
         assert_eq!(
             types,
-            std::fs::read_to_string(root.join("contracts.ts")).expect("run npm run contracts")
+            std::fs::read_to_string(root.join("contracts.ts")).expect("run bun run contracts")
         );
         assert_eq!(
             schemas,
-            std::fs::read_to_string(root.join("schemas.json")).expect("run npm run contracts")
+            std::fs::read_to_string(root.join("schemas.json")).expect("run bun run contracts")
         );
     }
 }

@@ -9,17 +9,17 @@ browser checks as pull-request CI. A failing check prevents the publish job.
 From `sdk/typescript`:
 
 ```sh
-npm ci
-npm run check
-npm test
-npm run test:types
-npm run build
-npm run size
+bun install --frozen-lockfile
+bun run check
+bun run test
+bun run test:types
+bun run build
+bun run size
 npm run test:package
-npm run test:runtime
+bun run test:runtime
 cargo build -p nelcota-server
-npx playwright-core install chromium firefox webkit
-npm run test:contract -- --browser
+bunx playwright-core install chromium firefox webkit
+bun run test:contract -- --browser
 npm pack
 ```
 

@@ -59,7 +59,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 900,
   },
   server: {
-    // `npm run dev`: both the panel API and health checks come from Nelcota.
+    // `bun run dev`: both the panel API and health checks come from Nelcota.
     // Keep Host aligned with the browser's Origin for the panel's CSRF check.
     proxy: {
       '/admin/api': { target: apiTarget, changeOrigin: false },
