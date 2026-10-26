@@ -28,7 +28,9 @@ for (const [id, source] of Object.entries(documents)) {
   }
   if (mode === '--import') {
     if (!selected) throw new Error('--import requires a guide id and a JSON array of translations')
-    const values = JSON.parse(await readFile(process.argv[4], 'utf8'))
+    const translationsPath = process.argv[4]
+    if (translationsPath === undefined || translationsPath.trim() === '') throw new Error('--import requires the path of a JSON array of translations')
+    const values = JSON.parse(await readFile(translationsPath, 'utf8'))
     if (values.length !== fragments.length) throw new Error(`${id}: expected ${fragments.length} translations, received ${values.length}`)
     catalog = Object.fromEntries(fragments.map((text, index) => [text, values[index]]))
     const errors = validateTranslations(markdown, catalog)

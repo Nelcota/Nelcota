@@ -43,11 +43,18 @@ const API_PORT = await new Promise<number>((resolvePort, reject) => {
 });
 const JWT_SECRET = 'sdk-contract-secret-with-more-than-32-characters';
 
-// Only the fields read from `cargo build --message-format=json`.
-interface CargoMessage {
-  readonly reason: string;
-  readonly target?: { readonly name: string };
-  readonly executable?: string | null;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function contractServerExecutable(line: string): string | undefined {
+  const message: unknown = JSON.parse(line);
+  if (isRecord(message) === false || message['reason'] !== 'compiler-artifact') return undefined;
+  const target = message['target'];
+  if (isRecord(target) === false || target['name'] !== 'sdk-contract-server') return undefined;
+  const executable = message['executable'];
+  if (typeof executable !== 'string') return undefined;
+  return executable;
 }
 
 function run(command: string, args: string[], options: SpawnSyncOptions = {}) {
@@ -62,8 +69,8 @@ function docker(...args: string[]) {
 
 function mappedPort(container: string, port: string): number {
   const result = docker('port', container, port);
-  const match = result.stdout.trim().match(/:(\d+)$/);
-  if (result.status !== 0 || match === null) throw new Error(`No mapped port for ${container}:${port}`);
+  const match = result.stdout?.trim().match(/:(\d+)$/);
+  if (result.status !== 0 || match == null) throw new Error(`No mapped port for ${container}:${port}`);
   return Number(match[1]);
 }
 
@@ -106,10 +113,10 @@ try {
     '--example', 'sdk-contract-server', '--features', 'lettre/rustls-native-certs',
     '--message-format=json',
   ], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
-  const artifact = build.stdout.toString().split('\n').filter((line) => line.trim() !== '')
-    .map((line): CargoMessage => JSON.parse(line))
-    .find((item) => item.reason === 'compiler-artifact' && item.target?.name === 'sdk-contract-server' && item.executable != null);
-  if (artifact?.executable == null) throw new Error('Missing SDK contract server build artifact');
+  const executable = build.stdout.toString().split('\n').filter((line) => line.trim() !== '')
+    .map(contractServerExecutable)
+    .find((path) => path !== undefined);
+  if (executable === undefined) throw new Error('Missing SDK contract server build artifact');
 
   const certs = join(storageDir, 'smtp-certs');
   mkdirSync(certs, { mode: 0o700 });
@@ -155,7 +162,7 @@ try {
     NELCOTA_MAGIC_LINK_URL: 'https://app.example.com/signed-in',
     RUST_LOG: 'warn',
   };
-  server = spawn(artifact.executable, ['serve'], { env, stdio: ['ignore', 'inherit', 'inherit'] });
+  server = spawn(executable, ['serve'], { env, stdio: ['ignore', 'inherit', 'inherit'] });
   server.on('exit', (code) => {
     if (code !== null && code !== 0) console.error(`nelcota serve exited with ${code}`);
   });
