@@ -6,7 +6,6 @@ Send committed database changes to an HTTP endpoint. Configuration, signing keys
 
 Use server 0.4.0+ with administrator access and a trusted receiver. The receiver
 needs bounded raw-body signature verification and durable event-ID deduplication.
-Source-only scheduler/lifecycle changes are listed in Unreleased.
 
 ## Create a webhook
 
@@ -86,7 +85,7 @@ The history shows status, HTTP code, attempts, timestamps and the exact payload.
 
 ## Limits and retention
 
-There are at most 50 active configurations per project and ten per table. The queue holds at most 10,000 outstanding deliveries and 100,000 retained deliveries. Admission is transactional: if a limit is reached, the business write fails with a retryable database-capacity error instead of silently losing its event. The panel shows usage and warns at 80%.
+There are at most 50 webhooks per project (paused ones included, deleted ones excluded) and ten per table. The queue holds at most 10,000 outstanding deliveries and 100,000 retained deliveries. Admission is transactional: if a limit is reached, the business write fails with a retryable database-capacity error instead of silently losing its event. The panel shows usage and warns at 80%.
 
 Terminal history is kept for up to seven days and cleaned in bounded batches. Pending deliveries are never deleted by age. **Clear history** removes only terminal deliveries and their payloads. To free a stalled queue, fix or enable its destinations, or delete unwanted webhooks to cancel their pending work. Keep database backups private: they contain signing keys and event payloads.
 

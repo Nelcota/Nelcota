@@ -35,8 +35,8 @@ systemctl is-enabled cron.service
 Fedora/RHEL uses the `cronie` package and `crond.service`. The current source
 requires an active, persistently enabled systemd cron service before creating
 host credentials; `--skip-checks` does not waive this prerequisite. A cron file
-alone does not schedule a backup. These validation fixes are **Unreleased**;
-prepare and verify the scheduler manually on published 0.5.0 too.
+alone does not schedule a backup. These validation fixes are included in server
+0.5.1; on 0.5.0, prepare and verify the scheduler manually.
 
 The first `init` (as root) installs a daily cron job at 03:00
 (`/etc/cron.d/nelcota-backup`):
@@ -99,9 +99,9 @@ and off-host restore; a successful upload alone does not prove recoverability.
 > project's `.env` a restore still works, but the JWT key changes and every
 > user has to sign in again (passwords keep working).
 
-### Verified external copies (unreleased)
+### Verified external copies
 
-The source after 0.5.1 requires HTTPS backup endpoints without URL credentials, query parameters or fragments. External CLI backups, including the daily schedule, read back the database dump, immutable file snapshot and encrypted recovery configuration before reporting success or pruning local history. Providers must support server-side AES256 encryption for the configuration object. TLS or readback failures preserve the local pair and return an error.
+Since server 0.5.2, backups require HTTPS backup endpoints without URL credentials, query parameters or fragments. External CLI backups, including the daily schedule, read back the database dump, immutable file snapshot and encrypted recovery configuration before reporting success or pruning local history. Providers must support server-side AES256 encryption for the configuration object. TLS or readback failures preserve the local pair and return an error.
 
 For these new scheduled/manual copies, the encrypted project configuration is stored at `<project>/deployments/<dump-filename>/previous.env` in the backup bucket; keep it with `<project>/<dump-filename>` and `<project>/<dump-filename>.files/`. Update jobs retain their documented job-ID recovery prefix. Root-private verification receipts are bound to the current host/project configuration and do not certify restoration on another machine.
 
@@ -137,10 +137,14 @@ have no historical file manifest; they remain usable for database-only restores.
 ### Restore on a new VPS
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sh
+sudo -i                                       # init needs root
+apt-get update && apt-get install -y ca-certificates curl coreutils cron
+systemctl enable --now cron.service
+curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | NELCOTA_VERSION=0.5.4 sh
 mkdir -p /opt/nelcota && cd /opt/nelcota
-nelcota init api.shop.com --yes
-cp /safe/place/shop.env projects/shop/.env   # optional: keeps the JWT key
+nelcota init api.shop.com --yes --s3-endpoint https://... --s3-bucket my-backups \
+  --s3-access-key ... --s3-secret-key ... --s3-region ...
+cp /safe/place/shop.env projects/shop/.env   # optional, before the first `up`: keeps the JWT key
 nelcota up
 aws s3 cp s3://my-backups/shop/nelcota-shop-....dump projects/shop/backups/ --endpoint-url ...
 nelcota -p shop restore projects/shop/backups/nelcota-shop-....dump --files --yes
@@ -378,9 +382,9 @@ do not discard the safety backup. Use a disposable host to rehearse recovery.
 Related: [deploy](deploy.md), [storage](storage.md), [leaving](leaving.md). Controlled-update recovery has a separate repository
 guide at `docs/panel-updates.md`.
 
-## Operational backup alerts (unreleased)
+## Operational backup alerts
 
-Current source records private backup attempts and completed success for
+Since server 0.5.2, the CLI records private backup attempts and completed success for
 [operational alerts](operational-alerts.md). Partial dump mtimes never count as
 successful backups. Upgrade the CLI executable used by cron along with the
 controller, then complete a successful backup to establish freshness. Failed or

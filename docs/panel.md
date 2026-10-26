@@ -105,7 +105,7 @@ are refused before querying the database. Return to the first page to continue.
 |---|---|
 | Edit a cell | double click; Enter saves, Esc cancels, NULL button for nulls |
 | Edit or insert a full row | expand button next to the row's checkbox / "Insert row" (side panel). Closing an altered form asks whether to keep editing or discard |
-| Delete several rows | tick the boxes and "Delete N" (a single transaction) |
+| Delete several rows | tick the boxes and "Delete" in the selection bar (a single transaction) |
 | Sort | click the column header (asc → desc → unsorted) |
 | Filter | "Filter" in the grid: equals, not equal, contains, greater/less, is/is not NULL. Filters live in the URL in the REST API format (`/admin/tables/orders?status=eq.paid`). Page, page size and sort use `_page`, `_size`, `_sort` and `_desc`; the complete view survives switching between Data and Structure, refresh and browser navigation |
 | Export a table | "Export" → CSV or JSON, with the grid's order and filters. The server streams with bounded buffers and no collection row cap; exports have a two-minute lifetime and can fail on timeout/cancellation. CSV has a BOM for Excel accents |
@@ -118,7 +118,7 @@ are refused before querying the database. Return to the first page to continue.
 | Command palette | Ctrl+K (⌘K on Mac) or the search button at the top right: pages, tables, saved queries, templates and actions |
 | Create a table | "New table" in the table list: columns (type, default, PK, identity, UNIQUE, foreign key), RLS on by default and a GRANTs matrix. Shows the SQL before creating |
 | Edit the structure | the table's **Structure** tab (`/admin/tables/<name>/structure`): add, edit and delete columns; rename the table; description; turn RLS on/off; GRANTs per role; delete the table (by typing its name) |
-| Policies | search tables and filter their RLS status; "New policy" on each table, with templates (public read, signed-in users read, owner reads/creates/updates/deletes); edit and delete; "Enable RLS" on tables without it. Long expressions expand on demand |
+| Policies | search tables and filter their RLS status; "New rule" on each table, with templates (public read, signed-in users read, owner reads/creates/updates/deletes); edit and delete; "Turn on row protection (RLS)" on tables without it. Long expressions expand on demand |
 | service_role token | **API** page, expandable token section after the examples: issues a token with the chosen validity; shown once and never stored |
 | Create a user / reset a password | **Users** page: "New user" and "Reset password…" in each user's menu, with a password generator. Same rules as public signup. Accounts created here count as confirmed and the panel sends no invitations; end users can recover their own password by email when the project has SMTP configured ([schema-auth.md](schema-auth.md#password-recovery)) |
 | Generate migration | **Migrations** page: schema changes made in the panel (tables, columns, policies) that are not in any file yet, and the project's migrations (applied or only in the folder). "Generate migration" downloads `V<n>__<name>.sql` and registers it as applied in this database; the file goes into `migrations/` (see [deploy](deploy.md#changes-made-in-the-panel)) |
@@ -176,7 +176,7 @@ Use JSON export when you need the original text without this neutralization.
 
 ## Guides and references
 
-The book icon in the top bar opens **Guides and references** at `/admin/guides`.
+The book icon in the left rail (or **Guides** in the sidebar) opens **Guides and references** at `/admin/guides`.
 The reader includes its registered project guides, JavaScript/TypeScript and
 Rust SDK references, SQL examples and server recipes. Repository-only references
 and historical reports are not automatically added to the reader. Search matches the full text,
@@ -210,9 +210,9 @@ a failed request can be retried.
 - **RLS without policies**: RLS on and no policy. Nobody but `service_role`
   (and the owner) has access: it is safe, but maybe not what you want.
 
-## Server operations workspace (unreleased)
+## Server operations workspace
 
-The source after server 0.5.1 adds **Server** to the separately authenticated host controller, with **Health**, **Projects**, **Backups** and **Settings**. Published 0.5.1 does not include these new controls. Install a matching reviewed CLI/controller release before using them; project-panel credentials do not grant host authority.
+Server 0.5.2 adds **Server** to the separately authenticated host controller, with **Health**, **Projects**, **Backups** and **Settings**. Use matching CLI/controller versions; project-panel credentials do not grant host authority.
 
 Health runs read-only checks for application/database health, DNS, public HTTPS, the boot-enabled backup scheduler, disk reserve and backup freshness. Missing CPU or memory measurements remain unavailable. A saved external destination, a verified downloaded copy and a restore on another machine are distinct results; none enables update installation by itself.
 
@@ -292,7 +292,7 @@ and durable recovery. It uses a separate HTTPS origin and SSH-granted host
 authority. The Projects page links to this controller when enrolled.
 Deployment, supported layouts and activation are described in `docs/host-management.md`.
 
-### Operational alerts (unreleased)
+### Operational alerts
 
 In **Server → Alerts**, enrolled host operators can review and configure email
 and HTTPS webhook incident digests for application/database/HTTPS health, low
@@ -301,5 +301,5 @@ incidents, recovery, scan freshness, transport acceptance and retry status.
 Changes and delivery tests require explicit approval; project logins have no
 host authority. Secret URLs are write-only. A complete VPS outage requires an
 independent heartbeat provider, configured and rehearsed separately. Follow
-[operational alerts](operational-alerts.md) before enabling; published 0.5.1
-does not include these controls.
+[operational alerts](operational-alerts.md) before enabling; these controls
+require server 0.5.2 or later.

@@ -1,8 +1,7 @@
-# Operational alerts (unreleased)
+# Operational alerts
 
-Current source adds **Server → Alerts** to the separately authenticated host
-controller. Published 0.5.1 does not include it. Install a matching reviewed
-CLI/controller release before activation; this task does not update a VPS.
+Server 0.5.2 adds **Server → Alerts** to the separately authenticated host
+controller. Install a matching CLI/controller release before activation.
 No Node process, additional database, migration or background container is needed.
 
 ## Authority and activation

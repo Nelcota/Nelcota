@@ -47,7 +47,7 @@ cargo audit
 ```
 
 Choose the appropriate server suite (`auth`, `oauth`, `storage`, `webhooks`,
-`sdk_rust`, `memory`, or feature modules under `tests/admin`). S3 tests are
+`sdk_rust`, `memory`, or `admin` for the feature modules under `tests/admin/`). S3 tests are
 ignored without their disposable provider settings; CI provisions the provider
 and runs them explicitly. Check `.github/workflows/ci.yml` for the exact commands.
 Do not report ignored/unrun checks as passed.

@@ -38,8 +38,9 @@ Cross-instance owners join PostgreSQL's advisory-lock queue with a server-side
 statement timeout bounded by the store timeout (5 s by default); the previous
 statement timeout is restored. Related lineage reads and nested locks reuse the
 owner's connection. Failure to acquire returns `SessionError` `session_store`.
-`new PostgresSessionStore(pool, timeout, leaseTimeout)` usa 5 s / 60 s por padrão
-e exige `leaseTimeout >= 2 * timeout`. Cada chamada de auth dentro do lease recebe
+`new PostgresSessionStore(pool, timeout, leaseTimeout)` recebe milissegundos
+(padrão 5000 / 60000; `timeout` entre 100 e 30000, `leaseTimeout` até 120000 e
+`>= 2 * timeout`). Cada chamada de auth dentro do lease recebe
 no máximo o tempo restante do lease menos um `timeout` do store, reservado para
 gravar o resultado. Se não couber, retorna o erro de auth `lease_exhausted` antes
 de ser enviada.
@@ -167,8 +168,7 @@ bootstrap ficaram com a identidade mais antiga, que é o limite residual acima.
 Na mesma data passaram o pacote empacotado num consumidor externo, o build
 negativo de fronteira e os testes de backend/RLS e de storage S3 com um binário
 compilado do código atual. Ainda faltam a matriz completa de fluxos de auth,
-versões adicionais de Node/Next/navegador, medições de recursos e uma versão
-publicada do SDK base com as correções exigidas.
+versões adicionais de Node/Next/navegador e medições de recursos.
 
 Use o PostgreSQL descartável do repositório e rode Rust, Vitest e auditorias em
 sequência, conforme AGENTS.md. `npm --prefix sdk/nextjs run check`, `npm --prefix

@@ -95,7 +95,8 @@ Checking a release never starts maintenance or updates a project.
 Keep `enable_installation: false` until the G03 acceptance matrix has been
 executed with the exact installed controller binary and retained evidence. The
 worker requires a root-owned private report whose `binary_sha256` matches that
-binary, `schema` is 1, `status` is `passed`, and every following check is true:
+binary, `schema` is 1, `status` is `passed`, and whose `checks` object sets every
+following key to `true`:
 
 | Report check | Required evidence |
 |---|---|

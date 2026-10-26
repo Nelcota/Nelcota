@@ -59,7 +59,8 @@ enrollment and an operator login; project SSO does not grant it.
 ## Authentication and key rotation
 
 Prefer Ed25519 keys generated with `nelcota keygen`. Do not reuse example
-secrets. Built-in verification checks role/sub/expiry and signature; `iss` and
+secrets. Built-in verification checks role/sub/expiry, optional `nbf`/`iat` (30 s
+leeway) and signature; `iss` and
 `aud` are informational, not enforced issuer/audience policies. Integrations
 requiring those policies need their own verifier/middleware.
 
@@ -87,8 +88,8 @@ deduplication by event ID, then acknowledge. Delivery is at least once and unord
 
 ## Operational limits
 
-Controlled panel updates in `main` remain disabled until official artifacts
-and exact-binary VPS acceptance pass. They do not certify your DNS, SSH rescue,
+Controlled panel updates keep installation disabled after enrollment until
+exact-binary VPS acceptance passes. They do not certify your DNS, SSH rescue,
 power-loss recovery or offsite restore. See [the operating guide](../panel-updates.md).
 
 If you suspect compromise, isolate the affected credentials/host, preserve

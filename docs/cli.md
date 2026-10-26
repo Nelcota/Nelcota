@@ -1,10 +1,7 @@
 # CLI reference
 
 Use `nelcota --help` and `<command> --help` for the installed binary. This reference
-was generated from a locked build of source commit
-`5cd74c590ed16e5b44da52cde423ed2ca209d2ee`. It reports version 0.4.0 before
-the next release bump; the `updates` command is source-only and absent from
-published 0.4.0. Match release/tag and checksum, not the version string alone.
+matches server 0.5.4. Match release/tag and checksum, not the version string alone.
 
 ## Prerequisites and selection
 
@@ -15,12 +12,14 @@ selects a project. Commands needing one project require selection on multi-proje
 hosts. Without configuration, a bare `nelcota` prints help; with process/TOML
 server configuration, it serves. `serve` explicitly loads server configuration.
 
-Application `migrate`, `types` and `token` use saved dev settings, host runtime
-configuration or direct process settings. Run migrations in your application
+Application `migrate`, `types` and `token` use, in order: `NELCOTA_DATABASE_URL`
+from the process environment, the selected host project, or the saved
+`nelcota dev` settings. Run migrations in your application
 folder; the repository-root migrations are internal Nelcota SQL.
 
 > **Warning:** `token service-role` bypasses RLS. Keep its result private.
-> `remove`, `down --volumes`, `restore` and `pitr restore` can delete/replace data.
+> `remove`, `down --volumes`, `restore` and `pitr restore` can delete/replace data;
+> `pitr recover` clears a restore fence.
 > A confirmation flag does not replace a verified backup and restore plan.
 
 ## Commands and options
@@ -144,10 +143,10 @@ Options:
           [possible values: docker, systemd]
 
       --firewall
-          Configures ufw (allows SSH, 80 and 443 and enables it)
+          Configures installed ufw on a new non-local Linux host (SSH, 80 and 443)
 
       --skip-checks
-          Skips the environment checks
+          Skips Docker, ports, RAM and DNS checks, not installation prerequisites
 
   -h, --help
           Print help (see a summary with '-h')
@@ -489,6 +488,7 @@ Commands:
   enable   Archives every WAL segment to the host's S3 and takes a first full backup
   disable  Stops archiving (the backups already in S3 are kept)
   status   Base backups and the time range that can be restored
+  recover  Verifies a cleanly stopped PG17 directory and explicitly clears its fence
   backup   Takes a base backup now (full on Sundays, differential otherwise)
   restore  Restores the database to a moment (REPLACES the current data)
   help     Print this message or the help of the given subcommand(s)
@@ -550,6 +550,20 @@ Options:
       --time <TIME>        Target moment, e.g. "2026-10-07 14:30:00+00" (default: the last archived write)
   -p, --project <PROJECT>  Project (required when the host has more than one)
       --yes                Does not ask for confirmation
+  -h, --help               Print help
+```
+
+### nelcota pitr recover
+
+```text
+Verifies a cleanly stopped PG17 directory and explicitly clears its fence
+
+Usage: nelcota pitr recover [OPTIONS]
+
+Options:
+  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+      --yes                Does not ask for confirmation; verification is still mandatory
+  -p, --project <PROJECT>  Project (required when the host has more than one)
   -h, --help               Print help
 ```
 

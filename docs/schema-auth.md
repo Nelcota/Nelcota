@@ -22,12 +22,12 @@ in the server changelog. Never expose database password hashes or link tokens.
 | `id` | `uuid` PK | `gen_random_uuid()`; it is the JWT `sub` and `auth.uid()` |
 | `email` | `text` unique | always lowercase, ≤ 254 characters |
 | `encrypted_password` | `text` | **argon2id PHC string** (see below); `NULL` = no password |
-| `email_confirmed_at` | `timestamptz` | set when the person opens a signup confirmation, magic or recovery link (proves they receive the email) |
+| `email_confirmed_at` | `timestamptz` | set when the person opens a signup confirmation, magic or recovery link (proves they receive the email), or signs in with a provider that verified the email |
 | `raw_user_meta_data` | `jsonb` | the signup `data` field; returned as `user_metadata` |
 | `created_at`, `updated_at` | `timestamptz` | |
 | `last_sign_in_at` | `timestamptz` | updated on every login |
 
-### Password format
+### Email format
 
 Account emails use a simple mailbox address: a dot-atom ASCII local part (up
 to 64 bytes), a DNS domain with nonempty labels, and at most 254 bytes overall.
@@ -37,6 +37,8 @@ querying the database, using the same rule for public auth and panel accounts.
 International domains can use their ASCII/Punycode form. Existing malformed
 addresses are not renamed automatically; an administrator should verify
 ownership before repairing such a row in SQL.
+
+### Password format
 
 The server shares one bounded Argon2 worker budget between public auth, panel
 login and account administration. Panel login rate limits apply per client IP;
@@ -61,7 +63,7 @@ One row per login.
 | `id` | `uuid` PK | goes into the JWT as the `session_id` claim |
 | `user_id` | `uuid` → `auth.users` | `ON DELETE CASCADE` |
 | `created_at`, `refreshed_at` | `timestamptz` | |
-| `revoked_at` | `timestamptz` | logout or detected refresh token reuse |
+| `revoked_at` | `timestamptz` | logout, detected refresh token reuse, a password change or reset (other sessions), or an inbox-owner claim |
 | `user_agent`, `ip` | `text`, `inet` | informative |
 
 ## `auth.refresh_tokens`
@@ -135,6 +137,7 @@ Provider sign-ins in progress; each row lives minutes.
 
 | Column | Type | Notes |
 |---|---|---|
+| `id` | `bigint` PK | |
 | `state_hash` | `bytea` unique | **SHA-256** of the `state` sent to the provider |
 | `provider` | `text` | |
 | `provider_verifier` | `text` | PKCE verifier toward the provider; atomically cleared when claiming the callback, before HTTP exchange |
@@ -169,9 +172,9 @@ a full minute, enough to recover the complete GCRA burst.
 | `GET /auth/v1/user` | Bearer | user data |
 | `PUT /auth/v1/user` | Bearer + `{password?, current_password?, data?}` | 200 + user data (see [Updating the signed-in user](#updating-the-signed-in-user)) |
 | `GET /auth/v1/.well-known/jwks.json` | - | public JWKS |
-| `POST /auth/v1/recover` | `{email}` | 200 `{}` (whether or not the account exists) |
-| `POST /auth/v1/magiclink` | `{email}` | 200 `{}` (whether or not the account exists) |
-| `POST /auth/v1/resend` | `{type: "signup", email}` | 200 `{}` (whether or not the account exists) |
+| `POST /auth/v1/recover` | `{email}` | 200 `{}` (whether or not the account exists; `422 invalid_email` for a malformed address) |
+| `POST /auth/v1/magiclink` | `{email}` | 200 `{}` (whether or not the account exists; `422 invalid_email` for a malformed address) |
+| `POST /auth/v1/resend` | `{type: "signup", email}` | 200 `{}` (whether or not the account exists; `422 invalid_email` for a malformed address) |
 | `POST /auth/v1/verify` | `{type: "recovery", token, password}` or `{type: "signup" \| "magiclink", token}` | 200 + session |
 
 Auth handlers send `Cache-Control: no-store` and `Pragma: no-cache` on session,
@@ -193,9 +196,15 @@ Session:
 ```
 
 Errors: `422 invalid_email` or `422 weak_password` (email or password outside
-the rules), `422 validation_failed` (a value the endpoint requires is missing,
-such as `refresh_token`), `400`/`422 invalid_body` (the body is not JSON or a
-field has the wrong type), `409
+the rules), `422 validation_failed` (a value the endpoint checks itself is
+missing or invalid: `email`/`password` on the password grant, `refresh_token`,
+`auth_code`/`code_verifier`, the recovery `password`, non-object `data`, or
+`PUT /user` with neither `password` nor `data`), `422 invalid_body` (a required
+JSON field is missing or has the wrong type), `400 invalid_body` (the body is
+not JSON), `415 unsupported_media_type` (no `Content-Type: application/json`),
+`400 unsupported_grant_type` (a `grant_type` other than `password`,
+`refresh_token` or `pkce`; a missing one is `400 invalid_query`), `404
+user_not_found` (`GET /auth/v1/user` after the account was deleted), `409
 user_already_exists`, `400 invalid_grant` (invalid credentials or refresh, with
 the same message for an unknown email and a wrong password), `429
 rate_limited` with `Retry-After`, `403 signup_disabled`, `400
@@ -410,7 +419,8 @@ server from starting.
 Errors on `redirect_to`: `access_denied` (the person declined),
 `provider_error`, `email_conflict` (the provider did not verify an email that
 belongs to an account), `email_required` (the provider gave no email),
-`signup_disabled`. `/authorize` answers `400 redirect_not_allowed`, `400
+`signup_disabled`, `invalid_state` (the sign-in expired or was already completed)
+and `provider_disabled` (the provider was removed mid-flow). `/authorize` answers `400 redirect_not_allowed`, `400
 invalid_code_challenge` or `403 provider_disabled`; `/callback` answers `400
 invalid_state` for an unknown, expired or already answered sign-in.
 

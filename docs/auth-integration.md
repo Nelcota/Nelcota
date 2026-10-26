@@ -55,6 +55,9 @@ The startup order is explicit in `main.rs`: connect as the administrator for
 `bootstrap`; configure a separate request pool as `authenticator`; construct
 `Keys`, one shared `Passwords` worker pool and `AuthState::new`; own a pruner
 handle; mount `router` with a request deadline; serve with Ctrl-C shutdown.
+Serve the router with `into_make_service_with_connect_info::<SocketAddr>()` (or
+enable `trust_proxy` behind a proxy that sets `X-Forwarded-For`); without a
+client address every caller shares one per-IP rate-limit bucket.
 The example closes the pool after aborting and awaiting its pruner.
 
 Example budgets are four DB connections, two password threads, a five-second
@@ -84,8 +87,8 @@ The router marks auth handler responses `Cache-Control: no-store` and
 JWKS route keeps its five-minute cache policy. Preserve these headers when
 adding host middleware or a reverse proxy.
 
-Assign `state.mailer`, configure `state.settings.links` before constructing
-the final state, and use the shared `MailDelivery` admission/deadline for mail
+Set `AuthSettings::links` before calling `AuthState::new` (which validates the
+pages), then assign `state.mailer` (and `state.oauth`) on the returned state; use the shared `MailDelivery` admission/deadline for mail
 flows. Missing adapters leave the corresponding flows disabled. Provider
 integration uses `OAuth`, `Provider`, `ProviderKind` and explicit redirect
 allowlists. Google and GitHub flows retain the existing verified-email and

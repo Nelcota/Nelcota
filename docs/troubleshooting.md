@@ -100,7 +100,8 @@ cost more memory; responses also have an 8 MiB budget
 
 Password sign-in, signup, email links and provider sign-in use per-endpoint
 IP budgets based on `NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE` (30 by default).
-Password login also has a per-email budget. Refresh and PKCE redemption share
+Password login also has a per-email-and-IP budget and an escalating per-email
+delay. Refresh and PKCE redemption share
 a separate per-IP budget of ten times that value (300 by default). Quotas are
 per process, not distributed across server instances. Clients behind a NAT can
 share an IP budget. The response carries `Retry-After`; SDKs expose it as

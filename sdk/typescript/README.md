@@ -92,7 +92,7 @@ A programming mistake (an invalid column name, a `..` in a file path, a
 anything is sent.
 
 Custom token/storage adapters may throw their own errors. A response returned
-by `storage.open()` is caller-owned: handle errors while reading its stream.
+by `storage.from(bucket).open()` is caller-owned: handle errors while reading its stream.
 
 ```ts
 const { data, error } = await nelcota.from('notes').select('id,body');
@@ -235,8 +235,8 @@ are coordinated:
   `localStorage` view is stale. A reservation is committed before HTTP.
 
 Native browser persistence requires IndexedDB. Storage failures reject
-explicit auth calls; observe automatic refresh failures with
-`auth.onBackgroundError`. If an owner disappears during rotation or cannot
+explicit auth calls; observe automatic refresh failures with the
+`auth: { onBackgroundError }` option. If an owner disappears during rotation or cannot
 save its replacement, another client refuses to reuse the reserved token.
 Retry from the owning client, sign in again, or call `signOut()` to clear it.
 
@@ -490,8 +490,8 @@ const nelcota = createClient<Database>(url, { accessToken: () => session?.access
 
 The repository's [Next.js integration](https://github.com/Nelcota/Nelcota/blob/main/sdk/nextjs/README.md)
 follows this design: read-only Server Components, a refresh route and a shared
-PostgreSQL session store with per-session locks. It is an unreleased
-candidate, but its README documents each trade-off.
+PostgreSQL session store with per-session locks. It is published as
+`@nelcota/nextjs` 0.1.1, and its README documents each trade-off.
 
 `autoRefresh: false` (already the default outside browsers) keeps background
 timers out of a request-scoped client. A client with session storage still
@@ -502,7 +502,7 @@ refreshing is allowed.
 
 ```ts
 createClient<Database>(url, {
-  auth: { storage, storageKey, autoRefresh, refreshMargin },
+  auth: { storage, storageKey, autoRefresh, refreshMargin, onBackgroundError },
   accessToken,           // () => token | null, replaces the session
   fetch,                 // custom fetch (tests, tracing)
   headers,               // extra headers (browsers only send what CORS allows)
@@ -568,8 +568,8 @@ and tagged release procedure. [CHANGELOG.md](CHANGELOG.md) tracks SDK changes.
 
 Create a server-side client per request or provide a per-request token source;
 never share a user's mutable auth session across server requests. Dispose clients
-when their owner ends. The next SDK package observes async auth listener errors
-through `onBackgroundError`; listeners can call auth without holding its lock.
+when their owner ends. Since 0.2.2, async auth listener errors are reported to
+`auth: { onBackgroundError }`; listeners can call auth without holding its lock.
 If a custom session adapter fails, repair it and explicitly persist the retained
 session before sharing it with other clients. Never log the session to diagnose
 storage failures.

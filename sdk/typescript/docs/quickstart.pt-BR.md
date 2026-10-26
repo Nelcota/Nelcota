@@ -19,10 +19,10 @@ com os recursos descritos na [matriz de compatibilidade](../README.md#compatibil
 npm install @nelcota/client@0.2.3
 ```
 
-Version 0.2.3 is published on npm. Read the [upgrade notes](contract.md#upgrading-from-020)
-and [publication receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294).
-Server updates do not install client packages. The following commands are only
-for testing future checkout changes as a local archive:
+A versão 0.2.3 está publicada no npm. Leia as [notas de atualização](contract.md#upgrading-from-020)
+e os [comprovantes de publicação](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294).
+Atualizar o servidor não instala os pacotes do cliente. Os comandos a seguir
+servem apenas para testar alterações futuras do checkout como arquivo local:
 
 ```sh
 cd sdk/typescript
@@ -143,10 +143,9 @@ os exports locais. O servidor do exemplo de navegador fornece um import map.
 
 ## Sessões e erros
 
-No pacote publicado 0.1.2, a sessão do navegador usa localStorage. Na fonte
-atual, um registro transacional IndexedDB mantém o estado oficial da sessão e
-do PKCE; localStorage é um espelho. Esse comportamento exige um novo build/pacote
-e IndexedDB disponível. A renovação é coordenada entre abas com Web Locks.
+No navegador, um registro transacional IndexedDB mantém o estado oficial da
+sessão e do PKCE; o localStorage é um espelho. Esse comportamento exige
+IndexedDB disponível. A renovação é coordenada entre abas com Web Locks.
 Em ambientes sem Web Locks, passe
 `auth: { storage: sessionStorage }` para manter cada sessão na sua aba.
 No servidor, use um cliente por requisição e encaminhe o token do usuário.
@@ -167,14 +166,13 @@ Os demais métodos e opções estão no [README](../README.md) e no
 
 ## Ciclo de vida e operações longas
 
-A atualização do servidor não atualiza o SDK instalado no aplicativo. As
-correções em `Unreleased` exigem a próxima versão do pacote. Não registre
+A atualização do servidor não atualiza o SDK instalado no aplicativo. Não registre
 senhas, tokens, sessões nem URLs assinadas nos logs. Erros do banco também
 podem conter dados do aplicativo; remova informações sensíveis da telemetria.
 
 No servidor, crie um cliente por requisição ou forneça o token daquela
-requisição. Não compartilhe uma sessão de usuário entre requisições. Na próxima
-versão, falhas síncronas e assíncronas em `onChange` chegam a
+requisição. Não compartilhe uma sessão de usuário entre requisições. Desde a
+0.2.2, falhas síncronas e assíncronas em `onChange` chegam a
 `onBackgroundError`, sem interromper o refresh. O callback pode consultar auth;
 o SDK não aguarda sua conclusão dentro da trava da sessão.
 
@@ -185,9 +183,9 @@ em `finally` se parar antes do fim. `download()` armazena o arquivo inteiro em
 memória. Corrija um adapter de sessão com falha e persista explicitamente a
 sessão retida antes de compartilhá-la novamente.
 
-A próxima versão valida linhas REST como objetos não nulos e exige hints em
+Desde a 0.2.2, o SDK valida linhas REST como objetos não nulos e exige hints em
 relações ambíguas nos dois sentidos. Arrays vazios e campos nulos continuam
-válidos. Erros serializados passam a preservar `retryAfter`.
+válidos. Erros serializados preservam `retryAfter`.
 
 O MIME explícito de upload usa partes de 1 a 127 caracteres ASCII, com letras,
 dígitos e `!#$&-^_.+`, como o servidor. Parâmetros após ponto e vírgula continuam
@@ -211,9 +209,9 @@ um token ainda válido é revogado diretamente, mesmo se a renovação falhar. A
 renovação serve apenas para a revogação: não é salva nem emite `refreshed`, e o
 logout emite um único `signed_out`. Falhas ainda podem impedir a revogação
 remota; o estado local é limpo. Uma rotação de resultado incerto não é repetida para tentar encerrá-la.
-Every definite 4xx rejection other than `invalid_grant` releases the refresh
-reservation; `invalid_grant` clears the session. Network and gateway failures
-keep their uncertainty fence.
+Toda rejeição 4xx definitiva diferente de `invalid_grant` libera a reserva de
+refresh; `invalid_grant` limpa a sessão. Falhas de rede e de gateway mantêm a
+proteção contra resultado incerto.
 
 Adaptadores distintos no servidor não compartilham a fila de autenticação.
 Clientes com o mesmo adaptador e chave continuam coordenados, e o storage do
@@ -222,7 +220,7 @@ e perfil entre abas preservam os eventos corretos; estado inalterado não emite
 evento, e sessionStorage explícito permanece isolado por aba.
 
 Filtros em colunas com nomes reservados não são descartados por paginação ou
-ordenação. Erros de cardinalidade reportam406. O timeout de uma resposta bruta
+ordenação. Erros de cardinalidade reportam 406. O timeout de uma resposta bruta
 termina nos cabeçalhos; o cancelamento do chamador continua válido para o stream.
 O corpo de respostas em buffer continua sob prazo. Valores inválidos de headers
 e URLs são erros de uso; falha ao ler um corpo de erro preserva o status HTTP.

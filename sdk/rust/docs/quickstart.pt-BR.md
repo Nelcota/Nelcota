@@ -1,17 +1,17 @@
 # Começando com Rust
 
-Este guia descreve o SDK **0.1.6**, com correções posteriores ao 0.1.3 publicado.
+Este guia descreve o SDK **0.1.6**, com as correções publicadas desde a 0.1.3.
 Elas recusam `single`/`maybe_single` em HEAD ou escritas sem representação
 antes de enviar HTTP: use `.select(...)` para receber a linha de uma escrita.
 O cancelamento também retira requisições de auth da fila de ciclo de vida;
 uma rotação aceita continua responsável por persistir sua sessão.
 Essas correções exigem atualizar o pacote do cliente.
 
-The published SDK requires Rust 1.88+ and native Tokio. Add
-`nelcota-client = "0.1.6"` to Cargo.toml together with serde, serde_json and Tokio
-as shown in the [README](../README.md). [Registry receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294)
-verify this version on Rust 1.88/1.99. See the [upgrade notes](contract.md#upgrading-from-015).
-The server checkout uses Rust 1.99; its version is independent of the SDK.
+O SDK publicado exige Rust 1.88+ e Tokio nativo. Adicione
+`nelcota-client = "0.1.6"` ao Cargo.toml junto com serde, serde_json e Tokio,
+como mostra o [README](../README.md). Os [comprovantes de publicação](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294)
+verificam esta versão no Rust 1.88/1.99. Veja as [notas de atualização](contract.md#upgrading-from-015).
+O checkout do servidor usa Rust 1.99; a versão dele é independente da do SDK.
 
 ## Atualizar do 0.1.3
 
@@ -56,7 +56,8 @@ de refresh. Em um backend que atende vários usuários, use
 transporte compartilhado e cada chamada com a identidade correta.
 
 Os exemplos `storage` e `oauth` mostram arquivos com streaming e PKCE. Defina
-`NELCOTA_UPLOAD_PATH` para o arquivo no primeiro; no segundo, configure
+`NELCOTA_ACCESS_TOKEN` e `NELCOTA_UPLOAD_PATH` no primeiro (ele não usa
+email/senha); no segundo, configure
 `NELCOTA_OAUTH_REDIRECT_URL` também na lista permitida do servidor, abra a URL
 impressa e cole a URL de retorno quando solicitado. Eles não imprimem os tokens
 da sessão. As políticas do banco continuam decidindo quem pode acessar os dados.
@@ -64,8 +65,7 @@ da sessão. As políticas do banco continuam decidindo quem pode acessar os dado
 
 ## Ciclo de vida e operações longas
 
-A atualização do servidor não atualiza o SDK instalado no aplicativo. As
-correções em `Unreleased` exigem a próxima versão do pacote. Não registre
+A atualização do servidor não atualiza o SDK instalado no aplicativo. Não registre
 senhas, tokens, sessões nem URLs assinadas nos logs. Erros do banco também
 podem conter dados do aplicativo; remova informações sensíveis da telemetria.
 
@@ -75,7 +75,7 @@ independentes que compartilham FileStorage precisam coordenar o refresh
 externamente. Mantenha o diretório da sessão privado.
 
 Use `tokio::time::timeout` ao redor da operação completa para limitar a espera
-total. Na próxima versão, o timeout explícito da query prevalece sobre
+total. Desde a 0.1.5, o timeout explícito da query prevalece sobre
 `RequestOptions.timeout`; zero desativa esse prazo. Transferências continuam
 sem prazo por padrão. Use `open()` e leia os chunks com controle de fluxo para
 arquivos grandes; descartar a resposta interrompe a leitura. `download()`

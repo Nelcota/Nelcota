@@ -59,7 +59,7 @@ update HTTP mocks to return the documented response representation.
 | RPC | `rpc(name, args)` | `POST /rest/v1/rpc/{name}`; named JSON arguments; caller's role |
 | Auth | signUp | `POST /auth/v1/signup`; session or `{user}` awaiting confirmation |
 | Auth | password login, refresh, exchangeCode | `POST /auth/v1/token?grant_type=password/refresh_token/pkce` |
-| Auth | getUser, signOut | `GET /auth/v1/user`, `POST /auth/v1/logout` |
+| Auth | getUser, updateUser, signOut | `GET`/`PUT /auth/v1/user`, `POST /auth/v1/logout` |
 | Auth links | recover, magic link, resend, verify/reset | `POST /auth/v1/recover`, `/magiclink`, `/resend`, `/verify` |
 | OAuth | signInWithOAuth, handleRedirect | `GET /auth/v1/authorize`; S256 PKCE; callback `?code=` exchanged once |
 | Storage | upload, replace, open/download, remove | `POST/PUT/GET/DELETE /storage/v1/object/{bucket}/{path}`; raw bytes |
@@ -72,11 +72,11 @@ at runtime. RLS and GRANTs always remain server/Postgres decisions.
 
 ## Results and failures
 
-- Auth and storage return `{data,error}`. REST adds `status` and `count`; RPC
+- Auth and storage return `{data,error}`. REST adds `status`, `count` and `range`; RPC
   adds `status`. Writes without `.select()` and HEAD responses return null.
   HEAD is typed as null, including chained selects. `single`/`maybeSingle`
   require a row representation and refuse minimal writes or HEAD before HTTP.
-  A requested row representation that is empty or not a JSON array returns
+  A requested row representation that has no body or is not a JSON array returns
   `invalid_response`; it never succeeds with null or another shape.
 - HTTP failures preserve server `code`, `message` and status. Network, abort,
   timeout and interrupted buffered bodies return status 0 and client codes.
@@ -106,7 +106,7 @@ at runtime. RLS and GRANTs always remain server/Postgres decisions.
 - Timeout covers each attempt and its buffered body, excluding session refresh
   and the wait between retries. Retry-After up to 30 seconds is respected;
   longer delays return the error immediately with `retryAfter` for the caller.
-- `storage.open()` hands the raw response to the caller. Subsequent stream
+- `storage.from(bucket).open()` hands the raw response to the caller. Subsequent stream
   errors must be handled by the caller; `download()` buffers into a Blob and
   returns body failures in its result.
 
@@ -296,5 +296,5 @@ Locks. Explicit sessionStorage remains local to its tab.
 
 Cross-tab notifications preserve account/profile event kinds without sending
 credentials; unchanged reloads emit nothing. Reserved modifier column filters
-use logic groups, including embedded paths, and cardinality errors report406.
+use logic groups, including embedded paths, and cardinality errors report 406.
 The query string returned by toString includes the same implicit limit as HTTP.

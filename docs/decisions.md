@@ -303,7 +303,7 @@ toasts, an icon before every title, subtitles explaining the obvious and the
 Criterion: color only for problems (no RLS, RLS without policies, error,
 destructive action); short texts. Inter/JetBrains Mono swapped for IBM Plex
 Sans/Mono, less ubiquitous and with the feel of a technical tool. Security
-warnings stay, as plain text.
+warnings stay, as plain text. (D102 later replaced the typeface with Manrope.)
 
 ## Several projects per host
 
@@ -345,7 +345,8 @@ taking the others down).
 
 ## Identity and account in the panel
 
-**D62. The mascot is the panel's identity, the only exception to D55.** It
+**D62. The mascot is the panel's identity, the only exception to D55**
+(superseded by D102). It
 comes from the NelcotaScreenShare atlas (`src/assets/mascot/`), cropped with
 the poses anchored at the feet and right arm so the figure does not jump when
 the expression changes. It is not decoration because it reacts to the login
@@ -354,7 +355,7 @@ its eyes while the password is typed and looks sad after a refused login. The
 eyes are a vector layer over the PNG's (only the pupil moves); with
 `prefers-reduced-motion` the gaze jumps straight to the target.
 
-**D63. Full-height sidebar.** Project at the top (same height and border as
+**D63. Full-height sidebar** (superseded by D98 and D103). Project at the top (same height and border as
 the topbar), pages in the middle, account at the bottom; the topbar covers
 only the content area. Pinned, it takes 240px from `xl` up; collapsed, it
 becomes an icon rail that expands over the content. "Projects" left the menu:
