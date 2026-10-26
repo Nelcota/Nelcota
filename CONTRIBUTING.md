@@ -9,9 +9,11 @@ Follow [the Code of Conduct](CODE_OF_CONDUCT.md).
 
 Use Rust **1.99.1** from `rust-toolchain.toml`, Docker and Git. Python 3.11+
 is needed for native review/acceptance scripts (3.11.8+ for auth packaging).
-Bun **1.4.3** or later installs and runs the repository UI/TypeScript tooling,
-with Node **24** for the Node runtime checks; SDK consumers use Node 22+ or
-Bun, and the Rust SDK alone supports Rust 1.88. Neither Node nor
+Bun **1.4.3** or later is the primary JavaScript runtime and tool: it installs
+dependencies and runs the UI/TypeScript scripts, tests and builds. Node **24**
+runs the Node compatibility checks (`test:node`, the npm consumer smokes and
+the GC leak checks); SDK consumers use Bun 1.4.3+ or Node 22+, and the Rust SDK
+alone supports Rust 1.88. Neither Node nor
 Python is a production backend runtime dependency.
 
 From the repository root:
@@ -98,7 +100,7 @@ in its own build commit. CI checks it for drift. For targeted UI tests use
 
 From `sdk/typescript`, run `bun install --frozen-lockfile`, `bun run check`, `bun run test`,
 `bun run test:types`, `bun run build`, `bun run size`, `npm run test:package`,
-`bun run test:memory` and `bun run test:runtime` as relevant. The real-server
+`bun run test:node`, `bun run test:memory` and `bun run test:runtime` as relevant. The real-server
 contract is `bun run test:contract -- --browser` after building the server and
 installing Playwright browsers. CI also covers Bun/Deno and all three browser
 engines; see [the SDK contract](sdk/typescript/docs/contract.md).
@@ -121,7 +123,7 @@ Keep these suites sequential with Rust and panel tests.
 
 The authoritative browser/backend commands and environment are in
 [the Next.js verification workflow](.github/workflows/sdk-nextjs-check.yml).
-It covers Node 22/24/26 with Chromium, Firefox/WebKit on Node 24, two production
+It covers Bun with Chromium, Firefox and WebKit, Node 22/24/26 with Chromium, two production
 Next processes sharing PostgreSQL sessions, server-only import boundaries,
 real backend/RLS, email/PKCE and disposable S3. Select the affected gate; do not
 run the entire matrix for prose-only edits. The

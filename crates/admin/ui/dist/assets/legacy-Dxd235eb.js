@@ -1,1 +1,0 @@
-import{Wt as e}from"./index.svelte--tBCMtzc.js";e();

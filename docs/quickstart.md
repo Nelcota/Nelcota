@@ -3,7 +3,7 @@
 Create a local application, make an authenticated request and read your own
 rows through PostgreSQL RLS. For production HTTPS, use [deploy.md](deploy.md).
 
-You need Docker, `curl` and `jq`. The optional JavaScript client needs Node 22+;
+You need Docker, `curl` and `jq`. The optional JavaScript client needs Bun 1.4.3+ or Node 22+;
 Rust client development needs Rust 1.88+. Building the server from source needs
 the pinned Rust 1.99.1 toolchain. The binary needs no Node runtime.
 
@@ -149,8 +149,8 @@ its registry availability first; a source checkout can also use a reviewed local
 archive as described in the SDK README:
 
 ```sh
-npm init -y
-npm install @nelcota/client@0.2.4
+# With Node instead: npm init -y && npm install @nelcota/client@0.2.4, then node client.mjs
+bun add @nelcota/client@0.2.4
 cat > client.mjs <<'JS'
 import { createClient, unwrap } from '@nelcota/client';
 const client = createClient('http://127.0.0.1:8000');
@@ -163,7 +163,7 @@ try {
   console.log(data);
 } finally { client.dispose(); }
 JS
-node client.mjs
+bun client.mjs
 ```
 
 In a TypeScript application, import `Database` from the generated file and use

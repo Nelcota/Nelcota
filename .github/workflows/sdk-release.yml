@@ -42,7 +42,7 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          version=$(node -p "require('./package.json').version")
+          version=$(bun -p "require('./package.json').version")
           if [ "$TAG" != "sdk-v$version" ]; then
             echo "::error::tag $TAG does not match package.json version $version"
             exit 1
@@ -51,7 +51,7 @@ jobs:
       - name: skip a version already on npm
         id: published
         run: |
-          version=$(node -p "require('./package.json').version")
+          version=$(bun -p "require('./package.json').version")
           if npm view "@nelcota/client@$version" version >/dev/null 2>&1; then
             echo "::notice::@nelcota/client@$version is already on npm"
             echo "skip=true" >> "$GITHUB_OUTPUT"

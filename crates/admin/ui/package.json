@@ -4,14 +4,15 @@
   "version": "0.3.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "bun run guides:check && vite build",
-    "check": "bun run guides:check && svelte-check --tsconfig ./tsconfig.app.json && node node_modules/typescript-7/bin/tsc -p tsconfig.node.json && node node_modules/typescript-7/bin/tsc -p tsconfig.e2e.json",
-    "guides:check": "node scripts/guides-i18n.mjs --check",
-    "guides:pending": "node scripts/guides-i18n.mjs --pending",
-    "test": "vitest run src",
+    "dev": "bun --bun vite",
+    "build": "bun run guides:check && bun --bun vite build",
+    "check": "bun run guides:check && bun --bun svelte-check --tsconfig ./tsconfig.app.json && bun node_modules/typescript-7/bin/tsc -p tsconfig.node.json && bun node_modules/typescript-7/bin/tsc -p tsconfig.e2e.json",
+    "guides:check": "bun scripts/guides-i18n.mjs --check",
+    "guides:pending": "bun scripts/guides-i18n.mjs --pending",
+    "test": "bun --bun vitest run src",
+    "test:node": "vitest run src",
     "test:memory": "vitest run src/lib/resources/query-client.test.ts --pool forks --execArgv=--expose-gc",
-    "contracts": "cargo run --manifest-path ../../../Cargo.toml -p nelcota-admin --example export_contracts && node scripts/contracts.mjs",
+    "contracts": "cargo run --manifest-path ../../../Cargo.toml -p nelcota-admin --example export_contracts && bun scripts/contracts.mjs",
     "test:e2e": "playwright test"
   },
   "devDependencies": {

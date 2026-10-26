@@ -27,6 +27,9 @@ test('development proxy forwards backend health and preserves the login origin',
   try {
     process.env.NELCOTA_API_URL = `http://127.0.0.1:${backendPort}`
     vite = await createViteServer({
+      // Cache próprio: este servidor roda no Node do Playwright, o do webServer roda no Bun, e
+      // um cache compartilhado faria um reotimizar as dependências do outro no meio da suíte.
+      cacheDir: 'node_modules/.vite-dev-proxy-test',
       server: { host: '127.0.0.1', port: 0, strictPort: true, warmup: { clientFiles: [] } },
     })
     await vite.listen()

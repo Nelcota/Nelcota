@@ -812,6 +812,22 @@ TS 6 package once svelte-check supports 7. Updates still wait seven days
 after release (Dependabot cooldown), so "newest" means newest that has
 been out for a week.
 
+**D105. Bun is the primary JavaScript runtime and tool; Node stays
+supported.** Bun installs dependencies (`bun.lock`), runs the scripts, the
+panel's Vite and tests, the examples and the main CI jobs. The SDKs target
+both runtimes: published code uses only the web and `node:` APIs that Bun and
+Node share, never `Bun.*` or `bun:*`, and every SDK suite also runs on Node
+22/24/26 (`test:node`). Tests stay on Vitest, run by Bun: `bun test` lacks
+`vi.stubGlobal` and the async fake timers the suites rely on, and the same
+suite must keep running on Node. The garbage-collection leak checks run on
+Node only, because JavaScriptCore's conservative collector can keep an
+unreachable object alive and so cannot prove that nothing leaks. npm still
+packs and publishes (trusted publishing with provenance) and drives the
+npm-consumer smokes. New releases wait 14 days, through the Dependabot
+cooldown and `minimumReleaseAge` in each `bunfig.toml`, replacing the week
+in D96. TypeScript 7 now also checks `@nelcota/ssr`, `@nelcota/nextjs` and
+the App Router example; only svelte-check keeps TypeScript 6.
+
 ## Connecting apps and access
 
 **D97. The panel connects apps and explains refusals.** The API page leads

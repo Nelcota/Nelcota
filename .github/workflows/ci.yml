@@ -244,7 +244,7 @@ jobs:
           bun-version: 1.4.3
       - run: bun install --frozen-lockfile
       - run: bun audit --audit-level=high
-      - run: node scripts/contracts.mjs
+      - run: bun scripts/contracts.mjs
       - name: generated browser validators are up to date
         run: git diff --exit-code -- src/lib/generated
       - run: bun run check

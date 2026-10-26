@@ -37,7 +37,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          node --input-type=module -e '
+          bun -e '
             import metadata from "./package.json" with { type: "json" };
             if (process.env.RELEASE_TAG !== `ssr-sdk-v${metadata.version}` || metadata.private === true) process.exit(1);
           '
@@ -45,7 +45,7 @@ jobs:
       - name: Skip an already published version
         id: published
         run: |
-          version=$(node -p "require('./package.json').version")
+          version=$(bun -p "require('./package.json').version")
           if npm view "@nelcota/ssr@$version" version >/dev/null 2>&1; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi

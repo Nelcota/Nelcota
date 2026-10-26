@@ -14,16 +14,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { node: 22, browser: chromium }
-          - { node: 24, browser: chromium }
-          - { node: 26, browser: chromium }
-          - { node: 24, browser: firefox }
-          - { node: 24, browser: webkit }
-          - { node: 24, browser: chromium, next: '15.5.28' }
-          - { node: 24, browser: firefox, next: '15.5.28' }
-          - { node: 24, browser: webkit, next: '15.5.28' }
-          # Next.js e o núcleo de sessão (inclusive o store PostgreSQL) servidos pelo Bun.
-          - { node: 24, browser: chromium, runtime: bun }
+          # Bun é o runtime principal: os três navegadores rodam nele.
+          - { runtime: bun, browser: chromium, node: 24 }
+          - { runtime: bun, browser: firefox, node: 24 }
+          - { runtime: bun, browser: webkit, node: 24 }
+          # Compatibilidade com Node.
+          - { runtime: node, browser: chromium, node: 22 }
+          - { runtime: node, browser: chromium, node: 24 }
+          - { runtime: node, browser: chromium, node: 26 }
+          # Next 15 num consumidor npm descartável.
+          - { runtime: node, browser: chromium, node: 24, next: '15.5.28' }
+          - { runtime: node, browser: firefox, node: 24, next: '15.5.28' }
+          - { runtime: node, browser: webkit, node: 24, next: '15.5.28' }
     env:
       NELCOTA_NEXT_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:55432/postgres
       NELCOTA_NEXT_BROWSER: ${{ matrix.browser }}
@@ -43,17 +45,17 @@ jobs:
       # The framework-agnostic session core the Next adapter is built on.
       - name: SSR core
         working-directory: sdk/ssr
-        run: bun install --frozen-lockfile && bun audit --audit-level=high && bun run check && bun run ${{ matrix.runtime == 'bun' && 'test:bun' || 'test' }} && bun run build
+        run: bun install --frozen-lockfile && bun audit --audit-level=high && bun run check && bun run ${{ matrix.runtime == 'node' && 'test:node' || 'test' }} && bun run build
       - run: bun install --frozen-lockfile
         working-directory: sdk/nextjs
       - run: bun audit --audit-level=high
         working-directory: sdk/nextjs
-      - run: bun run check && bun run ${{ matrix.runtime == 'bun' && 'test:bun' || 'test' }} && bun run build
+      - run: bun run check && bun run ${{ matrix.runtime == 'node' && 'test:node' || 'test' }} && bun run build
         working-directory: sdk/nextjs
       - run: node scripts/package-smoke.mjs
         working-directory: sdk/nextjs
       - name: Published base SDK consumer
-        if: matrix.node == 24 && matrix.browser == 'chromium' && !matrix.next && !matrix.runtime
+        if: matrix.runtime == 'node' && matrix.node == 24 && matrix.browser == 'chromium' && !matrix.next
         run: node scripts/package-smoke.mjs --published-base
         working-directory: sdk/nextjs
       # The apt mirror can be slow enough to time the job out, so the .deb
@@ -93,19 +95,19 @@ jobs:
             ~/.cache/playwright-apt
           key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/bun.lock') }}${{ steps.playwright-install.outcome != 'success' && format('-partial-{0}-{1}', github.run_id, github.run_attempt) || '' }}
       - name: Server-only production boundary
-        if: matrix.node == 24 && matrix.browser == 'chromium' && !matrix.next && !matrix.runtime
-        run: node scripts/boundary-smoke.mjs
+        if: matrix.runtime == 'bun' && matrix.browser == 'chromium'
+        run: bun scripts/boundary-smoke.mjs
         working-directory: sdk/nextjs
       - name: Earlier Next major compatibility
         if: matrix.next
         working-directory: sdk/nextjs
         env:
           NELCOTA_NEXT_COMPAT_VERSION: ${{ matrix.next }}
-        run: node scripts/compatibility-smoke.mjs
+        run: ${{ matrix.runtime }} scripts/compatibility-smoke.mjs
       - name: Production framework, auth flows and two-process sessions
         if: ${{ !matrix.next }}
         working-directory: sdk/nextjs
-        run: ${{ matrix.runtime || 'node' }} scripts/framework-smoke.mjs
+        run: ${{ matrix.runtime }} scripts/framework-smoke.mjs
       - name: Remove disposable services
         if: always()
         run: docker rm -f nelcota-test-postgres || true
@@ -141,7 +143,7 @@ jobs:
         working-directory: sdk/nextjs
       - run: cargo build --locked -p nelcota-server
       - name: Real auth and STARTTLS email contracts
-        run: node scripts/contract.mjs --nextjs test/contract/auth.test.ts
+        run: bun scripts/contract.mjs --nextjs test/contract/auth.test.ts
         working-directory: sdk/typescript
       - name: Real OAuth provider and PKCE contract
         run: scripts/test.sh rust --locked -p nelcota-server --test oauth rust_sdk_finishes_a_real_pkce_flow
@@ -150,7 +152,7 @@ jobs:
       - name: Final backend adversarial matrix and sustained pool contention
         env:
           NELCOTA_NEXT_SOAK_SECONDS: '120'
-        run: NELCOTA_NEXT_TEST_BINARY="$GITHUB_WORKSPACE/target/debug/nelcota" node --conditions=react-server scripts/backend-smoke.mjs > backend-evidence.json
+        run: NELCOTA_NEXT_TEST_BINARY="$GITHUB_WORKSPACE/target/debug/nelcota" bun --conditions=react-server scripts/backend-smoke.mjs > backend-evidence.json
         working-directory: sdk/nextjs
       - name: Preserve backend validation evidence
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -169,7 +171,7 @@ jobs:
           done
           exit 1
       - name: S3 redirects, credential stripping and range reads
-        run: NELCOTA_NEXT_TEST_BINARY="$GITHUB_WORKSPACE/target/debug/nelcota" node --conditions=react-server scripts/storage-smoke.mjs
+        run: NELCOTA_NEXT_TEST_BINARY="$GITHUB_WORKSPACE/target/debug/nelcota" bun --conditions=react-server scripts/storage-smoke.mjs
         working-directory: sdk/nextjs
       - name: Remove disposable services
         if: always()
@@ -183,10 +185,10 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chromium, firefox, webkit]
-        runtime: [node]
+        # O app SvelteKit construído e servido pelo Bun, mais um job de compatibilidade com Node.
+        runtime: [bun]
         include:
-          # O app SvelteKit construído e servido pelo Bun.
-          - { browser: chromium, runtime: bun }
+          - { browser: chromium, runtime: node }
     env:
       NELCOTA_SSR_BROWSER: ${{ matrix.browser }}
     steps:

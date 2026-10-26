@@ -36,6 +36,8 @@ try {
   manifest.devDependencies.next = version;
   // Next 15 pins an affected PostCSS release; keep the audit gate enabled.
   manifest.overrides = { ...manifest.overrides, postcss: '8.5.31' };
+  // O Next 15 usa a API JavaScript do TypeScript 6; o suporte ao TypeScript 7 começa no Next 16.2.11.
+  manifest.devDependencies.typescript = 'npm:@typescript/typescript6@^6.0.2';
   manifest.peerDependencies.next = `^${version}`;
   await writeFile(join(target, 'package.json'), JSON.stringify(manifest, null, 2) + '\n');
   // O lock do checkout fixa o Next 16; o consumidor npm resolve o Next 15 do zero.
@@ -53,7 +55,7 @@ try {
   await run('npm', ['run', 'check']);
   await run(process.execPath, ['scripts/boundary-smoke.mjs']);
   await run(process.execPath, ['scripts/framework-smoke.mjs']);
-  console.log(JSON.stringify({ next: version, postcssOverride: '8.5.31', node: process.version, browser: process.env.NELCOTA_NEXT_BROWSER ?? 'chromium', checks: ['typecheck', 'server-only production boundary', 'production framework and two-process PostgreSQL sessions'], fixture: 'removed in finally' }));
+  console.log(JSON.stringify({ next: version, postcssOverride: '8.5.31', typescript: 6, node: process.version, browser: process.env.NELCOTA_NEXT_BROWSER ?? 'chromium', checks: ['typecheck', 'server-only production boundary', 'production framework and two-process PostgreSQL sessions'], fixture: 'removed in finally' }));
 } finally {
   await rm(directory, { recursive: true, force: true });
 }

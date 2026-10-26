@@ -124,9 +124,9 @@ const { data: notes } = await nelcota.from('notes').select('id,body');
 
 | Platform | Package | Guide |
 | --- | --- | --- |
-| JavaScript / TypeScript | `npm install @nelcota/client` | [TypeScript SDK](sdk/typescript/README.md) |
+| JavaScript / TypeScript | `bun add @nelcota/client` (or `npm install`) | [TypeScript SDK](sdk/typescript/README.md) |
 | Rust / Tokio | `cargo add nelcota-client` | [Rust SDK](sdk/rust/README.md) |
-| Next.js App Router | `npm install @nelcota/nextjs @nelcota/client pg` | [Next.js integration](sdk/nextjs/README.md) |
+| Next.js App Router | `bun add @nelcota/nextjs @nelcota/client pg` (or `npm install`) | [Next.js integration](sdk/nextjs/README.md) |
 
 Generate types from your schema with `nelcota types -o src/database.ts`
 (TypeScript) or `nelcota types --lang rust -o src/database.rs` (Rust). Quickstarts

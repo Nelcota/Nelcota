@@ -16,7 +16,7 @@ com os recursos descritos na [matriz de compatibilidade](../README.md#compatibil
 ## 1. Instale
 
 ```sh
-npm install @nelcota/client@0.2.4   # ou: bun add @nelcota/client@0.2.4
+bun add @nelcota/client@0.2.4   # ou: npm install @nelcota/client@0.2.4
 ```
 
 A versão 0.2.4 está publicada no npm. Leia as [notas de atualização](contract.md#upgrading-from-020)
@@ -36,8 +36,8 @@ npm install "$NELCOTA_SDK_TARBALL"
 
 ## Atualizar do 0.2.0
 
-Execute `npm install --save-exact @nelcota/client@0.2.4`, confira a versão com
-`npm ls @nelcota/client` e versione o manifesto/lockfile do aplicativo. Rode seus
+Execute `bun add --exact @nelcota/client@0.2.4` (ou `npm install --save-exact @nelcota/client@0.2.4`),
+confira a versão com `bun pm ls` (ou `npm ls @nelcota/client`) e versione o manifesto/lockfile do aplicativo. Rode seus
 testes, a checagem de tipos e o build. Preserve `number | string | null` nos
 limites de bucket; strings decimais exatas evitam arredondamento de int64.
 Os tipos de `single()`/`maybeSingle()` após outro `select()` agora refletem o

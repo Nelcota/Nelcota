@@ -6,15 +6,15 @@ The minimum base peer remains 0.2.2. See the [English guide](../README.md),
 [publication evidence](https://github.com/Nelcota/Nelcota/issues/151).
 
 ```sh
-npm install --save-exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.4
-npm install pg
-# ou com Bun: bun add --exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.4 pg
+bun add --exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.4 pg
+# ou com npm: npm install --save-exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.4 pg
 ```
 
 The supported peer range is Next 16 on the Node runtime. The selected matrix
-uses Next 16.4.3 / React 19.3.1 and Node 22/24/26, plus Firefox/WebKit on Node 24,
-and Bun 1.4.3 with Chromium.
-Pinned Next 15.5.28 also passed three browser consumers with PostCSS 8.5.31 and
+uses Next 16.4.3 / React 19.3.1 on Bun 1.4.3 with Chromium, Firefox and WebKit,
+plus Node 22/24/26 with Chromium.
+Pinned Next 15.5.28 also passed three browser consumers with PostCSS 8.5.31,
+TypeScript 6 (Next 15 cannot use TypeScript 7) and
 Node middleware adaptations. Pages Router, Edge and earlier majors are outside scope.
 
 ## Organização e configuração
