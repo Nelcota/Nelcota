@@ -1,11 +1,10 @@
 # Nelcota for Next.js
 
-App Router integration released as `@nelcota/nextjs` **0.1.2**. Install it with
-`@nelcota/client` **0.2.4**; the supported minimum peer remains 0.2.2. Registry
-installation requires the tagged release workflows to publish both versions.
-[Publication and acceptance](https://github.com/Nelcota/Nelcota/issues/151)
-record registry integrity, fresh consumers and the explicitly skipped external
-provider gates for 0.1.1. See [releasing](docs/releasing.md) for future releases.
+App Router integration published as `@nelcota/nextjs` **0.1.2**. Install it with
+the published `@nelcota/client` **0.2.4**; the supported minimum peer remains
+0.2.2. [Registry receipts](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169) record both releases;
+[publication and acceptance](https://github.com/Nelcota/Nelcota/issues/151)
+record the original validation and the explicitly skipped external provider gates. See [releasing](docs/releasing.md) for future releases.
 
 Install in a compatible Next App Router application:
 

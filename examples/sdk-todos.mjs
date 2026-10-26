@@ -4,7 +4,7 @@
 //    examples/todos.sql to your project's migrations/ folder as
 //    V1__todos.sql (or the next free version) and run `nelcota migrate`, or
 //    paste it into the SQL editor of the panel (/admin/).
-// 2. Copy this file into your consumer and run npm install --save-exact @nelcota/client@0.2.3
+// 2. Copy this file into your consumer and run npm install --save-exact @nelcota/client@0.2.4
 // 3. NELCOTA_URL=http://127.0.0.1:8000 node sdk-todos.mjs
 //
 // The demo signs up a fresh account and uses it at once, so the project must

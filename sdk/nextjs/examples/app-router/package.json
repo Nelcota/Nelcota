@@ -8,12 +8,12 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@nelcota/nextjs": "0.1.1",
+    "@nelcota/nextjs": "0.1.2",
     "next": "16.4.3",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "pg": "^8.23.1",
-    "@nelcota/client": "0.2.3"
+    "@nelcota/client": "0.2.4"
   },
   "engines": {
     "node": ">=22"
