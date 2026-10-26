@@ -49,7 +49,7 @@ def availability(root, preset):
     if not preset.get("enabled", True):
         return "disabled", preset["reason"]
     engine = preset["engine"]
-    binary = {"npm-audit": "npm"}.get(engine, engine)
+    binary = {"bun-audit": "bun"}.get(engine, engine)
     if tool_path(root, binary) is None:
         return "unavailable", f"{binary} is not installed; see presets/README.md for project-local setup."
     return "ready", None
@@ -119,22 +119,16 @@ def normalize_semgrep(payload, preset, root):
 
 
 def normalize_audit(payload, preset, workspace, root):
-    if "error" in payload:
-        raise ValueError("npm audit could not complete: " + str(payload["error"].get("code", "audit_error")))
-    if "vulnerabilities" not in payload:
-        raise ValueError("Unsupported npm audit JSON; npm 7 or newer is required")
+    # bun audit --json: {"pacote": [aviso, ...]}, o mesmo formato da API de avisos em lote do npm.
+    if not isinstance(payload, dict) or not all(isinstance(value, list) for value in payload.values()):
+        raise ValueError("Unsupported bun audit JSON; expected advisories grouped by package")
     result = []
-    for name, item in payload["vulnerabilities"].items():
-        severity = {"high": "error", "critical": "error"}.get(item.get("severity"), "warning")
-        for advisory in item.get("via", []):
-            if not isinstance(advisory, dict):
-                continue
-            message = f"{name}: {advisory.get('title', 'Vulnerable dependency')} ({item.get('severity', 'unknown')})"
-            result.append(diagnostic(preset, relative_file(workspace / "package-lock.json", root), 1, 1,
-                                     f"npm-audit/{advisory.get('source', name)}", message, severity))
-        if not any(isinstance(value, dict) for value in item.get("via", [])):
-            result.append(diagnostic(preset, relative_file(workspace / "package-lock.json", root), 1, 1,
-                                     f"npm-audit/{name}", f"{name}: vulnerable transitive dependency ({item.get('severity', 'unknown')})", severity))
+    for name, advisories in payload.items():
+        for advisory in advisories:
+            severity = {"high": "error", "critical": "error"}.get(advisory.get("severity"), "warning")
+            message = f"{name}: {advisory.get('title', 'Vulnerable dependency')} ({advisory.get('severity', 'unknown')})"
+            result.append(diagnostic(preset, relative_file(workspace / "bun.lock", root), 1, 1,
+                                     f"bun-audit/{advisory.get('id', name)}", message, severity))
     return result
 
 
@@ -165,15 +159,15 @@ def run_oxlint(root, preset, paths, binary, timeout, fix=False):
 
 def run_external(root, preset, timeout):
     engine = preset["engine"]
-    if engine == "npm-audit":
+    if engine == "bun-audit":
         diagnostics, codes = [], []
         for name in preset["workspaces"]:
             workspace = root / name
-            completed = run_command([tool_path(root, "npm"), "audit", "--json"], workspace, timeout)
+            completed = run_command([tool_path(root, "bun"), "audit", "--json"], workspace, timeout)
+            if completed.returncode not in (0, 1):
+                raise ValueError(f"bun audit could not complete (exit {completed.returncode})")
             payload = json.loads(completed.stdout)
             diagnostics.extend(normalize_audit(payload, preset, workspace, root))
-            if completed.returncode not in (0, 1):
-                raise ValueError(f"npm audit could not complete (exit {completed.returncode})")
             codes.append(completed.returncode)
         return diagnostics, max(codes, default=0), None
     if engine == "semgrep":

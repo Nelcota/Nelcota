@@ -12,11 +12,11 @@ translates the parsed document, retaining fenced/indented code, comments in
 examples, inline code, link destinations and source-language section IDs.
 Code-only source changes therefore appear immediately in the next build.
 
-From `crates/admin/ui`, run `npm run guides:pending` to list missing prose.
+From `crates/admin/ui`, run `bun run guides:pending` to list missing prose.
 Translate the changed fragments and remove obsolete keys. Keep inline code and
 link destinations intact; sentence order and link labels may change.
-`npm run guides:check` rejects missing/obsolete prose or changed inline code and
-links. Both `npm run check` and `npm run build` include this check, including CI.
+`bun run guides:check` rejects missing/obsolete prose or changed inline code and
+links. Both `bun run check` and `bun run build` include this check, including CI.
 Unit tests also compare all code examples, destinations and heading IDs.
 
 For a new catalog, `node scripts/guides-i18n.mjs --extract <id>` lists all

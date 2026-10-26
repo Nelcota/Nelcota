@@ -174,8 +174,8 @@ compilado do código atual. Ainda faltam a matriz completa de fluxos de auth,
 versões adicionais de Node/Next/navegador e medições de recursos.
 
 Use o PostgreSQL descartável do repositório e rode Rust, Vitest e auditorias em
-sequência, conforme AGENTS.md. `npm --prefix sdk/nextjs run check`, `npm --prefix
-sdk/nextjs test` e `npm --prefix sdk/nextjs run build` verificam o candidato. O teste
+sequência, conforme AGENTS.md. `bun run --cwd sdk/nextjs check`, `bun run --cwd
+sdk/nextjs test` e `bun run --cwd sdk/nextjs build` verificam o candidato. O teste
 PostgreSQL exige `NELCOTA_NEXT_TEST_DATABASE_URL` e cria/remove um banco próprio.
 Não use dados nem credenciais de produção. O exemplo App Router é loopback de
 desenvolvimento; não deve ser publicado como configuração de produção.

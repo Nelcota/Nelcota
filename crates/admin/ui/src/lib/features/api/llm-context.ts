@@ -143,7 +143,7 @@ export function llmContext(input: LlmContextInput): string {
     '',
     '## Setup',
     '',
-    fence('sh', 'npm install @nelcota/client'),
+    fence('sh', 'npm install @nelcota/client   # or: bun add @nelcota/client'),
     '',
     `Save the schema below as \`src/database.ts\` (or download it from the panel: Connect → SDK, or run \`nelcota types -o src/database.ts\`). Other SDKs: \`nelcota-client\` for Rust (crates.io) and \`@nelcota/nextjs\` for the Next.js App Router (server-side sessions; the browser only gets an opaque HttpOnly cookie).`,
     '',

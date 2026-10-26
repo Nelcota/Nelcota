@@ -19,7 +19,7 @@ Playwright Chromium, with no other test suite running:
 
 ```sh
 cd crates/admin/ui
-npx playwright test e2e/readme-screenshots.spec.ts --workers=1
+bunx playwright test e2e/readme-screenshots.spec.ts --workers=1
 ```
 
 Inspect all eight images in `crates/admin/ui/test-results/`, then copy them to
@@ -30,7 +30,7 @@ find crates/admin/ui/test-results -type f -name 'panel-*.png' -exec cp -t docs/a
 ```
 
 The overview and table images are also bundled in panel guides. After replacing
-them, rebuild the UI with `npm --prefix crates/admin/ui run build` as described
+them, rebuild the UI with `bun run --cwd crates/admin/ui build` as described
 in [contributing](../../CONTRIBUTING.md).
 
 Keep historical drafts identified by version. Use disposable project data in

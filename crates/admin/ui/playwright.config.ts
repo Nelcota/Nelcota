@@ -8,7 +8,7 @@ export default defineConfig({
   use: { baseURL: 'http://127.0.0.1:5176', locale: 'pt-BR', trace: 'retain-on-failure', launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM } },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } }],
   webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 5176 --strictPort',
+    command: 'bun run dev --host 127.0.0.1 --port 5176 --strictPort',
     url: 'http://127.0.0.1:5176/admin/', reuseExistingServer: false,
   },
 })

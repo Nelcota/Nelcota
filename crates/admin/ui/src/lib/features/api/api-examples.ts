@@ -60,7 +60,7 @@ export function jsObject(row: Record<string, unknown>, indent = ''): string {
 /** How a project creates its client (as in the SDK's README). */
 export function sdkSetup(base: string): { install: string; client: string } {
   return {
-    install: 'npm install @nelcota/client',
+    install: 'npm install @nelcota/client   # or: bun add @nelcota/client',
     client: `import { createClient } from '@nelcota/client'\nimport type { Database } from './database'\n\nexport const nelcota = createClient<Database>(${jsString(base)})`,
   }
 }

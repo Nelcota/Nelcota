@@ -184,7 +184,7 @@ code blocks have copy buttons, and a table of contents links to each section.
 On phones, a guide selector replaces the sidebar. Guides and references follow
 the panel language, with Portuguese translations of the English sources. Code
 examples, inline code, URLs and section identifiers remain unchanged. Translations
-live in `docs/i18n/pt-BR/`; `npm run guides:check` verifies every prose fragment
+live in `docs/i18n/pt-BR/`; `bun run guides:check` verifies every prose fragment
 against its source and fails on missing or outdated translations. Code-only
 changes flow straight from the source without requiring a translation update.
 
@@ -264,20 +264,20 @@ because of the `$`), followed by `docker compose up -d --force-recreate app`.
 
 ```sh
 cd crates/admin/ui
-npm ci
-npm run dev        # http://127.0.0.1:5173/admin/; proxy: http://127.0.0.1:8000
-npm run check      # types (svelte-check)
-npm run build      # generates dist/ (versioned and embedded in the binary)
+bun install --frozen-lockfile
+bun run dev        # http://127.0.0.1:5173/admin/; proxy: http://127.0.0.1:8000
+bun run check      # types (svelte-check)
+bun run build      # generates dist/ (versioned and embedded in the binary)
 ```
 
-After bundled guide/UI changes, run `npm run build` and rebuild the binary
+After bundled guide/UI changes, run `bun run build` and rebuild the binary
 (`cargo build --locked -p nelcota-server`). Commit generated `dist/` in its own
 build commit. CI checks it for drift. Set `NELCOTA_API_URL` when Vite should
 proxy another backend.
 
 Interface texts live in `src/lib/i18n/messages/<area>.ts`, with a Portuguese
 (`pt-BR`) and an English (`en`) object; the English one is typed against the
-Portuguese one, so a missing key fails `npm run check`. Never hardcode a
+Portuguese one, so a missing key fails `bun run check`. Never hardcode a
 user-facing string in a component.
 
 ## Related guides

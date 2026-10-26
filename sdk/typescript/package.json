@@ -67,8 +67,8 @@
     "test:memory": "node --expose-gc test/runtime/memory.mjs",
     "example:browser": "node scripts/example-server.mjs",
     "size": "node scripts/size.mjs",
-    "prepack": "npm run build",
-    "prepublishOnly": "npm run check && npm test && npm run test:types && npm run build && npm run size && npm run test:package"
+    "prepack": "bun run build",
+    "prepublishOnly": "bun run check && bun run test && bun run test:types && bun run build && bun run size && npm run test:package"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

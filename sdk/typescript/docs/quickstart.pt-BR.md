@@ -26,7 +26,7 @@ servem apenas para testar alterações futuras do checkout como arquivo local:
 
 ```sh
 cd sdk/typescript
-npm ci
+bun install --frozen-lockfile
 NELCOTA_SDK_TARBALL="$(pwd)/$(npm pack --silent)"
 mkdir -p ../../.nelcota/sdk-consumer
 cd ../../.nelcota/sdk-consumer
@@ -127,8 +127,8 @@ passo; TypeScript usa os tipos para conferir tabelas, colunas e argumentos.
 
 ## Exemplos executáveis
 
-- Navegador: no diretório do SDK, rode `npm run build` e
-  `npm run example:browser`. Abra `http://127.0.0.1:5178`, informe a URL
+- Navegador: no diretório do SDK, rode `bun run build` e
+  `bun run example:browser`. Abra `http://127.0.0.1:5178`, informe a URL
   da API e entre. A página permite cadastro, notas e upload.
 - Node: configure `NELCOTA_URL`, `NELCOTA_EMAIL`, `NELCOTA_PASSWORD` e rode
   `node examples/node.mjs` no diretório do SDK após instalar o pacote local.

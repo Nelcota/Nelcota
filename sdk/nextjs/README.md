@@ -301,14 +301,14 @@ Node matrix; the execution ledger retains each artifact and result.
 
 ## Local verification
 
-From the repository root, install/build the base SDK, then `npm ci --prefix
-sdk/nextjs`. Run Rust, Vitest and audits sequentially:
+From the repository root, install/build the base SDK, then `bun install --cwd
+sdk/nextjs --frozen-lockfile`. Run Rust, Vitest and audits sequentially:
 
 ```sh
-npm --prefix sdk/nextjs run check
+bun run --cwd sdk/nextjs check
 NELCOTA_NEXT_TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/postgres \
-  npm --prefix sdk/nextjs test
-npm --prefix sdk/nextjs run build
+  bun run --cwd sdk/nextjs test
+bun run --cwd sdk/nextjs build
 ```
 
 The PostgreSQL integration creates/drops its own random test database. It needs

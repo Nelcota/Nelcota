@@ -1,6 +1,7 @@
 # Weekly version updates, grouped per ecosystem so they arrive as one PR
-# each. New releases wait a week first: a compromised version is usually
-# caught and yanked within days. Security updates are not delayed.
+# each. New releases wait two weeks first: a compromised version is usually
+# caught and yanked within days. Security updates are not delayed. The JS
+# packages apply the same 14 days on install (minimumReleaseAge in bunfig.toml).
 version: 2
 updates:
   - package-ecosystem: cargo
@@ -8,17 +9,17 @@ updates:
     schedule:
       interval: weekly
     cooldown:
-      default-days: 7
+      default-days: 14
     groups:
       cargo:
         patterns: ["*"]
 
-  - package-ecosystem: npm
+  - package-ecosystem: bun
     directory: /crates/admin/ui
     schedule:
       interval: weekly
     cooldown:
-      default-days: 7
+      default-days: 14
     groups:
       panel:
         patterns: ["*"]
@@ -29,32 +30,32 @@ updates:
       - dependency-name: typescript
         update-types: ["version-update:semver-major"]
 
-  - package-ecosystem: npm
+  - package-ecosystem: bun
     directory: /sdk/typescript
     schedule:
       interval: weekly
     cooldown:
-      default-days: 7
+      default-days: 14
     groups:
       sdk:
         patterns: ["*"]
 
-  - package-ecosystem: npm
+  - package-ecosystem: bun
     directory: /sdk/ssr
     schedule:
       interval: weekly
     cooldown:
-      default-days: 7
+      default-days: 14
     groups:
       ssr-sdk:
         patterns: ["*"]
 
-  - package-ecosystem: npm
+  - package-ecosystem: bun
     directory: /sdk/nextjs
     schedule:
       interval: weekly
     cooldown:
-      default-days: 7
+      default-days: 14
     groups:
       nextjs-sdk:
         patterns: ["*"]
@@ -67,7 +68,7 @@ updates:
     schedule:
       interval: weekly
     cooldown:
-      default-days: 7
+      default-days: 14
     groups:
       actions:
         patterns: ["*"]
