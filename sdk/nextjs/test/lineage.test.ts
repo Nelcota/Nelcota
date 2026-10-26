@@ -1,13 +1,13 @@
 import { randomBytes } from 'node:crypto';
 import { NextRequest } from 'next/server.js';
 import { describe, expect, it } from 'vitest';
-import { Integration, type CookieWriter, type NextOptions } from '../src/context.js';
-import { DevelopmentSessionStore } from '../src/memory-store.js';
-import { PostgresSessionStore } from '../src/postgres.js';
+import { Integration, type CookieWriter, type SessionOptions as NextOptions } from '@nelcota/ssr';
+import { DevelopmentSessionStore } from '@nelcota/ssr/testing';
+import { PostgresSessionStore } from '@nelcota/ssr/postgres';
 import { createNelcotaProxy } from '../src/proxy.js';
-import { SessionSealer } from '../src/seal.js';
-import type { SessionLease, SessionStore } from '../src/store.js';
-import { FakePostgres } from './fake-postgres.js';
+import { SessionSealer } from '../../ssr/src/seal.js';
+import type { SessionLease, SessionStore } from '@nelcota/ssr';
+import { FakePostgres } from '../../ssr/test/fake-postgres.js';
 
 type CookieOptions = Parameters<CookieWriter['set']>[2];
 /** One request's cookie view: what it presented and what its response set. */

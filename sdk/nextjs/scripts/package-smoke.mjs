@@ -23,12 +23,15 @@ function packed(cwd) {
 }
 try {
   const next = packed(root);
+  // The SSR core is a peer package until its own registry release; always pack it here.
+  const ssr = packed(resolve(root, '../ssr'));
   const client = publishedBase ? null : packed(resolve(root, '../typescript'));
   assert(next.files.some(file => file.path === 'dist/server.js'));
-  assert(next.files.some(file => file.path === 'sql/session-store.sql'));
+  assert(ssr.files.some(file => file.path === 'sql/session-store.sql'));
+  assert(!ssr.files.some(file => /(^|\/)(node_modules|test|\.env)(\/|$)/.test(file.path)));
   assert(!next.files.some(file => /(^|\/)(node_modules|test|examples|\.env)(\/|$)/.test(file.path)));
   await writeFile(join(directory, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
-  run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', '--omit=optional', join(directory, next.filename), client ? join(directory, client.filename) : '@nelcota/client@0.2.2', 'next@16.4.3', 'react@19.3.1', '@types/react@19.3.0']);
+  run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', '--omit=optional', join(directory, next.filename), join(directory, ssr.filename), client ? join(directory, client.filename) : '@nelcota/client@0.2.2', 'next@16.4.3', 'react@19.3.1', '@types/react@19.3.0']);
   await writeFile(join(directory, 'consumer.mjs'), `import { createNelcotaNext, SessionError } from '@nelcota/nextjs/server';
 import { PostgresSessionStore } from '@nelcota/nextjs/postgres';
 import { createNelcotaProxy } from '@nelcota/nextjs/proxy';

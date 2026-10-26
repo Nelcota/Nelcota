@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { describe, expect, it } from 'vitest';
-import { Integration, type CookieWriter, type NextOptions } from '../src/context.js';
+import { Integration, type CookieWriter, type SessionOptions } from '../src/context.js';
 import { DevelopmentSessionStore } from '../src/memory-store.js';
 
 const origin = 'http://localhost:3000', api = 'http://localhost:8000';
@@ -14,7 +14,7 @@ class Jar implements CookieWriter {
 const post = () => new Request(`${origin}/auth/login`, { method: 'POST', headers: { origin } });
 interface Sent { url: URL; redirect: RequestRedirect | undefined; headers: Headers }
 /** API fixture: `routes` maps an absolute URL to the redirect Location it answers with. */
-async function setup(routes: Record<string, string>, overrides: Partial<NextOptions> = {}) {
+async function setup(routes: Record<string, string>, overrides: Partial<SessionOptions> = {}) {
   const sent: Sent[] = [];
   const integration = await Integration.create({
     url: api, appOrigin: origin, keys: [randomBytes(32).toString('base64url')], store: new DevelopmentSessionStore(), allowInsecureDevelopment: true,

@@ -2,8 +2,8 @@
 // GitHub token/profile endpoints are local fixtures; Nelcota and PKCE are real.
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
-import { Integration } from '../dist/context.js';
-import { DevelopmentSessionStore } from '../dist/memory-store.js';
+import { Integration } from '../../ssr/dist/context.js';
+import { DevelopmentSessionStore } from '../../ssr/dist/memory-store.js';
 
 const api = process.env.NELCOTA_NEXT_OAUTH_TEST_URL;
 if (!api || !['localhost', '127.0.0.1', '[::1]'].includes(new URL(api).hostname)) throw new Error('Explicit disposable loopback backend required');

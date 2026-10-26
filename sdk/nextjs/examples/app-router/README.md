@@ -30,7 +30,8 @@ server environment variables or submitted form/POST bodies.
 
 The default `DevelopmentSessionStore` is loopback-only, volatile and limited
 to one process. For disposable multi-process testing, provision the dedicated
-session schema from the installed package's `sql/session-store.sql`, set
+session schema from `sql/session-store.sql` in the installed `@nelcota/ssr` package
+(`@nelcota/nextjs` 0.1.x ships it itself), set
 `NELCOTA_NEXT_SESSION_DATABASE_URL` privately, and give the application role
 only the privileges described in the [SDK guide](https://github.com/Nelcota/Nelcota/blob/main/sdk/nextjs/README.md).
 

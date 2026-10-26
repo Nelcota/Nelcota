@@ -25,7 +25,8 @@ para representar visitantes. REST/RPC/storage reutilizam `@nelcota/client`; as
 permissões e RLS do backend continuam sendo a autorização.
 
 Em produção use HTTPS, `appOrigin` explícita e `PostgresSessionStore` de
-`@nelcota/nextjs/postgres`. Execute `sql/session-store.sql` com o proprietário de
+`@nelcota/nextjs/postgres`. Execute `sql/session-store.sql` (no `@nelcota/ssr` instalado; até a 0.1.x ele vem no próprio
+`@nelcota/nextjs`) com o proprietário de
 um banco privado de sessões. A role da aplicação precisa somente de CONNECT,
 USAGE no schema e SELECT/INSERT/UPDATE/DELETE na tabela; não conceda acesso às
 roles públicas da API. Configure TLS com verificação de certificado, limite o

@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { Pool } from 'pg';
-import { Integration } from '../dist/context.js';
-import { PostgresSessionStore } from '../dist/postgres.js';
-import { SessionSealer, sessionKey } from '../dist/seal.js';
+import { Integration } from '../../ssr/dist/context.js';
+import { PostgresSessionStore } from '../../ssr/dist/postgres.js';
+import { SessionSealer, sessionKey } from '../../ssr/dist/seal.js';
 
 const api = process.env.NELCOTA_SDK_TEST_URL;
 const mail = process.env.NELCOTA_SDK_TEST_MAIL;
@@ -40,7 +40,7 @@ async function emailLink(address, page) {
   throw new Error('The disposable SMTP fixture did not deliver the expected link');
 }
 try {
-  await pool.query(await readFile(new URL('../sql/session-store.sql', import.meta.url), 'utf8'));
+  await pool.query(await readFile(new URL('../../ssr/sql/session-store.sql', import.meta.url), 'utf8'));
   const options = { url: api, appOrigin: origin, keys: [key], store: new PostgresSessionStore(pool), allowInsecureDevelopment: true };
   const integration = await Integration.create(options);
   const second = await Integration.create({ ...options, store: new PostgresSessionStore(pool) });

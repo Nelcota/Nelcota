@@ -12,7 +12,7 @@ import { Pool } from 'pg';
 import assert from 'node:assert/strict';
 
 let Integration, DevelopmentSessionStore;
-try { ({ Integration } = await import('../dist/context.js')); ({ DevelopmentSessionStore } = await import('../dist/memory-store.js')); }
+try { ({ Integration } = await import('../../ssr/dist/context.js')); ({ DevelopmentSessionStore } = await import('../../ssr/dist/memory-store.js')); }
 catch (error) {
   if (/Client Component/.test(String(error?.message))) throw new Error('Run with: node --conditions=react-server scripts/storage-smoke.mjs');
   throw error;

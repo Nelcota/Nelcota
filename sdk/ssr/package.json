@@ -1,0 +1,68 @@
+{
+  "name": "@nelcota/ssr",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Framework-agnostic, request-scoped Nelcota sessions for server-rendered apps",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": "^22.0.0 || ^24.0.0 || ^26.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./postgres": {
+      "types": "./dist/postgres.d.ts",
+      "default": "./dist/postgres.js"
+    },
+    "./testing": {
+      "types": "./dist/memory-store.d.ts",
+      "default": "./dist/memory-store.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "default": "./dist/browser.js"
+    },
+    "./sveltekit": {
+      "types": "./dist/sveltekit.d.ts",
+      "default": "./dist/sveltekit.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "sql",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run --maxWorkers=2",
+    "prepack": "npm run build"
+  },
+  "peerDependencies": {
+    "@nelcota/client": "^0.2.2"
+  },
+  "devDependencies": {
+    "@nelcota/client": "file:../typescript",
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vitest": "^5.0.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nelcota/Nelcota.git",
+    "directory": "sdk/ssr"
+  },
+  "homepage": "https://github.com/Nelcota/Nelcota/tree/main/sdk/ssr",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

@@ -40,7 +40,6 @@
     "README.md",
     "CHANGELOG.md",
     "docs",
-    "sql",
     "LICENSE"
   ],
   "scripts": {
@@ -54,11 +53,13 @@
   },
   "peerDependencies": {
     "@nelcota/client": "^0.2.2",
+    "@nelcota/ssr": "^0.1.0",
     "next": "^16.4.3",
     "react": "^19.3.1"
   },
   "devDependencies": {
     "@nelcota/client": "file:../typescript",
+    "@nelcota/ssr": "file:../ssr",
     "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.2.0",

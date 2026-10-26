@@ -1,4 +1,3 @@
-import 'server-only';
 import { createHash, randomBytes, webcrypto } from 'node:crypto';
 import { SessionError } from './errors.js';
 

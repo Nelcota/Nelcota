@@ -161,7 +161,7 @@ try {
   await admin.query(`CREATE DATABASE "${databaseName}"`); databaseCreated = true;
   database.pathname = `/${databaseName}`;
   const installer = new Pool({ connectionString: database.href, max: 1, connectionTimeoutMillis: 2000 });
-  try { await installer.query(await readFile(new URL('../sql/session-store.sql', import.meta.url), 'utf8')); }
+  try { await installer.query(await readFile(new URL('../../ssr/sql/session-store.sql', import.meta.url), 'utf8')); }
   finally { await installer.end(); }
   await linkPackage();
   const buildKey = randomBytes(32).toString('base64url');

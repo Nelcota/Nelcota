@@ -3,6 +3,16 @@
 Package releases use Semantic Versioning. Registry availability requires a
 successful publication; a source version or Git tag alone is insufficient.
 
+## Unreleased
+
+### Changed
+
+- The session core moved to the new framework-agnostic `@nelcota/ssr` package,
+  now a required peer dependency; install it next to `@nelcota/client`. The
+  package entry points, options and behavior are unchanged, and existing
+  cookies and session rows remain valid. `sql/session-store.sql` now ships in
+  `@nelcota/ssr`.
+
 ## 0.1.2 — 2026-10-26
 
 ### Fixed
