@@ -37,12 +37,14 @@ const BUDGETS = {
   // checks, reserved-column filters, post-header deadlines and sign-out revocation.
   // Splitting the session lifecycle into store, scheduler and manager modules
   // (one responsibility each) adds about 400 B gzip to root/auth.
-  'index.js': 18_900,
+  // Rejecting invalid Date/bigint JSON bodies, a size-free query check and a quick
+  // first retry inside the server's refresh-reuse window add about 130 B gzip.
+  'index.js': 19_050,
   // Standalone factories include HTTP and keep the other feature modules out.
-  'rest/index.js': 9_900,
+  'rest/index.js': 10_000,
   // Failed persistence must retain rotated tokens; background failures are observed.
-  'auth/index.js': 12_700,
-  'storage/index.js': 7_950,
+  'auth/index.js': 12_850,
+  'storage/index.js': 8_000,
 };
 
 function closure(entry, seen = new Set()) {

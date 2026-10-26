@@ -3,6 +3,14 @@
 Package releases use Semantic Versioning. Registry availability requires a
 successful publication; a source version or Git tag alone is insufficient.
 
+## Unreleased
+
+### Fixed
+
+- The authentication proxy no longer clears a stale cookie that has no stored
+  row (a bootstrap or pre-login ID). A sign-in response still in flight may have
+  replaced it, and clearing it signed the user out.
+
 ## 0.1.1 — 2026-10-24
 
 ### Fixed

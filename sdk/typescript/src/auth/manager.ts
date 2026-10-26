@@ -7,7 +7,7 @@ import { isSession, secondsLeft, type Session, type User } from './session.js';
 import { BrowserSessionConflictError } from './browser-state.js';
 import { Broadcast, withLock, sessionLock } from './coordination.js';
 import { SessionStore, storageKey } from './store.js';
-import { RefreshScheduler, RETRY_REFRESH_MS } from './scheduler.js';
+import { QUICK_RETRY_REFRESH_MS, RefreshScheduler, RETRY_REFRESH_MS } from './scheduler.js';
 import { NelcotaUsageError, clientError, fail, ok, type Result } from '../core/errors.js';
 import { abortable } from '../core/cancellation.js';
 import { isBrowser } from '../core/jwt.js';
@@ -231,12 +231,14 @@ export class SessionManager {
     if (renewed) return fail(renewed.error);
     throw failure;
   }
+  #retries = 0;
   #tick(): void {
     this.#background(this.get().then(async ({ data, error }) => {
       if (error && error.code !== 'invalid_grant' && error.code !== 'session_missing') {
-        this.#scheduler.schedule(await this.current(), RETRY_REFRESH_MS);
+        this.#scheduler.schedule(await this.current(), this.#retries++ === 0 ? QUICK_RETRY_REFRESH_MS : RETRY_REFRESH_MS);
         return;
       }
+      this.#retries = 0;
       if (!this.#store.dirty) this.#scheduler.schedule(data);
     }));
   }

@@ -101,8 +101,9 @@ impl AuthClient {
                     let (sender, receiver) = watch::channel(None);
                     *running = Some(receiver.clone());
                     let mut auth = self.clone();
-                    // Once started, rotation continues when its waiters cancel.
-                    auth.client.options.cancellation = None;
+                    // Once started, rotation continues when its waiters cancel, and it is
+                    // shared: the client's timeout applies, not the first caller's.
+                    auth.client.options = Default::default();
                     tokio::spawn(async move {
                         let result = auth.rotate_since(observed).await;
                         let manager = &auth.client.inner.auth;
@@ -143,7 +144,14 @@ impl AuthClient {
             if let Some(result) = &state.last_refresh {
                 return result.clone();
             }
-            return state.session.clone().ok_or(Error::SessionMissing);
+            // A user update moves the epoch without rotating: a due session still rotates.
+            match &state.session {
+                None => return Err(Error::SessionMissing),
+                Some(session) if session.expires_in_now() > manager.margin_for(session) => {
+                    return Ok(session.clone());
+                }
+                Some(_) => {}
+            }
         }
         let current = state.session.as_ref().ok_or(Error::SessionMissing)?;
         let result = self

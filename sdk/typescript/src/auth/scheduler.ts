@@ -2,6 +2,8 @@
 import { secondsLeft, type Session } from './session.js';
 
 export const RETRY_REFRESH_MS = 10_000;
+// First retry after an uncertain refresh: the server only takes the old token back within 10 s.
+export const QUICK_RETRY_REFRESH_MS = 2_000;
 
 export class RefreshScheduler {
   #timer: ReturnType<typeof setTimeout> | undefined;

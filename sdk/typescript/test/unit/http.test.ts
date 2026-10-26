@@ -347,3 +347,17 @@ it('retains rate-limit delay when serializing an error without its cause', async
     name: 'NelcotaError', status: 429, code: 'rate_limited', message: 'Try later', retryAfter: 17,
   });
 });
+
+describe('query strings', () => {
+  it('keeps filters on engines without URLSearchParams.size (Safari < 17)', async () => {
+    const size = Object.getOwnPropertyDescriptor(URLSearchParams.prototype, 'size');
+    Object.defineProperty(URLSearchParams.prototype, 'size', { configurable: true, get: () => undefined });
+    try {
+      const mock = mockFetch(json([]));
+      await createClient('https://api.example.com', { fetch: mock.fetch }).from('notes').select('id').eq('owner', 7);
+      expect(String(mock.calls[0]?.url)).toContain('owner=eq.7');
+    } finally {
+      if (size) Object.defineProperty(URLSearchParams.prototype, 'size', size);
+    }
+  });
+});
