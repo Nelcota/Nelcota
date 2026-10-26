@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { randomBytes } from 'node:crypto';
-import { Integration, type CookieWriter, type NextOptions } from '../src/context.js';
+import { Integration, type CookieWriter, type SessionOptions } from '../src/context.js';
 import type { SessionStore } from '../src/store.js';
 import { DevelopmentSessionStore } from '../src/memory-store.js';
 import { newSessionId } from '../src/seal.js';
@@ -14,7 +14,7 @@ class Jar implements CookieWriter {
   set(name: string, value: string, options: Parameters<CookieWriter['set']>[2]): void { this.writes.push({ name, value, options }); if (options.maxAge === 0) { this.values.delete(name); return; } this.values.set(name, value); }
 }
 const post = () => new Request('http://localhost:3000/auth/login', { method: 'POST', headers: { origin: 'http://localhost:3000' } });
-async function setup(overrides: Partial<NextOptions> = {}) {
+async function setup(overrides: Partial<SessionOptions> = {}) {
   const requests: { url: URL; init: RequestInit }[] = [];
   const store = new DevelopmentSessionStore();
   const integration = await Integration.create({ url: 'http://localhost:8000', appOrigin: 'http://localhost:3000', keys: [randomBytes(32).toString('base64url')], store, allowInsecureDevelopment: true,
@@ -335,7 +335,7 @@ describe('lease budget', () => {
   });
 });
 describe('OAuth callback path', () => {
-  const start = async (overrides: Partial<NextOptions> = {}) => {
+  const start = async (overrides: Partial<SessionOptions> = {}) => {
     const fixture = await setup(overrides);
     const started = await fixture.integration.write(fixture.jar, post(), context => context.auth.startOAuth({ provider: 'github' }));
     return { ...fixture, redirect: new URL(new URL(started.data!.url).searchParams.get('redirect_to')!) };

@@ -8,10 +8,10 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { Pool } from 'pg';
 import assert from 'node:assert/strict';
-import { SessionSealer, sessionKey } from '../dist/seal.js';
+import { SessionSealer, sessionKey } from '../../ssr/dist/seal.js';
 // The package entries import `server-only`, which only loads under Next's server condition.
 let Integration, PostgresSessionStore;
-try { ({ Integration } = await import('../dist/context.js')); ({ PostgresSessionStore } = await import('../dist/postgres.js')); }
+try { ({ Integration } = await import('../../ssr/dist/context.js')); ({ PostgresSessionStore } = await import('../../ssr/dist/postgres.js')); }
 catch (error) {
   if (/Client Component/.test(String(error?.message))) throw new Error('Run with: node --conditions=react-server scripts/backend-smoke.mjs');
   throw error;
@@ -59,7 +59,7 @@ try {
     if (attempt > 100 || server.exitCode !== null) throw new Error('Disposable backend failed to start: ' + diagnostics);
     await new Promise(resolve => setTimeout(resolve, 100));
   }
-  await pool.query(await readFile(new URL('../sql/session-store.sql', import.meta.url), 'utf8'));
+  await pool.query(await readFile(new URL('../../ssr/sql/session-store.sql', import.meta.url), 'utf8'));
   await pool.query(`CREATE TABLE public.next_notes (id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, owner uuid NOT NULL DEFAULT auth.uid(), body text NOT NULL, "limit" integer NOT NULL DEFAULT 5, "order" integer NOT NULL DEFAULT 2);
     ALTER TABLE public.next_notes ENABLE ROW LEVEL SECURITY;
     GRANT SELECT, INSERT, UPDATE, DELETE ON public.next_notes TO anon, authenticated;

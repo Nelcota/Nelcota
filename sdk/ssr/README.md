@@ -1,0 +1,117 @@
+# @nelcota/ssr
+
+Request-scoped Nelcota sessions for server-rendered applications, independent of
+the framework. The browser holds only an opaque, `HttpOnly` cookie; access and
+refresh tokens stay in an encrypted server-side store. A cross-site script can
+therefore never read a refresh token.
+
+Use a framework adapter when one exists:
+
+| Framework | Package |
+| --- | --- |
+| Next.js App Router | [`@nelcota/nextjs`](../nextjs/README.md), built on this package |
+
+Other frameworks call the core directly, as described below.
+
+## What it provides
+
+- One `Integration` per application, created from shared configuration:
+  encryption keys, the session store and the Nelcota API URL.
+- `read(cookies, work)` for rendering. The session is never refreshed or
+  rotated while reading.
+- `write(cookies, request, work)` for unsafe requests (POST/PUT/PATCH/DELETE)
+  that may sign in, sign out, refresh or call the API. It checks the exact
+  `Origin`, rejects cross-site requests, and serializes each browser session
+  across all application instances through the store.
+- Session lineage: a sign-in or sign-out in one tab supersedes earlier cookies,
+  and late responses carrying an old cookie read as signed out, never as the
+  previous user.
+- PKCE OAuth with a state check, an optional storage-redirect allow-list,
+  `safeReturnTo` for local redirects, and `createGuard` for authentication
+  routing of protected paths.
+
+## Install
+
+```sh
+npm install --save-exact @nelcota/ssr @nelcota/client
+npm install pg   # for the PostgreSQL store
+```
+
+Node 22, 24 or 26. Session keys never reach a browser bundle:
+`Integration.create` refuses to run where `document` exists.
+
+## Session store
+
+Production requires a shared, durable store. Provision a dedicated PostgreSQL
+database with [sql/session-store.sql](sql/session-store.sql), using its owner.
+Give the application role only CONNECT on that database, USAGE on `nelcota_next`
+and SELECT/INSERT/UPDATE/DELETE on `nelcota_next.sessions`. Never grant them to
+Nelcota `anon`, `authenticated` or a public API schema. Expired rows are removed
+by an application-owned, bounded `DELETE` job.
+
+```ts
+import { Pool } from 'pg';
+import { Integration } from '@nelcota/ssr';
+import { PostgresSessionStore } from '@nelcota/ssr/postgres';
+
+const pool = new Pool({ connectionString: process.env.SESSION_DATABASE_URL, max: 8 });
+export const sessions = await Integration.create<Database>({
+  url: 'https://api.example.com',
+  appOrigin: 'https://app.example.com',
+  keys: [process.env.SESSION_KEY!], // 32 random bytes, base64url; first key seals
+  store: new PostgresSessionStore(pool),
+});
+```
+
+`@nelcota/ssr/testing` provides `DevelopmentSessionStore`, an in-memory store
+that only loads with `allowInsecureDevelopment` and a loopback `appOrigin`.
+
+## Using the core from a framework
+
+An adapter supplies a cookie jar with `get(name)` and
+`set(name, value, options)`, plus the incoming `Request`:
+
+```ts
+// Rendering: verified identity, no refresh.
+const notes = await sessions.read(cookies, async ({ client, hasSession }) =>
+  hasSession ? (await client.from('notes').select('id, body')).data : []);
+
+// Form/API endpoint: same-origin unsafe request only.
+const response = await sessions.write(cookies, request, async ({ auth }) => {
+  const result = await auth.signInWithPassword({ email, password });
+  return result.error ? new Response(null, { status: 401 }) : new Response(null, { status: 303, headers: { location: '/' } });
+});
+return privateResponse(response);
+```
+
+Send every response that depends on the session through `privateResponse`
+(`no-store`, `Vary: Cookie`, no referrer). `createGuard(options, ignoredPrefixes)`
+returns routing decisions (`public`, `allow`, `redirect`, `denied`,
+`unavailable`, `invalid_path`) that an adapter maps to its own responses. A
+guard is navigation assistance, never authorization: backend grants and RLS
+decide what a user may read or write.
+
+The [Next.js adapter source](../nextjs/src) is a complete example, at about 100
+lines.
+
+## Compatibility
+
+Cookie values, sealed rows and the `nelcota_next` schema are the same as
+`@nelcota/nextjs` 0.1.x, so moving between the adapter and the core keeps
+existing sessions. Internal identifiers that still say `nelcota-next` are part
+of that format and stay unchanged.
+
+## Development
+
+```sh
+npm --prefix sdk/typescript ci && npm --prefix sdk/typescript run build
+npm --prefix sdk/ssr ci
+npm --prefix sdk/ssr run check
+NELCOTA_NEXT_TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/postgres \
+  npm --prefix sdk/ssr test
+npm --prefix sdk/ssr run build
+```
+
+The PostgreSQL integration tests use the repository's disposable fixture
+(`scripts/test.sh db`), never a shared database. The Next.js verification
+workflow also runs every framework, browser and backend check through this core.

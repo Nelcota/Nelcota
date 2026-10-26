@@ -2,8 +2,8 @@ import { randomBytes } from 'node:crypto';
 import { NextRequest } from 'next/server.js';
 import { expect, it, vi } from 'vitest';
 import { createNelcotaProxy } from '../src/proxy.js';
-import { Integration } from '../src/context.js';
-import { DevelopmentSessionStore } from '../src/memory-store.js';
+import { Integration } from '@nelcota/ssr';
+import { DevelopmentSessionStore } from '@nelcota/ssr/testing';
 
 async function setup(basePath?: string) {
   const fetch = vi.fn(async () => Response.json({ code: 'invalid_token', message: 'Expired' }, { status: 401 }));

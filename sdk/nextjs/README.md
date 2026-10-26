@@ -38,7 +38,8 @@ Never use a service/operator credential as a substitute for a visitor token.
 
 Keep this module server-only. Share configuration/pool, **never a user client**.
 Provision a dedicated PostgreSQL session database with
-[sql/session-store.sql](sql/session-store.sql), using its owner for installation.
+[sql/session-store.sql](../ssr/sql/session-store.sql), using its owner for installation
+(shipped by the package up to 0.1.x; from the next minor it ships in `@nelcota/ssr`).
 Give an application role only CONNECT on that database, USAGE on `nelcota_next`
 and SELECT/INSERT/UPDATE/DELETE on `nelcota_next.sessions`. Do not grant these
 privileges to Nelcota `anon`, `authenticated`, or a public API schema. Runtime
@@ -313,7 +314,7 @@ The PostgreSQL integration creates/drops its own random test database. It needs
 the repository's disposable fixture, never a production/shared database. The
 example is **loopback-only development**, not a production deployment template.
 Set `NELCOTA_NEXT_SESSION_DATABASE_URL` to use a shared PostgreSQL session store
-in the example; install `sql/session-store.sql` first. Without it the example
+in the example; install [sql/session-store.sql](../ssr/sql/session-store.sql) first. Without it the example
 explicitly selects its development store.
 Framework/backend scripts require bounded disposable environments; the latter
 records the explicit binary SHA and does not claim it matches newer source.

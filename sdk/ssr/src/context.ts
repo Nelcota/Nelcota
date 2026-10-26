@@ -1,4 +1,3 @@
-import 'server-only';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { createClient, type AuthRequestOptions, NelcotaError, type Credentials, type DefaultSchemaName, type FetchLike, type NelcotaClient, type OAuthProvider, type Result, type Session, type SessionStorage, type SignUpInput, type User, type UserUpdate } from '@nelcota/client';
 import { SessionError } from './errors.js';
@@ -10,10 +9,10 @@ export interface CookieReader { get(name: string): { value: string } | undefined
 export interface CookieWriter extends CookieReader {
   set(name: string, value: string, options: { path: '/'; httpOnly: true; secure: boolean; sameSite: 'lax'; maxAge: number }): void;
 }
-export interface NextOptions {
+export interface SessionOptions {
   url: string;
   appOrigin: string;
-  /** Next `basePath`, e.g. '/app'; prefixes the OAuth callback. Default ''. */
+  /** Path the app is mounted under (Next `basePath`, SvelteKit `paths.base`), e.g. '/app'; prefixes the OAuth callback. Default ''. */
   basePath?: string;
   keys: readonly string[];
   store: SessionStore;
@@ -99,10 +98,10 @@ export class Integration<Database> {
   readonly #secure: boolean;
   readonly #ttl: number;
   readonly #namespace: string;
-  readonly #options: Omit<NextOptions, 'keys'>;
+  readonly #options: Omit<SessionOptions, 'keys'>;
   readonly #sealer: SessionSealer;
   readonly #redirects: ReadonlySet<string>;
-  private constructor(options: NextOptions, sealer: SessionSealer) {
+  private constructor(options: SessionOptions, sealer: SessionSealer) {
     const { keys: _keys, ...settings } = options;
     this.#options = settings; this.#sealer = sealer;
     const development = options.allowInsecureDevelopment === true;
@@ -127,7 +126,9 @@ export class Integration<Database> {
       return trustedUrl(origin, development, true).origin;
     }));
   }
-  static async create<Database>(options: NextOptions): Promise<Integration<Database>> {
+  static async create<Database>(options: SessionOptions): Promise<Integration<Database>> {
+    // Session keys and tokens must never reach a browser bundle.
+    if (typeof (globalThis as { document?: unknown }).document !== 'undefined') throw new SessionError('configuration', '@nelcota/ssr sessions run only on the server');
     return new Integration<Database>({ ...options }, await SessionSealer.create(options.keys));
   }
   get origin(): string { return this.#origin; }

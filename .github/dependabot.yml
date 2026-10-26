@@ -40,6 +40,16 @@ updates:
         patterns: ["*"]
 
   - package-ecosystem: npm
+    directory: /sdk/ssr
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      ssr-sdk:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
     directory: /sdk/nextjs
     schedule:
       interval: weekly

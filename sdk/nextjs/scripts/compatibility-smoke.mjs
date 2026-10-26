@@ -25,6 +25,12 @@ try {
   await cp(join(sdk, '../typescript/dist'), join(directory, 'typescript/dist'), { recursive: true });
   await cp(join(sdk, '../typescript/package.json'), join(directory, 'typescript/package.json'));
   await symlink(join(sdk, '../typescript/node_modules'), join(directory, 'typescript/node_modules'), 'dir');
+  // So is the SSR core (`file:../ssr`), with its SQL schema.
+  await mkdir(join(directory, 'ssr'));
+  for (const entry of ['dist', 'sql', 'package.json']) await cp(join(sdk, '../ssr', entry), join(directory, 'ssr', entry), { recursive: true });
+  // Its only runtime dependency is the base SDK: point it at the same copy as above.
+  await mkdir(join(directory, 'ssr/node_modules/@nelcota'), { recursive: true });
+  await symlink('../../../typescript', join(directory, 'ssr/node_modules/@nelcota/client'), 'dir');
   const manifest = JSON.parse(await readFile(join(target, 'package.json'), 'utf8'));
   manifest.devDependencies.next = version;
   // Next 15 pins an affected PostCSS release; keep the audit gate enabled.

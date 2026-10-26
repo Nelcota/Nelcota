@@ -38,6 +38,8 @@ jobs:
             if (process.env.RELEASE_TAG !== `nextjs-sdk-v${metadata.version}` || metadata.private === true) process.exit(1);
           '
           npm view @nelcota/client@0.2.2 version
+          # The adapter's peer: publish @nelcota/ssr (tag ssr-sdk-v*) first.
+          npm view @nelcota/ssr@0.1.0 version
       - name: Skip an already published version
         id: published
         run: |
@@ -48,6 +50,9 @@ jobs:
       - if: steps.published.outputs.skip != 'true'
         run: npm ci && npm run build
         working-directory: sdk/typescript
+      - if: steps.published.outputs.skip != 'true'
+        run: npm ci && npm run build
+        working-directory: sdk/ssr
       - if: steps.published.outputs.skip != 'true'
         run: npm ci && npm run build
       - if: steps.published.outputs.skip != 'true'

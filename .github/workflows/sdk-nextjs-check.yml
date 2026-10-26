@@ -35,10 +35,15 @@ jobs:
           cache: npm
           cache-dependency-path: |
             sdk/typescript/package-lock.json
+            sdk/ssr/package-lock.json
             sdk/nextjs/package-lock.json
       - run: scripts/test.sh db
       - name: Build base SDK
         run: npm --prefix sdk/typescript ci && npm --prefix sdk/typescript run build
+      # The framework-agnostic session core the Next adapter is built on.
+      - name: SSR core
+        working-directory: sdk/ssr
+        run: npm ci && npm audit --audit-level=high && npm run check && npm test && npm run build
       - run: npm ci
         working-directory: sdk/nextjs
       - run: npm audit --audit-level=high
@@ -127,6 +132,8 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: scripts/test.sh db
       - run: npm --prefix sdk/typescript ci && npm --prefix sdk/typescript run build
+      - run: npm ci && npm run build
+        working-directory: sdk/ssr
       - run: npm ci && npm run build
         working-directory: sdk/nextjs
       - run: cargo build --locked -p nelcota-server
