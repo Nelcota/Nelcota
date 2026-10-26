@@ -9,6 +9,7 @@ permissions:
 jobs:
   sdk:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: sdk/typescript
@@ -43,7 +44,22 @@ jobs:
       - run: deno run --allow-net --allow-read --allow-env test/runtime/smoke.mjs
       - run: cargo build -p nelcota-server
         working-directory: .
-      - run: npx playwright-core install --with-deps chromium firefox webkit
+      - name: Restore Playwright browsers and system packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/.cache/playwright-apt
+          key: playwright-${{ runner.os }}-all-${{ hashFiles('sdk/typescript/package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-all-
+      - name: Install browsers
+        # The apt mirror can be slow enough to time the job out, so the .deb
+        # files fetched by --with-deps are cached next to the browsers.
+        run: |
+          mkdir -p ~/.cache/playwright-apt
+          sudo find ~/.cache/playwright-apt -name '*.deb' -exec cp -t /var/cache/apt/archives {} +
+          npx playwright-core install --with-deps chromium firefox webkit
+          find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -exec cp -t ~/.cache/playwright-apt {} +
       - name: SDK server and browser contracts
         id: sdk_contract
         run: |
