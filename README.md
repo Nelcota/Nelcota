@@ -2,47 +2,64 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
-  <img src="docs/assets/logo-light.svg" alt="Nelcota" width="480" height="180">
+  <img src="docs/assets/logo-light.svg" alt="Nelcota" width="400">
 </picture>
 
-Open source backend-as-a-service for applications that use PostgreSQL.<br>
-One Rust binary provides REST, authentication, file storage, webhooks,<br>
-a database admin panel and a separately authenticated host operator console.
+### Your PostgreSQL, your server, your backend.
 
-[![CI](https://github.com/Nelcota/Nelcota/actions/workflows/ci.yml/badge.svg)](https://github.com/Nelcota/Nelcota/actions/workflows/ci.yml)
-[Releases](https://github.com/Nelcota/Nelcota/releases) · [Apache-2.0](LICENSE)
+REST API, authentication, file storage, webhooks and an admin panel,<br>
+in a single Rust binary, secured by PostgreSQL row-level security.
 
-[Quickstart](docs/quickstart.md) · [Deploy](docs/deploy.md) · [Documentation website](https://nelcota.github.io/NelcotaWebsite/docs/) · [Repository guides](docs/README.md) · [Changelog](CHANGELOG.md)
+[![CI](https://img.shields.io/github/actions/workflow/status/Nelcota/Nelcota/ci.yml?branch=main&style=flat-square&label=CI&logo=githubactions&logoColor=2088FF&labelColor=1F2328)](https://github.com/Nelcota/Nelcota/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/Nelcota/Nelcota?style=flat-square&label=release&color=003FDA&labelColor=1F2328)](https://github.com/Nelcota/Nelcota/releases) [![License](https://img.shields.io/badge/license-Apache--2.0-D22128?style=flat-square&logo=apache&logoColor=white&labelColor=1F2328)](LICENSE) [![Rust](https://img.shields.io/badge/Rust-1.99-CE422B?style=flat-square&logo=rust&logoColor=white&labelColor=1F2328)](rust-toolchain.toml) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?style=flat-square&logo=postgresql&logoColor=white&labelColor=1F2328)](docs/architecture.md)
+
+**[Quickstart](docs/quickstart.md)** · **[Documentation](https://nelcota.github.io/NelcotaWebsite/docs/)** · **[Deploy](docs/deploy.md)** · **[SDKs](sdk/README.md)** · **[Changelog](CHANGELOG.md)**
 
 </div>
 
+<br>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/panel-overview-dark.png">
-  <img src="docs/assets/panel-overview-light.png" alt="Current Nelcota overview in English, showing project resources and API traffic">
+  <img src="docs/assets/panel-overview-light.png" alt="Nelcota admin panel overview with project resources and API traffic">
 </picture>
 
-Screenshots show the current Svelte interface with disposable demonstration data
-from the browser-test fixtures. They describe this checkout, including unreleased
-UI changes, rather than a running production deployment.
+## What is Nelcota?
 
-## Why Nelcota
+Nelcota is an open source backend-as-a-service you run on your own VPS. Write
+your schema in SQL, and Nelcota turns it into a ready-to-use backend:
 
-Use Nelcota when you want to own your database and deploy your backend on a VPS.
-Your schema, grants, row-level security policies and functions remain SQL you
-can export. PostgreSQL enforces data access; you do not need a separate Node
-service for the backend or panel. Production deployments also use Caddy for
-HTTPS, and optional integrations need their own SMTP or S3 provider.
+- **REST API**: generated from your schema, with filters, relations, RPC and OpenAPI.
+- **Authentication**: email/password, magic links, OAuth/OIDC, Ed25519 JWTs and refresh-token rotation.
+- **File storage**: public and private buckets on disk or S3, with signed URLs.
+- **Webhooks**: transactional events with signed delivery and retries.
+- **Admin panel**: tables, SQL, migrations, users, files and webhooks, in English and Portuguese.
+- **Host operations**: isolated projects per server, backups, point-in-time recovery and alerts.
 
-Build applications through the REST API or the TypeScript, Rust and Next.js
-clients. Manage tables, users, files and webhooks in the embedded panel. For
-host operations, enroll a separate operator to manage isolated projects,
-configuration, backups, recovery and operational alerts. Project administrators
-and application users have separate credentials and authority.
+There is no authorization layer to learn: **PostgreSQL grants and RLS policies
+decide what every request can do.** Your data, schema and policies stay plain
+SQL that you can export and [take with you](docs/leaving.md) at any time.
+
+## How it works
+
+```
+your app ──HTTPS──▶ Caddy ──▶ nelcota (one binary) ──▶ PostgreSQL 17
+                                │  /rest/v1     tables, views and RPC
+                                │  /auth/v1     sign-up, sign-in and sessions
+                                │  /storage/v1  buckets and files
+                                │  /admin       embedded panel
+```
+
+Each request runs in a PostgreSQL transaction with the caller's role and JWT
+claims, so your RLS policies apply everywhere: API, SDKs and storage alike.
+Caddy provides HTTPS in production; locally, the API listens directly. The
+panel is embedded in the binary, so no Node runtime is required in production.
 
 ## Quickstart
 
-You need Linux, Docker, `curl` and `jq`. The installer downloads a published
-binary and verifies its checksum. Use a fresh application directory:
+You need Linux, Docker, `curl` and `jq`. On macOS or Windows, build from source
+as described in the [full quickstart](docs/quickstart.md).
+
+**1. Install and start a local environment**
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | NELCOTA_SKIP_DOCKER=1 sh
@@ -50,10 +67,13 @@ mkdir notes-app && cd notes-app
 nelcota dev
 ```
 
-Keep that terminal running. In a second terminal, enter `notes-app` and run:
+This starts PostgreSQL in Docker and serves the API at `http://127.0.0.1:8000`.
+The panel is at [`/admin/`](http://127.0.0.1:8000/admin/); its credentials are
+in `.nelcota/dev.env`.
+
+**2. Describe your data in SQL** (in a second terminal, inside `notes-app`)
 
 ```sh
-set -eu
 mkdir -p migrations
 cat > migrations/V1__notes.sql <<'SQL'
 CREATE TABLE public.notes (
@@ -67,173 +87,125 @@ CREATE POLICY notes_owner ON public.notes FOR ALL TO authenticated
     USING (owner = auth.uid()) WITH CHECK (owner = auth.uid());
 SQL
 nelcota migrate
-SESSION=$(curl -fsS -X POST http://127.0.0.1:8000/auth/v1/signup \
+```
+
+**3. Use your API**
+
+```sh
+TOKEN=$(curl -fsS -X POST http://127.0.0.1:8000/auth/v1/signup \
   -H 'content-type: application/json' \
-  -d '{"email":"ana@example.com","password":"a-development-password"}')
-TOKEN=$(printf '%s' "$SESSION" | jq -er '.access_token')
-NELCOTA_SCHEMA_READY=0
-for attempt in 1 2 3 4 5 6 7 8 9 10; do
-  NELCOTA_READ_STATUS=$(curl -sS -o /dev/null -w '%{http_code}' \
-    http://127.0.0.1:8000/rest/v1/notes -H "authorization: Bearer $TOKEN")
-  if [ "$NELCOTA_READ_STATUS" = 200 ]; then NELCOTA_SCHEMA_READY=1; break; fi
-  [ "$NELCOTA_READ_STATUS" = 404 ] || { printf '%s\n' 'Readiness request failed' >&2; exit 1; }
-  sleep 0.2
-done
-[ "$NELCOTA_SCHEMA_READY" = 1 ] || { printf '%s\n' 'Schema is not ready' >&2; exit 1; }
+  -d '{"email":"ana@example.com","password":"a-development-password"}' | jq -er .access_token)
+
 curl -fsS -X POST http://127.0.0.1:8000/rest/v1/notes \
   -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
   -H 'prefer: return=representation' -d '{"body":"My first note"}'
-curl -fsS 'http://127.0.0.1:8000/rest/v1/notes?order=id.desc' \
-  -H "authorization: Bearer $TOKEN"
+
+curl -fsS http://127.0.0.1:8000/rest/v1/notes -H "authorization: Bearer $TOKEN"
 ```
 
-The last request returns your note under RLS. This account/password is a local
-example. The [full quickstart](docs/quickstart.md) adds the shared SDK schema,
-generated types and a runnable client. On macOS/Windows, build with Rust as
-explained there. The panel is at `http://127.0.0.1:8000/admin/`; read its generated
-credentials locally from `.nelcota/dev.env`.
+Each user only sees their own notes. That is the RLS policy at work. If the
+API answers `404` right after `migrate`, wait a moment for the schema to reload.
+The [full quickstart](docs/quickstart.md) continues with file storage,
+generated types and a runnable client.
 
 > [!WARNING]
-> A `service_role` token bypasses RLS. Keep it in trusted backend code; never
-> include it in a browser, mobile app or public example configuration.
+> A `service_role` token bypasses RLS. Use it only in trusted backend code,
+> never in a browser, mobile app or public configuration.
 
-## What's inside
+## Client SDKs
 
-| Capability | Reference |
-| --- | --- |
-| Schema-derived REST, filters, relations, RPC and OpenAPI | [REST API](docs/api.md) |
-| Password/email/OAuth sign-in, Ed25519 JWTs and refresh rotation | [Auth schema](docs/schema-auth.md), [JWT and roles](docs/jwt-and-roles.md) |
-| Private/public files, disk/S3 storage and signed URLs | [Storage](docs/storage.md) |
-| Transactional events and signed delivery with retries | [Webhooks](docs/webhooks.md) |
-| Embedded English/Portuguese panel, table editing, SQL, migrations and API guides | [Panel](docs/panel.md) |
-| Docker/systemd deployment, isolated projects, backups and database PITR | [Deploy](docs/deploy.md), [Backup](docs/backup.md) |
-| Separate host operator console for project lifecycle, health and configuration | [Host management](docs/host-management.md) |
-| Operator-approved email/webhook alerts and external heartbeat monitoring | [Operational alerts](docs/operational-alerts.md) |
-| Controlled updates with artifact verification, approval and recovery | [Panel updates](docs/panel-updates.md) |
-| TypeScript, Rust and Next.js App Router clients | [SDK overview](sdk/README.md) |
+```ts
+import { createClient } from '@nelcota/client';
 
-## Explore the panel
+const nelcota = createClient('https://api.yourdomain.com');
+await nelcota.auth.signInWithPassword({ email, password });
+const { data: notes } = await nelcota.from('notes').select('id,body');
+```
 
-The current panel uses the official Nelcota wordmark, graphite surfaces and
-cobalt actions, with light and dark themes, English and Portuguese, and mobile
-navigation. The login keeps project identity visible and places language and
-theme controls in the footer.
+| Platform | Package | Guide |
+| --- | --- | --- |
+| JavaScript / TypeScript | `npm install @nelcota/client` | [TypeScript SDK](sdk/typescript/README.md) |
+| Rust / Tokio | `cargo add nelcota-client` | [Rust SDK](sdk/rust/README.md) |
+| Next.js App Router | `npm install @nelcota/nextjs @nelcota/client pg` | [Next.js integration](sdk/nextjs/README.md) |
 
-- **Database:** edit rows and table structure, filter and sort data, run SQL,
-  inspect row protection and export schema changes as migrations.
-- **Users:** inspect accounts, sessions and sign-in providers, with password
-  and email/OAuth configuration kept separate from panel administrator login.
-- **Storage:** browse buckets and files, preview content, manage access rules
-  and create signed URLs using disk or S3-compatible storage.
-- **Events and API:** configure signed webhook deliveries, inspect history,
-  find SDK examples and read the bundled guides.
-- **Server:** use a separately enrolled operator for health, project lifecycle,
-  configuration, backups, alerts and controlled updates. Availability depends
-  on enrollment, policy and the required acceptance checks.
+Generate types from your schema with `nelcota types -o src/database.ts`
+(TypeScript) or `nelcota types --lang rust -o src/database.rs` (Rust). Quickstarts
+are also available in Portuguese for [TypeScript](sdk/typescript/docs/quickstart.pt-BR.md),
+[Rust](sdk/rust/docs/quickstart.pt-BR.md) and [Next.js](sdk/nextjs/docs/quickstart.pt-BR.md).
 
-<details>
-<summary>Database table editor — light and dark themes</summary>
+## Deploy to a VPS
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/panel-table-dark.png">
-  <img src="docs/assets/panel-table-light.png" alt="Nelcota database table editor showing the notes table and row editing controls" loading="lazy">
-</picture>
-
-</details>
-
-<details>
-<summary>File storage — buckets, files and access rules</summary>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/panel-storage-dark.png">
-  <img src="docs/assets/panel-storage-light.png" alt="Nelcota file browser showing the documents bucket, folders and file actions" loading="lazy">
-</picture>
-
-</details>
-
-<details>
-<summary>Updated administrator login</summary>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/panel-login-dark.png">
-  <img src="docs/assets/panel-login-light.png" alt="Nelcota administrator login with email and password, project identity, language and theme controls" loading="lazy">
-</picture>
-
-</details>
-
-Capture sources and reproduction steps are in [documentation assets](docs/assets/README.md).
-
-## Deploy a VPS
-
-Point your domain's DNS A record at a Linux VPS, then run on Debian/Ubuntu or
-Fedora/RHEL:
+You need a Linux server (Debian/Ubuntu or Fedora/RHEL) with root access, ports
+80 and 443 open, and a DNS A record pointing at it. Then run:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo NELCOTA_VERSION=0.5.4 sh -s -- api.yourdomain.com
 ```
 
-The current installer prepares cron, Docker and the CLI, initializes the host
-in `/opt/nelcota` and starts its projects and Caddy. Add `--firewall` to install
-and configure ufw, or `--dir <folder>` to choose the host directory. Keep the
-panel password shown during setup. Read [deployment](docs/deploy.md) for DNS,
-ports, runtime choices and backups. The installer comes from `main`; the version
-pin selects the published CLI and image, not a snapshot of the installer.
+The installer sets up cron, Docker and the CLI, creates the host in
+`/opt/nelcota` and starts your project behind Caddy with automatic HTTPS.
+**Save the panel password it prints; it is not shown again.** Add `--firewall`
+to configure ufw. Run `nelcota doctor` to check DNS, ports, backups and health,
+and read the [deployment guide](docs/deploy.md) and [backups](docs/backup.md)
+before going to production.
 
-## Application SDKs
+## The admin panel
 
-| Application | Package | Guide |
-| --- | --- | --- |
-| JavaScript / TypeScript | `@nelcota/client@0.2.3` | [REST, auth and storage](sdk/typescript/README.md) |
-| Native Rust / Tokio | `nelcota-client = "0.1.6"` | [Rust client](sdk/rust/README.md) |
-| Next.js App Router / Node.js | `@nelcota/nextjs@0.1.1` with `@nelcota/client@0.2.3` | [Server Components, Actions, Route Handlers and OAuth](sdk/nextjs/README.md) |
+<table>
+  <tr>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/panel-table-dark.png">
+        <img src="docs/assets/panel-table-light.png" alt="Table editor showing the notes table" loading="lazy">
+      </picture>
+      <p align="center"><b>Database</b>: edit rows and structure, run SQL, export migrations</p>
+    </td>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/panel-storage-dark.png">
+        <img src="docs/assets/panel-storage-light.png" alt="File browser showing a bucket and its folders" loading="lazy">
+      </picture>
+      <p align="center"><b>Storage</b>: browse buckets, manage access, create signed URLs</p>
+    </td>
+  </tr>
+</table>
 
-Publication and registry-consumer checks are recorded in the
-[TypeScript/Rust receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294) and
-[Next.js acceptance ledger](https://github.com/Nelcota/Nelcota/issues/151).
-Next.js uses a dedicated PostgreSQL session store and request-scoped clients;
-Server Components only read sessions. Its supported matrix is Next 16.4.3 /
-React 19.3.1 on Node 22, 24 and 26. Source now targets Next.js SDK 0.1.1 with
-additional session-concurrency corrections; see [version availability](docs/releases/README.md)
-and the guide before configuring sessions.
+The panel also manages users and sessions, sign-in providers, webhooks,
+`service_role` tokens and bundled guides. Server operations (projects, backups, alerts and updates) live in a
+separate operator console with its own credentials. See the [panel guide](docs/panel.md)
+and [host management](docs/host-management.md).
 
-## Status and roadmap
+## Status
 
-This source targets server **0.5.4**. SDKs have independent versions.
-Confirm published artifacts and signed readiness on the
-[release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.4).
-The [0.5.4 notes](docs/releases/0.5.4.en.md) cover storage integrity, stable refresh
-rotation, literal database identifiers, panel usability and guarded installation.
-[current status](docs/current-status.md) distinguishes source scope, publication
-and validation. Host project management and durable PITR recovery fencing remain available.
-See the [changelog](CHANGELOG.md), [version and upgrade guide](docs/releases/README.md)
-and [release handoff](docs/onboarding/release.md) for source/package distinctions.
-A source build can report the same binary version as a published release until
-its version is bumped: identify it by tag/commit and artifact hash.
+This source targets server **0.5.4**. Nelcota is still `0.x`: read the
+[upgrade notes](docs/releases/README.md) and test backup and restore before
+upgrading production. See what changed in the [0.5.4 release notes](docs/releases/0.5.4.en.md);
+newer changes are listed under [Unreleased](CHANGELOG.md#unreleased) and in the
+[current status](docs/current-status.md).
 
-Controlled panel updates are available in server 0.5.0 and remain disabled
-until the exact controller binary passes its documented VPS acceptance matrix.
-See [the update guide](docs/panel-updates.md).
-
-Realtime subscriptions, Edge Functions, MFA and image transformations are not
-implemented. Multiple isolated projects per Docker host are supported; shared
-database tenant management is not built in. Versions remain 0.x: review upgrade
-notes and test backup/restore before production changes. Measurements and their
-operating limits are in [bench](bench/README.md).
+Not implemented yet: realtime subscriptions, edge functions, MFA and image
+transformations.
 
 ## Documentation
 
-Use the [task-based index](docs/README.md), [configuration](docs/configuration.md),
-[CLI reference](docs/cli.md) and [security model](docs/security/README.md).
-For a complete private Notes/file installation, follow [Notes staging](docs/onboarding/notes.md).
+| Build | Operate | Reference |
+| --- | --- | --- |
+| [REST API](docs/api.md) | [Deploy](docs/deploy.md) | [Configuration](docs/configuration.md) |
+| [Authentication](docs/schema-auth.md) | [Backup and PITR](docs/backup.md) | [CLI](docs/cli.md) |
+| [JWT and roles](docs/jwt-and-roles.md) | [Host management](docs/host-management.md) | [Architecture](docs/architecture.md) |
+| [Storage](docs/storage.md) | [Operational alerts](docs/operational-alerts.md) | [Security model](docs/security/README.md) |
+| [Webhooks](docs/webhooks.md) | [Controlled updates](docs/panel-updates.md) | [Troubleshooting](docs/troubleshooting.md) |
+| [Examples](examples/README.md) | [Leaving Nelcota](docs/leaving.md) | [Glossary](docs/glossary.md) |
 
-## Development
+Browse everything in the [documentation index](docs/README.md) or on the
+[documentation website](https://nelcota.github.io/NelcotaWebsite/docs/).
 
-Source builds use Rust **1.99.1**, pinned in `rust-toolchain.toml`. Node is
-needed for UI/TypeScript SDK development, not to run the Rust backend or panel.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, targeted suites, contracts and
-separate generated-panel commits. Read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-for community conduct and [SECURITY.md](SECURITY.md) for private vulnerability reporting.
+## Contributing
+
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup and
+tests, and follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report security
+issues privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-[Apache-2.0](LICENSE)
+Nelcota is licensed under [Apache-2.0](LICENSE).
