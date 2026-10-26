@@ -17,10 +17,8 @@ curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/instal
 
 Arguments after the script's `--` go to `nelcota init`, for example `--email`,
 `--firewall`, `--runtime systemd` or `--s3-*`; `--dir <folder>` selects another
-host folder. With `--firewall`, it also installs ufw and runs `ufw allow OpenSSH` (port 22).
-It also allows the current SSH session's port when `SSH_CONNECTION` reaches the
-script, but `sudo` normally drops that variable: if SSH listens on another port,
-run `ufw allow <port>/tcp` before installing. Run again on an existing host, it skips `init` and only
+host folder. With `--firewall`, it also installs ufw, and `init` allows SSH on port 22 plus
+every port `sshd -T` reports and the current session's port. Run again on an existing host, it skips `init` and only
 runs `up`. The same steps by hand:
 
 ```sh
@@ -48,8 +46,9 @@ in server 0.5.1; when installing the earlier 0.5.0, perform the preparation abov
 yourself. Never remove an existing project's `.env` just to retry a failed init;
 inspect and preserve any partial installation first.
 
-To request `--firewall`, install `ufw` first and allow your actual SSH port
-before enabling it; the built-in `OpenSSH` rule normally covers port 22.
+To request `--firewall`, install `ufw` first. Init allows the `OpenSSH` rule
+(port 22), every port `sshd -T` reports and the `SSH_CONNECTION` port; it warns
+when it cannot detect any, so verify a custom SSH port before enabling.
 The option applies only to the first, non-local Linux host initialization.
 Missing ufw or a failed rule aborts the current source's init. Without the
 option, configure the host firewall and provider security group manually.
@@ -240,7 +239,7 @@ Security details in [panel.md](panel.md).
    the compose plugin, free ports 80/443
    (in use = error, with how to find the process; `--skip-checks` continues
    anyway), RAM and the domain's DNS.
-2. **Machine:** with `--firewall`, configures `ufw` (SSH, 80 and 443), then
+2. **Machine:** with `--firewall`, configures `ufw` (SSH ports, 80 and 443), then
    installs the daily backup job (03:00, keeps 7). Failure aborts init before
    host credentials are written. These prerequisites are not skipped by
    `--skip-checks`.

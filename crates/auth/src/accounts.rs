@@ -279,9 +279,15 @@ pub(crate) async fn update_user(
         return Err(validation("provide password or data"));
     }
     let new_hash = match body.password {
-        Some(password) => {
-            Some(change_password(state, user_id, password, body.current_password).await?)
-        }
+        Some(password) => Some(
+            change_password(
+                state,
+                (user_id, session_id),
+                password,
+                body.current_password,
+            )
+            .await?,
+        ),
         None => None,
     };
 
@@ -354,7 +360,7 @@ pub(crate) async fn update_user(
 /// the new PHC. argon2 runs without holding a connection.
 async fn change_password(
     state: &AuthState,
-    user_id: Uuid,
+    (user_id, session_id): (Uuid, Uuid),
     password: String,
     current_password: Option<String>,
 ) -> Result<(Option<String>, String), ApiError> {
@@ -365,21 +371,25 @@ async fn change_password(
     {
         return Err(invalid_grant("current password is incorrect"));
     }
-    // A stolen access token must not become a password-guessing oracle.
-    limit(state, &format!("password:{user_id}"))?;
+    // A logged-out access token stays valid until it expires; check its
+    // session before argon2 so it cannot keep testing passwords.
     let phc: Option<String> = {
         let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
         let tx = begin_auth(&mut client).await?;
         let row = tx
             .query_opt(
-                "SELECT encrypted_password FROM auth.users WHERE id = $1",
-                &[&user_id],
+                "SELECT u.encrypted_password FROM auth.users u
+                 JOIN auth.sessions s ON s.user_id = u.id
+                 WHERE u.id = $1 AND s.id = $2 AND s.revoked_at IS NULL",
+                &[&user_id, &session_id],
             )
             .await
             .map_err(db_error)?;
         tx.commit().await.map_err(db_error)?;
         row.ok_or_else(ApiError::invalid_token)?.get(0)
     };
+    // A stolen access token must not become a password-guessing oracle.
+    limit(state, &format!("password:{user_id}"))?;
     if phc.is_some() {
         let current = current_password
             .ok_or_else(|| validation("current_password is required to change the password"))?;

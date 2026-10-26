@@ -82,13 +82,11 @@ cp "$source_file" "$4"
 
 
     def test_setup_prepares_the_machine_then_creates_and_starts_the_host(self):
-        self.environment["SSH_CONNECTION"] = "203.0.113.9 51000 198.51.100.4 2222"
         result = self.setup_vps("api.example.com", "--firewall", "--email", "me@example.com")
         self.assertEqual(result.returncode, 0, result.stderr)
         calls = self.calls()
         self.assertIn("systemctl enable --now cron.service", calls)
         self.assertTrue(any(c.startswith("apt-get install") and " ufw " in c for c in calls), calls)
-        self.assertIn("ufw allow 2222/tcp", calls)
         nelcota = [c for c in calls if c.startswith("nelcota -C")]
         self.assertEqual(nelcota, [
             f"nelcota -C {self.host} init --yes api.example.com --firewall --email me@example.com",
