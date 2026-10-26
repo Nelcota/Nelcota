@@ -113,7 +113,8 @@ const CONSTRAINTS_SQL: &str = "
     FROM pg_constraint con
     LEFT JOIN pg_class cf ON cf.oid = con.confrelid
     LEFT JOIN pg_namespace nf ON nf.oid = cf.relnamespace
-    WHERE con.conrelid = $1 AND con.contype IN ('p', 'u', 'f')";
+    WHERE con.conrelid = $1 AND con.contype IN ('p', 'u', 'f')
+    ORDER BY con.conname";
 
 const GRANTS_SQL: &str = "
     SELECT r.role::text, p.privilege::text

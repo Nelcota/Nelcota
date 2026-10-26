@@ -131,7 +131,7 @@ pub(super) fn parse_embed(
         ))
     })?;
     let alias = alias.unwrap_or(name);
-    if alias.is_empty() || alias.len() > MAX_IDENTIFIER_BYTES {
+    if alias.is_empty() || alias.len() > MAX_IDENTIFIER_BYTES || alias.contains('\0') {
         return Err(invalid(format!("invalid embed alias: '{alias}'")));
     }
     let (many, join) = resolve_relation(&catalog.schema, parent, target, hint)?;
@@ -325,7 +325,7 @@ pub(super) fn parse_in_list(value: &str) -> Result<Vec<String>, QueryError> {
     while let Some(c) = chars.next() {
         match c {
             '"' if quoted => quoted = false,
-            '"' if current.trim().is_empty() => {
+            '"' if !was_quoted && current.trim().is_empty() => {
                 quoted = true;
                 was_quoted = true;
                 current.clear();
@@ -339,6 +339,10 @@ pub(super) fn parse_in_list(value: &str) -> Result<Vec<String>, QueryError> {
                 items.push(finish_item(&current, was_quoted));
                 current.clear();
                 was_quoted = false;
+            }
+            c if was_quoted && !quoted && c.is_whitespace() => {}
+            _ if was_quoted && !quoted => {
+                return Err(invalid("unexpected characters after quoted in list item"));
             }
             c => current.push(c),
         }
@@ -496,6 +500,7 @@ pub(super) fn unquote_operand(filter: &str) -> Result<String, QueryError> {
     while let Some(c) = chars.next() {
         match c {
             '\\' => value.extend(chars.next()),
+            '"' => return Err(invalid("unescaped quotes in an or/and value")),
             c => value.push(c),
         }
     }

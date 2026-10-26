@@ -47,8 +47,11 @@ impl Policy {
             Host::Ipv4(ip) => public_address(IpAddr::V4(ip)) || development,
             Host::Ipv6(ip) => public_address(IpAddr::V6(ip)) || development,
             Host::Domain(name) => {
+                let trimmed = name.trim_end_matches('.');
                 development
-                    || (name.contains('.') && !name.ends_with(".localhost") && name != "localhost")
+                    || (trimmed.contains('.')
+                        && !trimmed.ends_with(".localhost")
+                        && trimmed != "localhost")
             }
         };
         if !allowed {
@@ -79,7 +82,7 @@ impl Policy {
 
 fn is_loopback_host(host: &Host<&str>) -> bool {
     match host {
-        Host::Domain(name) => *name == "localhost",
+        Host::Domain(name) => name.trim_end_matches('.') == "localhost",
         Host::Ipv4(ip) => *ip == Ipv4Addr::LOCALHOST,
         Host::Ipv6(ip) => *ip == Ipv6Addr::LOCALHOST,
     }
@@ -143,7 +146,8 @@ where
 
 impl Resolve for SafeResolver {
     fn resolve(&self, name: Name) -> Resolving {
-        let allow_loopback = self.policy.allow_loopback && name.as_str() == "localhost";
+        let allow_loopback =
+            self.policy.allow_loopback && name.as_str().trim_end_matches('.') == "localhost";
         let slots = self.lookups.clone();
         Box::pin(async move {
             let name = name.as_str().to_owned();

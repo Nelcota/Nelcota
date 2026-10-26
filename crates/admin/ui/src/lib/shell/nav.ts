@@ -83,13 +83,17 @@ export const navItems: NavItem[] = [
   { title: 'shell.pages.guides', path: '/guides', icon: BookOpen },
 ]
 
-const matches = (path: string) => (path === '/' ? route.path === '/' : route.path === path || route.path.startsWith(path + '/'))
+const cleanPath = () => route.path.replace(/\/$/, '') || '/'
+const matches = (path: string) => {
+  const current = cleanPath()
+  return path === '/' ? current === '/' : current === path || current.startsWith(path + '/')
+}
 
 export const isActive = (path: string, also: readonly string[] = []) => matches(path) || also.some(matches)
 
 /** Resolve child selection without marking the whole group as the current page. */
 export function isNavActive(item: NavItem): boolean {
-  if (item.section) return route.path === '/connect' && apiSectionLocation.current === item.section
+  if (item.section) return cleanPath() === '/connect' && apiSectionLocation.current === item.section
   if (item.webhookView) {
     const history = route.path.startsWith('/webhooks/deliveries/') || route.query.get('tab') === 'deliveries'
     return isActive('/webhooks') && (item.webhookView === 'deliveries' ? history : !history)
@@ -98,7 +102,7 @@ export function isNavActive(item: NavItem): boolean {
 }
 
 export function navPath(item: NavItem): string {
-  if (!item.section || route.path !== '/connect') return item.path
+  if (!item.section || cleanPath() !== '/connect') return item.path
   const query = new URLSearchParams(route.query)
   query.set('section', item.section)
   return `/connect?${query}`

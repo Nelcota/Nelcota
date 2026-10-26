@@ -21,12 +21,18 @@ pub(crate) async fn issue(
 ) -> Result<Option<String>, ApiError> {
     // Serializes the empty-token case too. There is no token row to lock on
     // the first request; every issuer instead locks the owning account.
-    tx.query_one(
-        "SELECT id FROM auth.users WHERE id = $1 FOR UPDATE",
-        &[&user_id],
-    )
-    .await
-    .map_err(db_error)?;
+    let eligible = tx
+        .query_opt(
+            "SELECT 1 FROM auth.users
+             WHERE id = $1 AND (email_confirmed_at IS NULL OR NOT $2)
+             FOR UPDATE",
+            &[&user_id, &kind.only_unconfirmed()],
+        )
+        .await
+        .map_err(db_error)?;
+    if eligible.is_none() {
+        return Ok(None);
+    }
     let recent: bool = tx
         .query_one(
             "SELECT EXISTS (

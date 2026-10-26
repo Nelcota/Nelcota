@@ -38,8 +38,8 @@ pub struct AppState {
 
 /// Runs the first introspection of the exposed schema.
 pub async fn load_catalog(pool: &Pool, schema: &str) -> anyhow::Result<Arc<CatalogHandle>> {
-    let client = pool.get().await?;
-    let catalog = Catalog::load(&**client, schema).await?;
+    let mut client = pool.get().await?;
+    let catalog = Catalog::load_snapshot(&mut client, schema).await?;
     tracing::info!(
         schema,
         tables = catalog.tables.len(),

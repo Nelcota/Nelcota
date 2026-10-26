@@ -98,7 +98,8 @@ impl Template {
 /// `<bucket>_<template>`, within Postgres' 63-byte identifiers.
 fn policy_name(bucket: &str, slug: &str) -> String {
     let room = 63 - slug.len() - 1;
-    let bucket = &bucket[..bucket.len().min(room)];
+    let end = bucket.floor_char_boundary(room);
+    let bucket = &bucket[..end];
     format!("{bucket}_{slug}")
 }
 

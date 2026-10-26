@@ -8,7 +8,7 @@
   import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import CodeBlock from '$lib/components/shared/CodeBlock.svelte'
-  import { ApiError, isAbort } from '$lib/transport/api'
+  import { ApiError, expireSession, isAbort } from '$lib/transport/api'
   import { baseName, formatBytes, previewKind } from '$lib/features/storage/files'
   import { readPreview } from '$lib/features/storage/preview'
   import type { StoredFile } from '$lib/contracts/types'
@@ -43,7 +43,10 @@
     loading = true
     try {
       const response = await fetch(url, { credentials: 'same-origin', signal: request.signal })
-      if (!response.ok) throw new ApiError(t('common.requestFailed'), response.status)
+      if (!response.ok) {
+        expireSession(response.status, url)
+        throw new ApiError(t('common.requestFailed'), response.status)
+      }
       const blob = await readPreview(response, (format === 'text' ? 1 : 20) * 1024 * 1024, request.signal)
       if (request.signal.aborted) return
       if (!blob) { unavailable = true; return }

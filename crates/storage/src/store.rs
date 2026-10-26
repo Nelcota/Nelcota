@@ -294,17 +294,24 @@ impl Store {
             mode: object_store::PutMode::Create,
             ..Default::default()
         };
-        match self
+        let created = match self
             .inner
             .put_opts(&Key::from(name), bytes.into(), options)
             .await
         {
-            Ok(_) | Err(object_store::Error::AlreadyExists { .. }) => {}
+            Ok(_) => true,
+            Err(object_store::Error::AlreadyExists { .. }) => false,
             Err(error) => return Err(error.into()),
-        }
+        };
         if let Backend::Disk { root } = &self.backend {
-            self.check_control_path(name)?;
             let marker = root.join(name);
+            #[cfg(unix)]
+            if created {
+                use std::os::unix::fs::PermissionsExt;
+                std::fs::set_permissions(&marker, std::fs::Permissions::from_mode(0o600))
+                    .map_err(|error| StoreError::Directory(marker.clone(), error))?;
+            }
+            self.check_control_path(name)?;
             std::fs::File::open(&marker)
                 .and_then(|file| file.sync_all())
                 .map_err(|error| StoreError::Directory(marker, error))?;

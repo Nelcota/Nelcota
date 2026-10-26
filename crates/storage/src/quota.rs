@@ -93,8 +93,11 @@ pub(crate) async fn reserve(
         bytes = bytes.min((available + u128::from(old_size)).min(u128::from(u64::MAX)) as u64);
     }
     if let Some(free) = free {
-        let available = u128::from(free)
-            .saturating_sub(u128::from(state.settings.min_free_bytes) + reserved.disk);
+        let required = u128::from(state.settings.min_free_bytes) + reserved.disk;
+        if u128::from(free) <= required {
+            return Err(full(true));
+        }
+        let available = u128::from(free) - required;
         if available < u128::from(bytes) {
             bytes = available as u64;
             disk = true;

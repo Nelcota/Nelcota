@@ -28,7 +28,8 @@ pub(super) async fn load(
                  WHERE n.nspname = $1 AND p.prokind = 'f'
                    AND p.prorettype <> 'trigger'::regtype
                    AND p.prorettype <> 'event_trigger'::regtype
-                   AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = p.oid AND d.deptype = 'e')",
+                   AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = p.oid AND d.deptype = 'e')
+                 ORDER BY p.proname, p.proargtypes::text, p.proargnames",
                 &[&schema],
             )
             .await?;

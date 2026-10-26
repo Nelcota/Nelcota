@@ -65,6 +65,37 @@ impl Store {
     pub(crate) async fn ensure_ownership(&self, pool: &Pool) -> Result<(), StoreError> {
         self.ownership_ready
             .get_or_try_init(|| async {
+                if self.gc_owner.get().is_none() {
+                    let client = pool
+                        .get()
+                        .await
+                        .map_err(|_| StoreError::Ownership("database identity not initialized"))?;
+                    let row = client
+                        .query_one(
+                            "SELECT system_identifier::text, current_database(),
+                                    (SELECT oid::text FROM pg_database WHERE datname = current_database())
+                             FROM pg_control_system()",
+                            &[],
+                        )
+                        .await
+                        .map_err(|_| StoreError::Ownership("database identity not initialized"))?;
+                    let identity = format!(
+                        "{}\n{}\n{}",
+                        row.get::<_, String>(0),
+                        row.get::<_, String>(1),
+                        row.get::<_, String>(2)
+                    );
+                    let digest: String = Sha256::digest(identity.as_bytes())
+                        .iter()
+                        .map(|byte| format!("{byte:02x}"))
+                        .collect();
+                    let owner = format!("v1:{digest}");
+                    if self.gc_owner.set(owner.clone()).is_err()
+                        && self.gc_owner.get() != Some(&owner)
+                    {
+                        self.mark_shared().await?;
+                    }
+                }
                 let owner = self
                     .gc_owner
                     .get()

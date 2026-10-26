@@ -12,6 +12,7 @@ export interface TableRowsAdapter {
 export class TableRows {
   private resource = new RemoteResource<TableData>()
   private target?: { table: string; params: URLSearchParams }
+  private loadSeq = 0
   selected = $state<Set<number>>(new Set())
   saving = $state(false)
 
@@ -30,6 +31,7 @@ export class TableRows {
   }
 
   async load(table: string, params: URLSearchParams) {
+    this.loadSeq++
     this.setTable(table)
     const target = this.target = { table, params: new URLSearchParams(params) }
     this.selected = new Set()
@@ -50,7 +52,7 @@ export class TableRows {
   }
 
   async edit(pk: RowData, column: string, value: string | null): Promise<number | undefined> {
-    const data = this.data, target = this.target
+    const data = this.data, target = this.target, seq = this.loadSeq
     if (!data || !target || this.loading || this.saving || data.table.name !== target.table || !data.table.editable) return undefined
     const table = target.table
     const key = rowKey(pk, data.table.primary_key)
@@ -58,7 +60,7 @@ export class TableRows {
     try {
       const result = await this.adapter.update(table, { ...pk }, { [column]: value })
       if (this.target?.table !== table) return result.count
-      if (this.data === data) {
+      if (this.data === data && this.loadSeq === seq) {
         const row = data.rows.find(candidate => rowKey(candidate, data.table.primary_key) === key)
         if (row && result.count > 0) row[column] = value
         return result.count

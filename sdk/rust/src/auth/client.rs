@@ -40,8 +40,8 @@ impl AuthClient {
     pub async fn get_session(&self) -> Result<Option<Session>> {
         crate::http::cancel(&self.client.options, async {
             let manager = &self.client.inner.auth;
-            let observed = manager.epoch.load(Ordering::Acquire);
             let mut state = manager.gate.lock().await;
+            let observed = manager.epoch.load(Ordering::Acquire);
             manager.load(&mut state).await?;
             match &state.session {
                 None => Ok(None),

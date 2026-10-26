@@ -99,8 +99,8 @@ impl Snapshot {
 
     async fn reload_locked(&self, pool: &deadpool_postgres::Pool) -> Result<(), String> {
         let schema = self.get().schema.clone();
-        let client = pool.get().await.map_err(|e| e.to_string())?;
-        let catalog = Catalog::load(&**client, &schema)
+        let mut client = pool.get().await.map_err(|e| e.to_string())?;
+        let catalog = Catalog::load_snapshot(&mut client, &schema)
             .await
             .map_err(|e| e.to_string())?;
         tracing::info!(

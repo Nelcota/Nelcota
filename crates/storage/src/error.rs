@@ -49,6 +49,11 @@ pub(crate) fn write_error(err: tokio_postgres::Error, claims: &Claims) -> ApiErr
             "a file with this name already exists; use PUT to replace it",
         );
     }
+    if err.code() == Some(&SqlState::FOREIGN_KEY_VIOLATION)
+        && err.as_db_error().and_then(|e| e.constraint()) == Some("objects_bucket_id_fkey")
+    {
+        return bucket_not_found();
+    }
     ApiError::from_db(err, claims.role())
 }
 

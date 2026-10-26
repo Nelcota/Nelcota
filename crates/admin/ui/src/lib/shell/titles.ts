@@ -22,16 +22,17 @@ export type Crumb = { label: string; path?: string }
 
 /** Breadcrumb of the current page (topbar); joined, it is the tab title. */
 export function crumbsFor(path: string): Crumb[] {
-  const delivery = match('/webhooks/deliveries/:id', path.replace(/\/$/, ''))
+  const clean = path.replace(/\/$/, '') || '/'
+  const delivery = match('/webhooks/deliveries/:id', clean)
   if (delivery) return [{ label: t('shell.pages.webhooks'), path: '/webhooks?tab=deliveries' }, { label: t('webhooks.deliveryTitle', { id: delivery.id }) }]
-  const guide = match('/guides/:id', path.replace(/\/$/, ''))
+  const guide = match('/guides/:id', clean)
   const guideTitle = `guides.entries.${guide?.id}.title`
   if (guide && hasMessage(guideTitle)) return [{ label: t('shell.pages.guides'), path: '/guides' }, { label: t(guideTitle as MessageKey) }]
-  const table = match('/tables/:name', path)
+  const table = match('/tables/:name', clean)
   if (table) return [{ label: t('shell.pages.tables'), path: '/tables' }, { label: table.name }]
-  const bucket = match('/storage/:bucket', path)
+  const bucket = match('/storage/:bucket', clean)
   if (bucket) return [{ label: t('shell.pages.storage'), path: '/storage' }, { label: bucket.bucket }]
-  const structure = match('/tables/:name/structure', path)
+  const structure = match('/tables/:name/structure', clean)
   if (structure) {
     return [
       { label: t('shell.pages.tables'), path: '/tables' },
@@ -39,7 +40,7 @@ export function crumbsFor(path: string): Crumb[] {
       { label: t('shell.pages.structure') },
     ]
   }
-  return [{ label: t(titles[path.replace(/\/$/, '') || '/'] ?? 'shell.pages.notFound') }]
+  return [{ label: t(titles[clean] ?? 'shell.pages.notFound') }]
 }
 
 /** Browser tab title: most specific first, product name last. */

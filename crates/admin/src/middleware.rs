@@ -12,17 +12,18 @@ pub(crate) async fn same_origin(request: Request, next: Next) -> Response {
     if request.method() != Method::GET && request.method() != Method::HEAD {
         let headers = request.headers();
         let host = headers.get(header::HOST).and_then(|v| v.to_str().ok());
-        if let Some(origin) = headers.get(header::ORIGIN).and_then(|v| v.to_str().ok()) {
-            let matches = host.is_some_and(|host| {
-                origin == format!("https://{host}") || origin == format!("http://{host}")
+        if let Some(value) = headers.get(header::ORIGIN) {
+            let matches = value.to_str().ok().is_some_and(|origin| {
+                host.is_some_and(|host| {
+                    origin == format!("https://{host}") || origin == format!("http://{host}")
+                })
             });
             if !matches {
                 return forbidden_origin();
             }
         }
-        if headers
-            .get("sec-fetch-site")
-            .is_some_and(|v| v == "cross-site")
+        if let Some(value) = headers.get("sec-fetch-site")
+            && !matches!(value.to_str().ok(), Some("same-origin" | "none"))
         {
             return forbidden_origin();
         }
