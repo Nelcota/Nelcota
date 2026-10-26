@@ -1,4 +1,4 @@
--- Schema the SDK contract tests run against (scripts/contract.mjs applies it).
+-- Schema the SDK contract tests run against (scripts/contract.ts applies it).
 
 CREATE TYPE public.order_status AS ENUM ('open', 'paid', 'shipped');
 

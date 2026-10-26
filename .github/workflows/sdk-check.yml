@@ -85,7 +85,7 @@ jobs:
         id: sdk_contract
         run: |
           set -o pipefail
-          bun scripts/contract.mjs --browser 2>&1 | tee "$RUNNER_TEMP/nelcota-sdk-contract.log"
+          bun scripts/contract.ts --browser 2>&1 | tee "$RUNNER_TEMP/nelcota-sdk-contract.log"
         env:
           NELCOTA_SDK_BROWSERS: chromium,firefox,webkit
       - name: Annotate contract failure diagnostics

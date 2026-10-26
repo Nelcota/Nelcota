@@ -6,13 +6,13 @@
   "scripts": {
     "dev": "bun --bun vite",
     "build": "bun run guides:check && bun --bun vite build",
-    "check": "bun run guides:check && bun --bun svelte-check --tsconfig ./tsconfig.app.json && bun node_modules/typescript-7/bin/tsc -p tsconfig.node.json && bun node_modules/typescript-7/bin/tsc -p tsconfig.e2e.json",
-    "guides:check": "bun scripts/guides-i18n.mjs --check",
-    "guides:pending": "bun scripts/guides-i18n.mjs --pending",
+    "check": "bun run guides:check && bun --bun svelte-check --tsconfig ./tsconfig.app.json && bun node_modules/typescript-7/bin/tsc -p tsconfig.node.json && bun node_modules/typescript-7/bin/tsc -p tsconfig.e2e.json && bun node_modules/typescript-7/bin/tsc -p tsconfig.scripts.json",
+    "guides:check": "bun scripts/guides-i18n.ts --check",
+    "guides:pending": "bun scripts/guides-i18n.ts --pending",
     "test": "bun --bun vitest run src",
     "test:node": "vitest run src",
     "test:memory": "vitest run src/lib/resources/query-client.test.ts --pool forks --execArgv=--expose-gc",
-    "contracts": "cargo run --manifest-path ../../../Cargo.toml -p nelcota-admin --example export_contracts && bun scripts/contracts.mjs",
+    "contracts": "cargo run --manifest-path ../../../Cargo.toml -p nelcota-admin --example export_contracts && bun scripts/contracts.ts",
     "test:e2e": "playwright test"
   },
   "devDependencies": {

@@ -1,4 +1,4 @@
-// Compiled (not run) by scripts/contract.mjs against the types the real
+// Compiled (not run) by scripts/contract.ts against the types the real
 // `nelcota types` generated for test/contract/fixture.sql: the SDK's typing
 // must accept the generator's output as is.
 import { createClient } from '../../src/index.js';

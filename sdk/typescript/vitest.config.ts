@@ -19,7 +19,7 @@ export default defineConfig({
       },
       {
         // Against a running server: NELCOTA_SDK_TEST_URL and the fixture in
-        // test/contract/fixture.sql (scripts/contract-server.mjs sets both up).
+        // test/contract/fixture.sql (scripts/contract.ts sets both up).
         test: {
           name: 'contract',
           include: ['test/contract/**/*.test.ts'],

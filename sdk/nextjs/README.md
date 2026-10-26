@@ -352,7 +352,7 @@ After building the server and both SDK packages, run the real auth/email
 contract from the repository root:
 
 ```sh
-node sdk/typescript/scripts/contract.mjs --nextjs test/contract/auth.test.ts
+bun sdk/typescript/scripts/contract.ts --nextjs test/contract/auth.test.ts
 ```
 
 This owns disposable PostgreSQL and STARTTLS Mailpit fixtures, tests real

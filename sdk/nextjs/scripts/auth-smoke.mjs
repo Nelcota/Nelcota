@@ -1,4 +1,4 @@
-// Invoked by sdk/typescript/scripts/contract.mjs --nextjs while its real
+// Invoked by sdk/typescript/scripts/contract.ts --nextjs while its real
 // disposable Nelcota/PostgreSQL/STARTTLS Mailpit fixture is alive.
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';

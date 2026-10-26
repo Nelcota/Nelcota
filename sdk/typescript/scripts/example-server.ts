@@ -5,10 +5,10 @@ import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
+const types: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
 createServer(async (request, response) => {
   try {
-    const path = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
+    const path = decodeURIComponent(new URL(request.url ?? '/', 'http://localhost').pathname);
     const relative = path === '/' ? 'examples/browser.html' : path.slice(1);
     const directory = relative.startsWith('examples/') ? 'examples' : relative.startsWith('dist/') ? 'dist' : null;
     if (directory === null) { response.writeHead(404).end(); return; }
