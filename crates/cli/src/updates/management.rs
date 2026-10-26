@@ -58,6 +58,13 @@ pub(super) fn validate_policy(p: &Provisioning) -> anyhow::Result<()> {
     }
     Ok(())
 }
+/// Sanity check for the operator's own VPS addresses in the root-owned
+/// provisioning policy. These are expected DNS answers for managed domains, not
+/// user-supplied egress destinations, so this stays looser than the SSRF guard
+/// `nelcota_core::net::is_public_address` (CGNAT and documentation addresses
+/// keep loading, so installed policies don't break). It still refuses reserved
+/// IPv4 and IPv6 forms that embed an IPv4 address, because health checks and
+/// probes connect to these addresses.
 fn public_ip(ip: std::net::IpAddr) -> bool {
     match ip {
         std::net::IpAddr::V4(ip) => {
@@ -68,9 +75,11 @@ fn public_ip(ip: std::net::IpAddr) -> bool {
                 && !ip.is_multicast()
                 && !ip.is_broadcast()
                 && ip.octets()[0] != 0
+                && ip.octets()[0] < IPV4_RESERVED_FIRST_OCTET
         }
         std::net::IpAddr::V6(ip) => {
             ip.to_ipv4_mapped().is_none()
+                && !embeds_ipv4(ip.segments())
                 && !ip.is_loopback()
                 && !ip.is_unspecified()
                 && !ip.is_multicast()
@@ -78,6 +87,32 @@ fn public_ip(ip: std::net::IpAddr) -> bool {
                 && !ip.is_unicast_link_local()
         }
     }
+}
+/// 240.0.0.0/4 is reserved and never routed.
+const IPV4_RESERVED_FIRST_OCTET: u8 = 240;
+/// NAT64 64:ff9b::/96 and the local-use 64:ff9b:1::/48.
+const NAT64_FIRST_SEGMENT: u16 = 0x0064;
+const NAT64_SECOND_SEGMENT: u16 = 0xff9b;
+const NAT64_LOCAL_SECOND_SEGMENT: u16 = 0xff9b;
+const NAT64_LOCAL_THIRD_SEGMENT: u16 = 0x0001;
+/// 6to4 2002::/16 and Teredo 2001::/32.
+const SIX_TO_FOUR_FIRST_SEGMENT: u16 = 0x2002;
+const TEREDO_FIRST_SEGMENT: u16 = 0x2001;
+const TEREDO_SECOND_SEGMENT: u16 = 0x0000;
+/// IPv6 forms that carry an IPv4 address a router may translate to.
+fn embeds_ipv4(segments: [u16; 8]) -> bool {
+    let [first, second, third, ..] = segments;
+    // IPv4-compatible ::/96 (::1 and :: are covered by the loopback/unspecified checks).
+    let compatible = segments[..6].iter().all(|segment| *segment == 0);
+    let nat64 = first == NAT64_FIRST_SEGMENT
+        && second == NAT64_SECOND_SEGMENT
+        && segments[2..6].iter().all(|segment| *segment == 0);
+    let nat64_local = first == NAT64_FIRST_SEGMENT
+        && second == NAT64_LOCAL_SECOND_SEGMENT
+        && third == NAT64_LOCAL_THIRD_SEGMENT;
+    let six_to_four = first == SIX_TO_FOUR_FIRST_SEGMENT;
+    let teredo = first == TEREDO_FIRST_SEGMENT && second == TEREDO_SECOND_SEGMENT;
+    compatible || nat64 || nat64_local || six_to_four || teredo
 }
 pub(super) fn free_bytes(root: &Path) -> u64 {
     rustix::fs::statvfs(root)
