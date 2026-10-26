@@ -51,22 +51,37 @@ jobs:
         if: matrix.node == 24 && matrix.browser == 'chromium' && !matrix.next
         run: node scripts/package-smoke.mjs --published-base
         working-directory: sdk/nextjs
+      # The apt mirror can be slow enough to time the job out, so the .deb
+      # files fetched by --with-deps are cached next to the browsers. An install
+      # that runs out of time still saves what it downloaded (as a partial
+      # entry), so the next attempt resumes instead of starting over.
       - name: Restore Playwright browsers and system packages
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: playwright-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cache/ms-playwright
             ~/.cache/playwright-apt
           key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/package-lock.json') }}
-          restore-keys: playwright-${{ runner.os }}-${{ matrix.browser }}-
+          restore-keys: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/package-lock.json') }}-
       - name: Install browser
-        # The apt mirror can be slow enough to time the job out, so the .deb
-        # files fetched by --with-deps are cached next to the browsers.
+        id: playwright-install
+        timeout-minutes: 12
         run: |
           mkdir -p ~/.cache/playwright-apt
           sudo find ~/.cache/playwright-apt -name '*.deb' -exec cp -t /var/cache/apt/archives {} +
           node sdk/typescript/node_modules/playwright-core/cli.js install --with-deps "${NELCOTA_NEXT_BROWSER}"
-          find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -exec cp -t ~/.cache/playwright-apt {} +
+      - name: Collect downloaded system packages
+        if: always() && steps.playwright-cache.outputs.cache-hit != 'true'
+        run: find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -exec cp -t ~/.cache/playwright-apt {} +
+      - name: Save Playwright browsers and system packages
+        if: always() && steps.playwright-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/.cache/playwright-apt
+          key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('sdk/typescript/package-lock.json') }}${{ steps.playwright-install.outcome != 'success' && format('-partial-{0}-{1}', github.run_id, github.run_attempt) || '' }}
       - name: Server-only production boundary
         if: matrix.node == 24 && matrix.browser == 'chromium' && !matrix.next
         run: node scripts/boundary-smoke.mjs
