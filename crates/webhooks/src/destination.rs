@@ -2,6 +2,7 @@
 //! DNS answers are checked by reqwest's resolver, so there is no second lookup
 //! between validation and connection. A pooled socket remains the checked peer.
 use crate::{Error, invalid};
+use nelcota_core::net::is_public_address;
 use reqwest::dns::{Addrs, Name, Resolve, Resolving};
 use std::{
     io,
@@ -44,8 +45,8 @@ impl Policy {
             return Err(bad());
         }
         let allowed = match host {
-            Host::Ipv4(ip) => public_address(IpAddr::V4(ip)) || development,
-            Host::Ipv6(ip) => public_address(IpAddr::V6(ip)) || development,
+            Host::Ipv4(ip) => is_public_address(IpAddr::V4(ip)) || development,
+            Host::Ipv6(ip) => is_public_address(IpAddr::V6(ip)) || development,
             Host::Domain(name) => {
                 let trimmed = name.trim_end_matches('.');
                 development
@@ -85,32 +86,6 @@ fn is_loopback_host(host: &Host<&str>) -> bool {
         Host::Domain(name) => name.trim_end_matches('.') == "localhost",
         Host::Ipv4(ip) => *ip == Ipv4Addr::LOCALHOST,
         Host::Ipv6(ip) => *ip == Ipv6Addr::LOCALHOST,
-    }
-}
-
-/// Conservative public-unicast allowlist; transition and documentation ranges
-/// are excluded as well as link-local, CGNAT, multicast and private networks.
-fn public_address(ip: IpAddr) -> bool {
-    match ip {
-        IpAddr::V4(ip) => {
-            let [a, b, c, _] = ip.octets();
-            !(matches!(a, 0 | 10 | 127)
-                || a >= 224
-                || (a == 100 && (64..=127).contains(&b))
-                || (a == 169 && b == 254)
-                || (a == 172 && (16..=31).contains(&b))
-                || (a == 192
-                    && (b == 168 || (b == 0 && (c == 0 || c == 2)) || (b == 88 && c == 99)))
-                || (a == 198 && (b == 18 || b == 19 || (b == 51 && c == 100)))
-                || (a == 203 && b == 0 && c == 113))
-        }
-        IpAddr::V6(ip) => {
-            let s = ip.segments();
-            (s[0] & 0xe000) == 0x2000
-                && !(s[0] == 0x2001 && (s[1] < 0x200 || s[1] == 0xdb8))
-                && s[0] != 0x2002
-                && !(s[0] == 0x3fff && s[1] < 0x1000)
-        }
     }
 }
 
@@ -157,7 +132,7 @@ impl Resolve for SafeResolver {
             .await?;
             if addresses.is_empty()
                 || addresses.iter().any(|addr| {
-                    !public_address(addr.ip())
+                    !is_public_address(addr.ip())
                         && !(allow_loopback
                             && matches!(
                                 addr.ip(),

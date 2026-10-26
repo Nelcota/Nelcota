@@ -1,45 +1,9 @@
 //! One bounded digest per channel. Destinations and raw errors never enter receipts.
 use super::*;
 use nelcota_auth::Mailer;
+use nelcota_core::net::is_public_address;
 use nelcota_deployment::alerts::{Batch, Channel};
-use std::net::{IpAddr, SocketAddr};
-fn public(ip: IpAddr) -> bool {
-    match ip {
-        IpAddr::V4(ip) => {
-            !ip.is_private()
-                && !ip.is_loopback()
-                && !ip.is_link_local()
-                && !ip.is_unspecified()
-                && !ip.is_multicast()
-                && !ip.is_broadcast()
-                && !ip.is_documentation()
-                && !(ip.octets()[0] == 100 && (64..=127).contains(&ip.octets()[1]))
-                // IETF protocol assignments (192.0.0.0/24) and benchmarking (198.18.0.0/15).
-                && ip.octets()[..3] != [192, 0, 0]
-                && !(ip.octets()[0] == 198 && (18..=19).contains(&ip.octets()[1]))
-                && ip.octets()[0] != 0
-                && ip.octets()[0] < 224
-        }
-        IpAddr::V6(ip) => {
-            let s = ip.segments();
-            ip.to_ipv4_mapped().is_none()
-                // Translation/tunnel prefixes can embed a private IPv4 route:
-                // IPv4-compatible ::/96, NAT64 64:ff9b::/96 and 64:ff9b:1::/48,
-                // Teredo 2001::/32 and 6to4 2002::/16. Documentation 2001:db8::/32.
-                && s[..6] != [0; 6]
-                && s[..6] != [0x64, 0xff9b, 0, 0, 0, 0]
-                && s[..3] != [0x64, 0xff9b, 1]
-                && s[..2] != [0x2001, 0]
-                && s[..2] != [0x2001, 0xdb8]
-                && s[0] != 0x2002
-                && !ip.is_loopback()
-                && !ip.is_unspecified()
-                && !ip.is_multicast()
-                && !ip.is_unique_local()
-                && !ip.is_unicast_link_local()
-        }
-    }
-}
+use std::net::SocketAddr;
 pub(super) fn tls() -> anyhow::Result<()> {
     if rustls::crypto::CryptoProvider::get_default().is_none()
         && rustls::crypto::ring::default_provider()
@@ -66,7 +30,9 @@ pub(super) async fn post(
     .await??
     .collect::<Vec<SocketAddr>>();
     ensure!(
-        !addresses.is_empty() && addresses.len() <= 32 && addresses.iter().all(|a| public(a.ip())),
+        !addresses.is_empty()
+            && addresses.len() <= 32
+            && addresses.iter().all(|a| is_public_address(a.ip())),
         "invalid_alert_destination"
     );
     // Retain configured HTTP proxy/CA trust. A production egress proxy is a
@@ -173,11 +139,14 @@ mod tests {
     #[test]
     fn shared_address_space_is_not_a_public_alert_destination() {
         for ip in ["100.64.0.0", "100.100.100.200", "100.127.255.255"] {
-            assert!(!public(ip.parse().unwrap()), "shared route accepted: {ip}");
+            assert!(
+                !is_public_address(ip.parse().unwrap()),
+                "shared route accepted: {ip}"
+            );
         }
         for ip in ["100.63.255.255", "100.128.0.0"] {
             assert!(
-                public(ip.parse().unwrap()),
+                is_public_address(ip.parse().unwrap()),
                 "public neighbor rejected: {ip}"
             );
         }
@@ -196,15 +165,20 @@ mod tests {
             "2001::1",
             "2001:db8::1",
             "2002:a00:1::1",
+            // Previously accepted by the alert-only check.
+            "192.88.99.1",
+            "100::1",
+            "2001:2::1",
+            "3fff::1",
         ] {
             assert!(
-                !public(ip.parse().unwrap()),
+                !is_public_address(ip.parse().unwrap()),
                 "reserved route accepted: {ip}"
             );
         }
         for ip in ["198.17.255.255", "198.20.0.0", "2001:4860:4860::8888"] {
             assert!(
-                public(ip.parse().unwrap()),
+                is_public_address(ip.parse().unwrap()),
                 "public neighbor rejected: {ip}"
             );
         }
@@ -221,10 +195,10 @@ mod tests {
             "fc00::1",
             "fe80::1",
         ] {
-            assert!(!public(ip.parse().unwrap()), "{ip}");
+            assert!(!is_public_address(ip.parse().unwrap()), "{ip}");
         }
         for ip in ["1.1.1.1", "2606:4700:4700::1111"] {
-            assert!(public(ip.parse().unwrap()), "{ip}");
+            assert!(is_public_address(ip.parse().unwrap()), "{ip}");
         }
     }
 }

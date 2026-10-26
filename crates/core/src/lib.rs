@@ -6,6 +6,7 @@ pub mod config;
 pub mod db;
 pub mod error;
 pub mod extract;
+pub mod net;
 
 pub use claims::{Claims, InvalidClaims, Role};
 pub use config::{Config, MailConfig, OAuthConfig, Secret};

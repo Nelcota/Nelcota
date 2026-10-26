@@ -58,6 +58,11 @@ pub(super) fn validate_policy(p: &Provisioning) -> anyhow::Result<()> {
     }
     Ok(())
 }
+/// Sanity check for the operator's own VPS addresses in the root-owned
+/// provisioning policy. These are expected DNS answers for managed domains, not
+/// user-supplied egress destinations, so this is deliberately looser than the
+/// SSRF guard `nelcota_core::net::is_public_address`: tightening it would make
+/// already-installed policies fail to load.
 fn public_ip(ip: std::net::IpAddr) -> bool {
     match ip {
         std::net::IpAddr::V4(ip) => {
