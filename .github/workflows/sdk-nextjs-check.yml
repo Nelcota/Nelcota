@@ -72,10 +72,10 @@ jobs:
           sudo find ~/.cache/playwright-apt -name '*.deb' -exec cp -t /var/cache/apt/archives {} +
           node sdk/typescript/node_modules/playwright-core/cli.js install --with-deps "${NELCOTA_NEXT_BROWSER}"
       - name: Collect downloaded system packages
-        if: always() && steps.playwright-cache.outputs.cache-hit != 'true'
+        if: always() && steps.playwright-install.outcome != 'skipped' && steps.playwright-cache.outputs.cache-hit != 'true'
         run: find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -exec cp -t ~/.cache/playwright-apt {} +
       - name: Save Playwright browsers and system packages
-        if: always() && steps.playwright-cache.outputs.cache-hit != 'true'
+        if: always() && steps.playwright-install.outcome != 'skipped' && steps.playwright-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
