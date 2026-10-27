@@ -6,9 +6,11 @@ Dates use UTC.
 Server releases are listed here. The [TypeScript SDK](sdk/typescript/CHANGELOG.md)
 [Rust SDK](sdk/rust/CHANGELOG.md) and [Next.js integration](sdk/nextjs/CHANGELOG.md)
 have independent package versions. See [current status](docs/current-status.md)
-for the October 25 server scope and independent SDK publication checkpoint.
+for the October 27 server scope and independent SDK publication checkpoint.
 
 ## [Unreleased]
+
+## [0.5.5] — 2026-10-27
 
 ### Security
 
@@ -18,6 +20,20 @@ for the October 25 server scope and independent SDK publication checkpoint.
   IPv6 documentation 3fff::/20 or any IPv6 address outside 2000::/3. The
   host-management policy also refuses 240.0.0.0/4 and IPv6 addresses that embed
   an IPv4 address (IPv4-compatible, NAT64, 6to4, Teredo).
+- Trust a client-declared `image/*`, `audio/*` or `video/*` type only when the
+  file's bytes confirm it (SVG must look like SVG); other uploads in those
+  families are stored as `application/octet-stream` and downloaded instead of
+  shown inline.
+- Keep a policy's custom roles when it is edited in the panel: saving a policy
+  created in SQL with `TO editor` no longer widens it to `TO PUBLIC`.
+- Reject state-changing admin requests whose `Origin` header is not valid
+  text or that send `Sec-Fetch-Site: same-site`.
+
+### Added
+
+- A "Context for AI" section on the API page builds an `llms.txt`-style
+  document (project address, SDK usage, RLS policies, buckets and the generated
+  `database.ts`, with no secrets) to copy or download for coding assistants.
 
 ### Changed
 
@@ -42,6 +58,18 @@ for the October 25 server scope and independent SDK publication checkpoint.
   alert email is sent.
 - Restore terminal echo after a hidden password prompt if the CLI panics while
   reading it.
+- Confirm a linked OAuth account's email once the provider verifies it, and
+  drop stale `code`/`error` parameters from the OAuth `redirect_to`.
+- Load the schema catalog in one snapshot so concurrent DDL cannot produce a
+  torn catalog, and order overloaded functions deterministically.
+- Return `400` for NUL bytes in select aliases and malformed quotes in
+  `in`/`or`/`and` filters, refuse `order`/`limit`/`offset` on `POST`, and return
+  `404` when a bucket is deleted during an upload.
+- Prune expired one-time tokens and OAuth flow states, apply the free-space
+  guard to empty uploads and release the quota before old versions are deleted.
+- Panel: negated filters keep their `not`, saved SQL queries follow other tabs,
+  a malformed blocked path no longer breaks Overview and Policies, and a
+  non-JSON `200` reply shows an error instead of an endless spinner.
 - Check that the caller's session is still active before verifying
   `current_password` on `PUT /auth/v1/user`, so a logged-out access token can no
   longer test passwords until it expires.

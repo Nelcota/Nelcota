@@ -1,7 +1,7 @@
 # CLI reference
 
 Use `nelcota --help` and `<command> --help` for the installed binary. This reference
-matches server 0.5.4. Match release/tag and checksum, not the version string alone.
+matches server 0.5.5. Match release/tag and checksum, not the version string alone.
 
 ## Prerequisites and selection
 

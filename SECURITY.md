@@ -59,7 +59,7 @@ before installing:
 ```sh
 sha256sum -c nelcota-x86_64-unknown-linux-musl.sha256
 gh attestation verify nelcota-x86_64-unknown-linux-musl -R Nelcota/Nelcota
-gh attestation verify oci://ghcr.io/nelcota/nelcota-server:0.5.4 -R Nelcota/Nelcota
+gh attestation verify oci://ghcr.io/nelcota/nelcota-server:0.5.5 -R Nelcota/Nelcota
 ```
 
 Use the corresponding arm64 filename when needed. Checksums detect mismatched
