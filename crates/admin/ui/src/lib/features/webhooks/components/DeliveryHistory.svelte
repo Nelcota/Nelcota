@@ -38,7 +38,7 @@
     <ul class="grid gap-2 sm:hidden">
       {#each data.deliveries as delivery (delivery.id)}
         <li><a href={href(`/webhooks/deliveries/${delivery.id}`)} class="grid min-w-0 gap-2 rounded-3xl bg-card p-4 transition-colors hover:bg-accent">
-          <span class="flex items-center justify-between gap-2"><span class={['rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap', statusClass(delivery.status)]}>{statusLabel(delivery.status)}</span><span class="text-xs text-muted-foreground tabular-nums">{delivery.attempts}/{delivery.max_attempts}{delivery.last_status ? ` · HTTP ${delivery.last_status}` : ''}</span></span>
+          <span class="flex items-center justify-between gap-2"><span class={['rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap', statusClass(delivery.status)]}>{statusLabel(delivery.status)}</span><span class="text-xs text-muted-foreground tabular-nums">{t('webhooks.attemptsOf', { done: delivery.attempts, count: delivery.max_attempts })}{delivery.last_status ? ` · HTTP ${delivery.last_status}` : ''}</span></span>
           <span class="truncate font-medium">{delivery.endpoint_name}</span>
           <span class="text-xs text-muted-foreground">{dateLabel(delivery.created_at)} · {eventLabel(delivery.event)}</span>
         </a></li>
@@ -50,7 +50,7 @@
           <td class="p-4 whitespace-nowrap text-muted-foreground">{dateLabel(delivery.created_at)}</td>
           <td class="max-w-64 p-4"><p class="break-words font-medium">{delivery.endpoint_name}</p><p class="mt-1 font-mono text-xs text-muted-foreground">{delivery.schema}.{delivery.table}</p></td>
           <td class="p-4 whitespace-nowrap">{eventLabel(delivery.event)}</td>
-          <td class="p-4"><span class={['inline-block rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap', statusClass(delivery.status)]}>{statusLabel(delivery.status)}</span><p class="mt-1 text-xs text-muted-foreground">{delivery.attempts}/{delivery.max_attempts}{delivery.last_status ? ` · HTTP ${delivery.last_status}` : ''}</p></td>
+          <td class="p-4"><span class={['inline-block rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap', statusClass(delivery.status)]}>{statusLabel(delivery.status)}</span><p class="mt-1 text-xs text-muted-foreground">{t('webhooks.attemptsOf', { done: delivery.attempts, count: delivery.max_attempts })}{delivery.last_status ? ` · HTTP ${delivery.last_status}` : ''}</p></td>
           <td class="p-4"><Button variant="outline" size="sm" href={href(`/webhooks/deliveries/${delivery.id}`)}>{t('webhooks.view')}</Button></td>
         </tr>{/each}</tbody>
       </table>

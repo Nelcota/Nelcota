@@ -31,7 +31,7 @@ const ptBR = {
     reviewHint: 'Confira os campos e o acesso. A tabela será criada vazia, pronta para receber registros.',
     fieldsCount: '{count} campos', automaticField: 'Automático', optional: 'Opcional', requiredField: 'Obrigatório',
     types: { text: 'Texto', bigint: 'Número inteiro', numeric: 'Número com casas decimais', boolean: 'Sim ou não', date: 'Data', timestamptz: 'Data e hora', uuid: 'ID de usuário', jsonb: 'Dados estruturados (JSON)' },
-    examples: { text: 'Ex.: nome, descrição ou email.', bigint: 'Ex.: quantidade de itens: 10.', numeric: 'Ex.: preço: 29,90.', boolean: 'Ex.: tarefa concluída: sim ou não.', date: 'Ex.: data de nascimento.', timestamptz: 'Ex.: horário de um agendamento.', uuid: 'Identificador de um usuário do app.', jsonb: 'Uma lista ou conjunto de informações relacionadas.' },
+    examples: { text: 'Ex.: nome, descrição ou e-mail.', bigint: 'Ex.: quantidade de itens: 10.', numeric: 'Ex.: preço: 29,90.', boolean: 'Ex.: tarefa concluída: sim ou não.', date: 'Ex.: data de nascimento.', timestamptz: 'Ex.: horário de um agendamento.', uuid: 'Identificador de um usuário do app.', jsonb: 'Uma lista ou conjunto de informações relacionadas.' },
     advancedHint: 'Aqui você pode ajustar tipos, valores padrão, relacionamentos e permissões. As opções de acesso escolhidas acima deixam de ser aplicadas.',
     customAccess: 'O acesso será definido pelas permissões avançadas e pela proteção escolhidas abaixo.',
   },

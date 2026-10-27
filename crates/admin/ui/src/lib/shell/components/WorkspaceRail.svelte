@@ -36,7 +36,7 @@
     {/each}
   </nav>
   <div class="mt-auto grid gap-2 pt-5">
-    <a href={href('/updates')} class={['panel-rail-link', isActive('/updates') && 'is-active']} aria-label={t('shell.pages.updates')} title={t('shell.pages.updates')}><ArrowUpCircle class="size-5" strokeWidth={1.6} aria-hidden="true" /></a>
+    <a href={href('/updates')} class={['panel-rail-link', isActive('/updates') && 'is-active']} aria-label={t('shell.pages.updates')} aria-current={isActive('/updates') ? 'page' : undefined} title={t('shell.pages.updates')}><ArrowUpCircle class="size-5" strokeWidth={1.6} aria-hidden="true" /></a>
     <button type="button" class="panel-rail-link" onclick={toggleMode} aria-label={mode.current === 'dark' ? t('shell.account.lightTheme') : t('shell.account.darkTheme')} title={mode.current === 'dark' ? t('shell.account.lightTheme') : t('shell.account.darkTheme')}>
       {#if mode.current === 'dark'}<Sun class="size-5" strokeWidth={1.6} aria-hidden="true" />{/if}
       {#if mode.current !== 'dark'}<Moon class="size-5" strokeWidth={1.6} aria-hidden="true" />{/if}

@@ -533,7 +533,7 @@
               class="rounded-xl border border-border px-3 py-2 text-sm"
               href={`https://${item.domain}/admin/`}
               target="_blank"
-              rel="noopener noreferrer">{h('openPanel')}</a
+              rel="noopener noreferrer">{h('openPanel')}<span class="sr-only"> {t('common.newTab')}</span></a
             ><Button
               size="sm"
               variant="outline"
@@ -680,8 +680,7 @@
               <span translate="no">sha256:{plan.image_digest}</span>
             </p>
             <p class="text-xs">
-              {h('remaining')}: {seconds}
-              {h('seconds')}
+              {h('remaining')}: {translate(i18n.locale, 'host.secondsLeft', { count: seconds })}
             </p>{/if}
         </div>
         {#if plan && plan.blockers.length}<div
@@ -721,10 +720,12 @@
               class="mt-1"
             />{h('rescue')}</label
           ><label for="host-confirmation">{h('typed')}</label><code
+            id="host-confirmation-phrase"
             class="w-fit rounded-lg bg-well px-3 py-2"
             translate="no">{phrase}</code
           ><Input
             id="host-confirmation"
+            aria-describedby="host-confirmation-phrase"
             required
             maxlength={100}
             autocomplete="off"
@@ -799,7 +800,7 @@
               class="w-fit text-sm underline"
               href={`https://${job.operation.domain}/admin/`}
               target="_blank"
-              rel="noopener noreferrer">{h('openPanel')}</a
+              rel="noopener noreferrer">{h('openPanel')}<span class="sr-only"> {t('common.newTab')}</span></a
             >{/if}
         </article>{/each}
     </section>

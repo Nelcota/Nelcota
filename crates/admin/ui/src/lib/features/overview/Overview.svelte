@@ -242,7 +242,7 @@
               <p class="text-sm text-muted-foreground">{t('overview.cards.refused')}</p>
               <p class="text-3xl leading-none font-semibold tracking-[-0.03em]">{fmt.format(traffic.totals.refused)}</p>
             </div>
-            <MiniBars values={refusedBars} labels={refusedLabels} describe={t('overview.cards.refusedBars')} />
+            <MiniBars values={refusedBars} labels={refusedLabels} describe={t('overview.cards.refusedBars', { total: fmt.format(refusedBars.reduce((sum, value) => sum + value, 0)) })} />
           </div>
           <div class="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-t pt-2 text-xs text-muted-foreground">
             <a class={footerLink} href={href('/policies')}>{t('shell.pages.policies')}</a>
@@ -283,9 +283,7 @@
         </div>
         <div class="ml-auto flex items-center gap-3">
           {#if traffic?.totals.p95_ms != null}
-            <span class="text-sm text-muted-foreground tabular-nums" title={t('overview.traffic.p95Title', { ms: fmt.format(traffic.totals.p95_ms) })}
-              >{t('overview.traffic.p95', { ms: fmt.format(traffic.totals.p95_ms) })}</span
-            >
+            <span class="text-sm text-muted-foreground tabular-nums">{t('overview.traffic.p95Title', { ms: fmt.format(traffic.totals.p95_ms) })}</span>
           {/if}
           <button
             type="button"

@@ -46,7 +46,7 @@ const en: Messages<typeof ptBR> = {
     users: 'Users',
     usersRing: '{percent}% of users have signed in from the app',
     refused: 'Refused',
-    refusedBars: 'Refused across the period',
+    refusedBars: 'Refused across the period: {total}',
     open: 'Open {page}',
   },
   traffic: {

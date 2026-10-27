@@ -168,7 +168,7 @@
 {#snippet methods(user: User)}
   {@const list = signInMethods(user)}
   <span class="inline-flex flex-wrap gap-1" title={list[0].kind === 'linkOnly' ? t('users.methods.linkOnlyHint') : undefined}>
-    {#each list as method, i (i)}<span class={['rounded-md bg-well px-2 py-0.5 text-xs font-medium', method.kind === 'linkOnly' ? 'text-muted-foreground' : '']}>{#if (method.kind === 'password')}{t('users.methods.password')}{/if}{#if !(method.kind === 'password') && (method.kind === 'provider')}{method.name}{/if}{#if !(method.kind === 'password') && !(method.kind === 'provider')}{t('users.methods.linkOnly')}{/if}</span>{/each}
+    {#each list as method, i (i)}<span class={['rounded-md bg-well px-2 py-0.5 text-xs font-medium', method.kind === 'linkOnly' ? 'text-muted-foreground' : '']}>{#if (method.kind === 'password')}{t('users.methods.password')}{/if}{#if !(method.kind === 'password') && (method.kind === 'provider')}{method.name}{/if}{#if !(method.kind === 'password') && !(method.kind === 'provider')}{t('users.methods.linkOnly')}{/if}{#if list[0].kind === 'linkOnly'}<span class="sr-only">{t('users.methods.linkOnlyHint')}</span>{/if}</span>{/each}
   </span>
 {/snippet}
 

@@ -43,7 +43,7 @@ const ptBR = {
     users: 'Usuários',
     usersRing: '{percent}% dos usuários já entraram pelo app',
     refused: 'Recusadas',
-    refusedBars: 'Recusadas ao longo do período',
+    refusedBars: 'Recusadas ao longo do período: {total}',
     open: 'Abrir {page}',
   },
   traffic: {

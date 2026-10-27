@@ -50,7 +50,7 @@
   {#if !resource.data && resource.loading}<Skeleton class="h-40 rounded-3xl" />{/if}
   {#if resource.data && delivery}
     <section class="grid gap-4 rounded-3xl bg-card p-5">
-      <div class="flex flex-wrap items-center gap-3"><span class={['rounded-full px-3 py-1 text-sm font-medium', statusClass(delivery.status)]}>{statusLabel(delivery.status)}</span><span class="text-sm text-muted-foreground">{delivery.attempts}/{delivery.max_attempts}</span>{#if !delivery.endpoint_enabled}<span class="text-sm text-muted-foreground">{t('webhooks.paused')}</span>{/if}</div>
+      <div class="flex flex-wrap items-center gap-3"><span class={['rounded-full px-3 py-1 text-sm font-medium', statusClass(delivery.status)]}>{statusLabel(delivery.status)}</span><span class="text-sm text-muted-foreground">{t('webhooks.attemptsOf', { done: delivery.attempts, count: delivery.max_attempts })}</span>{#if !delivery.endpoint_enabled}<span class="text-sm text-muted-foreground">{t('webhooks.paused')}</span>{/if}</div>
       {#if delivery.last_error}<p class="text-sm text-destructive">{failureLabel(delivery.last_error)}</p>{/if}
       <dl class="grid gap-4 text-sm sm:grid-cols-2">
         <div class="min-w-0"><dt class="text-muted-foreground">{t('webhooks.destination')}</dt><dd class="mt-1 break-all">{delivery.url}</dd></div>

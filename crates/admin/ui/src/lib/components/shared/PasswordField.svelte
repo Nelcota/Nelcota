@@ -39,7 +39,7 @@
       <button
         type="button"
         class="absolute top-1/2 right-0 grid size-10 -translate-y-1/2 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        aria-label={visible ? t('users.password.hide') : t('users.password.show')}
+        aria-label={t('users.password.show')}
         aria-pressed={visible}
         onclick={() => (visible = !visible)}
       >

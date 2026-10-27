@@ -29,7 +29,7 @@ const ptBR = {
     asUser: 'Vendo como {email}',
     ownerTrigger: 'Ver como',
     pickTitle: 'Ver como qual usuário?',
-    search: 'Buscar por email',
+    search: 'Buscar por e-mail',
     empty: 'Nenhum usuário encontrado',
     noUsers: 'Ainda não há usuários. Crie um para ver a tabela como ele.',
     loading: 'Carregando…',

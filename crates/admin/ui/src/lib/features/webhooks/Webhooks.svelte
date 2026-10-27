@@ -18,7 +18,8 @@
   import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte'
   import { RemoteResource } from '$lib/resources/remote-resource.svelte'
   import { route, navigate, href } from '$lib/navigation/router.svelte'
-  import { errorMessage, t } from '$lib/i18n/index.svelte'
+  import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
+  import { numberFormat } from '$lib/formatting/intl'
   import type { WebhookEndpoints, WebhookDeliveries, WebhookEndpoint, WebhookSecret } from '$lib/contracts/types'
   import EndpointDialog from './components/EndpointDialog.svelte'
   import SecretDialog from './components/SecretDialog.svelte'
@@ -26,6 +27,12 @@
   import { webhooks, type EndpointInput } from './api'
   import { eventLabel } from './format'
 
+  // The queue limits enforced by the capture trigger (migrations/V13__webhooks.sql),
+  // and the share of them that shows the capacity warning.
+  const OUTSTANDING_LIMIT = 10_000
+  const RETAINED_LIMIT = 100_000
+  const CAPACITY_WARNING = 0.8
+  const count = (value: number) => numberFormat(intlLocale()).format(value)
   const config = new RemoteResource<WebhookEndpoints>()
   const history = new RemoteResource<WebhookDeliveries>()
   const tab = $derived(route.query.get('tab') === 'deliveries' ? 'deliveries' : 'configuration')
@@ -122,14 +129,16 @@
   <PageHeader title={t('webhooks.title')} description={t('webhooks.description')}>
     {#snippet actions()}<Button variant="outline" onclick={refresh} disabled={refreshing}><RefreshCw data-icon="inline-start" aria-hidden="true" class={refreshing ? 'animate-spin' : ''} />{t('common.refresh')}</Button>{#if tab === 'configuration'}<Button onclick={() => edit(null)} disabled={!config.data?.tables.length}><Plus data-icon="inline-start" aria-hidden="true" />{t('webhooks.create')}</Button>{/if}{/snippet}
   </PageHeader>
+  <!-- The sidebar picks the view; this names it for screen readers (D103). -->
+  <h2 class="sr-only">{t(tab === 'deliveries' ? 'webhooks.deliveries' : 'webhooks.configuration')}</h2>
   {#if config.error}<LoadError message={errorMessage(config.error)} onretry={loadConfig} busy={config.loading} />{/if}
   {#if !config.data && config.loading}<Skeleton class="h-40 rounded-3xl" />{/if}
   {#if config.data}
     <div class="grid grid-cols-2 gap-4">
-      <div class="rounded-3xl bg-card p-4 sm:p-5"><p class="text-sm text-muted-foreground">{t('webhooks.outstanding')}</p><p class="mt-1 flex flex-wrap items-baseline gap-x-2 text-2xl font-semibold tabular-nums">{config.data.outstanding}<span class="text-xs font-normal whitespace-nowrap text-muted-foreground">/ 10 000</span></p></div>
-      <div class="rounded-3xl bg-card p-4 sm:p-5"><p class="text-sm text-muted-foreground">{t('webhooks.retained')}</p><p class="mt-1 flex flex-wrap items-baseline gap-x-2 text-2xl font-semibold tabular-nums">{config.data.retained}<span class="text-xs font-normal whitespace-nowrap text-muted-foreground">/ 100 000</span></p></div>
+      <div class="rounded-3xl bg-card p-4 sm:p-5"><p class="text-sm text-muted-foreground">{t('webhooks.outstanding')}</p><p class="mt-1 flex flex-wrap items-baseline gap-x-2 text-2xl font-semibold tabular-nums">{count(config.data.outstanding)}<span class="text-xs font-normal whitespace-nowrap text-muted-foreground">{t('webhooks.ofLimit', { limit: count(OUTSTANDING_LIMIT) })}</span></p></div>
+      <div class="rounded-3xl bg-card p-4 sm:p-5"><p class="text-sm text-muted-foreground">{t('webhooks.retained')}</p><p class="mt-1 flex flex-wrap items-baseline gap-x-2 text-2xl font-semibold tabular-nums">{count(config.data.retained)}<span class="text-xs font-normal whitespace-nowrap text-muted-foreground">{t('webhooks.ofLimit', { limit: count(RETAINED_LIMIT) })}</span></p></div>
     </div>
-    {#if config.data.outstanding >= 8000 || config.data.retained >= 80000}<Callout variant="warning" title={t('webhooks.capacity')} />{/if}
+    {#if config.data.outstanding >= OUTSTANDING_LIMIT * CAPACITY_WARNING || config.data.retained >= RETAINED_LIMIT * CAPACITY_WARNING}<Callout variant="warning" title={t('webhooks.capacity')} />{/if}
     {#if (tab === 'configuration')}
       {#if !config.data.endpoints.length}
         <EmptyState class="rounded-3xl bg-card" icon={Webhook} title={t(config.data.tables.length ? 'webhooks.emptyTitle' : 'webhooks.noTables')} description={t(config.data.tables.length ? 'webhooks.emptyHint' : 'webhooks.noTablesHint')}>
@@ -139,7 +148,7 @@
       <div class="grid gap-4 lg:grid-cols-2">
         {#each config.data.endpoints as hook (hook.id)}
           <section class="grid min-w-0 content-start gap-4 rounded-3xl bg-card p-5">
-            <header class="flex flex-wrap items-center justify-between gap-2"><h2 class="min-w-0 break-words font-semibold">{hook.name}</h2>
+            <header class="flex flex-wrap items-center justify-between gap-2"><h3 class="min-w-0 break-words font-semibold">{hook.name}</h3>
               {#if !hook.table_available}<span class="rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive">{t('webhooks.tableMissing')}</span>{/if}
               {#if hook.table_available}<span class={['rounded-full px-2.5 py-1 text-xs font-medium', hook.enabled ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground']}>{t(hook.enabled ? 'webhooks.enabled' : 'webhooks.paused')}</span>{/if}
             </header>

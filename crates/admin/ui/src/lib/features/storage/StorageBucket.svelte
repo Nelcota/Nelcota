@@ -126,7 +126,7 @@
     if (!info && !target) return
     const result = await browser.send(list, replace, target)
     if (!result) return
-    for (const { file, error } of result.errors) toast.error(`${file.name}: ${errorMessage(error)}`)
+    for (const { file, error } of result.errors) toast.error(`${file.name}: ${errorMessage(error, 'storage.browser.uploadFailed')}`)
     if (result.sent) toast.success(t('storage.browser.uploaded', { count: result.sent }))
     if (result.conflicts.length) {
       conflicts = result.conflicts

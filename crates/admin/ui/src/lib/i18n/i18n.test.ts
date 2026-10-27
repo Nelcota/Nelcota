@@ -36,6 +36,11 @@ describe('t', () => {
     expect(translate('en', 'overview.summary.users', { count: 0 })).toBe('0 users')
   })
 
+  it('formats the counted number for the language', () => {
+    expect(translate('pt-BR', 'overview.summary.users', { count: 1234 })).toBe('1.234 usuários')
+    expect(translate('en', 'overview.summary.users', { count: 1234 })).toBe('1,234 users')
+  })
+
   it('returns the key for a missing text (visible in development)', () => {
     expect(translate('en', 'common.nope')).toBe('common.nope')
   })
@@ -49,6 +54,13 @@ describe('errorMessage', () => {
     )
     expect(errorMessage(new Error('failed'))).toBe('failed')
     expect(errorMessage('text')).toBe('text')
+  })
+
+  it('uses the fallback key for errors that are not from the server', () => {
+    i18n.locale = 'pt-BR'
+    expect(errorMessage(new Error('Upload failed'), 'storage.browser.uploadFailed')).toBe('O envio falhou. Tente novamente.')
+    expect(errorMessage(new ApiError('quota', 400, 'not_a_known_code'), 'storage.browser.uploadFailed')).toBe('quota')
+    expect(errorMessage(new TypeError('Failed to fetch'), 'storage.browser.uploadFailed')).toBe(translate('pt-BR', 'errors.network'))
   })
 })
 

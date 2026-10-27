@@ -326,9 +326,12 @@
                       size="icon-sm"
                       aria-label={t('policies.editLabel', { name: policy.name })}
                       title={def ? t('common.edit') : t('policies.customRoles')}
-                      disabled={!def}
+                      aria-disabled={!def}
+                      aria-describedby={def ? undefined : `custom-roles-${table.name}-${policy.name}`}
+                      class={def ? undefined : 'opacity-50 cursor-not-allowed'}
                       onclick={() => def && openSheet(table.name, def)}><Pencil /></Button
                     >
+                    {#if !def}<span id={`custom-roles-${table.name}-${policy.name}`} class="sr-only">{t('policies.customRoles')}</span>{/if}
                     <Button
                       variant="ghost"
                       size="icon-sm"

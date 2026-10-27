@@ -87,7 +87,7 @@ const ptBR = {
     asVisitor: 'Como visitante',
     asUser: 'Como {email}',
     pickTitle: 'Executar como qual usuário?',
-    search: 'Buscar por email',
+    search: 'Buscar por e-mail',
     empty: 'Nenhum usuário encontrado',
     noUsers: 'Ainda não há usuários. Crie um para testar como ele.',
     loading: 'Carregando…',

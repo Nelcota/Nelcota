@@ -3,6 +3,7 @@
   import { Button } from '$lib/components/ui/button'
   import { i18n, translate } from '$lib/i18n/index.svelte'
   import { dateTimeText } from '$lib/formatting/date'
+  import { numberFormat } from '$lib/formatting/intl'
   import { RemoteResource } from '$lib/resources/remote-resource.svelte'
   import { formatGibibytes } from '../storage/files'
   import { request, sessionExpired } from '../updates/controller'
@@ -31,11 +32,11 @@
   {#if error}<p role="alert" class="text-sm text-destructive">{s('error')}</p>{/if}
   {#if data}<p class="text-xs text-muted-foreground">{s('checked')}: {dateTimeText(data.checked_at * 1000, i18n.locale)}</p>
     <dl class="grid gap-3 sm:grid-cols-2">
-      {#each [[s('cpu'), data.cpu_percent === null ? s('unavailable') : `${data.cpu_percent.toFixed(1)}%`], [s('memory'), `${size(data.memory_available_bytes)} / ${size(data.memory_total_bytes)}`], [s('disk'), size(data.free_bytes)], [s('load'), data.load_one === null ? s('unavailable') : data.load_one.toFixed(2)]] as [label, value]}
+      {#each [[s('cpu'), data.cpu_percent === null ? s('unavailable') : numberFormat(i18n.locale, { style: 'percent', maximumFractionDigits: 1 }).format(data.cpu_percent / 100)], [s('memory'), `${size(data.memory_available_bytes)} / ${size(data.memory_total_bytes)}`], [s('disk'), size(data.free_bytes)], [s('load'), data.load_one === null ? s('unavailable') : numberFormat(i18n.locale, { maximumFractionDigits: 2 }).format(data.load_one)]] as [label, value]}
         <div class="rounded-2xl bg-well p-4"><dt class="text-sm text-muted-foreground">{label}</dt><dd class="mt-1 text-xl font-semibold">{value}</dd></div>
       {/each}
     </dl>
-    <ul class="grid gap-2">{#each data.checks as check (check.name)}<li class="flex items-center justify-between gap-4 rounded-2xl border border-border px-4 py-3"><span>{s(check.name) === `server.${check.name}` ? s('unavailable') : s(check.name)}</span><span class={`text-sm font-medium ${check.status === 'failed' ? 'text-destructive' : check.status === 'passed' ? 'text-success' : 'text-amber-700 dark:text-amber-300'}`}>{s(check.status)}</span></li>{/each}</ul>
+    <ul class="grid gap-2">{#each data.checks as check (check.name)}<li class="flex items-center justify-between gap-4 rounded-2xl border border-border px-4 py-3"><span>{s(check.name) === `server.${check.name}` ? s('unavailable') : s(check.name)}</span><span class={`text-sm font-medium ${check.status === 'failed' ? 'text-destructive' : check.status === 'passed' ? 'text-success' : 'text-warning'}`}>{s(check.status)}</span></li>{/each}</ul>
   {/if}
   <p class="text-sm text-muted-foreground">{s('pendingUpdate')}</p>
 </section>

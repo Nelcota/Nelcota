@@ -33,7 +33,7 @@ async function mount(page: Page, actions: Record<string, unknown>[], options: { 
 test('alerts explain external observation, stay read-only and fit mobile', async ({ page }, info) => {
   const actions: Record<string, unknown>[] = []; await mount(page, actions)
   await expect(page.getByText('Queda total da VPS exige um observador externo')).toBeVisible()
-  await expect(page.getByText('Aguardando uma verificação recente do worker')).toBeVisible()
+  await expect(page.getByText('Aguardando uma verificação recente do serviço de monitoramento')).toBeVisible()
   expect(actions.filter(a => ['host_plan', 'host_configure_plan', 'host_start'].includes(String(a.action)))).toHaveLength(0)
   await page.screenshot({ path: info.outputPath('alerts-desktop.png'), fullPage: true })
   await page.setViewportSize({ width: 390, height: 844 })
@@ -83,7 +83,7 @@ test('persistent monitor errors take priority over waiting for a first scan', as
   await mount(page, [], { status: { monitor_error: 'alert_state_unavailable', last_scan_at: null } })
   await expect(page.getByText('Há verificações indisponíveis; consulte os incidentes')).toBeVisible()
   await expect(page.getByText('O estado persistido dos alertas está indisponível.', { exact: false })).toBeVisible()
-  await expect(page.getByText('Aguardando uma verificação recente do worker')).not.toBeVisible()
+  await expect(page.getByText('Aguardando uma verificação recente do serviço de monitoramento')).not.toBeVisible()
 })
 
 async function pollingClock(page: Page) {

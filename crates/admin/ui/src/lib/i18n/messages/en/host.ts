@@ -133,7 +133,7 @@ const en: Messages<typeof ptBR> = {
   max: 'Approved limit',
   estimated: 'Profiles estimate configuration, not guaranteed capacity.',
   remaining: 'Review validity',
-  seconds: 'seconds',
+  secondsLeft: { one: '{count} second', other: '{count} seconds' },
   select: 'Select project'
 }
 

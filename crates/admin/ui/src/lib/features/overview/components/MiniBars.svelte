@@ -1,7 +1,11 @@
 <script lang="ts">
   // A small trend in a stat card: earlier periods in the muted step, the
-  // current one in the accent (D98). Each bar names its value on hover.
+  // current one in the accent (D98). Each bar names its value on hover; the
+  // accessible name carries the total, since hover never reaches a screen reader.
+  import { numberFormat } from '$lib/formatting/intl'
+  import { intlLocale } from '$lib/i18n/index.svelte'
   let { values, labels, describe }: { values: number[]; labels: string[]; describe: string } = $props()
+  const format = (value: number) => numberFormat(intlLocale()).format(value)
   const max = $derived(Math.max(1, ...values))
 </script>
 
@@ -10,7 +14,7 @@
     <div
       class={['w-2 rounded-t-[4px] rounded-b-[2px]', i === values.length - 1 ? 'bg-brand' : 'bg-muted-foreground/25']}
       style:height={`${Math.max(6, (value / max) * 100)}%`}
-      title={`${labels[i] ?? ''}: ${value}`}
+      title={`${labels[i] ?? ''}: ${format(value)}`}
     ></div>
   {/each}
 </div>

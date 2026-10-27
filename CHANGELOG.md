@@ -39,6 +39,24 @@ for the October 27 server scope and independent SDK publication checkpoint.
   typing.
 - The table export menu says that "View as" does not apply to downloads, which
   use full access.
+- Generated SQL quotes column and table names that are reserved words
+  (`order`, `user`), which used to make the statement fail.
+- Counts in the panel follow the language's number format (`1.234 usuários`),
+  and the alert summary and review countdown use singular and plural forms.
+- Screen readers hear the alert summary once instead of every timestamp,
+  which limit fields are invalid, the confirmation phrase to type, the current
+  updates page in the rail and links that open a new tab. Failed uploads show a
+  translated message instead of the library's English text.
+- Portuguese texts use "apagar" and "e-mail" consistently and explain
+  "worker", "heartbeat" and "magic link" in plain words.
+
+### Security
+
+- Signing out in one tab signs out the panel's other tabs, and signing out
+  forgets the SQL history and open queries kept in the browser (saved queries
+  stay).
+- A project's sign-in handoff only follows links to that project's own
+  address.
 
 ## [0.5.6] — 2026-10-27
 

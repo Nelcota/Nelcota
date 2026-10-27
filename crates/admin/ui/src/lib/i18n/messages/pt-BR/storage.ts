@@ -122,6 +122,7 @@ const ptBR = {
     upload: 'Enviar arquivos',
     uploading: 'Enviando {done} de {total}…',
     uploaded: { one: '{count} arquivo enviado', other: '{count} arquivos enviados' },
+    uploadFailed: 'O envio falhou. Tente novamente.',
     emptyFolder: 'Pasta vazia',
     emptyFolderDescription: 'Envie arquivos para cá. Uma pasta existe enquanto tiver arquivos.',
     foldersHint: 'Pastas não são criadas à parte: elas vêm do caminho dos arquivos (ex.: fotos/perfil.png) e somem quando ficam vazias. Os envios daqui vão para a pasta aberta; para uma pasta nova, envie pelo app ou SDK com o caminho no nome.',

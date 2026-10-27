@@ -1,6 +1,7 @@
 import type ptBR from '../pt-BR/alerts'
+import type { Messages } from '../../index.svelte'
 
-const en: Record<keyof typeof ptBR, string> = {
+const en: Messages<typeof ptBR> = {
   "title": "Alerts",
   "description": "Operational notifications sent by the worker even when the panel is closed.",
   "reload": "Reload configuration",
@@ -8,7 +9,7 @@ const en: Record<keyof typeof ptBR, string> = {
   "loadFailed": "The monitor could not be read. Check connectivity and try again.",
   "staleForm": "Configuration changed while you were editing. Reload before reviewing another change.",
   "never": "Not recorded yet",
-  "active": "active incidents",
+  "activeCount": { "one": "{count} active incident", "other": "{count} active incidents" },
   "noConfirmed": "No confirmed incidents",
   "disabled": "Monitor disabled",
   "observerStale": "Waiting for a recent worker check",

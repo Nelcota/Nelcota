@@ -69,7 +69,6 @@ const en: Messages<typeof ptBR> = {
   },
   password: {
     show: 'Show password',
-    hide: 'Hide password',
     generate: 'Generate',
     copy: 'Copy password',
     copied: 'Password copied',

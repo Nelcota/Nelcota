@@ -26,7 +26,7 @@
     <div class="grid max-w-2xl gap-5 rounded-3xl bg-card p-6">
       <p>{t('updates.current')}: <strong translate="no">{version}</strong></p>
       <p class="text-sm text-muted-foreground">{t('updates.authority')}</p>
-      {#if origin}<Button class="w-fit" href={`${origin}/admin/`} target="_blank" rel="noopener noreferrer">{t('updates.open')}<ArrowUpRight data-icon="inline-end" aria-hidden="true" /></Button>{/if}
+      {#if origin}<Button class="w-fit" href={`${origin}/admin/`} target="_blank" rel="noopener noreferrer">{t('updates.open')}<span class="sr-only"> {t('common.newTab')}</span><ArrowUpRight data-icon="inline-end" aria-hidden="true" /></Button>{/if}
       {#if !origin}<p role="status" class="text-sm text-muted-foreground">{t('updates.unenrolled')}</p>{/if}
     </div>
   {/if}

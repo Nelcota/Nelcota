@@ -31,7 +31,8 @@
   import { downloadText } from '$lib/browser/download'
   import { authSnippets, sdkSetup, tableSnippets, type Lang, type Snippet } from '$lib/features/api/api-examples'
   import type { PoliciesData, ProjectsData, StorageOverview, TableData, TablesResponse } from '$lib/contracts/types'
-  import { errorMessage, t } from '$lib/i18n/index.svelte'
+  import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
+  import { formatBytes } from '$lib/features/storage/files'
 
   // The panel is served from the same host as the API.
   const base = location.origin
@@ -59,7 +60,7 @@
   const contextResource = new RemoteResource<string>()
   const context = $derived(contextResource.data)
   const contextError = $derived(contextResource.error ? errorMessage(contextResource.error) : '')
-  const contextSize = $derived(context ? `${Math.max(1, Math.round(new Blob([context]).size / 1024))} KB` : '')
+  const contextSize = $derived(context ? formatBytes(new Blob([context]).size, intlLocale()) : '')
   async function loadContext() {
     await contextResource.load(async signal => {
       const types = fetch(href('/api/typescript'), { signal, credentials: 'same-origin', cache: 'no-store' }).then(async response => {

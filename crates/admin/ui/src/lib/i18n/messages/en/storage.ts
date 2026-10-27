@@ -125,6 +125,7 @@ const en: Messages<typeof ptBR> = {
     upload: 'Upload files',
     uploading: 'Uploading {done} of {total}…',
     uploaded: { one: '{count} file uploaded', other: '{count} files uploaded' },
+    uploadFailed: 'Upload failed. Try again.',
     emptyFolder: 'Empty folder',
     emptyFolderDescription: 'Upload files here. A folder exists while it holds files.',
     foldersHint: 'Folders are not created on their own: they come from file paths (e.g. photos/profile.png) and disappear once empty. Uploads from here go to the open folder; for a new folder, upload from your app or SDK with the path in the name.',

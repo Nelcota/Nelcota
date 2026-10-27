@@ -77,12 +77,12 @@
 <section class="grid gap-5 rounded-3xl border border-border bg-card p-6" aria-labelledby="alerts-title" aria-busy={loading && !view}>
   <div class="flex flex-wrap items-center justify-between gap-3"><h2 id="alerts-title" class="text-xl font-semibold">{a('title')}</h2><Button variant="outline" disabled={disabled || loading} onclick={() => navigate(() => { mark(false); void load(true) })}>{a('reload')}</Button></div>
   <p class="text-sm text-muted-foreground">{a('description')}</p>
-  {#if failure}<p role="alert" class="text-sm text-destructive">{failure}</p>{/if}
-  {#if stale}<p role="alert" class="text-sm text-amber-700 dark:text-amber-400">{a('staleForm')}</p>{/if}
+  {#if failure}<p id="alerts-failure" role="alert" class="text-sm text-destructive">{failure}</p>{/if}
+  {#if stale}<p role="alert" class="text-sm text-warning">{a('staleForm')}</p>{/if}
   {#if !view && loading}<p role="status">{a('loading')}</p>{/if}
   {#if view}
-    <div class="grid gap-3 rounded-2xl bg-well p-4" role="status">
-      <p class="font-medium">{view.settings.enabled ? view.monitor_error ? a('observerFailed') : clockStale ? a('observerStale') : view.maintenance ? a('maintenance') : active.length > 0 ? `${active.length} · ${a('active')}` : a('noConfirmed') : a('disabled')}</p>
+    <div class="grid gap-3 rounded-2xl bg-well p-4">
+      <p class="font-medium" role="status">{view.settings.enabled ? view.monitor_error ? a('observerFailed') : clockStale ? a('observerStale') : view.maintenance ? a('maintenance') : active.length > 0 ? translate(i18n.locale, 'alerts.activeCount', { count: active.length }) : a('noConfirmed') : a('disabled')}</p>
       {#if view.monitor_error === 'alert_state_unavailable'}<p role="alert" class="text-sm text-destructive">{a('stateUnavailable')}</p>{/if}
       <p class="text-sm">{a('lastScan')}: {date(view.last_scan_at)}</p>
       <p class="text-sm">{a('heartbeatAccepted')}: {date(view.heartbeat_accepted_at)}</p>
@@ -113,7 +113,9 @@
     </fieldset>
     <div class="grid gap-4 sm:grid-cols-2">
       {#each [['diskPercent', a('diskPercent'), 5, 50], ['diskGib', a('diskGib'), 1, 1024], ['certDays', a('certDays'), 1, 60], ['backupHours', a('backupHours'), 1, 168], ['reminderHours', a('reminderHours'), 1, 168]] as [key, label, min, max]}
-        <label class="grid gap-2"><span>{label}</span><Input type="number" min={min} max={max} step={1} value={key === 'diskPercent' ? diskPercent : key === 'diskGib' ? diskGib : key === 'certDays' ? certDays : key === 'backupHours' ? backupHours : reminderHours} oninput={event => { const value = event.currentTarget.value; switch (key) { case 'diskPercent': diskPercent = value; break; case 'diskGib': diskGib = value; break; case 'certDays': certDays = value; break; case 'backupHours': backupHours = value; break; default: reminderHours = value } }} disabled={blocked} required /></label>
+        {@const value = key === 'diskPercent' ? diskPercent : key === 'diskGib' ? diskGib : key === 'certDays' ? certDays : key === 'backupHours' ? backupHours : reminderHours}
+        {@const invalid = integer(value, Number(min), Number(max)) === null}
+        <label class="grid gap-2"><span>{label}</span><Input type="number" min={min} max={max} step={1} {value} aria-invalid={invalid} aria-describedby={invalid && failure ? 'alerts-failure' : undefined} oninput={event => { const value = event.currentTarget.value; switch (key) { case 'diskPercent': diskPercent = value; break; case 'diskGib': diskGib = value; break; case 'certDays': certDays = value; break; case 'backupHours': backupHours = value; break; default: reminderHours = value } }} disabled={blocked} required /></label>
       {/each}
     </div>
     <p class="text-sm text-muted-foreground">{a('confirmationPolicy')}</p>
