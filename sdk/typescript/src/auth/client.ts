@@ -60,6 +60,11 @@ export class AuthClient {
     }, options.signal);
   }
 
+  /**
+   * Signs in with email and password. A wrong email or password fails with
+   * `invalid_grant` (400), the same code for both; an account still waiting
+   * for its confirmation link fails with `email_not_confirmed`.
+   */
   async signInWithPassword(credentials: Credentials, options: AuthRequestOptions = {}): Promise<Result<Session>> {
     const body = { email: email(credentials.email), password: credentials.password };
     return this.#manager.authenticate(() => this.#token('password', body, options), options.signal);

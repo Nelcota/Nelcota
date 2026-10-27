@@ -187,9 +187,9 @@ describe('reads', () => {
   it('unwrap() returns the data or throws the error', async () => {
     const { nelcota } = client(json([{ id: 1 }]));
     expect(unwrap(await nelcota.from('todos').select())).toEqual([{ id: 1 }]);
-    const failing = client(json({ code: 'invalid_credentials', message: 'no' }, 400));
+    const failing = client(json({ code: 'invalid_grant', message: 'no' }, 400));
     const result = await failing.nelcota.auth.signInWithPassword({ email: 'a@x.com', password: 'pw' });
-    expect(() => unwrap(result)).toThrow(expect.objectContaining({ code: 'invalid_credentials' }));
+    expect(() => unwrap(result)).toThrow(expect.objectContaining({ code: 'invalid_grant' }));
   });
 
   it('throws page errors and refuses pages() outside reads', async () => {
