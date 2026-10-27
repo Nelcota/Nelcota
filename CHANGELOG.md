@@ -12,6 +12,11 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Changed
 
+- Panel and `nelcota dev` passwords no longer use characters that look alike
+  when copied by eye (0/O, 1/l/I); they stay 20 random characters, about 116
+  bits. The note under printed passwords names the exact command that prints a
+  new one (`nelcota -C <host> admin-password`, with `-p` for a per-project
+  login), and the installer's final messages repeat it.
 - The one-command VPS setup turns the firewall on by default (`--no-firewall`
   leaves it off; D110). It adds HTTP and HTTPS to an already active firewalld
   or ufw, which used to block HTTPS without any error. It enables automatic

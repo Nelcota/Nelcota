@@ -142,7 +142,7 @@ pub fn run(host: &Host, args: InitArgs) -> anyhow::Result<()> {
     println!("  Auth:   {}/auth/v1/", entry.url());
     println!("  Panel:  {}/admin/", entry.url());
     let passwords: Vec<_> = host_password.into_iter().chain(project_password).collect();
-    panel_login::print(&passwords);
+    panel_login::print(host, &passwords);
     println!();
     println!(
         "  service_role token (BYPASSES RLS; backend only): nelcota -p {} token service-role",

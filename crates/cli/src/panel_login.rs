@@ -19,6 +19,8 @@ use crate::{
 const EMAIL: &str = "NELCOTA_ADMIN_EMAIL";
 const HASH: &str = "NELCOTA_ADMIN_PASSWORD_HASH";
 const SSO_SECRET: &str = "NELCOTA_ADMIN_SSO_SECRET";
+/// Scope of the single login shared by every project.
+const SHARED_SCOPE: &str = "all projects";
 
 /// Password generated now (shown only once; only the hash is stored).
 pub struct NewPassword {
@@ -33,7 +35,7 @@ fn hash(password: &str) -> anyhow::Result<String> {
 }
 
 fn new_credentials(file: &EnvFile, email: &str, scope: &str) -> anyhow::Result<NewPassword> {
-    let password = util::secret(20);
+    let password = util::password(20);
     file.set(EMAIL, email)?;
     file.set(HASH, &hash(&password)?)?;
     Ok(NewPassword {
@@ -52,7 +54,7 @@ pub fn host_email(host: &Host) -> anyhow::Result<Option<String>> {
 pub fn init_host(host: &Host, email: &str) -> anyhow::Result<NewPassword> {
     let secrets = host.secrets();
     secrets.set(SSO_SECRET, &util::secret(48))?;
-    new_credentials(&secrets, email, "all projects")
+    new_credentials(&secrets, email, SHARED_SCOPE)
 }
 
 /// Writes the current mode's credentials into the project's `.env`. In
@@ -122,7 +124,7 @@ pub fn reset(
     match (manifest.panel_login, project) {
         (PanelLogin::Shared, _) => {
             let email = host_email(host)?.unwrap_or_else(|| "admin@localhost".into());
-            let new = new_credentials(&host.secrets(), &email, "all projects")?;
+            let new = new_credentials(&host.secrets(), &email, SHARED_SCOPE)?;
             for project in host.projects(manifest) {
                 apply(host, manifest, &project)?;
             }
@@ -141,15 +143,44 @@ pub fn reset(
     }
 }
 
-pub fn print(passwords: &[NewPassword]) {
+pub fn print(host: &Host, passwords: &[NewPassword]) {
+    // Absolute, so the command also works from another folder (`init` may have
+    // run with the default `-C .`).
+    let root = std::fs::canonicalize(host.root()).unwrap_or_else(|_| host.root().to_path_buf());
     for p in passwords {
         println!();
         println!("  Panel ({}):", p.scope);
         println!("    email: {}", p.email);
         println!("    password: {}", p.password);
     }
-    if !passwords.is_empty() {
-        println!("  (passwords are shown only now; the files keep just the argon2id hash)");
+    if passwords.is_empty() {
+        return;
+    }
+    // Built from the host folder alone, never from the generated credentials.
+    println!("  (shown only now; the files keep just the argon2id hash. Copy the password");
+    println!(
+        "   rather than retyping it. Lost it? {})",
+        regenerate_command(&root)
+    );
+}
+
+/// The command that prints a new panel password for this host.
+fn regenerate_command(root: &std::path::Path) -> String {
+    format!(
+        "nelcota -C {} admin-password, with -p <project> for a per-project login",
+        shell_word(&root.display().to_string())
+    )
+}
+
+/// Quoted for `sh` only when needed, so the usual path stays easy to read.
+fn shell_word(value: &str) -> String {
+    let plain = !value.is_empty()
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"/._-".contains(&b));
+    match plain {
+        true => value.to_owned(),
+        false => format!("'{}'", value.replace('\'', r"'\''")),
     }
 }
 
@@ -235,5 +266,17 @@ mod tests {
             assert_eq!(project.env().get(HASH).unwrap(), shared_hash);
         }
         std::fs::remove_dir_all(host.root()).unwrap();
+    }
+
+    #[test]
+    fn regenerate_command_names_the_host_and_quotes_only_when_needed() {
+        assert_eq!(
+            regenerate_command(std::path::Path::new("/opt/nelcota")),
+            "nelcota -C /opt/nelcota admin-password, with -p <project> for a per-project login"
+        );
+        assert!(
+            regenerate_command(std::path::Path::new("/srv/my host/it's"))
+                .starts_with(r"nelcota -C '/srv/my host/it'\''s' admin-password")
+        );
     }
 }

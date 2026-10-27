@@ -448,12 +448,14 @@ main() {
     # `up` also fails while DNS does not point here yet, with the projects
     # already running; say how to finish in both cases.
     if ! "$PREFIX/nelcota" -C "$HOST_DIR" up; then
-      printf '%s\n' "Keep the panel password shown above; it is not shown again." >&2
+      printf '%s\n' "Keep the panel password shown above; it is not shown again. Lost or mistyped it? 'nelcota -C $HOST_DIR admin-password' prints a new one." >&2
       die "nelcota up did not finish. If it says the projects are running and only HTTPS is unreachable, point the domain's DNS at this machine and run 'nelcota -C $HOST_DIR up'. Otherwise fix the problem above and run the same command again (the host in $HOST_DIR is kept)"
     fi
     cat <<MSG
 
 Done. Keep the panel password shown above; it is not shown again.
+If it is lost or the panel refuses it, print a new one (copy it, do not retype):
+  nelcota -C $HOST_DIR admin-password
   cd $HOST_DIR && nelcota status    # health, backups and versions
   nelcota -C $HOST_DIR doctor       # DNS, ports, backups (after the first nightly backup)
 

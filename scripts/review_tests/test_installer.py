@@ -352,6 +352,7 @@ class Installer(unittest.TestCase):
         self.assertIn(f"nelcota -C {self.host} up", result.stderr)
         self.assertIn("run the same command again", result.stderr)
         self.assertIn("Keep the panel password", result.stderr)
+        self.assertIn(f"nelcota -C {self.host} admin-password", result.stderr)
 
     def test_systemd_runtime_does_not_install_docker(self):
         result = self.setup_vps("api.example.com", "--runtime", "systemd")
@@ -536,6 +537,7 @@ class Installer(unittest.TestCase):
         result = self.setup_vps("api.example.com")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("security group", result.stdout)
+        self.assertIn(f"nelcota -C {self.host} admin-password", result.stdout)
 
     def test_translated_system_output_is_parsed(self):
         # `free` prints "Mem.:" on a pt-BR system; the swap check must not break.

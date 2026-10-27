@@ -7,17 +7,31 @@ use std::{
 };
 
 const ALPHANUMERIC: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+/// Alphanumeric without the characters people misread when copying a password
+/// by eye: 0/O and 1/l/I. 57 symbols, so 20 of them carry about 116 bits.
+const READABLE: &[u8] = b"ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
 /// Alphanumeric secret (safe for URLs and `.env`), without modulo bias.
 pub fn secret(len: usize) -> String {
+    random_text(ALPHANUMERIC, len)
+}
+
+/// A secret that a person reads and types, such as the panel password.
+pub fn password(len: usize) -> String {
+    random_text(READABLE, len)
+}
+
+fn random_text(alphabet: &[u8], len: usize) -> String {
+    // Bytes at or above the largest multiple of the alphabet size are discarded
+    // so every symbol stays equally likely.
+    let limit = 256 - 256 % alphabet.len();
     let mut out = String::with_capacity(len);
     let mut buf = [0u8; 64];
     while out.len() < len {
         getrandom::fill(&mut buf).expect("system randomness source unavailable");
         for b in buf {
-            // 248 = 62 * 4: discard the remainder so the distribution stays uniform.
-            if b < 248 && out.len() < len {
-                out.push(ALPHANUMERIC[usize::from(b) % ALPHANUMERIC.len()] as char);
+            if usize::from(b) < limit && out.len() < len {
+                out.push(alphabet[usize::from(b) % alphabet.len()] as char);
             }
         }
     }
@@ -203,6 +217,20 @@ mod tests {
         assert_eq!(s.len(), 40);
         assert!(s.bytes().all(|b| b.is_ascii_alphanumeric()));
         assert_ne!(secret(40), s);
+    }
+
+    #[test]
+    fn passwords_have_no_characters_that_look_alike() {
+        let p = password(20);
+        assert_eq!(p.len(), 20);
+        assert!(p.bytes().all(|b| b.is_ascii_alphanumeric()));
+        assert_ne!(password(20), p);
+        let many: String = (0..200).map(|_| password(20)).collect();
+        for confusable in ['0', 'O', '1', 'l', 'I'] {
+            assert!(!many.contains(confusable), "generated {confusable}");
+        }
+        // Every readable symbol can appear.
+        assert!(READABLE.iter().all(|&c| many.contains(char::from(c))));
     }
 
     #[test]
