@@ -9,15 +9,15 @@ Projects are processed one at a time.
 
 ## Availability
 
-The `update` command is included in the current source and needs a new CLI
-release before installed binaries expose it. Once that release is installed:
+The `update` command ships with CLI releases after 0.5.6. With such a CLI
+installed:
 
 ```sh
 sudo nelcota update
 ```
 
-For an older CLI, the installer provides the same flow after this change is
-merged into `main`, without requiring the old CLI to recognize a new command:
+For an older CLI, the installer on `main` provides the same flow, without
+requiring the old CLI to recognize a new command:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo sh -s -- --update

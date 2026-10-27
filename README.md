@@ -158,7 +158,7 @@ with a preview and one confirmation:
 curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo sh -s -- --update
 ```
 
-The next CLI release also provides `sudo nelcota update`. See
+CLI releases after 0.5.6 also provide `sudo nelcota update`. See
 [updating an existing host](docs/update.md) for previews, project selection and
 hosts managed by the update controller.
 

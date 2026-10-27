@@ -315,11 +315,11 @@ with the project's `NELCOTA_VERSION` first:
 - `--dry-run` prints `current → target` for each project and changes nothing.
 
 ```sh
-# One-step CLI + project updates (available after this source change is released):
+# One-step CLI + project updates (CLI releases after 0.5.6):
 sudo nelcota update
 sudo nelcota update --dry-run
 
-# Older CLI: use the installer update mode from main after this change is merged:
+# Older CLI: use the installer's update mode from main:
 curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo sh -s -- --update
 
 # Explicit control with an already installed CLI:
