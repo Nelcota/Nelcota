@@ -23,6 +23,23 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - The three summary cards on Access policies share the row equally; the third
   was narrower because it lined up with the side column below.
 
+### Fixed
+
+- SQL JSON exports keep every column of a join that selects two columns with
+  the same name (`id`, `id_2`), as the grid and CSV already did.
+- The SQL error marker and line point at the right place when the query has an
+  emoji or other character outside the Basic Multilingual Plane before the
+  error.
+- Deleting the last rows of a page past the first, or opening a stale page
+  link, moves the table or user list to its last page instead of reading
+  "empty".
+- Webhook delivery paging is disabled while a new filter loads, so it can no
+  longer send the previous filter's cursor.
+- Users and Access policies searches no longer drop a trailing space while
+  typing.
+- The table export menu says that "View as" does not apply to downloads, which
+  use full access.
+
 ## [0.5.6] — 2026-10-27
 
 ### Changed

@@ -89,6 +89,7 @@ const ptBR = {
     showAll: 'Mostrar todas',
     export: 'Exportar',
     exportFiltered: 'Linhas filtradas, na ordem atual',
+    exportFullAccess: 'O “Ver como” não vale para downloads: eles usam acesso total',
     exportAll: 'Todas as linhas, na ordem atual',
     csvHint: 'Para Excel ou Planilhas Google',
     jsonHint: 'Para código e outras ferramentas',

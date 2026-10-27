@@ -7,8 +7,10 @@
   import { href } from '$lib/navigation/router.svelte'
   import { t } from '$lib/i18n/index.svelte'
   import { dateLabel, eventLabel, statuses, statusLabel, statusClass } from '../format'
-  let { data, endpoints, endpoint, status, hasCursor, onfilter, onnext, onfirst }: {
+  let { data, endpoints, endpoint, status, hasCursor, loading = false, onfilter, onnext, onfirst }: {
     data: WebhookDeliveries | null; endpoints: WebhookEndpoint[]; endpoint: string; status: string; hasCursor: boolean
+    /** While a new page or filter loads, `data` still holds the previous one and its cursor. */
+    loading?: boolean
     onfilter: (endpoint: string, status: string) => void; onnext: () => void; onfirst: () => void
   } = $props()
   const endpointName = $derived(endpoint ? endpoints.find(hook => hook.id === endpoint)?.name ?? endpoint : t('webhooks.allWebhooks'))
@@ -56,8 +58,8 @@
   {/if}
   {#if !(data?.deliveries.length) && (data)}<EmptyState class="rounded-3xl bg-card" icon={History} title={t('webhooks.noDeliveries')} description={t('webhooks.noDeliveriesHint')} />{/if}
   <div class="flex flex-wrap justify-end gap-2">
-    {#if hasCursor}<Button variant="outline" onclick={onfirst}>{t('webhooks.firstPage')}</Button>{/if}
-    <Button variant="outline" disabled={!data?.next_cursor} onclick={onnext}>{t('webhooks.nextPage')}</Button>
+    {#if hasCursor}<Button variant="outline" disabled={loading} onclick={onfirst}>{t('webhooks.firstPage')}</Button>{/if}
+    <Button variant="outline" disabled={loading || !data?.next_cursor} onclick={onnext}>{t('webhooks.nextPage')}</Button>
   </div>
   <p class="text-sm text-muted-foreground">{t('webhooks.retention')}</p>
 </div>

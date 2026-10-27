@@ -28,6 +28,7 @@
   import { TableRows } from '$lib/features/tables/table-rows.svelte'
   import { tableRowsApi } from '$lib/features/tables/api'
   import { parseTableView, tableViewSearch, type TableView } from '$lib/features/tables/table-view'
+  import { pageAfterEmpty } from '$lib/navigation/pagination'
   import type { Column, RowData, TablesResponse } from '$lib/contracts/types'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
 
@@ -180,6 +181,14 @@
     return () => rows.cancel()
   })
 
+  // A page past the first that came back empty (its last rows were deleted,
+  // or a stale link) moves to the last page instead of reading "empty table".
+  $effect(() => {
+    if (!data || loading || data.rows.length > 0 || data.page !== page) return
+    const next = pageAfterEmpty(page, data.size, data.total, data.total_exact)
+    if (next !== null) untrack(() => updateView({ page: next }))
+  })
+
   function setFilters(next: TableFilter[]) {
     filterOpen = false
     filterPreset = undefined
@@ -261,6 +270,7 @@
         {view}
         {data}
         filterCount={filters.length}
+        {viewing}
         bind:filterOpen
         loading={loading || savingCell}
         hiddenColumns={hidden.names}

@@ -31,7 +31,7 @@
   import type { UsersResponse, User } from '$lib/contracts/types'
   import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
   import { signInMethods } from '$lib/features/users/sign-in-methods'
-  import { parsePage } from '$lib/navigation/pagination'
+  import { pageAfterEmpty, parsePage } from '$lib/navigation/pagination'
 
   const resource = new RemoteResource<UsersResponse>()
   const users = $derived(resource.data?.users ?? null)
@@ -76,7 +76,24 @@
     return () => resource.cancel()
   })
 
-  $effect(() => { query = appliedQuery })
+  // The server lists 50 users per page (crates/admin/src/users/operations.rs).
+  const PAGE_SIZE = 50
+  // Deleting the last user of a page past the first, or a stale `page` link,
+  // moves to the last page instead of reading "no users yet".
+  $effect(() => {
+    const data = resource.data
+    if (!data || loading || data.users.length > 0 || data.page !== page) return
+    const next = pageAfterEmpty(page, PAGE_SIZE, data.total, true)
+    if (next !== null) untrack(() => go(next, appliedQuery, true))
+  })
+
+  // Copy the URL into the field only when it says something else (back/forward,
+  // a cleared search): rewriting it after a debounce would drop the trailing
+  // space the person just typed.
+  $effect(() => {
+    const applied = appliedQuery
+    untrack(() => { if (query.trim() !== applied) query = applied })
+  })
 
   let debounce: ReturnType<typeof setTimeout>
   function onSearch() {

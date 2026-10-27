@@ -172,7 +172,7 @@
     {#if !(tab === 'configuration')}
       {#if history.error}<LoadError message={errorMessage(history.error)} onretry={loadHistory} busy={history.loading} />{/if}
       {#if !history.data && history.loading}<Skeleton class="h-48 rounded-3xl" />{/if}
-      <DeliveryHistory data={history.data} endpoints={config.data.endpoints} endpoint={endpointFilter} status={statusFilter} hasCursor={!!before} onfilter={filters} onnext={() => filters(endpointFilter, statusFilter, history.data?.next_cursor ?? '')} onfirst={() => filters(endpointFilter, statusFilter)} />
+      <DeliveryHistory data={history.data} endpoints={config.data.endpoints} endpoint={endpointFilter} status={statusFilter} hasCursor={!!before} loading={history.loading} onfilter={filters} onnext={() => filters(endpointFilter, statusFilter, history.data?.next_cursor ?? '')} onfirst={() => filters(endpointFilter, statusFilter)} />
       <div><Button variant="outline" onclick={() => request('clear')} disabled={busy !== null || !config.data.retained}>{t('webhooks.clear')}</Button></div>
     {/if}
     <EndpointDialog bind:open={editorOpen} endpoint={editing} tables={config.data.tables} allowLoopback={config.data.allow_loopback} onsaved={saved} />
