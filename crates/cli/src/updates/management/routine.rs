@@ -269,13 +269,17 @@ pub(super) fn execute(
             if !endpoint.starts_with("https://") {
                 bail!("offsite_https_required");
             }
-            changed(journal, task, Stage::Applying)?;
+            // Tests change no configuration: a definite failure (refused
+            // credentials, an unreachable host) ends `failed` and never blocks
+            // the change that fixes it. An interrupted test still waits for
+            // recovery.
+            journal.advance(task, Stage::Applying, None)?;
             backup::test_remote(&host, &journal.directory(&task.public.id)?, &task.public.id)
                 .context("backup_test_failed")?;
             journal.advance(task, Stage::Verifying, None)?;
         }
         Operation::TestAlerts { .. } => {
-            changed(journal, task, Stage::Applying)?;
+            journal.advance(task, Stage::Applying, None)?;
             super::super::alerts::test(policy)?;
             journal.advance(task, Stage::Verifying, None)?;
         }
@@ -295,7 +299,7 @@ pub(super) fn execute(
             let to = nelcota_auth::normalize_email(&task.actor)
                 .map_err(|error| anyhow::anyhow!(error.0))
                 .context("invalid_operator_email")?;
-            changed(journal, task, Stage::Applying)?;
+            journal.advance(task, Stage::Applying, None)?;
             tokio::runtime::Builder::new_current_thread().enable_all().build()?.block_on(async {
                 tokio::time::timeout(Duration::from_secs(20), mailer.send(nelcota_auth::Email { to, subject: "Nelcota SMTP configuration test".into(), text: "The configured SMTP server accepted this operator-requested test message. This does not certify inbox delivery.".into() })).await.context("smtp_test_timeout")?.context("smtp_test_failed")
             })?;

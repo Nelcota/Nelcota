@@ -275,7 +275,8 @@ fn docker_lifecycle_preserves_other_projects_and_verified_restore_writes() {
         minimum_free_bytes: 1 << 30,
         timeout_seconds: 300,
         host_management: Some(Provisioning {
-            service_hosts: Vec::new(),
+            // `.invalid` never resolves: a backup destination that always fails.
+            service_hosts: vec!["backup.invalid".into()],
             version: env!("CARGO_PKG_VERSION").into(),
             image_digest: nelcota_deployment::token().unwrap(),
             source_sha: nonce[..40].into(),
@@ -717,6 +718,53 @@ fn routine_configuration_campaign(
             .unwrap()
             .contains(&"smtp_not_configured".into())
     );
+    // A destination test that fails for good (here an unreachable host) ends
+    // `failed`: it changed no configuration, so it must not block the change
+    // that fixes the credentials.
+    for (key, value) in [
+        ("NELCOTA_BACKUP_S3_ENDPOINT", "https://backup.invalid"),
+        ("NELCOTA_BACKUP_S3_BUCKET", "unreachable"),
+        ("NELCOTA_BACKUP_S3_ACCESS_KEY", "unreachable"),
+        ("NELCOTA_BACKUP_S3_SECRET_KEY", "unreachable"),
+    ] {
+        host.secrets().set(key, value).unwrap();
+    }
+    let test = accepted(
+        policy,
+        Operation::TestBackup {
+            project: shop.into(),
+        },
+    )
+    .unwrap();
+    assert!(execute_with(policy, &test.public.id, false, effects).is_err());
+    let failed = HostJournal::open(&policy.root)
+        .unwrap()
+        .list()
+        .unwrap()
+        .into_iter()
+        .find(|t| t.public.id == test.public.id)
+        .unwrap();
+    assert_eq!(failed.public.stage, Stage::Failed);
+    assert_eq!(failed.public.error.as_deref(), Some("backup_test_failed"));
+    assert!(
+        !native
+            .preflight(
+                policy,
+                &Operation::Restart {
+                    project: shop.into()
+                }
+            )
+            .unwrap()
+            .contains(&"host_busy".into())
+    );
+    for key in [
+        "NELCOTA_BACKUP_S3_ENDPOINT",
+        "NELCOTA_BACKUP_S3_BUCKET",
+        "NELCOTA_BACKUP_S3_ACCESS_KEY",
+        "NELCOTA_BACKUP_S3_SECRET_KEY",
+    ] {
+        host.secrets().remove(key).unwrap();
+    }
     atomic_write(&p.path(crate::maintenance::MARKER), b"").unwrap();
     assert!(
         native

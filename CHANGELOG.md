@@ -34,6 +34,12 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- A failed backup destination, SMTP or alert test in the host controller no
+  longer leaves the host waiting for attention. Wrong S3 keys used to block
+  every later operation, including the one that would fix them, until it was
+  repaired over SSH. A test that fails now ends `failed`. A test already stuck
+  by 0.5.5 keeps its record: fix the keys in `host.env` over SSH, then recover
+  it from the panel.
 - The installer replaces the binary atomically after checking that it runs and
   reports the requested version, starts Docker before `nelcota init` (the
   Docker script leaves it stopped on Fedora/RHEL), waits for the apt lock held
