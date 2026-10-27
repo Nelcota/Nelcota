@@ -144,8 +144,10 @@ curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/instal
 
 The installer sets up cron, Docker and the CLI, creates the host in
 `/opt/nelcota` and starts your project behind Caddy with automatic HTTPS.
-**Save the panel password it prints; it is not shown again.** Add `--firewall`
-to configure ufw. Run `nelcota -C /opt/nelcota doctor` to check DNS, ports, backups and health,
+**Save the panel password it prints; it is not shown again.** It also turns the
+firewall on (SSH, 80 and 443; `--no-firewall` leaves it off), enables automatic
+security updates and adds swap below 2 GB of RAM; `--yes` skips the setup
+questions. Run `nelcota -C /opt/nelcota doctor` to check DNS, ports, backups and health,
 and read the [deployment guide](docs/deploy.md) and [backups](docs/backup.md)
 before going to production.
 

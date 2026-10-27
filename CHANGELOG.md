@@ -10,6 +10,15 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ## [Unreleased]
 
+### Changed
+
+- The one-command VPS setup turns the firewall on by default (`--no-firewall`
+  leaves it off; D110). It adds HTTP and HTTPS to an already active firewalld
+  or ufw, which used to block HTTPS without any error. It enables automatic
+  security updates on Debian/Ubuntu and adds a 2 GB swap file below 2 GB of
+  RAM. When `nelcota up` stops at the public HTTPS check, the installer says how
+  to finish once DNS points at the machine.
+
 ### Security
 
 - The installer runs nothing until the whole script has downloaded, compares

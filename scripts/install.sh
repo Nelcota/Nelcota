@@ -4,20 +4,23 @@
 #   curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sh
 #
 # With arguments it sets up a whole VPS in one go, as root: installs the
-# prerequisites (cron, curl, Docker; ufw with --firewall), the binary, then
-# runs `nelcota init <arguments>` and `nelcota up` in /opt/nelcota:
+# prerequisites (cron, curl, Docker, ufw, automatic security updates), turns the
+# firewall on (SSH, 80 and 443), adds swap below 2 GB of RAM, installs the
+# binary, then runs `nelcota init <arguments>` and `nelcota up` in /opt/nelcota:
 #
 #   curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo sh -s -- api.yourdomain.com
 #
-# Every argument goes to `nelcota init` (--email, --firewall, --runtime
-# systemd, --s3-*...), except --dir <absolute folder>, the host folder.
-# --yes skips every init question, such as the S3 backup one.
+# Every argument goes to `nelcota init` (--email, --runtime systemd,
+# --s3-*...), except --dir <absolute folder>, the host folder, and
+# --no-firewall, which leaves the firewall off. --yes skips every init
+# question, such as the S3 backup one.
 #
 # Optional variables:
 #   NELCOTA_VERSION=0.5.5     version (default: the latest release)
 #   NELCOTA_REPO=owner/repo   GitHub repository (default: Nelcota/Nelcota)
 #   PREFIX=/usr/local/bin     where to install
 #   NELCOTA_SKIP_DOCKER=1     do not install Docker (for `nelcota init --runtime systemd`)
+#   NELCOTA_SWAP_FILE=/swapfile  swap file created when RAM is below 2 GB and no swap exists
 #
 # Rather not run `curl | sh`? Download the binary and the .sha256 from the
 # releases page and check them with `sha256sum -c`. This script does exactly that.
@@ -32,6 +35,11 @@ MAX_DOWNLOAD_BYTES=268435456
 APT_LOCK_WAIT_SECONDS=300
 APT_UPDATE_ATTEMPTS=6
 DOCKER_START_WAIT_SECONDS=30
+# Postgres, the app and Caddy share small VPS: below this RAM, without swap,
+# the kernel kills one of them under load.
+SWAP_BELOW_RAM_MB=2048
+SWAP_SIZE_MB=2048
+SWAP_KEEP_FREE_MB=2048
 
 say() { printf '%s\n' "→ $*"; }
 die() { printf '%s\n' "error: $*" >&2; exit 1; }
@@ -91,18 +99,23 @@ validate_host_dir() {
 }
 
 # Packages init needs before it writes anything: an active cron scheduler
-# reading /etc/cron.d, and ufw when --firewall is requested.
+# reading /etc/cron.d, ufw for the firewall (Debian/Ubuntu; Fedora/RHEL use
+# firewalld) and automatic security updates.
 install_prerequisites() {
   command -v systemctl >/dev/null 2>&1 ||
     die "setting up a VPS needs systemd (systemctl not found); install the binary without arguments and follow docs/deploy.md"
   packages="ca-certificates curl coreutils"
-  [ "$FIREWALL" -eq 0 ] || packages="$packages ufw"
   if command -v apt-get >/dev/null 2>&1; then
     say "Installing prerequisites with apt-get"
     export DEBIAN_FRONTEND=noninteractive
+    [ "$FIREWALL" -eq 0 ] || packages="$packages ufw"
+    # Debian ships unattended-upgrades disabled; this answer turns it on.
+    if command -v debconf-set-selections >/dev/null 2>&1; then
+      printf '%s\n' 'unattended-upgrades unattended-upgrades/enable_auto_updates boolean true' | debconf-set-selections
+    fi
     apt_update
     # shellcheck disable=SC2086
-    apt-get -o DPkg::Lock::Timeout="$APT_LOCK_WAIT_SECONDS" install -y -qq $packages cron >/dev/null
+    apt-get -o DPkg::Lock::Timeout="$APT_LOCK_WAIT_SECONDS" install -y -qq $packages cron unattended-upgrades >/dev/null
     systemctl enable --now cron.service
   elif command -v dnf >/dev/null 2>&1; then
     say "Installing prerequisites with dnf"
@@ -112,6 +125,89 @@ install_prerequisites() {
   else
     say "Unknown package manager: install curl, sha256sum and an active cron scheduler yourself"
   fi
+}
+
+ufw_active() {
+  command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q '^Status: active'
+}
+
+# An already active firewall blocks 80/443 and HTTPS fails without an error,
+# so its rules are only ever added to. Otherwise `nelcota init --firewall`
+# turns ufw on with SSH (22 and the ports sshd reports), 80 and 443.
+prepare_firewall() {
+  INIT_FIREWALL=0
+  if systemctl is-active --quiet firewalld 2>/dev/null; then
+    say "firewalld is active: allowing HTTP and HTTPS"
+    firewall-cmd --permanent --add-service=http --add-service=https --add-port=443/udp >/dev/null
+    firewall-cmd --reload >/dev/null
+    return
+  fi
+  if ufw_active; then
+    say "ufw is active: allowing ports 80 and 443"
+    ufw allow 80/tcp >/dev/null
+    ufw allow 443 >/dev/null
+    return
+  fi
+  if [ "$FIREWALL" -eq 0 ]; then
+    say "Firewall left off (--no-firewall): allow SSH, 80 and 443 before turning one on"
+    return
+  fi
+  if command -v ufw >/dev/null 2>&1; then
+    INIT_FIREWALL=1
+    return
+  fi
+  [ "$FIREWALL_REQUESTED" -eq 0 ] ||
+    die "--firewall uses ufw, which this distribution does not provide; enable firewalld (systemctl enable --now firewalld) and run the same command again"
+  say "note: no firewall turned on (ufw is not available here); enable your distribution's firewall and allow SSH, 80 and 443"
+}
+
+ensure_swap() {
+  case "$SWAP_FILE" in
+    /*) ;;
+    *) die "NELCOTA_SWAP_FILE must be an absolute path, such as /swapfile" ;;
+  esac
+  command -v free >/dev/null 2>&1 || return 0
+  ram_mb=$(free -m | awk '/^Mem:/ {print $2}')
+  swap_mb=$(free -m | awk '/^Swap:/ {print $2}')
+  case "$ram_mb$swap_mb" in
+    '' | *[!0-9]*) return 0 ;;
+  esac
+  if [ "$ram_mb" -ge "$SWAP_BELOW_RAM_MB" ] || [ "$swap_mb" -gt 0 ]; then
+    return 0
+  fi
+  if [ -e "$SWAP_FILE" ]; then
+    say "note: $SWAP_FILE exists but no swap is active; it was left untouched"
+    return 0
+  fi
+  disk=$(df -PTk / | awk 'NR == 2 {print $2 " " $5}')
+  fs_type=${disk%% *}
+  free_kb=${disk#* }
+  case "$fs_type" in
+    btrfs | zfs) say "note: less than 2 GB of RAM and no swap; create swap by hand on $fs_type"; return 0 ;;
+  esac
+  case "$free_kb" in
+    '' | *[!0-9]*) return 0 ;;
+  esac
+  if [ "$free_kb" -lt $(((SWAP_SIZE_MB + SWAP_KEEP_FREE_MB) * 1024)) ]; then
+    say "note: less than 2 GB of RAM and no swap, but too little disk to create it"
+    return 0
+  fi
+  say "Less than 2 GB of RAM and no swap: creating a ${SWAP_SIZE_MB} MB swap file at $SWAP_FILE"
+  if ! create_swap; then
+    rm -f "$SWAP_FILE"
+    say "warning: could not create the swap file; continuing without swap"
+  fi
+}
+
+create_swap() {
+  (umask 077 && dd if=/dev/zero of="$SWAP_FILE" bs=1M count="$SWAP_SIZE_MB" status=none) &&
+    mkswap "$SWAP_FILE" >/dev/null &&
+    swapon "$SWAP_FILE" &&
+    { swap_in_fstab || printf '%s none swap sw 0 0\n' "$SWAP_FILE" >>"$FSTAB"; }
+}
+
+swap_in_fstab() {
+  awk -v file="$SWAP_FILE" '$1 == file { found = 1 } END { exit found ? 0 : 1 }' "$FSTAB" 2>/dev/null
 }
 
 # `apt-get update` fails at once while another apt process holds the lists
@@ -231,8 +327,12 @@ main() {
   # Setup mode: split --dir from the arguments forwarded to `nelcota init`.
   SETUP=0
   HOST_DIR=/opt/nelcota
-  FIREWALL=0
+  FIREWALL_REQUESTED=0
+  NO_FIREWALL=0
+  LOCAL=0
   ASSUME_YES=0
+  SWAP_FILE="${NELCOTA_SWAP_FILE:-/swapfile}"
+  FSTAB="${NELCOTA_FSTAB:-/etc/fstab}"
   if [ "$#" -gt 0 ]; then
     SETUP=1
     count=$#
@@ -256,13 +356,23 @@ main() {
           count=$((count - 1))
           ;;
         --runtime=systemd) NELCOTA_SKIP_DOCKER=1; set -- "$@" "$arg" ;;
-        --firewall) FIREWALL=1; set -- "$@" "$arg" ;;
+        # Sent to init below, only when ufw is the firewall to turn on.
+        --firewall) FIREWALL_REQUESTED=1 ;;
+        --no-firewall) NO_FIREWALL=1 ;;
+        --local) LOCAL=1; set -- "$@" "$arg" ;;
         # Passed once below: init refuses a repeated --yes.
         --yes | -y) ASSUME_YES=1 ;;
         *) set -- "$@" "$arg" ;;
       esac
     done
     validate_host_dir
+    [ "$FIREWALL_REQUESTED" -eq 0 ] || [ "$NO_FIREWALL" -eq 0 ] || die "--firewall and --no-firewall cannot be used together"
+    [ "$FIREWALL_REQUESTED" -eq 0 ] || [ "$LOCAL" -eq 0 ] || die "--firewall does not apply to a --local host"
+    # On by default for a public VPS; a --local host stays as it is.
+    FIREWALL=1
+    if [ "$NO_FIREWALL" -eq 1 ] || [ "$LOCAL" -eq 1 ]; then
+      FIREWALL=0
+    fi
     # The arguments are not repeated: they may carry secrets such as --s3-secret-key.
     [ "$(id -u)" -eq 0 ] || die "setting up a VPS needs root: run the same command with sudo (curl -fsSL <this script> | sudo sh -s -- <your arguments>)"
   fi
@@ -275,7 +385,11 @@ main() {
     *) die "unsupported architecture: $(uname -m)" ;;
   esac
 
-  [ "$SETUP" -eq 0 ] || install_prerequisites
+  if [ "$SETUP" -eq 1 ]; then
+    install_prerequisites
+    prepare_firewall
+    ensure_swap
+  fi
 
   for tool in curl sha256sum mktemp install; do
     command -v "$tool" >/dev/null 2>&1 || die "$tool not found (apt install curl coreutils, or your distribution's equivalent)"
@@ -316,6 +430,7 @@ main() {
       say "A host already exists in $HOST_DIR: skipping init (add projects with 'nelcota -C $HOST_DIR init ...')"
     else
       say "Creating the host in $HOST_DIR"
+      [ "$INIT_FIREWALL" -eq 0 ] || set -- "$@" --firewall
       # Under `curl | sh` stdin is the script itself: ask questions on the terminal.
       if [ "$ASSUME_YES" -eq 0 ] && (: </dev/tty) 2>/dev/null; then
         "$PREFIX/nelcota" -C "$HOST_DIR" init "$@" </dev/tty ||
@@ -326,13 +441,20 @@ main() {
       fi
     fi
     say "Starting the projects and Caddy"
-    "$PREFIX/nelcota" -C "$HOST_DIR" up ||
-      die "nelcota up failed; fix the problem above and run the same command again (the host in $HOST_DIR is kept)"
+    # `up` also fails while DNS does not point here yet, with the projects
+    # already running; say how to finish in both cases.
+    if ! "$PREFIX/nelcota" -C "$HOST_DIR" up; then
+      printf '%s\n' "Keep the panel password shown above; it is not shown again." >&2
+      die "nelcota up did not finish. If it says the projects are running and only HTTPS is unreachable, point the domain's DNS at this machine and run 'nelcota -C $HOST_DIR up'. Otherwise fix the problem above and run the same command again (the host in $HOST_DIR is kept)"
+    fi
     cat <<MSG
 
 Done. Keep the panel password shown above; it is not shown again.
   cd $HOST_DIR && nelcota status    # health, backups and versions
   nelcota -C $HOST_DIR doctor       # DNS, ports, backups (after the first nightly backup)
+
+If HTTPS does not answer from outside, check your provider's firewall or
+security group too: ports 80 and 443 must be open there.
 MSG
     exit 0
   fi
