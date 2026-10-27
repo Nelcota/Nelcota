@@ -24,6 +24,19 @@ export function rememberSignedIn(signedIn: boolean) {
   remove(SIGNED_IN_KEY)
 }
 
+/**
+ * Calls `onSignedOut` when another tab of this browser signs out (it clears the
+ * hint above). Without it, this tab would keep showing data, such as a
+ * revealed service token, until its next request got a 401.
+ */
+export function watchSignOutElsewhere(onSignedOut: () => void): () => void {
+  const listener = (event: StorageEvent) => {
+    if (event.key === SIGNED_IN_KEY && event.newValue === null) onSignedOut()
+  }
+  window.addEventListener('storage', listener)
+  return () => window.removeEventListener('storage', listener)
+}
+
 function warmUp(load: () => Promise<unknown>) {
   load().catch((error: unknown) => {
     // The real import repeats the request and shows the failure to the user.

@@ -55,8 +55,13 @@
     clearTimeout(timer)
     if (!alive || signedOut) return
     const delay = pollDelay({ offline, attempts, active: active || (status?.checking ?? false), idleMs: IDLE_POLL_MS })
-    timer = setTimeout(() => void refresh(), delay)
+    // A hidden tab keeps its schedule without asking the controller.
+    timer = setTimeout(() => {
+      if (document.hidden) { schedule(); return }
+      void refresh()
+    }, delay)
   }
+  function refreshWhenShown() { if (!document.hidden) void refresh() }
   async function refresh() {
     if (!alive || polling === generation) return
     clearTimeout(timer); polling = generation
@@ -72,7 +77,11 @@
       offline = true; attempts++
     } finally { if (polling === revision) polling = null; if (alive && revision === generation) schedule() }
   }
-  onMount(() => { void refresh(); return () => { alive = false; generation++; clearTimeout(timer); for (const abort of requests) abort.abort() } })
+  onMount(() => {
+    void refresh()
+    document.addEventListener('visibilitychange', refreshWhenShown)
+    return () => { alive = false; generation++; clearTimeout(timer); document.removeEventListener('visibilitychange', refreshWhenShown); for (const abort of requests) abort.abort() }
+  })
   async function login(event: SubmitEvent) {
     event.preventDefault()
     if (busy || !email.trim() || !password) return

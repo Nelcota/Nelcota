@@ -136,8 +136,13 @@
     clearTimeout(timer)
     if (!alive) return
     const delay = pollDelay({ offline, attempts, active: active || pending !== null, idleMs: IDLE_POLL_MS })
-    timer = setTimeout(() => void refresh(), delay)
+    // A hidden tab keeps its schedule without asking the controller.
+    timer = setTimeout(() => {
+      if (document.hidden) { schedule(); return }
+      void refresh()
+    }, delay)
   }
+  function refreshWhenShown() { if (!document.hidden) void refresh() }
   async function refresh() {
     if (!alive || polling || busy) {
       schedule()
@@ -217,10 +222,12 @@
       now = Math.floor(Date.now() / 1000)
     }, 1000)
     void refresh()
+    document.addEventListener('visibilitychange', refreshWhenShown)
     return () => {
       alive = false
       clearTimeout(timer)
       clearInterval(clock)
+      document.removeEventListener('visibilitychange', refreshWhenShown)
       for (const abort of requests) abort.abort()
       password = ''
     }
