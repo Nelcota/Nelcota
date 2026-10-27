@@ -3,7 +3,7 @@
   import { Button } from '$lib/components/ui/button'
   import { Input } from '$lib/components/ui/input'
   import { i18n, translate } from '$lib/i18n/index.svelte'
-  import { dateText } from '$lib/formatting/date'
+  import { dateTimeText } from '$lib/formatting/date'
   import { RemoteResource } from '$lib/resources/remote-resource.svelte'
   import { request, sessionExpired } from '../updates/controller'
   import { integer, type Configuration } from './contracts'
@@ -25,7 +25,7 @@
   const blocked = $derived(disabled || !view || (loading && view === null))
   const active = $derived(view?.incidents.filter(i => i.active) ?? [])
   const clockStale = $derived(view?.last_scan_at === null || (view && Date.now() / 1000 - (view.last_scan_at ?? 0) > 300))
-  function date(value: number | null | undefined): string { if (value == null) return a('never'); return dateText(value * 1000, date => date.toLocaleString(i18n.locale)) }
+  function date(value: number | null | undefined): string { if (value == null) return a('never'); return dateTimeText(value * 1000, i18n.locale) }
   function mark(value: boolean) { dirty = value; ondirty(value) }
   function populate(v: AlertStatus) {
     const s = v.settings; saved = JSON.stringify(s)
@@ -50,7 +50,13 @@
     if (alive === false) return
     clearTimeout(poll)
     const loaded = await alertStatus.load(async signal => parseAlertStatus((await request({ action: 'host_alerts' }, signal)).data))
-    if (loaded && alertStatus.data !== null) { apply(alertStatus.data, replace); schedulePoll(); return }
+    if (loaded) {
+      // Poll first: nothing below may keep the next scan from being scheduled.
+      schedulePoll()
+      // `loaded` means the reply is in `data`; the check only narrows the type.
+      if (alertStatus.data !== null) apply(alertStatus.data, replace)
+      return
+    }
     // No error: a newer load replaced this one (and schedules the next poll) or the page closed.
     if (alertStatus.error === null) return
     if (sessionExpired(alertStatus.error)) expired()

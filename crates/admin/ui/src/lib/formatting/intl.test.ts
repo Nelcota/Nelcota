@@ -35,13 +35,23 @@ describe('cached Intl formatters', () => {
     expect(dateTimeFormat('en', { timeZone: undefined })).toBe(dateTimeFormat('en'))
   })
 
-  it('stays bounded when callers pass many distinct options', () => {
-    const first = numberFormat('en', { minimumIntegerDigits: 1 })
-    for (const locale of ['en', 'pt-BR', 'de', 'fr', 'es']) {
+  it('shares a formatter for the same options in another order', () => {
+    const first = dateTimeFormat('en', { dateStyle: 'short', timeZone: 'UTC' })
+    expect(dateTimeFormat('en', { timeZone: 'UTC', dateStyle: 'short' })).toBe(first)
+  })
+
+  it('evicts the least recently used formatter when full', () => {
+    const fill = (locale: string) => {
       for (let digits = 0; digits <= 20; digits++) numberFormat(locale, { maximumFractionDigits: digits })
     }
-    const again = numberFormat('en', { minimumIntegerDigits: 1 })
-    expect(again).not.toBe(first)
-    expect(again.format(5)).toBe('5')
+    const kept = numberFormat('en', { minimumIntegerDigits: 1 })
+    const dropped = numberFormat('en', { minimumIntegerDigits: 2 })
+    for (const locale of ['de', 'fr', 'es', 'it']) {
+      fill(locale)
+      // Each use moves it to the most recent end.
+      expect(numberFormat('en', { minimumIntegerDigits: 1 })).toBe(kept)
+    }
+    expect(numberFormat('en', { minimumIntegerDigits: 2 })).not.toBe(dropped)
+    expect(numberFormat('en', { minimumIntegerDigits: 1 })).toBe(kept)
   })
 })

@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ControllerError, request, controllerOrigin, pollDelay, sessionExpired, REQUEST_TIMEOUT_MS, parseJob, parsePlan, parseStatus, mergeStatus, type Job, type Status } from './controller'
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
 const job: Job = { id: 'a'.repeat(64), project: 'shop', current: '0.4.0', target: '0.5.0', phase: 'validating', sequence: 6, updated_at: 123, committed: false, error: null }
 const status: Status = { email: 'operator@example.test', projects: [{ name: 'shop', version: '0.4.0', update_available: true }], jobs: [job], release: { version: '0.5.0' }, enabled: true, checking: false, check_error: null }
 describe('update capability responses', () => {
@@ -79,7 +82,6 @@ describe('update capability responses', () => {
     timeout.abort(new DOMException('timed out', 'TimeoutError'))
     await rejected
     expect(caller.signal.aborted).toBe(false)
-    timer.mockRestore()
   })
   it('still lets the caller cancel before the timeout', async () => {
     vi.stubGlobal('fetch', vi.fn((_url: string, init: RequestInit) => new Promise<Response>((_resolve, reject) => init.signal?.addEventListener('abort', () => reject(init.signal?.reason)))))

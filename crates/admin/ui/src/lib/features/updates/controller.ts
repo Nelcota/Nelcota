@@ -1,5 +1,6 @@
 import { translate, i18n } from '$lib/i18n/index.svelte'
 import { readBody } from '$lib/transport/read-body'
+import { deadlineSignal } from '$lib/transport/deadline'
 export const phases = ['preparing', 'pausing', 'capturing', 'backup_verified', 'activating', 'validating', 'committing', 'succeeded', 'recovering', 'resuming_previous', 'recovered', 'failed_before_change', 'needs_operator'] as const
 export type Phase = typeof phases[number]
 export type Job = { id: string; project: string; current: string; target: string; phase: Phase; sequence: number; updated_at: number; committed: boolean; error: string | null }
@@ -54,8 +55,7 @@ export function pollDelay(state: { offline: boolean; attempts: number; active: b
 }
 export const sessionExpired = (error: unknown) => error instanceof ControllerError && error.status === 401
 export async function request(body?: object, caller?: AbortSignal): Promise<Record<string, unknown>> {
-  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  const signal = caller === undefined ? timeout : AbortSignal.any([caller, timeout])
+  const signal = deadlineSignal(caller, REQUEST_TIMEOUT_MS)
   const response = await fetch('/admin/api/updates', { method: body ? 'POST' : 'GET', credentials: 'same-origin', headers: body ? { 'Content-Type': 'application/json', 'X-Nelcota-Updates': '1' } : {}, body: body ? JSON.stringify(body) : undefined, signal })
   const status = response.ok ? 502 : response.status
   const code = response.ok ? 'invalid_response' : 'operation_blocked'

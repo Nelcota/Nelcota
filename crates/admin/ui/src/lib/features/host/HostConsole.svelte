@@ -10,8 +10,8 @@
   import { Input } from '$lib/components/ui/input'
   import { t, i18n, translate } from '$lib/i18n/index.svelte'
   import { request, newKey, pollDelay, ControllerError } from '../updates/controller'
-  import { dateText } from '$lib/formatting/date'
-  import { formatBytes } from '../storage/files'
+  import { dateTimeText } from '$lib/formatting/date'
+  import { formatGibibytes } from '../storage/files'
   import {
     parseStatus,
     parsePlan,
@@ -100,7 +100,7 @@
     return server === `server.${key}` ? value : server
   }
   const serverText = (key: string) => translate(i18n.locale, `server.${key}`)
-  const size = (bytes: number) => formatBytes(bytes, i18n.locale)
+  const size = (bytes: number) => formatGibibytes(bytes, i18n.locale)
   function reset() {
     plan = null
     recovery = null
@@ -778,7 +778,7 @@
           <details class="text-xs text-muted-foreground">
             <summary>{h('result')}</summary>
             <p class="mt-2 break-all font-mono" translate="no">{job.id}</p>
-            <p>{dateText(job.updated_at * 1000, date => date.toLocaleString(i18n.locale))}</p>
+            <p>{dateTimeText(job.updated_at * 1000, i18n.locale)}</p>
           </details>
           {#if job.stage === 'needs_attention'}<p class="text-sm">
               {h('recovery')}
