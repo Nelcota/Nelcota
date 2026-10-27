@@ -21,6 +21,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Security
 
+- Panel and `nelcota dev` passwords no longer use characters that look alike
+  when copied by eye (0/O, 1/l/I); they stay 20 random characters, about 116
+  bits. The installer and `init` say to copy the password rather than retype
+  it, and how to print a new one with `nelcota admin-password`.
 - The installer runs nothing until the whole script has downloaded, compares
   the binary with the published SHA-256 itself (a checksum file that names
   another file is refused), downloads over HTTPS only with timeouts and

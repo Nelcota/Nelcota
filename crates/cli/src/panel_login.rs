@@ -33,7 +33,7 @@ fn hash(password: &str) -> anyhow::Result<String> {
 }
 
 fn new_credentials(file: &EnvFile, email: &str, scope: &str) -> anyhow::Result<NewPassword> {
-    let password = util::secret(20);
+    let password = util::password(20);
     file.set(EMAIL, email)?;
     file.set(HASH, &hash(&password)?)?;
     Ok(NewPassword {
@@ -149,7 +149,10 @@ pub fn print(passwords: &[NewPassword]) {
         println!("    password: {}", p.password);
     }
     if !passwords.is_empty() {
-        println!("  (passwords are shown only now; the files keep just the argon2id hash)");
+        println!("  (passwords are shown only now; the files keep just the argon2id hash;");
+        println!(
+            "   copy them rather than retyping, and `nelcota admin-password` prints a new one)"
+        );
     }
 }
 

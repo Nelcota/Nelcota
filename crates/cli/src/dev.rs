@@ -54,7 +54,7 @@ fn load_state(root: &Path) -> anyhow::Result<Option<DevState>> {
         jwt_private_key: get("JWT_PRIVATE_KEY")?,
         db_port: get("DB_PORT")?.parse()?,
         admin_email: get("ADMIN_EMAIL").unwrap_or_else(|_| "admin@localhost".into()),
-        admin_password: get("ADMIN_PASSWORD").unwrap_or_else(|_| util::secret(18)),
+        admin_password: get("ADMIN_PASSWORD").unwrap_or_else(|_| util::password(18)),
         admin_password_hash: get("ADMIN_PASSWORD_HASH").unwrap_or_default(),
     };
     if state.admin_password_hash.is_empty() || get("ADMIN_PASSWORD").is_err() {
@@ -128,7 +128,7 @@ fn prepare_state(root: &Path, db_port: Option<u16>) -> anyhow::Result<DevState> 
             Ok(state)
         }
         None => {
-            let admin_password = util::secret(18);
+            let admin_password = util::password(18);
             let admin_password_hash = nelcota_auth::hash_password(&admin_password)
                 .context("could not hash the development admin password")?;
             let state = DevState {
