@@ -10,6 +10,14 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ## [Unreleased]
 
+### Added
+
+- `nelcota update` discovers a stable release, previews the CLI/project versions,
+  asks once, preserves the previous CLI and runs the existing backup-backed
+  project upgrades. `install.sh --update` provides the same flow for older CLIs;
+  both support version/project selection, `--dry-run` and `--yes`, and leave
+  controller-enrolled hosts to their existing update workflow.
+
 ### Changed
 
 - The Webhooks page no longer repeats the sidebar's "Webhooks" and "Delivery

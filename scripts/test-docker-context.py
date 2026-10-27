@@ -17,6 +17,7 @@ import tempfile
 REPO = Path(__file__).resolve().parents[1]
 KEEP = [
     'Cargo.toml', 'Cargo.lock', 'crates/core/src/lib.rs',
+    'scripts/install.sh',
     'crates/admin/ui/dist/index.html', 'sdk/typescript/src/index.ts',
     'sdk/nextjs/src/index.ts', '.env.example',
     'sdk/nextjs/examples/app-router/.env.example',

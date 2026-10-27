@@ -28,6 +28,7 @@ mod project;
 mod projects;
 mod registry;
 mod scaffold;
+mod update;
 mod updates;
 mod upgrade;
 mod util;
@@ -47,17 +48,11 @@ pub use host::{PanelLogin, Runtime};
     about = "BaaS on plain Postgres: REST API, auth and deploy in a single binary."
 )]
 pub struct Cli {
-    /// Host folder (where nelcota-host.json, caddy/ and projects/ live).
-    #[arg(
-        short = 'C',
-        long = "dir",
-        global = true,
-        env = "NELCOTA_ROOT",
-        default_value = "."
-    )]
-    pub dir: PathBuf,
+    /// Host folder (default: current directory; update also finds /opt/nelcota).
+    #[arg(short = 'C', long = "dir", global = true, env = "NELCOTA_ROOT")]
+    pub dir: Option<PathBuf>,
 
-    /// Project (required when the host has more than one).
+    /// Project (update defaults to all; other project commands may require one).
     #[arg(short = 'p', long = "project", global = true)]
     pub project: Option<String>,
 
@@ -67,6 +62,8 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Command {
+    /// Updates the CLI and projects to the latest stable release, with a preview.
+    Update(update::UpdateArgs),
     /// Secure, separately authenticated host update controller.
     Updates(updates::UpdatesArgs),
     /// Starts the HTTP server (the default when no command is given).
@@ -424,9 +421,14 @@ pub enum Outcome {
     UpdatesServe(nelcota_deployment::protocol::ControllerConfig),
 }
 
-pub fn run(mut cli: Cli) -> anyhow::Result<Outcome> {
-    cli.dir = std::path::absolute(&cli.dir).context("could not resolve the host directory")?;
-    let host = host::Host::new(&cli.dir);
+pub fn run(cli: Cli) -> anyhow::Result<Outcome> {
+    let default_dir = match &cli.command {
+        Some(Command::Update(_)) => update::default_dir(),
+        _ => PathBuf::from("."),
+    };
+    let dir = std::path::absolute(cli.dir.as_ref().unwrap_or(&default_dir))
+        .context("could not resolve the host directory")?;
+    let host = host::Host::new(&dir);
     // Every enrolled host mutation participates in the same deployment lease.
     let _deployment = match cli.command.as_ref() {
         Some(
@@ -441,11 +443,11 @@ pub fn run(mut cli: Cli) -> anyhow::Result<Outcome> {
             | Command::AdminPassword,
         ) => {
             host.require()?;
-            Some(host::acquire_mutation_lease(&cli.dir)?)
+            Some(host::acquire_mutation_lease(&dir)?)
         }
         _ => None,
     };
-    let enrolled = cli.dir.join("updates-controller.json").is_file();
+    let enrolled = dir.join("updates-controller.json").is_file();
     if matches!(
         cli.command,
         Some(Command::Upgrade {
@@ -471,6 +473,9 @@ pub fn run(mut cli: Cli) -> anyhow::Result<Outcome> {
     }
 
     match cli.command.unwrap_or(Command::Serve) {
+        // The newly installed CLI acquires the host lease when it runs upgrade.
+        // Holding that lease while waiting for the child would deadlock it.
+        Command::Update(args) => done(update::run(&host, selection, args)),
         Command::Serve => {
             pitr::fence::require_native_clear()?;
             Ok(Outcome::Serve(Box::new(Config::load()?)))
@@ -491,7 +496,7 @@ pub fn run(mut cli: Cli) -> anyhow::Result<Outcome> {
             }
             Ok(Outcome::Serve(Box::new(Config::load()?)))
         }
-        Command::Updates(args) => updates::run(&cli.dir, args),
+        Command::Updates(args) => updates::run(&dir, args),
         Command::Init(mut args) => {
             if args.project.is_none() {
                 args.project = cli.project.clone();
@@ -565,7 +570,7 @@ pub fn run(mut cli: Cli) -> anyhow::Result<Outcome> {
             done(projects::remove(&host, name, yes, keep_files, no_backup))
         }
         Command::PanelLogin { mode } => done(projects::set_panel_login(&host, mode)),
-        Command::Dev(args) => dev::run(&cli.dir, args),
+        Command::Dev(args) => dev::run(&dir, args),
         Command::Migrate { path } => done(db::migrate(&host, selection, &path)),
         Command::Upgrade {
             version,
@@ -693,6 +698,28 @@ pub fn run(mut cli: Cli) -> anyhow::Result<Outcome> {
 #[cfg(test)]
 mod cli_tests {
     use super::*;
+
+    #[test]
+    fn update_accepts_explicit_host_and_project_without_changing_upgrade() {
+        let cli = Cli::try_parse_from([
+            "nelcota",
+            "-C",
+            "/srv/host with spaces",
+            "-p",
+            "shop",
+            "update",
+            "--version",
+            "0.5.6",
+            "--dry-run",
+            "--yes",
+        ])
+        .unwrap();
+        assert_eq!(cli.dir, Some(PathBuf::from("/srv/host with spaces")));
+        assert_eq!(cli.project.as_deref(), Some("shop"));
+        assert!(matches!(cli.command, Some(Command::Update(_))));
+        assert!(Cli::try_parse_from(["nelcota", "update", "--without-controller"]).is_err());
+        assert!(Cli::try_parse_from(["nelcota", "update", "--allow-downgrade"]).is_err());
+    }
 
     #[test]
     fn down_volumes_takes_an_explicit_yes() {
