@@ -10,8 +10,38 @@ for the October 25 server scope and independent SDK publication checkpoint.
 
 ## [Unreleased]
 
+### Security
+
+- Check host alert webhooks with the same address policy as project webhooks.
+  Alert destinations no longer accept the 6to4 relay (192.88.99.0/24),
+  discard-only 100::/64, IPv6 benchmarking and other IETF blocks in 2001::/23,
+  IPv6 documentation 3fff::/20 or any IPv6 address outside 2000::/3. The
+  host-management policy also refuses 240.0.0.0/4 and IPv6 addresses that embed
+  an IPv4 address (IPv4-compatible, NAT64, 6to4, Teredo).
+
+### Changed
+
+- The panel loads faster: the sign-in screen downloads about 31% less, each
+  language and guide loads only when used (the Guides page went from 397 KB to
+  23 KB gzip), a returning browser starts in 4 sequential requests instead of 6,
+  and the server sends brotli-precompressed assets from the binary instead of
+  compressing them on every request.
+- SQL results with more than 200 rows are virtualized, so a 1000-row result
+  renders in about 0.2 s instead of 2 s; table grids and JSON previews do less
+  work per cell, and JSON previews keep every digit of large numbers.
+- The host and updates consoles validate controller replies with validators
+  generated from the Rust types, like the rest of the panel.
+- Host memory, disk and file sizes are shown in binary units (KiB, MiB, GiB)
+  with the reader's number format.
+
 ### Fixed
 
+- Deliver alerts to endpoints written as an IPv6 literal (`https://[…]/hook`),
+  which previously failed every delivery.
+- Validate the operator email at enrollment with the same rules used when an
+  alert email is sent.
+- Restore terminal echo after a hidden password prompt if the CLI panics while
+  reading it.
 - Check that the caller's session is still active before verifying
   `current_password` on `PUT /auth/v1/user`, so a logged-out access token can no
   longer test passwords until it expires.

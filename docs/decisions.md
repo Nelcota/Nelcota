@@ -999,6 +999,38 @@ Nelcota signs with EdDSA or HS256 (D16) and uses these curves only to verify
 provider signatures with public keys. Remove the ignore once both crates move to
 `elliptic-curve` 0.14, or revisit if ECDSA is ever used for signing.
 
+**D106. One outbound address policy for user-supplied destinations.** Project
+webhooks and host alert webhooks share `nelcota_core::net::is_public_address`:
+IPv4 refuses private, shared, reserved, benchmarking and documentation ranges;
+IPv6 is an allowlist of 2000::/3 minus the IETF, documentation and 6to4 blocks.
+The host-management policy check stays looser on purpose, because its
+addresses are the operator's own servers and installed policies must keep
+loading, but it refuses reserved IPv4 and IPv6 forms that embed an IPv4 address.
+
+**D107. The panel's assets are brotli-precompressed at build time.**
+`crates/admin/build.rs` compresses the embedded `ui/dist` at quality 11 and
+embeds only the brotli copy (about 2 MB more binary); clients without br get the
+existing runtime gzip. Variants are cached by content hash, so a rebuilt but
+unchanged `dist` is not compressed again. HTML entry points carry an ETag and
+answer 304; hashed assets stay immutable (D53).
+
+**D108. The panel loads only what the first screen needs.** Each language's
+texts are a separate chunk loaded before mount, with no fallback to the other
+language (the types already require every key in both). Guides load one at a
+time and index their text only when someone searches. A browser that was signed
+in last time prefetches the shell and the current page alongside `/session`;
+a first visit downloads only the sign-in screen. Response validators load on
+first use, always before the request is sent, so a failed download can never
+follow a committed write.
+
+**D109. Internal tooling scripts are TypeScript run by Bun.** Scripts that
+only maintainers run (`scripts/*.ts` in the TypeScript SDK and the panel) are
+type-checked by `bun run check`. Consumer smokes and `package-test.mjs` stay
+JavaScript because they stand in for a JavaScript user of the published package
+on every supported Node version; examples stay copy-paste JavaScript; generated
+validators, framework configs and k6 benchmarks keep the format their tools
+expect.
+
 ### Known pending items
 
 - Filtering parent rows by their embeds (`!inner`) and self-referencing embeds.

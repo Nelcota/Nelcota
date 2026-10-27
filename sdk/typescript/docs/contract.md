@@ -16,6 +16,10 @@ a server update does not install the client.
 See the [upgrade notes](#upgrading-from-020). Older packages keep the contract in their
 own bundled documentation.
 
+Browsers need Chrome or Edge 116, Firefox 124 or Safari 17.4 and later: request
+timeouts combine with a caller's `signal` through `AbortSignal.any`. Server
+runtimes are Node 22 and later, Bun and Deno.
+
 ## Upgrading from 0.2.3
 
 Install `@nelcota/client@0.2.4` and update the application lockfile. Public
@@ -160,6 +164,13 @@ alone do not order another tab's localStorage visibility. Without Web Locks,
 the journal rejects competing owners instead of waiting for their replacement.
 Custom shared adapters require Web Locks or external coordination; otherwise use
 per-tab sessionStorage. The module-local queue cannot coordinate separate tabs.
+
+Browsers expose Web Locks only in secure contexts (HTTPS or `localhost`). On a
+plain `http://` origin, such as a LAN address, tabs fall back to the
+module-local queue, so two tabs can refresh at once. The server's 10-second
+retry window accepts the second refresh, but if the token from the first one is
+the copy left in storage, its next refresh counts as reuse and ends the
+session. Serve browser apps over HTTPS when people keep several tabs open.
 
 Native persistence requires IndexedDB and bounds each database open and
 transaction to five seconds. Connections close after every operation. A foreign
