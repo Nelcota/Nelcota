@@ -26,6 +26,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
   by unattended upgrades on a fresh VPS, resolves `latest` once for both
   downloads, and refuses an invalid version, repository, `PREFIX`, `--dir` or
   `NELCOTA_SKIP_DOCKER` before changing anything.
+- Passing `--yes` (or `-y`) to the installer skips every `nelcota init`
+  question, such as the S3 backup one, and no longer makes init fail with a
+  repeated `--yes` when there is no terminal.
 
 ## [0.5.5] — 2026-10-27
 
