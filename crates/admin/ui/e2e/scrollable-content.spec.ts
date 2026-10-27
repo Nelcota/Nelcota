@@ -16,6 +16,10 @@ test('keyboard users can reach and scroll read-only migration history', async ({
   await expect(page.getByText('V40 · change_39', { exact: true })).toBeAttached()
   const content = page.getByRole('main')
   expect(await content.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true)
+  await page.keyboard.press('Tab')
+  await content.getByRole('heading').first().click()
+  await expect(content).toBeFocused()
+  await expect(content).toHaveCSS('outline-style', 'none')
   await page.locator('body').click({ position: { x: 1, y: 1 } })
   let reached = false
   for (let step = 0; step < 30; step++) {

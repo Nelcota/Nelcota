@@ -62,6 +62,8 @@ for the October 27 server scope and independent SDK publication checkpoint.
   translated message instead of the library's English text.
 - Portuguese texts use "apagar" and "e-mail" consistently and explain
   "worker", "heartbeat" and "magic link" in plain words.
+- The page's main scroll area no longer draws an outline after mouse or touch
+  navigation; keyboard navigation still shows it.
 
 ### Security
 
