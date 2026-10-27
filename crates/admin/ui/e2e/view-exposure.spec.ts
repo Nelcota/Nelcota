@@ -31,3 +31,12 @@ test('owner views warn and explain invoker privileges without offering table pol
   await expect(page.getByText('Nada precisa de atenção')).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Abrir editor SQL', exact: true })).toHaveAttribute('href', '/admin/sql')
 })
+
+test('the policy summary cards share the row equally', async ({ page }) => {
+  await fixture(page)
+  await page.goto('/admin/policies')
+  const cards = page.locator('[data-policy-stats] > div')
+  await expect(cards).toHaveCount(3)
+  const widths = await cards.evaluateAll(nodes => nodes.map(node => Math.round(node.getBoundingClientRect().width)))
+  expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1)
+})

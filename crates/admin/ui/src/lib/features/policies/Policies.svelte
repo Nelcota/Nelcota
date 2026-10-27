@@ -190,7 +190,7 @@
     <!-- The page at a glance, in the overview's figure style. -->
     <!-- Same columns as below: the last figure sits over the side column. -->
     <!-- Three across even on a phone: the figures are short, stacking them pushed the tables a screen down. -->
-    <div class="grid grid-cols-3 gap-3 sm:gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_24rem] xl:gap-6">
+    <div class="grid grid-cols-3 gap-3 sm:gap-4 xl:gap-6" data-policy-stats>
       <div class="grid content-start gap-1 rounded-3xl bg-card p-4 sm:p-5">
         <p class="text-xs text-muted-foreground sm:text-sm">{t('policies.stats.protected')}</p>
         <p class="text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">{stats.protected}<span class="ml-1.5 text-sm font-medium text-muted-foreground sm:text-base">{t('policies.stats.of', { count: stats.tables })}</span></p>

@@ -1,6 +1,6 @@
 const ptBR = {
   title: 'Eventos e webhooks', description: 'Envie mudanças do banco para outros serviços, com assinatura e novas tentativas automáticas.',
-  configuration: 'Webhooks', deliveries: 'Histórico de entregas', views: 'Seções de webhooks', webhook: 'Webhook', create: 'Novo webhook', edit: 'Editar webhook',
+  configuration: 'Webhooks', deliveries: 'Histórico de entregas', webhook: 'Webhook', create: 'Novo webhook', edit: 'Editar webhook',
   emptyTitle: 'Conecte o banco aos seus serviços', emptyHint: 'Escolha uma tabela, os eventos e a URL que receberá cada mudança.',
   noTables: 'Crie uma tabela primeiro', noTablesHint: 'Webhooks acompanham tabelas comuns do schema exposto. Views e tabelas particionadas não estão disponíveis nesta versão.',
   noDeliveries: 'Nenhuma entrega por aqui', noDeliveriesHint: 'As alterações feitas depois de ativar um webhook aparecem aqui. Ajuste os filtros se estiver procurando uma entrega.',

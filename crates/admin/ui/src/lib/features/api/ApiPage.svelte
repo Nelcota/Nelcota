@@ -285,14 +285,14 @@
       <section id="api-examples" class="grid scroll-mt-20 gap-5 rounded-3xl bg-card p-6">
         <h2 class="text-lg font-semibold">{t('connect.examples')}</h2>
         <div class="flex flex-wrap items-center gap-3">
-          <nav class="panel-segments" aria-label={t('connect.topic')}>
+          <div role="group" class="panel-segments" aria-label={t('connect.topic')}>
             <button type="button" class="panel-segment" aria-pressed={topic === 'tables'} onclick={() => choose({ topic: 'tables' })}
               ><Rows3 class="size-4" aria-hidden="true" />{t('connect.topics.tables')}</button
             >
             <button type="button" class="panel-segment" aria-pressed={topic === 'auth'} onclick={() => choose({ topic: 'auth' })}
               ><KeyRound class="size-4" aria-hidden="true" />{t('connect.topics.auth')}</button
             >
-          </nav>
+          </div>
           {#if topic === 'tables' && tables.length}
             <Select.Root type="single" value={table} onValueChange={(table) => choose({ table })}>
               <Select.Trigger class="w-52 max-w-full font-mono text-xs" aria-label={t('connect.table')}><span class="truncate">{table}</span></Select.Trigger>
@@ -305,7 +305,7 @@
               </Select.Content>
             </Select.Root>
           {/if}
-          <nav class="panel-segments sm:ml-auto" aria-label={t('connect.language')}>
+          <div role="group" class="panel-segments sm:ml-auto" aria-label={t('connect.language')}>
             <button type="button" class="panel-segment" aria-label={t('connect.sdkLabel')} aria-pressed={lang === 'ts'} onclick={() => choose({ lang: 'ts' })}
               ><LangMark lang="ts" /><span class="sm:hidden">SDK</span><span class="hidden sm:inline">{t('connect.sdkLabel')}</span></button
             >
@@ -315,7 +315,7 @@
             <button type="button" class="panel-segment" aria-pressed={lang === 'js'} onclick={() => choose({ lang: 'js' })}
               ><LangMark lang="js" />JavaScript</button
             >
-          </nav>
+          </div>
         </div>
 
         {#if topic === 'tables' && tableError}<LoadError message={tableError} onretry={loadTables} busy={tablesLoading} />{/if}

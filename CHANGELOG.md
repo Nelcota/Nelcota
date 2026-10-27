@@ -10,6 +10,19 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ## [Unreleased]
 
+### Changed
+
+- The Webhooks page no longer repeats the sidebar's "Webhooks" and "Delivery
+  history" items as tabs inside the page (D103 rules out duplicating sidebar
+  links in tab bars); the sidebar is the only navigation between the two views,
+  as for the database and users groups. The API page's example toggles are
+  grouped buttons rather than navigation landmarks.
+- The shortcut rail shows only on tablets (768–1023px), where the sidebar is a
+  menu. On wider screens it repeated the sidebar's links and theme toggle; the
+  brand mark now sits atop the sidebar (D111).
+- The three summary cards on Access policies share the row equally; the third
+  was narrower because it lined up with the side column below.
+
 ## [0.5.6] — 2026-10-27
 
 ### Changed

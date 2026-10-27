@@ -26,11 +26,9 @@ import { route } from '$lib/navigation/router.svelte'
 /** Titles are translation keys: render them with `t(item.title)`. */
 export type NavItem = {
   title: MessageKey
-  /** Short name on the top pill (defaults to the title). */
-  pill?: MessageKey
   path: string
   icon: Component
-  /** Other pages this pill stays lit for (sub-pages reached from it). */
+  /** Other pages this item stays active for (sub-pages reached from it). */
   also?: string[]
   children?: readonly NavItem[]
   section?: string
@@ -56,19 +54,19 @@ export const apiSectionPages = ([
 // Sign-in settings live under Users; /connect, not /api, since /admin/api/* is
 // the panel API.
 export const navPills: NavItem[] = [
-  { title: 'shell.pages.overview', pill: 'shell.pills.overview', path: '/', icon: House },
-  { title: 'shell.pages.database', pill: 'shell.pills.database', path: '/tables', icon: Database, also: ['/sql', '/migrations'], children: databasePages },
-  { title: 'shell.pages.storage', pill: 'shell.pills.storage', path: '/storage', icon: HardDrive },
-  { title: 'shell.pages.users', pill: 'shell.pills.users', path: '/users', icon: Users, also: ['/sign-in'], children: [
+  { title: 'shell.pages.overview', path: '/', icon: House },
+  { title: 'shell.pages.database', path: '/tables', icon: Database, also: ['/sql', '/migrations'], children: databasePages },
+  { title: 'shell.pages.storage', path: '/storage', icon: HardDrive },
+  { title: 'shell.pages.users', path: '/users', icon: Users, also: ['/sign-in'], children: [
     { title: 'shell.nav.userList', path: '/users', icon: Users },
     { title: 'shell.pages.userSignIn', path: '/sign-in', icon: LogIn },
   ] },
-  { title: 'shell.pages.policies', pill: 'shell.pills.policies', path: '/policies', icon: ShieldCheck },
-  { title: 'shell.pages.webhooks', pill: 'shell.pills.webhooks', path: '/webhooks', icon: Webhook, children: [
+  { title: 'shell.pages.policies', path: '/policies', icon: ShieldCheck },
+  { title: 'shell.pages.webhooks', path: '/webhooks', icon: Webhook, children: [
     { title: 'webhooks.configuration', path: '/webhooks', icon: Webhook, webhookView: 'configuration' },
     { title: 'webhooks.deliveries', path: '/webhooks?tab=deliveries', icon: History, webhookView: 'deliveries' },
   ] },
-  { title: 'shell.pages.connect', pill: 'shell.pills.connect', path: '/connect', icon: Plug, children: apiSectionPages },
+  { title: 'shell.pages.connect', path: '/connect', icon: Plug, children: apiSectionPages },
 ]
 
 // Every page the command palette can open: the groups, plus pages reached

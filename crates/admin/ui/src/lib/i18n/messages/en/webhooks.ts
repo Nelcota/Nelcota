@@ -3,7 +3,7 @@ import type ptBR from '../pt-BR/webhooks'
 
 const en: Messages<typeof ptBR> = {
   title: 'Events and webhooks', description: 'Send database changes to other services, with signatures and automatic retries.',
-  configuration: 'Webhooks', deliveries: 'Delivery history', views: 'Webhook sections', webhook: 'Webhook', create: 'New webhook', edit: 'Edit webhook',
+  configuration: 'Webhooks', deliveries: 'Delivery history', webhook: 'Webhook', create: 'New webhook', edit: 'Edit webhook',
   emptyTitle: 'Connect the database to your services', emptyHint: 'Choose a table, events and the URL that will receive each change.',
   noTables: 'Create a table first', noTablesHint: 'Webhooks watch ordinary tables in the exposed schema. Views and partitioned tables are unavailable in this version.',
   noDeliveries: 'No deliveries here yet', noDeliveriesHint: 'Changes made after enabling a webhook appear here. Adjust the filters if you are looking for a delivery.',

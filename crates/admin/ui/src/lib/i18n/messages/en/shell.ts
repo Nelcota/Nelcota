@@ -22,18 +22,6 @@ const en: Messages<typeof ptBR> = {
     userSignIn: 'User sign-in',
     webhooks: 'Events and webhooks',
   },
-  pills: {
-    database: 'Database',
-    overview: 'Overview',
-    tables: 'Tables',
-    sql: 'SQL',
-    migrations: 'Migrations',
-    storage: 'Storage',
-    users: 'Users',
-    policies: 'Access',
-    connect: 'API',
-    webhooks: 'Events',
-  },
   nav: {
     main: 'Main navigation',
     userList: 'User list',

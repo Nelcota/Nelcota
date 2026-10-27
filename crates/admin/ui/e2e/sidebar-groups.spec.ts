@@ -33,7 +33,8 @@ test('webhook history is selected for query filters and back navigation', async 
   const history = sidebar.getByRole('link', { name: 'Histórico de entregas', exact: true })
   await expect(history).toHaveAttribute('aria-current', 'page')
   await expect(sidebar.locator('[aria-current="page"]')).toHaveCount(1)
-  await expect(page.locator('main .panel-segments [aria-current="page"]')).toHaveText('Histórico de entregas')
+  // The sidebar is the only navigation between the two views, as for every other group.
+  await expect(page.locator('main .panel-segments')).toHaveCount(0)
   await sidebar.getByRole('link', { name: 'Webhooks', exact: true }).click()
   await expect(history).not.toHaveAttribute('aria-current', 'page')
   await page.goBack()
@@ -91,4 +92,20 @@ test('mobile groups support keyboard expansion, child selection and focus return
     return e.getBoundingClientRect().top < root.getBoundingClientRect().bottom
   })).toBe(true)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+})
+
+test('the shortcut rail shows only on tablets, where the sidebar is a menu', async ({ page }) => {
+  await page.goto('/admin/')
+  const rail = page.locator('.panel-rail')
+  const sidebar = page.locator('.panel-sidebar')
+  // Desktop: one navigation, with the brand mark on top of it.
+  await expect(sidebar).toBeVisible()
+  await expect(rail).toBeHidden()
+  await expect(sidebar.getByRole('link', { name: 'Nelcota', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Projetos', exact: true })).toHaveCount(1)
+  // Tablet: the sidebar collapses into the menu and the rail keeps the shortcuts.
+  await page.setViewportSize({ width: 900, height: 900 })
+  await expect(sidebar).toBeHidden()
+  await expect(rail).toBeVisible()
+  await expect(rail.getByRole('link', { name: 'Projetos', exact: true })).toBeVisible()
 })

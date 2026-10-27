@@ -176,7 +176,7 @@ Use JSON export when you need the original text without this neutralization.
 
 ## Guides and references
 
-The book icon in the left rail (or **Guides** in the sidebar) opens **Guides and references** at `/admin/guides`.
+**Guides** in the sidebar (the book icon in the tablet rail) opens **Guides and references** at `/admin/guides`.
 The reader includes its registered project guides, JavaScript/TypeScript and
 Rust SDK references, SQL examples and server recipes. Repository-only references
 and historical reports are not automatically added to the reader. Search matches the full text,
