@@ -38,7 +38,7 @@ The current published packages and fresh registry consumers are recorded in the
 
 | SDK | Version | Delivery |
 | --- | --- | --- |
-| TypeScript | 0.2.4 | npm `@nelcota/client`; refresh retry inside the server reuse window, Date/bigint JSON guards |
+| TypeScript | 0.2.5 | npm `@nelcota/client`; faster JSON parsing of large responses, refresh retry inside the server reuse window, Date/bigint JSON guards |
 | Rust | 0.1.7 | crates.io `nelcota-client`; shared refresh under the client timeout, due-session rotation |
 | Next.js | 0.1.2 | npm `@nelcota/nextjs`; proxy keeps row-less cookies a sign-in may have replaced |
 

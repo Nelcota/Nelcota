@@ -15,8 +15,9 @@ does not itself publish a package.
 | Next.js integration | 0.1.2 | [npm version](https://www.npmjs.com/package/@nelcota/nextjs/v/0.1.2); [release procedure](../../sdk/nextjs/docs/releasing.md) and [verification evidence](../goals/sdk-release-completion.md) |
 
 TypeScript 0.2.5 (October 27) parses JSON in large responses about 8 to 12
-times faster with the same results. Registry availability requires its tagged
-release workflow to finish; the previous published TypeScript baseline is 0.2.4.
+times faster with the same results; [registry receipts](https://github.com/Nelcota/Nelcota/pull/202#issuecomment-6445288705) record its
+tagged workflow, integrity and a fresh consumer. The previous published
+TypeScript baseline is 0.2.4.
 
 The October 26 patches are TypeScript 0.2.4, Rust 0.1.7 and Next.js 0.1.2.
 TypeScript and Rust retry an uncertain background refresh inside the server's
@@ -60,7 +61,7 @@ For a supported Next.js App Router application, install the adapter and its base
 SDK together (the production PostgreSQL store also needs application-owned `pg`):
 
 ```sh
-npm install --save-exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.4
+npm install --save-exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.5
 npm install pg
 npm ls @nelcota/nextjs @nelcota/client
 ```

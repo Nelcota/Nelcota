@@ -17,7 +17,7 @@ SQL. Schema setup is privileged; client requests use a user's token under RLS.
 
 ## JavaScript and TypeScript
 
-Use the published `@nelcota/client@0.2.4`. See the [upgrade notes](../sdk/typescript/docs/contract.md#upgrading-from-020). For checkout demos, enter
+Use the published `@nelcota/client@0.2.5`. See the [upgrade notes](../sdk/typescript/docs/contract.md#upgrading-from-020). For checkout demos, enter
 `sdk/typescript`, run `bun install --frozen-lockfile` and `bun run build`, then:
 
 ```sh
@@ -35,7 +35,7 @@ production web framework/CSRF/session configuration.
 
 The Todo demo uses [todos.sql](todos.sql) and [sdk-todos.mjs](sdk-todos.mjs).
 Copy `sdk-todos.mjs` into a consumer directory and run
-`bun add --exact @nelcota/client@0.2.4` (or `npm install --save-exact @nelcota/client@0.2.4`) there;
+`bun add --exact @nelcota/client@0.2.5` (or `npm install --save-exact @nelcota/client@0.2.5`) there;
 Bun and Node resolve imports from the script location, not just your working directory.
 The root checkout does not install `@nelcota/client`. It leaves a development account and Todo
 rows, so use a disposable project without email confirmation.
@@ -45,7 +45,7 @@ rows, so use a disposable project without email confirmation.
 Follow [the Next.js SDK guide](../sdk/nextjs/README.md) and its
 [runnable App Router example](../sdk/nextjs/examples/app-router/README.md). The fixture demonstrates
 Server Components, auth POST handlers, OAuth callbacks and browser refresh.
-Use `@nelcota/nextjs@0.1.2` with `@nelcota/client@0.2.4` and a dedicated
+Use `@nelcota/nextjs@0.1.2` with `@nelcota/client@0.2.5` and a dedicated
 PostgreSQL session store for production. Share the pool/configuration across
 requests while keeping each visitor's client scoped to its request.
 

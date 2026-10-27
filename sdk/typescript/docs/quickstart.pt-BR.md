@@ -19,8 +19,8 @@ com os recursos descritos na [matriz de compatibilidade](../README.md#compatibil
 bun add @nelcota/client@0.2.5   # ou: npm install @nelcota/client@0.2.5
 ```
 
-A instalação pelo npm depende de o workflow de release da tag publicar a 0.2.5.
-Leia as [notas de atualização](contract.md#upgrading-from-020).
+A versão 0.2.5 está publicada no npm. Leia as [notas de atualização](contract.md#upgrading-from-020)
+e os [comprovantes de publicação](https://github.com/Nelcota/Nelcota/pull/202#issuecomment-6445288705).
 Atualizar o servidor não instala os pacotes do cliente. Os comandos a seguir
 servem apenas para testar alterações futuras do checkout como arquivo local:
 

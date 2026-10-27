@@ -2,8 +2,9 @@
 
 The package has independent semver and requires the published
 `@nelcota/client` 0.2.2 or later. Verify the registry prerequisite with
-`npm view @nelcota/client@0.2.4 version`; 0.2.4 is the current published base
-used by the examples. The minimum peer remains 0.2.2.
+`npm view @nelcota/client@0.2.5 version`; 0.2.5 is the current published base.
+The App Router example stays on 0.2.4 until 0.2.5 passes its 14-day
+`minimumReleaseAge`. The minimum peer remains 0.2.2.
 
 ## Verification
 

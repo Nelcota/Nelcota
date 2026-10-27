@@ -34,13 +34,13 @@ Other frameworks call the core directly, as described below.
 ## Install
 
 ```sh
-bun add --exact @nelcota/ssr@0.1.0 @nelcota/client@0.2.4
+bun add --exact @nelcota/ssr@0.1.0 @nelcota/client@0.2.5
 bun add pg   # for the PostgreSQL store
-# or with npm: npm install --save-exact @nelcota/ssr@0.1.0 @nelcota/client@0.2.4 pg
+# or with npm: npm install --save-exact @nelcota/ssr@0.1.0 @nelcota/client@0.2.5 pg
 ```
 
-This guide targets 0.1.0, the first release. Registry installation requires its
-publication; see the [changelog](CHANGELOG.md).
+This guide targets 0.1.0, the first release, available on npm; [registry receipts](https://github.com/Nelcota/Nelcota/pull/203#issuecomment-6446199815)
+record its integrity and a fresh consumer. See the [changelog](CHANGELOG.md).
 
 Bun 1.4.3 or later, or Node 22, 24 or 26. Session keys never reach a browser bundle:
 `Integration.create` refuses to run where `document` exists.

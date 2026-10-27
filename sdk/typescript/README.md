@@ -51,7 +51,8 @@ same results: the pass that keeps unsafe integers and long decimals exact is
 skipped when no number in the response can lose digits.
 Earlier session, refresh, query and transport corrections remain included; see
 the [changelog](CHANGELOG.md) and [upgrade notes](docs/contract.md#upgrading-from-020).
-Registry installation requires the tagged release workflow to publish 0.2.5. Updating the server does not update installed clients. Node is SDK tooling/runtime, not a backend requirement.
+Version 0.2.5 is available on npm; [registry receipts](https://github.com/Nelcota/Nelcota/pull/202#issuecomment-6445288705)
+record integrity and consumer checks. Updating the server does not update installed clients. Node is SDK tooling/runtime, not a backend requirement.
 
 ## Independent modules
 
