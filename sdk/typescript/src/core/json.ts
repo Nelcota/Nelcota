@@ -16,6 +16,14 @@ function decimal(source: string): string {
   return `${negative ? '-' : ''}${significant}e${exponent}`;
 }
 /**
+ * A number token can only lose digits with 16+ significant digits (a run of
+ * 16 digits or dots) or an exponent (a digit, e/E and digits ending at a JSON
+ * delimiter). Doubles round-trip every decimal up to 15 significant digits, so
+ * documents without either skip the rewrite pass. Matches inside strings only
+ * cost the slow path, never correctness.
+ */
+const MAY_NEED_REWRITE = /[\d.]{16}|\d[eE][+-]?\d+(?:[,\]}\s]|$)/;
+/**
  * Keep ordinary numbers numeric; preserve unsafe integers and decimals whose
  * digits would change as strings. This also works without JSON reviver source
  * support. Validate the original document before rewriting numeric tokens so
@@ -23,6 +31,7 @@ function decimal(source: string): string {
  */
 export function parseJson(text: string): unknown {
   const parsed: unknown = JSON.parse(text);
+  if (MAY_NEED_REWRITE.test(text) === false) return parsed;
   let changed = false, quoted = false;
   // Match escapes separately: a repeated full-string regex can exhaust the
   // engine stack on valid large strings. Only unquoted numbers are rewritten.
