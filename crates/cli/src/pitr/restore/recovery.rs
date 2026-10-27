@@ -19,11 +19,8 @@ pub(in crate::pitr) struct Recovery<'a> {
 impl<'a> Recovery<'a> {
     fn name(project: &Project) -> anyhow::Result<String> {
         let directory = project.dir.canonicalize()?;
-        let hash: String = Sha256::digest(directory.as_os_str().as_encoded_bytes())
-            .iter()
-            .take(16)
-            .map(|byte| format!("{byte:02x}"))
-            .collect();
+        let digest = Sha256::digest(directory.as_os_str().as_encoded_bytes());
+        let hash = base16ct::lower::encode_string(&digest[..16]);
         Ok(format!("nelcota-pitr-recovery-{}-{hash}", project.name))
     }
 

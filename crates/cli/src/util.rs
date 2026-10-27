@@ -32,27 +32,24 @@ pub fn timestamp() -> String {
     format_timestamp(secs)
 }
 
+/// Last second of the year 9999, the end of four-digit years.
+const LAST_FOUR_DIGIT_YEAR_SECOND: u64 = 253_402_300_799;
+
 fn format_timestamp(secs: u64) -> String {
-    let days = i64::try_from(secs / 86_400).unwrap_or(0);
-    let rest = secs % 86_400;
-    // civil_from_days algorithm (Howard Hinnant).
-    let z = days + 719_468;
-    let era = z.div_euclid(146_097);
-    let doe = z.rem_euclid(146_097);
-    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let day = doy - (153 * mp + 2) / 5 + 1;
-    let month = match mp < 10 {
-        true => mp + 3,
-        false => mp - 9,
-    };
-    let year = yoe + era * 400 + i64::from(month <= 2);
+    // Clamp to 9999-12-31T23:59:59Z: a broken clock must not panic a request.
+    let clamped = secs.min(LAST_FOUR_DIGIT_YEAR_SECOND);
+    let at = i64::try_from(clamped)
+        .ok()
+        .and_then(|secs| time::OffsetDateTime::from_unix_timestamp(secs).ok())
+        .expect("clamped seconds fit an OffsetDateTime");
     format!(
-        "{year:04}{month:02}{day:02}T{:02}{:02}{:02}Z",
-        rest / 3600,
-        (rest % 3600) / 60,
-        rest % 60
+        "{:04}{:02}{:02}T{:02}{:02}{:02}Z",
+        at.year(),
+        u8::from(at.month()),
+        at.day(),
+        at.hour(),
+        at.minute(),
+        at.second()
     )
 }
 
@@ -94,24 +91,49 @@ pub fn ask(question: &str, default: &str) -> String {
     line.to_owned()
 }
 
-/// Question whose answer is not echoed (a secret). Uses `stty` on Unix, so
-/// no terminal crate is needed; elsewhere it falls back to [`ask`].
+/// Question whose answer is not echoed (a secret). Without a terminal on stdin
+/// it falls back to [`ask`].
+#[cfg(unix)]
 pub fn ask_secret(question: &str) -> String {
-    let stty = |arg: &str| {
-        cfg!(unix)
-            && std::process::Command::new("stty")
-                .arg(arg)
-                .stdin(std::process::Stdio::inherit())
-                .status()
-                .is_ok_and(|s| s.success())
-    };
-    if !stty("-echo") {
+    let Some(_echo) = EchoOff::new() else {
         return ask(question, "");
-    }
+    };
     let answer = ask(question, "");
-    stty("echo");
     println!();
     answer
+}
+
+#[cfg(not(unix))]
+pub fn ask_secret(question: &str) -> String {
+    ask(question, "")
+}
+
+/// Turns stdin echo off and restores the previous terminal mode on drop, so a
+/// panic while reading does not leave the terminal silent.
+#[cfg(unix)]
+struct EchoOff(rustix::termios::Termios);
+
+#[cfg(unix)]
+impl EchoOff {
+    fn new() -> Option<Self> {
+        use rustix::termios::{LocalModes, OptionalActions, tcgetattr, tcsetattr};
+        let stdin = std::io::stdin();
+        let previous = tcgetattr(&stdin).ok()?;
+        let mut silent = previous.clone();
+        silent.local_modes.remove(LocalModes::ECHO);
+        tcsetattr(&stdin, OptionalActions::Now, &silent).ok()?;
+        Some(Self(previous))
+    }
+}
+
+#[cfg(unix)]
+impl Drop for EchoOff {
+    fn drop(&mut self) {
+        use rustix::termios::{OptionalActions, tcsetattr};
+        if let Err(error) = tcsetattr(std::io::stdin(), OptionalActions::Now, &self.0) {
+            eprintln!("could not restore terminal echo ({error}); run `stty echo`");
+        }
+    }
 }
 
 pub fn confirm(question: &str) -> bool {
@@ -197,5 +219,6 @@ mod tests {
         assert_eq!(format_timestamp(0), "19700101T000000Z");
         assert_eq!(format_timestamp(1_791_308_348), "20261006T173908Z");
         assert_eq!(format_timestamp(951_782_400), "20000229T000000Z");
+        assert_eq!(format_timestamp(u64::MAX), "99991231T235959Z");
     }
 }

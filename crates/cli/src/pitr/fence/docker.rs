@@ -16,10 +16,7 @@ const MOUNT_STATE: &str = "/nelcota-pitr-fence/pitr-fence";
 mod preflight;
 
 fn digest(bytes: &[u8]) -> String {
-    Sha256::digest(bytes)
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect()
+    base16ct::lower::encode_string(&Sha256::digest(bytes))
 }
 
 pub(super) fn arm(fence: &Fence<'_>) -> anyhow::Result<()> {

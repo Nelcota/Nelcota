@@ -77,10 +77,7 @@ pub(super) fn patch(
 }
 pub(crate) fn bytes_digest(bytes: &[u8]) -> String {
     use sha2::{Digest, Sha256};
-    Sha256::digest(bytes)
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect()
+    base16ct::lower::encode_string(&Sha256::digest(bytes))
 }
 
 /// Only closed, non-sensitive codes may cross the IPC boundary.

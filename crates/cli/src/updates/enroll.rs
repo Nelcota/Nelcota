@@ -38,6 +38,14 @@ pub fn validate_origin(origin: &str) -> anyhow::Result<()> {
     }
     Ok(())
 }
+/// Same syntax rules as the SMTP test that later mails this address. The value
+/// is stored as typed because operator login compares it exactly.
+fn validate_operator_email(email: &str) -> anyhow::Result<()> {
+    if email.trim() != email || nelcota_auth::normalize_email(email).is_err() {
+        bail!("invalid operator email");
+    }
+    Ok(())
+}
 fn command(program: &str, args: &[&str]) -> anyhow::Result<()> {
     if !Command::new(program).args(args).status()?.success() {
         bail!("{program} failed");
@@ -114,14 +122,7 @@ pub fn run(
     {
         bail!("unknown deployment scope");
     }
-    if email.is_empty()
-        || email.len() > 254
-        || email.trim() != email
-        || !email.contains('@')
-        || email.chars().any(char::is_control)
-    {
-        bail!("invalid operator email");
-    }
+    validate_operator_email(email)?;
     let password = String::from_utf8(read_private(password_file, 1024)?)?;
     let password = password.trim_end_matches(['\r', '\n']);
     if password.len() < 16 {
@@ -392,6 +393,28 @@ mod tests {
             assert!(validate_origin(origin).is_err());
         }
         assert!(validate_origin("https://updates.example.test").is_ok());
+    }
+    #[test]
+    fn enrollment_accepts_only_emails_the_smtp_test_can_use() {
+        for email in [
+            "",
+            "@",
+            "operator",
+            "operator@",
+            "@example.test",
+            "operator@localhost",
+            "operator@@example.test",
+            "op erator@example.test",
+            " operator@example.test",
+            "operator@example.test\n",
+            "operator@-example.test",
+            "operator..x@example.test",
+        ] {
+            assert!(validate_operator_email(email).is_err(), "{email:?}");
+        }
+        for email in ["operator@example.test", "Ops.Team+alerts@Example.test"] {
+            assert!(validate_operator_email(email).is_ok(), "{email}");
+        }
     }
     #[test]
     fn project_layout_enrollment_rejects_extra_commands_and_storage_mounts() {

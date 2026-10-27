@@ -114,11 +114,9 @@ fn embeds_ipv4(segments: [u16; 8]) -> bool {
     let teredo = first == TEREDO_FIRST_SEGMENT && second == TEREDO_SECOND_SEGMENT;
     compatible || nat64 || nat64_local || six_to_four || teredo
 }
+/// Zero when unmeasurable, so disk blockers fail closed.
 pub(super) fn free_bytes(root: &Path) -> u64 {
-    rustix::fs::statvfs(root)
-        .ok()
-        .and_then(|s| s.f_bavail.checked_mul(s.f_frsize))
-        .unwrap_or(0)
+    crate::checks::free_bytes(root).unwrap_or(0)
 }
 pub(super) fn control_project(policy: &Policy, name: &str) -> anyhow::Result<Project> {
     if !nelcota_deployment::valid_project(name) || !policy.project_enrolled(name) {

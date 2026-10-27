@@ -380,10 +380,6 @@ async fn receive(
     Ok(Received {
         size,
         mime_type,
-        etag: hex(&hasher.finalize()),
+        etag: base16ct::lower::encode_string(&hasher.finalize()),
     })
-}
-
-fn hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
