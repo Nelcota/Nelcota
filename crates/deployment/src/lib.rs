@@ -15,3 +15,4 @@ pub mod operations;
 pub mod protocol;
 
 pub mod alerts;
+mod schema;

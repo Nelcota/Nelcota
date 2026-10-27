@@ -1,3 +1,4 @@
+import * as contracts from '$lib/generated/validators.js'
 import { translate, i18n } from '$lib/i18n/index.svelte'
 import { readBody } from '$lib/transport/read-body'
 import { deadlineSignal } from '$lib/transport/deadline'
@@ -9,19 +10,18 @@ export type Plan = { id: string; project: string; current: string; target: strin
 export class ControllerError extends Error { constructor(public status: number, public code: string) { super(code) } }
 export const hash = (value: unknown): value is string => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
-const text = (value: unknown): value is string => typeof value === 'string' && value.length <= 1024
-const integer = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+function invalid(): never { throw new ControllerError(502, 'invalid_response') }
+// The wire shapes come from the Rust contracts (D83).
 export function parseJob(value: unknown): Job {
-  if (!record(value) || !hash(value.id) || !text(value.project) || !text(value.current) || !text(value.target) || !phases.includes(value.phase as Phase) || !integer(value.sequence) || value.sequence === 0 || !integer(value.updated_at) || typeof value.committed !== 'boolean' || !(value.error === null || text(value.error))) throw new ControllerError(502, 'invalid_response')
+  if (contracts.UpdateJob(value) === false) return invalid()
   return value as Job
 }
 export function parseStatus(value: unknown): Status {
-  if (record(value) && value.host_busy !== undefined && typeof value.host_busy !== 'boolean') throw new ControllerError(502, 'invalid_response')
-  if (!record(value) || !(value.host_management === undefined || typeof value.host_management === 'boolean') || !text(value.email) || !Array.isArray(value.projects) || value.projects.length > 32 || value.projects.some(p => !record(p) || !text(p.name) || !text(p.version) || typeof p.update_available !== 'boolean') || !Array.isArray(value.jobs) || value.jobs.length > 32 || typeof value.enabled !== 'boolean' || typeof value.checking !== 'boolean' || !(value.check_error === null || text(value.check_error)) || !(value.release === null || (record(value.release) && text(value.release.version)))) throw new ControllerError(502, 'invalid_response')
-  return { ...value, jobs: value.jobs.map(parseJob) } as Status
+  if (contracts.UpdateStatus(value) === false) return invalid()
+  return value as Status
 }
 export function parsePlan(value: unknown): Plan {
-  if (!record(value) || !hash(value.id) || !hash(value.digest) || !text(value.project) || !text(value.current) || !text(value.target) || !integer(value.expires_at) || !Array.isArray(value.blockers) || value.blockers.length > 32 || !value.blockers.every(text)) throw new ControllerError(502, 'invalid_response')
+  if (contracts.UpdatePlan(value) === false) return invalid()
   return value as Plan
 }
 export function mergeStatus(previous: Status | null, next: Status): Status {

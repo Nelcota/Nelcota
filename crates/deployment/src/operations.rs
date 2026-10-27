@@ -2,6 +2,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Section {
     Alerts,
@@ -75,9 +76,20 @@ impl Configuration {
 }
 
 #[derive(Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ConfigurationView {
+    #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::PROJECT)))]
     pub project: String,
     /// Only explicitly selected non-secret fields; never a raw environment file.
+    #[cfg_attr(feature = "schema", schemars(extend(
+        "propertyNames" = { "enum": [
+            "NELCOTA_SMTP_FROM", "NELCOTA_PASSWORD_RECOVERY_URL", "NELCOTA_EMAIL_CONFIRMATION_URL",
+            "NELCOTA_MAGIC_LINK_URL", "NELCOTA_OAUTH_GOOGLE_CLIENT_ID", "NELCOTA_OAUTH_GITHUB_CLIENT_ID",
+            "NELCOTA_OAUTH_REDIRECT_URLS", "NELCOTA_BACKUP_S3_ENDPOINT", "NELCOTA_BACKUP_S3_BUCKET",
+            "NELCOTA_BACKUP_S3_REGION", "BACKUP_HOUR", "BACKUP_MINUTE", "BACKUP_KEEP"
+        ] },
+        "additionalProperties" = { "type": "string", "maxLength": 8192, "pattern": crate::schema::NO_CONTROL }
+    )))]
     pub fields: std::collections::BTreeMap<String, String>,
     pub smtp_configured: bool,
     pub google_configured: bool,
@@ -87,11 +99,14 @@ pub struct ConfigurationView {
 }
 
 #[derive(Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Check {
+    #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::CHECK_NAME)))]
     pub name: String,
     pub status: CheckStatus,
 }
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum CheckStatus {
     Passed,
@@ -100,15 +115,20 @@ pub enum CheckStatus {
     Unavailable,
 }
 #[derive(Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Diagnostics {
+    #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::PROJECT)))]
     pub project: String,
     pub checked_at: u64,
     pub memory_total_bytes: Option<u64>,
     pub memory_available_bytes: Option<u64>,
+    #[cfg_attr(feature = "schema", schemars(range(min = 0, max = 100)))]
     pub cpu_percent: Option<f64>,
+    #[cfg_attr(feature = "schema", schemars(range(min = 0)))]
     pub load_one: Option<f64>,
     pub free_bytes: u64,
     pub last_backup_at: Option<u64>,
     pub last_offsite_backup_at: Option<u64>,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::MAX_CHECKS)))]
     pub checks: Vec<Check>,
 }

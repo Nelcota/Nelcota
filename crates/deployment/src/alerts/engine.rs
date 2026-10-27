@@ -111,15 +111,11 @@ impl Engine {
         ensure!(
             self.heartbeat_error
                 .as_deref()
-                .is_none_or(|e| e == "alert_heartbeat_failed")
-                && self.monitor_error.as_deref().is_none_or(|e| matches!(
-                    e,
-                    "alert_probe_failed"
-                        | "alert_state_unavailable"
-                        | "alert_configuration_invalid"
-                        | "alert_observer_unavailable"
-                        | "alert_policy_changed"
-                )),
+                .is_none_or(|e| super::HEARTBEAT_ERRORS.contains(&e))
+                && self
+                    .monitor_error
+                    .as_deref()
+                    .is_none_or(|e| super::MONITOR_ERRORS.contains(&e)),
             "invalid_alert_state"
         );
         for channel in self.channels.values() {

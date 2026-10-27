@@ -8,6 +8,7 @@ use std::{
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Phase {
     Preparing,
@@ -53,16 +54,23 @@ impl Phase {
     }
 }
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct PublicJob {
+    #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::DIGEST)))]
     pub id: String,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub project: String,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub current: String,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub target: String,
     pub phase: Phase,
+    #[cfg_attr(feature = "schema", schemars(range(min = 1)))]
     pub sequence: u64,
     pub updated_at: u64,
     pub committed: bool,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub error: Option<String>,
 }
 #[derive(Clone, Debug, Deserialize, Serialize)]
