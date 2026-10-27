@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '$lib/transport/api'
 import { detectLocale, errorMessage, i18n, t, translate } from './index.svelte'
 
@@ -49,5 +49,83 @@ describe('errorMessage', () => {
     )
     expect(errorMessage(new Error('failed'))).toBe('failed')
     expect(errorMessage('text')).toBe('text')
+  })
+})
+
+// A fresh copy of the module, with no catalog loaded yet (the test setup loads
+// both languages into the shared one).
+async function freshI18n() {
+  vi.resetModules()
+  return import('./index.svelte')
+}
+
+describe('catalog loading', () => {
+  afterEach(() => {
+    vi.doUnmock('./messages/en')
+    vi.resetModules()
+  })
+
+  it('loads only the requested language', async () => {
+    const fresh = await freshI18n()
+    expect(fresh.translate('en', 'common.cancel')).toBe('common.cancel')
+    await fresh.loadLocale('en')
+    expect(fresh.translate('en', 'common.cancel')).toBe('Cancel')
+    // No fallback to the other language: Portuguese was never downloaded.
+    expect(fresh.translate('pt-BR', 'common.cancel')).toBe('common.cancel')
+  })
+
+  it('reuses one download per language', async () => {
+    const fresh = await freshI18n()
+    expect(fresh.loadLocale('en')).toBe(fresh.loadLocale('en'))
+  })
+
+  it('keeps the current language until the new one has loaded', async () => {
+    const fresh = await freshI18n()
+    await fresh.loadLocale('pt-BR')
+    fresh.i18n.locale = 'pt-BR'
+    const switching = fresh.setLocale('en')
+    expect(fresh.i18n.locale).toBe('pt-BR')
+    expect(fresh.t('common.cancel')).toBe('Cancelar')
+    await switching
+    expect(fresh.i18n.locale).toBe('en')
+    expect(fresh.t('common.cancel')).toBe('Cancel')
+  })
+
+  it('applies the last choice when switches overlap', async () => {
+    const fresh = await freshI18n()
+    await fresh.loadLocale('pt-BR')
+    fresh.i18n.locale = 'pt-BR'
+    const toEnglish = fresh.setLocale('en')
+    const backToPortuguese = fresh.setLocale('pt-BR')
+    await Promise.all([toEnglish, backToPortuguese])
+    expect(fresh.i18n.locale).toBe('pt-BR')
+  })
+
+  it('keeps the current language when the download fails, and can retry', async () => {
+    vi.doMock('./messages/en', () => {
+      throw new TypeError('Failed to fetch dynamically imported module')
+    })
+    const fresh = await freshI18n()
+    await fresh.loadLocale('pt-BR')
+    fresh.i18n.locale = 'pt-BR'
+    await expect(fresh.setLocale('en')).rejects.toThrow()
+    expect(fresh.i18n.locale).toBe('pt-BR')
+    vi.doUnmock('./messages/en')
+    await fresh.setLocale('en')
+    expect(fresh.i18n.locale).toBe('en')
+  })
+
+  it('resolves quietly when a failed switch was already replaced by another', async () => {
+    vi.doMock('./messages/en', () => {
+      throw new TypeError('Failed to fetch dynamically imported module')
+    })
+    const fresh = await freshI18n()
+    await fresh.loadLocale('pt-BR')
+    fresh.i18n.locale = 'pt-BR'
+    const toEnglish = fresh.setLocale('en')
+    const backToPortuguese = fresh.setLocale('pt-BR')
+    await expect(toEnglish).resolves.toBeUndefined()
+    await backToPortuguese
+    expect(fresh.i18n.locale).toBe('pt-BR')
   })
 })

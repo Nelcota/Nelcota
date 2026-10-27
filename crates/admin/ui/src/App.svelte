@@ -3,28 +3,36 @@
   import { ModeWatcher } from 'mode-watcher'
   import Login from '$lib/features/auth/Login.svelte'
   import LoadingScreen from '$lib/shell/LoadingScreen.svelte'
-  import { takeHandoffToken } from '$lib/features/projects/projects'
   import { api, ApiError } from '$lib/transport/api'
   import OfflineScreen from '$lib/shell/OfflineScreen.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import { session } from '$lib/resources/session.svelte'
+  import { preloadResponseContracts } from '$lib/contracts/responses'
+  import { rememberSignedIn } from '$lib/shell/prefetch'
   import { route } from '$lib/navigation/router.svelte'
   import { crumbsFor, documentTitle } from '$lib/shell/titles'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
 
-  const controller = document.querySelector('meta[name=nelcota-updates-controller]')?.getAttribute('content') === '1'
+  // Decided in main.ts, which also starts the session check (or reads the
+  // single sign-on token) while the language loads.
+  let { controller, handoffToken, sessionCheck }: {
+    controller: boolean
+    handoffToken: string | null
+    sessionCheck: Promise<{ email: string }> | null
+  } = $props()
 
   onMount(async () => {
     if (controller) return
+    if (handoffToken === null) {
+      await checkSession(sessionCheck ?? undefined)
+      return
+    }
     // Coming from another panel on the host (single sign-on): trade the token for a session.
-    const token = takeHandoffToken()
-    if (token) {
-      try {
-        session.email = (await api.post<{ email: string }>('/sso', { token })).email
-        return
-      } catch {
-        // Expired or already used token: fall back to the normal login.
-      }
+    try {
+      session.email = (await api.post<{ email: string }>('/sso', { token: handoffToken })).email
+      return
+    } catch {
+      // Expired or already used token: fall back to the normal login.
     }
     await checkSession()
   })
@@ -34,10 +42,10 @@
   let offline = $state<unknown>(null)
   let checking = $state(false)
 
-  async function checkSession() {
+  async function checkSession(pending: Promise<{ email: string }> = api.get<{ email: string }>('/session')) {
     checking = true
     try {
-      const me = await api.get<{ email: string }>('/session')
+      const me = await pending
       offline = null
       session.email = me.email
     } catch (e) {
@@ -56,7 +64,15 @@
     if (offline && !checking) void checkSession()
   }
 
-  // The signed-in panel's code, fetched once there is a session. Kept in state
+  // The hint main.ts reads to fetch the panel's code early on the next visit.
+  $effect(() => {
+    if (controller) return
+    if (typeof session.email === 'string') rememberSignedIn(true)
+    if (session.email === null) rememberSignedIn(false)
+  })
+
+  // The signed-in panel's code, needed once there is a session (main.ts may
+  // have started downloading it alongside the session check). Kept in state
   // rather than an {#await}, so the startup screen stays mounted from the
   // session check until the panel is ready and moves on to its next step.
   let Shell = $state<Component | null>(null)
@@ -65,6 +81,7 @@
   $effect(() => {
     if (controller || !session.email || shellRequested) return
     shellRequested = true
+    preloadResponseContracts()
     import('$lib/shell/AuthenticatedShell.svelte')
       .then((module) => (Shell = module.default))
       .catch((error: unknown) => (shellError = error))
@@ -91,7 +108,7 @@
   <LoadingScreen stage={session.email ? 'panel' : 'session'} />
 {/if}
 {#if !controller && unreachable}
-  <OfflineScreen error={offline} {checking} onretry={checkSession} />
+  <OfflineScreen error={offline} {checking} onretry={() => checkSession()} />
 {/if}
 {#if !controller && session.email === null}
   <Login />

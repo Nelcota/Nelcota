@@ -23,7 +23,7 @@
   let hostArea = $state<HostArea>('projects')
   let view = $state<'projects' | 'updates'>('projects')
   let hostConsole = $state<HostConsole>()
-  import { t, translate, i18n, setLocale } from '$lib/i18n/index.svelte'
+  import { t, translate, i18n, setLocale, errorMessage } from '$lib/i18n/index.svelte'
   import { ControllerError, request, pollDelay, parseStatus, parsePlan, parseJob, mergeStatus, newKey, message, terminal, type Status, type Plan, type Job } from './controller'
   let status = $state<Status | null>(null)
   let signedOut = $state(false)
@@ -105,6 +105,10 @@
     catch { failure = t('updates.reconnect') }
     finally { busy = false }
   }
+  async function switchLanguage() {
+    try { await setLocale(i18n.locale === 'pt-BR' ? 'en' : 'pt-BR') }
+    catch (error) { failure = errorMessage(error) }
+  }
   function blocker(code: string) { const value = translate(i18n.locale, `updates.${code}`); return value === `updates.${code}` ? t('updates.blocked') : value }
   const progress: Record<string, number> = { preparing: 0, pausing: 1, capturing: 2, backup_verified: 3, activating: 4, validating: 5, committing: 6, succeeded: 7 }
 </script>
@@ -114,7 +118,7 @@
   <header class="console-header">
     <div class="console-brand"><Logo mark /><span class="console-label">{t('updates.console')}</span></div>
     <div class="console-tools">
-      <Button variant="ghost" size="sm" onclick={() => setLocale(i18n.locale === 'pt-BR' ? 'en' : 'pt-BR')}>{i18n.locale === 'pt-BR' ? 'English' : 'Português'}</Button>
+      <Button variant="ghost" size="sm" onclick={switchLanguage}>{i18n.locale === 'pt-BR' ? 'English' : 'Português'}</Button>
       <Button variant="ghost" size="icon" onclick={toggleMode} aria-label={mode.current === 'dark' ? t('shell.account.lightTheme') : t('shell.account.darkTheme')}><SunMoon class="size-4" aria-hidden="true" /></Button>
       {#if status}<Button variant="ghost" size="sm" disabled={busy} onclick={() => { if (hostConsole) { hostConsole.leave(() => { void logout() }); return }; void logout() }}><LogOut class="size-4" aria-hidden="true" /><span class="sr-only sm:not-sr-only">{t('shell.account.signOut')}</span></Button>{/if}
     </div>

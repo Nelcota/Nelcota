@@ -82,5 +82,6 @@ export default defineConfig({
     },
   },
   // The default (CPUs - 1 workers) saturates dev machines when Rust tests run too.
-  test: { maxWorkers: 2 },
+  // Components and helpers under test translate synchronously: load both languages first.
+  test: { maxWorkers: 2, setupFiles: ['./src/lib/i18n/test-setup.ts'] },
 })

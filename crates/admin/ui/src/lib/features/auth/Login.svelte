@@ -15,7 +15,7 @@
   import Globe from '@lucide/svelte/icons/globe'
   import CircleHelp from '@lucide/svelte/icons/circle-help'
   import Logo from '$lib/shell/components/Logo.svelte'
-  import { LOCALES, errorMessage, i18n, setLocale, t } from '$lib/i18n/index.svelte'
+  import { LOCALES, errorMessage, i18n, setLocale, t, type Locale } from '$lib/i18n/index.svelte'
 
   const year = new Date().getFullYear()
 
@@ -39,6 +39,18 @@
   let loading = $state(false)
   let showPassword = $state(false)
   let capsLock = $state(false)
+
+  // A failed language download, shown by the switcher (not as a sign-in error).
+  let localeFailure = $state<unknown>(null)
+
+  async function changeLocale(locale: Locale) {
+    localeFailure = null
+    try {
+      await setLocale(locale)
+    } catch (error) {
+      localeFailure = error
+    }
+  }
 
   function checkCapsLock(event: KeyboardEvent) {
     capsLock = event.getModifierState('CapsLock')
@@ -168,11 +180,12 @@
       <div class="login-languages" role="group" aria-label={t('shell.account.language')}>
         <Globe size={16} aria-hidden="true" />
         {#each LOCALES as locale (locale)}
-          <button type="button" lang={locale} aria-pressed={i18n.locale === locale} onclick={() => setLocale(locale)}>
+          <button type="button" lang={locale} aria-pressed={i18n.locale === locale} onclick={() => changeLocale(locale)}>
             {t(`shell.languages.${locale}`)}
           </button>
         {/each}
       </div>
+      {#if localeFailure !== null}<p class="login-language-error" role="alert">{errorMessage(localeFailure)}</p>{/if}
       <span aria-hidden="true">·</span>
       <span>© {year} Nelcota</span>
       <button
@@ -234,6 +247,7 @@
   .login-languages { display: flex; align-items: center; gap: 8px; }
   .login-footer button { cursor: pointer; }
   .login-languages button[aria-pressed="true"] { color: var(--foreground); font-weight: 600; }
+  .login-language-error { flex-basis: 100%; text-align: center; color: var(--destructive); }
   .login-footer button:hover { color: var(--foreground); }
   .login-footer button:focus-visible, .login-support a:focus-visible { outline: 2px solid var(--primary); outline-offset: 5px; border-radius: 3px; }
   .login-theme { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; }

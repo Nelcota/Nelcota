@@ -40,7 +40,7 @@ async fn separate_login_and_protected_api() {
             .await;
         assert_eq!(reply.status, StatusCode::UNAUTHORIZED);
         assert_eq!(reply.body["error"], "Invalid email or password.");
-        // The panel translates by code (crates/admin/ui/src/lib/i18n/messages/errors.ts).
+        // The panel translates by code (crates/admin/ui/src/lib/i18n/messages/<language>/errors.ts).
         assert_eq!(reply.body["code"], "invalid_credentials");
     }
 

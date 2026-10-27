@@ -50,20 +50,9 @@
     navigate('/sql')
   }
 
-  function onKeydown(event: KeyboardEvent) {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-      event.preventDefault()
-      // Respect the active modal's focus and draft; never open a hidden palette.
-      if (!palette.open && document.querySelector('[role="dialog"], [role="alertdialog"]')) return
-      palette.open = !palette.open
-    }
-  }
-
   const pages = navItems
 
 </script>
-
-<svelte:window onkeydown={onKeydown} />
 
 <Command.Dialog
   bind:open={palette.open}

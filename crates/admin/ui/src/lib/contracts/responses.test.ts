@@ -1,22 +1,28 @@
 import { expect, it } from 'vitest'
 import { responseContract } from './responses'
 
-it('rejects incompatible rows and SQL results rather than trusting the client generic', () => {
-  const sql = responseContract('POST', '/sql')!
+async function contract(method: string, path: string) {
+  const validator = await responseContract(method, path)
+  if (validator === undefined) throw new Error(`No contract for ${method} ${path}`)
+  return validator
+}
+
+it('rejects incompatible rows and SQL results rather than trusting the client generic', async () => {
+  const sql = await contract('POST', '/sql')
   expect(sql({ results: [{ columns: ['id'], rows: [['9223372036854775807', null]], count: 1, truncated: false }], results_truncated: false })).toBe(true)
   expect(sql({ results: [{ columns: ['id'], rows: [[42]], count: 1, truncated: false }], results_truncated: false })).toBe(false)
   expect(sql({ error: { message: 'failed', code: null, hint: null, detail: null, position: null } })).toBe(true)
   expect(sql({ unexpected: 'result' })).toBe(false)
 })
-it('requires commit status and distinguishes preview from a committed change pending catalog refresh', () => {
-  const ddl = responseContract('PATCH', '/tables/notes')!
+it('requires commit status and distinguishes preview from a committed change pending catalog refresh', async () => {
+  const ddl = await contract('PATCH', '/tables/notes')
   expect(ddl({ sql: ['ALTER TABLE notes ENABLE ROW LEVEL SECURITY'], applied: true, catalog_pending: true })).toBe(true)
   expect(ddl({ sql: ['SELECT 1'], applied: false, catalog_pending: false })).toBe(true)
   expect(ddl({ sql: ['SELECT 1'] })).toBe(false)
-  expect(responseContract('POST', '/tables/notes/rows')).toBeUndefined()
+  expect(await responseContract('POST', '/tables/notes/rows')).toBeUndefined()
 })
-it('requires enabled storage to carry its complete configuration', () => {
-  const storage = responseContract('GET', '/storage')!
+it('requires enabled storage to carry its complete configuration', async () => {
+  const storage = await contract('GET', '/storage')
   expect(storage({ enabled: false })).toBe(true)
   expect(storage({ enabled: true })).toBe(false)
 })
@@ -33,9 +39,8 @@ it.each([
   ['PUT', '/webhooks/endpoint', endpoint],
   ['POST', '/webhooks/deliveries/9223372036854775800/replay', { id: '9223372036854775801' }],
   ['DELETE', '/webhooks/deliveries', { deleted: 1 }],
-] as const)('validates the webhook response for %s %s', (method, path, valid) => {
-  const validator = responseContract(method, path)
-  expect(validator).toBeTypeOf('function')
-  expect(validator!(valid)).toBe(true)
-  expect(validator!({ unexpected: 'response' })).toBe(false)
+] as const)('validates the webhook response for %s %s', async (method, path, valid) => {
+  const validator = await contract(method, path)
+  expect(validator(valid)).toBe(true)
+  expect(validator({ unexpected: 'response' })).toBe(false)
 })

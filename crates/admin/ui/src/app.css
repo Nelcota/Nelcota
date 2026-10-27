@@ -531,3 +531,30 @@
 @container (min-width: 52rem) {
   .resource-canvas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* index.html's fallback when the panel's texts fail to download (main.ts):
+   plain markup, styled here because no component has loaded. */
+.startup-failure {
+	display: grid;
+	min-height: 100dvh;
+	place-content: center;
+	gap: 0.75rem;
+	padding: 1rem;
+	background: var(--background);
+	color: var(--foreground);
+	text-align: center;
+	font-size: 0.875rem;
+}
+.startup-failure[hidden] {
+	display: none;
+}
+.startup-failure button {
+	justify-self: center;
+	margin-top: 0.5rem;
+	border-radius: var(--radius);
+	background: var(--primary);
+	color: var(--primary-foreground);
+	padding: 0.625rem 1rem;
+	font-weight: 500;
+	cursor: pointer;
+}

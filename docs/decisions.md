@@ -290,7 +290,7 @@ Postgres' exact text (`RawValue`). Batch deletes in a single transaction. The
 SPA is served at any `/admin/*` (fallback to `index.html`). Hashed assets get
 immutable caching; `index.html`, `no-cache`.
 
-**D54. CodeMirror loaded on demand.** The main bundle stays around 130 KB
+**D54. CodeMirror loaded on demand.** The login screen loads about 135 KB
 gzip; the SQL editor (~145 KB gzip) is only downloaded when its page opens.
 The Inter and JetBrains Mono fonts come from `@fontsource-variable` (OFL),
 served by the binary itself.

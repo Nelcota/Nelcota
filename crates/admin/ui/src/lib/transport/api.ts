@@ -16,6 +16,7 @@ async function request<T>(method: string, path: string, body?: unknown, signal?:
     if (typeof value === 'number' && !Number.isFinite(value)) throw new Error(t('common.invalidNumber'))
     return value
   })
+  await loadContractFirst(method, path)
   const changesSession = ['/login', '/logout', '/sso'].includes(path)
   if (changesSession) clearQuerySession()
   const started = querySession()
@@ -61,12 +62,29 @@ async function request<T>(method: string, path: string, body?: unknown, signal?:
   return pending
 }
 
+/**
+ * Downloads the response's validator before the request is sent: a failed
+ * download then fails the request before any side effect, rather than turning
+ * a committed write (a secret shown once) into an error after the fact.
+ * parseResponse's own lookup then resolves from the loaded module.
+ */
+async function loadContractFirst(method: string, path: string) {
+  await responseContract(method, path)
+}
+
 /** Sends a file as the raw request body (storage uploads). */
 export async function uploadFile<T>(path: string, file: File, onprogress?: (loaded: number, total: number) => void): Promise<T> {
   const started = querySession()
-  const { upload } = await import('./upload')
+  const [{ upload }] = await Promise.all([import('./upload'), loadContractFirst('POST', path)])
   requireSession(started)
-  try { return await upload(path, file, response => parseResponse<T>(response, path, 'POST', started), onprogress) }
+  // request() re-checks the session after parseResponse; uploads have no such
+  // wrapper, so a response finished under another session is dropped here.
+  const parse = async (response: Response) => {
+    const result = await parseResponse<T>(response, path, 'POST', started)
+    requireSession(started)
+    return result
+  }
+  try { return await upload(path, file, parse, onprogress) }
   catch (error) {
     // A response aborted at the XHR budget never reaches parseResponse.
     if (error instanceof ApiError) expireSession(error.status, path, started)
@@ -119,7 +137,7 @@ export async function parseResponse<T>(res: Response, path: string, method: stri
   // A 200 that isn't JSON is someone else's page (an auth proxy's sign-in
   // form after a redirect), not this API answering.
   if (!json) throw new ApiError(t('common.invalidResponse'), 502, 'invalid_response')
-  const validate = responseContract(method, path)
+  const validate = await responseContract(method, path)
   if (validate && !validate(data)) throw new ApiError(t('common.invalidResponse'), 502, 'invalid_response')
   return data as T
 }

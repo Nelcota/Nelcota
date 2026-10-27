@@ -1,27 +1,39 @@
 <script lang="ts">
-  import { tick } from 'svelte'
+  import { tick, type Component } from 'svelte'
+  import { toast } from 'svelte-sonner'
   import { Toaster } from '$lib/components/ui/sonner'
   import * as Tooltip from '$lib/components/ui/tooltip'
   import TopNav from './components/TopNav.svelte'
-  import CommandPalette from './components/CommandPalette.svelte'
   import NotFound from './NotFound.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import { session } from '$lib/resources/session.svelte'
-  import { match, route } from '$lib/navigation/router.svelte'
+  import { route } from '$lib/navigation/router.svelte'
+  import { loadPage, pageFor } from './pages'
   import { crumbsFor } from './titles'
+  import { handlePaletteShortcut, palette } from './palette.svelte'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
 
-  const path = $derived(route.path.replace(/\/$/, '') || '/')
-  const structureName = $derived(match('/tables/:name/structure', path)?.name)
-  const tableName = $derived(match('/tables/:name', path)?.name ?? structureName)
-  const bucketName = $derived(match('/storage/:bucket', path)?.bucket)
-  const guide = $derived(match('/guides/:id', path)?.id)
-  const deliveryId = $derived(match('/webhooks/deliveries/:id', path)?.id)
-  // Data/Structure keeps the editor mounted; a different table gets fresh state.
-  const pageKey = $derived(tableName ? `/tables/${tableName}` : route.path)
+  const page = $derived(pageFor(route.path))
+  // Same promise for the same page, so a table's data/structure switch keeps the editor.
+  const pageModule = $derived(page === null ? null : loadPage(page.load))
   let content = $state<HTMLElement>()
   let previousPath = route.path
   const pageLabel = $derived(crumbsFor(route.path).map((crumb) => crumb.label).join(' · '))
+
+  // The command palette's code (cmdk) loads the first time it opens.
+  let CommandPalette = $state<Component | null>(null)
+  let paletteRequested = false
+  $effect(() => {
+    if (palette.open === false || paletteRequested) return
+    paletteRequested = true
+    import('./components/CommandPalette.svelte')
+      .then((module) => (CommandPalette = module.default))
+      .catch((error: unknown) => {
+        paletteRequested = false
+        palette.open = false
+        toast.error(errorMessage(error))
+      })
+  })
 
   $effect(() => {
     const nextPath = route.path
@@ -46,6 +58,7 @@
   </div>
 {/snippet}
 
+<svelte:window onkeydown={handlePaletteShortcut} />
 <Toaster position="bottom-right" />
 <Tooltip.Provider delayDuration={200}>
   <a
@@ -59,84 +72,18 @@
       <!-- Keep absolute accessibility labels inside this scroll container. -->
       <!-- The page is a keyboard scroll target even when it has no controls. -->
       <main bind:this={content} id="conteudo" tabindex="0" aria-label={pageLabel} class="relative min-h-0 min-w-0 flex-1 overflow-auto focus-visible:-outline-offset-2">
-        {#key pageKey}
-          {#if path === '/updates'}
-            {#await import('$lib/features/updates/Updates.svelte')}{@render loading()}{:then m}<m.default />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if (path === '/')}
-            {#await import('$lib/features/overview/Overview.svelte')}
+        {#key page?.key ?? route.path}
+          {#if page && pageModule}
+            {#await pageModule}
               {@render loading()}
-            {:then m}<m.default />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if !(path === '/updates') && !(path === '/') && (path === '/tables' || tableName)}
-            {#await import('$lib/features/tables/TableEditor.svelte')}
-              {@render loading()}
-            {:then m}<m.default name={tableName} view={structureName ? 'structure' : 'data'} />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if !(path === '/updates') && !(path === '/') && !(path === '/tables' || tableName) && (path === '/sql')}
-            {#await import('$lib/features/sql/SqlEditor.svelte')}
-              {@render loading()}
-            {:then m}<m.default />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if !(path === '/updates') && !(path === '/') && !(path === '/tables' || tableName) && !(path === '/sql') && (path === '/migrations')}
-            {#await import('$lib/features/migrations/Migrations.svelte')}
-              {@render loading()}
-            {:then m}<m.default />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if !(path === '/updates') && !(path === '/') && !(path === '/tables' || tableName) && !(path === '/sql') && !(path === '/migrations') && (path === '/users')}
-            {#await import('$lib/features/users/Users.svelte')}
-              {@render loading()}
-            {:then m}<m.default />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if !(path === '/updates') && !(path === '/') && !(path === '/tables' || tableName) && !(path === '/sql') && !(path === '/migrations') && !(path === '/users') && (path === '/sign-in')}
-            {#await import('$lib/features/sign-in/SignIn.svelte')}
-              {@render loading()}
-            {:then m}<m.default />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if !(path === '/updates') && !(path === '/') && !(path === '/tables' || tableName) && !(path === '/sql') && !(path === '/migrations') && !(path === '/users') && !(path === '/sign-in') && (path === '/storage')}
-            {#await import('$lib/features/storage/Storage.svelte')}
-              {@render loading()}
-            {:then m}<m.default />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if !(path === '/updates') && !(path === '/') && !(path === '/tables' || tableName) && !(path === '/sql') && !(path === '/migrations') && !(path === '/users') && !(path === '/sign-in') && !(path === '/storage') && (bucketName)}
-            {#await import('$lib/features/storage/StorageBucket.svelte')}
-              {@render loading()}
-            {:then m}<m.default bucket={bucketName} />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if !(path === '/updates') && !(path === '/') && !(path === '/tables' || tableName) && !(path === '/sql') && !(path === '/migrations') && !(path === '/users') && !(path === '/sign-in') && !(path === '/storage') && !(bucketName) && (path === '/policies')}
-            {#await import('$lib/features/policies/Policies.svelte')}
-              {@render loading()}
-            {:then m}<m.default />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if !(path === '/updates') && !(path === '/') && !(path === '/tables' || tableName) && !(path === '/sql') && !(path === '/migrations') && !(path === '/users') && !(path === '/sign-in') && !(path === '/storage') && !(bucketName) && !(path === '/policies') && (path === '/webhooks')}
-            {#await import('$lib/features/webhooks/Webhooks.svelte')}
-              {@render loading()}
-            {:then m}<m.default />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if !(path === '/updates') && !(path === '/') && !(path === '/tables' || tableName) && !(path === '/sql') && !(path === '/migrations') && !(path === '/users') && !(path === '/sign-in') && !(path === '/storage') && !(bucketName) && !(path === '/policies') && !(path === '/webhooks') && (deliveryId)}
-            {#await import('$lib/features/webhooks/DeliveryDetail.svelte')}
-              {@render loading()}
-            {:then m}<m.default id={deliveryId} />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if !(path === '/updates') && !(path === '/') && !(path === '/tables' || tableName) && !(path === '/sql') && !(path === '/migrations') && !(path === '/users') && !(path === '/sign-in') && !(path === '/storage') && !(bucketName) && !(path === '/policies') && !(path === '/webhooks') && !(deliveryId) && (path === '/projects')}
-            {#await import('$lib/features/projects/Projects.svelte')}
-              {@render loading()}
-            {:then m}<m.default />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if !(path === '/updates') && !(path === '/') && !(path === '/tables' || tableName) && !(path === '/sql') && !(path === '/migrations') && !(path === '/users') && !(path === '/sign-in') && !(path === '/storage') && !(bucketName) && !(path === '/policies') && !(path === '/webhooks') && !(deliveryId) && !(path === '/projects') && (path === '/connect')}
-            {#await import('$lib/features/api/ApiPage.svelte')}
-              {@render loading()}
-            {:then m}<m.default />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if !(path === '/updates') && !(path === '/') && !(path === '/tables' || tableName) && !(path === '/sql') && !(path === '/migrations') && !(path === '/users') && !(path === '/sign-in') && !(path === '/storage') && !(bucketName) && !(path === '/policies') && !(path === '/webhooks') && !(deliveryId) && !(path === '/projects') && !(path === '/connect') && (path === '/guides' || guide)}
-            {#await import('$lib/features/guides/Guides.svelte')}
-              {@render loading()}
-            {:then m}<m.default />{:catch error}{@render failed(error)}{/await}
-          {/if}
-          {#if !(path === '/updates') && !(path === '/') && !(path === '/tables' || tableName) && !(path === '/sql') && !(path === '/migrations') && !(path === '/users') && !(path === '/sign-in') && !(path === '/storage') && !(bucketName) && !(path === '/policies') && !(path === '/webhooks') && !(deliveryId) && !(path === '/projects') && !(path === '/connect') && !(path === '/guides' || guide)}<NotFound />{/if}
+            {:then m}
+              {@const Page = m.default as Component<Record<string, unknown>>}
+              <Page {...page.props} />
+            {:catch error}{@render failed(error)}{/await}
+          {:else}<NotFound />{/if}
         {/key}
       </main>
     </TopNav>
   </div>
-  <CommandPalette />
+  {#if CommandPalette}<CommandPalette />{/if}
 </Tooltip.Provider>
