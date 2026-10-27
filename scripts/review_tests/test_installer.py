@@ -121,8 +121,10 @@ class Installer(unittest.TestCase):
         self.logging_tool("systemctl", 'case "$*" in *is-active*firewalld*) [ -n "${FIXTURE_FIREWALLD:-}" ] ;; esac\n')
         self.logging_tool("firewall-cmd")
         self.tool("debconf-set-selections", '#!/bin/sh\nprintf \'debconf %s\\n\' "$(cat)" >> "$CALLS"\n')
-        self.tool("free", "#!/bin/sh\nprintf '  total\\nMem: %s 0 0\\nSwap: %s 0 0\\n' "
-                          "\"${FIXTURE_RAM_MB:-4096}\" \"${FIXTURE_SWAP_MB:-0}\"\n")
+        # Translated like a pt-BR system unless the caller asks for LC_ALL=C.
+        self.tool("free", "#!/bin/sh\nlabel=Mem.; [ \"${LC_ALL:-}\" = C ] && label=Mem\n"
+                          "printf '  total\\n%s: %s 0 0\\nSwap: %s 0 0\\n' "
+                          "\"$label\" \"${FIXTURE_RAM_MB:-4096}\" \"${FIXTURE_SWAP_MB:-0}\"\n")
         if ufw:
             self.logging_tool("ufw", '[ "$1" = status ] || exit 0\n'
                                      '[ -n "${FIXTURE_UFW_ACTIVE:-}" ] && echo "Status: active" || echo "Status: inactive"\n')
@@ -534,6 +536,27 @@ class Installer(unittest.TestCase):
         result = self.setup_vps("api.example.com")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("security group", result.stdout)
+
+    def test_translated_system_output_is_parsed(self):
+        # `free` prints "Mem.:" on a pt-BR system; the swap check must not break.
+        self.environment.update({"LANG": "pt_BR.UTF-8", "FIXTURE_RAM_MB": "1024"})
+        self.environment.pop("LC_ALL", None)
+        self.fake_disk()
+        result = self.setup_vps("api.example.com")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("[:", result.stderr)
+        self.assertIn(f"swapon {self.root / 'swapfile'}", self.calls())
+
+    def test_unsupported_distribution_stops_before_changing_anything(self):
+        self.fake_root(package_manager="pacman")
+        self.environment["FIXTURE_UFW_ACTIVE"] = "1"
+        result = self.install("--dir", str(self.host), "api.example.com")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("supports Debian/Ubuntu (apt-get) and Fedora/RHEL (dnf)", result.stderr)
+        changes = [c for c in self.calls()
+                   if c.startswith(("ufw allow", "systemctl enable", "curl ", "nelcota "))]
+        self.assertEqual(changes, [])
+        self.assertFalse(self.destination().exists())
 
 if __name__ == "__main__":
     unittest.main()

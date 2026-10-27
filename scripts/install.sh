@@ -123,12 +123,13 @@ install_prerequisites() {
     dnf install -y -q $packages cronie
     systemctl enable --now crond.service
   else
-    say "Unknown package manager: install curl, sha256sum and an active cron scheduler yourself"
+    # init needs cron.service/crond.service, so stop before changing anything.
+    die "setting up a VPS supports Debian/Ubuntu (apt-get) and Fedora/RHEL (dnf); on this system install the binary without arguments and follow docs/deploy.md"
   fi
 }
 
 ufw_active() {
-  command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q '^Status: active'
+  command -v ufw >/dev/null 2>&1 && LC_ALL=C ufw status 2>/dev/null | grep -q '^Status: active'
 }
 
 # An already active firewall blocks 80/443 and HTTPS fails without an error,
@@ -167,11 +168,10 @@ ensure_swap() {
     *) die "NELCOTA_SWAP_FILE must be an absolute path, such as /swapfile" ;;
   esac
   command -v free >/dev/null 2>&1 || return 0
-  ram_mb=$(free -m | awk '/^Mem:/ {print $2}')
-  swap_mb=$(free -m | awk '/^Swap:/ {print $2}')
-  case "$ram_mb$swap_mb" in
-    '' | *[!0-9]*) return 0 ;;
-  esac
+  # Parsed output: the English labels and columns, whatever the system language.
+  ram_mb=$(LC_ALL=C free -m | awk '/^Mem:/ {print $2}')
+  swap_mb=$(LC_ALL=C free -m | awk '/^Swap:/ {print $2}')
+  is_number "$ram_mb" && is_number "$swap_mb" || return 0
   if [ "$ram_mb" -ge "$SWAP_BELOW_RAM_MB" ] || [ "$swap_mb" -gt 0 ]; then
     return 0
   fi
@@ -179,15 +179,13 @@ ensure_swap() {
     say "note: $SWAP_FILE exists but no swap is active; it was left untouched"
     return 0
   fi
-  disk=$(df -PTk / | awk 'NR == 2 {print $2 " " $5}')
+  disk=$(LC_ALL=C df -PTk / | awk 'NR == 2 {print $2 " " $5}')
   fs_type=${disk%% *}
   free_kb=${disk#* }
   case "$fs_type" in
     btrfs | zfs) say "note: less than 2 GB of RAM and no swap; create swap by hand on $fs_type"; return 0 ;;
   esac
-  case "$free_kb" in
-    '' | *[!0-9]*) return 0 ;;
-  esac
+  is_number "$free_kb" || return 0
   if [ "$free_kb" -lt $(((SWAP_SIZE_MB + SWAP_KEEP_FREE_MB) * 1024)) ]; then
     say "note: less than 2 GB of RAM and no swap, but too little disk to create it"
     return 0
@@ -197,6 +195,12 @@ ensure_swap() {
     rm -f "$SWAP_FILE"
     say "warning: could not create the swap file; continuing without swap"
   fi
+}
+
+is_number() {
+  case "$1" in
+    '' | *[!0-9]*) return 1 ;;
+  esac
 }
 
 create_swap() {
