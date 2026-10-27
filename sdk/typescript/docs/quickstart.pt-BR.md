@@ -1,6 +1,6 @@
 # Começando com o SDK JavaScript do Nelcota
 
-Este guia descreve o SDK **0.2.4**. Ele traz as correções de sessão, refresh,
+Este guia descreve o SDK **0.2.5**. Ele traz as correções de sessão, refresh,
 consultas e transporte do [changelog](../CHANGELOG.md), além das que o 0.2.1 trouxe
 sobre o 0.2.0. O cancelamento passa a retirar
 logins pendentes da fila, preservando a conclusão de operações já aceitas.
@@ -16,11 +16,11 @@ com os recursos descritos na [matriz de compatibilidade](../README.md#compatibil
 ## 1. Instale
 
 ```sh
-bun add @nelcota/client@0.2.4   # ou: npm install @nelcota/client@0.2.4
+bun add @nelcota/client@0.2.5   # ou: npm install @nelcota/client@0.2.5
 ```
 
-A versão 0.2.4 está publicada no npm. Leia as [notas de atualização](contract.md#upgrading-from-020)
-e os [comprovantes de publicação](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169).
+A instalação pelo npm depende de o workflow de release da tag publicar a 0.2.5.
+Leia as [notas de atualização](contract.md#upgrading-from-020).
 Atualizar o servidor não instala os pacotes do cliente. Os comandos a seguir
 servem apenas para testar alterações futuras do checkout como arquivo local:
 
@@ -36,7 +36,7 @@ npm install "$NELCOTA_SDK_TARBALL"
 
 ## Atualizar do 0.2.0
 
-Execute `bun add --exact @nelcota/client@0.2.4` (ou `npm install --save-exact @nelcota/client@0.2.4`),
+Execute `bun add --exact @nelcota/client@0.2.5` (ou `npm install --save-exact @nelcota/client@0.2.5`),
 confira a versão com `bun pm ls` (ou `npm ls @nelcota/client`) e versione o manifesto/lockfile do aplicativo. Rode seus
 testes, a checagem de tipos e o build. Preserve `number | string | null` nos
 limites de bucket; strings decimais exatas evitam arredondamento de int64.

@@ -25,7 +25,7 @@ or the [client contract](docs/contract.md). Empty results, 401/403 or a
   a browser.
 
 ```sh
-bun add @nelcota/client@0.2.4   # or: npm install @nelcota/client@0.2.4
+bun add @nelcota/client@0.2.5   # or: npm install @nelcota/client@0.2.5
 nelcota types -o src/database.ts
 ```
 
@@ -45,14 +45,13 @@ const nelcota = createClient('https://api.example.com');
 
 ## Version scope
 
-This guide targets 0.2.4. Version 0.2.3 is the previous published baseline.
-The patch retries an uncertain background refresh inside the server's 10-second
-refresh-token reuse window, rejects invalid `Date` and `bigint` JSON bodies, and
-keeps query strings on engines without `URLSearchParams.size`.
+This guide targets 0.2.5. Version 0.2.4 is the previous published baseline.
+The patch parses JSON in large responses about 8 to 12 times faster, with the
+same results: the pass that keeps unsafe integers and long decimals exact is
+skipped when no number in the response can lose digits.
 Earlier session, refresh, query and transport corrections remain included; see
 the [changelog](CHANGELOG.md) and [upgrade notes](docs/contract.md#upgrading-from-020).
-Version 0.2.4 is available on npm; [registry receipts](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169)
-record integrity and consumer checks. Updating the server does not update installed clients. Node is SDK tooling/runtime, not a backend requirement.
+Registry installation requires the tagged release workflow to publish 0.2.5. Updating the server does not update installed clients. Node is SDK tooling/runtime, not a backend requirement.
 
 ## Independent modules
 

@@ -149,8 +149,8 @@ its registry availability first; a source checkout can also use a reviewed local
 archive as described in the SDK README:
 
 ```sh
-# With Node instead: npm init -y && npm install @nelcota/client@0.2.4, then node client.mjs
-bun add @nelcota/client@0.2.4
+# With Node instead: npm init -y && npm install @nelcota/client@0.2.5, then node client.mjs
+bun add @nelcota/client@0.2.5
 cat > client.mjs <<'JS'
 import { createClient, unwrap } from '@nelcota/client';
 const client = createClient('http://127.0.0.1:8000');
