@@ -16,10 +16,15 @@ curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/instal
 ```
 
 Arguments after the script's `--` go to `nelcota init`, for example `--email`,
-`--firewall`, `--runtime systemd` or `--s3-*`; `--dir <folder>` selects another
-host folder. With `--firewall`, it also installs ufw, and `init` allows SSH on port 22 plus
-every port `sshd -T` reports and the current session's port. Run again on an existing host, it skips `init` and only
-runs `up`. The same steps by hand:
+`--runtime systemd` or `--s3-*`; `--dir <absolute folder>` selects another host
+folder and `--yes` skips the `init` questions, such as the S3 backup one.
+
+The installer also turns the firewall on. An already active firewalld or ufw only
+gets HTTP and HTTPS added; otherwise it installs ufw and `init --firewall` allows
+SSH on port 22 plus every port `sshd -T` reports and the current session's port,
+80 and 443. `--no-firewall` leaves it off. On Debian/Ubuntu it enables automatic
+security updates, and below 2 GB of RAM without swap it creates a 2 GB swap file.
+Run again on an existing host, it skips `init` and only runs `up`. The same steps by hand:
 
 ```sh
 sudo -i                                        # enter a root shell; omit if already root

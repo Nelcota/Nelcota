@@ -13,7 +13,8 @@ VERSION = "1.2.3"
 BIN = "nelcota-x86_64-unknown-linux-musl"
 # Real system commands the tests replace with fakes, or remove to simulate a
 # machine without them. Everything else comes from the system folders.
-FAKED = {"apt-get", "curl", "dnf", "docker", "id", "sleep", "sudo", "systemctl", "ufw", "uname"}
+FAKED = {"apt-get", "curl", "debconf-set-selections", "dnf", "docker", "firewall-cmd", "free", "id",
+         "mkswap", "sleep", "sudo", "swapon", "systemctl", "ufw", "uname"}
 
 # Records every call, serves the fixtures and answers the latest-release
 # redirect like GitHub. FIXTURE_MISSING makes downloads fail like a 404.
@@ -68,7 +69,9 @@ class Installer(unittest.TestCase):
                                 PREFIX=str(self.root / "user/bin"), NELCOTA_VERSION=VERSION,
                                 NELCOTA_SKIP_DOCKER="1", FIXTURE_BINARY=str(self.binary),
                                 FIXTURE_CHECKSUM=str(self.checksum), FIXTURE_LATEST=VERSION,
-                                FIXTURE_GET_DOCKER=str(self.get_docker), CALLS=str(self.log))
+                                FIXTURE_GET_DOCKER=str(self.get_docker), CALLS=str(self.log),
+                                NELCOTA_SWAP_FILE=str(self.root / "swapfile"),
+                                NELCOTA_FSTAB=str(self.root / "fstab"))
 
     def system_commands(self):
         """Links to the system commands, without the ones the tests fake."""
@@ -105,13 +108,35 @@ class Installer(unittest.TestCase):
                               env=self.environment, capture_output=True, text=True,
                               timeout=20, start_new_session=True)
 
-    def setup_vps(self, *arguments):
-        """Runs setup mode as a fake root with logging package/service tools."""
+    def logging_tool(self, name, extra=""):
+        self.tool(name, f'#!/bin/sh\nprintf \'{name} %s\\n\' "$*" >> "$CALLS"\n{extra}')
+
+    def fake_root(self, docker=True, package_manager="apt-get", ufw=True):
+        """A fake root machine with logging package, service and firewall tools.
+
+        FIXTURE_FIREWALLD / FIXTURE_UFW_ACTIVE turn those firewalls on;
+        FIXTURE_RAM_MB / FIXTURE_SWAP_MB set what `free` reports."""
         self.tool("id", "#!/bin/sh\nprintf '0\\n'\n")
-        for name in ("apt-get", "systemctl", "ufw", "docker"):
-            self.tool(name, f'#!/bin/sh\nprintf \'{name} %s\\n\' "$*" >> "$CALLS"\n')
+        self.logging_tool(package_manager)
+        self.logging_tool("systemctl", 'case "$*" in *is-active*firewalld*) [ -n "${FIXTURE_FIREWALLD:-}" ] ;; esac\n')
+        self.logging_tool("firewall-cmd")
+        self.tool("debconf-set-selections", '#!/bin/sh\nprintf \'debconf %s\\n\' "$(cat)" >> "$CALLS"\n')
+        self.tool("free", "#!/bin/sh\nprintf '  total\\nMem: %s 0 0\\nSwap: %s 0 0\\n' "
+                          "\"${FIXTURE_RAM_MB:-4096}\" \"${FIXTURE_SWAP_MB:-0}\"\n")
+        if ufw:
+            self.logging_tool("ufw", '[ "$1" = status ] || exit 0\n'
+                                     '[ -n "${FIXTURE_UFW_ACTIVE:-}" ] && echo "Status: active" || echo "Status: inactive"\n')
+        if docker:
+            self.logging_tool("docker")
         self.host = self.root / "host dir"
+
+    def setup_vps(self, *arguments):
+        """Runs setup mode on the fake root machine."""
+        self.fake_root()
         return self.install("--dir", str(self.host), *arguments)
+
+    def init_call(self):
+        return next(c for c in self.calls() if c.startswith("nelcota -C") and " init " in c)
 
     def calls(self):
         return self.log.read_text().splitlines()
@@ -261,7 +286,7 @@ class Installer(unittest.TestCase):
         self.assertTrue(any(c.startswith("apt-get -o DPkg::Lock::Timeout=") for c in calls), calls)
         nelcota = [c for c in calls if c.startswith("nelcota -C")]
         self.assertEqual(nelcota, [
-            f"nelcota -C {self.host} init --yes api.example.com --firewall --email me@example.com",
+            f"nelcota -C {self.host} init --yes api.example.com --email me@example.com --firewall",
             f"nelcota -C {self.host} up",
         ])
         self.assertLess(calls.index("systemctl enable --now cron.service"),
@@ -279,10 +304,7 @@ class Installer(unittest.TestCase):
 
     def test_setup_installs_and_starts_missing_docker(self):
         self.environment["NELCOTA_SKIP_DOCKER"] = "0"
-        self.tool("id", "#!/bin/sh\nprintf '0\\n'\n")
-        for name in ("apt-get", "systemctl"):
-            self.tool(name, f'#!/bin/sh\nprintf \'{name} %s\\n\' "$*" >> "$CALLS"\n')
-        self.host = self.root / "host dir"
+        self.fake_root(docker=False)
         result = self.install("--dir", str(self.host), "api.example.com")
         self.assertEqual(result.returncode, 0, result.stderr)
         calls = self.calls()
@@ -291,9 +313,7 @@ class Installer(unittest.TestCase):
 
     def test_docker_that_never_starts_stops_before_init(self):
         self.environment["NELCOTA_SKIP_DOCKER"] = "0"
-        self.tool("id", "#!/bin/sh\nprintf '0\\n'\n")
-        for name in ("apt-get", "systemctl"):
-            self.tool(name, f'#!/bin/sh\nprintf \'{name} %s\\n\' "$*" >> "$CALLS"\n')
+        self.fake_root(docker=False)
         self.tool("docker", "#!/bin/sh\nexit 1\n")
         self.tool("sleep", "#!/bin/sh\nexit 0\n")
         result = self.install("--dir", str(self.root / "host dir"), "api.example.com")
@@ -308,7 +328,7 @@ class Installer(unittest.TestCase):
                 self.log.write_text("")
                 result = self.setup_vps("api.example.com", flag, "--email", "me@example.com")
                 self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertIn(f"nelcota -C {self.host} init --yes api.example.com --email me@example.com",
+                self.assertIn(f"nelcota -C {self.host} init --yes api.example.com --email me@example.com --firewall",
                               self.calls())
 
     def test_setup_skips_init_when_the_host_exists(self):
@@ -326,14 +346,16 @@ class Installer(unittest.TestCase):
         self.write_checksum(hashlib.sha256(self.binary.read_bytes()).hexdigest() + "  " + BIN)
         result = self.setup_vps("api.example.com")
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("nelcota up failed", result.stderr)
+        self.assertIn("nelcota up did not finish", result.stderr)
+        self.assertIn(f"nelcota -C {self.host} up", result.stderr)
         self.assertIn("run the same command again", result.stderr)
+        self.assertIn("Keep the panel password", result.stderr)
 
     def test_systemd_runtime_does_not_install_docker(self):
         result = self.setup_vps("api.example.com", "--runtime", "systemd")
         self.assertEqual(result.returncode, 0, result.stderr)
         calls = self.calls()
-        self.assertIn(f"nelcota -C {self.host} init --yes api.example.com --runtime systemd", calls)
+        self.assertIn(f"nelcota -C {self.host} init --yes api.example.com --runtime systemd --firewall", calls)
         self.assertNotIn("get-docker", calls)
         self.assertNotIn("systemctl enable --now docker.service", calls)
 
@@ -370,6 +392,148 @@ class Installer(unittest.TestCase):
                 self.assertIn(message, result.stderr)
                 self.assertNotIn("unexpected-apt", result.stderr)
 
+
+    # Firewall, swap and automatic updates in setup mode.
+
+    def apt_install(self):
+        return next(c for c in self.calls() if c.startswith("apt-get") and " install " in c)
+
+    def test_firewall_is_on_by_default(self):
+        result = self.setup_vps("api.example.com")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(self.init_call().endswith(" --firewall"), self.init_call())
+        self.assertIn(" ufw ", self.apt_install() + " ")
+
+    def test_no_firewall_leaves_it_off_and_is_not_passed_to_init(self):
+        result = self.setup_vps("api.example.com", "--no-firewall")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.init_call(), f"nelcota -C {self.host} init --yes api.example.com")
+        self.assertNotIn(" ufw ", self.apt_install() + " ")
+        self.assertIn("Firewall left off", result.stdout)
+
+    def test_active_firewalld_gets_http_and_https_instead_of_ufw(self):
+        self.environment["FIXTURE_FIREWALLD"] = "1"
+        result = self.setup_vps("api.example.com")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self.calls()
+        self.assertIn("firewall-cmd --permanent --add-service=http --add-service=https --add-port=443/udp", calls)
+        self.assertIn("firewall-cmd --reload", calls)
+        self.assertNotIn("--firewall", self.init_call())
+        self.assertLess(calls.index("firewall-cmd --reload"), calls.index(self.init_call()))
+
+    def test_active_firewall_gets_80_and_443_even_with_no_firewall(self):
+        # An active firewall would block HTTPS without any error.
+        self.environment["FIXTURE_UFW_ACTIVE"] = "1"
+        result = self.setup_vps("api.example.com", "--no-firewall")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self.calls()
+        self.assertIn("ufw allow 80/tcp", calls)
+        self.assertIn("ufw allow 443", calls)
+        self.assertNotIn("--firewall", self.init_call())
+
+    def test_local_host_gets_no_firewall(self):
+        result = self.setup_vps("--local", "--project", "demo")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.init_call(), f"nelcota -C {self.host} init --yes --local --project demo")
+
+    def test_conflicting_firewall_flags_stop_before_changing_anything(self):
+        for arguments, message in ((("--firewall", "--no-firewall"), "cannot be used together"),
+                                   (("--local", "--firewall"), "does not apply to a --local host")):
+            with self.subTest(arguments=arguments):
+                self.log.write_text("")
+                result = self.setup_vps("api.example.com", *arguments)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(message, result.stderr)
+                self.assertEqual(self.calls(), [])
+
+    def test_dnf_without_ufw_or_firewalld(self):
+        # RHEL-like systems have no ufw: a requested --firewall stops early,
+        # the default only leaves a note.
+        self.fake_root(package_manager="dnf", ufw=False)
+        result = self.install("--dir", str(self.host), "api.example.com", "--firewall")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("enable firewalld", result.stderr)
+        self.assertFalse(any(c.startswith("nelcota -C") for c in self.calls()))
+        self.log.write_text("")
+        result = self.install("--dir", str(self.host), "api.example.com")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("no firewall turned on", result.stdout)
+        self.assertEqual(self.init_call(), f"nelcota -C {self.host} init --yes api.example.com")
+        self.assertNotIn("ufw", next(c for c in self.calls() if c.startswith("dnf install")))
+
+    def test_automatic_security_updates_are_installed_and_enabled(self):
+        result = self.setup_vps("api.example.com")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("unattended-upgrades", self.apt_install())
+        self.assertIn("debconf unattended-upgrades unattended-upgrades/enable_auto_updates boolean true",
+                      self.calls())
+
+    def fake_disk(self, filesystem="ext4", free_kb=20 * 1024 * 1024, mkswap_fails=False):
+        self.tool("df", "#!/bin/sh\nprintf 'Filesystem Type 1024-blocks Used Available Capacity Mounted\\n"
+                        f"/dev/vda1 {filesystem} 1 1 {free_kb} 1%% /\\n'\n")
+        self.logging_tool("dd", 'for a in "$@"; do case "$a" in of=*) : > "${a#of=}" ;; esac; done\n')
+        self.logging_tool("mkswap", "exit 1\n" if mkswap_fails else "")
+        self.logging_tool("swapon")
+
+    def test_swap_is_created_below_2_gb_of_ram(self):
+        self.environment["FIXTURE_RAM_MB"] = "1024"
+        self.fake_disk()
+        swapfile = self.root / "swapfile"
+        result = self.setup_vps("api.example.com")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self.calls()
+        self.assertTrue(any(c.startswith("dd ") and f"of={swapfile}" in c and "count=2048" in c for c in calls))
+        self.assertIn(f"mkswap {swapfile}", calls)
+        self.assertIn(f"swapon {swapfile}", calls)
+        self.assertEqual((self.root / "fstab").read_text(), f"{swapfile} none swap sw 0 0\n")
+        self.assertLess(calls.index(f"swapon {swapfile}"), calls.index(self.init_call()))
+        # Running again keeps a single fstab entry and does not recreate it.
+        self.environment["FIXTURE_SWAP_MB"] = "2048"
+        self.assertEqual(self.setup_vps("api.example.com").returncode, 0)
+        self.assertEqual((self.root / "fstab").read_text().count("swapfile"), 1)
+
+    def test_swap_is_left_alone_when_not_needed_or_not_safe(self):
+        cases = [
+            ({"FIXTURE_RAM_MB": "4096"}, {}, None),
+            ({"FIXTURE_RAM_MB": "1024", "FIXTURE_SWAP_MB": "512"}, {}, None),
+            ({"FIXTURE_RAM_MB": "1024"}, {"filesystem": "btrfs"}, "create swap by hand on btrfs"),
+            ({"FIXTURE_RAM_MB": "1024"}, {"free_kb": 1024 * 1024}, "too little disk"),
+        ]
+        for environment, disk, note in cases:
+            with self.subTest(environment=environment, disk=disk):
+                self.log.write_text("")
+                self.environment.pop("FIXTURE_SWAP_MB", None)
+                self.environment.update(environment)
+                self.fake_disk(**disk)
+                result = self.setup_vps("api.example.com")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertFalse(any(c.startswith(("dd ", "mkswap", "swapon")) for c in self.calls()))
+                if note:
+                    self.assertIn(note, result.stdout)
+
+    def test_existing_swap_file_is_not_overwritten(self):
+        self.environment["FIXTURE_RAM_MB"] = "1024"
+        self.fake_disk()
+        (self.root / "swapfile").write_text("someone else's file")
+        result = self.setup_vps("api.example.com")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((self.root / "swapfile").read_text(), "someone else's file")
+        self.assertIn("left untouched", result.stdout)
+
+    def test_failed_swap_is_removed_and_setup_continues(self):
+        self.environment["FIXTURE_RAM_MB"] = "1024"
+        self.fake_disk(mkswap_fails=True)
+        result = self.setup_vps("api.example.com")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("continuing without swap", result.stdout)
+        self.assertFalse((self.root / "swapfile").exists())
+        self.assertFalse((self.root / "fstab").exists())
+        self.assertIn(f"nelcota -C {self.host} up", self.calls())
+
+    def test_done_message_mentions_the_provider_firewall(self):
+        result = self.setup_vps("api.example.com")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("security group", result.stdout)
 
 if __name__ == "__main__":
     unittest.main()

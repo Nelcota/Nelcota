@@ -1031,6 +1031,15 @@ on every supported Node version; examples stay copy-paste JavaScript; generated
 validators, framework configs and k6 benchmarks keep the format their tools
 expect.
 
+**D110. The one-command VPS setup turns the firewall on.** D44 still holds
+for `init` run by hand. The installer, though, prepares a whole public VPS, and
+a missing firewall or an active one that blocks 80/443 are the usual failed
+setups. It adds HTTP/HTTPS to an already active firewalld or ufw; otherwise it
+passes `--firewall` to `init`, which allows SSH on 22 and the ports `sshd -T`
+reports. `--no-firewall` opts out, and a `--local` host is left alone. Below
+2 GB of RAM without swap it adds a 2 GB swap file, and on Debian/Ubuntu it
+enables unattended-upgrades.
+
 ### Known pending items
 
 - Filtering parent rows by their embeds (`!inner`) and self-referencing embeds.
