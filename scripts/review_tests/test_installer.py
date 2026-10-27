@@ -301,6 +301,16 @@ class Installer(unittest.TestCase):
         self.assertIn("Docker did not start", result.stderr)
         self.assertFalse(any(c.startswith("nelcota -C") for c in self.calls()))
 
+    def test_yes_is_passed_to_init_once(self):
+        # Without a terminal the installer adds --yes itself; init refuses two.
+        for flag in ("--yes", "-y"):
+            with self.subTest(flag=flag):
+                self.log.write_text("")
+                result = self.setup_vps("api.example.com", flag, "--email", "me@example.com")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(f"nelcota -C {self.host} init --yes api.example.com --email me@example.com",
+                              self.calls())
+
     def test_setup_skips_init_when_the_host_exists(self):
         self.host = self.root / "host dir"
         self.host.mkdir()

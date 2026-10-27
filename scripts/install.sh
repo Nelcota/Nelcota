@@ -11,6 +11,7 @@
 #
 # Every argument goes to `nelcota init` (--email, --firewall, --runtime
 # systemd, --s3-*...), except --dir <absolute folder>, the host folder.
+# --yes skips every init question, such as the S3 backup one.
 #
 # Optional variables:
 #   NELCOTA_VERSION=0.5.5     version (default: the latest release)
@@ -231,6 +232,7 @@ main() {
   SETUP=0
   HOST_DIR=/opt/nelcota
   FIREWALL=0
+  ASSUME_YES=0
   if [ "$#" -gt 0 ]; then
     SETUP=1
     count=$#
@@ -255,6 +257,8 @@ main() {
           ;;
         --runtime=systemd) NELCOTA_SKIP_DOCKER=1; set -- "$@" "$arg" ;;
         --firewall) FIREWALL=1; set -- "$@" "$arg" ;;
+        # Passed once below: init refuses a repeated --yes.
+        --yes | -y) ASSUME_YES=1 ;;
         *) set -- "$@" "$arg" ;;
       esac
     done
@@ -313,7 +317,7 @@ main() {
     else
       say "Creating the host in $HOST_DIR"
       # Under `curl | sh` stdin is the script itself: ask questions on the terminal.
-      if (: </dev/tty) 2>/dev/null; then
+      if [ "$ASSUME_YES" -eq 0 ] && (: </dev/tty) 2>/dev/null; then
         "$PREFIX/nelcota" -C "$HOST_DIR" init "$@" </dev/tty ||
           die "nelcota init failed; fix the problem above and run the same command again"
       else
