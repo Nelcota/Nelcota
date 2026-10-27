@@ -14,9 +14,12 @@ test.beforeEach(async ({ page }) => {
 test('workspace navigation keeps database tools, breadcrumbs and search usable', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible()
   const navigation = page.locator('.panel-sidebar')
+  await page.keyboard.press('Tab')
   await navigation.getByRole('button', { name: 'Banco de dados', exact: true }).click()
   await navigation.getByRole('link', { name: 'Editor SQL', exact: true }).click()
   await expect(page).toHaveURL(/\/admin\/sql$/)
+  await expect(page.getByRole('main')).toBeFocused()
+  await expect(page.getByRole('main')).toHaveCSS('outline-style', 'none')
   await expect(navigation.getByRole('button', { name: 'Banco de dados', exact: true })).toHaveAttribute('aria-expanded', 'true')
   await expect(navigation.getByRole('link', { name: 'Editor SQL', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('navigation', { name: 'Localização atual' })).toContainText('Editor SQL')
@@ -35,6 +38,7 @@ test('mobile menu closes on navigation and returns focus to the page', async ({ 
   await expect(menu).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Armazenamento', exact: true })).toBeVisible()
   await expect(page.locator('main')).toBeFocused()
+  await expect(page.locator('main')).toHaveCSS('outline-style', 'none')
   await expect(page.getByRole('button', { name: /Buscar \(/ })).toBeVisible()
 })
 

@@ -90,6 +90,10 @@ their implementation, keep page dependencies out of these modules, and run
 `python3 scripts/check-boundaries.py` after moving sources. See the ownership map
 in [architecture](docs/architecture.md#source-organization).
 
+The shell tracks keyboard and pointer input so the main scroll region keeps
+its keyboard focus indicator without drawing an outline after mouse or touch
+navigation. Keep focus indicators on individual controls intact.
+
 `dist/` is tracked and embedded. Rebuild it after UI or bundled-guide changes,
 then rebuild the Rust binary to serve the new assets. Commit generated `dist`
 in its own build commit. CI checks it for drift. For targeted UI tests use

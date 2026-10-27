@@ -17,6 +17,7 @@
   // Same promise for the same page, so a table's data/structure switch keeps the editor.
   const pageModule = $derived(page === null ? null : loadPage(page.load))
   let content = $state<HTMLElement>()
+  let keyboardNavigation = $state(false)
   let previousPath = route.path
   const pageLabel = $derived(crumbsFor(route.path).map((crumb) => crumb.label).join(' · '))
 
@@ -58,7 +59,13 @@
   </div>
 {/snippet}
 
-<svelte:window onkeydown={handlePaletteShortcut} />
+<svelte:window
+  onkeydown={(event) => {
+    keyboardNavigation = true
+    handlePaletteShortcut(event)
+  }}
+  onpointerdown={() => (keyboardNavigation = false)}
+/>
 <Toaster position="bottom-right" />
 <Tooltip.Provider delayDuration={200}>
   <a
@@ -68,10 +75,10 @@
   >
   <div class="panel-frame">
     <TopNav>
-      <!-- Route and skip-link focus identify the page without framing the viewport. -->
+      <!-- Pointer navigation keeps route focus without framing the viewport. -->
       <!-- Keep absolute accessibility labels inside this scroll container. -->
       <!-- The page is a keyboard scroll target even when it has no controls. -->
-      <main bind:this={content} id="conteudo" tabindex="0" aria-label={pageLabel} class="relative min-h-0 min-w-0 flex-1 overflow-auto focus-visible:-outline-offset-2">
+      <main bind:this={content} id="conteudo" tabindex="0" aria-label={pageLabel} class={`relative min-h-0 min-w-0 flex-1 overflow-auto ${keyboardNavigation ? 'focus-visible:-outline-offset-2' : 'focus-visible:outline-none'}`}>
         {#key page?.key ?? route.path}
           {#if page && pageModule}
             {#await pageModule}
