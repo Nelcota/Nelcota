@@ -8,6 +8,12 @@ function deferred<T>() {
   return { promise, resolve, reject }
 }
 describe('remote resources', () => {
+  it('keeps a loaded response as the same plain object instead of a deep proxy', async () => {
+    const resource = new RemoteResource<{ rows: { id: number }[] }>()
+    const payload = { rows: [{ id: 1 }] }
+    await resource.load(async () => payload)
+    expect(resource.data).toBe(payload)
+  })
   it('ignores obsolete responses even when the adapter ignores abort', async () => {
     const resource = new RemoteResource<string>()
     const old = deferred<string>(), current = deferred<string>()

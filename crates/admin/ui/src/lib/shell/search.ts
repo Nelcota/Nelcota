@@ -2,7 +2,8 @@
 // in order ("orders" matched "page Our Data Records"); here every typed term
 // must appear whole, ignoring accents and case.
 
-const normalize = (text: string) =>
+/** Lowercase text without accents. Callers searching large texts cache the result. */
+export const normalizeSearchText = (text: string) =>
   text
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
@@ -15,10 +16,14 @@ const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&
  * first. Terms at the start of a word score higher than in the middle.
  */
 export function commandScore(value: string, search: string, keywords: string[] = []): number {
-  const terms = normalize(search).split(/\s+/).filter(Boolean)
+  return normalizedScore(normalizeSearchText([value, ...keywords].join(' ')), search)
+}
+
+/** {@link commandScore} for a haystack that already went through {@link normalizeSearchText}. */
+export function normalizedScore(haystack: string, search: string): number {
+  const terms = normalizeSearchText(search).split(/\s+/).filter(Boolean)
   if (terms.length === 0) return 1
-  const haystack = normalize([value, ...keywords].join(' '))
-  if (!terms.every((term) => haystack.includes(term))) return 0
+  if (terms.every((term) => haystack.includes(term)) === false) return 0
   const atWordStart = terms.every((term) => new RegExp(`(^|[\\s_./-])${escapeRegExp(term)}`).test(haystack))
   return atWordStart ? 1 : 0.5
 }

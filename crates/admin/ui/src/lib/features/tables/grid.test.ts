@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alignRight, canonicalType, columnKind, shortUuid, columnWidth, editedValue, monospace, nextCell, pageInfo } from './grid'
+import { alignRight, canonicalType, cellPreview, CELL_PREVIEW_MAX_LENGTH, compactJsonPreview, columnKind, shortUuid, columnWidth, editedValue, monospace, nextCell, pageInfo } from './grid'
 
 const col = (
   name: string,
@@ -152,5 +152,40 @@ describe('inline edit value', () => {
   it('setting NULL is saved only when the cell was not NULL', () => {
     expect(editedValue('abc', 'abc', true)).toBeNull()
     expect(editedValue(null, '', true)).toBeUndefined()
+  })
+})
+
+describe('cell previews', () => {
+  it('keeps short values whole and cuts long ones at the limit with an ellipsis', () => {
+    expect(cellPreview('short')).toBe('short')
+    const exact = 'a'.repeat(CELL_PREVIEW_MAX_LENGTH)
+    expect(cellPreview(exact)).toBe(exact)
+    const long = cellPreview('b'.repeat(CELL_PREVIEW_MAX_LENGTH * 10))
+    expect(long).toHaveLength(CELL_PREVIEW_MAX_LENGTH + 1)
+    expect(long.endsWith('…')).toBe(true)
+  })
+
+  it('never splits an astral character at the cut', () => {
+    const text = `${'a'.repeat(CELL_PREVIEW_MAX_LENGTH - 1)}\u{1F600}tail`
+    expect(cellPreview(text)).toBe(`${'a'.repeat(CELL_PREVIEW_MAX_LENGTH - 1)}…`)
+  })
+
+  it('compacts JSON onto one line and cuts large documents', () => {
+    expect(compactJsonPreview('{ "a": [1, 2] }')).toBe('{"a":[1,2]}')
+    expect(compactJsonPreview('not json')).toBe('not json')
+    const large = JSON.stringify({ items: Array.from({ length: 1000 }, (_, index) => index) }, null, 2)
+    expect(compactJsonPreview(large)).toHaveLength(CELL_PREVIEW_MAX_LENGTH + 1)
+  })
+  it('keeps every digit and the whitespace inside strings', () => {
+    expect(compactJsonPreview('{ "id": 12345678901234567890, "amount": 0.10000000000000000001 }'))
+      .toBe('{"id":12345678901234567890,"amount":0.10000000000000000001}')
+    expect(compactJsonPreview('{ "note": "two  spaces\\n \\" quoted \\"" }')).toBe('{"note":"two  spaces\\n \\" quoted \\""}')
+    expect(compactJsonPreview('"plain  string"')).toBe('"plain  string"')
+  })
+  it('cuts a very large value without parsing all of it', () => {
+    const huge = `[${' 1,'.repeat(100_000)} 1]`
+    expect(huge.length).toBeGreaterThan(64 * 1024)
+    expect(compactJsonPreview(huge)).toBe(`${`[${'1,'.repeat(CELL_PREVIEW_MAX_LENGTH)}`.slice(0, CELL_PREVIEW_MAX_LENGTH)}…`)
+    expect(compactJsonPreview(`text ${'x'.repeat(70_000)}`)).toHaveLength(CELL_PREVIEW_MAX_LENGTH + 1)
   })
 })

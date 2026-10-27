@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { commandScore } from './search'
+import { commandScore, normalizedScore, normalizeSearchText } from './search'
 
 describe('palette search', () => {
   it('does not match scattered letters (the fuzzy search problem)', () => {
@@ -27,5 +27,13 @@ describe('palette search', () => {
   it('an empty search shows everything; keywords count too', () => {
     expect(commandScore('anything', '  ')).toBe(1)
     expect(commandScore('action sign out', 'logout', ['logout'])).toBeGreaterThan(0)
+  })
+
+  it('scores a cached normalized haystack like the raw text', () => {
+    const haystack = normalizeSearchText('Caixa de Entrada e Configuração do E-mail')
+    expect(haystack).toBe('caixa de entrada e configuracao do e-mail')
+    for (const search of ['CONFIGURAÇÃO', 'entrada caixa', 'trada', 'senha', '  ']) {
+      expect(normalizedScore(haystack, search)).toBe(commandScore('Caixa de Entrada e Configuração do E-mail', search))
+    }
   })
 })

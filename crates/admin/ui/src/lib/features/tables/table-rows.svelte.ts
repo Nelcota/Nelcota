@@ -61,8 +61,7 @@ export class TableRows {
       const result = await this.adapter.update(table, { ...pk }, { [column]: value })
       if (this.target?.table !== table) return result.count
       if (this.data === data && this.loadSeq === seq) {
-        const row = data.rows.find(candidate => rowKey(candidate, data.table.primary_key) === key)
-        if (row && result.count > 0) row[column] = value
+        if (result.count > 0) this.replaceCell(data, key, column, value)
         return result.count
       }
       await this.reload(table)
@@ -70,6 +69,15 @@ export class TableRows {
     } finally {
       this.saving = false
     }
+  }
+
+  // Rows are raw state: a saved cell replaces its row and the page object,
+  // and every other row keeps its identity.
+  private replaceCell(data: TableData, key: string, column: string, value: string | null) {
+    const index = data.rows.findIndex(candidate => rowKey(candidate, data.table.primary_key) === key)
+    const row = data.rows[index]
+    if (row === undefined) return
+    this.resource.data = { ...data, rows: data.rows.with(index, { ...row, [column]: value }) }
   }
 
   async deleteSelected(): Promise<number | undefined> {

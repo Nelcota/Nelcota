@@ -11,7 +11,7 @@ export interface SqlAdapter {
 export class SqlExecution {
   readonly schema = new RemoteResource<SchemaResponse>()
   running = $state(false)
-  response = $state<SqlResponse | null>(null)
+  response = $state.raw<SqlResponse | null>(null)
   error = $state<unknown>(null)
   elapsed = $state(0)
   private generation = 0

@@ -3,6 +3,68 @@
 
 import type { Column, RowData } from '$lib/contracts/types'
 
+/**
+ * Longest text a cell keeps in the DOM for its tooltip or JSON preview. A
+ * cell shows only its start; the detail dialog has the whole value.
+ */
+export const CELL_PREVIEW_MAX_LENGTH = 500
+
+export function cellPreview(text: string): string {
+  if (text.length <= CELL_PREVIEW_MAX_LENGTH) return text
+  // Do not split a surrogate pair (emoji and other astral characters).
+  const lastCode = text.charCodeAt(CELL_PREVIEW_MAX_LENGTH - 1)
+  const end = lastCode >= 0xd800 && lastCode <= 0xdbff ? CELL_PREVIEW_MAX_LENGTH - 1 : CELL_PREVIEW_MAX_LENGTH
+  return `${text.slice(0, end)}…`
+}
+
+/** Above this, a value is not parsed just to check it is JSON. */
+const JSON_VALIDATION_MAX_LENGTH = 64 * 1024
+const JSON_CONTAINER_START = /^\s*[[{]/
+
+/**
+ * JSON on a single line, cut for the cell; text that is not JSON is only cut.
+ * Whitespace outside strings is dropped instead of re-serializing, so numbers
+ * keep every digit and a large value is only read up to the preview length.
+ */
+export function compactJsonPreview(text: string): string {
+  if (isJsonText(text) === false) return cellPreview(text)
+  return cellPreview(withoutJsonWhitespace(text, CELL_PREVIEW_MAX_LENGTH + 1))
+}
+
+function isJsonText(text: string): boolean {
+  if (text.length > JSON_VALIDATION_MAX_LENGTH) return JSON_CONTAINER_START.test(text)
+  try {
+    JSON.parse(text)
+    return true
+  } catch {
+    // Not JSON: the caller shows the text as stored.
+    return false
+  }
+}
+
+const JSON_WHITESPACE = new Set([' ', '\t', '\n', '\r'])
+
+/** Drops whitespace outside strings, stopping once `limit` characters are kept. */
+function withoutJsonWhitespace(text: string, limit: number): string {
+  let kept = ''
+  let inString = false
+  let escaped = false
+  for (const character of text) {
+    if (kept.length >= limit) break
+    if (inString) {
+      kept += character
+      if (escaped) escaped = false
+      else if (character === '\\') escaped = true
+      else if (character === '"') inString = false
+      continue
+    }
+    if (JSON_WHITESPACE.has(character)) continue
+    if (character === '"') inString = true
+    kept += character
+  }
+  return kept
+}
+
 /** Stable identity, including composite keys; never use a row's position for writes. */
 export function rowKey(row: RowData, primaryKey: readonly string[], fallback = 0): string {
   return primaryKey.length ? JSON.stringify(primaryKey.map((key) => row[key])) : String(fallback)
