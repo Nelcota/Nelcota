@@ -70,7 +70,7 @@
     </div>
   {/if}
   {#if !(!projects && refreshing) && (projects)}
-    {#if projects.length === 0}<EmptyState icon={Boxes} title={t('projects.empty')} description={t('projects.emptyDescription')} />{/if}
+    {#if projects.length === 0}<EmptyState class="rounded-3xl bg-card" icon={Boxes} title={t('projects.empty')} description={t('projects.emptyDescription')} />{/if}
     <div class="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {#each projects as project (project.name)}
         {@const url = address(project)}

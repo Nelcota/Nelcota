@@ -34,7 +34,7 @@ const ptBR = {
     policy_updated: 'Política {name} atualizada',
     policy_dropped: 'Política {name} apagada',
   },
-  listTitle: 'Migrações',
+  listTitle: 'Histórico',
   noMigrations: 'Nenhuma migração ainda',
   noMigrationsHint: 'Arquivos V1__nome.sql em migrations/, aplicados com nelcota migrate, aparecem aqui.',
   columns: {

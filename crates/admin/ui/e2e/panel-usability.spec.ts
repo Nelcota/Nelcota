@@ -121,7 +121,8 @@ test('internal navigation and reload respect the active draft and explicit disca
 
 test('discard confirmation preserves a history jump across hash entries', async ({ page }) => {
   await page.goto('/admin/connect')
-  await page.locator('main a[href="#api-sdk"]').first().click()
+  // The page no longer links to its own sections (the sidebar does); a hash change adds the same history entry.
+  await page.evaluate(() => { location.hash = 'api-sdk' })
   await expect(page).toHaveURL(/#api-sdk$/)
   await page.locator('.panel-sidebar').getByRole('button', { name: 'Users', exact: true }).click()
   await page.locator('.panel-sidebar').getByRole('link', { name: 'User list', exact: true }).click()
@@ -271,7 +272,7 @@ test('updates distinguishes loading, enrollment and a retryable failure', async 
     await expect(page.getByText('This host has not been enrolled for panel updates.', { exact: true })).toHaveCount(0)
     await expect(page.getByRole('status')).toContainText('Loading')
     release()
-    await expect(page.getByRole('link', { name: 'Open update management', exact: true })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Open update management (opens in a new tab)', exact: true })).toBeVisible()
     origin = null; await page.reload()
     await expect(page.getByText('This host has not been enrolled for panel updates.', { exact: true })).toBeVisible()
     version = ''; await page.reload()

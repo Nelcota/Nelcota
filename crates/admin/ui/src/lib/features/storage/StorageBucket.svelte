@@ -204,7 +204,7 @@
 
   {#if infoError}<LoadError message={infoError} onretry={loadInfo} busy={infoLoading} />{/if}
   {#if error}<LoadError message={error} onretry={() => load()} busy={loading} />{/if}
-  <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+  <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
   <section class="min-w-0" aria-label={t('storage.browser.files')}>
   {#if info}
     <button type="button" disabled={uploading !== null} class={['mb-4 flex w-full cursor-pointer flex-col items-center gap-2 rounded-3xl border-2 border-dashed border-border bg-card px-4 py-6 text-sm text-muted-foreground transition-colors hover:border-brand/50 hover:text-foreground disabled:cursor-wait', dragging && 'border-brand bg-brand/5 text-brand']} aria-label={t('storage.browser.dropHint')} aria-describedby="drop-limits" onclick={() => picker?.click()}>

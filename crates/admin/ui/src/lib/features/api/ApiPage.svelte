@@ -3,7 +3,6 @@
   import { onMount, untrack, tick } from 'svelte'
   import * as Select from '$lib/components/ui/select'
   import BookOpen from '@lucide/svelte/icons/book-open'
-  import Plug from '@lucide/svelte/icons/plug'
   import Globe from '@lucide/svelte/icons/globe'
   import UserRound from '@lucide/svelte/icons/user-round'
   import Server from '@lucide/svelte/icons/server'
@@ -171,7 +170,6 @@
 <div class="mx-auto grid w-full max-w-page gap-6 px-4 pt-2 pb-12 *:min-w-0 sm:px-6 lg:px-8 [&>:first-child]:mb-0">
   <PageHeader title={t('connect.title')} description={t('connect.description')}>
     {#snippet actions()}
-      <Button href="#api-sdk"><Plug data-icon="inline-start" aria-hidden="true" />{t('connect.start')}</Button>
       <Button variant="outline" href={href('/guides/openapi')}>
         <BookOpen data-icon="inline-start" aria-hidden="true" />{t('connect.openapi')}
       </Button>

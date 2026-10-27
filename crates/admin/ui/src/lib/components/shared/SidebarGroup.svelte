@@ -10,7 +10,7 @@
 
 <div class="panel-nav-group">
   <button type="button" class="panel-nav-link w-full text-left" class:is-parent-active={active} aria-expanded={open} aria-controls={id} onclick={() => (open = !open)}>
-    <Icon class="size-[17px] shrink-0" aria-hidden="true" />
+    <Icon class="size-[17px] shrink-0" strokeWidth={1.6} aria-hidden="true" />
     <span class="min-w-0 flex-1">{label}</span>
     <ChevronDown class={['size-3.5 shrink-0 transition-transform', !open && '-rotate-90']} aria-hidden="true" />
   </button>

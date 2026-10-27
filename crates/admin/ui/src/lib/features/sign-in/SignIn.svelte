@@ -40,7 +40,7 @@
   })
 </script>
 
-<div class="mx-auto grid w-full max-w-page gap-6 px-4 pt-2 pb-12 *:min-w-0 sm:px-6 lg:px-8">
+<div class="mx-auto grid w-full max-w-page gap-6 px-4 pt-2 pb-12 *:min-w-0 sm:px-6 lg:px-8 [&>:first-child]:mb-0">
   <PageHeader title={t('signIn.title')} description={t('signIn.description')}>
     {#snippet actions()}<Button variant="outline" href={href('/connect?topic=auth')}><BookOpen data-icon="inline-start" aria-hidden="true" />{t('signIn.examples')}</Button>{/snippet}
   </PageHeader>
@@ -68,10 +68,10 @@
       <h2 id="signin-session" class="text-lg font-semibold">{t('signIn.session.title')}</h2>
       <div class="grid gap-4 sm:grid-cols-3">
         {#each session as item (item.id)}
-          <div class="grid content-start gap-1 rounded-3xl bg-card p-5">
-            <p class="text-sm text-muted-foreground">{t(`signIn.session.${item.id}.label`)}</p>
-            <p class="text-3xl font-semibold tracking-tight tabular-nums">
-              {fmt.format(item.value)}<span class="ml-1.5 text-base font-medium text-muted-foreground">{t(`signIn.session.${item.id}.unit`, { count: item.value })}</span>
+          <div class="grid content-start gap-1 rounded-3xl bg-card p-4 sm:p-5">
+            <p class="text-xs text-muted-foreground sm:text-sm">{t(`signIn.session.${item.id}.label`)}</p>
+            <p class="text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">
+              {fmt.format(item.value)}<span class="ml-1.5 text-sm font-medium text-muted-foreground sm:text-base">{t(`signIn.session.${item.id}.unit`, { count: item.value })}</span>
             </p>
             <p class="text-sm text-muted-foreground">{t(`signIn.session.${item.id}.hint`)}</p>
           </div>

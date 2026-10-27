@@ -22,6 +22,19 @@ for the October 27 server scope and independent SDK publication checkpoint.
   brand mark now sits atop the sidebar (D111).
 - The three summary cards on Access policies share the row equally; the third
   was narrower because it lined up with the side column below.
+- Panel pages share one frame: the same gap under every page title, the same
+  stat card sizes, one badge style for statuses (webhooks, deliveries, sign-in
+  options), equal side columns on the database and storage pages, and the
+  Updates page in the standard container.
+- Overview cards have a single link each, named like the sidebar, and the
+  "Needs you" list appears once. The API page drops its "Connect my app"
+  button, which repeated the sidebar link (D103).
+- Delivery details lists attempts as rows on phones and keeps its way back in a
+  phone-only breadcrumb, like the storage pages; the delivery history hides its
+  pager when everything fits on one page. Webhook card menus sit next to the
+  status.
+- The Migrations title is the page's main heading on phones, and its list is
+  called "History".
 
 ### Fixed
 

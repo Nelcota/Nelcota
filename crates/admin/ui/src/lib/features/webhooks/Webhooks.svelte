@@ -12,6 +12,7 @@
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
+  import { Badge } from '$lib/components/ui/badge'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import Callout from '$lib/components/shared/Callout.svelte'
@@ -125,7 +126,7 @@
   }
 </script>
 
-<div class="mx-auto grid w-full max-w-page gap-6 px-4 pt-2 pb-12 *:min-w-0 sm:px-6 lg:px-8">
+<div class="mx-auto grid w-full max-w-page gap-6 px-4 pt-2 pb-12 *:min-w-0 sm:px-6 lg:px-8 [&>:first-child]:mb-0">
   <PageHeader title={t('webhooks.title')} description={t('webhooks.description')}>
     {#snippet actions()}<Button variant="outline" onclick={refresh} disabled={refreshing}><RefreshCw data-icon="inline-start" aria-hidden="true" class={refreshing ? 'animate-spin' : ''} />{t('common.refresh')}</Button>{#if tab === 'configuration'}<Button onclick={() => edit(null)} disabled={!config.data?.tables.length}><Plus data-icon="inline-start" aria-hidden="true" />{t('webhooks.create')}</Button>{/if}{/snippet}
   </PageHeader>
@@ -135,22 +136,32 @@
   {#if !config.data && config.loading}<Skeleton class="h-40 rounded-3xl" />{/if}
   {#if config.data}
     <div class="grid grid-cols-2 gap-4">
-      <div class="rounded-3xl bg-card p-4 sm:p-5"><p class="text-sm text-muted-foreground">{t('webhooks.outstanding')}</p><p class="mt-1 flex flex-wrap items-baseline gap-x-2 text-2xl font-semibold tabular-nums">{count(config.data.outstanding)}<span class="text-xs font-normal whitespace-nowrap text-muted-foreground">{t('webhooks.ofLimit', { limit: count(OUTSTANDING_LIMIT) })}</span></p></div>
-      <div class="rounded-3xl bg-card p-4 sm:p-5"><p class="text-sm text-muted-foreground">{t('webhooks.retained')}</p><p class="mt-1 flex flex-wrap items-baseline gap-x-2 text-2xl font-semibold tabular-nums">{count(config.data.retained)}<span class="text-xs font-normal whitespace-nowrap text-muted-foreground">{t('webhooks.ofLimit', { limit: count(RETAINED_LIMIT) })}</span></p></div>
+      <div class="grid content-start gap-1 rounded-3xl bg-card p-4 sm:p-5"><p class="text-xs text-muted-foreground sm:text-sm">{t('webhooks.outstanding')}</p><p class="flex flex-wrap items-baseline gap-x-1.5 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">{count(config.data.outstanding)}<span class="text-sm font-medium whitespace-nowrap text-muted-foreground sm:text-base">{t('webhooks.ofLimit', { limit: count(OUTSTANDING_LIMIT) })}</span></p></div>
+      <div class="grid content-start gap-1 rounded-3xl bg-card p-4 sm:p-5"><p class="text-xs text-muted-foreground sm:text-sm">{t('webhooks.retained')}</p><p class="flex flex-wrap items-baseline gap-x-1.5 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">{count(config.data.retained)}<span class="text-sm font-medium whitespace-nowrap text-muted-foreground sm:text-base">{t('webhooks.ofLimit', { limit: count(RETAINED_LIMIT) })}</span></p></div>
     </div>
     {#if config.data.outstanding >= OUTSTANDING_LIMIT * CAPACITY_WARNING || config.data.retained >= RETAINED_LIMIT * CAPACITY_WARNING}<Callout variant="warning" title={t('webhooks.capacity')} />{/if}
     {#if (tab === 'configuration')}
       {#if !config.data.endpoints.length}
         <EmptyState class="rounded-3xl bg-card" icon={Webhook} title={t(config.data.tables.length ? 'webhooks.emptyTitle' : 'webhooks.noTables')} description={t(config.data.tables.length ? 'webhooks.emptyHint' : 'webhooks.noTablesHint')}>
-          {#snippet actions()}{#if (config.data?.tables.length)}<Button onclick={() => edit(null)}>{t('webhooks.create')}</Button>{/if}{#if !(config.data?.tables.length)}<Button href={href('/tables?create=true')}>{t('tables.editor.newTable')}</Button>{/if}{/snippet}
+          {#snippet actions()}{#if (config.data?.tables.length)}<Button variant="outline" onclick={() => edit(null)}><Plus data-icon="inline-start" aria-hidden="true" />{t('webhooks.create')}</Button>{/if}{#if !(config.data?.tables.length)}<Button href={href('/tables?create=true')}>{t('tables.editor.newTable')}</Button>{/if}{/snippet}
         </EmptyState>
       {/if}
       <div class="grid gap-4 lg:grid-cols-2">
         {#each config.data.endpoints as hook (hook.id)}
           <section class="grid min-w-0 content-start gap-4 rounded-3xl bg-card p-5">
-            <header class="flex flex-wrap items-center justify-between gap-2"><h3 class="min-w-0 break-words font-semibold">{hook.name}</h3>
-              {#if !hook.table_available}<span class="rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive">{t('webhooks.tableMissing')}</span>{/if}
-              {#if hook.table_available}<span class={['rounded-full px-2.5 py-1 text-xs font-medium', hook.enabled ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground']}>{t(hook.enabled ? 'webhooks.enabled' : 'webhooks.paused')}</span>{/if}
+            <header class="flex items-center gap-2"><h3 class="min-w-0 flex-1 break-words font-semibold">{hook.name}</h3>
+              {#if !hook.table_available}<Badge variant="destructive">{t('webhooks.tableMissing')}</Badge>{/if}
+              {#if hook.table_available}<Badge variant={hook.enabled ? 'success' : 'muted'}>{t(hook.enabled ? 'webhooks.enabled' : 'webhooks.paused')}</Badge>{/if}
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger disabled={busy !== null}>
+                  {#snippet child({ props })}<Button variant="ghost" size="icon-sm" aria-label={t('common.actionsFor', { name: hook.name })} {...props}><Ellipsis aria-hidden="true" /></Button>{/snippet}
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content align="end" class="w-48">
+                  <DropdownMenu.Item onclick={() => request('rotate', hook)}><KeyRound aria-hidden="true" />{t('webhooks.rotate')}</DropdownMenu.Item>
+                  <DropdownMenu.Separator />
+                  <DropdownMenu.Item variant="destructive" onclick={() => request('delete', hook)}><Trash2 aria-hidden="true" />{t('webhooks.remove')}</DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
             </header>
             <p class="font-mono text-sm text-muted-foreground">{hook.schema}.{hook.table}</p>
             {#if !hook.table_available}<p class="text-sm text-warning">{t('webhooks.missingTable')}</p>{/if}
@@ -162,16 +173,6 @@
                    pending deliveries; only resuming needs the table back (the server refuses it). -->
               {#if hook.enabled || hook.table_available}<Button variant="outline" size="sm" onclick={() => hook.enabled ? request('pause', hook) : enable(hook)} disabled={busy !== null}>{t(hook.enabled ? 'webhooks.pause' : 'webhooks.resume')}</Button>{/if}
               <Button variant="outline" size="sm" onclick={() => filters(hook.id, '')}>{t('webhooks.deliveries')}</Button>
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger disabled={busy !== null}>
-                  {#snippet child({ props })}<Button variant="ghost" size="icon-sm" aria-label={t('common.actionsFor', { name: hook.name })} {...props}><Ellipsis aria-hidden="true" /></Button>{/snippet}
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Content align="end" class="w-48">
-                  <DropdownMenu.Item onclick={() => request('rotate', hook)}><KeyRound aria-hidden="true" />{t('webhooks.rotate')}</DropdownMenu.Item>
-                  <DropdownMenu.Separator />
-                  <DropdownMenu.Item variant="destructive" onclick={() => request('delete', hook)}><Trash2 aria-hidden="true" />{t('webhooks.remove')}</DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Root>
             </div>
           </section>
         {/each}

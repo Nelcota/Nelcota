@@ -27,7 +27,7 @@ const en: Messages<typeof ptBR> = {
   allWebhooks: 'All webhooks', allStatuses: 'All states', webhookFilter: 'Filter by webhook', statusFilter: 'Filter by state',
   status: { pending: 'Waiting', processing: 'Sending', succeeded: 'Delivered', failed: 'Failed', cancelled: 'Cancelled' },
   sent: 'Created', event: 'Event', result: 'Result', view: 'View delivery', firstPage: 'Newest', nextPage: 'Older',
-  deliveryTitle: 'Delivery #{id}', back: 'Back to history', eventId: 'Event ID', deliveryId: 'Delivery ID', payload: 'Payload',
+  deliveryTitle: 'Delivery #{id}', eventId: 'Event ID', deliveryId: 'Delivery ID', payload: 'Payload',
   attemptHistory: 'Attempts', attempt: 'Attempt', started: 'Started', duration: 'Duration', nextAttempt: 'Next attempt',
   noAttempts: 'No send started yet.', replay: 'Resend', replayTitle: 'Resend this event?',
   replayHint: 'A new delivery will use the webhook’s current URL and key. The event ID and payload stay the same. The service may ignore an already processed event.',

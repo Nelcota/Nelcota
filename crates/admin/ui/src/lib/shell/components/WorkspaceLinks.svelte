@@ -17,7 +17,7 @@
       <SidebarGroup label={t(item.title)} icon={item.icon} {active}>
         {#each item.children as child (child.path)}
           <a href={href(navPath(child))} onclick={close} aria-current={isNavActive(child) ? child.section ? 'location' : 'page' : undefined} class={['panel-nav-link panel-nav-child', isNavActive(child) && 'is-active']}>
-            <child.icon class="size-4 shrink-0" aria-hidden="true" /><span>{t(child.title)}</span>
+            <child.icon class="size-4 shrink-0" strokeWidth={1.6} aria-hidden="true" /><span>{t(child.title)}</span>
           </a>
         {/each}
       </SidebarGroup>
@@ -29,7 +29,7 @@
     {/if}
   {/each}
   <div class="my-3 h-px bg-border" role="separator"></div>
-  <a href={href('/projects')} onclick={close} aria-current={isActive('/projects') ? 'page' : undefined} class={['panel-nav-link', isActive('/projects') && 'is-active']}><Boxes class="size-[17px] shrink-0" aria-hidden="true" />{t('shell.pages.projects')}</a>
-  <a href={href('/updates')} onclick={close} aria-current={isActive('/updates') ? 'page' : undefined} class={['panel-nav-link', isActive('/updates') && 'is-active']}><ArrowUpCircle class="size-[17px] shrink-0" aria-hidden="true" />{t('shell.pages.updates')}</a>
-  <a href={href('/guides')} onclick={close} aria-current={isActive('/guides') ? 'page' : undefined} class={['panel-nav-link', isActive('/guides') && 'is-active']}><BookOpen class="size-[17px] shrink-0" aria-hidden="true" />{t('shell.pages.guides')}</a>
+  <a href={href('/projects')} onclick={close} aria-current={isActive('/projects') ? 'page' : undefined} class={['panel-nav-link', isActive('/projects') && 'is-active']}><Boxes class="size-[17px] shrink-0" strokeWidth={1.6} aria-hidden="true" />{t('shell.pages.projects')}</a>
+  <a href={href('/updates')} onclick={close} aria-current={isActive('/updates') ? 'page' : undefined} class={['panel-nav-link', isActive('/updates') && 'is-active']}><ArrowUpCircle class="size-[17px] shrink-0" strokeWidth={1.6} aria-hidden="true" />{t('shell.pages.updates')}</a>
+  <a href={href('/guides')} onclick={close} aria-current={isActive('/guides') ? 'page' : undefined} class={['panel-nav-link', isActive('/guides') && 'is-active']}><BookOpen class="size-[17px] shrink-0" strokeWidth={1.6} aria-hidden="true" />{t('shell.pages.guides')}</a>
 </nav>

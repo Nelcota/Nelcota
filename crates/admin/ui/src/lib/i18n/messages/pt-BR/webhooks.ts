@@ -24,7 +24,7 @@ const ptBR = {
   allWebhooks: 'Todos os webhooks', allStatuses: 'Todos os estados', webhookFilter: 'Filtrar por webhook', statusFilter: 'Filtrar por estado',
   status: { pending: 'Aguardando', processing: 'Enviando', succeeded: 'Entregue', failed: 'Falhou', cancelled: 'Cancelada' },
   sent: 'Criada em', event: 'Evento', result: 'Resultado', view: 'Ver entrega', firstPage: 'Mais recentes', nextPage: 'Mais antigas',
-  deliveryTitle: 'Entrega #{id}', back: 'Voltar ao histórico', eventId: 'ID do evento', deliveryId: 'ID da entrega', payload: 'Dados enviados',
+  deliveryTitle: 'Entrega #{id}', eventId: 'ID do evento', deliveryId: 'ID da entrega', payload: 'Dados enviados',
   attemptHistory: 'Tentativas', attempt: 'Tentativa', started: 'Início', duration: 'Duração', nextAttempt: 'Próxima tentativa',
   noAttempts: 'Nenhum envio iniciado.', replay: 'Reenviar', replayTitle: 'Reenviar este evento?',
   replayHint: 'Uma nova entrega usará a URL e a chave atuais do webhook. O ID do evento e os dados permanecem iguais. O serviço pode ignorar um evento já processado.',

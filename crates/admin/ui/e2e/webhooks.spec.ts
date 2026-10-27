@@ -103,7 +103,7 @@ test('history filters and cursor survive URL navigation; resend preserves the ev
   expect(historyQueries.some(query => query.includes('before=50') && query.includes('status=failed'))).toBe(true)
   await page.getByRole('link', { name: 'Ver entrega', exact: true }).click()
   await expect(page.getByRole('heading', { name: `Entrega #${deliveryId}` })).toBeVisible()
-  await expect(page.getByText('O envio foi interrompido; a fila recuperou a tentativa.')).toBeVisible()
+  await expect(page.getByText('O envio foi interrompido; a fila recuperou a tentativa.').filter({ visible: true })).toBeVisible()
   await expect(page.getByText('<script>window.webhookXss = true</script>', { exact: false })).toBeVisible()
   expect(await page.evaluate(() => Reflect.get(window, 'webhookXss'))).toBeUndefined()
   await page.getByRole('button', { name: 'Reenviar', exact: true }).click()

@@ -45,7 +45,7 @@
 
 <aside
   aria-label={t('tables.sidebar.label')}
-  class={cn('w-full shrink-0 flex-col overflow-hidden lg:flex lg:w-64 2xl:w-72', !tables.length && !loading && !error ? 'border-b border-border lg:border-r lg:border-b-0' : 'rounded-3xl bg-card', phone ? 'flex' : 'hidden')}
+  class={cn('w-full shrink-0 flex-col overflow-hidden lg:flex lg:w-64 xl:w-72', !tables.length && !loading && !error ? 'border-b border-border lg:border-r lg:border-b-0' : 'rounded-3xl bg-card', phone ? 'flex' : 'hidden')}
 >
   <div class="grid gap-3 border-b p-4">
     <div class="flex items-center justify-between gap-2">

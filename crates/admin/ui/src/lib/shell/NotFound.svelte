@@ -9,7 +9,7 @@
 
 <div class="mx-auto grid h-full w-full max-w-page place-items-center px-4 pt-2 pb-12 sm:px-6 lg:px-8">
   <div class="grid w-full max-w-md justify-items-center rounded-3xl bg-card px-6 pt-8 pb-10 text-center sm:px-8">
-    <span class="mb-4 grid size-14 place-items-center rounded-xl bg-well"><Search class="size-6 text-muted-foreground" aria-hidden="true" /></span>
+    <span class="mb-4 grid size-14 place-items-center rounded-full bg-well"><Search class="size-6 text-muted-foreground" aria-hidden="true" /></span>
     <p class="mt-2 font-mono text-sm text-muted-foreground">404</p>
     <h1 class="mt-1 text-2xl font-semibold tracking-tight">{t('overview.notFound.title')}</h1>
     <p class="mt-1 text-sm text-muted-foreground">{t('overview.notFound.description')}</p>

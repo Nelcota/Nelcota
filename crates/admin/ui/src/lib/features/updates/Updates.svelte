@@ -16,14 +16,14 @@
   }
   onMount(() => { void load(); return () => resource.cancel() })
 </script>
-<div class="mx-auto w-full max-w-page px-4 py-6 sm:px-6 lg:px-8" aria-busy={resource.loading}>
+<div class="mx-auto w-full max-w-page px-4 pt-2 pb-12 sm:px-6 lg:px-8" aria-busy={resource.loading}>
   <PageHeader title={t('updates.title')} description={t('updates.subtitle')} />
   {#if resource.error}<LoadError message={errorMessage(resource.error)} onretry={load} busy={resource.loading} />{/if}
   {#if !resource.loaded || resource.loading}
     <p role="status" class="text-sm text-muted-foreground">{t('common.loading')}</p>
   {/if}
   {#if resource.loaded && !resource.loading && !resource.error}
-    <div class="grid max-w-2xl gap-5 rounded-3xl bg-card p-6">
+    <div class="grid gap-5 rounded-3xl bg-card p-5">
       <p>{t('updates.current')}: <strong translate="no">{version}</strong></p>
       <p class="text-sm text-muted-foreground">{t('updates.authority')}</p>
       {#if origin}<Button class="w-fit" href={`${origin}/admin/`} target="_blank" rel="noopener noreferrer">{t('updates.open')}<span class="sr-only"> {t('common.newTab')}</span><ArrowUpRight data-icon="inline-end" aria-hidden="true" /></Button>{/if}
