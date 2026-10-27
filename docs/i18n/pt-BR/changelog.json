@@ -71,5 +71,5 @@
   "Reject an invalid `Date` or a `bigint` in a JSON request body with\n`NelcotaUsageError`, instead of writing `null` or throwing a raw `TypeError`.": "Recusar uma `Date` inválida ou um `bigint` no corpo JSON de uma requisição com `NelcotaUsageError`, em vez de gravar `null` ou lançar um `TypeError` bruto.",
   "Keep query strings on engines without `URLSearchParams.size` (Safari before\n17), which previously sent requests without their filters.": "Manter a query string em engines sem `URLSearchParams.size` (Safari anterior ao 17), que antes enviavam as requisições sem os filtros.",
   "Unreleased": "Não lançado",
-  "Parse responses about 8 to 12 times faster: the pass that keeps unsafe\nintegers and long decimals exact is skipped when no number in the response\ncan lose digits.": "Leitura de respostas cerca de 8 a 12 vezes mais rápida: a etapa que mantém exatos os inteiros inseguros e os decimais longos é pulada quando nenhum número da resposta pode perder dígitos."
+  "Parse JSON in large responses about 8 to 12 times faster: the pass that\nkeeps unsafe integers and long decimals exact is skipped when no number in\nthe response can lose digits.": "Ler o JSON de respostas grandes cerca de 8 a 12 vezes mais rápido: a etapa que mantém exatos os inteiros inseguros e os decimais longos é pulada quando nenhum número da resposta pode perder dígitos."
 }

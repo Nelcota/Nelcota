@@ -12,9 +12,10 @@ for the October 25 server scope and independent SDK publication checkpoint.
 
 ### Security
 
-- Host alert webhooks now refuse the same non-public destinations as project
-  webhooks, through one shared check: CGNAT, benchmarking, documentation, the
-  6to4 relay, discard-only IPv6 and every IPv6 address outside 2000::/3. The
+- Check host alert webhooks with the same address policy as project webhooks.
+  Alert destinations no longer accept the 6to4 relay (192.88.99.0/24),
+  discard-only 100::/64, IPv6 benchmarking and other IETF blocks in 2001::/23,
+  IPv6 documentation 3fff::/20 or any IPv6 address outside 2000::/3. The
   host-management policy also refuses 240.0.0.0/4 and IPv6 addresses that embed
   an IPv4 address (IPv4-compatible, NAT64, 6to4, Teredo).
 
@@ -35,13 +36,12 @@ for the October 25 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
-- Alert endpoints written as an IPv6 literal (`https://[2001:db8::1]/hook`) no
-  longer fail every delivery.
-- The operator email is validated at enrollment with the same rules used when
-  an alert email is sent.
-- A hidden password prompt restores terminal echo if the CLI panics while
+- Deliver alerts to endpoints written as an IPv6 literal (`https://[…]/hook`),
+  which previously failed every delivery.
+- Validate the operator email at enrollment with the same rules used when an
+  alert email is sent.
+- Restore terminal echo after a hidden password prompt if the CLI panics while
   reading it.
-
 - Check that the caller's session is still active before verifying
   `current_password` on `PUT /auth/v1/user`, so a logged-out access token can no
   longer test passwords until it expires.

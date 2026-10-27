@@ -167,9 +167,10 @@ per-tab sessionStorage. The module-local queue cannot coordinate separate tabs.
 
 Browsers expose Web Locks only in secure contexts (HTTPS or `localhost`). On a
 plain `http://` origin, such as a LAN address, tabs fall back to the
-module-local queue, so two tabs can refresh at once and the server's reuse
-detection ends the session. Serve browser apps over HTTPS when people keep
-several tabs open.
+module-local queue, so two tabs can refresh at once. The server's 10-second
+retry window accepts the second refresh, but if the token from the first one is
+the copy left in storage, its next refresh counts as reuse and ends the
+session. Serve browser apps over HTTPS when people keep several tabs open.
 
 Native persistence requires IndexedDB and bounds each database open and
 transaction to five seconds. Connections close after every operation. A foreign

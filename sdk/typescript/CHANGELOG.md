@@ -7,9 +7,9 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Changed
 
-- Parse responses about 8 to 12 times faster: the pass that keeps unsafe
-  integers and long decimals exact is skipped when no number in the response
-  can lose digits.
+- Parse JSON in large responses about 8 to 12 times faster: the pass that
+  keeps unsafe integers and long decimals exact is skipped when no number in
+  the response can lose digits.
 
 ## 0.2.4 — 2026-10-26
 
