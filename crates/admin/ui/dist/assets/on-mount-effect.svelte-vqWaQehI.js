@@ -1,1 +1,0 @@
-import{Et as e,xt as t}from"./index.svelte-DHCxs6nC.js";function n(n){e(()=>t(()=>n()))}export{n as t};

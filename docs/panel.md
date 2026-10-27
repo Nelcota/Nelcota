@@ -275,10 +275,10 @@ After bundled guide/UI changes, run `bun run build` and rebuild the binary
 build commit. CI checks it for drift. Set `NELCOTA_API_URL` when Vite should
 proxy another backend.
 
-Interface texts live in `src/lib/i18n/messages/<area>.ts`, with a Portuguese
-(`pt-BR`) and an English (`en`) object; the English one is typed against the
-Portuguese one, so a missing key fails `bun run check`. Never hardcode a
-user-facing string in a component.
+Interface texts live in `src/lib/i18n/messages/pt-BR/<area>.ts` and
+`src/lib/i18n/messages/en/<area>.ts`; the English one is typed against the
+Portuguese one, so a missing key fails `bun run check`. The panel downloads
+only the active language. Never hardcode a user-facing string in a component.
 
 ## Related guides
 

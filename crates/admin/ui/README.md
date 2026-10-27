@@ -25,7 +25,8 @@ persistence; `features/storage` owns server files). See the ownership map in
 
 Wire types and validators in `src/lib/generated` come from Rust DTOs. Import
 the generated types through `$lib/contracts/types` rather than declaring another copy.
-Panel texts live in `src/lib/i18n/messages` (pt-BR and English).
+Panel texts live in `src/lib/i18n/messages/pt-BR` and `src/lib/i18n/messages/en`;
+the panel downloads only the active language.
 
 Use Node 24 for repository tooling and start the native backend first. Override
 Vite's target with `NELCOTA_API_URL`. Regenerate wire types with `bun run contracts`;

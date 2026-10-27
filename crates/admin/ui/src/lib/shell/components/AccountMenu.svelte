@@ -14,7 +14,8 @@
   import { logout } from '$lib/features/auth/auth'
   import { loadProfile, profile } from '$lib/features/profile/profile.svelte'
   import { session } from '$lib/resources/session.svelte'
-  import { LOCALES, i18n, setLocale, t, type Locale } from '$lib/i18n/index.svelte'
+  import { toast } from 'svelte-sonner'
+  import { LOCALES, errorMessage, i18n, setLocale, t, type Locale } from '$lib/i18n/index.svelte'
 
   let { open = $bindable(false) }: { open?: boolean } = $props()
 
@@ -28,6 +29,14 @@
   $effect(() => {
     if (session.email && !profile.loaded) loadProfile()
   })
+
+  async function changeLocale(locale: Locale) {
+    try {
+      await setLocale(locale)
+    } catch (error) {
+      toast.error(errorMessage(error))
+    }
+  }
 </script>
 
 <DropdownMenu.Root bind:open>
@@ -71,7 +80,7 @@
         <span class="ml-auto pl-3 text-xs text-muted-foreground">{t(`shell.languages.${i18n.locale}`)}</span>
       </DropdownMenu.SubTrigger>
       <DropdownMenu.SubContent class="min-w-40">
-        <DropdownMenu.RadioGroup value={i18n.locale} onValueChange={(value) => setLocale(value as Locale)}>
+        <DropdownMenu.RadioGroup value={i18n.locale} onValueChange={(value) => changeLocale(value as Locale)}>
           {#each LOCALES as locale (locale)}
             <!-- Each language names itself, so it can be found from either one. -->
             <DropdownMenu.RadioItem value={locale} lang={locale}>{t(`shell.languages.${locale}`)}</DropdownMenu.RadioItem>

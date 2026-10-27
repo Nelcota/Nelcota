@@ -19,6 +19,9 @@ for (const [route, endpoints] of Object.entries(pageContracts)) {
   test(`${route || 'overview'} loads its generated contract without an error`, async ({ page }) => {
     // Lazy modules and the Vite connection can outlive page readiness.
     // Check the actual data contracts and rendered loading state instead.
+    // Connect builds an AI context from the generated types; the shared fixture
+    // leaves that endpoint unmocked (a 404 would show an error alert).
+    await page.route('**/admin/api/typescript', route => route.fulfill({ contentType: 'text/plain', body: 'export type Database = { public: { Tables: {} } }\n' }))
     const responses = endpoints.map(path => page.waitForResponse(response => new URL(response.url()).pathname === `/admin/api${path}`))
     await page.goto(`/admin/${route}`)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()

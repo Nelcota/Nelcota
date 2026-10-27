@@ -8,7 +8,7 @@ use serde_json::json;
 /// Panel API error: `{"error": "<English text>", "code": "...", "params": {...}}`.
 ///
 /// `code` and `params` let the panel show the error in the user's language
-/// (crates/admin/ui/src/lib/i18n/messages/errors.ts); `error` stays the
+/// (crates/admin/ui/src/lib/i18n/messages/<language>/errors.ts); `error` stays the
 /// English text for other API consumers. Errors that come straight from
 /// Postgres carry no code, so the panel shows their text as-is.
 #[derive(Debug)]
