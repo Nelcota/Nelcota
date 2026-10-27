@@ -85,8 +85,9 @@ test('create shows the key once, then edit/pause/rotate/delete remain usable', a
 
 test('history filters and cursor survive URL navigation; resend preserves the event and opens the new delivery', async ({ page }) => {
   const { writes, historyQueries } = await setup(page)
-  await page.locator('main nav.panel-segments').getByRole('link', { name: 'Histórico de entregas', exact: true }).click()
-  await expect(page.locator('main nav.panel-segments').getByRole('link', { name: 'Histórico de entregas', exact: true })).toHaveAttribute('aria-current', 'page')
+  const history = page.locator('.panel-sidebar').getByRole('link', { name: 'Histórico de entregas', exact: true })
+  await history.click()
+  await expect(history).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('button', { name: 'Novo webhook', exact: true })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Ver entrega', exact: true })).toBeVisible()
   await page.getByLabel('Filtrar por webhook').click()
@@ -133,7 +134,7 @@ test('unsaved configuration and server errors keep the editor open', async ({ pa
 test('the signing key survives Escape, outside clicks and navigation until acknowledged', async ({ page }) => {
   await setup(page)
   // Two in-app entries, so Back stays inside the panel's router.
-  const views = page.locator('main nav.panel-segments')
+  const views = page.locator('.panel-sidebar')
   await views.getByRole('link', { name: 'Histórico de entregas', exact: true }).click()
   await views.getByRole('link', { name: 'Webhooks', exact: true }).click()
   await page.getByRole('button', { name: 'Ações de Pedidos pagos', exact: true }).click()
@@ -186,7 +187,8 @@ for (const locale of ['pt-BR', 'en']) {
     await page.goto('/admin/webhooks?tab=deliveries')
     await expect(page.getByRole('link', { name: /Pedidos pagos/ })).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-    await page.locator('main nav.panel-segments').getByRole('link', { name: 'Webhooks', exact: true }).click()
+    // At 320px the sidebar is a closed drawer; open the configuration view directly.
+    await page.goto('/admin/webhooks')
     await page.getByRole('button', { name: locale === 'en' ? 'Edit' : 'Editar', exact: true }).click()
     await expect(page.getByLabel(locale === 'en' ? 'Destination URL' : 'URL de destino', { exact: true })).toHaveValue(initial.url)
     await page.getByRole('dialog').getByRole('button', { name: locale === 'en' ? 'Cancel' : 'Cancelar', exact: true }).click()

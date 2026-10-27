@@ -8,7 +8,6 @@
   import Ellipsis from '@lucide/svelte/icons/ellipsis'
   import KeyRound from '@lucide/svelte/icons/key-round'
   import Trash2 from '@lucide/svelte/icons/trash-2'
-  import History from '@lucide/svelte/icons/history'
   import { Button } from '$lib/components/ui/button'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import { Skeleton } from '$lib/components/ui/skeleton'
@@ -123,10 +122,6 @@
   <PageHeader title={t('webhooks.title')} description={t('webhooks.description')}>
     {#snippet actions()}<Button variant="outline" onclick={refresh} disabled={refreshing}><RefreshCw data-icon="inline-start" aria-hidden="true" class={refreshing ? 'animate-spin' : ''} />{t('common.refresh')}</Button>{#if tab === 'configuration'}<Button onclick={() => edit(null)} disabled={!config.data?.tables.length}><Plus data-icon="inline-start" aria-hidden="true" />{t('webhooks.create')}</Button>{/if}{/snippet}
   </PageHeader>
-  <nav class="panel-segments" aria-label={t('webhooks.views')}>
-    <a href={href('/webhooks')} aria-current={tab === 'configuration' ? 'page' : undefined} class="panel-segment"><Webhook aria-hidden="true" />{t('webhooks.configuration')}</a>
-    <a href={href('/webhooks?tab=deliveries')} aria-current={tab === 'deliveries' ? 'page' : undefined} class="panel-segment"><History aria-hidden="true" />{t('webhooks.deliveries')}</a>
-  </nav>
   {#if config.error}<LoadError message={errorMessage(config.error)} onretry={loadConfig} busy={config.loading} />{/if}
   {#if !config.data && config.loading}<Skeleton class="h-40 rounded-3xl" />{/if}
   {#if config.data}

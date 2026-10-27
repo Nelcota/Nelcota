@@ -14,6 +14,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Changed
 
+- The Webhooks page no longer repeats the sidebar's "Webhooks" and "Delivery
+  history" items as tabs inside the page; the sidebar is the only navigation
+  between the two views, as for the database and users groups.
 - Panel and `nelcota dev` passwords no longer use characters that look alike
   when copied by eye (0/O, 1/l/I); they stay 20 random characters, about 116
   bits. The note under printed passwords names the exact command that prints a

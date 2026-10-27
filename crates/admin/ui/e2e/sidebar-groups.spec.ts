@@ -33,7 +33,8 @@ test('webhook history is selected for query filters and back navigation', async 
   const history = sidebar.getByRole('link', { name: 'Histórico de entregas', exact: true })
   await expect(history).toHaveAttribute('aria-current', 'page')
   await expect(sidebar.locator('[aria-current="page"]')).toHaveCount(1)
-  await expect(page.locator('main .panel-segments [aria-current="page"]')).toHaveText('Histórico de entregas')
+  // The sidebar is the only navigation between the two views, as for every other group.
+  await expect(page.locator('main .panel-segments')).toHaveCount(0)
   await sidebar.getByRole('link', { name: 'Webhooks', exact: true }).click()
   await expect(history).not.toHaveAttribute('aria-current', 'page')
   await page.goBack()
