@@ -1,1 +1,0 @@
-import{C as e,S as t,m as n}from"./index.svelte-BFaQyora.js";var r={name:`arrow-up-right`,size:24,node:[[`path`,{d:`M7 7h10v10`}],[`path`,{d:`M7 17 17 7`}]]};r.node;var i=new Set([`$$slots`,`$$events`,`$$legacy`]);function a(a,o){let s=t(o,i);n(a,e(()=>s,{get icon(){return r}}))}export{a as t};

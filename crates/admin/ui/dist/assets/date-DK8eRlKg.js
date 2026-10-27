@@ -1,1 +1,0 @@
-function e(e,t){if(e==null||e===``)return`—`;let n=new Date(e);return Number.isFinite(n.getTime())?t(n):typeof e==`string`?e:`—`}export{e as t};
