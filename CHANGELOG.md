@@ -10,6 +10,23 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ## [Unreleased]
 
+### Security
+
+- The installer runs nothing until the whole script has downloaded, compares
+  the binary with the published SHA-256 itself (a checksum file that names
+  another file is refused), downloads over HTTPS only with timeouts and
+  retries, and no longer repeats arguments such as `--s3-secret-key` in its
+  root error.
+
+### Fixed
+
+- The installer replaces the binary atomically after checking that it runs and
+  reports the requested version, starts Docker before `nelcota init` (the
+  Docker script leaves it stopped on Fedora/RHEL), waits for the apt lock held
+  by unattended upgrades on a fresh VPS, resolves `latest` once for both
+  downloads, and refuses an invalid version, repository, `PREFIX`, `--dir` or
+  `NELCOTA_SKIP_DOCKER` before changing anything.
+
 ## [0.5.5] — 2026-10-27
 
 ### Security
