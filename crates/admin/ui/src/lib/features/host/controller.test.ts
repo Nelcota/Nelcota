@@ -160,4 +160,34 @@ describe('host management boundaries', () => {
       )
     ).toThrow()
   })
+  it('accepts the fields older replies omit but not a missing nullable field', () => {
+    const parsed = parseStatus({ ...status, receipt: undefined })
+    expect(parsed.receipt).toBeNull()
+    expect(parseJob({ ...job, affected_projects: ['shop'], last_stage: null }).affected_projects).toEqual(['shop'])
+    for (const field of ['backup', 'error'] as const) {
+      const { [field]: _omitted, ...missing } = job
+      expect(() => parseJob(missing)).toThrow()
+    }
+    expect(() => parseJob({ ...job, affected_projects: ['shop', 'shop'] })).toThrow()
+    // Text limits count characters, so emoji (two UTF-16 units each) fit too.
+    expect(parseJob({ ...job, error: '🙂'.repeat(1024) }).error).toHaveLength(2048)
+    expect(() => parseJob({ ...job, error: '🙂'.repeat(1025) })).toThrow()
+    expect(() => parseStatus({ ...status, busy: null })).toThrow()
+    expect(() => parseStatus({ ...status, max_projects: 33 })).toThrow()
+  })
+  it('only accepts a rollback for an applied configuration change', () => {
+    const configure = { kind: 'configure', project: 'shop', section: 'smtp', revision: id }
+    expect(parseJob({ ...job, operation: configure, stage: 'rolled_back' }).stage).toBe('rolled_back')
+    expect(() => parseJob({ ...job, operation: configure, stage: 'rolled_back', changed: false })).toThrow()
+    expect(() => parseJob({ ...job, stage: 'rolled_back' })).toThrow()
+  })
+  it('rejects duplicate projects and fields outside the operation contract', () => {
+    const project = { name: 'shop', domain: 'api.shop.test', version: '0.4.0', app: 'healthy', database: 'healthy', backups: [] }
+    expect(() => parseStatus({ ...status, projects: [project, project] })).toThrow()
+    expect(() => parseOperation({ ...op, project: 'shop-' })).toThrow()
+    // Enrolled names follow valid_project, which allows edge hyphens; operations do not.
+    expect(parseStatus({ ...status, projects: [{ ...project, name: 'shop-' }] }).projects[0].name).toBe('shop-')
+    expect(() => parseStatus({ ...status, projects: [{ ...project, name: 'Shop' }] })).toThrow()
+    expect(() => parseOperation({ kind: 'backup', project: 'shop', shell: 'rm -rf /' })).toThrow()
+  })
 })

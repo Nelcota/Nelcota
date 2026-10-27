@@ -9,41 +9,86 @@ use std::{
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Operation {
     Create {
+        #[cfg_attr(
+            feature = "schema",
+            schemars(pattern(crate::schema::OPERATION_PROJECT))
+        )]
         project: String,
+        #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::DOMAIN), length(max = crate::schema::DOMAIN_MAX)))]
         domain: String,
+        #[cfg_attr(feature = "schema", schemars(extend("enum" = ["1gb", "2gb", "4gb", "8gb"])))]
         profile: String,
     },
     Backup {
+        #[cfg_attr(
+            feature = "schema",
+            schemars(pattern(crate::schema::OPERATION_PROJECT))
+        )]
         project: String,
     },
     Restore {
+        #[cfg_attr(
+            feature = "schema",
+            schemars(pattern(crate::schema::OPERATION_PROJECT))
+        )]
         project: String,
+        #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::BACKUP), length(max = crate::schema::BACKUP_NAME_MAX)))]
         backup: String,
     },
     Remove {
+        #[cfg_attr(
+            feature = "schema",
+            schemars(pattern(crate::schema::OPERATION_PROJECT))
+        )]
         project: String,
     },
     Restart {
+        #[cfg_attr(
+            feature = "schema",
+            schemars(pattern(crate::schema::OPERATION_PROJECT))
+        )]
         project: String,
     },
     BackupOffsite {
+        #[cfg_attr(
+            feature = "schema",
+            schemars(pattern(crate::schema::OPERATION_PROJECT))
+        )]
         project: String,
     },
     TestAlerts {
+        #[cfg_attr(
+            feature = "schema",
+            schemars(pattern(crate::schema::OPERATION_PROJECT))
+        )]
         project: String,
     },
     TestSmtp {
+        #[cfg_attr(
+            feature = "schema",
+            schemars(pattern(crate::schema::OPERATION_PROJECT))
+        )]
         project: String,
     },
     TestBackup {
+        #[cfg_attr(
+            feature = "schema",
+            schemars(pattern(crate::schema::OPERATION_PROJECT))
+        )]
         project: String,
     },
     Configure {
+        #[cfg_attr(
+            feature = "schema",
+            schemars(pattern(crate::schema::OPERATION_PROJECT))
+        )]
         project: String,
         section: crate::operations::Section,
+        #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::DIGEST)))]
         revision: String,
     },
 }
@@ -78,7 +123,7 @@ impl Operation {
             domain, profile, ..
         } = self
             && (domain.parse::<std::net::IpAddr>().is_ok()
-                || domain.len() > 253
+                || domain.len() > crate::schema::DOMAIN_MAX
                 || !domain.contains('.')
                 || domain.split('.').any(|part| {
                     part.is_empty()
@@ -132,7 +177,7 @@ impl Operation {
     }
 }
 pub fn valid_backup(value: &str) -> bool {
-    value.len() <= 200
+    value.len() <= crate::schema::BACKUP_NAME_MAX
         && value.ends_with(".dump")
         && value
             .as_bytes()
@@ -143,6 +188,7 @@ pub fn valid_backup(value: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Stage {
     Accepted,
@@ -163,16 +209,24 @@ impl Stage {
     }
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Plan {
     #[serde(default)]
+    #[cfg_attr(feature = "schema", schemars(skip_serializing_if = "Vec::is_empty"))]
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::MAX_PROJECTS), inner(pattern(crate::schema::PROJECT)), extend("uniqueItems" = true)))]
     pub affected_projects: Vec<String>,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub confirmation: String,
+    #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::DIGEST)))]
     pub id: String,
     pub operation: Operation,
     pub expires_at: u64,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub version: String,
+    #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::DIGEST)))]
     pub image_digest: String,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::MAX_BLOCKERS), inner(length(max = crate::schema::TEXT_MAX))))]
     pub blockers: Vec<String>,
     pub ram_mb: u64,
     pub free_bytes: u64,
@@ -180,19 +234,28 @@ pub struct Plan {
     pub destructive: bool,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct PublicJob {
     #[serde(default)]
+    #[cfg_attr(feature = "schema", schemars(skip_serializing_if = "Vec::is_empty"))]
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::MAX_PROJECTS), inner(pattern(crate::schema::PROJECT)), extend("uniqueItems" = true)))]
     pub affected_projects: Vec<String>,
+    #[cfg_attr(feature = "schema", schemars(skip_serializing_if = "Option::is_none"))]
     pub last_stage: Option<Stage>,
+    #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::DIGEST)))]
     pub request_key: String,
+    #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::DIGEST)))]
     pub id: String,
     pub operation: Operation,
     pub stage: Stage,
+    #[cfg_attr(feature = "schema", schemars(range(min = 1)))]
     pub sequence: u64,
     pub updated_at: u64,
     pub changed: bool,
+    #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::BACKUP), length(max = crate::schema::BACKUP_NAME_MAX)))]
     pub backup: Option<String>,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub error: Option<String>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -216,34 +279,59 @@ pub struct Task {
     pub host_env_sha: Option<String>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Project {
+    #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::PROJECT)))]
     pub name: String,
+    #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::DOMAIN), length(max = crate::schema::DOMAIN_MAX)))]
     pub domain: String,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub version: String,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub app: String,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub database: String,
+    #[cfg_attr(feature = "schema", schemars(
+        length(max = crate::schema::MAX_BACKUPS),
+        inner(pattern(crate::schema::BACKUP), length(max = crate::schema::BACKUP_NAME_MAX))
+    ))]
     pub backups: Vec<String>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Status {
+    #[cfg_attr(feature = "schema", schemars(skip_serializing_if = "Option::is_none"))]
     pub receipt: Option<PublicJob>,
     pub enabled: bool,
     #[serde(default)]
+    #[cfg_attr(
+        feature = "schema",
+        schemars(skip_serializing_if = "crate::schema::is_false")
+    )]
     pub busy: bool,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::MAX_PROJECTS)))]
     pub projects: Vec<Project>,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::MAX_JOBS)))]
     pub jobs: Vec<PublicJob>,
+    #[cfg_attr(feature = "schema", schemars(range(max = crate::schema::MAX_PROJECTS)))]
     pub max_projects: usize,
     pub ram_mb: u64,
     pub free_bytes: u64,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct LogEntry {
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub timestamp: String,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub level: String,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub target: String,
+    /// Log text never leaves the host: entries only carry metadata.
+    #[cfg_attr(feature = "schema", schemars(extend("const" = "event_metadata_only")))]
     pub message: String,
 }
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]

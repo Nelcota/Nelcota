@@ -1263,6 +1263,1910 @@
     "title": "Grants",
     "type": "object"
   },
+  "HostAlertSettings": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "backup_hours": {
+        "format": "uint16",
+        "maximum": 168,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "certificate_days": {
+        "format": "uint8",
+        "maximum": 60,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "disk_gib": {
+        "format": "uint16",
+        "maximum": 1024,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "disk_percent": {
+        "format": "uint8",
+        "maximum": 50,
+        "minimum": 5,
+        "type": "integer"
+      },
+      "email_enabled": {
+        "type": "boolean"
+      },
+      "enabled": {
+        "type": "boolean"
+      },
+      "heartbeat_enabled": {
+        "type": "boolean"
+      },
+      "recipient": {
+        "maxLength": 254,
+        "pattern": "^[^\\u0000-\\u001f]*$",
+        "type": "string"
+      },
+      "reminder_hours": {
+        "format": "uint16",
+        "maximum": 168,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "smtp_project": {
+        "pattern": "^[a-z0-9-]{0,32}$",
+        "type": "string"
+      },
+      "webhook_enabled": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "enabled",
+      "email_enabled",
+      "webhook_enabled",
+      "heartbeat_enabled",
+      "smtp_project",
+      "recipient",
+      "disk_percent",
+      "disk_gib",
+      "certificate_days",
+      "backup_hours",
+      "reminder_hours"
+    ],
+    "title": "Settings",
+    "type": "object"
+  },
+  "HostAlertStatus": {
+    "$defs": {
+      "Channel": {
+        "enum": [
+          "email",
+          "webhook"
+        ],
+        "type": "string"
+      },
+      "ChannelView": {
+        "properties": {
+          "channel": {
+            "$ref": "#/$defs/Channel"
+          },
+          "last_error": {
+            "enum": [
+              "alert_delivery_failed",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_success_at": {
+            "format": "uint64",
+            "maximum": 8640000000000,
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "next_attempt_at": {
+            "format": "uint64",
+            "maximum": 8640000000000,
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "channel",
+          "last_success_at",
+          "last_error",
+          "next_attempt_at"
+        ],
+        "type": "object"
+      },
+      "IncidentView": {
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "changed_at": {
+            "format": "uint64",
+            "maximum": 8640000000000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "key": {
+            "pattern": "^(?:host\\.(?:disk|monitoring)|[a-f0-9]{64}\\.[a-z_]{1,20})$",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/$defs/Kind"
+          },
+          "project": {
+            "pattern": "^[a-z0-9-]{1,32}$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "severity": {
+            "$ref": "#/$defs/Severity"
+          },
+          "since": {
+            "format": "uint64",
+            "maximum": 8640000000000,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "project",
+          "kind",
+          "severity",
+          "active",
+          "since",
+          "changed_at"
+        ],
+        "type": "object"
+      },
+      "Kind": {
+        "enum": [
+          "application",
+          "database",
+          "https",
+          "certificate",
+          "disk",
+          "backup_late",
+          "backup_failed",
+          "monitoring"
+        ],
+        "type": "string"
+      },
+      "Settings": {
+        "additionalProperties": false,
+        "properties": {
+          "backup_hours": {
+            "format": "uint16",
+            "maximum": 168,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "certificate_days": {
+            "format": "uint8",
+            "maximum": 60,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "disk_gib": {
+            "format": "uint16",
+            "maximum": 1024,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "disk_percent": {
+            "format": "uint8",
+            "maximum": 50,
+            "minimum": 5,
+            "type": "integer"
+          },
+          "email_enabled": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "heartbeat_enabled": {
+            "type": "boolean"
+          },
+          "recipient": {
+            "maxLength": 254,
+            "pattern": "^[^\\u0000-\\u001f]*$",
+            "type": "string"
+          },
+          "reminder_hours": {
+            "format": "uint16",
+            "maximum": 168,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "smtp_project": {
+            "pattern": "^[a-z0-9-]{0,32}$",
+            "type": "string"
+          },
+          "webhook_enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled",
+          "email_enabled",
+          "webhook_enabled",
+          "heartbeat_enabled",
+          "smtp_project",
+          "recipient",
+          "disk_percent",
+          "disk_gib",
+          "certificate_days",
+          "backup_hours",
+          "reminder_hours"
+        ],
+        "type": "object"
+      },
+      "Severity": {
+        "enum": [
+          "warning",
+          "critical"
+        ],
+        "type": "string"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "channels": {
+        "items": {
+          "$ref": "#/$defs/ChannelView"
+        },
+        "maxItems": 2,
+        "type": "array"
+      },
+      "heartbeat_accepted_at": {
+        "format": "uint64",
+        "maximum": 8640000000000,
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "heartbeat_configured": {
+        "type": "boolean"
+      },
+      "heartbeat_error": {
+        "enum": [
+          "alert_heartbeat_failed",
+          null
+        ],
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "heartbeat_host": {
+        "maxLength": 253,
+        "pattern": "^[a-z0-9.-]+$",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "incidents": {
+        "items": {
+          "$ref": "#/$defs/IncidentView"
+        },
+        "maxItems": 258,
+        "type": "array"
+      },
+      "last_scan_at": {
+        "format": "uint64",
+        "maximum": 8640000000000,
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "maintenance": {
+        "type": "boolean"
+      },
+      "monitor_error": {
+        "enum": [
+          "alert_probe_failed",
+          "alert_state_unavailable",
+          "alert_configuration_invalid",
+          "alert_observer_unavailable",
+          "alert_policy_changed",
+          null
+        ],
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "projects": {
+        "items": {
+          "pattern": "^[a-z0-9-]{1,32}$",
+          "type": "string"
+        },
+        "maxItems": 32,
+        "type": "array",
+        "uniqueItems": true
+      },
+      "recipients": {
+        "items": {
+          "maxLength": 254,
+          "pattern": "^[^\\u0000-\\u001f]*$",
+          "type": "string"
+        },
+        "maxItems": 16,
+        "type": "array",
+        "uniqueItems": true
+      },
+      "settings": {
+        "$ref": "#/$defs/Settings"
+      },
+      "webhook_configured": {
+        "type": "boolean"
+      },
+      "webhook_host": {
+        "maxLength": 253,
+        "pattern": "^[a-z0-9.-]+$",
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "settings",
+      "recipients",
+      "projects",
+      "webhook_configured",
+      "heartbeat_configured",
+      "webhook_host",
+      "heartbeat_host",
+      "last_scan_at",
+      "heartbeat_accepted_at",
+      "heartbeat_error",
+      "monitor_error",
+      "maintenance",
+      "incidents",
+      "channels"
+    ],
+    "title": "Status",
+    "type": "object"
+  },
+  "HostConfigurationView": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+      "backup_configured": {
+        "type": "boolean"
+      },
+      "fields": {
+        "additionalProperties": {
+          "maxLength": 8192,
+          "pattern": "^[^\\u0000-\\u001f]*$",
+          "type": "string"
+        },
+        "description": "Only explicitly selected non-secret fields; never a raw environment file.",
+        "propertyNames": {
+          "enum": [
+            "NELCOTA_SMTP_FROM",
+            "NELCOTA_PASSWORD_RECOVERY_URL",
+            "NELCOTA_EMAIL_CONFIRMATION_URL",
+            "NELCOTA_MAGIC_LINK_URL",
+            "NELCOTA_OAUTH_GOOGLE_CLIENT_ID",
+            "NELCOTA_OAUTH_GITHUB_CLIENT_ID",
+            "NELCOTA_OAUTH_REDIRECT_URLS",
+            "NELCOTA_BACKUP_S3_ENDPOINT",
+            "NELCOTA_BACKUP_S3_BUCKET",
+            "NELCOTA_BACKUP_S3_REGION",
+            "BACKUP_HOUR",
+            "BACKUP_MINUTE",
+            "BACKUP_KEEP"
+          ]
+        },
+        "type": "object"
+      },
+      "github_configured": {
+        "type": "boolean"
+      },
+      "google_configured": {
+        "type": "boolean"
+      },
+      "project": {
+        "pattern": "^[a-z0-9-]{1,32}$",
+        "type": "string"
+      },
+      "shared_login": {
+        "type": "boolean"
+      },
+      "smtp_configured": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "project",
+      "fields",
+      "smtp_configured",
+      "google_configured",
+      "github_configured",
+      "backup_configured",
+      "shared_login"
+    ],
+    "title": "ConfigurationView",
+    "type": "object"
+  },
+  "HostDiagnostics": {
+    "$defs": {
+      "Check": {
+        "properties": {
+          "name": {
+            "pattern": "^[a-z_]{1,40}$",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/$defs/CheckStatus"
+          }
+        },
+        "required": [
+          "name",
+          "status"
+        ],
+        "type": "object"
+      },
+      "CheckStatus": {
+        "enum": [
+          "passed",
+          "warning",
+          "failed",
+          "unavailable"
+        ],
+        "type": "string"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+      "checked_at": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "checks": {
+        "items": {
+          "$ref": "#/$defs/Check"
+        },
+        "maxItems": 32,
+        "type": "array"
+      },
+      "cpu_percent": {
+        "format": "double",
+        "maximum": 100,
+        "minimum": 0,
+        "type": [
+          "number",
+          "null"
+        ]
+      },
+      "free_bytes": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "last_backup_at": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "last_offsite_backup_at": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "load_one": {
+        "format": "double",
+        "minimum": 0,
+        "type": [
+          "number",
+          "null"
+        ]
+      },
+      "memory_available_bytes": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "memory_total_bytes": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "project": {
+        "pattern": "^[a-z0-9-]{1,32}$",
+        "type": "string"
+      }
+    },
+    "required": [
+      "project",
+      "checked_at",
+      "memory_total_bytes",
+      "memory_available_bytes",
+      "cpu_percent",
+      "load_one",
+      "free_bytes",
+      "last_backup_at",
+      "last_offsite_backup_at",
+      "checks"
+    ],
+    "title": "Diagnostics",
+    "type": "object"
+  },
+  "HostJob": {
+    "$defs": {
+      "Operation": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "domain": {
+                "maxLength": 253,
+                "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+                "type": "string"
+              },
+              "kind": {
+                "const": "create",
+                "type": "string"
+              },
+              "profile": {
+                "enum": [
+                  "1gb",
+                  "2gb",
+                  "4gb",
+                  "8gb"
+                ],
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project",
+              "domain",
+              "profile"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "backup",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "backup": {
+                "maxLength": 200,
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*\\.dump$",
+                "type": "string"
+              },
+              "kind": {
+                "const": "restore",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project",
+              "backup"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "remove",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "restart",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "backup_offsite",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "test_alerts",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "test_smtp",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "test_backup",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "configure",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              },
+              "revision": {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              "section": {
+                "$ref": "#/$defs/Section"
+              }
+            },
+            "required": [
+              "kind",
+              "project",
+              "section",
+              "revision"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "Section": {
+        "enum": [
+          "alerts",
+          "smtp",
+          "oauth_google",
+          "oauth_github",
+          "backup",
+          "schedule",
+          "admin_password"
+        ],
+        "type": "string"
+      },
+      "Stage": {
+        "enum": [
+          "accepted",
+          "validating",
+          "provisioning",
+          "starting",
+          "backing_up",
+          "applying",
+          "verifying",
+          "completed",
+          "rolled_back",
+          "failed",
+          "needs_attention"
+        ],
+        "type": "string"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "affected_projects": {
+        "items": {
+          "pattern": "^[a-z0-9-]{1,32}$",
+          "type": "string"
+        },
+        "maxItems": 32,
+        "type": "array",
+        "uniqueItems": true
+      },
+      "backup": {
+        "maxLength": 200,
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*\\.dump$",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "changed": {
+        "type": "boolean"
+      },
+      "error": {
+        "maxLength": 1024,
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "id": {
+        "pattern": "^[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "last_stage": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/Stage"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "operation": {
+        "$ref": "#/$defs/Operation"
+      },
+      "request_key": {
+        "pattern": "^[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "sequence": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "stage": {
+        "$ref": "#/$defs/Stage"
+      },
+      "updated_at": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "request_key",
+      "id",
+      "operation",
+      "stage",
+      "sequence",
+      "updated_at",
+      "changed",
+      "backup",
+      "error"
+    ],
+    "title": "PublicJob",
+    "type": "object"
+  },
+  "HostLogEntry": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "level": {
+        "maxLength": 1024,
+        "type": "string"
+      },
+      "message": {
+        "const": "event_metadata_only",
+        "description": "Log text never leaves the host: entries only carry metadata.",
+        "type": "string"
+      },
+      "target": {
+        "maxLength": 1024,
+        "type": "string"
+      },
+      "timestamp": {
+        "maxLength": 1024,
+        "type": "string"
+      }
+    },
+    "required": [
+      "timestamp",
+      "level",
+      "target",
+      "message"
+    ],
+    "title": "LogEntry",
+    "type": "object"
+  },
+  "HostOperation": {
+    "$defs": {
+      "Section": {
+        "enum": [
+          "alerts",
+          "smtp",
+          "oauth_google",
+          "oauth_github",
+          "backup",
+          "schedule",
+          "admin_password"
+        ],
+        "type": "string"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "oneOf": [
+      {
+        "additionalProperties": false,
+        "properties": {
+          "domain": {
+            "maxLength": 253,
+            "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+            "type": "string"
+          },
+          "kind": {
+            "const": "create",
+            "type": "string"
+          },
+          "profile": {
+            "enum": [
+              "1gb",
+              "2gb",
+              "4gb",
+              "8gb"
+            ],
+            "type": "string"
+          },
+          "project": {
+            "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "project",
+          "domain",
+          "profile"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "backup",
+            "type": "string"
+          },
+          "project": {
+            "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "project"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "backup": {
+            "maxLength": 200,
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*\\.dump$",
+            "type": "string"
+          },
+          "kind": {
+            "const": "restore",
+            "type": "string"
+          },
+          "project": {
+            "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "project",
+          "backup"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "remove",
+            "type": "string"
+          },
+          "project": {
+            "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "project"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "restart",
+            "type": "string"
+          },
+          "project": {
+            "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "project"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "backup_offsite",
+            "type": "string"
+          },
+          "project": {
+            "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "project"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "test_alerts",
+            "type": "string"
+          },
+          "project": {
+            "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "project"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "test_smtp",
+            "type": "string"
+          },
+          "project": {
+            "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "project"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "test_backup",
+            "type": "string"
+          },
+          "project": {
+            "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "project"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "configure",
+            "type": "string"
+          },
+          "project": {
+            "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+            "type": "string"
+          },
+          "revision": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "section": {
+            "$ref": "#/$defs/Section"
+          }
+        },
+        "required": [
+          "kind",
+          "project",
+          "section",
+          "revision"
+        ],
+        "type": "object"
+      }
+    ],
+    "title": "Operation"
+  },
+  "HostPlan": {
+    "$defs": {
+      "Operation": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "domain": {
+                "maxLength": 253,
+                "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+                "type": "string"
+              },
+              "kind": {
+                "const": "create",
+                "type": "string"
+              },
+              "profile": {
+                "enum": [
+                  "1gb",
+                  "2gb",
+                  "4gb",
+                  "8gb"
+                ],
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project",
+              "domain",
+              "profile"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "backup",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "backup": {
+                "maxLength": 200,
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*\\.dump$",
+                "type": "string"
+              },
+              "kind": {
+                "const": "restore",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project",
+              "backup"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "remove",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "restart",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "backup_offsite",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "test_alerts",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "test_smtp",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "test_backup",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "configure",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              },
+              "revision": {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              "section": {
+                "$ref": "#/$defs/Section"
+              }
+            },
+            "required": [
+              "kind",
+              "project",
+              "section",
+              "revision"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "Section": {
+        "enum": [
+          "alerts",
+          "smtp",
+          "oauth_google",
+          "oauth_github",
+          "backup",
+          "schedule",
+          "admin_password"
+        ],
+        "type": "string"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "affected_projects": {
+        "items": {
+          "pattern": "^[a-z0-9-]{1,32}$",
+          "type": "string"
+        },
+        "maxItems": 32,
+        "type": "array",
+        "uniqueItems": true
+      },
+      "blockers": {
+        "items": {
+          "maxLength": 1024,
+          "type": "string"
+        },
+        "maxItems": 32,
+        "type": "array"
+      },
+      "confirmation": {
+        "maxLength": 1024,
+        "type": "string"
+      },
+      "destructive": {
+        "type": "boolean"
+      },
+      "expires_at": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "free_bytes": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "id": {
+        "pattern": "^[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "image_digest": {
+        "pattern": "^[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "operation": {
+        "$ref": "#/$defs/Operation"
+      },
+      "project_count": {
+        "format": "uint",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "ram_mb": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "version": {
+        "maxLength": 1024,
+        "type": "string"
+      }
+    },
+    "required": [
+      "confirmation",
+      "id",
+      "operation",
+      "expires_at",
+      "version",
+      "image_digest",
+      "blockers",
+      "ram_mb",
+      "free_bytes",
+      "project_count",
+      "destructive"
+    ],
+    "title": "Plan",
+    "type": "object"
+  },
+  "HostStatus": {
+    "$defs": {
+      "Operation": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "domain": {
+                "maxLength": 253,
+                "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+                "type": "string"
+              },
+              "kind": {
+                "const": "create",
+                "type": "string"
+              },
+              "profile": {
+                "enum": [
+                  "1gb",
+                  "2gb",
+                  "4gb",
+                  "8gb"
+                ],
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project",
+              "domain",
+              "profile"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "backup",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "backup": {
+                "maxLength": 200,
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*\\.dump$",
+                "type": "string"
+              },
+              "kind": {
+                "const": "restore",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project",
+              "backup"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "remove",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "restart",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "backup_offsite",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "test_alerts",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "test_smtp",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "test_backup",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "project"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "configure",
+                "type": "string"
+              },
+              "project": {
+                "pattern": "^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$",
+                "type": "string"
+              },
+              "revision": {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              "section": {
+                "$ref": "#/$defs/Section"
+              }
+            },
+            "required": [
+              "kind",
+              "project",
+              "section",
+              "revision"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "Project": {
+        "additionalProperties": false,
+        "properties": {
+          "app": {
+            "maxLength": 1024,
+            "type": "string"
+          },
+          "backups": {
+            "items": {
+              "maxLength": 200,
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*\\.dump$",
+              "type": "string"
+            },
+            "maxItems": 32,
+            "type": "array"
+          },
+          "database": {
+            "maxLength": 1024,
+            "type": "string"
+          },
+          "domain": {
+            "maxLength": 253,
+            "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+            "type": "string"
+          },
+          "name": {
+            "pattern": "^[a-z0-9-]{1,32}$",
+            "type": "string"
+          },
+          "version": {
+            "maxLength": 1024,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "domain",
+          "version",
+          "app",
+          "database",
+          "backups"
+        ],
+        "type": "object"
+      },
+      "PublicJob": {
+        "additionalProperties": false,
+        "properties": {
+          "affected_projects": {
+            "items": {
+              "pattern": "^[a-z0-9-]{1,32}$",
+              "type": "string"
+            },
+            "maxItems": 32,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "backup": {
+            "maxLength": 200,
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*\\.dump$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "changed": {
+            "type": "boolean"
+          },
+          "error": {
+            "maxLength": 1024,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "last_stage": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Stage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "operation": {
+            "$ref": "#/$defs/Operation"
+          },
+          "request_key": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "sequence": {
+            "format": "uint64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "stage": {
+            "$ref": "#/$defs/Stage"
+          },
+          "updated_at": {
+            "format": "uint64",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "request_key",
+          "id",
+          "operation",
+          "stage",
+          "sequence",
+          "updated_at",
+          "changed",
+          "backup",
+          "error"
+        ],
+        "type": "object"
+      },
+      "Section": {
+        "enum": [
+          "alerts",
+          "smtp",
+          "oauth_google",
+          "oauth_github",
+          "backup",
+          "schedule",
+          "admin_password"
+        ],
+        "type": "string"
+      },
+      "Stage": {
+        "enum": [
+          "accepted",
+          "validating",
+          "provisioning",
+          "starting",
+          "backing_up",
+          "applying",
+          "verifying",
+          "completed",
+          "rolled_back",
+          "failed",
+          "needs_attention"
+        ],
+        "type": "string"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "busy": {
+        "type": "boolean"
+      },
+      "enabled": {
+        "type": "boolean"
+      },
+      "free_bytes": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "jobs": {
+        "items": {
+          "$ref": "#/$defs/PublicJob"
+        },
+        "maxItems": 32,
+        "type": "array"
+      },
+      "max_projects": {
+        "format": "uint",
+        "maximum": 32,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "projects": {
+        "items": {
+          "$ref": "#/$defs/Project"
+        },
+        "maxItems": 32,
+        "type": "array"
+      },
+      "ram_mb": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "receipt": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/PublicJob"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "enabled",
+      "projects",
+      "jobs",
+      "max_projects",
+      "ram_mb",
+      "free_bytes"
+    ],
+    "title": "Status",
+    "type": "object"
+  },
   "MetricsPoint": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "properties": {
@@ -4113,6 +6017,306 @@
       "enums"
     ],
     "title": "TypesResponse",
+    "type": "object"
+  },
+  "UpdateJob": {
+    "$defs": {
+      "Phase": {
+        "enum": [
+          "preparing",
+          "pausing",
+          "capturing",
+          "backup_verified",
+          "activating",
+          "validating",
+          "committing",
+          "succeeded",
+          "recovering",
+          "resuming_previous",
+          "recovered",
+          "failed_before_change",
+          "needs_operator"
+        ],
+        "type": "string"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "committed": {
+        "type": "boolean"
+      },
+      "current": {
+        "maxLength": 1024,
+        "type": "string"
+      },
+      "error": {
+        "maxLength": 1024,
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "id": {
+        "pattern": "^[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "phase": {
+        "$ref": "#/$defs/Phase"
+      },
+      "project": {
+        "maxLength": 1024,
+        "type": "string"
+      },
+      "sequence": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "target": {
+        "maxLength": 1024,
+        "type": "string"
+      },
+      "updated_at": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "project",
+      "current",
+      "target",
+      "phase",
+      "sequence",
+      "updated_at",
+      "committed",
+      "error"
+    ],
+    "title": "PublicJob",
+    "type": "object"
+  },
+  "UpdatePlan": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "blockers": {
+        "items": {
+          "maxLength": 1024,
+          "type": "string"
+        },
+        "maxItems": 32,
+        "type": "array"
+      },
+      "current": {
+        "maxLength": 1024,
+        "type": "string"
+      },
+      "digest": {
+        "pattern": "^[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "expires_at": {
+        "format": "uint64",
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "id": {
+        "pattern": "^[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "project": {
+        "maxLength": 1024,
+        "type": "string"
+      },
+      "target": {
+        "maxLength": 1024,
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "project",
+      "current",
+      "target",
+      "digest",
+      "expires_at",
+      "blockers"
+    ],
+    "title": "UpdatePlan",
+    "type": "object"
+  },
+  "UpdateStatus": {
+    "$defs": {
+      "Phase": {
+        "enum": [
+          "preparing",
+          "pausing",
+          "capturing",
+          "backup_verified",
+          "activating",
+          "validating",
+          "committing",
+          "succeeded",
+          "recovering",
+          "resuming_previous",
+          "recovered",
+          "failed_before_change",
+          "needs_operator"
+        ],
+        "type": "string"
+      },
+      "ProjectStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 1024,
+            "type": "string"
+          },
+          "update_available": {
+            "type": "boolean"
+          },
+          "version": {
+            "maxLength": 1024,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "version",
+          "update_available"
+        ],
+        "type": "object"
+      },
+      "PublicJob": {
+        "additionalProperties": false,
+        "properties": {
+          "committed": {
+            "type": "boolean"
+          },
+          "current": {
+            "maxLength": 1024,
+            "type": "string"
+          },
+          "error": {
+            "maxLength": 1024,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "phase": {
+            "$ref": "#/$defs/Phase"
+          },
+          "project": {
+            "maxLength": 1024,
+            "type": "string"
+          },
+          "sequence": {
+            "format": "uint64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "target": {
+            "maxLength": 1024,
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "uint64",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "project",
+          "current",
+          "target",
+          "phase",
+          "sequence",
+          "updated_at",
+          "committed",
+          "error"
+        ],
+        "type": "object"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "check_error": {
+        "maxLength": 1024,
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "checking": {
+        "type": "boolean"
+      },
+      "email": {
+        "maxLength": 1024,
+        "type": "string"
+      },
+      "enabled": {
+        "type": "boolean"
+      },
+      "host_busy": {
+        "type": "boolean"
+      },
+      "host_management": {
+        "type": "boolean"
+      },
+      "jobs": {
+        "items": {
+          "$ref": "#/$defs/PublicJob"
+        },
+        "maxItems": 32,
+        "type": "array"
+      },
+      "projects": {
+        "items": {
+          "$ref": "#/$defs/ProjectStatus"
+        },
+        "maxItems": 32,
+        "type": "array"
+      },
+      "release": {
+        "properties": {
+          "version": {
+            "maxLength": 1024,
+            "type": "string"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "type": [
+          "object",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "email",
+      "projects",
+      "jobs",
+      "release",
+      "check_error",
+      "enabled",
+      "checking"
+    ],
+    "title": "Status",
     "type": "object"
   },
   "User": {

@@ -262,6 +262,34 @@ pub fn exports() -> (String, String) {
         crate::ddl::policy::PolicyRole,
         crate::ddl::policy::PolicyDef
     );
+    // Controller responses (nelcota-deployment) get a schema only: the panel
+    // keeps its own TypeScript types for them.
+    let controller = schemars::generate::SchemaSettings::draft2020_12()
+        .for_serialize()
+        .with_transform(schemars::transform::RecursiveTransform(safe_integer));
+    macro_rules! schema_only {
+        ($($name:literal => $ty:ty),* $(,)?) => { $(
+            let schema = controller.clone().into_generator().into_root_schema_for::<$ty>();
+            schemas.insert($name.into(), serde_json::to_value(schema).expect("schema serializes"));
+        )* };
+    }
+    {
+        use nelcota_deployment::{PublicJob, alerts, management, operations, protocol};
+        schema_only!(
+            "HostAlertStatus" => alerts::Status,
+            "HostAlertSettings" => alerts::Settings,
+            "HostDiagnostics" => operations::Diagnostics,
+            "HostConfigurationView" => operations::ConfigurationView,
+            "HostStatus" => management::Status,
+            "HostPlan" => management::Plan,
+            "HostJob" => management::PublicJob,
+            "HostOperation" => management::Operation,
+            "HostLogEntry" => management::LogEntry,
+            "UpdateStatus" => protocol::Status,
+            "UpdatePlan" => protocol::UpdatePlan,
+            "UpdateJob" => PublicJob,
+        );
+    }
     types.push_str("export type RowData = Record<string, string | null>;\n");
     let types = types
         .lines()
@@ -273,6 +301,22 @@ pub fn exports() -> (String, String) {
         types,
         serde_json::to_string_pretty(&schemas).expect("schemas serialize") + "\n",
     )
+}
+
+/// Larger integers lose precision in `JSON.parse`; the hand-written panel checks rejected them too.
+fn safe_integer(schema: &mut schemars::Schema) {
+    const MAX_SAFE_INTEGER: i64 = (1 << 53) - 1;
+    let signed = match schema.get("format").and_then(serde_json::Value::as_str) {
+        Some("uint64" | "uint") => false,
+        Some("int64" | "int") => true,
+        _ => return,
+    };
+    if schema.get("maximum").is_none() {
+        schema.insert("maximum".into(), MAX_SAFE_INTEGER.into());
+    }
+    if signed && schema.get("minimum").is_none() {
+        schema.insert("minimum".into(), (-MAX_SAFE_INTEGER).into());
+    }
 }
 
 #[cfg(test)]
@@ -289,5 +333,96 @@ mod tests {
             schemas,
             std::fs::read_to_string(root.join("schemas.json")).expect("run bun run contracts")
         );
+    }
+
+    fn exported() -> serde_json::Value {
+        serde_json::from_str(&super::exports().1).expect("schemas are JSON")
+    }
+
+    #[test]
+    fn wide_integers_stay_within_the_javascript_safe_range() {
+        let mut unsigned =
+            schemars::json_schema!({ "type": "integer", "format": "uint64", "minimum": 0 });
+        super::safe_integer(&mut unsigned);
+        assert_eq!(
+            unsigned.get("maximum"),
+            Some(&serde_json::json!(9_007_199_254_740_991_i64))
+        );
+        assert_eq!(unsigned.get("minimum"), Some(&serde_json::json!(0)));
+
+        let mut signed = schemars::json_schema!({ "type": "integer", "format": "int64" });
+        super::safe_integer(&mut signed);
+        assert_eq!(
+            signed.get("maximum"),
+            Some(&serde_json::json!(9_007_199_254_740_991_i64))
+        );
+        assert_eq!(
+            signed.get("minimum"),
+            Some(&serde_json::json!(-9_007_199_254_740_991_i64))
+        );
+
+        let mut bounded =
+            schemars::json_schema!({ "type": "integer", "format": "uint64", "maximum": 32 });
+        super::safe_integer(&mut bounded);
+        assert_eq!(bounded.get("maximum"), Some(&serde_json::json!(32)));
+
+        let mut small = schemars::json_schema!({ "type": "integer", "format": "uint32" });
+        super::safe_integer(&mut small);
+        assert_eq!(small.get("maximum"), None);
+    }
+
+    #[test]
+    fn each_alert_status_field_allows_only_its_own_codes() {
+        let schemas = exported();
+        let status = &schemas["HostAlertStatus"]["properties"];
+        let allowed = |codes: &[&str]| {
+            let mut values: Vec<serde_json::Value> =
+                codes.iter().map(|code| (*code).into()).collect();
+            values.push(serde_json::Value::Null);
+            serde_json::Value::Array(values)
+        };
+        assert_eq!(
+            status["heartbeat_error"]["enum"],
+            allowed(&nelcota_deployment::alerts::HEARTBEAT_ERRORS)
+        );
+        assert_eq!(
+            status["monitor_error"]["enum"],
+            allowed(&nelcota_deployment::alerts::MONITOR_ERRORS)
+        );
+    }
+
+    #[test]
+    fn project_patterns_match_the_rust_validators() {
+        let schemas = exported();
+        let pattern = |value: &serde_json::Value| {
+            regex::Regex::new(value.as_str().expect("pattern is a string"))
+                .expect("pattern compiles")
+        };
+        let project =
+            pattern(&schemas["HostStatus"]["$defs"]["Project"]["properties"]["name"]["pattern"]);
+        let operation =
+            pattern(&schemas["HostOperation"]["oneOf"][1]["properties"]["project"]["pattern"]);
+        let long = "a".repeat(32);
+        let too_long = "a".repeat(33);
+        for name in [
+            "shop", "a", "0", "shop-2", "-shop", "shop-", "-", "a--b", &long, &too_long, "",
+            "Shop", "shop_2", "shop.2", "loja ", "çafé",
+        ] {
+            assert_eq!(
+                project.is_match(name),
+                nelcota_deployment::valid_project(name),
+                "project pattern disagrees with valid_project on {name:?}"
+            );
+            let operation_valid = nelcota_deployment::management::Operation::Backup {
+                project: name.into(),
+            }
+            .validate()
+            .is_ok();
+            assert_eq!(
+                operation.is_match(name),
+                operation_valid,
+                "operation pattern disagrees with Operation::validate on {name:?}"
+            );
+        }
     }
 }
