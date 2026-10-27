@@ -10,7 +10,8 @@ This is the 0.2.5 package contract. It includes queued-auth cancellation, exact
 bucket-limit writes, profile ordering and the input/response guards below.
 Version 0.2.0 predates these corrections, and 0.2.1 predates the
 [0.2.2 hardening](#hardening-in-022). Registry installation requires
-successful publication of 0.2.5 by the tagged release workflow;
+successful publication of 0.2.5, now confirmed in the
+[registry receipts](https://github.com/Nelcota/Nelcota/pull/202#issuecomment-6445288705);
 a server update does not install the client.
 See the [upgrade notes](#upgrading-from-020). Older packages keep the contract in their
 own bundled documentation.

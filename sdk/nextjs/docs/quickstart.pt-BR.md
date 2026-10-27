@@ -1,13 +1,13 @@
 # Next.js 0.1.2
 
-This guide uses published `@nelcota/nextjs` 0.1.2 and `@nelcota/client` 0.2.4.
+This guide uses published `@nelcota/nextjs` 0.1.2 and `@nelcota/client` 0.2.5.
 The minimum base peer remains 0.2.2. See the [English guide](../README.md),
 [runnable example](https://github.com/Nelcota/Nelcota/blob/main/sdk/nextjs/examples/app-router/README.md) and
 [publication evidence](https://github.com/Nelcota/Nelcota/issues/151).
 
 ```sh
-bun add --exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.4 pg
-# ou com npm: npm install --save-exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.4 pg
+bun add --exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.5 pg
+# ou com npm: npm install --save-exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.5 pg
 ```
 
 The supported peer range is Next 16 on the Node runtime. The selected matrix

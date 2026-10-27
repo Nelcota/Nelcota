@@ -1,7 +1,7 @@
 # App Router example
 
 This runnable application uses published `@nelcota/nextjs` 0.1.2 and
-`@nelcota/client` 0.2.4 with Next 16.4.3 / React 19.3.1. Use Bun 1.4.3 or later (the scripts run Next
+`@nelcota/client` 0.2.4 (0.2.5 once it passes the 14-day `minimumReleaseAge` in `bunfig.toml`) with Next 16.4.3 / React 19.3.1. Use Bun 1.4.3 or later (the scripts run Next
 on Bun), or Node 22, 24 or 26 through npx.
 The package manifest and lockfile use registry packages, with no local SDK link.
 
