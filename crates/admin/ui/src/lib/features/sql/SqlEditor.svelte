@@ -12,7 +12,6 @@
   import Pencil from '@lucide/svelte/icons/pencil'
   import FileCode from '@lucide/svelte/icons/file-code'
   import LoaderCircle from '@lucide/svelte/icons/loader-circle'
-  import Maximize2 from '@lucide/svelte/icons/maximize-2'
   import * as Resizable from '$lib/components/ui/resizable'
   import { toast } from 'svelte-sonner'
   import CodeEditor, { type Cursor } from '$lib/features/sql/components/CodeEditor.svelte'
@@ -28,6 +27,7 @@
   import SaveQueryDialog from '$lib/features/sql/components/SaveQueryDialog.svelte'
   import SqlSidebar from '$lib/features/sql/components/SqlSidebar.svelte'
   import CellDetailDialog from '$lib/components/shared/CellDetailDialog.svelte'
+  import ResultTable from '$lib/features/sql/components/ResultTable.svelte'
   import { changesSchema, SqlExecution } from '$lib/features/sql/execution.svelte'
   import { sqlAdapter } from '$lib/features/sql/api'
   import { downloadText } from '$lib/browser/download'
@@ -71,6 +71,54 @@
     ? { error: { message: errorMessage(execution.error), code: null, detail: null, hint: null, position: null } }
     : execution.response)
   const elapsed = $derived(execution.elapsed)
+  let resultsRegion = $state<HTMLElement>()
+  let resultsContent = $state<HTMLElement>()
+  // Where each result table's rows start in the pane's content, by result
+  // index: virtualized rows are positioned from there. Measured in one pass
+  // whenever anything in the pane can have moved them.
+  let rowOffsets = $state<Record<number, number>>({})
+  let offsetsFrame = 0
+  function measureRowOffsets() {
+    const region = resultsRegion
+    if (region === undefined) return
+    const contentTop = region.getBoundingClientRect().top - region.scrollTop
+    const next: Record<number, number> = {}
+    for (const body of region.querySelectorAll<HTMLElement>('tbody[data-result-index]')) {
+      next[Number(body.dataset.resultIndex)] = body.getBoundingClientRect().top - contentTop
+    }
+    if (sameOffsets(next, rowOffsets) === false) rowOffsets = next
+  }
+  function sameOffsets(next: Record<number, number>, current: Record<number, number>): boolean {
+    const indexes = Object.keys(next).map(Number)
+    if (indexes.length !== Object.keys(current).length) return false
+    return indexes.every(index => {
+      const previous = current[index]
+      return previous !== undefined && Math.abs(previous - next[index]) < 1
+    })
+  }
+  function scheduleRowOffsets() {
+    cancelAnimationFrame(offsetsFrame)
+    offsetsFrame = requestAnimationFrame(measureRowOffsets)
+  }
+  // Size changes: the pane (wrapping notes) and the tables (measured rows).
+  $effect(() => {
+    const region = resultsRegion
+    const content = resultsContent
+    if (region === undefined) return
+    const observer = new ResizeObserver(scheduleRowOffsets)
+    observer.observe(region)
+    if (content !== undefined) observer.observe(content)
+    return () => {
+      observer.disconnect()
+      cancelAnimationFrame(offsetsFrame)
+    }
+  })
+  // Moves without a resize: the progress bar and the notes above the tables.
+  $effect(() => {
+    void running
+    void response
+    scheduleRowOffsets()
+  })
   onMount(() => { void execution.loadSchema() })
   onDestroy(() => execution.cancel())
 
@@ -321,7 +369,7 @@
     <!-- Keyboard users need a Tab stop to scroll results, including the empty
          state; this named region intentionally has a nonnegative tabindex. -->
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-    <div class="relative h-full min-h-0 overflow-auto bg-card focus-visible:outline-offset-[-2px]" role="region" tabindex="0" aria-label={t('sql.results.label')} aria-busy={running}>
+    <div bind:this={resultsRegion} class="relative h-full min-h-0 overflow-auto bg-card focus-visible:outline-offset-[-2px]" role="region" tabindex="0" aria-label={t('sql.results.label')} aria-busy={running}>
       {#if running}
         <div class="pointer-events-none sticky top-0 z-20 h-0.5 overflow-hidden bg-brand/15" aria-hidden="true">
           <div class="animate-progress h-full w-2/5 bg-brand"></div>
@@ -357,10 +405,11 @@
             {t('sql.results.noRows')} · <span class="tabular-nums">{elapsed} ms</span>
           </p>
         {/if}
-        {#each response.results as result, r (r)}
+        <div bind:this={resultsContent}>
+        {#each response.results as result, resultIndex (result)}
           <div class="flex min-h-10 items-center gap-2 border-b px-4 py-1 text-sm text-muted-foreground">
             <span class="tabular-nums">
-              {#if response.results.length > 1}{t('sql.results.resultOf', { index: r + 1, total: response.results.length })}
+              {#if response.results.length > 1}{t('sql.results.resultOf', { index: resultIndex + 1, total: response.results.length })}
                 · {/if}{t('sql.results.rows', { count: result.count })}{#if result.truncated}<span class="text-warning">
                   {t('sql.results.truncated')}</span
                 >{/if} · {elapsed} ms
@@ -373,39 +422,21 @@
                   {/snippet}
                 </DropdownMenu.Trigger>
                 <DropdownMenu.Content align="end" class="w-40">
-                  <DropdownMenu.Item onclick={() => exportResult(result, r, 'csv')}>CSV</DropdownMenu.Item>
-                  <DropdownMenu.Item onclick={() => exportResult(result, r, 'json')}>JSON</DropdownMenu.Item>
+                  <DropdownMenu.Item onclick={() => exportResult(result, resultIndex, 'csv')}>CSV</DropdownMenu.Item>
+                  <DropdownMenu.Item onclick={() => exportResult(result, resultIndex, 'json')}>JSON</DropdownMenu.Item>
                 </DropdownMenu.Content>
               </DropdownMenu.Root>
             {/if}
           </div>
           {#if result.columns.length}
-            <table class="w-max min-w-full border-separate border-spacing-0 text-sm">
-              <thead class="sticky top-0 z-10">
-                <tr>
-                  {#each result.columns as column, c (c)}
-                    <th class="border-r border-b bg-muted px-3 py-2 text-left font-mono text-xs font-medium">{column}</th>
-                  {/each}
-                </tr>
-              </thead>
-              <tbody>
-                {#each result.rows as row, i (i)}
-                  <tr class="hover:bg-muted/40">
-                    {#each row as cell, c (c)}
-                      <td class="max-w-96 truncate border-r border-b px-3 py-2 font-mono text-xs" title={cell ?? 'NULL'}>
-                        <div class="flex items-center gap-2"><span class="min-w-0 flex-1 truncate">{#if (cell === null)}<span class="text-3xs text-muted-foreground/80">NULL</span>{/if}{#if !(cell === null)}{cell}{/if}</span>{#if cell && (cell.length > 80 || cell.includes('\n'))}<Button variant="ghost" size="icon-xs" aria-label={t('common.details')} onclick={() => { detail = { title: result.columns[c], value: cell }; detailOpen = true }}><Maximize2 aria-hidden="true" /></Button>{/if}</div>
-                      </td>
-                    {/each}
-                  </tr>
-                {/each}
-              </tbody>
-            </table>
+            <ResultTable {result} {resultIndex} scrollElement={() => resultsRegion} scrollMargin={rowOffsets[resultIndex] ?? 0} ondetail={(title, value) => { detail = { title, value }; detailOpen = true }} />
             {#if result.rows.length === 0}
               <!-- Headers alone looked like a rendering glitch; say the query just matched nothing. -->
               <p class="border-b px-4 py-6 text-center text-sm text-muted-foreground">{t('sql.results.noMatchingRows')}</p>
             {/if}
           {/if}
         {/each}
+        </div>
       {/if}
     </div>
     </Resizable.Pane>

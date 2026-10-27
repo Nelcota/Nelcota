@@ -1,1 +1,0 @@
-import{gt as e,xt as t}from"./index.svelte-CFygIlKO.js";function n(n){t(()=>e(()=>n()))}export{n as t};
