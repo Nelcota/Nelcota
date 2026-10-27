@@ -92,6 +92,7 @@ const en: Messages<typeof ptBR> = {
     showAll: 'Show all',
     export: 'Export',
     exportFiltered: 'Filtered rows, in the current order',
+    exportFullAccess: '“View as” does not apply to downloads: they use full access',
     exportAll: 'All rows, in the current order',
     csvHint: 'For Excel or Google Sheets',
     jsonHint: 'For code and other tools',

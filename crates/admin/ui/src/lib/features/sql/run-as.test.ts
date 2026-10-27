@@ -16,6 +16,13 @@ describe('run as', () => {
     expect(runAsRequest()).toEqual({ role: 'owner' })
   })
 
+  it('never turns a signed-in run without a user into an owner run', () => {
+    runAs.mode = 'authenticated'
+    runAs.user = null
+    expect(() => runAsRequest()).toThrow()
+    setRunAs('owner')
+  })
+
   it('travels with the run to the adapter', async () => {
     const adapter: SqlAdapter = {
       execute: vi.fn(async () => ({ results: [], results_truncated: false })),

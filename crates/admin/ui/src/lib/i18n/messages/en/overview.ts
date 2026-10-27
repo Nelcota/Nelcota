@@ -6,7 +6,6 @@ const en: Messages<typeof ptBR> = {
   title: 'Overview',
   quickActions: 'Project quick actions',
   resources: 'Project resources',
-  resourcesAccess: 'Access control',
   description: 'Your project is live.',
   period: {
     label: 'Period',
@@ -38,7 +37,6 @@ const en: Messages<typeof ptBR> = {
   },
   cards: {
     database: 'Database',
-    auth: 'Authentication',
     tablesCaption: { one: '{count} protected', other: '{count} protected' },
     usersCaption: { one: '{count} signed in from the app', other: '{count} signed in from the app' },
     tables: 'Tables',
@@ -46,7 +44,7 @@ const en: Messages<typeof ptBR> = {
     users: 'Users',
     usersRing: '{percent}% of users have signed in from the app',
     refused: 'Refused',
-    refusedBars: 'Refused across the period',
+    refusedBars: 'Refused across the period: {total}',
     open: 'Open {page}',
   },
   traffic: {
@@ -92,7 +90,6 @@ const en: Messages<typeof ptBR> = {
   },
   tables: {
     heading: 'Tables',
-    openEditor: 'Open editor',
     empty: 'No tables yet',
     emptyBefore: 'Create them with',
     emptyMiddle: 'or in the',

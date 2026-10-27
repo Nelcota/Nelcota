@@ -8,7 +8,8 @@
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import { session } from '$lib/resources/session.svelte'
   import { preloadResponseContracts } from '$lib/contracts/responses'
-  import { rememberSignedIn } from '$lib/shell/prefetch'
+  import { rememberSignedIn, watchSignOutElsewhere } from '$lib/shell/prefetch'
+  import { clearQuerySession } from '$lib/resources/query-client'
   import { route } from '$lib/navigation/router.svelte'
   import { crumbsFor, documentTitle } from '$lib/shell/titles'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
@@ -63,6 +64,17 @@
   function retryWhenOffline() {
     if (offline && !checking) void checkSession()
   }
+
+  // Signing out in another tab signs this one out too, dropping cached reads.
+  $effect(() => {
+    if (controller) return
+    return watchSignOutElsewhere(() => {
+      if (!session.email) return
+      clearQuerySession()
+      session.expired = false
+      session.email = null
+    })
+  })
 
   // The hint main.ts reads to fetch the panel's code early on the next visit.
   $effect(() => {

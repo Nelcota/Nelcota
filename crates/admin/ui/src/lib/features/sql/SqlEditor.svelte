@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { errorOffset } from './error-position'
   import { onMount, onDestroy } from 'svelte'
   import { Button } from '$lib/components/ui/button'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
@@ -163,9 +164,10 @@
       if (changesSchema(code)) void execution.loadSchema()
     }
     const result = execution.response
-    // Postgres counts from 1 within the text it received.
+    // Postgres counts characters from 1 within the text it received.
     const position = !execution.error && result && 'error' in result ? result.error.position : null
-    errorAt = position ? offset + position - 1 : null
+    const local = position ? errorOffset(code, position) : null
+    errorAt = local === null ? null : offset + local
   }
 
   /** Stops waiting for the query; dropping the request cancels it on the server. */

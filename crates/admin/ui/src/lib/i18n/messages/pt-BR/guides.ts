@@ -17,7 +17,7 @@ const ptBR = {
     'sdk-start': { title: 'Começando com o SDK', description: 'Instale o cliente e conecte seu app passo a passo.' },
     api: { title: 'API REST', description: 'Filtros, relacionamentos, paginação, escritas e funções.' },
     openapi: { title: 'Referência OpenAPI', description: 'Rotas e modelos gerados pelo banco deste projeto.' },
-    auth: { title: 'Autenticação', description: 'Senhas, sessões, confirmação por email e login social.' },
+    auth: { title: 'Autenticação', description: 'Senhas, sessões, confirmação por e-mail e login social.' },
     roles: { title: 'JWT e regras de acesso', description: 'Papéis, tokens e políticas que protegem os dados.' },
     storage: { title: 'Arquivos e S3', description: 'Configure o armazenamento, os buckets e as regras de acesso.' },
     webhooks: { title: 'Eventos e webhooks', description: 'Destinos, assinaturas, tentativas e reenvio de eventos do banco.' },

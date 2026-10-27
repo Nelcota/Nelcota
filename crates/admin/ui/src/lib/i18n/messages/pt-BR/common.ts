@@ -5,6 +5,7 @@ const ptBR = {
   invalidNumber: 'Informe um número finito e tente novamente.',
 
   cancel: 'Cancelar',
+  newTab: '(abre em nova aba)',
   save: 'Salvar',
   saving: 'Salvando…',
   working: 'Processando…',
@@ -41,7 +42,6 @@ const ptBR = {
   keepEditing: 'Continuar editando',
   discard: 'Descartar alterações',
   showPassword: 'Mostrar senha',
-  hidePassword: 'Ocultar senha',
   details: 'Ver conteúdo completo',
   reviewAccess: 'Revisar acesso',
   noMatches: 'Nenhum resultado para esses filtros',

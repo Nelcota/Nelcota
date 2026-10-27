@@ -12,13 +12,15 @@
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
+  import { Badge } from '$lib/components/ui/badge'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import Callout from '$lib/components/shared/Callout.svelte'
   import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte'
   import { RemoteResource } from '$lib/resources/remote-resource.svelte'
   import { route, navigate, href } from '$lib/navigation/router.svelte'
-  import { errorMessage, t } from '$lib/i18n/index.svelte'
+  import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
+  import { numberFormat } from '$lib/formatting/intl'
   import type { WebhookEndpoints, WebhookDeliveries, WebhookEndpoint, WebhookSecret } from '$lib/contracts/types'
   import EndpointDialog from './components/EndpointDialog.svelte'
   import SecretDialog from './components/SecretDialog.svelte'
@@ -26,6 +28,12 @@
   import { webhooks, type EndpointInput } from './api'
   import { eventLabel } from './format'
 
+  // The queue limits enforced by the capture trigger (migrations/V13__webhooks.sql),
+  // and the share of them that shows the capacity warning.
+  const OUTSTANDING_LIMIT = 10_000
+  const RETAINED_LIMIT = 100_000
+  const CAPACITY_WARNING = 0.8
+  const count = (value: number) => numberFormat(intlLocale()).format(value)
   const config = new RemoteResource<WebhookEndpoints>()
   const history = new RemoteResource<WebhookDeliveries>()
   const tab = $derived(route.query.get('tab') === 'deliveries' ? 'deliveries' : 'configuration')
@@ -118,30 +126,42 @@
   }
 </script>
 
-<div class="mx-auto grid w-full max-w-page gap-6 px-4 pt-2 pb-12 *:min-w-0 sm:px-6 lg:px-8">
+<div class="mx-auto grid w-full max-w-page gap-6 px-4 pt-2 pb-12 *:min-w-0 sm:px-6 lg:px-8 [&>:first-child]:mb-0">
   <PageHeader title={t('webhooks.title')} description={t('webhooks.description')}>
     {#snippet actions()}<Button variant="outline" onclick={refresh} disabled={refreshing}><RefreshCw data-icon="inline-start" aria-hidden="true" class={refreshing ? 'animate-spin' : ''} />{t('common.refresh')}</Button>{#if tab === 'configuration'}<Button onclick={() => edit(null)} disabled={!config.data?.tables.length}><Plus data-icon="inline-start" aria-hidden="true" />{t('webhooks.create')}</Button>{/if}{/snippet}
   </PageHeader>
+  <!-- The sidebar picks the view; this names it for screen readers (D103). -->
+  <h2 class="sr-only">{t(tab === 'deliveries' ? 'webhooks.deliveries' : 'webhooks.configuration')}</h2>
   {#if config.error}<LoadError message={errorMessage(config.error)} onretry={loadConfig} busy={config.loading} />{/if}
   {#if !config.data && config.loading}<Skeleton class="h-40 rounded-3xl" />{/if}
   {#if config.data}
     <div class="grid grid-cols-2 gap-4">
-      <div class="rounded-3xl bg-card p-4 sm:p-5"><p class="text-sm text-muted-foreground">{t('webhooks.outstanding')}</p><p class="mt-1 flex flex-wrap items-baseline gap-x-2 text-2xl font-semibold tabular-nums">{config.data.outstanding}<span class="text-xs font-normal whitespace-nowrap text-muted-foreground">/ 10 000</span></p></div>
-      <div class="rounded-3xl bg-card p-4 sm:p-5"><p class="text-sm text-muted-foreground">{t('webhooks.retained')}</p><p class="mt-1 flex flex-wrap items-baseline gap-x-2 text-2xl font-semibold tabular-nums">{config.data.retained}<span class="text-xs font-normal whitespace-nowrap text-muted-foreground">/ 100 000</span></p></div>
+      <div class="grid content-start gap-1 rounded-3xl bg-card p-4 sm:p-5"><p class="text-xs text-muted-foreground sm:text-sm">{t('webhooks.outstanding')}</p><p class="flex flex-wrap items-baseline gap-x-1.5 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">{count(config.data.outstanding)}<span class="text-sm font-medium whitespace-nowrap text-muted-foreground sm:text-base">{t('webhooks.ofLimit', { limit: count(OUTSTANDING_LIMIT) })}</span></p></div>
+      <div class="grid content-start gap-1 rounded-3xl bg-card p-4 sm:p-5"><p class="text-xs text-muted-foreground sm:text-sm">{t('webhooks.retained')}</p><p class="flex flex-wrap items-baseline gap-x-1.5 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">{count(config.data.retained)}<span class="text-sm font-medium whitespace-nowrap text-muted-foreground sm:text-base">{t('webhooks.ofLimit', { limit: count(RETAINED_LIMIT) })}</span></p></div>
     </div>
-    {#if config.data.outstanding >= 8000 || config.data.retained >= 80000}<Callout variant="warning" title={t('webhooks.capacity')} />{/if}
+    {#if config.data.outstanding >= OUTSTANDING_LIMIT * CAPACITY_WARNING || config.data.retained >= RETAINED_LIMIT * CAPACITY_WARNING}<Callout variant="warning" title={t('webhooks.capacity')} />{/if}
     {#if (tab === 'configuration')}
       {#if !config.data.endpoints.length}
         <EmptyState class="rounded-3xl bg-card" icon={Webhook} title={t(config.data.tables.length ? 'webhooks.emptyTitle' : 'webhooks.noTables')} description={t(config.data.tables.length ? 'webhooks.emptyHint' : 'webhooks.noTablesHint')}>
-          {#snippet actions()}{#if (config.data?.tables.length)}<Button onclick={() => edit(null)}>{t('webhooks.create')}</Button>{/if}{#if !(config.data?.tables.length)}<Button href={href('/tables?create=true')}>{t('tables.editor.newTable')}</Button>{/if}{/snippet}
+          {#snippet actions()}{#if (config.data?.tables.length)}<Button variant="outline" onclick={() => edit(null)}><Plus data-icon="inline-start" aria-hidden="true" />{t('webhooks.create')}</Button>{/if}{#if !(config.data?.tables.length)}<Button href={href('/tables?create=true')}>{t('tables.editor.newTable')}</Button>{/if}{/snippet}
         </EmptyState>
       {/if}
       <div class="grid gap-4 lg:grid-cols-2">
         {#each config.data.endpoints as hook (hook.id)}
           <section class="grid min-w-0 content-start gap-4 rounded-3xl bg-card p-5">
-            <header class="flex flex-wrap items-center justify-between gap-2"><h2 class="min-w-0 break-words font-semibold">{hook.name}</h2>
-              {#if !hook.table_available}<span class="rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive">{t('webhooks.tableMissing')}</span>{/if}
-              {#if hook.table_available}<span class={['rounded-full px-2.5 py-1 text-xs font-medium', hook.enabled ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground']}>{t(hook.enabled ? 'webhooks.enabled' : 'webhooks.paused')}</span>{/if}
+            <header class="flex items-center gap-2"><h3 class="min-w-0 flex-1 break-words font-semibold">{hook.name}</h3>
+              {#if !hook.table_available}<Badge variant="destructive">{t('webhooks.tableMissing')}</Badge>{/if}
+              {#if hook.table_available}<Badge variant={hook.enabled ? 'success' : 'muted'}>{t(hook.enabled ? 'webhooks.enabled' : 'webhooks.paused')}</Badge>{/if}
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger disabled={busy !== null}>
+                  {#snippet child({ props })}<Button variant="ghost" size="icon-sm" aria-label={t('common.actionsFor', { name: hook.name })} {...props}><Ellipsis aria-hidden="true" /></Button>{/snippet}
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content align="end" class="w-48">
+                  <DropdownMenu.Item onclick={() => request('rotate', hook)}><KeyRound aria-hidden="true" />{t('webhooks.rotate')}</DropdownMenu.Item>
+                  <DropdownMenu.Separator />
+                  <DropdownMenu.Item variant="destructive" onclick={() => request('delete', hook)}><Trash2 aria-hidden="true" />{t('webhooks.remove')}</DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
             </header>
             <p class="font-mono text-sm text-muted-foreground">{hook.schema}.{hook.table}</p>
             {#if !hook.table_available}<p class="text-sm text-warning">{t('webhooks.missingTable')}</p>{/if}
@@ -153,16 +173,6 @@
                    pending deliveries; only resuming needs the table back (the server refuses it). -->
               {#if hook.enabled || hook.table_available}<Button variant="outline" size="sm" onclick={() => hook.enabled ? request('pause', hook) : enable(hook)} disabled={busy !== null}>{t(hook.enabled ? 'webhooks.pause' : 'webhooks.resume')}</Button>{/if}
               <Button variant="outline" size="sm" onclick={() => filters(hook.id, '')}>{t('webhooks.deliveries')}</Button>
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger disabled={busy !== null}>
-                  {#snippet child({ props })}<Button variant="ghost" size="icon-sm" aria-label={t('common.actionsFor', { name: hook.name })} {...props}><Ellipsis aria-hidden="true" /></Button>{/snippet}
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Content align="end" class="w-48">
-                  <DropdownMenu.Item onclick={() => request('rotate', hook)}><KeyRound aria-hidden="true" />{t('webhooks.rotate')}</DropdownMenu.Item>
-                  <DropdownMenu.Separator />
-                  <DropdownMenu.Item variant="destructive" onclick={() => request('delete', hook)}><Trash2 aria-hidden="true" />{t('webhooks.remove')}</DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Root>
             </div>
           </section>
         {/each}
@@ -172,7 +182,7 @@
     {#if !(tab === 'configuration')}
       {#if history.error}<LoadError message={errorMessage(history.error)} onretry={loadHistory} busy={history.loading} />{/if}
       {#if !history.data && history.loading}<Skeleton class="h-48 rounded-3xl" />{/if}
-      <DeliveryHistory data={history.data} endpoints={config.data.endpoints} endpoint={endpointFilter} status={statusFilter} hasCursor={!!before} onfilter={filters} onnext={() => filters(endpointFilter, statusFilter, history.data?.next_cursor ?? '')} onfirst={() => filters(endpointFilter, statusFilter)} />
+      <DeliveryHistory data={history.data} endpoints={config.data.endpoints} endpoint={endpointFilter} status={statusFilter} hasCursor={!!before} loading={history.loading} onfilter={filters} onnext={() => filters(endpointFilter, statusFilter, history.data?.next_cursor ?? '')} onfirst={() => filters(endpointFilter, statusFilter)} />
       <div><Button variant="outline" onclick={() => request('clear')} disabled={busy !== null || !config.data.retained}>{t('webhooks.clear')}</Button></div>
     {/if}
     <EndpointDialog bind:open={editorOpen} endpoint={editing} tables={config.data.tables} allowLoopback={config.data.allow_loopback} onsaved={saved} />

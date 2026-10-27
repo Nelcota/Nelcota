@@ -1,5 +1,6 @@
 // Navigation between the panels of the host's projects.
 import { api } from '$lib/transport/api'
+import { ApiError } from '$lib/transport/api-error'
 import type { ProjectLink } from '$lib/contracts/types'
 
 /**
@@ -11,10 +12,29 @@ export async function openProject(project: ProjectLink, sso: boolean) {
   if (project.current || !project.url) return
   if (sso) {
     const { url } = await api.post<{ url: string }>('/sso/handoff', { project: project.name })
-    location.href = url
+    location.href = handoffDestination(url, project.url)
     return
   }
   location.href = `${project.url.replace(/\/$/, '')}/admin/`
+}
+
+/**
+ * The handoff URL carries a sign-in token, so it must open the chosen
+ * project's own panel: a URL on any other origin (a misconfigured proxy, a
+ * mismatched version) is refused instead of followed.
+ */
+export function handoffDestination(url: string, projectUrl: string): string {
+  const refused = new ApiError(`SSO handoff URL is not on the project's origin`, 0, 'invalid_response')
+  let target: URL
+  let project: URL
+  try {
+    target = new URL(url)
+    project = new URL(projectUrl)
+  } catch {
+    throw refused
+  }
+  if (target.origin !== project.origin) throw refused
+  return target.href
 }
 
 /** Handoff token in the fragment (`#sso=...`), removed from the URL right away. */

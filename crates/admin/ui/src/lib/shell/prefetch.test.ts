@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { rememberSignedIn, wasSignedIn } from './prefetch'
+import { rememberSignedIn, wasSignedIn, watchSignOutElsewhere } from './prefetch'
 
 function storage() {
   const values = new Map<string, string>()
@@ -35,5 +35,26 @@ describe('signed-in hint', () => {
     expect(() => rememberSignedIn(true)).not.toThrow()
     expect(() => rememberSignedIn(false)).not.toThrow()
     expect(wasSignedIn()).toBe(false)
+  })
+})
+
+describe('watchSignOutElsewhere', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  const storageEvent = (key: string, newValue: string | null) => Object.assign(new Event('storage'), { key, newValue })
+
+  it('reports only another tab clearing the signed-in hint, until stopped', () => {
+    const target = new EventTarget()
+    vi.stubGlobal('window', target)
+    const onSignedOut = vi.fn()
+    const stop = watchSignOutElsewhere(onSignedOut)
+    target.dispatchEvent(storageEvent('nelcota.signedIn', '1'))
+    target.dispatchEvent(storageEvent('nelcota.locale', null))
+    expect(onSignedOut).not.toHaveBeenCalled()
+    target.dispatchEvent(storageEvent('nelcota.signedIn', null))
+    expect(onSignedOut).toHaveBeenCalledTimes(1)
+    stop()
+    target.dispatchEvent(storageEvent('nelcota.signedIn', null))
+    expect(onSignedOut).toHaveBeenCalledTimes(1)
   })
 })

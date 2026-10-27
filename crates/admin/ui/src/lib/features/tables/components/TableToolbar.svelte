@@ -27,6 +27,7 @@
     ontogglecolumn,
     onshowallcolumns,
     exportHref,
+    viewing = false,
     onreload,
     oninsert,
     viewer,
@@ -43,6 +44,8 @@
     hiddenColumns: string[]
     ontogglecolumn: (column: string) => void
     onshowallcolumns: () => void
+    /** "View as" is active; downloads still use full access. */
+    viewing?: boolean
     exportHref: (format: 'csv' | 'json') => string
     onreload: () => void
     oninsert: () => void
@@ -139,6 +142,7 @@
           <DropdownMenu.Label class="text-xs font-normal text-muted-foreground">
             {filterCount ? t('tables.toolbar.exportFiltered') : t('tables.toolbar.exportAll')}
           </DropdownMenu.Label>
+          {#if viewing}<p class="px-2 pb-1.5 text-xs text-warning">{t('tables.toolbar.exportFullAccess')}</p>{/if}
           {#each [{ format: 'csv', label: 'CSV', hint: t('tables.toolbar.csvHint') }, { format: 'json', label: 'JSON', hint: t('tables.toolbar.jsonHint') }] as const as option (option.format)}
             <DropdownMenu.Item class="flex-col items-start gap-0">
               {#snippet child({ props })}<a {...props} href={exportHref(option.format)} download>

@@ -149,7 +149,7 @@
                   variant="ghost"
                   size="icon-sm"
                   disabled={loading}
-                  aria-label={t(showPassword ? 'common.hidePassword' : 'common.showPassword')}
+                  aria-label={t('common.showPassword')}
                   aria-pressed={showPassword}
                   onclick={() => { showPassword = !showPassword; document.getElementById('password')?.focus() }}
                 >
@@ -171,7 +171,7 @@
         <div class="login-support">
           <p>{t('login.restricted')}</p>
           <a href="https://github.com/Nelcota/Nelcota/blob/main/docs/README.md" target="_blank" rel="noreferrer">
-            <CircleHelp size={17} aria-hidden="true" />{t('login.help')}
+            <CircleHelp size={17} aria-hidden="true" />{t('login.help')}<span class="sr-only"> {t('common.newTab')}</span>
           </a>
         </div>
       </div>

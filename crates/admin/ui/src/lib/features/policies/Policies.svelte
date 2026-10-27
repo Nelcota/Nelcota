@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, untrack } from 'svelte'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import { Button } from '$lib/components/ui/button'
   import Plus from '@lucide/svelte/icons/plus'
@@ -51,7 +51,12 @@
     { state: 'danger', icon: ShieldAlert, tone: 'text-destructive' },
   ] as const
   const rlsFilter = $derived<Filter>(FILTERS.find(filter => filter === route.query.get('filter')) ?? 'all')
-  $effect(() => { search = appliedSearch })
+  // Copy the URL into the field only when it says something else, so a
+  // debounced search never drops the trailing space being typed.
+  $effect(() => {
+    const applied = appliedSearch
+    untrack(() => { if (search.trim() !== applied) search = applied })
+  })
   let debounce: ReturnType<typeof setTimeout>
   $effect(() => () => clearTimeout(debounce))
 
@@ -321,9 +326,12 @@
                       size="icon-sm"
                       aria-label={t('policies.editLabel', { name: policy.name })}
                       title={def ? t('common.edit') : t('policies.customRoles')}
-                      disabled={!def}
+                      aria-disabled={!def}
+                      aria-describedby={def ? undefined : `custom-roles-${table.name}-${policy.name}`}
+                      class={def ? undefined : 'opacity-50 cursor-not-allowed'}
                       onclick={() => def && openSheet(table.name, def)}><Pencil /></Button
                     >
+                    {#if !def}<span id={`custom-roles-${table.name}-${policy.name}`} class="sr-only">{t('policies.customRoles')}</span>{/if}
                     <Button
                       variant="ghost"
                       size="icon-sm"

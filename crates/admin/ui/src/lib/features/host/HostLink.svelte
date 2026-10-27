@@ -28,6 +28,6 @@
       class="w-fit rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
       href={`${origin}/admin/`}
       target="_blank"
-      rel="noopener noreferrer">{t('host.title')}</a
+      rel="noopener noreferrer">{t('host.title')}<span class="sr-only"> {t('common.newTab')}</span></a
     >
   </div>{/if}

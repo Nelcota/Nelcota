@@ -1,6 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import ChevronRight from '@lucide/svelte/icons/chevron-right'
+  import RefreshCw from '@lucide/svelte/icons/refresh-cw'
   import { toast } from 'svelte-sonner'
+  import { Badge } from '$lib/components/ui/badge'
   import { Button } from '$lib/components/ui/button'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
@@ -12,7 +15,7 @@
   import { errorMessage, t } from '$lib/i18n/index.svelte'
   import type { WebhookDetail } from '$lib/contracts/types'
   import { webhooks } from './api'
-  import { canReplay, dateLabel, durationLabel, eventLabel, failureLabel, statusClass, statusLabel } from './format'
+  import { canReplay, dateLabel, durationLabel, eventLabel, failureLabel, statusVariant, statusLabel } from './format'
 
   let { id }: { id: string } = $props()
   const resource = new RemoteResource<WebhookDetail>()
@@ -41,16 +44,21 @@
   }
 </script>
 
-<div class="mx-auto grid w-full max-w-page gap-6 px-4 pt-2 pb-12 *:min-w-0 sm:px-6 lg:px-8">
-  <div><Button variant="outline" href={href('/webhooks?tab=deliveries')}>{t('webhooks.back')}</Button></div>
+<div class="mx-auto grid w-full max-w-page gap-6 px-4 pt-2 pb-12 *:min-w-0 *:mb-0 sm:px-6 lg:px-8">
+  <!-- From md the top bar shows Webhooks > Delivery; phones hide that bar and keep the way back here. -->
+  <nav class="flex flex-wrap items-center gap-2 text-sm md:hidden" aria-label={t('shell.nav.breadcrumb')}>
+    <a class="text-muted-foreground hover:text-foreground hover:underline" href={href('/webhooks?tab=deliveries')}>{t('webhooks.deliveries')}</a>
+    <ChevronRight class="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+    <span aria-current="page">{t('webhooks.deliveryTitle', { id })}</span>
+  </nav>
   <PageHeader title={t('webhooks.deliveryTitle', { id })} description={delivery ? `${delivery.endpoint_name} · ${delivery.schema}.${delivery.table} · ${eventLabel(delivery.event)}` : undefined}>
-    {#snippet actions()}<Button variant="outline" onclick={refresh} disabled={refreshing}>{t('common.refresh')}</Button><Button onclick={() => replayOpen = true} disabled={busy || !delivery || !canReplay(delivery)}>{t('webhooks.replay')}</Button>{/snippet}
+    {#snippet actions()}<Button variant="outline" onclick={refresh} disabled={refreshing}><RefreshCw data-icon="inline-start" aria-hidden="true" class={refreshing ? 'animate-spin' : ''} />{t('common.refresh')}</Button><Button onclick={() => replayOpen = true} disabled={busy || !delivery || !canReplay(delivery)}>{t('webhooks.replay')}</Button>{/snippet}
   </PageHeader>
   {#if resource.error}<LoadError message={errorMessage(resource.error)} onretry={load} busy={resource.loading} />{/if}
   {#if !resource.data && resource.loading}<Skeleton class="h-40 rounded-3xl" />{/if}
   {#if resource.data && delivery}
     <section class="grid gap-4 rounded-3xl bg-card p-5">
-      <div class="flex flex-wrap items-center gap-3"><span class={['rounded-full px-3 py-1 text-sm font-medium', statusClass(delivery.status)]}>{statusLabel(delivery.status)}</span><span class="text-sm text-muted-foreground">{delivery.attempts}/{delivery.max_attempts}</span>{#if !delivery.endpoint_enabled}<span class="text-sm text-muted-foreground">{t('webhooks.paused')}</span>{/if}</div>
+      <div class="flex flex-wrap items-center gap-3"><Badge variant={statusVariant(delivery.status)}>{statusLabel(delivery.status)}</Badge><span class="text-sm text-muted-foreground">{t('webhooks.attemptsOf', { done: delivery.attempts, count: delivery.max_attempts })}</span>{#if !delivery.endpoint_enabled}<span class="text-sm text-muted-foreground">{t('webhooks.paused')}</span>{/if}</div>
       {#if delivery.last_error}<p class="text-sm text-destructive">{failureLabel(delivery.last_error)}</p>{/if}
       <dl class="grid gap-4 text-sm sm:grid-cols-2">
         <div class="min-w-0"><dt class="text-muted-foreground">{t('webhooks.destination')}</dt><dd class="mt-1 break-all">{delivery.url}</dd></div>
@@ -61,7 +69,16 @@
       {#if delivery.replay_of}<a href={href(`/webhooks/deliveries/${delivery.replay_of}`)} class="text-sm text-brand underline">{t('webhooks.replayOf', { id: delivery.replay_of })}</a>{/if}
     </section>
     <section class="grid gap-4 rounded-3xl bg-card p-5"><h2 class="font-semibold">{t('webhooks.attemptHistory')}</h2>
-      {#if (resource.data.attempts.length)}<div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead><tr class="text-muted-foreground"><th class="py-3 pr-4 font-medium">{t('webhooks.attempt')}</th><th class="py-3 pr-4 font-medium">{t('webhooks.started')}</th><th class="py-3 pr-4 font-medium">{t('webhooks.duration')}</th><th class="py-3 font-medium">{t('webhooks.result')}</th></tr></thead><tbody>
+      {#if (resource.data.attempts.length)}
+        <!-- Phones list the attempts one per row, like the delivery history, instead of a sideways table. -->
+        <ol class="grid gap-3 text-sm sm:hidden">
+          {#each resource.data.attempts as attempt (attempt.number)}<li class="grid gap-1 border-t border-border pt-3 first:border-0 first:pt-0">
+            <span class="flex flex-wrap justify-between gap-2"><span class="font-medium">{t('webhooks.attempt')} {attempt.number}</span><span>{attempt.status_code ? `HTTP ${attempt.status_code}` : attempt.finished_at ? '—' : statusLabel('processing')}</span></span>
+            <span class="text-xs text-muted-foreground tabular-nums">{dateLabel(attempt.started_at)} · {durationLabel(attempt.duration_ms)}</span>
+            {#if attempt.error}<span class="text-xs text-muted-foreground">{failureLabel(attempt.error)}</span>{/if}
+          </li>{/each}
+        </ol>
+        <div class="overflow-x-auto max-sm:hidden"><table class="w-full text-left text-sm"><thead><tr class="text-muted-foreground"><th class="py-3 pr-4 font-medium">{t('webhooks.attempt')}</th><th class="py-3 pr-4 font-medium">{t('webhooks.started')}</th><th class="py-3 pr-4 font-medium">{t('webhooks.duration')}</th><th class="py-3 font-medium">{t('webhooks.result')}</th></tr></thead><tbody>
         {#each resource.data.attempts as attempt (attempt.number)}<tr class="border-t border-border"><td class="py-3 pr-4 tabular-nums">{attempt.number}</td><td class="py-3 pr-4 whitespace-nowrap">{dateLabel(attempt.started_at)}</td><td class="py-3 pr-4 whitespace-nowrap tabular-nums">{durationLabel(attempt.duration_ms)}</td><td class="py-3">{attempt.status_code ? `HTTP ${attempt.status_code}` : attempt.finished_at ? '—' : statusLabel('processing')}{#if attempt.error}<p class="mt-1 text-xs text-muted-foreground">{failureLabel(attempt.error)}</p>{/if}</td></tr>{/each}
       </tbody></table></div>{/if}
       {#if !(resource.data.attempts.length)}<p class="text-sm text-muted-foreground">{t('webhooks.noAttempts')}</p>{/if}

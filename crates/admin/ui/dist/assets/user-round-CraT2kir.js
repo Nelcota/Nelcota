@@ -1,0 +1,1 @@
+import{T as e,g as t,w as n}from"./index.svelte-BmceUQi1.js";var r={name:`user-round`,size:24,node:[[`circle`,{cx:`12`,cy:`8`,r:`5`}],[`path`,{d:`M20 21a8 8 0 0 0-16 0`}]],aliases:[`user-2`]};r.node;var i=new Set([`$$slots`,`$$events`,`$$legacy`]);function a(a,o){let s=n(o,i);t(a,e(()=>s,{get icon(){return r}}))}export{a as t};

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { sqlStore } from './sql-store.svelte'
 
 // No localStorage in Node: the store works in memory only (the same path as
@@ -74,5 +74,41 @@ describe('history', () => {
     expect(sqlStore.history).toHaveLength(20)
     expect(sqlStore.history[0]).toBe('select 3')
     expect(sqlStore.history.filter((h) => h === 'select 3')).toHaveLength(1)
+  })
+})
+
+describe('signing out', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  function fakeStorage() {
+    const values = new Map<string, string>()
+    return {
+      values,
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value) },
+      removeItem: (key: string) => { values.delete(key) },
+    }
+  }
+
+  it('forgets executed statements and drafts but keeps saved queries', () => {
+    const storage = fakeStorage()
+    vi.stubGlobal('localStorage', storage)
+    sqlStore.setDraft("alter role app password 'secret'")
+    sqlStore.remember("alter role app password 'secret'")
+    const kept = sqlStore.save('kept')
+    sqlStore.forgetSession()
+    expect(sqlStore.history).toEqual([])
+    expect(sqlStore.drafts).toHaveLength(1)
+    expect(sqlStore.draft).not.toContain('secret')
+    expect(sqlStore.saved.map(q => q.id)).toContain(kept.id)
+    expect([...storage.values.keys()].sort()).toEqual(['nelcota:sql-saved'])
+  })
+
+  it('stores a typed draft once, in the workspace', () => {
+    const storage = fakeStorage()
+    vi.stubGlobal('localStorage', storage)
+    sqlStore.setDraft('select 42')
+    expect(storage.values.has('nelcota:sql-draft')).toBe(false)
+    expect(storage.values.get('nelcota:sql-workspace')).toContain('select 42')
   })
 })

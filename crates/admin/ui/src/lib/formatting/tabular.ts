@@ -22,8 +22,27 @@ export function toCsv(columns: readonly string[], rows: readonly (readonly Cell[
   return `﻿${lines.join('\r\n')}\r\n`
 }
 
+/** Keys for JSON objects: a repeated column name (`a.id, b.id`) gets a numeric
+ * suffix (`id_2`) that no other column uses, so no value is overwritten. */
+export function uniqueKeys(columns: readonly string[]): string[] {
+  const used = new Set(columns)
+  const seen = new Set<string>()
+  return columns.map((column) => {
+    if (seen.has(column) === false) {
+      seen.add(column)
+      return column
+    }
+    let suffix = 2
+    while (used.has(`${column}_${suffix}`)) suffix += 1
+    const key = `${column}_${suffix}`
+    used.add(key)
+    return key
+  })
+}
+
 /** Array of objects; values stay as Postgres returned them (text). */
 export function toJson(columns: readonly string[], rows: readonly (readonly Cell[])[]): string {
-  const objects = rows.map((row) => Object.fromEntries(columns.map((c, i) => [c, row[i] ?? null])))
+  const keys = uniqueKeys(columns)
+  const objects = rows.map((row) => Object.fromEntries(keys.map((key, i) => [key, row[i] ?? null])))
   return `${JSON.stringify(objects, null, 2)}\n`
 }

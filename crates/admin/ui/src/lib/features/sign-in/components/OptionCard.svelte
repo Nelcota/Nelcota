@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Badge } from '$lib/components/ui/badge'
   import type { Component } from 'svelte'
   import ChevronDown from '@lucide/svelte/icons/chevron-down'
   import KeyRound from '@lucide/svelte/icons/key-round'
@@ -26,10 +27,7 @@
       {#if (Icon)}<Icon class="size-[18px]" aria-hidden="true" />{/if}
       {#if !(Icon) && (option.id === 'google' || option.id === 'github')}<BrandMark brand={option.id} />{/if}
     </span>
-    <span class={['flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium', option.on ? 'bg-success/10 text-success' : 'bg-well text-muted-foreground']}>
-      <span class={['size-1.5 rounded-full', option.on ? 'bg-success' : 'bg-muted-foreground/60']} aria-hidden="true"></span>
-      {option.on ? t('signIn.on') : t('signIn.off')}
-    </span>
+    <Badge variant={option.on ? 'success' : 'muted'}>{option.on ? t('signIn.on') : t('signIn.off')}</Badge>
   </div>
 
   <div class="grid gap-1">

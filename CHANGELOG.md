@@ -22,6 +22,54 @@ for the October 27 server scope and independent SDK publication checkpoint.
   brand mark now sits atop the sidebar (D111).
 - The three summary cards on Access policies share the row equally; the third
   was narrower because it lined up with the side column below.
+- Panel pages share one frame: the same gap under every page title, the same
+  stat card sizes, one badge style for statuses (webhooks, deliveries, sign-in
+  options), equal side columns on the database and storage pages, and the
+  Updates page in the standard container.
+- Overview cards have a single link each, named like the sidebar, and the
+  "Needs you" list appears once. The API page drops its "Connect my app"
+  button, which repeated the sidebar link (D103).
+- Delivery details lists attempts as rows on phones and keeps its way back in a
+  phone-only breadcrumb, like the storage pages; the delivery history hides its
+  pager when everything fits on one page. Webhook card menus sit next to the
+  status.
+- The Migrations title is the page's main heading on phones, and its list is
+  called "History".
+
+### Fixed
+
+- SQL JSON exports keep every column of a join that selects two columns with
+  the same name (`id`, `id_2`), as the grid and CSV already did.
+- The SQL error marker and line point at the right place when the query has an
+  emoji or other character outside the Basic Multilingual Plane before the
+  error.
+- Deleting the last rows of a page past the first, or opening a stale page
+  link, moves the table or user list to its last page instead of reading
+  "empty".
+- Webhook delivery paging is disabled while a new filter loads, so it can no
+  longer send the previous filter's cursor.
+- Users and Access policies searches no longer drop a trailing space while
+  typing.
+- The table export menu says that "View as" does not apply to downloads, which
+  use full access.
+- Generated SQL quotes column and table names that are reserved words
+  (`order`, `user`), which used to make the statement fail.
+- Counts in the panel follow the language's number format (`1.234 usuários`),
+  and the alert summary and review countdown use singular and plural forms.
+- Screen readers hear the alert summary once instead of every timestamp,
+  which limit fields are invalid, the confirmation phrase to type, the current
+  updates page in the rail and links that open a new tab. Failed uploads show a
+  translated message instead of the library's English text.
+- Portuguese texts use "apagar" and "e-mail" consistently and explain
+  "worker", "heartbeat" and "magic link" in plain words.
+
+### Security
+
+- Signing out in one tab signs out the panel's other tabs, and signing out
+  forgets the SQL history and open queries kept in the browser (saved queries
+  stay).
+- A project's sign-in handoff only follows links to that project's own
+  address.
 
 ## [0.5.6] — 2026-10-27
 

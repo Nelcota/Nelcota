@@ -3,7 +3,6 @@
   import { onMount, untrack, tick } from 'svelte'
   import * as Select from '$lib/components/ui/select'
   import BookOpen from '@lucide/svelte/icons/book-open'
-  import Plug from '@lucide/svelte/icons/plug'
   import Globe from '@lucide/svelte/icons/globe'
   import UserRound from '@lucide/svelte/icons/user-round'
   import Server from '@lucide/svelte/icons/server'
@@ -31,7 +30,8 @@
   import { downloadText } from '$lib/browser/download'
   import { authSnippets, sdkSetup, tableSnippets, type Lang, type Snippet } from '$lib/features/api/api-examples'
   import type { PoliciesData, ProjectsData, StorageOverview, TableData, TablesResponse } from '$lib/contracts/types'
-  import { errorMessage, t } from '$lib/i18n/index.svelte'
+  import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
+  import { formatBytes } from '$lib/features/storage/files'
 
   // The panel is served from the same host as the API.
   const base = location.origin
@@ -59,7 +59,7 @@
   const contextResource = new RemoteResource<string>()
   const context = $derived(contextResource.data)
   const contextError = $derived(contextResource.error ? errorMessage(contextResource.error) : '')
-  const contextSize = $derived(context ? `${Math.max(1, Math.round(new Blob([context]).size / 1024))} KB` : '')
+  const contextSize = $derived(context ? formatBytes(new Blob([context]).size, intlLocale()) : '')
   async function loadContext() {
     await contextResource.load(async signal => {
       const types = fetch(href('/api/typescript'), { signal, credentials: 'same-origin', cache: 'no-store' }).then(async response => {
@@ -170,7 +170,6 @@
 <div class="mx-auto grid w-full max-w-page gap-6 px-4 pt-2 pb-12 *:min-w-0 sm:px-6 lg:px-8 [&>:first-child]:mb-0">
   <PageHeader title={t('connect.title')} description={t('connect.description')}>
     {#snippet actions()}
-      <Button href="#api-sdk"><Plug data-icon="inline-start" aria-hidden="true" />{t('connect.start')}</Button>
       <Button variant="outline" href={href('/guides/openapi')}>
         <BookOpen data-icon="inline-start" aria-hidden="true" />{t('connect.openapi')}
       </Button>

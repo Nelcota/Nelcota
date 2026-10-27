@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { toCsv, toJson } from './tabular'
+import { toCsv, toJson, uniqueKeys } from './tabular'
 
 describe('CSV', () => {
   it('has a BOM, CRLF and quotes only when needed', () => {
@@ -45,5 +45,16 @@ describe('JSON', () => {
 
   it('preserves formula text for lossless data export', () => {
     expect(JSON.parse(toJson(['=header'], [['=1+1']]))).toEqual([{ '=header': '=1+1' }])
+  })
+})
+
+describe('JSON with repeated column names', () => {
+  it('keeps every value of a join that selects two columns with the same name', () => {
+    expect(JSON.parse(toJson(['id', 'id'], [['1', '99']]))).toEqual([{ id: '1', id_2: '99' }])
+  })
+
+  it('never reuses a name another column already has', () => {
+    expect(uniqueKeys(['x', 'x', 'x_2', 'x'])).toEqual(['x', 'x_3', 'x_2', 'x_4'])
+    expect(uniqueKeys(['a', 'b'])).toEqual(['a', 'b'])
   })
 })

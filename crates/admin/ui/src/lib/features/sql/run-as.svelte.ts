@@ -18,6 +18,10 @@ export function setRunAs(mode: RunAsMode, user: RunAsUser | null = null) {
 }
 
 export function runAsRequest(): RunAsRequest {
-  if (runAs.mode === 'authenticated' && runAs.user) return { role: 'authenticated', user_id: runAs.user.id }
+  if (runAs.mode === 'authenticated') {
+    // Falling back to the owner here would skip the access rules unnoticed.
+    if (runAs.user === null) throw new Error('run as a signed-in user without a user')
+    return { role: 'authenticated', user_id: runAs.user.id }
+  }
   return { role: runAs.mode === 'anon' ? 'anon' : 'owner' }
 }

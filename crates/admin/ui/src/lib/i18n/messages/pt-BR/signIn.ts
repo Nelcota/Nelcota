@@ -14,14 +14,14 @@ const ptBR = {
   copyEnv: 'Copiar variáveis',
   options: {
     password: {
-      title: 'Cadastro com email e senha',
+      title: 'Cadastro com e-mail e senha',
       text: 'Qualquer pessoa cria uma conta pelo app.',
       textOn: 'Qualquer pessoa cria uma conta pelo app. Desligue para que só o painel crie usuários.',
       textOff: 'Só o painel cria usuários. Ligue para que qualquer pessoa crie uma conta pelo app.',
     },
-    confirmation: { title: 'Confirmação de email', text: 'A conta só entra depois de clicar no link enviado por email.' },
-    recovery: { title: 'Recuperação de senha', text: 'A pessoa recebe um link por email para escolher uma senha nova.' },
-    magicLink: { title: 'Link mágico', text: 'Entrar sem senha, por um link enviado por email.' },
+    confirmation: { title: 'Confirmação de e-mail', text: 'A conta só entra depois de clicar no link enviado por e-mail.' },
+    recovery: { title: 'Recuperação de senha', text: 'A pessoa recebe um link por e-mail para escolher uma senha nova.' },
+    magicLink: { title: 'Link mágico', text: 'Entrar sem senha, por um link enviado por e-mail.' },
     google: { title: 'Google', text: 'Entrar com a conta Google.' },
     github: { title: 'GitHub', text: 'Entrar com a conta GitHub.' },
   },

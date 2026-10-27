@@ -69,8 +69,10 @@
       onclick={() => info.lastPage !== null && onpage(info.lastPage)}
       aria-label={t('tables.footer.last')}
       title={info.lastPage === null ? t('tables.footer.estimated') : undefined}
+      aria-describedby={info.lastPage === null ? 'grid-footer-estimated' : undefined}
     >
       <ChevronsRight />
     </Button>
+    {#if info.lastPage === null}<span id="grid-footer-estimated" class="sr-only">{t('tables.footer.estimated')}</span>{/if}
   </div>
 </footer>

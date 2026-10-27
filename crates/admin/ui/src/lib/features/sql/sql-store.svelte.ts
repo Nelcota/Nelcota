@@ -3,13 +3,15 @@
 // Persisted in the browser (per project, since each panel has its own origin).
 
 import { newId } from '$lib/browser/id'
-import { readJson, readText, write } from '$lib/browser/local-storage'
+import { readJson, readText, remove, write } from '$lib/browser/local-storage'
 
+// Read once to migrate drafts from before the workspace; never written.
 const DRAFT_KEY = 'nelcota:sql-draft'
 const HISTORY_KEY = 'nelcota:sql-history'
 const SAVED_KEY = 'nelcota:sql-saved'
 const WORKSPACE_KEY = 'nelcota:sql-workspace'
 const HISTORY_LIMIT = 20
+const DEFAULT_DRAFT = 'select now();'
 
 export interface SavedQuery {
   id: string
@@ -54,7 +56,7 @@ const parseHistory = (data: unknown): string[] | null =>
   Array.isArray(data) ? data.filter((h): h is string => typeof h === 'string') : null
 
 class SqlStore {
-  drafts = $state<SqlDraft[]>(workspace?.items ?? [{ id: 'scratch', queryId: null, sql: readText(DRAFT_KEY, 'select now();') }])
+  drafts = $state<SqlDraft[]>(workspace?.items ?? [{ id: 'scratch', queryId: null, sql: readText(DRAFT_KEY, DEFAULT_DRAFT) }])
   activeDraftId = $state(workspace?.active ?? 'scratch')
   activeDraft = $derived(this.drafts.find((item) => item.id === this.activeDraftId)!)
   draft = $derived(this.activeDraft.sql)
@@ -87,8 +89,21 @@ class SqlStore {
 
   setDraft(sql: string) {
     this.activeDraft.sql = sql
-    write(DRAFT_KEY, sql)
     this.persistWorkspace()
+  }
+
+  /**
+   * Forgets what this browser kept of the work: executed statements and open
+   * drafts can hold passwords or keys, and outlive the session on a shared
+   * machine. Queries saved on purpose stay.
+   */
+  forgetSession() {
+    remove(HISTORY_KEY)
+    remove(WORKSPACE_KEY)
+    remove(DRAFT_KEY)
+    this.history = []
+    this.drafts = [{ id: 'scratch', queryId: null, sql: DEFAULT_DRAFT }]
+    this.activeDraftId = 'scratch'
   }
 
   /** Opens a text in the editor; with `id`, starts editing that saved query. */

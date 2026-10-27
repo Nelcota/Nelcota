@@ -12,7 +12,7 @@ const ptBR = {
     'A execução falhou. Consulte o diagnóstico privado da VPS antes de recuperar.',
   interrupted: 'A execução foi interrompida.',
   worker_interrupted:
-    'O worker foi interrompido; revise a última etapa antes de recuperar.',
+    'O processo do controlador foi interrompido; revise a última etapa antes de recuperar.',
   history_full:
     'O histórico atingiu o limite. Arquive apenas operações concluídas por SSH.',
   title: 'Projetos da VPS',
@@ -134,7 +134,7 @@ const ptBR = {
   estimated:
     'Os perfis são estimativas de configuração, não garantias de capacidade.',
   remaining: 'Validade da revisão',
-  seconds: 'segundos',
+  secondsLeft: { one: '{count} segundo', other: '{count} segundos' },
   select: 'Selecionar projeto'
 }
 

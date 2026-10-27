@@ -9,7 +9,7 @@
 // the other one before the interface changes language.
 
 import { ApiError } from '$lib/transport/api-error'
-import { pluralRules } from '$lib/formatting/intl'
+import { numberFormat, pluralRules } from '$lib/formatting/intl'
 import { readText, write } from '$lib/browser/local-storage'
 import type ptBR from './messages/pt-BR'
 
@@ -128,7 +128,9 @@ export function translate(locale: Locale, key: string, params?: Params): string 
   const count = Number(params?.count ?? 0)
   // CLDR files 0 under `one` in Portuguese, but people write "0 usuários".
   const form = count !== 0 && pluralRules(locale).select(count) === 'one' ? 'one' : 'other'
-  return interpolate(entry[form], params)
+  // The counted number reads in the language's format ("1.234 usuários").
+  const shown = typeof params?.count === 'number' ? { ...params, count: numberFormat(locale).format(params.count) } : params
+  return interpolate(entry[form], shown)
 }
 
 /** Does the current language have this key? (Server error codes may be new.) */
@@ -140,11 +142,13 @@ export function hasMessage(key: string): boolean {
  * Message for a failed request: the translation of the server's error code
  * when there is one, else the server's (English) text, e.g. a Postgres error.
  */
-export function errorMessage(error: unknown): string {
+export function errorMessage(error: unknown, fallbackKey?: string): string {
   if (error instanceof ApiError && error.code && hasMessage(`errors.${error.code}`)) {
     return translate(i18n.locale, `errors.${error.code}`, error.params)
   }
   if (isNetworkError(error)) return translate(i18n.locale, 'errors.network')
+  // Library errors (e.g. Uppy) carry English text; the key gives a translated one.
+  if (fallbackKey !== undefined && error instanceof ApiError === false) return translate(i18n.locale, fallbackKey)
   return error instanceof Error ? error.message : String(error)
 }
 

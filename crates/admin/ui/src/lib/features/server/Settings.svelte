@@ -128,7 +128,7 @@
       <label class="grid gap-2"><span>{s('confirmPassword')}</span><Input type="password" autocomplete="new-password" bind:value={repeat} minlength={16} maxlength={1024} disabled={blocked} required /></label>
     {/if}
     <p class="text-sm text-muted-foreground">{s(section === 'backup' ? 'backupImpact' : section === 'schedule' ? 'scheduleImpact' : 'impact')}</p>
-    {#if dirty}<p role="status" class="text-sm text-amber-700 dark:text-amber-300">{s('dirty')}</p>{/if}
+    {#if dirty}<p role="status" class="text-sm text-warning">{s('dirty')}</p>{/if}
     <Button class="w-fit" type="submit" disabled={blocked || !valid}>{s('preview')}</Button>
   </form>
   {#if backups}<div class="grid gap-3 border-t border-border pt-4"><p class="text-sm text-muted-foreground">{s('offsiteImpact')}</p><div class="flex flex-wrap gap-3"><Button variant="outline" disabled={blocked || dirty} onclick={() => void action({ kind: 'backup', project })}>{s('backupNow')}</Button><Button variant="outline" disabled={blocked || dirty || !view?.backup_configured} onclick={() => void action({ kind: 'test_backup', project })}>{s('testBackup')}</Button><Button disabled={blocked || dirty || !view?.backup_configured} onclick={() => void action({ kind: 'backup_offsite', project })}>{s('offsiteNow')}</Button></div></div>{/if}

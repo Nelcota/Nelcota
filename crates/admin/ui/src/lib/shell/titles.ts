@@ -24,7 +24,7 @@ export type Crumb = { label: string; path?: string }
 export function crumbsFor(path: string): Crumb[] {
   const clean = path.replace(/\/$/, '') || '/'
   const delivery = match('/webhooks/deliveries/:id', clean)
-  if (delivery) return [{ label: t('shell.pages.webhooks'), path: '/webhooks?tab=deliveries' }, { label: t('webhooks.deliveryTitle', { id: delivery.id }) }]
+  if (delivery) return [{ label: t('webhooks.deliveries'), path: '/webhooks?tab=deliveries' }, { label: t('webhooks.deliveryTitle', { id: delivery.id }) }]
   const guide = match('/guides/:id', clean)
   const guideTitle = `guides.entries.${guide?.id}.title`
   if (guide && hasMessage(guideTitle)) return [{ label: t('shell.pages.guides'), path: '/guides' }, { label: t(guideTitle as MessageKey) }]

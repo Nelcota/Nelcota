@@ -92,7 +92,7 @@ const ptBR = {
     signup: {
       label: 'Criar conta',
       description: 'Devolve a sessão (access_token e refresh_token) já logada.',
-      sdk: 'session vem null enquanto o email aguarda confirmação.',
+      sdk: 'session vem null enquanto o e-mail aguarda confirmação.',
     },
     login: {
       label: 'Entrar',

@@ -3,7 +3,6 @@ const ptBR = {
   title: 'Visão geral',
   quickActions: 'Ações rápidas do projeto',
   resources: 'Recursos do projeto',
-  resourcesAccess: 'Controle de acesso',
   description: 'Seu projeto está no ar.',
   period: {
     label: 'Período',
@@ -35,7 +34,6 @@ const ptBR = {
   },
   cards: {
     database: 'Banco de dados',
-    auth: 'Autenticação',
     tablesCaption: { one: '{count} protegida', other: '{count} protegidas' },
     usersCaption: { one: '{count} já entrou pelo app', other: '{count} já entraram pelo app' },
     tables: 'Tabelas',
@@ -43,7 +41,7 @@ const ptBR = {
     users: 'Usuários',
     usersRing: '{percent}% dos usuários já entraram pelo app',
     refused: 'Recusadas',
-    refusedBars: 'Recusadas ao longo do período',
+    refusedBars: 'Recusadas ao longo do período: {total}',
     open: 'Abrir {page}',
   },
   traffic: {
@@ -89,7 +87,6 @@ const ptBR = {
   },
   tables: {
     heading: 'Tabelas',
-    openEditor: 'Abrir editor',
     empty: 'Nenhuma tabela ainda',
     emptyBefore: 'Crie com',
     emptyMiddle: 'ou no',

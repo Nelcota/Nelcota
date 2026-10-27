@@ -6,9 +6,12 @@
   import type { WebhookDeliveries, WebhookEndpoint } from '$lib/contracts/types'
   import { href } from '$lib/navigation/router.svelte'
   import { t } from '$lib/i18n/index.svelte'
-  import { dateLabel, eventLabel, statuses, statusLabel, statusClass } from '../format'
-  let { data, endpoints, endpoint, status, hasCursor, onfilter, onnext, onfirst }: {
+  import { Badge } from '$lib/components/ui/badge'
+  import { dateLabel, eventLabel, statuses, statusLabel, statusVariant } from '../format'
+  let { data, endpoints, endpoint, status, hasCursor, loading = false, onfilter, onnext, onfirst }: {
     data: WebhookDeliveries | null; endpoints: WebhookEndpoint[]; endpoint: string; status: string; hasCursor: boolean
+    /** While a new page or filter loads, `data` still holds the previous one and its cursor. */
+    loading?: boolean
     onfilter: (endpoint: string, status: string) => void; onnext: () => void; onfirst: () => void
   } = $props()
   const endpointName = $derived(endpoint ? endpoints.find(hook => hook.id === endpoint)?.name ?? endpoint : t('webhooks.allWebhooks'))
@@ -36,7 +39,7 @@
     <ul class="grid gap-2 sm:hidden">
       {#each data.deliveries as delivery (delivery.id)}
         <li><a href={href(`/webhooks/deliveries/${delivery.id}`)} class="grid min-w-0 gap-2 rounded-3xl bg-card p-4 transition-colors hover:bg-accent">
-          <span class="flex items-center justify-between gap-2"><span class={['rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap', statusClass(delivery.status)]}>{statusLabel(delivery.status)}</span><span class="text-xs text-muted-foreground tabular-nums">{delivery.attempts}/{delivery.max_attempts}{delivery.last_status ? ` · HTTP ${delivery.last_status}` : ''}</span></span>
+          <span class="flex items-center justify-between gap-2"><Badge variant={statusVariant(delivery.status)}>{statusLabel(delivery.status)}</Badge><span class="text-xs text-muted-foreground tabular-nums">{t('webhooks.attemptsOf', { done: delivery.attempts, count: delivery.max_attempts })}{delivery.last_status ? ` · HTTP ${delivery.last_status}` : ''}</span></span>
           <span class="truncate font-medium">{delivery.endpoint_name}</span>
           <span class="text-xs text-muted-foreground">{dateLabel(delivery.created_at)} · {eventLabel(delivery.event)}</span>
         </a></li>
@@ -48,16 +51,17 @@
           <td class="p-4 whitespace-nowrap text-muted-foreground">{dateLabel(delivery.created_at)}</td>
           <td class="max-w-64 p-4"><p class="break-words font-medium">{delivery.endpoint_name}</p><p class="mt-1 font-mono text-xs text-muted-foreground">{delivery.schema}.{delivery.table}</p></td>
           <td class="p-4 whitespace-nowrap">{eventLabel(delivery.event)}</td>
-          <td class="p-4"><span class={['inline-block rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap', statusClass(delivery.status)]}>{statusLabel(delivery.status)}</span><p class="mt-1 text-xs text-muted-foreground">{delivery.attempts}/{delivery.max_attempts}{delivery.last_status ? ` · HTTP ${delivery.last_status}` : ''}</p></td>
+          <td class="p-4"><Badge variant={statusVariant(delivery.status)}>{statusLabel(delivery.status)}</Badge><p class="mt-1 text-xs text-muted-foreground">{t('webhooks.attemptsOf', { done: delivery.attempts, count: delivery.max_attempts })}{delivery.last_status ? ` · HTTP ${delivery.last_status}` : ''}</p></td>
           <td class="p-4"><Button variant="outline" size="sm" href={href(`/webhooks/deliveries/${delivery.id}`)}>{t('webhooks.view')}</Button></td>
         </tr>{/each}</tbody>
       </table>
     </div>
   {/if}
   {#if !(data?.deliveries.length) && (data)}<EmptyState class="rounded-3xl bg-card" icon={History} title={t('webhooks.noDeliveries')} description={t('webhooks.noDeliveriesHint')} />{/if}
-  <div class="flex flex-wrap justify-end gap-2">
-    {#if hasCursor}<Button variant="outline" onclick={onfirst}>{t('webhooks.firstPage')}</Button>{/if}
-    <Button variant="outline" disabled={!data?.next_cursor} onclick={onnext}>{t('webhooks.nextPage')}</Button>
-  </div>
+  <!-- Like the users list: no pager while everything fits on one page. -->
+  {#if hasCursor || data?.next_cursor}<div class="flex flex-wrap justify-end gap-2">
+    {#if hasCursor}<Button variant="outline" size="sm" disabled={loading} onclick={onfirst}>{t('webhooks.firstPage')}</Button>{/if}
+    <Button variant="outline" size="sm" disabled={loading || !data?.next_cursor} onclick={onnext}>{t('webhooks.nextPage')}</Button>
+  </div>{/if}
   <p class="text-sm text-muted-foreground">{t('webhooks.retention')}</p>
 </div>

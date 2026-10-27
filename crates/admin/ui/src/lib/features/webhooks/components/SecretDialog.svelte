@@ -52,7 +52,7 @@
     {#if value}<pre class="rounded-xl bg-well px-4 py-3.5 font-mono text-xs leading-relaxed break-all whitespace-pre-wrap sm:text-[0.8125rem]" oncopy={copiedKey}>{value.secret}</pre>{/if}
     <p class="text-sm text-muted-foreground">{t('webhooks.secretHelp')}</p>
     <!-- A new tab, so reading the guide does not leave the key behind. -->
-    <a class="text-sm text-brand underline" href={href('/guides/webhooks')} target="_blank" rel="noopener">{t('webhooks.guide')}</a>
+    <a class="text-sm text-brand underline" href={href('/guides/webhooks')} target="_blank" rel="noopener">{t('webhooks.guide')}<span class="sr-only"> {t('common.newTab')}</span></a>
     {#if warned}<p role="alert" class="text-sm text-warning">{t('webhooks.secretNotCopied')}</p>{/if}
     {#if !warned}
       <Dialog.Footer><Button variant="outline" onclick={copy}><Copy data-icon="inline-start" aria-hidden="true" />{t('webhooks.copySecret')}</Button><Button bind:ref={doneButton} onclick={close}>{t('webhooks.secretCopied')}</Button></Dialog.Footer>

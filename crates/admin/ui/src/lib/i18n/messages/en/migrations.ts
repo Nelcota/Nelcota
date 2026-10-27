@@ -36,7 +36,7 @@ const en: Messages<typeof ptBR> = {
     policy_updated: 'Policy {name} updated',
     policy_dropped: 'Policy {name} dropped',
   },
-  listTitle: 'Migrations',
+  listTitle: 'History',
   noMigrations: 'No migrations yet',
   noMigrationsHint: 'V1__name.sql files in migrations/, applied with nelcota migrate, show up here.',
   columns: {
