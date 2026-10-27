@@ -40,7 +40,8 @@ const BUDGETS: Record<string, number> = {
   // Rejecting invalid Date/bigint JSON bodies, a size-free query check and a quick
   // first retry inside the server's refresh-reuse window add about 130 B gzip.
   // Skipping the lossless-number rewrite pass when no token can lose digits
-  // (8-12x faster parsing of typical responses) adds about 45 B gzip.
+  // (8-12x faster parsing of typical responses) adds 13-44 B gzip to every
+  // entry point below; each budget rose by 50 B for it.
   'index.js': 19_100,
   // Standalone factories include HTTP and keep the other feature modules out.
   'rest/index.js': 10_050,

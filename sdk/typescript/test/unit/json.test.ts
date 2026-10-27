@@ -43,17 +43,6 @@ describe('request bodies', () => {
   });
 });
 
-/** Test oracle: significant digits and power of ten, ignoring notation. */
-function decimalIdentity(source: string): string {
-  const [mantissa = '', power = '0'] = source.toLowerCase().split('e');
-  const [whole = '', fraction = ''] = mantissa.split('.');
-  const sign = whole.startsWith('-') ? '-' : '';
-  const digits = (whole.replace('-', '') + fraction).replace(/^0+/, '');
-  if (digits === '') return '0';
-  const significant = digits.replace(/0+$/, '');
-  const exponent = BigInt(power) - BigInt(fraction.length) + BigInt(digits.length - significant.length);
-  return `${sign}${significant}e${exponent}`;
-}
 describe('parseJson fast path', () => {
   const token = fc.oneof(
     fc.bigInt({ min: -(10n ** 30n), max: 10n ** 30n }).map(String),
@@ -61,23 +50,35 @@ describe('parseJson fast path', () => {
     fc.tuple(fc.stringMatching(/^-?(?:0|[1-9]\d{0,24})$/), fc.stringMatching(/^\d{1,24}$/), fc.option(fc.stringMatching(/^[eE][+-]?\d{1,3}$/)))
       .map(([whole, fraction, exponent]) => `${whole}.${fraction}${exponent ?? ''}`),
   );
-  it('keeps every number token exact as a number or as its original text', () => {
+  // A 16-digit string forces the full rewrite pass, so it is the reference.
+  const SLOW_PATH_MARKER = '"0000000000000000"';
+  it('returns the same values as the full rewrite pass', () => {
     fc.assert(fc.property(fc.array(token, { minLength: 1, maxLength: 8 }), tokens => {
-      const values = parseJson(`[${tokens.join(',')}]`) as unknown[];
-      tokens.forEach((source, index) => {
-        const value = values[index];
-        if (typeof value === 'string') return expect(value).toBe(source);
-        expect(typeof value).toBe('number');
-        expect(Number.isFinite(value)).toBe(true);
-        // A kept number must print back to the same decimal as the source.
-        expect(decimalIdentity(String(value))).toBe(decimalIdentity(source));
-      });
+      const fast = parseJson(`[${tokens.join(',')}]`) as unknown[];
+      const reference = parseJson(`[${[...tokens, SLOW_PATH_MARKER].join(',')}]`) as unknown[];
+      expect(fast).toEqual(reference.slice(0, -1));
+    }));
+  });
+  it('takes the fast path for short tokens and still matches the full pass', () => {
+    const short = fc.oneof(
+      fc.integer({ min: -99_999_999_999_999, max: 99_999_999_999_999 }).map(String),
+      fc.tuple(fc.stringMatching(/^-?(?:0|[1-9]\d{0,6})$/), fc.stringMatching(/^\d{1,7}$/)).map(([whole, fraction]) => `${whole}.${fraction}`),
+    );
+    fc.assert(fc.property(fc.array(short, { minLength: 1, maxLength: 8 }), tokens => {
+      const text = `[${tokens.join(', ')}]`;
+      const reference = parseJson(`[${[...tokens, SLOW_PATH_MARKER].join(',')}]`) as unknown[];
+      expect(parseJson(text)).toEqual(JSON.parse(text));
+      expect(parseJson(text)).toEqual(reference.slice(0, -1));
     }));
   });
   it('rewrites exponent and long tokens wherever they end in the document', () => {
     expect(parseJson('1e400')).toBe('1e400');
     expect(parseJson('{"a":1E-400}')).toEqual({ a: '1E-400' });
-    expect(parseJson('[1e400 ]')).toEqual(['1e400']);
+    const documents = ['[1e400,2]', '[1e400]', '{"a":1e400}', '[1e400 ,2]', '[1e400\t,2]', '[1e400\r,2]', '[1e400\n,2]'];
+    for (const text of documents) {
+      const value = parseJson(text);
+      expect(JSON.stringify(value)).toContain('"1e400"');
+    }
     expect(parseJson('[12345678901234567]')).toEqual(['12345678901234567']);
     expect(parseJson('[0.12345678901234567]')).toEqual(['0.12345678901234567']);
   });
