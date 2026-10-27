@@ -20,13 +20,40 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Changed
 
+- The sidebar is wider and uses short labels where the Portuguese page title
+  did not fit ("Access", "Webhooks", "Connect", "Sign-in methods"). List
+  filters moved from in-page tab bars to sidebar sub-items: Tables (all,
+  attention, views) and Access (all, protected, unprotected, attention), kept
+  in the URL (D111). "API" is called "Connect" everywhere.
+- Page headers keep the primary action on the right at every width; the
+  overview, Migrations and Access policies use the shared header too.
+- The overview leads with what needs attention (unprotected or locked tables
+  and the first steps, hidden once done), then the traffic card with its
+  period, totals and series, then plain area cards and the recent blocks.
+  The rows-per-table block, the quick-action row and the percentage rings
+  are gone.
+- Access policies list the problems first, each with its fix beside it
+  (turn protection on, create a rule, open the SQL editor for owner views),
+  then every table with the urgent ones first; the legend is folded at the
+  end. The rule sheet is one screen: the choices as cards, a live sentence
+  of what the rule does, and the name and SQL under a folded section.
+- Migrations is one timeline: the next version with the panel changes that
+  have no file yet, then the applied migrations, newest first; the steps for
+  other environments are folded inside the next version.
+- "Insert row" always shows its label. "New column" uses the table wizard's
+  words (field name, kind of information, required) and keeps default,
+  UNIQUE, identity, references and description under "Advanced options".
+- Webhooks show a one-line summary instead of two limit cards, keep the
+  card menu for secret rotation and removal only, and open the endpoint form
+  as a side sheet. The user list drops the id column (it stays in "Copy ID")
+  and names the sessions column "Active sessions". Storage folds its notes
+  into a collapsible section; Updates has an empty state for hosts not
+  enrolled; the account menu no longer repeats "Updates".
 - The Webhooks page no longer repeats the sidebar's "Webhooks" and "Delivery
   history" items as tabs inside the page (D103 rules out duplicating sidebar
   links in tab bars); the sidebar is the only navigation between the two views,
   as for the database and users groups. The API page's example toggles are
   grouped buttons rather than navigation landmarks.
-- The three summary cards on Access policies share the row equally; the third
-  was narrower because it lined up with the side column below.
 - Panel pages share one frame: the same gap under every page title, the same
   stat card sizes, one badge style for statuses (webhooks, deliveries, sign-in
   options), equal side columns on the database and storage pages, and the
@@ -38,8 +65,6 @@ for the October 27 server scope and independent SDK publication checkpoint.
   phone-only breadcrumb, like the storage pages; the delivery history hides its
   pager when everything fits on one page. Webhook card menus sit next to the
   status.
-- The Migrations title is the page's main heading on phones, and its list is
-  called "History".
 
 ### Fixed
 

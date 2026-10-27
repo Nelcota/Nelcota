@@ -65,21 +65,25 @@ because of the CSP `font-src 'self'`). Dark theme by default; theme and
 language are in the account menu, at the top right.
 
 The sidebar groups related pages into expandable subcategories; phones use
-the same hierarchy in the menu. **Database** contains Tables, SQL editor and
-Migrations; **Users** contains the user list and user sign-in settings;
-**Events and webhooks** contains webhook configuration and delivery history.
-**API** contains links to its address, caller roles, SDK setup, examples and
-token sections. The active page or section is highlighted within its group.
-These groups replace page-level tab bars. Table views, filters and example
-languages remain next to the content they control. The project chip at the top left shows the project, whether it
+the same hierarchy in the menu. **Database** contains Tables (with its list
+filters: all, attention, views), SQL editor and Migrations; **Users** contains
+the user list and sign-in methods; **Access** holds the policies page and its
+filters (all, protected, unprotected, attention); **Webhooks** contains the
+configuration and the deliveries; **Connect** links to the API's address,
+caller roles, SDK setup, AI context, examples and token sections. Sidebar
+items use short labels when the page title does not fit; the page keeps its
+full title. The active page, filter or section is highlighted within its
+group. These groups replace page-level tab bars and list filters; table views
+and example languages remain next to the content they control. The project chip at the top left shows the project, whether it
 runs locally or on which host, and a dot for whether the server answers
 (checked every minute and when the window regains focus). Search (Ctrl K)
 sits beside the account chip. The
-**overview** leads with the API's traffic: requests in the last 24 hours,
-the share refused and the share that failed, then cards for tables (how
-many are protected), users (how many have signed in from the app) and
-refused calls, beside a chart of requests and refused calls over the last
-hour or day, with a table view. The counts are kept in memory per minute
+**overview** leads with what needs attention (unprotected or locked tables
+and the first steps of a new project, hidden once they are done), then the
+API's traffic: requests in the last hour or day, the share refused and the
+share that failed, with a chart of requests and refused calls and a table
+view; then cards for tables (how many are protected), users (how many have
+signed in from the app) and refused calls, and the recent blocks. The counts are kept in memory per minute
 for 24 hours: restarting the server starts them again.
 
 RLS state shows as a colored badge: green (RLS with policies), amber (RLS on
@@ -118,8 +122,8 @@ are refused before querying the database. Return to the first page to continue.
 | Command palette | Ctrl+K (⌘K on Mac) or the search button at the top right: pages, tables, saved queries, templates and actions |
 | Create a table | "New table" in the table list: columns (type, default, PK, identity, UNIQUE, foreign key), RLS on by default and a GRANTs matrix. Shows the SQL before creating |
 | Edit the structure | the table's **Structure** tab (`/admin/tables/<name>/structure`): add, edit and delete columns; rename the table; description; turn RLS on/off; GRANTs per role; delete the table (by typing its name) |
-| Policies | search tables and filter their RLS status; "New rule" on each table, with templates (public read, signed-in users read, owner reads/creates/updates/deletes); edit and delete; "Turn on row protection (RLS)" on tables without it. Long expressions expand on demand |
-| service_role token | **API** page, expandable token section after the examples: issues a token with the chosen validity; shown once and never stored |
+| Policies | what needs attention first, each problem with its fix beside it; then every table, the ones with problems first; filters in the sidebar, search on the page; "New rule" on each table, with templates (public read, signed-in users read, owner reads/creates/updates/deletes); edit and delete; "Turn on row protection (RLS)" on tables without it. Long expressions expand on demand |
+| service_role token | **Connect** page, expandable token section after the examples: issues a token with the chosen validity; shown once and never stored |
 | Create a user / reset a password | **Users** page: "New user" and "Reset password…" in each user's menu, with a password generator. Same rules as public signup. Accounts created here count as confirmed and the panel sends no invitations; end users can recover their own password by email when the project has SMTP configured ([schema-auth.md](schema-auth.md#password-recovery)) |
 | Generate migration | **Migrations** page: schema changes made in the panel (tables, columns, policies) that are not in any file yet, and the project's migrations (applied or only in the folder). "Generate migration" downloads `V<n>__<name>.sql` and registers it as applied in this database; the file goes into `migrations/` (see [deploy](deploy.md#changes-made-in-the-panel)) |
 | Profile photo | account menu, at the top right: "Add photo…". The image is center-cropped and scaled to 256px in the browser; the server accepts PNG, JPEG or WebP up to 256 KB. It lives in the project's database (`nelcota.admin_avatar`, out of reach of the API roles), so it works in any browser, but it is per project |
@@ -144,11 +148,11 @@ Use JSON export when you need the original text without this neutralization.
 | **Storage** | buckets with file count, size, limit and accepted types (create, edit, delete when empty); a file browser by folder: upload by selection or drop, per-file progress (asks before replacing), preview, download, copy the public URL, delete. Passive image formats and PDFs up to 20 MB can be previewed; plain text, CSV and JSON up to 1 MB. PDFs open in the browser viewer. Files go through the same checks as the API ([storage.md](storage.md)) |
 | **Users** | search by email, how each account signs in (password, Google, GitHub, or email links only), last sign-in, active sessions, unconfirmed emails; create a user, confirm an email, reset a password (ends their sessions), end sessions or delete a user |
 | **Policies** | each table's policies (`USING`/`WITH CHECK`): create, edit and delete; tables without RLS; functions `anon` can execute |
-| **API** | section navigation, project address, how each role calls the API, curl and JavaScript examples generated from each table's columns, service_role token. Topic, language and table are shareable through the URL |
+| **Connect** | section navigation, project address, how each role calls the API, curl and JavaScript examples generated from each table's columns, service_role token. Topic, language and table are shareable through the URL |
 
 ## Connecting an app and understanding access
 
-- **API → Connect with the SDK**: install command, a **Download database.ts**
+- **Connect → Connect with the SDK**: install command, a **Download database.ts**
   button (the same file `nelcota types` writes) and the `createClient` lines
   for this project. The examples switch between the TypeScript SDK (default),
   curl and plain `fetch`, generated from the chosen table's columns.
@@ -188,7 +192,7 @@ live in `docs/i18n/pt-BR/`; `bun run guides:check` verifies every prose fragment
 against its source and fails on missing or outdated translations. Code-only
 changes flow straight from the source without requiring a translation update.
 
-SDK help on the API page and the S3 guide on the Storage page open in this
+SDK help on the Connect page and the S3 guide on the Storage page open in this
 reader. Links between repository documents stay in the panel, including
 section links that can be shared and survive a reload. Registered sources and images are bundled, so reading those needs no GitHub
 access. The longer Notes staging guide opens on GitHub. Some unregistered
