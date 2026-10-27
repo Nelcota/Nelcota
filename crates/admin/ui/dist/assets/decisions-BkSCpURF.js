@@ -1040,6 +1040,13 @@ reports. \`--no-firewall\` opts out, and a \`--local\` host is left alone. Below
 2 GB of RAM without swap it adds a 2 GB swap file, and on Debian/Ubuntu it
 enables unattended-upgrades.
 
+**D111. List filters live in the sidebar.** Amends D103: a page whose main
+content is a filtered list (Tables, Access policies) exposes its filters as
+sidebar sub-items, kept in the URL (\`?filter=\`), and keeps only the search on
+the page. Sidebar items may carry a short label when the page title does not
+fit the sidebar; the page itself keeps the full title. Views of one object
+(a table's data and structure) and example languages stay beside the content.
+
 ### Known pending items
 
 - Filtering parent rows by their embeds (\`!inner\`) and self-referencing embeds.
