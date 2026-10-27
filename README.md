@@ -139,7 +139,7 @@ You need a Linux server (Debian/Ubuntu or Fedora/RHEL) with root access, ports
 80 and 443 open, and a DNS A record pointing at it. Then run:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo NELCOTA_VERSION=0.5.4 sh -s -- api.yourdomain.com
+curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo NELCOTA_VERSION=0.5.5 sh -s -- api.yourdomain.com
 ```
 
 The installer sets up cron, Docker and the CLI, creates the host in
@@ -177,9 +177,9 @@ and [host management](docs/host-management.md).
 
 ## Status
 
-This source targets server **0.5.4**. Nelcota is still `0.x`: read the
+This source targets server **0.5.5**. Nelcota is still `0.x`: read the
 [upgrade notes](docs/releases/README.md) and test backup and restore before
-upgrading production. See what changed in the [0.5.4 release notes](docs/releases/0.5.4.en.md);
+upgrading production. See what changed in the [0.5.5 release notes](docs/releases/0.5.5.en.md);
 newer changes are listed under [Unreleased](CHANGELOG.md#unreleased) and in the
 [current status](docs/current-status.md).
 

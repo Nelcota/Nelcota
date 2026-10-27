@@ -1,13 +1,13 @@
 # Release handoff after Notes acceptance
 
-The 0.5.4 release improves file-publication integrity, database-bound storage
-collection, concurrent refresh, panel usability and installation, as recorded
+The 0.5.5 release shares one outbound address policy between project and alert
+webhooks and makes the panel load faster, as recorded
 in the [server changelog](../../CHANGELOG.md). A local acceptance pass proves
 the selected binary and its Notes workflow; it does not publish binaries,
 container images, Rust crates or either SDK package.
 
 Historical Notes acceptance evidence for 0.4.0 is in
-[Notes acceptance evidence](validation.md); record new reports for the 0.5.4
+[Notes acceptance evidence](validation.md); record new reports for the 0.5.5
 candidate before publishing.
 
 ## Candidate evidence
@@ -27,10 +27,10 @@ of the release scope.
 
 ## Upgrade an existing project
 
-The 0.5.3 → 0.5.4 patch retains internal schema V16 with no new migration.
+The 0.5.4 → 0.5.5 patch retains internal schema V16 with no new migration.
 Rehearse that exact upgrade and a paired database/file restore on a disposable
 installation before publishing. Existing legacy-upgrade CI also covers
-0.3.1 → this checkout; that result does not substitute for the 0.5.3 baseline.
+0.3.1 → this checkout; that result does not substitute for the 0.5.4 baseline.
 
 Since 0.5.1, SMTP requires implicit TLS or mandatory STARTTLS, and Linux
 initialization checks privileges, the cron scheduler and requested UFW

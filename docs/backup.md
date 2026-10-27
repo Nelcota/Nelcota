@@ -140,7 +140,7 @@ have no historical file manifest; they remain usable for database-only restores.
 sudo -i                                       # init needs root
 apt-get update && apt-get install -y ca-certificates curl coreutils cron
 systemctl enable --now cron.service
-curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | NELCOTA_VERSION=0.5.4 sh
+curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | NELCOTA_VERSION=0.5.5 sh
 mkdir -p /opt/nelcota && cd /opt/nelcota
 nelcota init api.shop.com --yes --s3-endpoint https://... --s3-bucket my-backups \
   --s3-access-key ... --s3-secret-key ... --s3-region ...
