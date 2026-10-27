@@ -81,6 +81,14 @@ unsafe_code = "forbid"
 all = { level = "warn", priority = -1 }
 redundant_else = "warn"
 
+# build.rs in nelcota-admin brotli-compresses the panel at quality 11; an
+# unoptimized compressor would add minutes to every build. Build scripts and
+# their dependencies default to opt-level 0, even in release.
+[profile.dev.build-override]
+opt-level = 3
+[profile.release.build-override]
+opt-level = 3
+
 [profile.release]
 lto = "thin"
 codegen-units = 1

@@ -31,12 +31,19 @@ rust-embed.workspace = true
 serde.workspace = true
 serde_json = { workspace = true, features = ["raw_value"] }
 sha2.workspace = true
+base16ct.workspace = true
 time.workspace = true
 tokio = { workspace = true, features = ["rt", "net", "time", "io-util", "sync"] }
 tokio-postgres.workspace = true
 tracing.workspace = true
 ts-rs = "12.0.1"
 schemars.workspace = true
+
+[build-dependencies]
+# Precompress the embedded panel at build time (build.rs).
+brotli = "9.0.0"
+sha2.workspace = true
+base16ct.workspace = true
 
 [lints]
 workspace = true
@@ -45,4 +52,7 @@ workspace = true
 # Already compiled in the tree; checks the exported patterns against the Rust validators.
 regex = "1.13.1"
 tower.workspace = true
+tower-http.workspace = true
+brotli = "9.0.0"
+flate2 = "1.1.10"
 tempfile = "3.27.0"
