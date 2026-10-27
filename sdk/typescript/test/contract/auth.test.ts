@@ -55,7 +55,10 @@ describe.skipIf(skip)('auth against the server', () => {
     expect(error).toBeNull();
     expect(data?.user.id).toBe(id);
     const wrong = await visitor().auth.signInWithPassword({ email, password: 'nope-nope-nope' });
-    expect(wrong.error?.status).toBe(400);
+    expect(wrong.error).toMatchObject({ status: 400, code: 'invalid_grant' });
+    // An unknown email gets the same answer, so the response does not reveal which was wrong.
+    const unknown = await visitor().auth.signInWithPassword({ email: `nobody-${randomUUID()}@example.com`, password });
+    expect(unknown.error).toMatchObject({ status: 400, code: 'invalid_grant' });
     const duplicate = await visitor().auth.signUp({ email, password });
     expect(duplicate.error).toMatchObject({ status: 409, code: 'user_already_exists' });
   });

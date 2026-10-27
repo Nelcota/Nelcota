@@ -3,6 +3,15 @@
 Package releases use Semantic Versioning and Keep a Changelog categories.
 Dates identify release entries; registry availability requires a successful publish.
 
+## Unreleased
+
+### Fixed
+
+- `ServerErrorCode` no longer lists `invalid_credentials` and
+  `bad_verification_code`, which the server never sends. A wrong email or
+  password is `invalid_grant`, now documented on `signInWithPassword`. Code
+  comparing against those strings still compiles.
+
 ## 0.2.5 — 2026-10-27
 
 ### Changed
