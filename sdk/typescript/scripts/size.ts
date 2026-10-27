@@ -39,12 +39,15 @@ const BUDGETS: Record<string, number> = {
   // (one responsibility each) adds about 400 B gzip to root/auth.
   // Rejecting invalid Date/bigint JSON bodies, a size-free query check and a quick
   // first retry inside the server's refresh-reuse window add about 130 B gzip.
-  'index.js': 19_050,
+  // Skipping the lossless-number rewrite pass when no token can lose digits
+  // (8-12x faster parsing of typical responses) adds 13-44 B gzip to every
+  // entry point below; each budget rose by 50 B for it.
+  'index.js': 19_100,
   // Standalone factories include HTTP and keep the other feature modules out.
-  'rest/index.js': 10_000,
+  'rest/index.js': 10_050,
   // Failed persistence must retain rotated tokens; background failures are observed.
-  'auth/index.js': 12_850,
-  'storage/index.js': 8_000,
+  'auth/index.js': 12_900,
+  'storage/index.js': 8_050,
 };
 
 function closure(entry: string, seen = new Set<string>()): Set<string> {

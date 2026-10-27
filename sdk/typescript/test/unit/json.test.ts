@@ -42,3 +42,48 @@ describe('request bodies', () => {
     expect(encodeJson({ due: new Date(0), none: null })).toBe('{"due":"1970-01-01T00:00:00.000Z","none":null}');
   });
 });
+
+describe('parseJson fast path', () => {
+  const token = fc.oneof(
+    fc.bigInt({ min: -(10n ** 30n), max: 10n ** 30n }).map(String),
+    fc.double({ noNaN: true, noDefaultInfinity: true }).filter(value => Object.is(value, -0) === false).map(String),
+    fc.tuple(fc.stringMatching(/^-?(?:0|[1-9]\d{0,24})$/), fc.stringMatching(/^\d{1,24}$/), fc.option(fc.stringMatching(/^[eE][+-]?\d{1,3}$/)))
+      .map(([whole, fraction, exponent]) => `${whole}.${fraction}${exponent ?? ''}`),
+  );
+  // A 16-digit string forces the full rewrite pass, so it is the reference.
+  const SLOW_PATH_MARKER = '"0000000000000000"';
+  it('returns the same values as the full rewrite pass', () => {
+    fc.assert(fc.property(fc.array(token, { minLength: 1, maxLength: 8 }), tokens => {
+      const fast = parseJson(`[${tokens.join(',')}]`) as unknown[];
+      const reference = parseJson(`[${[...tokens, SLOW_PATH_MARKER].join(',')}]`) as unknown[];
+      expect(fast).toEqual(reference.slice(0, -1));
+    }));
+  });
+  it('takes the fast path for short tokens and still matches the full pass', () => {
+    const short = fc.oneof(
+      fc.integer({ min: -99_999_999_999_999, max: 99_999_999_999_999 }).map(String),
+      fc.tuple(fc.stringMatching(/^-?(?:0|[1-9]\d{0,6})$/), fc.stringMatching(/^\d{1,7}$/)).map(([whole, fraction]) => `${whole}.${fraction}`),
+    );
+    fc.assert(fc.property(fc.array(short, { minLength: 1, maxLength: 8 }), tokens => {
+      const text = `[${tokens.join(', ')}]`;
+      const reference = parseJson(`[${[...tokens, SLOW_PATH_MARKER].join(',')}]`) as unknown[];
+      expect(parseJson(text)).toEqual(JSON.parse(text));
+      expect(parseJson(text)).toEqual(reference.slice(0, -1));
+    }));
+  });
+  it('rewrites exponent and long tokens wherever they end in the document', () => {
+    expect(parseJson('1e400')).toBe('1e400');
+    expect(parseJson('{"a":1E-400}')).toEqual({ a: '1E-400' });
+    const documents = ['[1e400,2]', '[1e400]', '{"a":1e400}', '[1e400 ,2]', '[1e400\t,2]', '[1e400\r,2]', '[1e400\n,2]'];
+    for (const text of documents) {
+      const value = parseJson(text);
+      expect(JSON.stringify(value)).toContain('"1e400"');
+    }
+    expect(parseJson('[12345678901234567]')).toEqual(['12345678901234567']);
+    expect(parseJson('[0.12345678901234567]')).toEqual(['0.12345678901234567']);
+  });
+  it('leaves strings that look like numbers untouched', () => {
+    const uuid = '0c1e3f2a-41e3-4b6c-9d1e-123456789012';
+    expect(parseJson(JSON.stringify({ id: uuid, note: '1e3, 12345678901234567' }))).toEqual({ id: uuid, note: '1e3, 12345678901234567' });
+  });
+});
