@@ -3,6 +3,12 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sh
 #
+# Update an existing host, including its CLI, backups and projects:
+#   curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo sh -s -- --update
+# Use --dry-run to preview, --yes for automation, --project <name> to select
+# one project, --version <version> to pin a stable release, and --dir <folder>
+# for a host outside /opt/nelcota. Update mode never provisions the machine.
+#
 # With arguments it sets up a whole VPS in one go, as root: installs the
 # prerequisites (cron, curl, Docker, ufw, automatic security updates), turns the
 # firewall on (SSH, 80 and 443), adds swap below 2 GB of RAM, installs the
@@ -291,8 +297,120 @@ install_binary() {
 }
 
 check_staged_version() {
-  reported=$("$STAGED" --version 2>&1) || die "the downloaded binary does not run on this machine: $reported"
+  check_binary_version "$STAGED"
+}
+
+check_binary_version() {
+  reported=$("$1" --version 2>&1) || die "the downloaded binary does not run on this machine: $reported"
   [ "$reported" = "nelcota $VERSION" ] || die "expected nelcota $VERSION, but the binary reports: $reported"
+}
+
+# Parse update arguments separately: setup arguments must never accidentally
+# reach init or change the firewall, packages, swap or runtime on an old host.
+parse_update() {
+  UPDATE_PROJECT=""
+  UPDATE_YES=0
+  UPDATE_DRY_RUN=0
+  HOST_DIR=${NELCOTA_ROOT:-/opt/nelcota}
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --update) shift ;;
+      --dir|--project|--version)
+        [ "$#" -ge 2 ] || die "$1 needs a value"
+        case "$1" in
+          --dir) HOST_DIR=$2 ;;
+          --project) [ -n "$2" ] || die "--project needs a name"; UPDATE_PROJECT=$2 ;;
+          --version) VERSION=${2#v}; validate_version ;;
+        esac
+        shift 2
+        ;;
+      --yes|-y) UPDATE_YES=1; shift ;;
+      --dry-run) UPDATE_DRY_RUN=1; shift ;;
+      *) die "unknown update option: $1 (use --dir, --project, --version, --dry-run or --yes)" ;;
+    esac
+  done
+  validate_host_dir
+  [ "$(id -u)" -eq 0 ] || die "updating a host needs root; run with sudo"
+  [ -f "$HOST_DIR/nelcota-host.json" ] || die "no host at $HOST_DIR; select the existing host with --dir"
+  [ ! -e "$HOST_DIR/updates-controller.json" ] && [ ! -L "$HOST_DIR/updates-controller.json" ] ||
+    die "this host uses the updates controller; update its projects from the controller panel and replace the controller separately over SSH (docs/panel-updates.md)"
+  [ -x "$PREFIX/nelcota" ] || die "no installed CLI at $PREFIX/nelcota; set PREFIX to its installation folder"
+  resolved_cli=$(readlink -f "$PREFIX/nelcota") || die "could not resolve the installed CLI path"
+  case "$resolved_cli" in
+    /usr/local/lib/nelcota/*|/usr/local/lib/nelcota-updates/*)
+      die "update the installed CLI in /usr/local/bin, not an application or controller binary" ;;
+  esac
+  NELCOTA_SKIP_DOCKER=1
+}
+
+update_upgrade() {
+  update_cli=$1
+  shift
+  if [ -n "$UPDATE_PROJECT" ]; then
+    "$update_cli" -C "$HOST_DIR" -p "$UPDATE_PROJECT" upgrade --version "$VERSION" "$@"
+    return
+  fi
+  "$update_cli" -C "$HOST_DIR" upgrade --all --version "$VERSION" "$@"
+}
+
+update_host() {
+  # Stable releases can be ordered with coreutils without requiring Python,
+  # Node or a new command in the currently installed (possibly old) CLI.
+  printf '%s\n' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' ||
+    die "update mode requires a stable release version"
+  current=$("$PREFIX/nelcota" --version) || die "could not read the installed CLI version"
+  current=${current#nelcota }
+  current_core=${current%%[-+]*}
+  printf '%s\n' "$current_core" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' ||
+    die "could not compare the installed CLI version: $current"
+  newest=$(printf '%s\n%s\n' "$current_core" "$VERSION" | LC_ALL=C sort -V | tail -n 1)
+  [ "$newest" = "$VERSION" ] || die "refusing to downgrade the CLI from $current to $VERSION"
+
+  chmod 0755 "$TMP/$BIN"
+  check_binary_version "$TMP/$BIN"
+  say "CLI: $current → $VERSION"
+  say "Project update plan (each changed project gets a paired database/file backup)"
+  if ! update_upgrade "$TMP/$BIN" --dry-run >"$TMP/update-plan" 2>&1; then
+    cat "$TMP/update-plan"
+    die "could not prepare the update plan; the installed CLI and projects were kept"
+  fi
+  cat "$TMP/update-plan"
+  if grep -Eq '\(downgrade:|\(versions not comparable\)' "$TMP/update-plan"; then
+    die "the plan contains a downgrade or unknown project version; review it with 'nelcota upgrade' before updating"
+  fi
+  if [ "$UPDATE_DRY_RUN" -eq 1 ]; then
+    say "Preview complete; the installed CLI and project versions were kept"
+    return
+  fi
+  if [ "$UPDATE_YES" -eq 0 ]; then
+    answer=""
+    if [ -t 0 ]; then
+      printf 'Install this CLI and update the selected projects? Brief maintenance is required. [y/N] '
+      IFS= read -r answer || true
+    fi
+    if [ ! -t 0 ] && (: </dev/tty) 2>/dev/null; then
+      printf 'Install this CLI and update the selected projects? Brief maintenance is required. [y/N] ' >/dev/tty
+      IFS= read -r answer </dev/tty || true
+    fi
+    case "$answer" in
+      y|Y|yes|YES) ;;
+      *) die "update cancelled; the installed CLI and projects were kept (use --yes for automation)" ;;
+    esac
+  fi
+
+  # Preserve the old CLI as well as upgrade's existing runtime rollback copy.
+  install -m 0755 "$PREFIX/nelcota" "$PREFIX/nelcota.previous"
+  install_binary
+  say "CLI $VERSION installed; previous CLI saved at $PREFIX/nelcota.previous"
+  update_upgrade "$PREFIX/nelcota" ||
+    die "project update failed; CLI $VERSION remains installed. Inspect 'nelcota -C $HOST_DIR status' and the upgrade output before retrying"
+  if [ -n "$UPDATE_PROJECT" ]; then
+    "$PREFIX/nelcota" -C "$HOST_DIR" -p "$UPDATE_PROJECT" status
+  fi
+  if [ -z "$UPDATE_PROJECT" ]; then
+    "$PREFIX/nelcota" -C "$HOST_DIR" status
+  fi
+  say "Update complete"
 }
 
 install_docker() {
@@ -335,6 +453,14 @@ main() {
   NO_FIREWALL=0
   LOCAL=0
   ASSUME_YES=0
+  UPDATE=0
+  for arg in "$@"; do
+    [ "$arg" != --update ] || UPDATE=1
+  done
+  if [ "$UPDATE" -eq 1 ]; then
+    parse_update "$@"
+    set --
+  fi
   SWAP_FILE="${NELCOTA_SWAP_FILE:-/swapfile}"
   FSTAB="${NELCOTA_FSTAB:-/etc/fstab}"
   if [ "$#" -gt 0 ]; then
@@ -398,6 +524,11 @@ main() {
   for tool in curl sha256sum mktemp install; do
     command -v "$tool" >/dev/null 2>&1 || die "$tool not found (apt install curl coreutils, or your distribution's equivalent)"
   done
+  if [ "$UPDATE" -eq 1 ]; then
+    for tool in sort tail; do
+      command -v "$tool" >/dev/null 2>&1 || die "$tool not found (install coreutils)"
+    done
+  fi
 
   TMP="$(mktemp -d)"
   trap cleanup EXIT
@@ -415,6 +546,11 @@ main() {
 
   say "Checking the checksum (SHA-256)"
   verify_checksum
+
+  if [ "$UPDATE" -eq 1 ]; then
+    update_host
+    return
+  fi
 
   install_binary
   say "nelcota $VERSION installed at $PREFIX/nelcota"

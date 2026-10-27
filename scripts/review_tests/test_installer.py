@@ -3,6 +3,7 @@
 import hashlib
 import os
 from pathlib import Path
+import pty
 import subprocess
 import tempfile
 import unittest
@@ -160,6 +161,182 @@ class Installer(unittest.TestCase):
         self.assertIn(message, result.stderr)
         self.assertEqual(destination.read_text(), "previous installation")
         self.assertEqual([p.name for p in destination.parent.iterdir()], ["nelcota"])
+
+    def prepare_update(self, current="1.0.0"):
+        self.fake_root(docker=False)
+        self.host.mkdir()
+        (self.host / "nelcota-host.json").write_text('{}\n')
+        destination = self.destination()
+        destination.parent.mkdir(parents=True)
+        destination.write_text(f'#!/bin/sh\nprintf "nelcota {current}\\n"\n')
+        destination.chmod(0o755)
+        return destination
+
+    def update(self, *arguments):
+        return self.install("--update", "--dir", str(self.host), *arguments)
+
+    def test_update_previews_before_replacing_cli_and_upgrades_with_that_cli(self):
+        destination = self.prepare_update()
+        previous = destination.read_bytes()
+        self.environment.pop("NELCOTA_VERSION")
+        result = self.update("--yes")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("CLI: 1.0.0 → 1.2.3", result.stdout)
+        self.assertEqual(destination.read_bytes(), self.binary.read_bytes())
+        self.assertEqual(destination.with_name("nelcota.previous").read_bytes(), previous)
+        calls = self.calls()
+        self.assertEqual([c for c in calls if c.startswith("nelcota ")], [
+            f"nelcota -C {self.host} upgrade --all --version 1.2.3 --dry-run",
+            f"nelcota -C {self.host} upgrade --all --version 1.2.3",
+            f"nelcota -C {self.host} status",
+        ])
+        self.assertEqual(sum("/releases/latest" in c for c in self.downloads()), 1)
+        self.assertFalse(any(c.startswith(("apt-get", "dnf", "systemctl", "ufw", "docker", "get-docker", "swapon"))
+                             for c in calls), calls)
+        self.assertFalse(any(" init " in c or " backup " in c for c in calls), calls)
+
+    def test_update_preview_keeps_the_old_cli_and_never_installs_or_upgrades(self):
+        destination = self.prepare_update()
+        previous = destination.read_bytes()
+        result = self.update("--dry-run")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(destination.read_bytes(), previous)
+        self.assertFalse(destination.with_name("nelcota.previous").exists())
+        self.assertEqual([c for c in self.calls() if c.startswith("nelcota ")], [
+            f"nelcota -C {self.host} upgrade --all --version 1.2.3 --dry-run",
+        ])
+
+    def test_update_selects_one_project_and_accepts_a_pinned_version(self):
+        self.prepare_update()
+        self.environment["NELCOTA_VERSION"] = "9.9.9"
+        result = self.update("--project", "shop", "--version", "v1.2.3", "--yes")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual([c for c in self.calls() if c.startswith("nelcota ")], [
+            f"nelcota -C {self.host} -p shop upgrade --version 1.2.3 --dry-run",
+            f"nelcota -C {self.host} -p shop upgrade --version 1.2.3",
+            f"nelcota -C {self.host} -p shop status",
+        ])
+        self.assertTrue(all("/download/v1.2.3/" in c for c in self.downloads()))
+
+    def test_update_without_confirmation_keeps_the_old_cli(self):
+        destination = self.prepare_update()
+        previous = destination.read_bytes()
+        result = self.update()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("update cancelled", result.stderr)
+        self.assertEqual(destination.read_bytes(), previous)
+        self.assertFalse(destination.with_name("nelcota.previous").exists())
+
+    def test_update_accepts_interactive_confirmation_once(self):
+        self.prepare_update()
+        master, slave = pty.openpty()
+        self.addCleanup(os.close, master)
+        self.addCleanup(os.close, slave)
+        os.write(master, b"y\n")
+        result = subprocess.run(["sh", str(INSTALLER), "--update", "--dir", str(self.host)],
+                                env=self.environment, stdin=slave, capture_output=True,
+                                text=True, timeout=20, start_new_session=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.count("Install this CLI and update"), 1)
+        self.assertIn("Update complete", result.stdout)
+
+    def test_update_flag_after_other_options_still_never_provisions(self):
+        self.prepare_update()
+        result = self.install("--dir", str(self.host), "--yes", "--update")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(any(c.startswith(("apt-get", "systemctl", "ufw")) for c in self.calls()))
+        self.assertFalse(any(" init " in c for c in self.calls()))
+
+    def test_update_refuses_enrolled_hosts_before_downloading_or_replacing(self):
+        destination = self.prepare_update()
+        previous = destination.read_bytes()
+        (self.host / "updates-controller.json").write_text('{}\n')
+        result = self.update("--yes")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("controller panel", result.stderr)
+        self.assertEqual(destination.read_bytes(), previous)
+        self.assertEqual(self.calls(), [])
+
+    def test_update_requires_root_and_an_existing_host_before_downloading(self):
+        destination = self.prepare_update()
+        previous = destination.read_bytes()
+        self.tool("id", "#!/bin/sh\necho 1000\n")
+        result = self.update("--yes")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("needs root", result.stderr)
+        self.assertEqual(self.calls(), [])
+        self.tool("id", "#!/bin/sh\necho 0\n")
+        (self.host / "nelcota-host.json").unlink()
+        result = self.update("--yes")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("no host", result.stderr)
+        self.assertEqual(self.calls(), [])
+        self.assertEqual(destination.read_bytes(), previous)
+
+    def test_update_bad_download_or_checksum_keeps_the_old_cli(self):
+        destination = self.prepare_update()
+        previous = destination.read_bytes()
+        self.write_checksum("0" * 64 + "  " + BIN)
+        result = self.update("--yes")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("checksum does not match", result.stderr)
+        self.assertEqual(destination.read_bytes(), previous)
+        self.assertFalse(destination.with_name("nelcota.previous").exists())
+
+    def test_update_refuses_unknown_options_before_any_download(self):
+        self.prepare_update()
+        for arguments in (("--runtime", "systemd"), ("--without-controller",), ("--dir",)):
+            with self.subTest(arguments=arguments):
+                result = self.update(*arguments)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(self.calls(), [])
+
+    def test_update_refuses_a_project_downgrade_before_replacing_the_cli(self):
+        destination = self.prepare_update()
+        previous = destination.read_bytes()
+        self.binary.write_text(self.binary.read_text() +
+                               'echo "shop: 2.0.0 → 1.2.3 (downgrade: refused without --allow-downgrade)"\n')
+        self.write_checksum(hashlib.sha256(self.binary.read_bytes()).hexdigest() + "  " + BIN)
+        result = self.update("--yes")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("plan contains a downgrade", result.stderr)
+        self.assertEqual(destination.read_bytes(), previous)
+        self.assertFalse(destination.with_name("nelcota.previous").exists())
+
+    def test_update_refuses_cli_downgrades(self):
+        destination = self.prepare_update(current="2.0.0")
+        previous = destination.read_bytes()
+        result = self.update("--yes")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("refusing to downgrade", result.stderr)
+        self.assertEqual(destination.read_bytes(), previous)
+        self.assertFalse(any(c.startswith("nelcota ") for c in self.calls()))
+
+    def test_update_failed_plan_keeps_the_old_cli(self):
+        destination = self.prepare_update()
+        previous = destination.read_bytes()
+        self.binary.write_text(self.binary.read_text() + 'echo "deployment needs recovery" >&2\nexit 1\n')
+        self.write_checksum(hashlib.sha256(self.binary.read_bytes()).hexdigest() + "  " + BIN)
+        result = self.update("--yes")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("deployment needs recovery", result.stdout)
+        self.assertIn("could not prepare the update plan", result.stderr)
+        self.assertEqual(destination.read_bytes(), previous)
+        self.assertFalse(destination.with_name("nelcota.previous").exists())
+
+    def test_update_project_failure_is_reported_with_new_cli_and_previous_copy(self):
+        destination = self.prepare_update()
+        previous = destination.read_bytes()
+        self.binary.write_text(self.binary.read_text() +
+                               'case "$*" in *--dry-run*) exit 0;; esac\nexit 1\n')
+        self.write_checksum(hashlib.sha256(self.binary.read_bytes()).hexdigest() + "  " + BIN)
+        result = self.update("--yes")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("project update failed; CLI 1.2.3 remains installed", result.stderr)
+        self.assertNotIn("Update complete", result.stdout)
+        self.assertEqual(destination.with_name("nelcota.previous").read_bytes(), previous)
+        self.assertEqual(destination.read_bytes(), self.binary.read_bytes())
+        self.assertFalse(any(c.endswith(" status") for c in self.calls()))
 
     def test_writable_prefix_needs_no_sudo_and_handles_spaces(self):
         self.environment["PREFIX"] = str(self.root / "user folder/bin")

@@ -151,6 +151,17 @@ questions. Run `nelcota -C /opt/nelcota doctor` to check DNS, ports, backups and
 and read the [deployment guide](docs/deploy.md) and [backups](docs/backup.md)
 before going to production.
 
+For an existing host, the installer can update the CLI and projects together,
+with a preview and one confirmation:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo sh -s -- --update
+```
+
+CLI releases after 0.5.6 also provide `sudo nelcota update`. See
+[updating an existing host](docs/update.md) for previews, project selection and
+hosts managed by the update controller.
+
 ## The admin panel
 
 <table>
