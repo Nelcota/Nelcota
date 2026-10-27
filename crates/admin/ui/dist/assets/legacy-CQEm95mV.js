@@ -1,1 +1,0 @@
-import{en as e}from"./index.svelte-BmceUQi1.js";e();

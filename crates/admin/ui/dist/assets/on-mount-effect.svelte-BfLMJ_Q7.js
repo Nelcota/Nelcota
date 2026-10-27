@@ -1,1 +1,0 @@
-import{Ct as e,Ot as t}from"./index.svelte-BmceUQi1.js";function n(n){t(()=>e(()=>n()))}export{n as t};
