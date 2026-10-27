@@ -25,9 +25,6 @@ for the October 27 server scope and independent SDK publication checkpoint.
   links in tab bars); the sidebar is the only navigation between the two views,
   as for the database and users groups. The API page's example toggles are
   grouped buttons rather than navigation landmarks.
-- The shortcut rail shows only on tablets (768–1023px), where the sidebar is a
-  menu. On wider screens it repeated the sidebar's links and theme toggle; the
-  brand mark now sits atop the sidebar (D111).
 - The three summary cards on Access policies share the row equally; the third
   was narrower because it lined up with the side column below.
 - Panel pages share one frame: the same gap under every page title, the same

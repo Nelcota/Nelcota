@@ -38,8 +38,7 @@ for (const theme of ['light', 'dark']) {
       await page.goto(path)
       await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible()
       await expect(page.locator('img[src*="nelcota-"]:visible')).toHaveCount(1)
-      // From 1024px the brand mark sits atop the sidebar; the rail is for tablets (D111).
-      const mark = page.locator('.panel-sidebar img:visible')
+      const mark = page.locator('.panel-rail img:visible')
       await expect.poll(() => mark.evaluate(image => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0)).toBe(true)
       if (path === '/admin/') await page.screenshot({ path: info.outputPath(`general-panel-${theme}.png`), fullPage: true })
     }

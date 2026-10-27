@@ -1040,13 +1040,6 @@ reports. `--no-firewall` opts out, and a `--local` host is left alone. Below
 2 GB of RAM without swap it adds a 2 GB swap file, and on Debian/Ubuntu it
 enables unattended-upgrades.
 
-**D111. The shortcut rail is for tablets only.** From 1024px the sidebar lists
-every page, so the rail repeated Overview, Projects, Updates and Guides beside
-it and a second theme toggle beside the account menu. The rail now shows only
-between 768 and 1023px, where the sidebar is a menu; on wider screens the brand
-mark sits atop the sidebar and links to the overview, and the theme stays in the
-account menu.
-
 ### Known pending items
 
 - Filtering parent rows by their embeds (`!inner`) and self-referencing embeds.

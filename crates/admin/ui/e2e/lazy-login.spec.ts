@@ -10,7 +10,7 @@ const panelModule = /AuthenticatedShell|(?:TableEditor|StorageBucket|CodeBlock|S
 async function signedOutDeepLink(page: Page, { signedInBefore }: { signedInBefore: boolean }) {
   await fixture(page)
   // Finish the fixture's initial authenticated navigation before recording requests.
-  await expect(page.locator('.panel-sidebar')).toBeVisible()
+  await expect(page.locator('.panel-rail')).toBeVisible()
   if (signedInBefore === false) await page.evaluate(() => localStorage.removeItem('nelcota.signedIn'))
   await page.route('**/admin/api/session', route => route.fulfill({ status: 401, json: { code: 'session_expired', message: 'Sign in' } }))
   await page.route('**/admin/api/login', route => route.fulfill({ json: { email: 'admin@example.test' } }))
@@ -22,7 +22,7 @@ async function signedOutDeepLink(page: Page, { signedInBefore }: { signedInBefor
   await page.goto('/admin/storage/documents')
   await expect(page.getByRole('heading', { name: 'Entrar no Nelcota' })).toBeVisible()
   await (await identity).finished()
-  await expect(page.locator('.panel-sidebar')).toHaveCount(0)
+  await expect(page.locator('.panel-rail')).toHaveCount(0)
   const apiPaths = requests.map(url => new URL(url).pathname).filter(path => path.startsWith('/admin/api/'))
   expect(apiPaths.filter(path => path !== '/admin/api/session' && path !== '/admin/api/whoami')).toEqual([])
   // Only the active language's texts are downloaded.

@@ -505,8 +505,7 @@
   background-size: 18px 18px;
   padding: 28px;
 }
-/* Tablets only: from 1024px the sidebar lists the same links (D111). */
-@media (min-width: 768px) and (max-width: 1023px) {
+@media (min-width: 768px) {
   .panel-rail { display: flex; }
 }
 @media (min-width: 1024px) {
