@@ -43,12 +43,14 @@ export type ServerErrorCode =
   | 'validation_failed'
   | 'invalid_email'
   | 'weak_password'
-  | 'invalid_credentials'
   | 'email_not_confirmed'
   | 'mail_busy'
   | 'user_already_exists'
   | 'user_not_found'
   | 'signup_disabled'
+  // A wrong email or password (the same code for both, so the response does
+  // not reveal which), a wrong `currentPassword`, an expired recovery link,
+  // or a refresh token that is invalid, reused or expired.
   | 'invalid_grant'
   | 'unsupported_grant_type'
   | 'recovery_disabled'
@@ -62,7 +64,6 @@ export type ServerErrorCode =
   | 'redirect_not_allowed'
   | 'invalid_code_challenge'
   | 'invalid_state'
-  | 'bad_verification_code'
   // Storage
   | 'invalid_bucket'
   | 'bucket_exists'

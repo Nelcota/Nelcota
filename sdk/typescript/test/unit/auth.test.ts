@@ -231,9 +231,9 @@ describe('password sign-in', () => {
   });
 
   it('returns the server error and stores nothing', async () => {
-    const { nelcota, storage } = setup(memoryStorage(), json({ code: 'invalid_credentials', message: 'no' }, 400));
+    const { nelcota, storage } = setup(memoryStorage(), json({ code: 'invalid_grant', message: 'no' }, 400));
     const { error } = await nelcota.auth.signInWithPassword({ email: 'a@x.com', password: 'bad' });
-    expect(error).toMatchObject({ status: 400, code: 'invalid_credentials' });
+    expect(error).toMatchObject({ status: 400, code: 'invalid_grant' });
     expect(await storage.getItem(KEY)).toBeNull();
   });
 

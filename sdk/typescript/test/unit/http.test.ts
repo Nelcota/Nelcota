@@ -284,7 +284,7 @@ describe('failures without a response', () => {
 
 describe('headers and tokens', () => {
   it('omits caller-configured authorization on public auth endpoints', async () => {
-    const mock = mockFetch(json({ code: 'invalid_credentials', message: 'no' }, 400));
+    const mock = mockFetch(json({ code: 'invalid_grant', message: 'no' }, 400));
     await client(mock, { headers: { authorization: 'Bearer caller-token' } }).auth.signInWithPassword({ email: 'a@x.com', password: 'pw' });
     expect(mock.calls[0]!.headers.has('authorization')).toBe(false);
   });
