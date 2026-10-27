@@ -674,7 +674,7 @@ pub fn run(mut cli: Cli) -> anyhow::Result<Outcome> {
             let new = panel_login::reset(&host, &manifest, project.as_ref())?;
             // The hash is already on disk: show the password before a restart
             // can fail, or it would be lost.
-            panel_login::print(&[new]);
+            panel_login::print(&host, &[new]);
             println!();
             let affected = match project {
                 Some(project) => vec![project],

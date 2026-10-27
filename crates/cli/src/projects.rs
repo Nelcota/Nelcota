@@ -147,7 +147,7 @@ pub fn set_panel_login(host: &Host, mode: PanelLogin) -> anyhow::Result<()> {
         println!("Single sign-on on: use the host email and password on any panel.");
         println!("(Forgot the password? `nelcota admin-password`.)");
     }
-    panel_login::print(&generated);
+    panel_login::print(host, &generated);
     println!();
     registry::write(host, &manifest)?;
     lifecycle::recreate_apps(&host.projects(&manifest))?;
