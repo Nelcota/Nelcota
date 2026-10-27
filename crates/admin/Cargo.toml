@@ -31,6 +31,7 @@ rust-embed.workspace = true
 serde.workspace = true
 serde_json = { workspace = true, features = ["raw_value"] }
 sha2.workspace = true
+base16ct.workspace = true
 time.workspace = true
 tokio = { workspace = true, features = ["rt", "net", "time", "io-util", "sync"] }
 tokio-postgres.workspace = true
@@ -41,7 +42,8 @@ schemars.workspace = true
 [build-dependencies]
 # Precompress the embedded panel at build time (build.rs).
 brotli = "9.0.0"
-flate2 = "1.1.10"
+sha2.workspace = true
+base16ct.workspace = true
 
 [lints]
 workspace = true

@@ -1,8 +1,10 @@
-// Precompresses the embedded panel (`ui/dist`) once per build, so the server
-// sends brotli or gzip bytes straight from the binary instead of compressing
-// every asset on every request. The variants live in OUT_DIR and are never
-// committed: the versioned `dist` stays the only source, and its drift check
-// is unaffected.
+// Brotli-compresses the embedded panel (`ui/dist`) at build time, so the server
+// sends br bytes straight from the binary instead of compressing every asset on
+// every request. Clients without br keep the runtime gzip of the global
+// CompressionLayer, so only one extra copy is embedded. The variants live in
+// OUT_DIR, named by the content hash of their source, so an unchanged file is
+// never recompressed even when `bun run build` rewrites it.
+use sha2::{Digest, Sha256};
 use std::{
     env, fs,
     io::Write,
@@ -21,13 +23,13 @@ const BROTLI_QUALITY: u32 = 11;
 /// Brotli's default window (4 MiB); every chunk fits in it.
 const BROTLI_WINDOW_BITS: u32 = 22;
 const BROTLI_BUFFER_BYTES: usize = 64 * 1024;
-const GZIP_LEVEL: u32 = 9;
 /// Matches the `jobs = 4` cap in `.cargo/config.toml`.
 const MAX_THREADS: usize = 4;
 
 struct Variant {
     /// Path relative to `ui/dist`, with `/` separators (the rust-embed key).
     path: String,
+    /// Hex SHA-256 of the original file; names the cached `.br` in OUT_DIR.
     file_stem: String,
 }
 
@@ -58,7 +60,7 @@ fn main() {
                     loop {
                         let index = next.fetch_add(1, Ordering::Relaxed);
                         let Some(path) = files.get(index) else { break };
-                        if let Some(variant) = compress(&dist, path, &target, index) {
+                        if let Some(variant) = compress(&dist, path, &target) {
                             done.push((index, variant));
                         }
                     }
@@ -74,13 +76,13 @@ fn main() {
     variants.sort_by_key(|(index, _)| *index);
 
     let mut table = String::from(
-        "/// Precompressed panel files, sorted by path: (path, brotli, gzip).\n\
-         static PRECOMPRESSED: &[(&str, &[u8], &[u8])] = &[\n",
+        "/// Precompressed panel files, sorted by path: (path, brotli).\n\
+         static PRECOMPRESSED: &[(&str, &[u8])] = &[\n",
     );
     for (_, variant) in &variants {
         let stem = &variant.file_stem;
         table.push_str(&format!(
-            "    ({:?}, include_bytes!(concat!(env!(\"OUT_DIR\"), \"/precompressed/{stem}.br\")), include_bytes!(concat!(env!(\"OUT_DIR\"), \"/precompressed/{stem}.gz\"))),\n",
+            "    ({:?}, include_bytes!(concat!(env!(\"OUT_DIR\"), \"/precompressed/{stem}.br\"))),\n",
             variant.path,
         ));
     }
@@ -107,7 +109,9 @@ fn collect(root: &Path, directory: &Path, files: &mut Vec<String>) {
             .extension()
             .and_then(|extension| extension.to_str())
             .is_some_and(|extension| COMPRESSIBLE_EXTENSIONS.contains(&extension));
-        let size = fs::metadata(&path).map_or(0, |metadata| metadata.len());
+        let size = fs::metadata(&path)
+            .unwrap_or_else(|error| panic!("cannot read metadata of {}: {error}", path.display()))
+            .len();
         if !compressible || size < MIN_COMPRESSIBLE_BYTES {
             continue;
         }
@@ -128,10 +132,20 @@ fn collect(root: &Path, directory: &Path, files: &mut Vec<String>) {
     }
 }
 
-/// Writes `<index>.br` and `<index>.gz`, or nothing when gzip does not shrink the file.
-fn compress(dist: &Path, path: &str, target: &Path, index: usize) -> Option<Variant> {
+/// Writes `<sha256>.br` unless an earlier build already did, or nothing when
+/// brotli does not shrink the file.
+fn compress(dist: &Path, path: &str, target: &Path) -> Option<Variant> {
     let original =
         fs::read(dist.join(path)).unwrap_or_else(|error| panic!("cannot read {path}: {error}"));
+    let file_stem = base16ct::lower::encode_string(&Sha256::digest(&original));
+    let output = target.join(format!("{file_stem}.br"));
+    let variant = Variant {
+        path: path.to_owned(),
+        file_stem,
+    };
+    if let Ok(cached) = fs::metadata(&output) {
+        return (cached.len() < original.len() as u64).then_some(variant);
+    }
 
     let mut brotli = Vec::new();
     {
@@ -145,26 +159,8 @@ fn compress(dist: &Path, path: &str, target: &Path, index: usize) -> Option<Vari
             .write_all(&original)
             .unwrap_or_else(|error| panic!("cannot brotli-compress {path}: {error}"));
     }
-
-    // GzBuilder leaves the header timestamp at zero, so the output is reproducible.
-    let mut gzip = flate2::GzBuilder::new().write(Vec::new(), flate2::Compression::new(GZIP_LEVEL));
-    gzip.write_all(&original)
-        .unwrap_or_else(|error| panic!("cannot gzip {path}: {error}"));
-    let gzip = gzip
-        .finish()
-        .unwrap_or_else(|error| panic!("cannot gzip {path}: {error}"));
-
-    if gzip.len() >= original.len() {
-        return None;
-    }
-    let file_stem = index.to_string();
-    for (extension, bytes) in [("br", &brotli), ("gz", &gzip)] {
-        let output = target.join(format!("{file_stem}.{extension}"));
-        fs::write(&output, bytes)
-            .unwrap_or_else(|error| panic!("cannot write {}: {error}", output.display()));
-    }
-    Some(Variant {
-        path: path.to_owned(),
-        file_stem,
-    })
+    // Written even when it does not shrink, so the cache check above stays valid.
+    fs::write(&output, &brotli)
+        .unwrap_or_else(|error| panic!("cannot write {}: {error}", output.display()));
+    (brotli.len() < original.len()).then_some(variant)
 }
