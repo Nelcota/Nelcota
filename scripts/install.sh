@@ -16,7 +16,7 @@
 # question, such as the S3 backup one.
 #
 # Optional variables:
-#   NELCOTA_VERSION=0.5.5     version (default: the latest release)
+#   NELCOTA_VERSION=0.5.6     version (default: the latest release)
 #   NELCOTA_REPO=owner/repo   GitHub repository (default: Nelcota/Nelcota)
 #   PREFIX=/usr/local/bin     where to install
 #   NELCOTA_SKIP_DOCKER=1     do not install Docker (for `nelcota init --runtime systemd`)
@@ -84,10 +84,10 @@ validate_settings() {
 # can never reach grep, which matches line by line.
 validate_version() {
   case "$VERSION" in
-    '' | *[!0-9A-Za-z.-]*) die "NELCOTA_VERSION must be a version such as 0.5.5" ;;
+    '' | *[!0-9A-Za-z.-]*) die "NELCOTA_VERSION must be a version such as 0.5.6" ;;
   esac
   printf '%s\n' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' ||
-    die "NELCOTA_VERSION must be a version such as 0.5.5"
+    die "NELCOTA_VERSION must be a version such as 0.5.6"
 }
 
 validate_host_dir() {

@@ -1,15 +1,16 @@
 # Current implementation and release status
 
-Documentation checkpoint: **2026-10-27**, server 0.5.5 scope after the outbound
-address policy (#191) and the panel performance work (#193–#199). SDK publication statements use the
-[October 26 receipts](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169); this page does not
+Documentation checkpoint: **2026-10-27**, server 0.5.6 scope after the hardened installer
+(#204–#209), readable panel passwords (#210) and the controller test fix (#212). SDK publication statements use the
+[October 26](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169) and
+[October 27](https://github.com/Nelcota/Nelcota/pull/202#issuecomment-6445288705) receipts; this page does not
 claim another production validation run. Verify server artifact availability and signed readiness on the
-[release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.5).
+[release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.6).
 
 ## Server and installation
 
-The workspace targets **0.5.5**. Its [release notes](releases/0.5.5.en.md) include
-the changes developed after published 0.5.4. A version number in source does not
+The workspace targets **0.5.6**. Its [release notes](releases/0.5.6.en.md) include
+the changes developed after published 0.5.5. A version number in source does not
 publish an artifact: retain the tag, source and artifact hash when identifying
 a build. Future changes are listed under [Unreleased](../CHANGELOG.md#unreleased).
 
@@ -23,6 +24,8 @@ a build. Future changes are listed under [Unreleased](../CHANGELOG.md#unreleased
 | Auth and queries | Serialize refresh by session, preserve literal admin identifiers and reject oversized present refresh tokens with `400 invalid_grant` | [0.5.4 notes](releases/0.5.4.en.md) |
 | Panel loading | Each language and guide loads on demand, a returning browser prefetches its shell, assets are brotli-precompressed and large SQL results are virtualized | [Panel](panel.md), [0.5.5 notes](releases/0.5.5.en.md) |
 | Outbound destinations | Project and host alert webhooks share one public-address policy; host management keeps a looser check for the operator's own servers | [Decisions](decisions.md), [0.5.5 notes](releases/0.5.5.en.md) |
+| Panel passwords | Generated without look-alike characters (0/O, 1/l/I); each one is printed with the command that makes a new one | [0.5.6 notes](releases/0.5.6.en.md) |
+| Controller tests | A failed backup, SMTP or alert test ends `failed` instead of blocking every later operation | [Host management](host-management.md), [0.5.6 notes](releases/0.5.6.en.md) |
 
 The installer script is fetched from `main` independently of the downloaded
 binary. Select and verify matching artifacts for the chosen version; a version
