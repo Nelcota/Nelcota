@@ -16,7 +16,7 @@ const ptBR = {
     email: 'E-mail',
     created: 'Criado',
     lastSignIn: 'Último login',
-    sessions: 'Sessões',
+    sessions: 'Sessões ativas',
     signIn: 'Entra com',
   },
   methods: {

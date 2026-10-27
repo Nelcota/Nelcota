@@ -59,7 +59,7 @@
         <Checkbox bind:checked={cascade} class="mt-0.5" />
         <span>
           {t('tables.drop.cascade')}
-          <span class="mt-0.5 block text-xs text-muted-foreground">
+          <span class="mt-0.5 block text-sm text-muted-foreground">
             {t('tables.drop.cascadeHint')}
           </span>
         </span>

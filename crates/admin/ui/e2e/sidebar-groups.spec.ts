@@ -11,7 +11,10 @@ test('database and users have nested links with one selected leaf and no duplica
   const sidebar = page.locator('.panel-sidebar')
   await page.goto('/admin/sql')
   await expect(sidebar.getByRole('button', { name: 'Banco de dados', exact: true })).toHaveAttribute('aria-expanded', 'true')
-  for (const [label, path] of [['Tabelas', '/tables'], ['Editor SQL', '/sql'], ['Migrações', '/migrations']] as const) {
+  // Tables is a group of its own inside Database: its first leaf lists every table.
+  await sidebar.getByRole('button', { name: 'Tabelas', exact: true }).click()
+  await expect(sidebar.getByRole('button', { name: 'Tabelas', exact: true })).toHaveAttribute('aria-expanded', 'true')
+  for (const [label, path] of [['Todas', '/tables'], ['Editor SQL', '/sql'], ['Migrações', '/migrations']] as const) {
     await sidebar.getByRole('link', { name: label, exact: true }).click()
     await expect(page).toHaveURL(new RegExp(`/admin${path}$`))
     await expect(sidebar.locator('[aria-current="page"]')).toHaveCount(1)
@@ -19,23 +22,37 @@ test('database and users have nested links with one selected leaf and no duplica
     await expect(page.locator('main').getByRole('navigation', { name: 'Seções do banco de dados' })).toHaveCount(0)
   }
   await sidebar.getByRole('button', { name: 'Usuários', exact: true }).click()
-  await sidebar.getByRole('link', { name: 'Login dos usuários', exact: true }).click()
+  await sidebar.getByRole('link', { name: 'Formas de entrar', exact: true }).click()
   await expect(page).toHaveURL(/\/sign-in$/)
-  await expect(sidebar.getByRole('link', { name: 'Login dos usuários', exact: true })).toHaveAttribute('aria-current', 'page')
+  await expect(sidebar.getByRole('link', { name: 'Formas de entrar', exact: true })).toHaveAttribute('aria-current', 'page')
   await sidebar.getByRole('link', { name: 'Lista de usuários', exact: true }).click()
   await expect(page).toHaveURL(/\/users$/)
   await expect(page.locator('main .panel-segments')).toHaveCount(0)
 })
 
+test('policy filters are sidebar links that keep the search', async ({ page }) => {
+  const sidebar = page.locator('.panel-sidebar')
+  await page.goto('/admin/policies?q=notes')
+  await expect(sidebar.getByRole('button', { name: 'Acesso', exact: true })).toHaveAttribute('aria-expanded', 'true')
+  await expect(sidebar.getByRole('link', { name: 'Todas', exact: true })).toHaveAttribute('aria-current', 'page')
+  await sidebar.getByRole('link', { name: 'Sem proteção', exact: true }).click()
+  await expect(page).toHaveURL(/\/policies\?q=notes&filter=disabled$/)
+  await expect(sidebar.locator('[aria-current="page"]')).toHaveCount(1)
+  await expect(sidebar.getByRole('link', { name: 'Sem proteção', exact: true })).toHaveAttribute('aria-current', 'page')
+  await expect(page.locator('main .panel-segments')).toHaveCount(0)
+  await sidebar.getByRole('link', { name: 'Todas', exact: true }).click()
+  await expect(page).toHaveURL(/\/policies\?q=notes$/)
+})
+
 test('webhook history is selected for query filters and back navigation', async ({ page }) => {
   const sidebar = page.locator('.panel-sidebar')
   await page.goto('/admin/webhooks?tab=deliveries&status=failed')
-  const history = sidebar.getByRole('link', { name: 'Histórico de entregas', exact: true })
+  const history = sidebar.getByRole('link', { name: 'Entregas', exact: true })
   await expect(history).toHaveAttribute('aria-current', 'page')
   await expect(sidebar.locator('[aria-current="page"]')).toHaveCount(1)
   // The sidebar is the only navigation between the two views, as for every other group.
   await expect(page.locator('main .panel-segments')).toHaveCount(0)
-  await sidebar.getByRole('link', { name: 'Webhooks', exact: true }).click()
+  await sidebar.getByRole('link', { name: 'Configuração', exact: true }).click()
   await expect(history).not.toHaveAttribute('aria-current', 'page')
   await page.goBack()
   await expect(history).toHaveAttribute('aria-current', 'page')
@@ -83,7 +100,7 @@ test('mobile groups support keyboard expansion, child selection and focus return
   await expect.poll(() => page.locator('main').evaluate(element => element.contains(document.activeElement))).toBe(true)
   await page.getByRole('button', { name: 'Menu', exact: true }).click()
   await expect(menu.getByRole('link', { name: 'Editor SQL', exact: true })).toHaveAttribute('aria-current', 'page')
-  await menu.getByRole('button', { name: 'API', exact: true }).click()
+  await menu.getByRole('button', { name: 'Conectar', exact: true }).click()
   await menu.locator('a[href*="section=api-sdk"]').click()
   await expect(menu).toHaveCount(0)
   await expect(page).toHaveURL(/connect\?section=api-sdk/)

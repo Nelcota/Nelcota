@@ -56,7 +56,7 @@
   <div class="flex items-start justify-between gap-3">
     <div class="grid gap-0.5">
       <h2 id="recently-blocked" class="text-base font-semibold">{t('policies.blocked.title')}</h2>
-      <p class="text-xs text-muted-foreground">{t('policies.blocked.hint', { capacity: data?.capacity ?? 100 })}</p>
+      <p class="text-sm text-muted-foreground">{t('policies.blocked.hint', { capacity: data?.capacity ?? 100 })}</p>
       {#if updatedAt}<p class="text-xs text-muted-foreground tabular-nums" aria-live="polite">{t('policies.blocked.updated', { time: updatedAt.toLocaleTimeString(intlLocale(), { hour: '2-digit', minute: '2-digit', second: '2-digit' }) })}</p>{/if}
     </div>
     <Button variant="ghost" size="icon-sm" disabled={resource.loading} onclick={load} aria-label={t('policies.blocked.refresh')} title={t('policies.blocked.refresh')}>
@@ -71,13 +71,13 @@
     <Skeleton class="h-12" />
   {/if}
   {#if !(resource.error) && !(!data) && (data.requests.length === 0)}
-    <p class="rounded-2xl bg-well px-4 py-3.5 text-sm text-muted-foreground">{t('policies.blocked.none')}</p>
+    <p class="border-t pt-4 text-sm text-muted-foreground">{t('policies.blocked.none')}</p>
   {/if}
   {#if !(resource.error) && !(!data) && !(data.requests.length === 0)}
-    <ul class="divide-y overflow-hidden rounded-2xl bg-well">
+    <ul class="divide-y border-t">
       {#each shown as request, index (`${request.at}-${index}`)}
         {@const link = targetHref(request)}
-        <li class="grid gap-1 px-4 py-3">
+        <li class="grid gap-1 py-3 last:pb-0">
           <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
             <span class="font-medium">{who(request)}</span>
             <span class="text-muted-foreground">·</span>
@@ -85,7 +85,7 @@
             {#if !link}<span>{target(request)}</span>{/if}
             <span class="w-full text-xs text-muted-foreground tabular-nums">{time(request.at)}</span>
           </div>
-          <p class="text-xs text-muted-foreground">{t(`policies.blocked.reasons.${blockReason(request)}`)}</p>
+          <p class="text-sm text-muted-foreground">{t(`policies.blocked.reasons.${blockReason(request)}`)}</p>
           {#if technical.on || blockReason(request) === 'other'}
             <p class="font-mono text-xs break-all text-muted-foreground">
               {request.method} {request.path} · {request.status} {request.code}{#if request.message} · {request.message}{/if}
@@ -100,5 +100,5 @@
       </Button>
     {/if}
   {/if}
-  <p class="text-xs text-muted-foreground">{t('policies.blocked.hintMore')}</p>
+  <p class="text-sm text-muted-foreground">{t('policies.blocked.hintMore')}</p>
 </section>

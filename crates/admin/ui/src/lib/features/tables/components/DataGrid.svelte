@@ -211,7 +211,7 @@
   role="grid"
   aria-label={t('tables.grid.label', { table: data.table.name })}
   aria-multiselectable={editable}
-  class="w-max min-w-full table-fixed border-separate border-spacing-0 text-xs"
+  class="w-max min-w-full table-fixed border-separate border-spacing-0 text-[0.8125rem]"
 >
   <colgroup>
     {#if editable}<col style:width="76px" />{/if}
@@ -299,7 +299,7 @@
                   <textarea
                     id="inline-editor"
                     rows="4"
-                    class={['w-full min-w-0 resize-y bg-transparent px-2.5 py-1.5 text-xs outline-none', monospace(kind) && 'font-mono']}
+                    class={['w-full min-w-0 resize-y bg-transparent px-2.5 py-1.5 text-[0.8125rem] outline-none', monospace(kind) && 'font-mono']}
                     bind:value={draft}
                     onkeydown={onEditorKey}
                     aria-label={t('tables.grid.edit', { column: column.name })}
@@ -309,7 +309,7 @@
                   <input
                     id="inline-editor"
                     class={[
-                      'w-full min-w-0 bg-transparent px-2.5 py-1.5 text-xs outline-none',
+                      'w-full min-w-0 bg-transparent px-2.5 py-1.5 text-[0.8125rem] outline-none',
                       monospace(kind) && 'font-mono',
                       alignRight(kind) && 'text-right',
                     ]}

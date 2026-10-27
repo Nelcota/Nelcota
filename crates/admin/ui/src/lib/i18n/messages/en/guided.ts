@@ -40,8 +40,7 @@ const en: Messages<typeof ptBR> = {
   },
   policy: {
     description: 'Choose who can access and what they can do. We build the rule for you.',
-    steps: { who: 'Who can access', action: 'What they can do', review: 'Review' },
-    whoTitle: 'Who should have access?', actionTitle: 'Define access to the records',
+    result: 'What this rule does', details: 'Rule name and SQL',
     ownerField: 'Which field identifies the owner?', ownerHint: 'Choose the field containing the ID of the user who owns the record.',
     addOwner: 'Add a field to identify the owner', addOwnerHint: 'The user_id field will be created with the rule. For new records, the app fills in the user’s ID automatically.',
     newOwnerReview: 'The user_id field will be added. Existing records will have no owner; this rule only allows access after that field contains the correct user ID.',

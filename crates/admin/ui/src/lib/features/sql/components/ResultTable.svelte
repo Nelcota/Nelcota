@@ -17,7 +17,7 @@
     ondetail: (column: string, value: string) => void
   } = $props()
 
-  // A row is one line of text-xs (1rem), py-2 (2 × 0.5rem) and a 1px border.
+  // A row is one 13px line with a 1rem line height, py-2 (2 × 0.5rem) and a 1px border.
   // The details button must not make its row taller: a row taller than the
   // estimate makes the virtualizer correct the scroll position, which
   // interrupts the browser's own smooth scrolling (End, Page Down).
@@ -81,12 +81,12 @@
   <colgroup>
     <!-- With a fixed layout and no width of its own, the table is as wide as
          these columns (or the pane). -->
-    {#each widths as width, columnIndex (columnIndex)}<col class="font-mono text-xs" style:width={columnWidthCss(width)} />{/each}
+    {#each widths as width, columnIndex (columnIndex)}<col class="font-mono text-[0.8125rem]/4" style:width={columnWidthCss(width)} />{/each}
   </colgroup>
   <thead class="sticky top-0 z-10">
     <tr aria-rowindex={1}>
       {#each result.columns as column, columnIndex (columnIndex)}
-        <th class="truncate border-r border-b bg-muted px-3 py-2 text-left font-mono text-xs font-medium" title={column}>{column}</th>
+        <th class="truncate border-r border-b bg-muted px-3 py-2 text-left font-mono text-[0.8125rem]/4 font-medium" title={column}>{column}</th>
       {/each}
     </tr>
   </thead>
@@ -96,7 +96,7 @@
       {@const row = result.rows[item.index] ?? []}
       <tr class="hover:bg-muted/40" data-index={item.index} aria-rowindex={item.index + 2} use:measure>
         {#each row as cell, columnIndex (columnIndex)}
-          <td class="truncate border-r border-b px-3 py-2 font-mono text-xs" title={cell ?? 'NULL'}>
+          <td class="truncate border-r border-b px-3 py-2 font-mono text-[0.8125rem]/4" title={cell ?? 'NULL'}>
             <div class="flex items-center gap-2"><span class="min-w-0 flex-1 truncate">{#if cell === null}<span class="text-3xs text-muted-foreground/80">NULL</span>{:else}{cell}{/if}</span>{#if needsDetail(cell)}<Button class="-my-1.5" variant="ghost" size="icon-xs" aria-label={t('common.details')} onclick={() => ondetail(result.columns[columnIndex], cell)}><Maximize2 aria-hidden="true" /></Button>{/if}</div>
           </td>
         {/each}

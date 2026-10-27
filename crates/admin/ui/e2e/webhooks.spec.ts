@@ -85,7 +85,7 @@ test('create shows the key once, then edit/pause/rotate/delete remain usable', a
 
 test('history filters and cursor survive URL navigation; resend preserves the event and opens the new delivery', async ({ page }) => {
   const { writes, historyQueries } = await setup(page)
-  const history = page.locator('.panel-sidebar').getByRole('link', { name: 'Histórico de entregas', exact: true })
+  const history = page.locator('.panel-sidebar').getByRole('link', { name: 'Entregas', exact: true })
   await history.click()
   await expect(history).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('button', { name: 'Novo webhook', exact: true })).toHaveCount(0)
@@ -135,8 +135,8 @@ test('the signing key survives Escape, outside clicks and navigation until ackno
   await setup(page)
   // Two in-app entries, so Back stays inside the panel's router.
   const views = page.locator('.panel-sidebar')
-  await views.getByRole('link', { name: 'Histórico de entregas', exact: true }).click()
-  await views.getByRole('link', { name: 'Webhooks', exact: true }).click()
+  await views.getByRole('link', { name: 'Entregas', exact: true }).click()
+  await views.getByRole('link', { name: 'Configuração', exact: true }).click()
   await page.getByRole('button', { name: 'Ações de Pedidos pagos', exact: true }).click()
   await page.getByRole('menuitem', { name: 'Trocar chave', exact: true }).click()
   await page.getByRole('alertdialog').getByRole('button', { name: 'Trocar chave', exact: true }).click()

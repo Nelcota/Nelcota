@@ -37,8 +37,7 @@ const ptBR = {
   },
   policy: {
     description: 'Escolha quem pode acessar e o que pode fazer. A regra é montada para você.',
-    steps: { who: 'Quem acessa', action: 'O que pode fazer', review: 'Revisar' },
-    whoTitle: 'Quem deve ter acesso?', actionTitle: 'Defina o acesso aos registros',
+    result: 'Como vai ficar', details: 'Nome e SQL da regra',
     ownerField: 'Qual campo identifica o dono?', ownerHint: 'Escolha o campo que guarda o ID do usuário a quem o registro pertence.',
     addOwner: 'Adicionar um campo para identificar o dono', addOwnerHint: 'O campo user_id será criado junto com a regra. Nos novos registros, o app preenche o ID do usuário automaticamente.',
     newOwnerReview: 'Será adicionado o campo user_id. Os registros que já existem ficarão sem dono; esta regra só permitirá acessá-los depois de preencher esse campo com o ID do usuário correto.',

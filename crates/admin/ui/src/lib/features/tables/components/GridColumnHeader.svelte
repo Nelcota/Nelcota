@@ -68,7 +68,7 @@
     aria-label={t('tables.header.label', { name: column.name, type: column.full_type, sort: sortLabel })}
   >
     <span class="grid min-w-0 flex-1">
-      <span class={['flex items-center gap-1.5 truncate text-xs font-medium text-foreground', alignRight(kind) && 'justify-end']}>
+      <span class={['flex items-center gap-1.5 truncate text-[0.8125rem] font-medium text-foreground', alignRight(kind) && 'justify-end']}>
         {#if column.is_pk}<KeyRound class="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />{/if}
         <span class="truncate">{column.name}</span>
       </span>

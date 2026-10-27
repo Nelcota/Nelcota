@@ -83,7 +83,7 @@ test('small shortcut text and protected badges retain AA contrast in both themes
     await page.evaluate(theme => localStorage.setItem('mode-watcher-mode', theme), theme)
     await page.goto('/admin/tables/notes')
     await expect.poll(() => page.locator('html').evaluate(e => e.classList.contains('dark'))).toBe(theme === 'dark')
-    for (const element of [page.locator('header kbd'), page.getByText('Protected', { exact: true }).first()]) {
+    for (const element of [page.locator('header kbd'), page.getByRole('main').getByText('Protected', { exact: true }).first()]) {
       await expectReadable(element)
     }
   }

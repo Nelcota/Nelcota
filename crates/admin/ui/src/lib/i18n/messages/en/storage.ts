@@ -15,6 +15,7 @@ const en: Messages<typeof ptBR> = {
   disabledDescription:
     "Set NELCOTA_STORAGE_BACKEND in the project's .env (disk for the server's disk, s3 for a compatible bucket) and restart the app.",
   notes: {
+    title: 'About buckets and files',
     access: {
       title: 'Who reaches the files',
       text: 'Each bucket has its own access rules. Without any rule, only the panel and your backend (service_role) reach the files.',
@@ -128,6 +129,7 @@ const en: Messages<typeof ptBR> = {
     uploadFailed: 'Upload failed. Try again.',
     emptyFolder: 'Empty folder',
     emptyFolderDescription: 'Upload files here. A folder exists while it holds files.',
+    foldersTitle: 'How folders work',
     foldersHint: 'Folders are not created on their own: they come from file paths (e.g. photos/profile.png) and disappear once empty. Uploads from here go to the open folder; for a new folder, upload from your app or SDK with the path in the name.',
     emptyBucket: 'Empty bucket',
     columns: { name: 'Name', size: 'Size', type: 'Type', updated: 'Changed' },

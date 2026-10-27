@@ -3,9 +3,9 @@ import type { Messages } from '../../index.svelte'
 import type ptBR from '../pt-BR/connect'
 
 const en: Messages<typeof ptBR> = {
-  title: 'API',
+  title: 'Connect',
   navigation: 'API documentation sections',
-  short: { address: 'Address', caller: 'Who calls', sdk: 'SDK', examples: 'Examples', token: 'Token' },
+  short: { address: 'Address', caller: 'Who calls', sdk: 'SDK', ai: 'AI', examples: 'Examples', token: 'Token' },
   description: 'How your app talks to this project.',
   start: 'Connect my app',
   openapi: 'OpenAPI documentation',

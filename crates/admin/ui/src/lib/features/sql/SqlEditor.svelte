@@ -232,7 +232,7 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<div class="mx-auto flex h-full min-h-0 w-full max-w-page flex-col gap-3 px-4 pt-1 pb-4 sm:px-6 lg:flex-row lg:px-8">
+<div class="mx-auto flex h-full min-h-0 w-full max-w-page flex-col gap-3 px-4 pt-4 pb-4 sm:px-6 lg:flex-row lg:px-8">
   <SqlSidebar onrename={(query) => openDialog({ mode: 'rename', query })} ondelete={askDelete} ondeleteDraft={(draft) => { toDeleteDraft = draft; deleteDraftOpen = true }} />
 
   <div class="flex min-w-0 flex-1 flex-col overflow-hidden rounded-3xl bg-card">
@@ -297,7 +297,7 @@
           <DropdownMenu.Content align="end" class="w-96">
             <DropdownMenu.Label class="text-xs text-muted-foreground">{t('sql.editor.recentlyRun')}</DropdownMenu.Label>
             {#each sqlStore.history as item, i (i)}
-              <DropdownMenu.Item class="font-mono text-xs" onclick={() => sqlStore.open(item)}
+              <DropdownMenu.Item class="font-mono text-[0.8125rem]" onclick={() => sqlStore.open(item)}
                 ><span class="truncate">{firstLine(item)}</span></DropdownMenu.Item
               >
             {/each}
@@ -388,7 +388,7 @@
         <div class="p-4" role="alert">
           <div class="rounded-2xl bg-destructive/10 px-4 py-3 text-sm">
             <p class="mb-1 font-medium text-destructive">{t('sql.results.failed')}</p>
-            <p class="font-mono text-xs leading-relaxed text-destructive">
+            <p class="font-mono text-[0.8125rem] leading-relaxed text-destructive">
               {#if response.error.code}{response.error.code}:{' '}{/if}{response.error.message}
             </p>
             {#if (errorLine !== null)}<p class="mt-2 text-muted-foreground">{t('sql.editor.errorHere', { line: errorLine })}</p>{/if}

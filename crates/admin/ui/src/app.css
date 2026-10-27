@@ -21,10 +21,10 @@
 	--card-foreground: oklch(0.145 0 0);
 	--popover: oklch(1 0 0);
 	--popover-foreground: oklch(0.145 0 0);
-	--primary: #003FDA;
+	--primary: #1B4ABF;
 	--primary-foreground: #ffffff;
-	--primary-border: #003FDA;
-	--primary-hover: #0035b8;
+	--primary-border: #1B4ABF;
+	--primary-hover: #173FA1;
 	/* Brand text uses a stronger step to retain contrast on light surfaces. */
 	--brand: #aa3600;
 	--brand-soft: rgb(184 59 0 / 9%);
@@ -81,10 +81,10 @@
 	--card-foreground: #e6e6e6;
 	--popover: #292929;
 	--popover-foreground: #e6e6e6;
-	--primary: #003FDA;
+	--primary: #1B4ABF;
 	--primary-foreground: #ffffff;
-	--primary-border: #003FDA;
-	--primary-hover: #0035b8;
+	--primary-border: #1B4ABF;
+	--primary-hover: #173FA1;
 	--brand: #ff9b59;
 	--brand-soft: rgb(255 122 36 / 10%);
 	--secondary: #303030;
@@ -385,7 +385,7 @@
 .panel-content { display: flex; flex: 1; min-height: 0; min-width: 0; }
 .panel-sidebar {
   display: none;
-  width: 13.5rem;
+  width: 16rem;
   flex-shrink: 0;
   overflow-y: auto;
   border-right: 1px solid var(--border);

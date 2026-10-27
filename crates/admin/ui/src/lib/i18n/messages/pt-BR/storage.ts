@@ -12,6 +12,7 @@ const ptBR = {
   disabledDescription:
     'Defina NELCOTA_STORAGE_BACKEND no .env do projeto (disk para o disco do servidor, s3 para um bucket compatível) e reinicie o app.',
   notes: {
+    title: 'Sobre buckets e arquivos',
     access: {
       title: 'Quem acessa os arquivos',
       text: 'Cada bucket tem as próprias regras de acesso. Sem nenhuma regra, só o painel e o seu backend (service_role) chegam aos arquivos.',
@@ -125,6 +126,7 @@ const ptBR = {
     uploadFailed: 'O envio falhou. Tente novamente.',
     emptyFolder: 'Pasta vazia',
     emptyFolderDescription: 'Envie arquivos para cá. Uma pasta existe enquanto tiver arquivos.',
+    foldersTitle: 'Como funcionam as pastas',
     foldersHint: 'Pastas não são criadas à parte: elas vêm do caminho dos arquivos (ex.: fotos/perfil.png) e somem quando ficam vazias. Os envios daqui vão para a pasta aberta; para uma pasta nova, envie pelo app ou SDK com o caminho no nome.',
     emptyBucket: 'Bucket vazio',
     columns: { name: 'Nome', size: 'Tamanho', type: 'Tipo', updated: 'Alterado' },

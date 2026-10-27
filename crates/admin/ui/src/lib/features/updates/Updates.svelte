@@ -1,5 +1,8 @@
 <script lang="ts">
   import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right'
+  import ArrowUpCircle from '@lucide/svelte/icons/arrow-up-circle'
+  import EmptyState from '$lib/components/shared/EmptyState.svelte'
+  import { href } from '$lib/navigation/router.svelte'
   import { onMount } from 'svelte'
   import { Button } from '$lib/components/ui/button'
   import { api } from '$lib/transport/api'
@@ -23,11 +26,18 @@
     <p role="status" class="text-sm text-muted-foreground">{t('common.loading')}</p>
   {/if}
   {#if resource.loaded && !resource.loading && !resource.error}
-    <div class="grid gap-5 rounded-3xl bg-card p-5">
-      <p>{t('updates.current')}: <strong translate="no">{version}</strong></p>
-      <p class="text-sm text-muted-foreground">{t('updates.authority')}</p>
-      {#if origin}<Button class="w-fit" href={`${origin}/admin/`} target="_blank" rel="noopener noreferrer">{t('updates.open')}<span class="sr-only"> {t('common.newTab')}</span><ArrowUpRight data-icon="inline-end" aria-hidden="true" /></Button>{/if}
-      {#if !origin}<p role="status" class="text-sm text-muted-foreground">{t('updates.unenrolled')}</p>{/if}
-    </div>
+    {#if origin}
+      <div class="grid gap-4 rounded-3xl bg-card p-5 sm:p-6">
+        <p class="text-base">{t('updates.current')}: <strong translate="no">{version}</strong></p>
+        <p class="text-sm text-muted-foreground">{t('updates.authority')}</p>
+        <Button class="w-fit" href={`${origin}/admin/`} target="_blank" rel="noopener noreferrer">{t('updates.open')}<span class="sr-only"> {t('common.newTab')}</span><ArrowUpRight data-icon="inline-end" aria-hidden="true" /></Button>
+      </div>
+    {/if}
+    {#if origin === null}
+      <EmptyState class="rounded-3xl bg-card" icon={ArrowUpCircle} title={t('updates.unenrolled')} description={t('updates.unenrolledHint')}>
+        {#snippet actions()}<Button variant="outline" href={href('/guides/deploy')}>{t('updates.guide')}<ArrowUpRight data-icon="inline-end" aria-hidden="true" /></Button>{/snippet}
+      </EmptyState>
+      <p role="status" class="mt-4 text-sm text-muted-foreground">{t('updates.current')}: <strong translate="no">{version}</strong></p>
+    {/if}
   {/if}
 </div>

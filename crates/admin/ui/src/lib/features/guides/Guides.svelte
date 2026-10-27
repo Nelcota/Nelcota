@@ -215,7 +215,7 @@
       <nav class="sticky top-4 hidden max-h-[80dvh] overflow-y-auto xl:grid" aria-label={t('guides.contents')}>
         <h2 class="pb-3 text-xs font-semibold text-muted-foreground">{t('guides.contents')}</h2>
         {#each headings.filter(heading => heading.level === 2) as heading (heading.id)}
-          <a class="border-l py-2 pl-3 text-xs leading-relaxed text-muted-foreground transition-colors hover:border-brand hover:text-foreground" href={href(guidePath(selected.id, heading.id))}>{heading.text}</a>
+          <a class="border-l py-2 pl-3 text-[0.8125rem] leading-relaxed text-muted-foreground transition-colors hover:border-brand hover:text-foreground" href={href(guidePath(selected.id, heading.id))}>{heading.text}</a>
         {/each}
       </nav>
     {/if}

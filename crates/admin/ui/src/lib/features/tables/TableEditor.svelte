@@ -17,7 +17,8 @@
   import CreateTableSheet from '$lib/features/tables/components/CreateTableSheet.svelte'
   import StructureView from '$lib/features/tables/components/StructureView.svelte'
   import TablesHome from '$lib/features/tables/components/TablesHome.svelte'
-  import { readText, write } from '$lib/browser/local-storage'
+  import { readJson, readText, remove, write } from '$lib/browser/local-storage'
+  import { parseRecent, rememberRecent } from '$lib/features/tables/home'
   import { api, enc, ApiError } from '$lib/transport/api'
   import type { RunAsLabels, Viewer } from '$lib/shared/run-as'
   import { RemoteResource } from '$lib/resources/remote-resource.svelte'
@@ -103,13 +104,21 @@
   const filters = $derived(parseFilters(route.query))
   const filtersKey = $derived(filtersToSearch(filters))
 
-  // The last table opened in this browser, offered again on the list page.
+  // The tables opened last in this browser, offered again on the list page.
+  // Older panels kept only one name under LAST_TABLE; it seeds the list once.
+  const RECENT_TABLES = 'nelcota:tables-recent'
   const LAST_TABLE = 'nelcota:tables-last'
-  let lastTable = $state<string | null>(readText(LAST_TABLE, '') || null)
+  const legacyLast = readText(LAST_TABLE, '')
+  const initialRecent = readJson(RECENT_TABLES, parseRecent, legacyLast.trim() === '' ? [] : [legacyLast])
+  let recentTables = $state<string[]>(initialRecent)
+  if (legacyLast.trim() !== '') {
+    write(RECENT_TABLES, JSON.stringify(initialRecent))
+    remove(LAST_TABLE)
+  }
   $effect(() => {
-    if (!name || name === lastTable) return
-    lastTable = name
-    write(LAST_TABLE, name)
+    if (!name || recentTables[0] === name) return
+    recentTables = rememberRecent(untrack(() => recentTables), name)
+    write(RECENT_TABLES, JSON.stringify(recentTables))
   })
 
   async function loadTables() {
@@ -253,16 +262,18 @@
   }
 </script>
 
-<div class={cn("mx-auto flex h-full min-h-0 w-full max-w-page px-4 pt-1 pb-4 sm:px-6 lg:px-8", emptyCatalog ? "flex-col" : "gap-3")}>
+<div class={cn("mx-auto flex h-full min-h-0 w-full max-w-page px-4 pt-4 pb-4 sm:px-6 lg:px-8", emptyCatalog ? "flex-col" : "gap-3")}>
   {#if !emptyCatalog}
-    <!-- Phones show one pane: the open table, or the home cards (the list
-         itself only when it failed to load, to offer the retry). -->
-    <TableSidebar {tables} current={name} phone={!name && !!tablesError} loading={tablesLoading} error={tablesError} onretry={loadTables} oncreate={() => (createOpen = true)} />
+    <!-- The home lists every table itself, so the sidebar list only comes with
+         an open table (or alone when the catalog failed, to offer the retry). -->
+    {#if name || tablesError}
+      <TableSidebar {tables} current={name} phone={!name && !!tablesError} loading={tablesLoading} error={tablesError} onretry={loadTables} oncreate={() => (createOpen = true)} />
+    {/if}
   {/if}
 
   <section class={cn('min-h-0 min-w-0 flex-1 flex-col overflow-hidden', emptyCatalog ? 'flex' : 'rounded-3xl bg-card', !emptyCatalog && (name || !tablesError ? 'flex' : 'hidden lg:flex'))}>
     {#if !name && !tablesError}
-      <TablesHome {tables} loading={tablesLoading || !tablesResource.loaded} last={lastTable} oncreate={() => (createOpen = true)} />
+      <TablesHome {tables} loading={tablesLoading || !tablesResource.loaded} recent={recentTables} oncreate={() => (createOpen = true)} onchanged={loadTables} />
     {/if}
     {#if !(!name)}
       <TableToolbar

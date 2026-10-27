@@ -8,7 +8,7 @@ const ptBR = {
   versionNotes: 'Novidades da versão',
   noResults: 'Nenhum guia encontrado',
   noResultsHint: 'Tente outro assunto, nome de função ou variável.',
-  openPanel: 'Abrir no painel',
+  openPanel: 'Ir para a página no painel',
   groups: { start: 'Comece aqui', develop: 'Desenvolvimento', operate: 'Operação', internals: 'Por dentro do Nelcota' },
   entries: {
     quickstart: { title: 'Primeiros passos', description: 'Do ambiente local à primeira chamada da API.' },

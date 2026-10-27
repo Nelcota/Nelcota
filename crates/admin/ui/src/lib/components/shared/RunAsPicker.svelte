@@ -30,7 +30,7 @@
         {...props}
         type="button"
         class={[
-          'inline-flex h-9 max-w-64 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 text-xs font-medium transition-colors',
+          'inline-flex h-9 max-w-64 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 text-[0.8125rem] font-medium transition-colors',
           owner && warnOwner
             ? 'border-warning/30 bg-warning/10 text-warning hover:bg-warning/15'
             : owner

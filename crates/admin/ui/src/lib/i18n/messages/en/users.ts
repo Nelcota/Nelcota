@@ -19,7 +19,7 @@ const en: Messages<typeof ptBR> = {
     email: 'Email',
     created: 'Created',
     lastSignIn: 'Last sign-in',
-    sessions: 'Sessions',
+    sessions: 'Active sessions',
     signIn: 'Signs in with',
   },
   methods: {

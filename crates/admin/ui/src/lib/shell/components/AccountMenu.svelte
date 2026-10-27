@@ -6,7 +6,6 @@
   import LogOut from '@lucide/svelte/icons/log-out'
   import ChevronDown from '@lucide/svelte/icons/chevron-down'
   import ImageUp from '@lucide/svelte/icons/image-up'
-  import History from '@lucide/svelte/icons/history'
   import { navigate } from '$lib/navigation/router.svelte'
   import Languages from '@lucide/svelte/icons/languages'
   import Avatar from '$lib/features/profile/components/Avatar.svelte'
@@ -69,7 +68,6 @@
     <DropdownMenu.Item onclick={() => (photoOpen = true)}>
       <ImageUp />{profile.avatar === null ? t('shell.account.addPhoto') : t('shell.account.changePhoto')}
     </DropdownMenu.Item>
-    <DropdownMenu.Item onclick={() => navigate('/updates')}><History />{t('shell.pages.updates')}</DropdownMenu.Item>
     <DropdownMenu.Item onclick={toggleMode}>
       {#if (mode.current === 'dark')}<Sun />{t('shell.account.lightTheme')}{/if}
       {#if !(mode.current === 'dark')}<Moon />{t('shell.account.darkTheme')}{/if}

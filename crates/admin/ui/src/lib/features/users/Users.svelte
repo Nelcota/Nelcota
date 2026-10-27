@@ -157,14 +157,6 @@
   {/if}
 {/snippet}
 
-{#snippet userId(user: User)}
-  <!-- The id is what policies and support tickets use: shown whole on hover, one click to copy. -->
-  <span class="group/id flex min-w-0 items-center gap-1">
-    <span class="min-w-0 truncate font-mono text-xs text-muted-foreground" title={user.id}>{user.id}</span>
-    <button type="button" class="-my-2 grid size-9 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" aria-label={t('users.copyIdOf', { email: user.email })} title={t('users.copyId')} onclick={() => copyText(user.id, t('users.idCopied'))}><Copy class="size-3.5" aria-hidden="true" /></button>
-  </span>
-{/snippet}
-
 {#snippet methods(user: User)}
   {@const list = signInMethods(user)}
   <span class="inline-flex flex-wrap gap-1" title={list[0].kind === 'linkOnly' ? t('users.methods.linkOnlyHint') : undefined}>
@@ -242,10 +234,10 @@
       {#each users as user (user.id)}
         <article class="min-w-0 rounded-3xl bg-card p-4">
           <div class="flex min-w-0 items-start justify-between gap-2">
-            <div class="min-w-0"><p class="break-all font-medium">{user.email}{@render unconfirmed(user)}</p><div class="mt-1">{@render userId(user)}</div></div>
+            <div class="min-w-0"><p class="break-all font-medium">{user.email}{@render unconfirmed(user)}</p></div>
             {@render userActions(user)}
           </div>
-          <dl class="mt-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 text-xs">
+          <dl class="mt-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 text-[0.8125rem]">
             <dt class="text-muted-foreground">{t('users.columns.signIn')}</dt><dd class="text-right">{@render methods(user)}</dd>
             <dt class="text-muted-foreground">{t('users.columns.lastSignIn')}</dt><dd class={['text-right', user.last_sign_in_at ? '' : 'text-muted-foreground']}>{user.last_sign_in_at ? when(user.last_sign_in_at) : t('users.neverSignedIn')}</dd>
             <dt class="text-muted-foreground">{t('users.columns.created')}</dt><dd class="text-right">{when(user.created_at)}</dd>
@@ -277,7 +269,6 @@
                   >
                   <div class="min-w-0">
                     <p class="font-medium">{user.email}{@render unconfirmed(user)}</p>
-                    <div class="max-w-72">{@render userId(user)}</div>
                   </div>
                 </div>
               </Table.Cell>

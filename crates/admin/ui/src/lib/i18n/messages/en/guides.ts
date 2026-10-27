@@ -11,7 +11,7 @@ const en: Messages<typeof ptBR> = {
   versionNotes: 'What’s new in this version',
   noResults: 'No guides found',
   noResultsHint: 'Try another topic, function name or variable.',
-  openPanel: 'Open in the panel',
+  openPanel: 'Go to the page in the panel',
   groups: { start: 'Start here', develop: 'Development', operate: 'Operations', internals: 'Inside Nelcota' },
   entries: {
     quickstart: { title: 'Quickstart', description: 'From local development to your first API call.' },

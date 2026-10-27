@@ -122,7 +122,7 @@
                 checked={!hiddenColumns.includes(column.name)}
                 closeOnSelect={false}
                 onCheckedChange={() => ontogglecolumn(column.name)}
-                class="font-mono text-xs">{column.name}</DropdownMenu.CheckboxItem
+                class="font-mono text-[0.8125rem]">{column.name}</DropdownMenu.CheckboxItem
               >
             {/each}
             {#if hiddenColumns.length}
@@ -142,7 +142,7 @@
           <DropdownMenu.Label class="text-xs font-normal text-muted-foreground">
             {filterCount ? t('tables.toolbar.exportFiltered') : t('tables.toolbar.exportAll')}
           </DropdownMenu.Label>
-          {#if viewing}<p class="px-2 pb-1.5 text-xs text-warning">{t('tables.toolbar.exportFullAccess')}</p>{/if}
+          {#if viewing}<p class="px-2 pb-1.5 text-sm text-warning">{t('tables.toolbar.exportFullAccess')}</p>{/if}
           {#each [{ format: 'csv', label: 'CSV', hint: t('tables.toolbar.csvHint') }, { format: 'json', label: 'JSON', hint: t('tables.toolbar.jsonHint') }] as const as option (option.format)}
             <DropdownMenu.Item class="flex-col items-start gap-0">
               {#snippet child({ props })}<a {...props} href={exportHref(option.format)} download>
@@ -159,9 +159,7 @@
       </div>
     </div>
     {#if data?.table.insertable}
-      <Button size="sm" class="max-sm:ml-auto sm:@max-5xl:px-2.5" disabled={loading} onclick={oninsert} title={t('tables.toolbar.insertRow')}
-        ><Plus aria-hidden="true" /><span class="sm:@max-5xl:sr-only">{t('tables.toolbar.insertRow')}</span></Button
-      >
+      <Button size="sm" class="max-sm:ml-auto" disabled={loading} onclick={oninsert}><Plus aria-hidden="true" />{t('tables.toolbar.insertRow')}</Button>
     {/if}
   {/if}
 </div>

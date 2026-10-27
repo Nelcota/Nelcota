@@ -41,7 +41,7 @@
     <p class="border-t border-destructive/20 bg-destructive/5 px-4 py-2.5 text-sm text-destructive">{preview.error}</p>
   {/if}
   {#if !(preview.error) && (open)}
-    <pre class="max-h-72 overflow-auto border-t bg-card/60 px-4 py-3 font-mono text-xs leading-relaxed whitespace-pre-wrap">{text ||
+    <pre class="max-h-72 overflow-auto border-t bg-card/60 px-4 py-3 font-mono text-[0.8125rem] leading-relaxed whitespace-pre-wrap">{text ||
         placeholder ||
         t('policies.sqlPreview.placeholder')}</pre>
   {/if}
