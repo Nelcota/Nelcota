@@ -20,6 +20,9 @@ describe('operational alert response boundary', () => {
     expect(() => parseAlertStatus({ ...status, incidents: [{ ...incident, project: 'base' }] })).toThrow()
     expect(() => parseAlertStatus({ ...status, projects: ['base', 'base'] })).toThrow()
     expect(() => parseAlertStatus({ ...status, monitor_error: 'raw provider error with secret' })).toThrow()
+    expect(parseAlertStatus({ ...status, heartbeat_error: 'alert_heartbeat_failed', monitor_error: 'alert_probe_failed' }).monitor_error).toBe('alert_probe_failed')
+    expect(() => parseAlertStatus({ ...status, heartbeat_error: 'alert_probe_failed' })).toThrow()
+    expect(() => parseAlertStatus({ ...status, monitor_error: 'alert_heartbeat_failed' })).toThrow()
     expect(parseAlertStatus({ ...status, incidents: [incident] }).incidents).toEqual([incident])
   })
   it('bounds channels and exposes only closed delivery errors', () => {

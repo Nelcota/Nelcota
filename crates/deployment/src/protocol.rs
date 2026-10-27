@@ -86,35 +86,68 @@ pub enum Request {
     },
 }
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct UpdatePlan {
+    #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::DIGEST)))]
     pub id: String,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub project: String,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub current: String,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub target: String,
+    #[cfg_attr(feature = "schema", schemars(pattern(crate::schema::DIGEST)))]
     pub digest: String,
     pub expires_at: u64,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::MAX_BLOCKERS), inner(length(max = crate::schema::TEXT_MAX))))]
     pub blockers: Vec<String>,
 }
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Status {
     #[serde(default)]
+    #[cfg_attr(
+        feature = "schema",
+        schemars(skip_serializing_if = "crate::schema::is_false")
+    )]
     pub host_management: bool,
     #[serde(default)]
+    #[cfg_attr(
+        feature = "schema",
+        schemars(skip_serializing_if = "crate::schema::is_false")
+    )]
     pub host_busy: bool,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub email: String,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::MAX_PROJECTS)))]
     pub projects: Vec<ProjectStatus>,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::MAX_JOBS)))]
     pub jobs: Vec<PublicJob>,
+    #[cfg_attr(feature = "schema", schemars(schema_with = "release_version"))]
     pub release: Option<Release>,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub check_error: Option<String>,
     pub enabled: bool,
     pub checking: bool,
 }
+/// The panel only reads the version of an offered release.
+#[cfg(feature = "schema")]
+fn release_version(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+    schemars::json_schema!({
+        "type": ["object", "null"],
+        "properties": { "version": { "type": "string", "maxLength": crate::schema::TEXT_MAX } },
+        "required": ["version"]
+    })
+}
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct ProjectStatus {
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub name: String,
+    #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::TEXT_MAX)))]
     pub version: String,
     pub update_available: bool,
 }

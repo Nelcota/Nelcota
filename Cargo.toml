@@ -46,6 +46,8 @@ jsonwebtoken = { version = "11.1.0", default-features = false, features = ["rust
 # system certificates). No native-tls/OpenSSL: the musl build stays static.
 lettre = { version = "0.11.23", default-features = false, features = ["builder", "hostname", "smtp-transport", "tokio1-rustls-tls"] }
 postgres-protocol = "0.6.12"
+# JSON Schema for the panel contracts (D83); nelcota-deployment only behind its `schema` feature.
+schemars = "1.2.2"
 # Protocol clients use our bounded reqwest transport, retaining the same TLS
 # provider and avoiding a second reqwest version.
 oauth2 = { version = "5.0.0", default-features = false }

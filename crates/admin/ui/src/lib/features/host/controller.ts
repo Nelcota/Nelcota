@@ -1,4 +1,5 @@
-import { isSection, revision, type Section } from '../server/contracts'
+import * as contracts from '$lib/generated/validators.js'
+import type { Section } from '../server/contracts'
 import { ControllerError, hash } from '../updates/controller'
 export const stages = [
   'accepted',
@@ -80,129 +81,48 @@ const object = (v: unknown): v is Record<string, unknown> =>
   v !== null && typeof v === 'object' && !Array.isArray(v)
 const text = (v: unknown): v is string =>
   typeof v === 'string' && v.length <= 1024
-const uint = (v: unknown): v is number =>
-  typeof v === 'number' && Number.isSafeInteger(v) && v >= 0
-const project = (v: unknown): v is string =>
-  typeof v === 'string' &&
-  /^[a-z0-9][a-z0-9-]{0,31}$/.test(v) &&
-  !v.endsWith('-')
-const domain = (v: unknown): v is string =>
-  typeof v === 'string' &&
-  v.length <= 253 &&
-  v.includes('.') &&
-  v.split('.').every((p) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(p))
-const backup = (v: unknown): v is string =>
-  typeof v === 'string' &&
-  v.length <= 200 &&
-  /^[a-zA-Z0-9][a-zA-Z0-9._-]*\.dump$/.test(v)
+const LOG_LIMIT = 100
 function invalid(): never {
   throw new ControllerError(502, 'invalid_response')
 }
+// The wire shapes come from the Rust contracts (D83); these are the rules
+// that span several fields.
+const confirms = (confirmation: string, operation: Operation) =>
+  confirmation === `${operation.kind.toUpperCase()} ${operation.project}`
+function checkedJob(job: Job): Job {
+  // Only an applied configuration change can be rolled back.
+  if (job.stage === 'rolled_back' && (job.operation.kind !== 'configure' || job.changed === false)) return invalid()
+  return job
+}
 export function parseOperation(v: unknown): Operation {
-  if (!object(v) || !project(v.project)) return invalid()
-  if (v.kind === 'configure' && isSection(v.section) && revision(v.revision)) return { kind: 'configure', project: v.project, section: v.section, revision: v.revision }
-  if (v.kind === 'backup' || v.kind === 'remove' || v.kind === 'restart' || v.kind === 'backup_offsite' || v.kind === 'test_smtp' || v.kind === 'test_backup' || v.kind === 'test_alerts')
-    return { kind: v.kind, project: v.project }
-  if (v.kind === 'restore' && backup(v.backup))
-    return { kind: 'restore', project: v.project, backup: v.backup }
-  if (
-    v.kind === 'create' &&
-    domain(v.domain) &&
-    typeof v.profile === 'string' &&
-    ['1gb', '2gb', '4gb', '8gb'].includes(v.profile)
-  )
-    return {
-      kind: 'create',
-      project: v.project,
-      domain: v.domain,
-      profile: v.profile
-    }
-  return invalid()
+  if (contracts.HostOperation(v) === false) return invalid()
+  return v as Operation
 }
 export function parseJob(v: unknown): Job {
-  if (
-    !object(v) ||
-    (v.affected_projects !== undefined && (!Array.isArray(v.affected_projects) || v.affected_projects.length > 32 || !v.affected_projects.every(project) || new Set(v.affected_projects).size !== v.affected_projects.length)) ||
-    !hash(v.id) ||
-    !(v.last_stage == null || stages.includes(v.last_stage as Stage)) ||
-    !hash(v.request_key) ||
-    !stages.includes(v.stage as Stage) ||
-    !uint(v.sequence) ||
-    !v.sequence ||
-    !uint(v.updated_at) ||
-    typeof v.changed !== 'boolean' ||
-    !(v.backup === null || backup(v.backup)) ||
-    !(v.error === null || text(v.error))
-  )
-    return invalid()
-  const operation = parseOperation(v.operation)
-  if (v.stage === 'rolled_back' && (operation.kind !== 'configure' || !v.changed)) return invalid()
-  return { ...v, operation } as Job
+  if (contracts.HostJob(v) === false) return invalid()
+  return checkedJob(v as Job)
 }
 export function parseStatus(v: unknown): Status {
-  if (
-    !object(v) ||
-    (v.busy !== undefined && typeof v.busy !== 'boolean') ||
-    typeof v.enabled !== 'boolean' ||
-    !uint(v.max_projects) ||
-    v.max_projects > 32 ||
-    !uint(v.ram_mb) ||
-    !uint(v.free_bytes) ||
-    !Array.isArray(v.projects) ||
-    v.projects.length > 32 ||
-    !Array.isArray(v.jobs) ||
-    v.jobs.length > 32
-  )
+  if (contracts.HostStatus(v) === false) return invalid()
+  const status = v as Status
+  if (new Set(status.projects.map((p) => p.name)).size !== status.projects.length)
     return invalid()
-  const projects = v.projects.map((p) => {
-    if (
-      !object(p) ||
-      !project(p.name) ||
-      !domain(p.domain) ||
-      !text(p.version) ||
-      !text(p.app) ||
-      !text(p.database) ||
-      !Array.isArray(p.backups) ||
-      p.backups.length > 32 ||
-      !p.backups.every(backup)
-    )
-      return invalid()
-    return p as Project
-  })
-  if (new Set(projects.map((p) => p.name)).size !== projects.length)
-    return invalid()
+  const receipt = status.receipt ?? null
   return {
-    ...v,
-    receipt: v.receipt == null ? null : parseJob(v.receipt),
-    projects,
-    jobs: v.jobs.map(parseJob)
-  } as Status
+    ...status,
+    receipt: receipt === null ? null : checkedJob(receipt),
+    jobs: status.jobs.map(checkedJob)
+  }
 }
 export function parsePlan(v: unknown): Plan {
+  if (contracts.HostPlan(v) === false) return invalid()
+  const plan = v as Plan
   if (
-    !object(v) ||
-    (v.affected_projects !== undefined && (!Array.isArray(v.affected_projects) || v.affected_projects.length > 32 || !v.affected_projects.every(project) || new Set(v.affected_projects).size !== v.affected_projects.length)) ||
-    !hash(v.id) ||
-    !hash(v.image_digest) ||
-    !text(v.confirmation) ||
-    !uint(v.expires_at) ||
-    !text(v.version) ||
-    !uint(v.ram_mb) ||
-    !uint(v.free_bytes) ||
-    !uint(v.project_count) ||
-    typeof v.destructive !== 'boolean' ||
-    !Array.isArray(v.blockers) ||
-    v.blockers.length > 32 ||
-    !v.blockers.every(text)
+    confirms(plan.confirmation, plan.operation) === false ||
+    plan.destructive !== ['remove', 'restore'].includes(plan.operation.kind)
   )
     return invalid()
-  const operation = parseOperation(v.operation)
-  if (
-    v.confirmation !== `${operation.kind.toUpperCase()} ${operation.project}` ||
-    v.destructive !== ['remove', 'restore'].includes(operation.kind)
-  )
-    return invalid()
-  return { ...v, operation } as Plan
+  return plan
 }
 export const terminal = (s: Stage) => s === 'completed' || s === 'failed' || s === 'rolled_back'
 export function mergeStatus(
@@ -232,28 +152,14 @@ export function parsePending(v: unknown): Pending | null {
     if (!object(v) || !hash(v.plan) || !hash(v.key) || !text(v.confirmation))
       return null
     const operation = parseOperation(v.operation)
-    if (
-      v.confirmation !== `${operation.kind.toUpperCase()} ${operation.project}`
-    )
-      return null
+    if (confirms(v.confirmation, operation) === false) return null
     return { plan: v.plan, key: v.key, confirmation: v.confirmation, operation }
   } catch {
     return null
   }
 }
 export function parseLogs(v: unknown): LogEntry[] {
-  if (
-    !Array.isArray(v) ||
-    v.length > 100 ||
-    v.some(
-      (p) =>
-        !object(p) ||
-        !text(p.timestamp) ||
-        !text(p.level) ||
-        !text(p.target) ||
-        p.message !== 'event_metadata_only'
-    )
-  )
+  if (Array.isArray(v) === false || v.length > LOG_LIMIT || v.every((entry) => contracts.HostLogEntry(entry)) === false)
     return invalid()
   return v as LogEntry[]
 }
