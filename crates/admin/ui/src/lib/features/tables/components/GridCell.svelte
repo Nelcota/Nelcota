@@ -1,18 +1,12 @@
 <script lang="ts">
   import { formatCell } from '$lib/features/tables/format'
-  import { alignRight, monospace, shortUuid, type ColumnKind } from '$lib/features/tables/grid'
+  import { alignRight, compactJsonPreview, monospace, shortUuid, type ColumnKind } from '$lib/features/tables/grid'
 
   let { value, type, kind }: { value: string | null; type: string; kind: ColumnKind } = $props()
 
   const display = $derived(value === null ? null : formatCell(value, type))
-  /** JSON on a single line: the cell shows the start; the whole value is in the tooltip. */
-  const compactJson = (text: string) => {
-    try {
-      return JSON.stringify(JSON.parse(text))
-    } catch {
-      return text
-    }
-  }
+  /** JSON on a single line, computed once per value: the cell shows the start; the detail dialog has it all. */
+  const json = $derived(kind === 'json' && value !== null ? compactJsonPreview(value) : '')
 </script>
 
 <!-- Display only; editing and the tooltip use the exact value. -->
@@ -38,7 +32,7 @@
     <span aria-hidden="true">{shortUuid(value)}</span><span class="sr-only">{value}</span>
   {/if}
   {#if !(value === null) && !(kind === 'boolean') && !(kind === 'enum') && !(kind === 'uuid' && shortUuid(value) !== value) && (kind === 'json')}
-    <span class="text-muted-foreground">{compactJson(value)}</span>
+    <span class="text-muted-foreground">{json}</span>
   {/if}
   {#if !(value === null) && !(kind === 'boolean') && !(kind === 'enum') && !(kind === 'uuid' && shortUuid(value) !== value) && !(kind === 'json')}
     {display?.text}

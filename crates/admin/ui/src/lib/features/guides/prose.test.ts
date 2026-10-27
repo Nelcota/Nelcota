@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Lexer, Marked, type TokensList } from 'marked'
-import { guides, guideSource, guideTranslation, guideSearchText } from './content'
+import { guides, loadGuideSource, loadGuideTranslation, loadGuideSearchText } from './content'
 import { readMarkdown } from './markdown'
 import { proseFragments, translateTokens, validateTranslations } from './prose'
 
@@ -16,8 +16,9 @@ function examples(tokens: TokensList) {
 
 describe('Portuguese guide contracts', () => {
   for (const guide of guides.filter(guide => !('language' in guide) && !('code' in guide) && guide.id !== 'openapi')) {
-    it(`translates ${guide.id} with unchanged code, links and section URLs`, () => {
-      const source = guideSource(guide), catalog = guideTranslation(guide, 'pt-BR')!
+    it(`translates ${guide.id} with unchanged code, links and section URLs`, async () => {
+      const source = await loadGuideSource(guide), catalog = await loadGuideTranslation(guide, 'pt-BR')
+      if (catalog === undefined) throw new Error(`Missing Portuguese catalog: ${guide.id}`)
       expect(validateTranslations(source, catalog)).toEqual([])
       const tokens = Lexer.lex(source), original = examples(tokens)
       translateTokens(tokens, catalog)
@@ -26,7 +27,7 @@ describe('Portuguese guide contracts', () => {
       const portuguese = readMarkdown(source, guide.source, catalog)
       expect(portuguese.filter(block => block.type === 'code')).toEqual(english.filter(block => block.type === 'code'))
       expect(portuguese.filter(block => block.type === 'heading').map(block => block.id)).toEqual(english.filter(block => block.type === 'heading').map(block => block.id))
-      expect(guideTranslation(guide, 'en')).toBeUndefined()
+      expect(await loadGuideTranslation(guide, 'en')).toBeUndefined()
     })
   }
 
@@ -53,12 +54,13 @@ describe('Portuguese guide contracts', () => {
     expect(examples(tokens)).toEqual(original)
   })
 
-  it('searches Portuguese prose and original technical identifiers', () => {
-    const auth = guides.find(guide => guide.id === 'auth')!
-    expect(guideSearchText(auth, 'pt-BR')).toContain('caixa de entrada')
-    expect(guideSearchText(auth, 'pt-BR')).toContain('NELCOTA_PASSWORD_RECOVERY_URL')
-    expect(guideSearchText(auth, 'en')).not.toContain('caixa de entrada')
-    const starter = guides.find(guide => guide.id === 'sdk-start')!
-    expect(guideTranslation(starter, 'pt-BR')).toBeUndefined()
+  it('searches Portuguese prose and original technical identifiers', async () => {
+    const auth = guides.find(guide => guide.id === 'auth')
+    const starter = guides.find(guide => guide.id === 'sdk-start')
+    if (auth === undefined || starter === undefined) throw new Error('auth and sdk-start guides are registered')
+    expect(await loadGuideSearchText(auth, 'pt-BR')).toContain('caixa de entrada')
+    expect(await loadGuideSearchText(auth, 'pt-BR')).toContain('nelcota_password_recovery_url')
+    expect(await loadGuideSearchText(auth, 'en')).not.toContain('caixa de entrada')
+    expect(await loadGuideTranslation(starter, 'pt-BR')).toBeUndefined()
   })
 })

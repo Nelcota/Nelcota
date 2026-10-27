@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, searchForWorkspaceRoot, type Plugin } from 'vite'
 
 // .env.example exports NELCOTA_API_URL empty, which is not a proxy target.
 const apiTarget = process.env.NELCOTA_API_URL || 'http://127.0.0.1:8000'
@@ -69,6 +69,17 @@ export default defineConfig({
     // Pages are lazy modules; transforming them up front keeps the first visit
     // to each page fast (the e2e tests open many pages in parallel).
     warmup: { clientFiles: ['./src/main.ts', './src/lib/shell/**/*.svelte', './src/lib/features/**/*.svelte'] },
+    // Guides load repository documents lazily with `?raw`, which the dev
+    // server only transforms inside allowed directories.
+    fs: {
+      allow: [
+        searchForWorkspaceRoot(process.cwd()),
+        '../../../docs',
+        '../../../examples',
+        '../../../sdk/typescript',
+        '../../../sdk/rust',
+      ],
+    },
   },
   // The default (CPUs - 1 workers) saturates dev machines when Rust tests run too.
   test: { maxWorkers: 2 },

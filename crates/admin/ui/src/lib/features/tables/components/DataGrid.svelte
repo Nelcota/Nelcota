@@ -8,7 +8,7 @@
   import GridColumnHeader from './GridColumnHeader.svelte'
   import CellDetailDialog from '$lib/components/shared/CellDetailDialog.svelte'
   import { copyText } from '$lib/browser/clipboard'
-  import { alignRight, columnKind, columnWidth, editedValue, monospace, nextCell, rowKey, rowPk, type CellPos } from '$lib/features/tables/grid'
+  import { alignRight, cellPreview, columnKind, columnWidth, editedValue, monospace, nextCell, rowKey, rowPk, type CellPos } from '$lib/features/tables/grid'
   import type { Column, RowData, TableData } from '$lib/contracts/types'
   import { t } from '$lib/i18n/index.svelte'
 
@@ -46,6 +46,7 @@
     const row = data.rows[index]
     return row ? [[rowKey(row, data.table.primary_key, index), true as const]] : []
   })))
+  const columnVisibility = $derived(Object.fromEntries(hidden.map(name => [name, false])))
   const table = createTable({
     features: tableFeatures({ columnVisibilityFeature, rowSelectionFeature }),
     get data() { return data.rows },
@@ -53,7 +54,7 @@
     getRowId: (row, index) => rowKey(row, data.table.primary_key, index),
     get enableRowSelection() { return data.table.editable && !disabled },
     get state() {
-      return { columnVisibility: Object.fromEntries(hidden.map(name => [name, false])), rowSelection: selectionState }
+      return { columnVisibility, rowSelection: selectionState }
     },
     onRowSelectionChange: updater => {
       const next = typeof updater === 'function' ? updater(selectionState) : updater
@@ -102,7 +103,8 @@
   async function startEdit(rowIndex: number, column: Column) {
     if (disabled || !editable || column.generated) return
     const row = data.rows[rowIndex]
-    editing = { key: rowKey(row, data.table.primary_key), pk: rowPk(row, data.table.primary_key), column: column.name, original: row[column.name] }
+    // Same key as the grid row id, so each cell compares strings instead of re-serializing the key.
+    editing = { key: rowKey(row, data.table.primary_key, rowIndex), pk: rowPk(row, data.table.primary_key), column: column.name, original: row[column.name] }
     draft = row[column.name] ?? ''
     await tick()
     document.getElementById('inline-editor')?.focus()
@@ -270,6 +272,7 @@
         {/if}
         {#each columns as { column, kind }, c (column.name)}
           {@const value = row[column.name]}
+          {@const isEditing = editing?.key === gridRow.id && editing.column === column.name}
           <td
             role="gridcell"
             data-cell={`${i}:${c}`}
@@ -284,7 +287,7 @@
             onkeydown={(e) => onCellKey(e, i, c)}
             ondblclick={() => startEdit(i, column)}
           >
-            {#if (editing?.key === rowKey(row, data.table.primary_key, i) && editing.column === column.name)}
+            {#if editing !== null && isEditing}
               <div class="flex items-center gap-1 bg-card p-0.5 ring-2 ring-brand ring-inset" onfocusout={(event) => {
                 // Focus left the editor (click elsewhere, Tab): save like Enter
                 // does. Escape and Enter clear `editing` first, so this is a no-op.
@@ -326,8 +329,8 @@
                 {/if}
               </div>
             {/if}
-            {#if !(editing?.key === rowKey(row, data.table.primary_key, i) && editing.column === column.name)}
-              <div class="flex min-h-10 items-center gap-1 px-3.5 py-2" title={value ?? 'NULL'}>
+            {#if isEditing === false}
+              <div class="flex min-h-10 items-center gap-1 px-3.5 py-2" title={value === null ? 'NULL' : cellPreview(value)}>
                 <span class="min-w-0 flex-1"><GridCell {value} type={column.type} {kind} /></span>
                 {#if value && (value.length > 80 || value.includes('\n'))}
                   <button type="button" class="grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground" aria-label={t('common.details')} onclick={() => { detail = { title: column.name, value }; detailOpen = true }} ondblclick={(event) => event.stopPropagation()}><Maximize2 class="size-3.5" aria-hidden="true" /></button>

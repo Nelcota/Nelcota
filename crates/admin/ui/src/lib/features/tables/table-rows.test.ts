@@ -46,6 +46,30 @@ describe('table row operations', () => {
     expect(adapter.update).toHaveBeenCalledWith('docs', { id: '1' }, { value: null })
   })
 
+  it('replaces the edited row instead of mutating the loaded page', async () => {
+    const { rows } = fixture()
+    await rows.load('docs', new URLSearchParams())
+    const before = rows.data
+    if (before === null) throw new Error('rows loaded')
+    const [first, second] = before.rows
+    expect(await rows.edit({ id: '2' }, 'value', 'changed')).toBe(1)
+    expect(rows.data).not.toBe(before)
+    expect(before.rows).toEqual([{ id: '1', value: 'old-1' }, { id: '2', value: 'old-2' }])
+    expect(rows.data?.rows[0]).toBe(first)
+    expect(rows.data?.rows[1]).not.toBe(second)
+    expect(rows.data?.rows[1]).toEqual({ id: '2', value: 'changed' })
+  })
+
+  it('keeps the loaded page when the update matched no row', async () => {
+    const { rows, adapter } = fixture()
+    adapter.update = vi.fn(async () => ({ count: 0 }))
+    await rows.load('docs', new URLSearchParams())
+    const before = rows.data
+    expect(await rows.edit({ id: '1' }, 'value', 'changed')).toBe(0)
+    expect(rows.data).toBe(before)
+    expect(rows.data?.rows[0]?.value).toBe('old-1')
+  })
+
   it('does not mutate or reload another table when a write finishes after navigation', async () => {
     const { rows, adapter } = fixture(), pending = deferred<{ count: number }>()
     adapter.update = vi.fn(() => pending.promise)

@@ -10,29 +10,101 @@
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
   import CodeBlock from '$lib/components/shared/CodeBlock.svelte'
   import { href, navigate, route } from '$lib/navigation/router.svelte'
-  import { i18n, t } from '$lib/i18n/index.svelte'
-  import { commandScore } from '$lib/shell/search'
-  import { guides, guideGroups, guidePath, guideSource, guideTranslation, guideSearchText } from './content'
+  import { errorMessage, i18n, t, type Locale } from '$lib/i18n/index.svelte'
+  import { normalizeSearchText, normalizedScore } from '$lib/shell/search'
+  import { Skeleton } from '$lib/components/ui/skeleton'
+  import LoadError from '$lib/components/shared/LoadError.svelte'
+  import { guides, guideGroups, guidePath, loadGuideSource, loadGuideTranslation, loadGuideSearchIndex, type Guide, type GuideId } from './content'
+  import type { TranslationCatalog } from './prose'
   import { readMarkdown } from './markdown'
   import OpenApiReference from './OpenApiReference.svelte'
   import NotFound from '$lib/shell/NotFound.svelte'
 
+  // Long enough to skip intermediate keystrokes, short enough to feel live.
+  const SEARCH_DEBOUNCE_MS = 150
+
+  type GuideDocument = { readonly id: GuideId; readonly locale: Locale; readonly source: string; readonly catalog?: TranslationCatalog }
+  type SearchIndex = { readonly locale: Locale; readonly texts: ReadonlyMap<GuideId, string> }
+
   let search = $state('')
+  let query = $state('')
   let article = $state<HTMLElement>()
+  let loaded = $state.raw<GuideDocument>()
+  let loadFailure = $state.raw<unknown>()
+  let loadAttempt = $state(0)
+  let searchIndex = $state.raw<SearchIndex>()
+  let searchFailure = $state.raw<unknown>()
+  let searchAttempt = $state(0)
   const path = $derived(route.path.replace(/\/$/, ''))
   const missing = $derived(path !== '/guides' && !guides.some(guide => path === guidePath(guide.id)))
   const selected = $derived(guides.find(guide => path === guidePath(guide.id)) ?? guides.find(guide => guide.id === (i18n.locale === 'pt-BR' ? 'sdk-start' : 'quickstart'))!)
-  const source = $derived(guideSource(selected))
-  const blocks = $derived('code' in selected ? [] : readMarkdown(source, selected.source, guideTranslation(selected, i18n.locale)))
+  // While a new language loads, the previous text of the same guide stays on screen.
+  const current = $derived(loaded?.id === selected.id ? loaded : undefined)
+  const currentId = $derived(current?.id)
+  const blocks = $derived(current === undefined || 'code' in selected ? [] : readMarkdown(current.source, selected.source, current.catalog))
   const headings = $derived(blocks.filter(block => block.type === 'heading'))
   const notes = $derived('versionNotes' in selected ? blocks.slice(0, selected.versionNotes) : [])
   const body = $derived(blocks.slice(notes.length))
-  const visible = $derived(guides.filter(guide => commandScore(`${t(`guides.entries.${guide.id}.title`)} ${t(`guides.entries.${guide.id}.description`)} ${guideSearchText(guide, i18n.locale)}`, search) > 0))
+  const searchTexts = $derived(searchIndex?.locale === i18n.locale ? searchIndex.texts : undefined)
+  const searching = $derived(query !== '' && searchTexts === undefined && searchFailure === undefined)
+  const visible = $derived(query === '' ? guides : guides.filter(guide => matchesSearch(guide, query)))
+
+  // Terms may be split between the title/description and the guide text, so
+  // they are matched against both at once. The text joins once it is indexed.
+  function matchesSearch(guide: Guide, terms: string): boolean {
+    const summary = normalizeSearchText(`${t(`guides.entries.${guide.id}.title`)} ${t(`guides.entries.${guide.id}.description`)}`)
+    const text = searchTexts?.get(guide.id) ?? ''
+    return normalizedScore(`${summary} ${text}`, terms) > 0
+  }
+
+  async function loadDocument(guide: Guide, locale: Locale): Promise<GuideDocument> {
+    const [source, catalog] = await Promise.all([loadGuideSource(guide), loadGuideTranslation(guide, locale)])
+    return { id: guide.id, locale, source, catalog }
+  }
+
+  $effect(() => {
+    void loadAttempt
+    const guide = selected
+    const locale = i18n.locale
+    if (guide.id === 'openapi') return
+    let cancelled = false
+    loadFailure = undefined
+    loadDocument(guide, locale).then(
+      document => { if (cancelled === false) loaded = document },
+      error => { if (cancelled === false) loadFailure = error },
+    )
+    return () => { cancelled = true }
+  })
+
+  // Clearing the search is immediate; typing waits for a short pause.
+  $effect(() => {
+    const value = search.trim()
+    if (value === '') { query = ''; return }
+    const timer = setTimeout(() => { query = value }, SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(timer)
+  })
+
+  // Every guide's text is only downloaded and indexed once someone searches.
+  $effect(() => {
+    void searchAttempt
+    if (query === '') { searchFailure = undefined; return }
+    const locale = i18n.locale
+    if (searchIndex?.locale === locale) return
+    let cancelled = false
+    searchFailure = undefined
+    loadGuideSearchIndex(locale).then(
+      texts => { if (cancelled === false) searchIndex = { locale, texts } },
+      error => { if (cancelled === false) searchFailure = error },
+    )
+    return () => { cancelled = true }
+  })
 
   // Query-based section links survive the SPA router, reload and browser back.
   $effect(() => {
     const section = route.query.get('section')
     const id = selected.id
+    // Wait until the guide text is on the page, so the section exists.
+    if (id !== 'openapi' && currentId === undefined) return
     void tick().then(() => {
       if (selected.id !== id) return
       const target = section && article ? Array.from(article.querySelectorAll<HTMLElement>('[id]')).find(element => element.id === section) : null
@@ -78,7 +150,11 @@
             </div>
           {/if}
         {/each}
-        {#if !visible.length}<EmptyState icon={Search} title={t('guides.noResults')} description={t('guides.noResultsHint')} />{/if}
+        {#if searchFailure !== undefined}<LoadError message={errorMessage(searchFailure)} onretry={() => { searchAttempt++ }} />{/if}
+        {#if searching && visible.length === 0}<Skeleton class="h-24 rounded-2xl" />{/if}
+        <!-- Matches on title or description show first; more may follow once the text is indexed. -->
+        {#if searching && visible.length > 0}<Skeleton class="h-8 rounded-xl" />{/if}
+        {#if searching === false && visible.length === 0}<EmptyState icon={Search} title={t('guides.noResults')} description={t('guides.noResultsHint')} />{/if}
       </nav>
     </aside>
 
@@ -94,10 +170,17 @@
       {#if (selected.id === 'openapi')}
         <OpenApiReference />
       {/if}
-      {#if !(selected.id === 'openapi') && ('code' in selected)}
-        <CodeBlock code={source} lang={selected.code} />
+      <!-- Also after a language switch, while the previous text is still shown. -->
+      {#if selected.id !== 'openapi' && loadFailure !== undefined}
+        <LoadError message={errorMessage(loadFailure)} onretry={() => { loadAttempt++ }} />
       {/if}
-      {#if !(selected.id === 'openapi') && !('code' in selected)}
+      {#if selected.id !== 'openapi' && current === undefined && loadFailure === undefined}
+        <Skeleton class="h-48 rounded-2xl" />
+      {/if}
+      {#if current !== undefined && ('code' in selected)}
+        <CodeBlock code={current.source} lang={selected.code} />
+      {/if}
+      {#if current !== undefined && ('code' in selected) === false}
         {#if headings.length}
           <details class="rounded-2xl bg-well p-4 xl:hidden">
             <summary class="cursor-pointer text-sm font-medium">{t('guides.contents')}</summary>
@@ -106,7 +189,7 @@
             </nav>
           </details>
         {/if}
-        <div class="grid min-w-0 gap-4" lang={'language' in selected ? selected.language : i18n.locale}>
+        <div class="grid min-w-0 gap-4" lang={'language' in selected ? selected.language : current.locale}>
           {#if notes.length}
             <details class="rounded-2xl bg-well p-4">
               <summary class="cursor-pointer text-sm font-medium" lang={i18n.locale}>{t('guides.versionNotes')}</summary>

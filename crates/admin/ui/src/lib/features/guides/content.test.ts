@@ -1,23 +1,48 @@
 import { describe, expect, it } from 'vitest'
-import { guides, guideLink, guideSource } from './content'
+import { bundledSources, guides, guideLink, loadGuideSearchText, loadGuideSource, loadGuideTranslation } from './content'
 import { headingSlug, readMarkdown } from './markdown'
 
 describe('bundled guides', () => {
-  it('includes every reference without fetching remote documentation', () => {
+  it('includes every reference without fetching remote documentation', async () => {
     for (const guide of guides.filter(guide => guide.id !== 'openapi')) {
-      expect(guideSource(guide), guide.source).not.toBe('')
-      if (!('code' in guide)) expect(readMarkdown(guideSource(guide), guide.source).length, guide.source).toBeGreaterThan(0)
+      const source = await loadGuideSource(guide)
+      expect(source, guide.source).not.toBe('')
+      if (!('code' in guide)) expect(readMarkdown(source, guide.source).length, guide.source).toBeGreaterThan(0)
     }
   })
 
-  it('folds only leading paragraphs that still describe a release', () => {
+  it('bundles exactly the registered guide sources', () => {
+    const registered = guides.filter(guide => guide.id !== 'openapi').map(guide => guide.source)
+    expect([...bundledSources].sort()).toEqual([...registered].sort())
+  })
+
+  it('folds only leading paragraphs that still describe a release', async () => {
     for (const guide of guides.filter(guide => 'versionNotes' in guide)) {
-      const notes = readMarkdown(guideSource(guide), guide.source).slice(0, 'versionNotes' in guide ? guide.versionNotes : 0)
+      const notes = readMarkdown(await loadGuideSource(guide), guide.source).slice(0, 'versionNotes' in guide ? guide.versionNotes : 0)
       for (const block of notes) {
         expect(block.type, guide.source).toBe('html')
         if (block.type === 'html') expect(block.html, guide.source).toMatch(/\d+\.\d+\.\d+/)
       }
     }
+  })
+
+  it('loads a Portuguese catalog only for Portuguese readers of translated guides', async () => {
+    const storage = guides.find(guide => guide.id === 'storage')
+    const starter = guides.find(guide => guide.id === 'sdk-start')
+    if (storage === undefined || starter === undefined) throw new Error('storage and sdk-start guides are registered')
+    expect(await loadGuideTranslation(storage, 'en')).toBeUndefined()
+    expect(await loadGuideTranslation(starter, 'pt-BR')).toBeUndefined()
+    expect(Object.keys(await loadGuideTranslation(storage, 'pt-BR') ?? {}).length).toBeGreaterThan(0)
+  })
+
+  it('normalizes search text once per locale and guide', async () => {
+    const auth = guides.find(guide => guide.id === 'auth')
+    if (auth === undefined) throw new Error('auth guide is registered')
+    expect(loadGuideSearchText(auth, 'pt-BR')).toBe(loadGuideSearchText(auth, 'pt-BR'))
+    expect(loadGuideSearchText(auth, 'en')).not.toBe(loadGuideSearchText(auth, 'pt-BR'))
+    const portuguese = await loadGuideSearchText(auth, 'pt-BR')
+    expect(portuguese).toBe(portuguese.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase())
+    expect(portuguese).toContain('nelcota_password_recovery_url')
   })
 
   it('keeps relative and GitHub documentation links in the panel, including sections', () => {

@@ -1,6 +1,7 @@
 /** Only the newest request owns its result, even when an adapter ignores cancellation. */
 export class RemoteResource<T> {
-  data = $state<T | null>(null)
+  // Raw: responses can be large and are replaced, never mutated in place.
+  data = $state.raw<T | null>(null)
   loading = $state(false)
   loaded = $state(false)
   error = $state<unknown>(null)

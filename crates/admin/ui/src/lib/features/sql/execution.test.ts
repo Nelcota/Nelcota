@@ -19,6 +19,11 @@ function fixture() {
 }
 
 describe('SQL execution lifetime', () => {
+  it('keeps the response as the same plain object instead of a deep proxy', async () => {
+    const { execution } = fixture()
+    expect(await execution.run('select 1')).toBe(true)
+    expect(execution.response).toBe(result)
+  })
   it('captures SQL, refuses empty or overlapping runs and records duration', async () => {
     const { execution, adapter, tick } = fixture(), pending = deferred<SqlResponse>()
     adapter.execute = vi.fn(() => pending.promise)
