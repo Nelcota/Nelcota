@@ -20,6 +20,8 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - The shortcut rail shows only on tablets (768–1023px), where the sidebar is a
   menu. On wider screens it repeated the sidebar's links and theme toggle; the
   brand mark now sits atop the sidebar (D111).
+- The three summary cards on Access policies share the row equally; the third
+  was narrower because it lined up with the side column below.
 
 ## [0.5.6] — 2026-10-27
 
