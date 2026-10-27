@@ -6,12 +6,11 @@ by the endpoints and features below, not by matching package version numbers.
 
 ## Version scope
 
-This is the 0.2.4 package contract. It includes queued-auth cancellation, exact
+This is the 0.2.5 package contract. It includes queued-auth cancellation, exact
 bucket-limit writes, profile ordering and the input/response guards below.
 Version 0.2.0 predates these corrections, and 0.2.1 predates the
 [0.2.2 hardening](#hardening-in-022). Registry installation requires
-successful publication of 0.2.4, now confirmed in the
-[registry receipts](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169);
+successful publication of 0.2.5 by the tagged release workflow;
 a server update does not install the client.
 See the [upgrade notes](#upgrading-from-020). Older packages keep the contract in their
 own bundled documentation.
@@ -20,9 +19,15 @@ Browsers need Chrome or Edge 116, Firefox 124 or Safari 17.4 and later: request
 timeouts combine with a caller's `signal` through `AbortSignal.any`. Server
 runtimes are Node 22 and later, Bun and Deno.
 
+## Upgrading from 0.2.4
+
+Install `@nelcota/client@0.2.5` and update the application lockfile. Public
+entrypoints, types and parsed values are unchanged; JSON parsing of large
+responses is faster.
+
 ## Upgrading from 0.2.3
 
-Install `@nelcota/client@0.2.4` and update the application lockfile. Public
+Install `@nelcota/client@0.2.5` and update the application lockfile. Public
 entrypoints and types are unchanged. A background refresh with an uncertain
 outcome is retried after 2 seconds instead of 10, inside the server's reuse
 window. JSON bodies containing an invalid `Date` or a `bigint` now fail with
@@ -31,7 +36,7 @@ with a `TypeError`; convert such values (for example a `bigint` to a string).
 
 ## Upgrading from 0.2.2
 
-Install `@nelcota/client@0.2.4` and update the application lockfile. Public
+Install `@nelcota/client@0.2.5` and update the application lockfile. Public
 entrypoints and types are unchanged. PKCE work on one server storage adapter
 no longer blocks clients using independent adapters. Clients sharing an adapter
 and key still serialize, and browser/worker Web Lock names remain compatible.
@@ -39,7 +44,7 @@ Rebuild server consumers and exercise login, callback exchange and logout.
 
 ## Upgrading from 0.2.0
 
-Install 0.2.4 explicitly, update the application lockfile and run its type check,
+Install 0.2.5 explicitly, update the application lockfile and run its type check,
 build and tests. Server and SDK versions remain independent. Existing package
 entrypoints, result/error codes, timeouts and HTTP routes are preserved.
 

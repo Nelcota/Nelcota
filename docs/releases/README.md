@@ -10,9 +10,13 @@ does not itself publish a package.
 | Component | Documented version | Distribution and availability |
 | --- | --- | --- |
 | Server | 0.5.5 | [Official release](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.5), verified binary or OCI image |
-| TypeScript SDK | 0.2.4 | [npm version](https://www.npmjs.com/package/@nelcota/client/v/0.2.4); confirm with `npm view @nelcota/client@0.2.4 version` |
+| TypeScript SDK | 0.2.5 | [npm version](https://www.npmjs.com/package/@nelcota/client/v/0.2.5); confirm with `npm view @nelcota/client@0.2.5 version` |
 | Rust SDK | 0.1.7 | [crates.io version](https://crates.io/crates/nelcota-client/0.1.7); confirm the version before updating Cargo.lock |
 | Next.js integration | 0.1.2 | [npm version](https://www.npmjs.com/package/@nelcota/nextjs/v/0.1.2); [release procedure](../../sdk/nextjs/docs/releasing.md) and [verification evidence](../goals/sdk-release-completion.md) |
+
+TypeScript 0.2.5 (October 27) parses JSON in large responses about 8 to 12
+times faster with the same results. Registry availability requires its tagged
+release workflow to finish; the previous published TypeScript baseline is 0.2.4.
 
 The October 26 patches are TypeScript 0.2.4, Rust 0.1.7 and Next.js 0.1.2.
 TypeScript and Rust retry an uncertain background refresh inside the server's
@@ -41,7 +45,7 @@ For TypeScript, install the exact selected version and commit the dependency
 and lockfile changes:
 
 ```sh
-npm install --save-exact @nelcota/client@0.2.4
+npm install --save-exact @nelcota/client@0.2.5
 npm ls @nelcota/client
 ```
 
