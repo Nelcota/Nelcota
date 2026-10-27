@@ -19,19 +19,6 @@ const ptBR = {
     userSignIn: 'Login dos usuários',
     webhooks: 'Eventos e webhooks',
   },
-  // Short page names for the top pills; page titles keep the full names.
-  pills: {
-    database: 'Banco',
-    overview: 'Visão geral',
-    tables: 'Tabelas',
-    sql: 'SQL',
-    migrations: 'Migrações',
-    storage: 'Armazenamento',
-    users: 'Usuários',
-    policies: 'Acesso',
-    connect: 'API',
-    webhooks: 'Eventos',
-  },
   nav: {
     main: 'Navegação principal',
     userList: 'Lista de usuários',

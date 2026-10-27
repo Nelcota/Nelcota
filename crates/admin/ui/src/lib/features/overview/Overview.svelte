@@ -204,8 +204,8 @@
           </div>
           <div class="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-t pt-2 text-xs text-muted-foreground">
             <a class={footerLink} href={href('/tables')}>{t('overview.tables.openEditor')}</a>
-            <a class={footerLink} href={href('/sql')}>{t('shell.pills.sql')}</a>
-            <a class={footerLink} href={href('/migrations')}>{t('shell.pills.migrations')}</a>
+            <a class={footerLink} href={href('/sql')}>{t('shell.pages.sql')}</a>
+            <a class={footerLink} href={href('/migrations')}>{t('shell.pages.migrations')}</a>
           </div>
         </article>
         <article class={card}>
