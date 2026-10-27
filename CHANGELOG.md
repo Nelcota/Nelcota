@@ -10,6 +10,8 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ## [Unreleased]
 
+## [0.5.6] — 2026-10-27
+
 ### Changed
 
 - Panel and `nelcota dev` passwords no longer use characters that look alike

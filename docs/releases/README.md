@@ -1,7 +1,7 @@
 # Versions and upgrades
 
-This checkout targets server **0.5.5**; confirm published artifacts and readiness
-on its [release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.5).
+This checkout targets server **0.5.6**; confirm published artifacts and readiness
+on its [release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.6).
 SDKs are distributed independently: installing
 or updating the server does not update dependencies in a client application.
 This checkout documents the following versions; a version number in source
@@ -9,7 +9,7 @@ does not itself publish a package.
 
 | Component | Documented version | Distribution and availability |
 | --- | --- | --- |
-| Server | 0.5.5 | [Official release](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.5), verified binary or OCI image |
+| Server | 0.5.6 | [Official release](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.6), verified binary or OCI image |
 | TypeScript SDK | 0.2.5 | [npm version](https://www.npmjs.com/package/@nelcota/client/v/0.2.5); confirm with `npm view @nelcota/client@0.2.5 version` |
 | Rust SDK | 0.1.7 | [crates.io version](https://crates.io/crates/nelcota-client/0.1.7); confirm the version before updating Cargo.lock |
 | Next.js integration | 0.1.2 | [npm version](https://www.npmjs.com/package/@nelcota/nextjs/v/0.1.2); [release procedure](../../sdk/nextjs/docs/releasing.md) and [verification evidence](../goals/sdk-release-completion.md) |
@@ -87,8 +87,8 @@ changed by these patch releases.
 
 ## Update a server
 
-Review the [0.5.5 notes in English](0.5.5.en.md) or
-[Portuguese](0.5.5.pt-BR.md). The 0.5.4 → 0.5.5 patch adds no internal
+Review the [0.5.6 notes in English](0.5.6.en.md) or
+[Portuguese](0.5.6.pt-BR.md). The 0.5.5 → 0.5.6 patch adds no internal
 migrations; the schema remains at V16. Upgrading from 0.4.0 applies internal migrations
 V14–V16. Take and restore-test a paired database/file backup and allow a
 maintenance window for large metadata tables. Verify the exact binary/image,
@@ -103,9 +103,9 @@ and the existing F07 rate-limit trade-off remain unchanged.
 
 ## Source and published artifacts
 
-The 0.5.5 source incorporates changes developed after the 0.5.4 tag, including
-the shared outbound address policy, IPv6-literal alert endpoints and the panel
-loading work. Selecting `--version 0.5.4` still selects
+The 0.5.6 source incorporates changes developed after the 0.5.5 tag, including
+readable panel passwords and the controller test fix; the hardened one-command
+installer is served from `main` for every version. Selecting `--version 0.5.5` still selects
 that older release. Confirm the exact binary/image and signed readiness receipt
 for the version being installed. Future [Unreleased](../../CHANGELOG.md#unreleased)
 changes require another artifact before deployed projects receive them. See

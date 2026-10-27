@@ -1,6 +1,6 @@
 # Documentation
 
-Choose a guide for your task. This source targets server 0.5.5; confirm its published artifacts on the release page. Examples target the
+Choose a guide for your task. This source targets server 0.5.6; confirm its published artifacts on the release page. Examples target the
 current source unless a published version is specified; server and SDK packages
 have separate versions. See the [version and upgrade guide](releases/README.md).
 
