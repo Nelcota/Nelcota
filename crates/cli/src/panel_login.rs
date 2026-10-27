@@ -152,24 +152,24 @@ pub fn print(host: &Host, passwords: &[NewPassword]) {
         println!("  Panel ({}):", p.scope);
         println!("    email: {}", p.email);
         println!("    password: {}", p.password);
-        println!("    lost it? {}", recovery_command(&root, &p.scope));
     }
-    if !passwords.is_empty() {
-        println!("  (shown only now; the files keep just the argon2id hash. Copy the password");
-        println!("   rather than retyping it.)");
+    if passwords.is_empty() {
+        return;
     }
+    // Built from the host folder alone, never from the generated credentials.
+    println!("  (shown only now; the files keep just the argon2id hash. Copy the password");
+    println!(
+        "   rather than retyping it. Lost it? {})",
+        regenerate_command(&root)
+    );
 }
 
-/// The command that prints a new password for this scope.
-fn recovery_command(root: &std::path::Path, scope: &str) -> String {
-    let command = format!(
-        "nelcota -C {} admin-password",
+/// The command that prints a new panel password for this host.
+fn regenerate_command(root: &std::path::Path) -> String {
+    format!(
+        "nelcota -C {} admin-password, with -p <project> for a per-project login",
         shell_word(&root.display().to_string())
-    );
-    match scope == SHARED_SCOPE {
-        true => command,
-        false => format!("{command} -p {}", shell_word(scope)),
-    }
+    )
 }
 
 /// Quoted for `sh` only when needed, so the usual path stays easy to read.
@@ -269,19 +269,14 @@ mod tests {
     }
 
     #[test]
-    fn recovery_command_names_the_host_and_quotes_only_when_needed() {
-        let root = std::path::Path::new("/opt/nelcota");
+    fn regenerate_command_names_the_host_and_quotes_only_when_needed() {
         assert_eq!(
-            recovery_command(root, SHARED_SCOPE),
-            "nelcota -C /opt/nelcota admin-password"
+            regenerate_command(std::path::Path::new("/opt/nelcota")),
+            "nelcota -C /opt/nelcota admin-password, with -p <project> for a per-project login"
         );
-        assert_eq!(
-            recovery_command(root, "shop"),
-            "nelcota -C /opt/nelcota admin-password -p shop"
-        );
-        assert_eq!(
-            recovery_command(std::path::Path::new("/srv/my host/it's"), SHARED_SCOPE),
-            r"nelcota -C '/srv/my host/it'\''s' admin-password"
+        assert!(
+            regenerate_command(std::path::Path::new("/srv/my host/it's"))
+                .starts_with(r"nelcota -C '/srv/my host/it'\''s' admin-password")
         );
     }
 }
