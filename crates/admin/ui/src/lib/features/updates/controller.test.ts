@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ControllerError, request, controllerOrigin, parseJob, parsePlan, parseStatus, mergeStatus, type Job, type Status } from './controller'
-afterEach(() => vi.unstubAllGlobals())
+import { ControllerError, request, controllerOrigin, pollDelay, sessionExpired, REQUEST_TIMEOUT_MS, parseJob, parsePlan, parseStatus, mergeStatus, type Job, type Status } from './controller'
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
 const job: Job = { id: 'a'.repeat(64), project: 'shop', current: '0.4.0', target: '0.5.0', phase: 'validating', sequence: 6, updated_at: 123, committed: false, error: null }
 const status: Status = { email: 'operator@example.test', projects: [{ name: 'shop', version: '0.4.0', update_available: true }], jobs: [job], release: { version: '0.5.0' }, enabled: true, checking: false, check_error: null }
 describe('update capability responses', () => {
@@ -62,5 +65,47 @@ describe('update capability responses', () => {
     await rejected
     expect(cancel).toHaveBeenCalledOnce()
     expect(body.locked).toBe(false)
+  })
+  it('gives up after the request timeout even when the caller never aborts', async () => {
+    const timeout = new AbortController()
+    const timer = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(timeout.signal)
+    let seen: AbortSignal | undefined
+    vi.stubGlobal('fetch', vi.fn((_url: string, init: RequestInit) => {
+      seen = init.signal ?? undefined
+      return new Promise<Response>((_resolve, reject) => init.signal?.addEventListener('abort', () => reject(init.signal?.reason)))
+    }))
+    const caller = new AbortController()
+    const pending = request({ action: 'host_status' }, caller.signal)
+    const rejected = expect(pending).rejects.toMatchObject({ name: 'TimeoutError' })
+    expect(timer).toHaveBeenCalledWith(REQUEST_TIMEOUT_MS)
+    expect(seen?.aborted).toBe(false)
+    timeout.abort(new DOMException('timed out', 'TimeoutError'))
+    await rejected
+    expect(caller.signal.aborted).toBe(false)
+  })
+  it('still lets the caller cancel before the timeout', async () => {
+    vi.stubGlobal('fetch', vi.fn((_url: string, init: RequestInit) => new Promise<Response>((_resolve, reject) => init.signal?.addEventListener('abort', () => reject(init.signal?.reason)))))
+    const caller = new AbortController()
+    const pending = request(undefined, caller.signal)
+    caller.abort()
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
+  })
+  it('recognizes only an unauthorized controller error as an expired session', () => {
+    expect(sessionExpired(new ControllerError(401, 'session_expired'))).toBe(true)
+    expect(sessionExpired(new ControllerError(403, 'operation_blocked'))).toBe(false)
+    expect(sessionExpired(new Error('401'))).toBe(false)
+    expect(sessionExpired(null)).toBe(false)
+  })
+})
+
+describe('controller polling', () => {
+  it('backs off exponentially while offline, capped at 30 seconds', () => {
+    const delays = [0, 1, 2, 3, 4, 5, 50].map(attempts => pollDelay({ offline: true, attempts, active: true, idleMs: 8000 }))
+    expect(delays).toEqual([2000, 4000, 8000, 16000, 30000, 30000, 30000])
+  })
+  it('polls fast while work runs and at the idle interval otherwise', () => {
+    expect(pollDelay({ offline: false, attempts: 3, active: true, idleMs: 10000 })).toBe(2000)
+    expect(pollDelay({ offline: false, attempts: 0, active: false, idleMs: 10000 })).toBe(10000)
+    expect(pollDelay({ offline: false, attempts: 0, active: false, idleMs: 8000 })).toBe(8000)
   })
 })

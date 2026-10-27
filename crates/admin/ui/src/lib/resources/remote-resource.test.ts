@@ -40,4 +40,11 @@ describe('remote resources', () => {
     expect(resource.error).toBeNull()
     expect(resource.loaded).toBe(false)
   })
+  it('reports a request timeout as an error, unlike a cancellation', async () => {
+    const resource = new RemoteResource<string>()
+    const loaded = await resource.load(async () => { throw new DOMException('timed out', 'TimeoutError') })
+    expect(loaded).toBe(false)
+    expect(resource.error).toMatchObject({ name: 'TimeoutError' })
+    expect(resource.loading).toBe(false)
+  })
 })

@@ -1,23 +1,29 @@
 // Storage page helpers: sizes, folders and file URLs.
 
-const UNITS = ['byte', 'kilobyte', 'megabyte', 'gigabyte', 'terabyte'] as const
+import { numberFormat } from '$lib/formatting/intl'
 
-/** `48213` → `47.1 KB`, in the viewer's language. */
+// Sizes are binary multiples, as everywhere else in the panel and the docs
+// (the bucket limit is asked in MiB, alert thresholds in GiB).
+const BINARY_UNITS = ['B', 'KiB', 'MiB', 'GiB', 'TiB'] as const
+const BYTES_PER_UNIT = 1024
+const BYTES_PER_GIBIBYTE = BYTES_PER_UNIT ** 3
+
+/** `48213` → `47.1 KiB`, in the viewer's language. */
 export function formatBytes(bytes: number, locale: string): string {
   let value = bytes
   let unit = 0
-  while (value >= 1024 && unit < UNITS.length - 1) {
-    value /= 1024
+  while (value >= BYTES_PER_UNIT && unit < BINARY_UNITS.length - 1) {
+    value /= BYTES_PER_UNIT
     unit++
   }
-  // Intl's short "byte" reads oddly ("512 byte"): plain bytes use B.
-  if (unit === 0) return `${new Intl.NumberFormat(locale).format(value)} B`
-  return new Intl.NumberFormat(locale, {
-    style: 'unit',
-    unit: UNITS[unit],
-    unitDisplay: 'short',
-    maximumFractionDigits: 1,
-  }).format(value)
+  // Intl has no binary units: the number is localized, the symbol is not.
+  return `${numberFormat(locale, { maximumFractionDigits: 1 }).format(value)} ${BINARY_UNITS[unit]}`
+}
+
+/** Host memory and disk, always in GiB like the alert thresholds: `8589934592` → `8.0 GiB`. */
+export function formatGibibytes(bytes: number, locale: string): string {
+  const value = numberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(bytes / BYTES_PER_GIBIBYTE)
+  return `${value} GiB`
 }
 
 /** `'a/b/'` → `[{ name: 'a', prefix: 'a/' }, { name: 'b', prefix: 'a/b/' }]` */

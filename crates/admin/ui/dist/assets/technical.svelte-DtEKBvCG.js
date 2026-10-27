@@ -1,0 +1,1 @@
+import{d as e,kt as t,u as n}from"./index.svelte-CFygIlKO.js";var r=`nelcota.technical`,i=t({on:n(r,`off`)===`on`});function a(){i.on=!i.on,e(r,i.on?`on`:`off`)}export{a as n,i as t};
