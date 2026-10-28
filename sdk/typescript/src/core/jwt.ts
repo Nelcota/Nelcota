@@ -13,10 +13,10 @@ export function base64UrlEncode(bytes: Uint8Array): string {
 }
 
 function base64UrlDecode(text: string): string {
-  const base64 = text.replace(/-/g, '+').replace(/_/g, '/');
-  const binary = atob(base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '='));
-  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
+  return new TextDecoder().decode(Uint8Array.from(
+    atob(text.replace(/-/g, '+').replace(/_/g, '/')),
+    c => c.charCodeAt(0),
+  ));
 }
 
 export interface JwtPayload {
@@ -51,9 +51,8 @@ let lastChecked: string | undefined;
  * opens the page could read and change every row. It belongs on a server.
  */
 export function assertTokenAllowed(token: string, browser: boolean = isBrowser()): void {
-  const scope = globalThis as typeof globalThis & { WorkerGlobalScope?: new (...args: never[]) => object };
-  const worker = typeof scope.WorkerGlobalScope === 'function' && globalThis instanceof scope.WorkerGlobalScope;
-  if ((!browser && !worker) || token === lastChecked) return;
+  const scope = (globalThis as { WorkerGlobalScope?: new (...args: never[]) => object }).WorkerGlobalScope;
+  if (token === lastChecked || !(browser || typeof scope === 'function' && globalThis instanceof scope)) return;
   if (decodeJwt(token)?.role === 'service_role') {
     throw new NelcotaUsageError(
       'A service_role token bypasses RLS and must never reach a browser. Use it only on a server.',
