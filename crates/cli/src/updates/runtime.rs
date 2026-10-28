@@ -210,6 +210,19 @@ fn project(policy: &Policy, name: &str) -> anyhow::Result<(Host, Project)> {
     Ok((host, project))
 }
 pub fn execute(policy: &Policy, id: &str, recover: bool) -> anyhow::Result<()> {
+    execute_inner(policy, id, recover, false)
+}
+
+pub fn recover(policy: &Policy, id: &str, restore_snapshot: bool) -> anyhow::Result<()> {
+    execute_inner(policy, id, true, restore_snapshot)
+}
+
+fn execute_inner(
+    policy: &Policy,
+    id: &str,
+    recover: bool,
+    restore_snapshot: bool,
+) -> anyhow::Result<()> {
     let _lease = HostLock::acquire(&policy.root)?;
     nelcota_deployment::management::ensure_idle(&policy.root)?;
     let journal = Journal::open(&policy.root)?;
@@ -219,6 +232,22 @@ pub fn execute(policy: &Policy, id: &str, recover: bool) -> anyhow::Result<()> {
         .find(|job| job.public.id == id)
         .context("unknown job")?;
     let (host, project) = project(policy, &job.public.project)?;
+    if restore_snapshot {
+        if job.public.phase != Phase::NeedsOperator
+            || !job.public.committed
+            || job.restored
+            || job.backup.is_none()
+            || job.dump_sha256.is_none()
+        {
+            bail!("snapshot restore requires an interrupted committed job with a verified backup");
+        }
+        job.restore_requested = true;
+        journal.advance(
+            &mut job,
+            Phase::NeedsOperator,
+            Some("operator_snapshot_restore_requested"),
+        )?;
+    }
     if recover {
         let result = recovery(policy, &host, &project, &journal, &mut job);
         if result.is_err() {
@@ -500,7 +529,7 @@ fn recovery(
         );
     }
     let gate = Maintenance::hold(host, project)?;
-    if job.public.committed {
+    if job.public.committed && (job.restored || !job.restore_requested) {
         if job.restored {
             let dir = journal.directory(&job.public.id)?;
             restore_previous_artifacts(project, job, &dir)?;
@@ -532,7 +561,7 @@ fn recovery(
     if job.backup.is_none()
         && matches!(
             job.interrupted_phase,
-            Some(Phase::BackupVerified | Phase::Activating | Phase::Validating | Phase::Recovering)
+            Some(Phase::BackupVerified | Phase::Activating | Phase::Validating)
         )
     {
         bail!("missing deployment snapshot");
@@ -571,6 +600,21 @@ fn recovery(
     }
     restore_previous_artifacts(project, job, &dir)?;
     job.restored = true;
+    if job.backup.is_none() {
+        // No activation was possible without a durable snapshot. Retrying this
+        // path may restart the old app, but never restores database/file bytes.
+        resume_previous_gate(project)?;
+        project.recreate(Service::App)?;
+        project.wait_healthy(Service::App, Duration::from_secs(120))?;
+        validate_previous(project, job, &dir)?;
+        wait_ready(project)?;
+        gate.finish()?;
+        return journal.advance(
+            job,
+            Phase::FailedBeforeChange,
+            Some("deployment_failed_before_change"),
+        );
+    }
     journal.advance(job, Phase::ResumingPrevious, None)?;
     resume_previous_gate(project)?;
     project.recreate(Service::App)?;

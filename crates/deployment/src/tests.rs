@@ -16,6 +16,125 @@ fn fixture() -> (tempfile::TempDir, Journal) {
     let journal = Journal::open(temp.path()).unwrap();
     (temp, journal)
 }
+
+#[test]
+fn pre_snapshot_recovery_remains_recoverable_across_repeated_interruptions() {
+    for original in [Phase::Pausing, Phase::Capturing] {
+        let (_temp, journal) = fixture();
+        let mut job = journal
+            .begin(
+                "app",
+                "0.4.0",
+                "0.5.0",
+                "owner",
+                &token().unwrap(),
+                &token().unwrap(),
+            )
+            .unwrap();
+        receipts(&mut job);
+        job.backup = None;
+        job.dump_sha256 = None;
+        journal.advance(&mut job, Phase::Pausing, None).unwrap();
+        if original == Phase::Capturing {
+            journal.advance(&mut job, Phase::Capturing, None).unwrap();
+        }
+        for _ in 0..3 {
+            journal.reconcile().unwrap();
+            job = journal.list().unwrap().remove(0);
+            assert_eq!(job.interrupted_phase, Some(original));
+            journal.advance(&mut job, Phase::Recovering, None).unwrap();
+        }
+        job.restored = true;
+        journal
+            .advance(&mut job, Phase::FailedBeforeChange, None)
+            .unwrap();
+        assert!(job.public.phase.terminal());
+        assert!(!job.public.committed);
+    }
+}
+
+#[test]
+fn unrelated_journal_files_do_not_hide_active_jobs() {
+    let (temp, journal) = fixture();
+    fs::write(
+        temp.path().join("updates/jobs/README.txt"),
+        b"operator notes",
+    )
+    .unwrap();
+    fs::create_dir(temp.path().join("updates/jobs/archive")).unwrap();
+    let job = journal
+        .begin(
+            "app",
+            "0.4.0",
+            "0.5.0",
+            "owner",
+            &token().unwrap(),
+            &token().unwrap(),
+        )
+        .unwrap();
+    assert_eq!(journal.list().unwrap()[0].public.id, job.public.id);
+    assert!(
+        journal
+            .begin(
+                "other",
+                "0.4.0",
+                "0.5.0",
+                "owner",
+                &token().unwrap(),
+                &token().unwrap()
+            )
+            .is_err()
+    );
+}
+
+#[test]
+fn post_commit_snapshot_restore_requires_a_durable_operator_decision() {
+    let (_temp, journal) = fixture();
+    let mut job = journal
+        .begin(
+            "app",
+            "0.4.0",
+            "0.5.0",
+            "owner",
+            &token().unwrap(),
+            &token().unwrap(),
+        )
+        .unwrap();
+    receipts(&mut job);
+    for phase in [
+        Phase::Pausing,
+        Phase::Capturing,
+        Phase::BackupVerified,
+        Phase::Activating,
+        Phase::Validating,
+        Phase::Committing,
+        Phase::NeedsOperator,
+    ] {
+        journal.advance(&mut job, phase, None).unwrap();
+    }
+    assert!(journal.advance(&mut job, Phase::Recovering, None).is_err());
+    job.restore_requested = true;
+    journal
+        .advance(
+            &mut job,
+            Phase::NeedsOperator,
+            Some("operator_snapshot_restore_requested"),
+        )
+        .unwrap();
+    let mut stale = job.clone();
+    journal.advance(&mut job, Phase::Recovering, None).unwrap();
+    journal.reconcile().unwrap();
+    job = journal.list().unwrap().remove(0);
+    assert!(job.restore_requested && job.public.committed);
+    journal.advance(&mut job, Phase::Recovering, None).unwrap();
+    job.restored = true;
+    journal
+        .advance(&mut job, Phase::ResumingPrevious, None)
+        .unwrap();
+    journal.advance(&mut job, Phase::Recovered, None).unwrap();
+    stale.restore_requested = false;
+    assert!(journal.save(&stale).is_err());
+}
 #[test]
 fn lock_is_owned_until_drop_and_shared_by_callers() {
     let temp = tempfile::tempdir().unwrap();
