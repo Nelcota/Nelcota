@@ -188,6 +188,34 @@ async fn pooled_connections_rollback_unowned_transactions_before_reuse() {
 }
 
 #[tokio::test]
+async fn panel_policy_urls_cannot_alias_a_truncated_identifier() {
+    let app = TestApp::spawn().await;
+    let original = "p".repeat(63);
+    app.admin_client
+        .batch_execute(&format!(
+            "CREATE POLICY \"{original}\" ON public.products USING (true)"
+        ))
+        .await
+        .unwrap();
+    let cookie = panel::login(&app).await;
+    let path = format!("/admin/api/tables/products/policies/{original}x");
+    for method in [Method::DELETE, Method::PUT] {
+        let reply = panel::send(
+            &app,
+            method,
+            &path,
+            &cookie,
+            json!({"policy":{"name":"replacement", "command":"select", "using":"true"}}),
+        )
+        .await;
+        assert_eq!(reply.status, StatusCode::BAD_REQUEST, "{}", reply.text);
+        assert_eq!(reply.body["code"], "name_too_long");
+        let count: i64 = app.admin_client.query_one("SELECT count(*) FROM pg_policies WHERE schemaname = 'public' AND tablename = 'products' AND policyname = $1", &[&original]).await.unwrap().get(0);
+        assert_eq!(count, 1);
+    }
+}
+
+#[tokio::test]
 async fn panel_ddl_can_finish_after_the_public_request_deadline() {
     let app = TestApp::spawn().await;
     let cookie = panel::login(&app).await;
@@ -203,6 +231,62 @@ async fn panel_ddl_can_finish_after_the_public_request_deadline() {
     assert_eq!(
         app.admin_client
             .query_one("SELECT value FROM public.slow_ddl", &[])
+            .await
+            .unwrap()
+            .get::<_, i32>(0),
+        7
+    );
+}
+
+#[tokio::test]
+async fn unique_actions_in_one_batch_track_constraints_across_renames() {
+    let app = TestApp::spawn().await;
+    let cookie = panel::login(&app).await;
+    let reply = panel::send(
+        &app,
+        Method::PATCH,
+        "/admin/api/tables/products",
+        &cookie,
+        json!({"actions":[
+            {"action":"add_column", "column":{"name":"sku", "data_type":"text", "unique":true}},
+            {"action":"set_unique", "column":"sku", "unique":true},
+            {"action":"rename_column", "from":"sku", "to":"code"},
+            {"action":"set_unique", "column":"code", "unique":false},
+            {"action":"set_unique", "column":"code", "unique":true},
+            {"action":"set_unique", "column":"code", "unique":true}
+        ]}),
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.text);
+    let count: i64 = app.admin_client.query_one("SELECT count(*) FROM pg_constraint WHERE conrelid = 'public.products'::regclass AND contype = 'u'", &[]).await.unwrap().get(0);
+    assert_eq!(count, 1);
+}
+
+#[tokio::test]
+async fn migration_exports_separate_statements_after_trailing_line_comments() {
+    let app = TestApp::spawn().await;
+    let statements = vec![
+        "CREATE TEMP TABLE review_export (id int) -- keep this explanation".to_owned(),
+        "INSERT INTO review_export VALUES (7) -- and the next statement".to_owned(),
+    ];
+    app.admin_client.execute("INSERT INTO nelcota.panel_changes (summary, statements, kind, target) VALUES ('Review export', $1, 'table_created', 'review_export')", &[&statements]).await.unwrap();
+    let cookie = panel::login(&app).await;
+    let reply = panel::send(
+        &app,
+        Method::POST,
+        "/admin/api/migrations",
+        &cookie,
+        json!({"name":"review_export"}),
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.text);
+    app.admin_client
+        .batch_execute(reply.body["sql"].as_str().unwrap())
+        .await
+        .unwrap();
+    assert_eq!(
+        app.admin_client
+            .query_one("SELECT id FROM review_export", &[])
             .await
             .unwrap()
             .get::<_, i32>(0),

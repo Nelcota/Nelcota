@@ -315,16 +315,16 @@ fn constraints_use_the_current_names() {
         sql[0],
         "ALTER TABLE \"public\".\"notes\" DROP CONSTRAINT \"notes_slug_key\""
     );
-    assert_eq!(
-        sql[1],
-        "ALTER TABLE \"public\".\"notes\" ADD UNIQUE (\"body\")"
+    assert!(
+        sql[1].starts_with("ALTER TABLE \"public\".\"notes\" ADD CONSTRAINT \"nelcota_unique_")
     );
+    assert!(sql[1].ends_with(" UNIQUE (\"body\")"));
     assert_eq!(
-        sql[3],
+        sql[2],
         "ALTER TABLE \"public\".\"notes\" DROP CONSTRAINT \"notes_customer_id_fkey\""
     );
     assert_eq!(
-        sql[4],
+        sql[3],
         "ALTER TABLE \"public\".\"notes\" ADD FOREIGN KEY (\"customer_id\") REFERENCES \"public\".\"customers\" (\"id\") ON DELETE SET NULL"
     );
 }
