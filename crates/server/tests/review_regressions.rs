@@ -108,3 +108,26 @@ async fn unsupported_rpc_signatures_are_absent_from_the_catalog() {
         assert_eq!(reply.status, StatusCode::NOT_FOUND, "{}", reply.text);
     }
 }
+
+#[tokio::test]
+async fn pooled_connections_rollback_unowned_transactions_before_reuse() {
+    let app = TestApp::spawn().await;
+    let pool = nelcota_core::db::api_pool(&app.admin, common::authenticator_password(), 1);
+    let client = pool.get().await.unwrap();
+    // Models BEGIN accepted by PostgreSQL before cancellation creates its guard.
+    client.batch_execute("BEGIN; SET LOCAL ROLE service_role; SELECT set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)").await.unwrap();
+    drop(client);
+    let client = pool.get().await.unwrap();
+    let row = client
+        .query_one(
+            "SELECT current_user::text, current_setting('request.jwt.claims', true)",
+            &[],
+        )
+        .await
+        .unwrap();
+    assert_eq!(row.get::<_, String>(0), "authenticator");
+    assert_ne!(
+        row.get::<_, Option<String>>(1).as_deref(),
+        Some("{\"role\":\"service_role\"}")
+    );
+}
