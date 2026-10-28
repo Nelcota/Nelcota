@@ -6,6 +6,7 @@ pub mod config;
 pub mod db;
 pub mod error;
 pub mod extract;
+pub mod migration_backup;
 pub mod net;
 pub mod user_migrations;
 

@@ -240,6 +240,7 @@ async fn process_redemption_child() {
     );
     let state = nelcota_admin::AdminState {
         production: false,
+        migration_backup: None,
         webhooks: Default::default(),
         sql: Arc::default(),
         exports: Arc::new(nelcota_admin::ExportExecutor::new(

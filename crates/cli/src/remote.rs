@@ -109,7 +109,7 @@ async fn send(
     let _ = rustls::crypto::ring::default_provider().install_default();
     let client = Client::builder()
         .redirect(reqwest::redirect::Policy::none())
-        .timeout(Duration::from_secs(180))
+        .timeout(Duration::from_secs(660))
         .build()?;
     let mut request = client
         .request(method, format!("{}/admin/deploy/v1/{path}", link.url))

@@ -23,6 +23,7 @@ mod init;
 mod lifecycle;
 mod machine;
 mod maintenance;
+mod migration_backup;
 mod naming;
 mod native;
 mod panel_login;
@@ -149,6 +150,11 @@ pub enum Command {
         dry_run: bool,
         #[command(subcommand)]
         action: Option<MigrateAction>,
+    },
+    /// Configure a project-scoped automatic backup agent for migrations (Linux).
+    MigrationBackup {
+        #[command(subcommand)]
+        action: migration_backup::Action,
     },
     /// Local development database maintenance.
     Db {
@@ -533,6 +539,9 @@ pub fn run(cli: Cli) -> anyhow::Result<Outcome> {
         // The newly installed CLI acquires the host lease when it runs upgrade.
         // Holding that lease while waiting for the child would deadlock it.
         Command::Update(args) => done(update::run(&host, selection, args)),
+        Command::MigrationBackup { action } => {
+            done(migration_backup::run(&host, selection, action))
+        }
         Command::Serve => {
             pitr::fence::require_native_clear()?;
             Ok(Outcome::Serve(Box::new(Config::load()?)))

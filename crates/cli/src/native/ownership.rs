@@ -163,6 +163,9 @@ fn inspect_legacy(host: &Host, units: &Path, postgres_config: &Path) -> anyhow::
             "nelcota-updates-controller.service" => {
                 Some("[Unit]\nDescription=Nelcota unprivileged updates controller\n")
             }
+            name if name.starts_with("nelcota-migration-backup-") => {
+                Some("[Unit]\nDescription=Nelcota project migration backup agent\n")
+            }
             _ => None,
         };
         if helper.is_some_and(|header| unit.starts_with(header)) {

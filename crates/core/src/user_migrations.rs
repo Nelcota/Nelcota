@@ -27,6 +27,16 @@ pub enum Error {
     Invalid(String),
     #[error("migration history diverged; inspect migrate status before applying")]
     Diverged,
+    #[error("production migrations require a configured automatic backup agent")]
+    BackupRequired,
+    #[error(
+        "automatic migration backup is unavailable or interrupted; inspect migration status before retrying"
+    )]
+    BackupFailed,
+    #[error("backup agent disconnected during SQL; inspect migration status before retrying")]
+    BackupInterrupted,
+    #[error("another protected migration deployment is running")]
+    Busy,
     #[error(transparent)]
     Database(#[from] tokio_postgres::Error),
 }
@@ -51,6 +61,8 @@ pub struct MigrationReport {
     pub migrations: Vec<MigrationStatus>,
     pub applied: Vec<i32>,
     pub dry_run: bool,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub backup: Option<String>,
 }
 
 fn parse(files: &[MigrationFile]) -> Result<BTreeMap<i32, refinery::Migration>, Error> {
@@ -218,6 +230,7 @@ pub async fn apply(
     Ok(MigrationReport {
         migrations,
         applied,
+        backup: None,
         dry_run: request.dry_run,
     })
 }

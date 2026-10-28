@@ -136,6 +136,9 @@ pub struct Config {
     pub migrations_dir: Option<std::path::PathBuf>,
     /// Require application schema changes to arrive through migrations.
     pub production: bool,
+    /// Project-scoped local backup agent. Production writes fail closed without it.
+    pub migration_backup_socket: Option<std::path::PathBuf>,
+    pub migration_backup_token: Option<Secret>,
     /// Local CLI-owned application folder; cannot be enabled through configuration.
     #[serde(skip)]
     pub dev_migrations_dir: Option<std::path::PathBuf>,
@@ -226,6 +229,8 @@ impl Default for Config {
             host_registry: None,
             migrations_dir: None,
             production: false,
+            migration_backup_socket: None,
+            migration_backup_token: None,
             dev_migrations_dir: None,
             db_schema: "public".into(),
             max_rows: Some(1000),
@@ -360,6 +365,14 @@ impl Config {
         if self.auth_rate_limit_per_minute == 0 {
             return Err(ConfigError::Invalid(
                 "NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE must be > 0 (requests per minute per IP)",
+            ));
+        }
+        if self.migration_backup_socket.is_some() != self.migration_backup_token.is_some()
+            || crate::migration_backup::BackupAgent::from_config(self)
+                .is_some_and(|agent| !agent.valid())
+        {
+            return Err(ConfigError::Invalid(
+                "migration backup requires an absolute socket path and a 64-character hexadecimal token",
             ));
         }
         self.mail()?;
@@ -832,6 +845,21 @@ mod tests {
         ] {
             assert!(config.mail().is_err(), "{config:?}");
         }
+    }
+    #[test]
+    fn migration_backup_configuration_rejects_partial_or_invalid_capabilities() {
+        let mut config = Config {
+            migration_backup_socket: Some("/run/backup/agent.sock".into()),
+            ..valid()
+        };
+        assert!(config.validate().is_err());
+        config.migration_backup_token = Some(Secret::new("not-a-capability"));
+        assert!(config.validate().is_err());
+        config.migration_backup_token = Some(Secret::new("a".repeat(64)));
+        assert!(config.validate().is_ok());
+        assert!(!format!("{config:?}").contains(&"a".repeat(64)));
+        config.migration_backup_socket = Some("relative.sock".into());
+        assert!(config.validate().is_err());
     }
     #[cfg(target_os = "linux")]
     #[test]

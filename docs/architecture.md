@@ -116,7 +116,11 @@ the metadata rewrite. V16 is outside the standalone auth migration selection. V1
 deployment-token digests and application-migration audit records, also outside
 the standalone auth selection. Application migration execution lives in core;
 CLI and deployment HTTP share checksums, version validation and per-file
-transaction locks. The host controller retains backup authority.
+transaction locks. A project-scoped Unix backup agent retains host backup
+authority; pending production migrations require its verified pre-application
+backup. The host lease and a durable migration fence span backup/SQL and survive
+an agent crash. PostgreSQL session-lock confirmation owns cleanup; canceled
+HTTP execution sends an explicit database cancellation request.
 
 DDL commits once and reports `applied` plus `catalog_pending`. An introspection
 failure after COMMIT does not turn a successful mutation into an error. Catalog

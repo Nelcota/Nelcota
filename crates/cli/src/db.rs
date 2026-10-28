@@ -28,7 +28,16 @@ fn target(host: &Host, selection: Option<&str>, mutation: bool) -> anyhow::Resul
     // Freeze the target decision: a newly published host must not be selected
     // after skipping its lease. Direct env/dev database operation stays valid.
     let configured_host = host.exists();
-    let lease = match mutation && configured_host {
+    // The project-scoped agent retains the host lease through backup and SQL.
+    // Taking it in this parent too would deadlock the child waiting for its agent.
+    let uses_agent = configured_host
+        && std::env::var_os("NELCOTA_DATABASE_URL").is_none()
+        && host
+            .select(&host.manifest()?, selection)?
+            .env()
+            .get("NELCOTA_MIGRATION_BACKUP_TOKEN")?
+            .is_some();
+    let lease = match mutation && configured_host && !uses_agent {
         true => Some(crate::host::acquire_mutation_lease(host.root())?),
         false => None,
     };
@@ -122,6 +131,15 @@ pub fn migrate(
             if dir != Path::new("migrations") {
                 bail!("in a nelcota init project, migrations live in ./migrations");
             }
+            if !status
+                && !dry_run
+                && project
+                    .env()
+                    .get("NELCOTA_MIGRATION_BACKUP_TOKEN")?
+                    .is_some()
+            {
+                project.in_app(&["migration-backup", "check-support"]).context("the configured project server does not support automatic migration backups")?;
+            }
             let path = project.app_migrations_dir();
             let mut args = vec!["migrate", "--path", &path];
             if dry_run {
@@ -142,10 +160,13 @@ pub fn migrate(
                     return Ok(());
                 }
                 step(&format!("Applying migrations from {}", dir.display()));
-                let report = user_migrations::apply(
+                let agent = nelcota_core::migration_backup::BackupAgent::from_config(&config);
+                let report = nelcota_core::migration_backup::apply(
                     &mut client,
                     &MigrationRequest { files, dry_run },
                     "cli:local",
+                    config.production,
+                    agent.as_ref(),
                 )
                 .await?;
                 for version in report.applied {

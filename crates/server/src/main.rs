@@ -188,6 +188,7 @@ async fn serve(config: Config) -> anyhow::Result<()> {
         (Some(email), Some(hash)) if !email.is_empty() && !hash.expose().is_empty() => {
             Some(nelcota_admin::AdminState {
                 production: config.production,
+                migration_backup: nelcota_core::migration_backup::BackupAgent::from_config(&config),
                 webhooks: nelcota_webhooks::destination::Policy {
                     allow_loopback: config.webhooks_allow_loopback,
                 },

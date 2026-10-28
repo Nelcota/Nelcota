@@ -116,6 +116,22 @@ fn migration_error(error: user_migrations::Error) -> ApiError {
             "migration_diverged",
             "migration history differs; inspect status and restore the original files",
         ),
+        user_migrations::Error::BackupRequired => ApiError::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "migration_backup_required",
+            "configure the project's automatic backup agent before production migrations",
+        ),
+        user_migrations::Error::BackupFailed | user_migrations::Error::BackupInterrupted => {
+            ApiError::new(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "migration_backup_failed",
+                "automatic backup unavailable or interrupted; inspect migration status before retrying",
+            )
+        }
+        user_migrations::Error::Busy => ApiError::conflict(
+            "migration_busy",
+            "another protected migration deployment is running",
+        ),
         user_migrations::Error::Database(error) => ApiError::from(error),
     }
 }
@@ -163,7 +179,23 @@ struct MigrationConnection(Option<deadpool_postgres::Object>);
 impl Drop for MigrationConnection {
     fn drop(&mut self) {
         if let Some(client) = self.0.take() {
-            drop(deadpool_postgres::Object::take(client));
+            let cancel = client.cancel_token();
+            // PostgreSQL may continue computing after a TCP close until it
+            // next writes a response. Cancel explicitly before closing the
+            // driver; retain pool admission during this bounded cleanup.
+            match tokio::runtime::Handle::try_current() {
+                Ok(runtime) => {
+                    runtime.spawn(async move {
+                        let _ = tokio::time::timeout(
+                            std::time::Duration::from_secs(2),
+                            cancel.cancel_query(tokio_postgres::NoTls),
+                        )
+                        .await;
+                        drop(deadpool_postgres::Object::take(client));
+                    });
+                }
+                Err(_) => drop(deadpool_postgres::Object::take(client)),
+            }
         }
     }
 }
@@ -173,10 +205,12 @@ async fn apply_response(
     actor: &str,
 ) -> Result<Response, ApiError> {
     let mut connection = MigrationConnection(Some(state.db.get().await?));
-    let report = user_migrations::apply(
+    let report = nelcota_core::migration_backup::apply(
         connection.0.as_mut().expect("owned migration connection"),
         request,
         actor,
+        state.production,
+        state.migration_backup.as_ref(),
     )
     .await
     .map_err(migration_error)?;

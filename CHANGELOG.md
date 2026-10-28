@@ -12,6 +12,11 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Added
 
+- Automatic pre-migration backups through a project-scoped host agent, with
+  database/disk-file verification, configured external readback, production
+  enforcement, and a durable host fence across cancellation and agent recovery.
+  `migration-backup enable` installs the restricted Linux service and socket.
+
 - Deploy repository migrations through scoped, revocable deployment tokens and
   the project API, with project links, named environments, status/dry-run and
   TypeScript downloads. V17 stores token digests and migration audit records.
