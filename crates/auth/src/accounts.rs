@@ -36,6 +36,15 @@ pub(crate) async fn confirm_inbox_owner(
     if confirmed == 0 {
         return Ok(());
     }
+    retire_unconfirmed_access(tx, user_id).await
+}
+
+/// Retires access established before inbox ownership was proved. The caller
+/// holds the account row lock and has just confirmed the account.
+pub(crate) async fn retire_unconfirmed_access(
+    tx: &Transaction<'_>,
+    user_id: Uuid,
+) -> Result<(), ApiError> {
     tx.execute(
         "UPDATE auth.sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL",
         &[&user_id],
