@@ -122,6 +122,8 @@ impl Mailer for Outbox {
 }
 
 pub struct Options {
+    pub production: bool,
+    pub migration_backup: Option<nelcota_core::migration_backup::BackupAgent>,
     pub pool_size: usize,
     pub admin_pool_size: usize,
     pub export_timeout: Duration,
@@ -151,6 +153,8 @@ pub struct Options {
 impl Default for Options {
     fn default() -> Self {
         Options {
+            production: false,
+            migration_backup: None,
             pool_size: 4,
             admin_pool_size: 2,
             export_timeout: Duration::from_secs(120),
@@ -296,6 +300,8 @@ impl TestApp {
         let passwords = Arc::new(Passwords::new(2));
         let admin_pool = db::admin_pool(&admin, options.admin_pool_size);
         let panel = nelcota_admin::AdminState {
+            production: options.production,
+            migration_backup: options.migration_backup.clone(),
             webhooks: nelcota_webhooks::destination::Policy::default(),
             sql: Arc::default(),
             exports: Arc::new(nelcota_admin::ExportExecutor::new(options.export_timeout)),
@@ -394,6 +400,8 @@ impl TestApp {
             );
         }
         let panel = nelcota_admin::AdminState {
+            production: options.production,
+            migration_backup: options.migration_backup.clone(),
             storage: Some(storage.clone()),
             ..panel
         };

@@ -872,6 +872,7 @@ mod tests {
                 .map(|t| (t.name.clone(), t))
                 .collect(),
             functions: Default::default(),
+            named_types: Default::default(),
         }
     }
 

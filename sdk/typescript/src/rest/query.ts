@@ -18,7 +18,7 @@ import {
   type IsValue,
 } from './conditions.js';
 import type { GenericSchema, Relation, RowOf, SelectRow } from './types.js';
-import type { FilterColumn, OrderOptions, QueryOutcome, QueryResult, ReferencedOption, RowRange, SelectOptions, UpsertOptions } from './query-types.js';
+import type { CountOption, FilterColumn, OrderOptions, QueryOutcome, QueryResult, ReferencedOption, RowRange, SelectOptions, UpsertOptions } from './query-types.js';
 export type { CountOption, FilterColumn, OrderOptions, QueryOutcome, QueryResult, QuerySuccess, ReferencedOption, RowRange, SelectOptions, UpsertOptions } from './query-types.js';
 
 /** Filters and ordering use every column of the table, not only the selected ones. */
@@ -395,8 +395,8 @@ export class TableRef<S extends GenericSchema, Name extends string, Row, Insert,
   }
 
   /** Inserts one row or many (one statement). Add `.select()` to get them back. */
-  insert(values: Insert | readonly Insert[]): Query<S, Name, Row, null> {
-    return this.#query('POST', { body: rowsBody(values), prefer: ['return=minimal'] });
+  insert(values: Insert | readonly Insert[], options: CountOption = {}): Query<S, Name, Row, null> {
+    return this.#query('POST', { body: rowsBody(values), prefer: writePreferences(options) });
   }
 
   /** Inserts, or merges into (or keeps) rows that hit a unique key. */
@@ -407,21 +407,25 @@ export class TableRef<S extends GenericSchema, Name extends string, Row, Insert,
       params.push(['on_conflict', columns.map((c) => identifier(c.trim(), 'column')).join(',')]);
     }
     const resolution = options.ignoreDuplicates ? 'resolution=ignore-duplicates' : 'resolution=merge-duplicates';
-    return this.#query('POST', { body: rowsBody(values), params, prefer: ['return=minimal', resolution] });
+    return this.#query('POST', { body: rowsBody(values), params, prefer: [...writePreferences(options), resolution] });
   }
 
   /** Changes the rows that match the filters (at least one is required). */
-  update(values: Update): Query<S, Name, Row, null> {
+  update(values: Update, options: CountOption = {}): Query<S, Name, Row, null> {
     if (!isRecord(values)) {
       throw new NelcotaUsageError('update takes one object with the new values');
     }
-    return this.#query('PATCH', { body: values, prefer: ['return=minimal'] });
+    return this.#query('PATCH', { body: values, prefer: writePreferences(options) });
   }
 
   /** Deletes the rows that match the filters (at least one is required). */
-  delete(): Query<S, Name, Row, null> {
-    return this.#query('DELETE', { prefer: ['return=minimal'] });
+  delete(options: CountOption = {}): Query<S, Name, Row, null> {
+    return this.#query('DELETE', { prefer: writePreferences(options) });
   }
+}
+
+function writePreferences(options: CountOption): string[] {
+  return options.count === 'exact' ? ['return=minimal', 'count=exact'] : ['return=minimal'];
 }
 
 function rowsBody(values: unknown): unknown {

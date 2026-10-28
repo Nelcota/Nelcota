@@ -353,6 +353,7 @@
     <Resizable.Pane defaultSize={42} minSize={20}>
     <div class="flex h-full min-h-0 flex-col">
       <div class="min-h-0 flex-1">
+        <p class="px-4 py-2 text-sm text-warning">{t('sql.editor.migrationWarning')}</p>
         <CodeEditor
           bind:value={() => sqlStore.draft, (sql) => sqlStore.setDraft(sql)}
           {schema}

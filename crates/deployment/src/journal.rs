@@ -102,11 +102,24 @@ pub struct Job {
 fn no_restore_requested(requested: &bool) -> bool {
     !requested
 }
+pub const MIGRATION_BACKUP_FENCE: &str = ".migration-backup-active";
+
 pub struct HostLock {
     _file: File,
 }
 impl HostLock {
     pub fn acquire(root: &Path) -> anyhow::Result<Self> {
+        let lease = Self::acquire_migration_recovery(root)?;
+        if fs::symlink_metadata(root.join(MIGRATION_BACKUP_FENCE)).is_ok() {
+            bail!(
+                "migration backup needs recovery: restart its project backup agent before mutating this host"
+            );
+        }
+        Ok(lease)
+    }
+    /// Root backup-agent recovery only: retain exclusion while checking its
+    /// durable fence and waiting for the project's migration database lock.
+    pub fn acquire_migration_recovery(root: &Path) -> anyhow::Result<Self> {
         let path = root.join(".deployment.lock");
         if fs::symlink_metadata(&path).is_ok_and(|meta| meta.file_type().is_symlink()) {
             bail!("unsafe deployment lock");

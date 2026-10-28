@@ -4,6 +4,7 @@ import type ptBR from '../pt-BR/sql'
 
 const en: Messages<typeof ptBR> = {
   editor: {
+    migrationWarning: 'SQL editor changes are not recorded as application migrations. Keep schema changes in repository migration files before deploying other environments.',
     newQuery: 'New query',
     unsaved: '· unsaved draft',
     unsavedTitle: 'Unsaved changes',

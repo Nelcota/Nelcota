@@ -313,3 +313,13 @@ host authority. Secret URLs are write-only. A complete VPS outage requires an
 independent heartbeat provider, configured and rehearsed separately. Follow
 [operational alerts](operational-alerts.md) before enabling; these controls
 require server 0.5.2 or later.
+
+## AI context freshness
+
+Connect → Context for AI records the latest applied application migration in
+`llms.txt` and on the page. An empty exposed schema displays a warning in both
+places. Apply your migrations and regenerate before giving the file to an
+assistant. The page checks migration changes every 30 seconds while visible
+and when the window regains focus. Copy/download is disabled for an outdated
+context or a failed freshness check; Refresh regenerates it. Type downloads
+read schema and migration version from one database snapshot.

@@ -6,7 +6,7 @@ const standalone = standaloneModule.default
 const ajv = new Ajv2020({ code: { source: true, esm: true }, strict: false, validateFormats: false })
 const refs: Record<string, string> = {}
 const names = ['Overview', 'TablesResponse', 'SchemaResponse', 'UsersResponse', 'PoliciesData', 'ProjectsData',
-  'ProjectsStatusData', 'MigrationsData', 'StorageOverview', 'TypesResponse', 'Structure', 'TableData', 'StorageListing',
+  'ProjectsStatusData', 'DeployToken', 'DeployTokens', 'MigrationsData', 'StorageOverview', 'TypesResponse', 'Structure', 'TableData', 'StorageListing',
   'SqlResponse', 'ExportedMigration', 'DdlResult', 'StorageAccess', 'DeniedRequests', 'SignIn', 'MetricsResponse',
   'WebhookEndpoints', 'WebhookEndpoint', 'WebhookSecret', 'WebhookDeliveries', 'WebhookDetail', 'WebhookReplay', 'WebhookCleared',
   // Controller responses (nelcota-deployment), schema only.

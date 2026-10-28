@@ -112,7 +112,15 @@ upgrades of large stores need time for that one-time rewrite.
 Internal migration V16 adds durable panel SSO redemption receipts shared by
 all instances of the project. Upgrading from 0.4.0 applies V14, V15 and V16;
 keep a tested paired database/file backup and allow a maintenance window for
-the metadata rewrite. V16 is outside the standalone auth migration selection.
+the metadata rewrite. V16 is outside the standalone auth migration selection. V17 adds opaque scoped
+deployment-token digests and application-migration audit records, also outside
+the standalone auth selection. Application migration execution lives in core;
+CLI and deployment HTTP share checksums, version validation and per-file
+transaction locks. A project-scoped Unix backup agent retains host backup
+authority; pending production migrations require its verified pre-application
+backup. The host lease and a durable migration fence span backup/SQL and survive
+an agent crash. PostgreSQL session-lock confirmation owns cleanup; canceled
+HTTP execution sends an explicit database cancellation request.
 
 DDL commits once and reports `applied` plus `catalog_pending`. An introspection
 failure after COMMIT does not turn a successful mutation into an error. Catalog
