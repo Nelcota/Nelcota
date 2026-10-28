@@ -140,7 +140,7 @@ export class Integration<Database> {
    * generation; otherwise a later sign-in/out in the same browser replaced it.
    */
   async #load(key: string, lease?: SessionLease): Promise<Loaded> {
-    const row = await (lease ? lease.load() : this.#options.store.read(key));
+    const row = await this.#readStored(() => lease ? lease.load() : this.#options.store.read(key));
     const unusable: Loaded = { state: null, row: row !== null, lineage: null, superseded: false, tombstone: false };
     if (!row) return unusable;
     let state: SessionState;
@@ -158,7 +158,7 @@ export class Integration<Database> {
   }
   /** A missing or unreadable head fails closed: no generation of that lineage is live. */
   async #head(lineage: string, lease?: SessionLease, parent?: SessionLease): Promise<LineageHead | null> {
-    const row = await (lease ? lease.load() : parent?.read ? parent.read(lineage) : this.#options.store.read(lineage));
+    const row = await this.#readStored(() => lease ? lease.load() : parent?.read ? parent.read(lineage) : this.#options.store.read(lineage));
     if (!row) return null;
     let value: Record<string, unknown>;
     try { value = await this.#sealer.openRecord(row.sealed, this.#lineageBinding(lineage)); }
@@ -166,6 +166,13 @@ export class Integration<Database> {
     const current = value['current'], generation = value['generation'];
     if (value['kind'] !== 'lineage' || typeof current !== 'string' || !/^[a-f0-9]{64}$/.test(current) || typeof generation !== 'number' || !Number.isSafeInteger(generation) || generation < 1) return null;
     return { current, generation };
+  }
+  async #readStored(read: () => Promise<StoredSession | null>): Promise<StoredSession | null> {
+    try { return await read(); }
+    catch (cause) {
+      if (cause instanceof SessionError) throw cause;
+      throw new SessionError('session_store', 'Session storage is unavailable', cause);
+    }
   }
   /** Credential-free marker that keeps a retired key linked to its lineage. */
   async #tombstone(key: string, lineage: string): Promise<StoredSession> {

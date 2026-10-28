@@ -3,6 +3,13 @@
 Package releases use Semantic Versioning. Registry availability requires a
 successful publication; a source version or Git tag alone is insufficient.
 
+## Unreleased
+
+### Fixed
+
+- Classify session-store read failures as unavailable in authentication guards,
+  producing 503 without clearing cookies or redirecting users to sign in.
+
 ## 0.1.0 — 2026-10-27
 
 ### Added

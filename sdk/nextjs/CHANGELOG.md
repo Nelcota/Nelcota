@@ -5,6 +5,11 @@ successful publication; a source version or Git tag alone is insufficient.
 
 ## Unreleased
 
+### Fixed
+
+- The authentication proxy returns 503 when its session store is unavailable,
+  retaining the browser cookie and the existing session.
+
 ### Changed
 
 - The session core moved to the new framework-agnostic `@nelcota/ssr` package,
