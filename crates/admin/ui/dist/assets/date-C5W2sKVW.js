@@ -1,1 +1,0 @@
-import{v as e}from"./router.svelte-BZ86KcnP.js";function t(e,t){if(e==null||e===``)return`—`;let n=new Date(e);return Number.isFinite(n.getTime())?t(n):typeof e==`string`?e:`—`}var n={year:`numeric`,month:`numeric`,day:`numeric`,hour:`numeric`,minute:`numeric`,second:`numeric`};function r(r,i){return t(r,t=>e(i,n).format(t))}export{r as n,t};
