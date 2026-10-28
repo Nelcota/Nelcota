@@ -98,25 +98,34 @@ pub fn app(
         .route("/health", get(health))
         .merge(nelcota_api::router().layer(DefaultBodyLimit::max(state.api.max_body_bytes)))
         .with_state(state)
-        .merge(nelcota_auth::router(auth));
+        .merge(nelcota_auth::router(auth))
+        .layer(TimeoutLayer::with_status_code(
+            StatusCode::GATEWAY_TIMEOUT,
+            request_timeout,
+        ));
     let observed = admin.as_ref().map(|admin| Observed {
         denied: admin.denied.clone(),
         metrics: admin.metrics.clone(),
     });
-    if let Some(admin) = admin.clone() {
-        router = router.merge(nelcota_admin::router(admin));
-    }
-    router = router
-        .layer(TimeoutLayer::with_status_code(
-            StatusCode::GATEWAY_TIMEOUT,
-            request_timeout,
-        ))
-        .layer(CompressionLayer::new());
+    router = router.layer(CompressionLayer::new());
     // Storage stays outside the timeout (uploads take as long as they take,
     // with their own cap) and gzip (files are served byte for byte, by range).
     if let Some(storage) = storage {
         router = router.merge(nelcota_storage::router(storage));
-        if let Some(admin) = admin {
+    }
+    router = router.layer(cors);
+    if let Some(admin) = admin {
+        // Panel statements have a 30 s database limit and may wait 5 s for
+        // a pool connection. Let PostgreSQL finish before the HTTP deadline.
+        router = router.merge(
+            nelcota_admin::router(admin.clone())
+                .layer(TimeoutLayer::with_status_code(
+                    StatusCode::GATEWAY_TIMEOUT,
+                    request_timeout.max(Duration::from_secs(40)),
+                ))
+                .layer(CompressionLayer::new()),
+        );
+        if admin.storage.is_some() {
             router = router.merge(nelcota_admin::upload_router(admin));
         }
     }
@@ -156,7 +165,6 @@ pub fn app(
                 )
             }),
         )
-        .layer(cors)
         // Every response carries `x-request-id`: the caller's own (from a
         // proxy in front) or a new UUID, also recorded in the request's span.
         .layer(PropagateRequestIdLayer::new(REQUEST_ID))
@@ -290,11 +298,15 @@ async fn not_found() -> ApiError {
 /// 504) into the API's `{"code", "message"}` JSON. The panel's routes keep
 /// their own error shape.
 async fn json_errors(request: Request, next: Next) -> Response {
-    let panel = request.uri().path().starts_with("/admin");
+    let panel = request.uri().path() == "/admin" || request.uri().path().starts_with("/admin/");
     let response = next.run(request).await;
-    if panel
-        || response.status().as_u16() < 400
+    if response.status().as_u16() < 400
         || response.extensions().get::<ErrorInfo>().is_some()
+        || (panel
+            && response
+                .headers()
+                .get(header::CONTENT_TYPE)
+                .is_some_and(|value| value == "application/json"))
     {
         return response;
     }
@@ -344,7 +356,10 @@ async fn json_errors(request: Request, next: Next) -> Response {
         (_, Some(text)) => text,
         (_, None) => default.to_owned(),
     };
-    let mut response = ApiError::new(status, code, message).into_response();
+    let mut response = match panel {
+        true => nelcota_admin::ApiError::new(status, code, message).into_response(),
+        false => ApiError::new(status, code, message).into_response(),
+    };
     // Keep what the original said besides its body (`Allow` on a 405,
     // `Content-Range` on a 416).
     let own: Vec<HeaderName> = response.headers().keys().cloned().collect();

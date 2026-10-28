@@ -1,7 +1,7 @@
 //! Regressions for typed filters, exact writes and panel HTTP boundaries.
 mod common;
 
-use axum::http::{Method, StatusCode};
+use axum::http::{Method, StatusCode, header};
 use common::{panel, *};
 use serde_json::json;
 
@@ -110,6 +110,61 @@ async fn unsupported_rpc_signatures_are_absent_from_the_catalog() {
 }
 
 #[tokio::test]
+async fn panel_rejections_are_json_and_public_cors_does_not_cover_the_panel() {
+    let app = TestApp::spawn().await;
+    let cookie = panel::login(&app).await;
+    for (headers, body, status) in [
+        (
+            vec![("cookie", cookie.as_str())],
+            "{}",
+            StatusCode::UNSUPPORTED_MEDIA_TYPE,
+        ),
+        (
+            vec![("cookie", cookie.as_str()), panel::JSON],
+            "[]",
+            StatusCode::UNPROCESSABLE_ENTITY,
+        ),
+    ] {
+        let reply = app
+            .raw(Method::POST, "/admin/api/sql", &headers, body.into())
+            .await;
+        assert_eq!(reply.status, status, "{}", reply.text);
+        assert!(reply.body["error"].is_string());
+        assert!(reply.body["code"].is_string());
+    }
+    for method in [Method::GET, Method::OPTIONS] {
+        let panel = app
+            .raw(
+                method.clone(),
+                "/admin/api/me",
+                &[
+                    ("origin", "https://foreign.example"),
+                    ("access-control-request-method", "GET"),
+                ],
+                String::new(),
+            )
+            .await;
+        assert!(
+            !panel
+                .headers
+                .contains_key(header::ACCESS_CONTROL_ALLOW_ORIGIN)
+        );
+        let api = app
+            .raw(
+                method,
+                "/rest/v1/products",
+                &[
+                    ("origin", "https://foreign.example"),
+                    ("access-control-request-method", "GET"),
+                ],
+                String::new(),
+            )
+            .await;
+        assert_eq!(api.headers[header::ACCESS_CONTROL_ALLOW_ORIGIN], "*");
+    }
+}
+
+#[tokio::test]
 async fn pooled_connections_rollback_unowned_transactions_before_reuse() {
     let app = TestApp::spawn().await;
     let pool = nelcota_core::db::api_pool(&app.admin, common::authenticator_password(), 1);
@@ -129,5 +184,28 @@ async fn pooled_connections_rollback_unowned_transactions_before_reuse() {
     assert_ne!(
         row.get::<_, Option<String>>(1).as_deref(),
         Some("{\"role\":\"service_role\"}")
+    );
+}
+
+#[tokio::test]
+async fn panel_ddl_can_finish_after_the_public_request_deadline() {
+    let app = TestApp::spawn().await;
+    let cookie = panel::login(&app).await;
+    app.admin_client.batch_execute(
+        "CREATE TABLE public.slow_ddl (id int); INSERT INTO public.slow_ddl VALUES (1);
+         CREATE FUNCTION public.slow_default() RETURNS int LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_sleep(11); RETURN 7; END $$;"
+    ).await.unwrap();
+    app.catalog.reload(&app.pool).await.unwrap();
+    let reply = panel::send(&app, Method::PATCH, "/admin/api/tables/slow_ddl", &cookie,
+        json!({"actions":[{"action":"add_column", "column":{"name":"value", "data_type":"integer", "default":"public.slow_default()"}}]})).await;
+    // The harness gives public routes 10 s; the DDL owns a longer panel budget.
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.text);
+    assert_eq!(
+        app.admin_client
+            .query_one("SELECT value FROM public.slow_ddl", &[])
+            .await
+            .unwrap()
+            .get::<_, i32>(0),
+        7
     );
 }
