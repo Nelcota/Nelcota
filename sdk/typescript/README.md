@@ -196,6 +196,23 @@ for await (const page of nelcota.from('notes').select('id,body').order('id').pag
 }
 ```
 
+For optimistic concurrency, include the expected version in the filters and
+request an affected-row count. Zero affected rows is a successful outcome:
+
+```ts
+const result = await nelcota.from('notes')
+  .update({ title: 'Revised', version: expectedVersion + 1 }, { count: 'exact' })
+  .eq('id', id).eq('version', expectedVersion);
+if (result.error) throw result.error;
+if (result.count === 0) {
+  // No visible row matched: reload or show that the save could not be applied.
+}
+```
+
+`insert`, `upsert`, `update` and `delete` accept `count: 'exact'`, including
+with `.select()`. The count respects GRANTs and RLS; zero cannot distinguish a
+stale version from a missing or RLS-hidden row. It does not disclose hidden data.
+
 ## Auth
 
 ```ts

@@ -12,6 +12,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Added
 
+- REST inserts and upserts honor `Prefer: count=exact`, matching PATCH/DELETE
+  affected-row counts and retaining duplicate-resolution response metadata.
+
 - `nelcota dev --mail` runs a project-owned Mailpit inbox and enables email
   confirmation, recovery and magic links over verified local STARTTLS.
 

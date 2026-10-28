@@ -7,6 +7,9 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Added
 
+- All table writes accept `count: 'exact'` and return the number of affected rows,
+  including zero, without requiring a row representation.
+
 - Auth listeners receive one asynchronous `initial_session` baseline per subscription,
   ordered before subsequent sign-in, refresh and user-update events.
 

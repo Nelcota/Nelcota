@@ -13,7 +13,7 @@ export interface RowRange {
 export interface QuerySuccess<T> {
   data: T;
   error: null;
-  /** Total matching rows with `count: 'exact'`, else `null`. */
+  /** Matching read rows or affected write rows with `count: 'exact'`, else `null`. */
   count: number | null;
   /** Which rows of the match these are. With `count`, `range.to + 1 < count` means more rows exist. */
   range: RowRange | null;
@@ -41,7 +41,7 @@ export interface OrderOptions extends ReferencedOption {
 }
 
 export interface CountOption {
-  /** `exact` counts every matching row (a second scan: use it when shown). */
+  /** `exact` counts matching read rows (a second scan) or affected write rows. */
   count?: 'exact';
 }
 
@@ -50,7 +50,7 @@ export interface SelectOptions<Head extends boolean = boolean> extends CountOpti
   head?: Head;
 }
 
-export interface UpsertOptions {
+export interface UpsertOptions extends CountOption {
   /** Columns of the unique key to match (default: the primary key). */
   onConflict?: string | readonly string[];
   /** Keep existing rows instead of merging into them. */
