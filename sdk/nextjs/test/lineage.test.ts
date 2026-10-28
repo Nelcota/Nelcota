@@ -103,9 +103,17 @@ describe.each([['memory store', memoryFixture], ['PostgreSQL store (mocked pool,
     const browser = await bootstrapped(one);
     // Two tabs send their sign-in with the same bootstrap cookie, to different instances.
     const tabA = browser.request(), tabB = browser.request();
+    let entered!: () => void;
+    const ownerStarted = new Promise<void>(resolve => { entered = resolve; });
+    const first = one.write(tabA, post(), context => {
+      entered();
+      return context.auth.signInWithPassword(login('alice'));
+    });
+    // Hashing may complete in either order on Web Crypto. Establish who owns
+    // the bootstrap lease first before starting the competing request.
+    await ownerStarted;
     const [a, b] = await Promise.all([
-      one.write(tabA, post(), context => context.auth.signInWithPassword(login('alice'))),
-      two.write(tabB, post(), context => context.auth.signInWithPassword(login('bob'))),
+      first, two.write(tabB, post(), context => context.auth.signInWithPassword(login('bob'))),
     ]);
     expect(a.data?.id).toBe('user-alice'); expect(b.data?.id).toBe('user-bob');
     expect(tabA.sets).toHaveLength(1); expect(tabB.sets).toHaveLength(1);
@@ -122,9 +130,15 @@ describe.each([['memory store', memoryFixture], ['PostgreSQL store (mocked pool,
     const fixture = await create(), [one, two] = fixture.apps;
     const browser = await bootstrapped(one);
     const tabA = browser.request(), tabB = browser.request();
+    let entered!: () => void;
+    const ownerStarted = new Promise<void>(resolve => { entered = resolve; });
+    const first = one.write(tabA, post(), context => {
+      entered();
+      return context.auth.signInWithPassword(login('alice'));
+    });
+    await ownerStarted;
     await Promise.all([
-      one.write(tabA, post(), context => context.auth.signInWithPassword(login('alice'))),
-      two.write(tabB, post(), context => context.auth.signInWithPassword(login('alice'))),
+      first, two.write(tabB, post(), context => context.auth.signInWithPassword(login('alice'))),
     ]);
     browser.receive(tabB); browser.receive(tabA);
     expect((await whoAmI(one, browser)).superseded).toBe(true);

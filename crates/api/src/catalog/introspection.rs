@@ -3,6 +3,7 @@ mod columns;
 mod constraints;
 mod functions;
 mod relations;
+mod types;
 
 use super::model::Catalog;
 use tokio_postgres::GenericClient;
@@ -34,7 +35,9 @@ impl Catalog {
         columns::load(client, schema, &mut tables).await?;
         constraints::load(client, schema, &mut tables).await?;
         let functions = functions::load(client, schema).await?;
+        let named_types = types::load(client, schema).await?;
         Ok(Catalog {
+            named_types,
             schema: schema.to_owned(),
             tables,
             functions,

@@ -105,6 +105,17 @@ Since server 0.5.2, backups require HTTPS backup endpoints without URL credentia
 
 For these new scheduled/manual copies, the encrypted project configuration is stored at `<project>/deployments/<dump-filename>/previous.env` in the backup bucket; keep it with `<project>/<dump-filename>` and `<project>/<dump-filename>.files/`. Update jobs retain their documented job-ID recovery prefix. Root-private verification receipts are bound to the current host/project configuration and do not certify restoration on another machine.
 
+## Automatic migration backups
+
+The current source can require a verified backup before applying application
+migrations through the API, panel or configured local CLI. Enable the restricted
+project agent with `nelcota -C /opt/nelcota -p shop migration-backup enable` as
+root and set `NELCOTA_PRODUCTION=true` for fail-closed production application.
+The agent reuses this database/disk-file capture and external readback workflow;
+it grants no general host-management capability to a deploy token. See
+[remote migrations](remote-migrations.md#automatic-backup-before-application)
+for installation, time budgets, durable interruption recovery and storage limits.
+
 ## Restore
 
 ```sh

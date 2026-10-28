@@ -340,7 +340,7 @@ it('does not emit a replacement session when a late response conflicts with logo
     await new BrowserSessionState(KEY, factory).write(null);
     complete();
     await rejected;
-    expect(events).toEqual([{ event: 'signed_out', value: null }]);
+    expect(events).toEqual([{ event: 'initial_session', value: expect.objectContaining({ refresh_token: 'refresh-1' }) }, { event: 'signed_out', value: null }]);
     expect((await client.auth.getSession()).data).toBeNull();
   } finally { complete(); client.dispose(); }
 });

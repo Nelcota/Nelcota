@@ -224,7 +224,7 @@ describe('password sign-in', () => {
     expect(JSON.parse(calls[0]!.body!)).toEqual({ email: 'ana@example.com', password: 'pw' });
     expect(calls[0]!.headers.has('authorization')).toBe(false);
     expect(JSON.parse((await storage.getItem(KEY))!).refresh_token).toBe('refresh-1');
-    expect(events).toEqual(['signed_in']);
+    expect(events).toEqual(['initial_session', 'signed_in']);
 
     await nelcota.from('notes').select();
     expect(calls[1]!.headers.get('authorization')).toBe('Bearer access-1');
@@ -547,7 +547,7 @@ describe('refresh', () => {
     expect(calls[0]!.url.search).toBe('?grant_type=refresh_token');
     expect(JSON.parse(calls[0]!.body!)).toEqual({ refresh_token: 'refresh-1' });
     expect(calls[1]!.headers.get('authorization')).toBe('Bearer access-2');
-    expect(events).toEqual(['refreshed']);
+    expect(events).toEqual(['initial_session', 'refreshed']);
   });
 
   it('sends one refresh for many concurrent requests', async () => {
@@ -597,7 +597,7 @@ describe('refresh', () => {
     );
     expect(await nelcota.auth.getSession()).toEqual({ data: null, error: null });
     expect(await storage.getItem(KEY)).toBeNull();
-    expect(events).toEqual(['signed_out']);
+    expect(events).toEqual(['initial_session', 'signed_out']);
   });
 
   it('a transient refresh failure keeps the session and reaches the caller without an expired request', async () => {
@@ -811,7 +811,7 @@ describe('sign-out and user', () => {
     expect(calls[0]!.url.pathname).toBe('/auth/v1/user');
     expect(JSON.parse(calls[0]!.body!)).toEqual({ password: 'new-password-123', current_password: 'old', data: { plan: 'pro' } });
     expect(JSON.parse((await storage.getItem(KEY))!).user.user_metadata).toEqual({ plan: 'pro' });
-    expect(events).toEqual(['user_updated']);
+    expect(events).toEqual(['initial_session', 'user_updated']);
   });
 
   it('updateUser without password or data is a usage error', async () => {
@@ -835,7 +835,7 @@ describe('sign-out and user', () => {
     finish(); await user;
     expect((await nelcota.auth.getSession()).data).toBeNull();
     expect(await storage.getItem(KEY)).toBeNull();
-    expect(events).toEqual(['signed_out']);
+    expect(events).toEqual(['initial_session', 'signed_out']);
   });
 
   it('keeps rotated tokens when an old user response has the same access token', async () => {
@@ -892,7 +892,7 @@ describe('sign-out and user', () => {
     expect(ok.calls[0]!.url.pathname).toBe('/auth/v1/logout');
     expect(ok.calls[0]!.headers.get('authorization')).toBe('Bearer access-1');
     expect(await ok.storage.getItem(KEY)).toBeNull();
-    expect(ok.events).toEqual(['signed_out']);
+    expect(ok.events).toEqual(['initial_session', 'signed_out']);
 
     const down = setup(stored(session()), json({ code: 'unavailable', message: 'down' }, 503));
     expect((await down.nelcota.auth.signOut()).error?.code).toBe('unavailable');
@@ -903,7 +903,7 @@ describe('sign-out and user', () => {
     const changed = { ...session().user, email_confirmed_at: '2026-02-01T00:00:00Z' };
     const { nelcota, events, storage } = setup(stored(session()), json(changed));
     expect((await nelcota.auth.getUser()).data).toEqual(changed);
-    expect(events).toEqual(['user_updated']);
+    expect(events).toEqual(['initial_session', 'user_updated']);
     expect(JSON.parse((await storage.getItem(KEY))!).user.email_confirmed_at).toBe('2026-02-01T00:00:00Z');
     expect((await setup().nelcota.auth.getUser()).error?.code).toBe('session_missing');
   });

@@ -21,6 +21,8 @@ const ptBR = {
     roles: { title: 'JWT e regras de acesso', description: 'Papéis, tokens e políticas que protegem os dados.' },
     storage: { title: 'Arquivos e S3', description: 'Configure o armazenamento, os buckets e as regras de acesso.' },
     webhooks: { title: 'Eventos e webhooks', description: 'Destinos, assinaturas, tentativas e reenvio de eventos do banco.' },
+    'remote-migrations': { title: 'Remote migrations', description: 'Project links, deployment tokens, CI and migration history.' },
+    'testing-rls': { title: 'Testing RLS', description: 'Rollback fixtures, API roles and SQLSTATE assertions.' },
     troubleshooting: { title: 'Resolver problemas', description: 'Respostas vazias, erros de acesso, limites e tipos desatualizados.' },
     deploy: { title: 'Publicar e atualizar', description: 'Projetos, domínios, migrações e atualizações do servidor.' },
     backup: { title: 'Backup e restauração', description: 'Preserve os dados e recupere banco e arquivos.' },

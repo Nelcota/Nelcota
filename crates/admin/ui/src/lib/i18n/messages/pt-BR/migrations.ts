@@ -1,5 +1,10 @@
 // Migrations page: panel changes still outside migrations and the migration list.
 const ptBR = {
+  upload: {
+    title: 'Apply repository migrations',
+    description: 'Select the complete migrations folder, including already applied files. Preview checks history without changing data. Each pending file commits separately; keep a verified backup before production deployment.',
+    files: 'Migration SQL files', preview: 'Preview migrations', apply: 'Apply migrations',
+  },
   title: 'Migrações',
   summary: {
     pending: { one: '{count} alteração pendente', other: '{count} alterações pendentes' },

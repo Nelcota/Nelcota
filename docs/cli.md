@@ -12,7 +12,10 @@ selects a project. Commands needing one project require selection on multi-proje
 hosts. Without configuration, a bare `nelcota` prints help; with process/TOML
 server configuration, it serves. `serve` explicitly loads server configuration.
 
-Application `migrate`, `types` and `token` use, in order: `NELCOTA_DATABASE_URL`
+Application `migrate` and `types` use a saved project link or explicit `--remote`
+when present; `--local` selects the original database path. See
+[remote migrations](remote-migrations.md) for scoped tokens and environments.
+Local `migrate`, `types` and `token` use, in order: `NELCOTA_DATABASE_URL`
 from the process environment, the selected host project, or the saved
 `nelcota dev` settings. Run migrations in your application
 folder; the repository-root migrations are internal Nelcota SQL.
@@ -36,6 +39,7 @@ BaaS on plain Postgres: REST API, auth and deploy in a single binary.
 Usage: nelcota [OPTIONS] [COMMAND]
 
 Commands:
+  update          Updates the CLI and projects to the latest stable release, with a preview
   updates         Secure, separately authenticated host update controller
   serve           Starts the HTTP server (the default when no command is given)
   init            Creates a project (and the host, the first time)
@@ -49,6 +53,8 @@ Commands:
   panel-login     Panel login: one for all (shared) or one per project
   dev             Local development environment (Postgres in a container + server)
   migrate         Applies SQL migrations from the directory (files V<n>__<name>.sql)
+  db              Local development database maintenance
+  link            Links an application folder to a remote deployment environment
   upgrade         Updates the app image, with a backup first and a rollback if it fails
   backup          Dumps the database to backups/ and uploads it to S3 when host.env has a bucket
   restore         Restores a dump (replaces the project's current database)
@@ -61,8 +67,8 @@ Commands:
   help            Print this message or the help of the given subcommand(s)
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -80,10 +86,9 @@ Arguments:
 
 Options:
   -C, --dir <DIR>
-          Host folder (where nelcota-host.json, caddy/ and projects/ live)
+          Host folder (default: current directory; update also finds /opt/nelcota)
 
           [env: NELCOTA_ROOT=]
-          [default: .]
 
       --project <PROJECT>
           Project name (default: derived from the domain, e.g. api.shop.com → shop)
@@ -160,11 +165,13 @@ Local development environment (Postgres in a container + server)
 Usage: nelcota dev [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-      --listen <LISTEN>    [default: 127.0.0.1:8000]
-      --db-port <DB_PORT>  Local port of the development Postgres (default: the saved one, else 54322). A new port is saved in .nelcota/dev.env
-  -p, --project <PROJECT>  Project (required when the host has more than one)
-  -h, --help               Print help
+  -C, --dir <DIR>                      Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+      --mail                           Capture local auth email with Mailpit and require signup confirmation (needs OpenSSL)
+      --mail-callback <MAIL_CALLBACK>  Application page receiving local email-link fragments [default: http://localhost:3000/auth/callback]
+  -p, --project <PROJECT>              Project (update defaults to all; other project commands may require one)
+      --listen <LISTEN>                [default: 127.0.0.1:8000]
+      --db-port <DB_PORT>              Local port of the development Postgres (default: the saved one, else 54322). A new port is saved in .nelcota/dev.env
+  -h, --help                           Print help
 ```
 
 ### nelcota migrate
@@ -172,12 +179,21 @@ Options:
 ```text
 Applies SQL migrations from the directory (files V<n>__<name>.sql)
 
-Usage: nelcota migrate [OPTIONS]
+Usage: nelcota migrate [OPTIONS] [COMMAND]
+
+Commands:
+  status  Show applied, pending, missing and diverged repository migrations
+  help    Print this message or the help of the given subcommand(s)
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --path <PATH>        [default: migrations]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
+      --remote <REMOTE>    API origin of a remote project (HTTPS, or loopback HTTP for development)
+      --env <ENVIRONMENT>  Linked environment name [default: default]
+      --token <TOKEN>      Deployment credential. Prefer NELCOTA_DEPLOY_TOKEN to command-line history [env: NELCOTA_DEPLOY_TOKEN]
+      --local              Use the local/host database even when this folder has a project link
+      --dry-run            Validate history and show pending migrations without applying SQL
   -h, --help               Print help
 ```
 
@@ -189,10 +205,14 @@ Generates TypeScript or Rust types from the exposed schema
 Usage: nelcota types [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+      --remote <REMOTE>    API origin of a remote project (HTTPS, or loopback HTTP for development)
+      --env <ENVIRONMENT>  Linked environment name [default: default]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
+      --token <TOKEN>      Deployment credential. Prefer NELCOTA_DEPLOY_TOKEN to command-line history [env: NELCOTA_DEPLOY_TOKEN]
+      --local              Use the local/host database even when this folder has a project link
       --lang <LANG>        [default: typescript] [possible values: typescript, rust]
   -o, --out <OUT>
-  -p, --project <PROJECT>  Project (required when the host has more than one)
   -h, --help               Print help
 ```
 
@@ -204,12 +224,13 @@ Issues service tokens
 Usage: nelcota token [OPTIONS] <COMMAND>
 
 Commands:
+  deploy        Opaque credential scoped to remote migrations and type downloads
   service-role  JWT with the service_role role (BYPASSES RLS: never use it in a frontend)
   help          Print this message or the help of the given subcommand(s)
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -221,9 +242,9 @@ JWT with the service_role role (BYPASSES RLS: never use it in a frontend)
 Usage: nelcota token service-role [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --days <DAYS>        [default: 3650]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -235,10 +256,10 @@ Dumps the database to backups/ and uploads it to S3 when host.env has a bucket
 Usage: nelcota backup [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --upload             Requires the S3 upload (fails if host.env has no bucket). Without it, the dump is uploaded whenever the bucket is configured
       --keep <KEEP>        Keeps only the N most recent local dumps (at least 1: the new one)
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
       --all                All projects
   -h, --help               Print help
 ```
@@ -254,9 +275,9 @@ Arguments:
   <FILE>
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --files              Also restores the files from the backup bucket (disk storage)
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
       --yes                Does not ask for confirmation
   -h, --help               Print help
 ```
@@ -269,10 +290,10 @@ Updates the app image, with a backup first and a rollback if it fails
 Usage: nelcota upgrade [OPTIONS]
 
 Options:
-  -C, --dir <DIR>           Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>           Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --version <VERSION>   Target version (default: this binary's version)
       --all                 All projects, one at a time
-  -p, --project <PROJECT>   Project (required when the host has more than one)
+  -p, --project <PROJECT>   Project (update defaults to all; other project commands may require one)
       --allow-downgrade     Allows a target older than the running version
       --reinstall           Redeploys even when the project is already on the target version
       --dry-run             Only prints the current → target version of each project
@@ -288,10 +309,10 @@ Stops a project (or all with --all). With --volumes, DELETES the data
 Usage: nelcota down [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --volumes            Also deletes the data volumes (asks for confirmation; Docker only)
       --all
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
       --yes                Does not ask for confirmation before deleting volumes
   -h, --help               Print help
 ```
@@ -304,10 +325,10 @@ Removes a project: final backup in archive/, containers and data deleted
 Usage: nelcota remove [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --yes                Does not ask for confirmation
       --keep-files         Keeps the project folder (migrations, backups)
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
       --no-backup          Skips the final backup (otherwise a stopped Postgres is started for it)
   -h, --help               Print help
 ```
@@ -330,16 +351,15 @@ Arguments:
 
 Options:
   -C, --dir <DIR>
-          Host folder (where nelcota-host.json, caddy/ and projects/ live)
+          Host folder (default: current directory; update also finds /opt/nelcota)
 
           [env: NELCOTA_ROOT=]
-          [default: .]
 
   -f, --follow
 
 
   -p, --project <PROJECT>
-          Project (required when the host has more than one)
+          Project (update defaults to all; other project commands may require one)
 
   -h, --help
           Print help (see a summary with '-h')
@@ -354,8 +374,8 @@ Usage: nelcota healthcheck [OPTIONS]
 
 Options:
       --addr <ADDR>        [default: 127.0.0.1:8000]
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -367,8 +387,8 @@ Lists the host's projects and the state of each one
 Usage: nelcota projects [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -380,8 +400,8 @@ Starts the projects and Caddy (all of them, or only the one from -p)
 Usage: nelcota up [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -393,8 +413,8 @@ State of the projects (all of them, or only the one from -p)
 Usage: nelcota status [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -406,8 +426,8 @@ Checks the host: Docker, ports, disk, DNS, backup job and age, S3, health
 Usage: nelcota doctor [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -426,13 +446,12 @@ Arguments:
 
 Options:
   -C, --dir <DIR>
-          Host folder (where nelcota-host.json, caddy/ and projects/ live)
+          Host folder (default: current directory; update also finds /opt/nelcota)
 
           [env: NELCOTA_ROOT=]
-          [default: .]
 
   -p, --project <PROJECT>
-          Project (required when the host has more than one)
+          Project (update defaults to all; other project commands may require one)
 
   -h, --help
           Print help (see a summary with '-h')
@@ -446,8 +465,8 @@ New panel password (the host's with single sign-on; the project's with per-proje
 Usage: nelcota admin-password [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -459,8 +478,8 @@ Generates a new Ed25519 private key (for NELCOTA_JWT_PRIVATE_KEY)
 Usage: nelcota keygen [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -472,8 +491,8 @@ Starts the HTTP server (the default when no command is given)
 Usage: nelcota serve [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -494,8 +513,8 @@ Commands:
   help     Print this message or the help of the given subcommand(s)
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -507,8 +526,8 @@ Archives every WAL segment to the host's S3 and takes a first full backup
 Usage: nelcota pitr enable [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -520,8 +539,8 @@ Stops archiving (the backups already in S3 are kept)
 Usage: nelcota pitr disable [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -533,8 +552,8 @@ Base backups and the time range that can be restored
 Usage: nelcota pitr status [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -546,9 +565,9 @@ Restores the database to a moment (REPLACES the current data)
 Usage: nelcota pitr restore [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --time <TIME>        Target moment, e.g. "2026-10-07 14:30:00+00" (default: the last archived write)
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
       --yes                Does not ask for confirmation
   -h, --help               Print help
 ```
@@ -561,9 +580,9 @@ Verifies a cleanly stopped PG17 directory and explicitly clears its fence
 Usage: nelcota pitr recover [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --yes                Does not ask for confirmation; verification is still mandatory
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -579,14 +598,14 @@ Commands:
   serve         Unprivileged HTTP controller (normally managed by systemd)
   worker        Restricted privileged IPC worker (normally managed by systemd)
   status        Inspect the durable journal over SSH, including interrupted jobs
-  recover       Recover one interrupted job. Never restores an old snapshot after commit
+  recover       Recover one interrupted job; resume the committed version by default
   host-recover  Resume a host-management receipt after inspecting the interrupted operation
   host-status   Inspect host projects and durable management receipts over SSH
   help          Print this message or the help of the given subcommand(s)
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -599,13 +618,13 @@ Usage: nelcota updates enroll [OPTIONS] --origin <ORIGIN> --email <EMAIL> --pass
 
 Options:
   -C, --dir <DIR>
-          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --origin <ORIGIN>
 
       --email <EMAIL>
 
   -p, --project <PROJECT>
-          Project (required when the host has more than one)
+          Project (update defaults to all; other project commands may require one)
       --password-file <PASSWORD_FILE>
           Private file containing a new operator password (at least 16 characters)
       --verifier <VERIFIER>
@@ -626,9 +645,9 @@ Inspect host projects and durable management receipts over SSH
 Usage: nelcota updates host-status [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --policy <POLICY>    [default: /etc/nelcota-updates/policy.json]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -640,25 +659,26 @@ Resume a host-management receipt after inspecting the interrupted operation
 Usage: nelcota updates host-recover [OPTIONS] --job <JOB>
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --policy <POLICY>    [default: /etc/nelcota-updates/policy.json]
       --job <JOB>
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
 ### nelcota updates recover
 
 ```text
-Recover one interrupted job. Never restores an old snapshot after commit
+Recover one interrupted job; resume the committed version by default
 
 Usage: nelcota updates recover [OPTIONS] --job <JOB>
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --policy <POLICY>    [default: /etc/nelcota-updates/policy.json]
       --job <JOB>
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
+      --restore-snapshot   Restore the verified pre-update snapshot after commit, discarding later writes
   -h, --help               Print help
 ```
 
@@ -670,9 +690,9 @@ Unprivileged HTTP controller (normally managed by systemd)
 Usage: nelcota updates serve [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --config <CONFIG>    [default: /etc/nelcota-updates/controller.json]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -684,9 +704,9 @@ Restricted privileged IPC worker (normally managed by systemd)
 Usage: nelcota updates worker [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --policy <POLICY>    [default: /etc/nelcota-updates/policy.json]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -698,9 +718,9 @@ Inspect the durable journal over SSH, including interrupted jobs
 Usage: nelcota updates status [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
       --policy <POLICY>    [default: /etc/nelcota-updates/policy.json]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -712,8 +732,8 @@ Takes a base backup now (full on Sundays, differential otherwise)
 Usage: nelcota pitr backup [OPTIONS]
 
 Options:
-  -C, --dir <DIR>          Host folder (where nelcota-host.json, caddy/ and projects/ live) [env: NELCOTA_ROOT=] [default: .]
-  -p, --project <PROJECT>  Project (required when the host has more than one)
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
   -h, --help               Print help
 ```
 
@@ -744,3 +764,79 @@ to bypass a blocked host. For permission/SQL/auth errors, see
 
 Related: [configuration](configuration.md), [deploy](deploy.md), [backup](backup.md)
 and [controlled updates](panel-updates.md).
+
+### nelcota link
+
+```text
+Links an application folder to a remote deployment environment
+
+Usage: nelcota link [OPTIONS]
+
+Options:
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+      --remote <REMOTE>    API origin of a remote project (HTTPS, or loopback HTTP for development)
+      --env <ENVIRONMENT>  Linked environment name [default: default]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
+      --token <TOKEN>      Deployment credential. Prefer NELCOTA_DEPLOY_TOKEN to command-line history [env: NELCOTA_DEPLOY_TOKEN]
+      --local              Use the local/host database even when this folder has a project link
+  -h, --help               Print help
+```
+
+### nelcota migrate status
+
+```text
+Show applied, pending, missing and diverged repository migrations
+
+Usage: nelcota migrate status [OPTIONS]
+
+Options:
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
+  -h, --help               Print help
+```
+
+### nelcota db
+
+```text
+Local development database maintenance
+
+Usage: nelcota db [OPTIONS] <COMMAND>
+
+Commands:
+  reset  Rebuild only this project's owned local development database from migrations and seed.sql
+  help   Print this message or the help of the given subcommand(s)
+
+Options:
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
+  -h, --help               Print help
+```
+
+### nelcota db reset
+
+```text
+Rebuild only this project's owned local development database from migrations and seed.sql
+
+Usage: nelcota db reset [OPTIONS]
+
+Options:
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+      --yes
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
+  -h, --help               Print help
+```
+
+### nelcota token deploy
+
+```text
+Opaque credential scoped to remote migrations and type downloads
+
+Usage: nelcota token deploy [OPTIONS]
+
+Options:
+  -C, --dir <DIR>          Host folder (default: current directory; update also finds /opt/nelcota) [env: NELCOTA_ROOT=]
+      --days <DAYS>        [default: 30]
+      --name <NAME>        [default: cli-deploy]
+  -p, --project <PROJECT>  Project (update defaults to all; other project commands may require one)
+  -h, --help               Print help
+```

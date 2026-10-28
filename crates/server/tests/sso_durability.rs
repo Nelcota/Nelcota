@@ -239,6 +239,8 @@ async fn process_redemption_child() {
         nelcota_auth::Keys::new(Some(&nelcota_auth::generate_ed25519_private_key()), None).unwrap(),
     );
     let state = nelcota_admin::AdminState {
+        production: false,
+        migration_backup: None,
         webhooks: Default::default(),
         sql: Arc::default(),
         exports: Arc::new(nelcota_admin::ExportExecutor::new(

@@ -42,11 +42,13 @@ const BUDGETS: Record<string, number> = {
   // Skipping the lossless-number rewrite pass when no token can lose digits
   // (8-12x faster parsing of typical responses) adds 13-44 B gzip to every
   // entry point below; each budget rose by 50 B for it.
-  'index.js': 19_100,
+  // Initial-session subscriptions and exact write counts add 127 B at root,
+  // 110 B to auth and 21 B to REST; the independent testing entry adds no bytes here.
+  'index.js': 19_250,
   // Standalone factories include HTTP and keep the other feature modules out.
-  'rest/index.js': 10_050,
+  'rest/index.js': 10_100,
   // Failed persistence must retain rotated tokens; background failures are observed.
-  'auth/index.js': 12_900,
+  'auth/index.js': 13_050,
   'storage/index.js': 8_050,
 };
 

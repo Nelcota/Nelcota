@@ -63,6 +63,13 @@ pub async fn apply(
             ..Default::default()
         }));
     }
+    if state.production {
+        return Err(ApiError::new(
+            axum::http::StatusCode::FORBIDDEN,
+            "production_schema_locked",
+            "this production project accepts schema changes through migrations; export and deploy the SQL from the repository",
+        ));
+    }
     let message = kind.summary(target);
     {
         let mut client = state.db.get().await?;

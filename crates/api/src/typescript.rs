@@ -100,49 +100,85 @@ fn relationships(out: &mut String, catalog: &Catalog, table: &Table) {
     );
 }
 
+fn ts_named(catalog: &Catalog, type_name: &str) -> (String, bool) {
+    if let Some(element) = type_name.strip_suffix("[]") {
+        let (base, _) = ts_named(catalog, element);
+        return (format!("({base} | null)[]"), false);
+    }
+    if let Some(named) = catalog.named_types.get(type_name) {
+        let section = match (named.enum_values.is_empty(), named.relation.as_deref()) {
+            (false, _) => "Enums",
+            (true, Some(name)) => {
+                if let Some(table) = catalog.tables.get(name) {
+                    let section = match table.kind {
+                        TableKind::Table => "Tables",
+                        _ => "Views",
+                    };
+                    return (
+                        format!(
+                            "Database[{}][{}][{}][\"Row\"]",
+                            string(&catalog.schema),
+                            string(section),
+                            string(name)
+                        ),
+                        true,
+                    );
+                }
+                return ("unknown".into(), false);
+            }
+            _ => "CompositeTypes",
+        };
+        return (
+            format!(
+                "Database[{}][{}][{}]",
+                string(&catalog.schema),
+                string(section),
+                string(&named.name)
+            ),
+            section == "CompositeTypes",
+        );
+    }
+    // Preserve hand-built catalogs and pre-introspection fixtures.
+    let table_name = type_name
+        .strip_prefix(&format!("{}.", catalog.schema))
+        .unwrap_or(type_name);
+    if let Some(table) = catalog.tables.get(table_name) {
+        let section = match table.kind {
+            TableKind::Table => "Tables",
+            _ => "Views",
+        };
+        return (
+            format!(
+                "Database[{}][{}][{}][\"Row\"]",
+                string(&catalog.schema),
+                string(section),
+                string(&table.name)
+            ),
+            true,
+        );
+    }
+    (ts_scalar(type_name), false)
+}
+
 fn function_signature(catalog: &Catalog, function: &Function) -> String {
     let args = function
         .args
         .iter()
         .map(|a| {
+            let optional = match a.has_default {
+                true => "?",
+                false => "",
+            };
             format!(
-                "{}{}: {}",
+                "{}{optional}: {}",
                 key(&a.name),
-                match a.has_default {
-                    true => "?",
-                    false => "",
-                },
-                ts_scalar(&a.type_name)
+                ts_named(catalog, &a.type_name).0
             )
         })
         .collect::<Vec<_>>()
         .join("; ");
-    fn unquote(s: &str) -> &str {
-        s.strip_prefix('"')
-            .and_then(|s| s.strip_suffix('"'))
-            .unwrap_or(s)
-    }
-    let table_name = match function.return_type.split_once('.') {
-        Some((prefix, name)) if unquote(prefix) == catalog.schema => unquote(name),
-        Some(_) => function.return_type.as_str(),
-        None => unquote(&function.return_type),
-    };
-    let relation = catalog.tables.get(table_name);
-    let base = relation
-        .map(|t| {
-            let section = match t.kind == TableKind::Table {
-                true => "Tables",
-                false => "Views",
-            };
-            format!(
-                "Database[{}][{}][{}][\"Row\"]",
-                string(&catalog.schema),
-                string(section),
-                string(&t.name)
-            )
-        })
-        .unwrap_or_else(|| ts_scalar(&function.return_type));
-    let returns = match (function.returns_set, relation.is_some()) {
+    let (base, relation) = ts_named(catalog, &function.return_type);
+    let returns = match (function.returns_set, relation) {
         (false, _) => base,
         (true, true) => format!("{base}[]"),
         // Scalar sets can include NULL rows; group unions before `[]`.
@@ -234,6 +270,15 @@ pub fn generate(catalog: &Catalog) -> String {
             }
         }
     }
+    for named in catalog
+        .named_types
+        .values()
+        .filter(|t| !t.enum_values.is_empty())
+    {
+        if !enums.iter().any(|(name, _)| name == &named.name) {
+            enums.push((named.name.clone(), &named.enum_values));
+        }
+    }
     for (name, values) in enums {
         let union = values
             .iter()
@@ -242,7 +287,33 @@ pub fn generate(catalog: &Catalog) -> String {
             .join(" | ");
         let _ = writeln!(out, "      {}: {union};", key(&name));
     }
-    out.push_str("    };\n  };\n}\n");
+    out.push_str("    };\n");
+    let composites: Vec<_> = catalog
+        .named_types
+        .values()
+        .filter(|t| t.enum_values.is_empty() && t.relation.is_none())
+        .collect();
+    if !composites.is_empty() {
+        out.push_str("    CompositeTypes: {\n");
+        for composite in composites {
+            let _ = writeln!(out, "      {}: {{", key(&composite.name));
+            for field in &composite.fields {
+                let null = match field.nullable {
+                    true => " | null",
+                    false => "",
+                };
+                let _ = writeln!(
+                    out,
+                    "        {}: {}{null};",
+                    key(&field.name),
+                    ts_named(catalog, &field.type_name).0
+                );
+            }
+            out.push_str("      };\n");
+        }
+        out.push_str("    };\n");
+    }
+    out.push_str("  };\n}\n");
     out
 }
 

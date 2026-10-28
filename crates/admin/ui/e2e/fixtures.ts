@@ -23,6 +23,7 @@ export async function fixture(page: Page, contentLanguage: 'pt-BR' | 'en' = 'pt-
     const path = url.pathname.slice('/admin/api'.length);
     const search = url.searchParams.get('q') ?? '';
     const reply = (json: unknown) => route.fulfill({ status: 200, json });
+    if (path === '/tokens/deploy' && req.method() === 'GET') return reply({ tokens: [] });
     if (path === '/profile') return reply({ avatar: null });
     if (path === '/session' || path === '/login') return reply({ email: 'admin@example.test' });
     if (path === '/whoami') return reply({ project: 'nelcota-demo' });

@@ -3,6 +3,11 @@ import type { Messages } from '../../index.svelte'
 import type ptBR from '../pt-BR/migrations'
 
 const en: Messages<typeof ptBR> = {
+  upload: {
+    title: 'Apply repository migrations',
+    description: 'Select the complete migrations folder, including already applied files. Preview checks history without changing data. Each pending file commits separately; keep a verified backup before production deployment.',
+    files: 'Migration SQL files', preview: 'Preview migrations', apply: 'Apply migrations',
+  },
   title: 'Migrations',
   summary: {
     pending: { one: '{count} pending change', other: '{count} pending changes' },
