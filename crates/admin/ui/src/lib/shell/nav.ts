@@ -114,7 +114,7 @@ export const navLabel = (item: NavItem): MessageKey => item.label ?? item.title
 export function isNavActive(item: NavItem): boolean {
   if (item.filter) {
     const filter = route.query.get('filter')
-    const known = navPills.some(group => group.children?.some(child => child.filter === filter && pathOf(child) === cleanPath()))
+    const known = hasFilter(navPills, cleanPath(), filter)
     return cleanPath() === pathOf(item) && (known ? filter : 'all') === item.filter
   }
   if (item.section) return cleanPath() === '/connect' && apiSectionLocation.current === item.section
@@ -126,6 +126,13 @@ export function isNavActive(item: NavItem): boolean {
 }
 
 const pathOf = (item: NavItem) => item.path.split('?')[0]
+
+function hasFilter(items: readonly NavItem[], path: string, filter: string | null): boolean {
+  return items.some(item =>
+    (item.filter === filter && pathOf(item) === path) ||
+    (item.children ? hasFilter(item.children, path, filter) : false),
+  )
+}
 
 export function navPath(item: NavItem): string {
   if (item.filter && cleanPath() === pathOf(item)) return filterPath(item, item.filter)
