@@ -278,6 +278,7 @@ mod tests {
             ]
             .into(),
             functions: Default::default(),
+            named_types: Default::default(),
         }
     }
 

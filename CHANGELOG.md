@@ -74,6 +74,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- Generated TypeScript RPC arguments and results retain named enums, composite
+  fields and table rows, including arrays and enums used only by functions.
+
 - Document column-level UPDATE grants on upsert conflict keys and the
   `ignoreDuplicates` alternative in the SDK and authorization troubleshooting.
 

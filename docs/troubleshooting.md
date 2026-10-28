@@ -77,6 +77,10 @@ columns are unknown to the compiler and removed ones still compile, failing
 only at run time with `invalid_query` or `db_error`. Running it in CI and
 failing on a diff catches stale files.
 
+Function arguments and returns preserve enum unions and relation row types.
+Standalone composite types appear in `Database[schema]["CompositeTypes"]`;
+RPC-only enums appear in `Enums` even when no table column uses them.
+
 The server itself reloads its catalog on every DDL. On a managed Postgres
 without the event trigger, reload it by hand: `NOTIFY nelcota, 'reload schema';`.
 

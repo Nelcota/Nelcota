@@ -138,3 +138,52 @@ async fn metadata_preserves_order_flags_privileges_and_rpc_arguments() {
     assert!(catalog.functions["rows"][0].returns_set);
     assert!(catalog.functions["nothing"][0].returns_void);
 }
+
+#[tokio::test]
+async fn rpc_types_preserve_enums_composites_and_table_arguments_without_column_usage() {
+    let app = TestApp::spawn().await;
+    app.admin_client.batch_execute(
+        r#"CREATE SCHEMA rpc_types_contract;
+           CREATE TYPE rpc_types_contract.member_role AS ENUM ('owner', 'editor', 'viewer');
+           CREATE TYPE rpc_types_contract."role.summary" AS (role rpc_types_contract.member_role, total bigint);
+           CREATE TABLE rpc_types_contract.members (id uuid, name text);
+           CREATE FUNCTION rpc_types_contract.role_for(role rpc_types_contract.member_role)
+             RETURNS rpc_types_contract.member_role LANGUAGE sql AS 'SELECT role';
+           CREATE FUNCTION rpc_types_contract.summarize(roles rpc_types_contract.member_role[], value rpc_types_contract."role.summary")
+             RETURNS rpc_types_contract."role.summary" LANGUAGE sql AS 'SELECT value';
+           CREATE FUNCTION rpc_types_contract.member_rows(value rpc_types_contract.members)
+             RETURNS SETOF rpc_types_contract.members LANGUAGE sql AS 'SELECT value.*';"#
+    ).await.unwrap();
+    let catalog = Catalog::load(&app.admin_client, "rpc_types_contract")
+        .await
+        .unwrap();
+    let code = nelcota_api::typescript::generate(&catalog);
+    assert!(code.contains(r#"role_for: { Args: { role: Database["rpc_types_contract"]["Enums"]["member_role"] }; Returns: Database["rpc_types_contract"]["Enums"]["member_role"] }"#), "{code}");
+    assert!(
+        code.contains(
+            r#"roles: (Database["rpc_types_contract"]["Enums"]["member_role"] | null)[]"#
+        ),
+        "{code}"
+    );
+    assert!(
+        code.contains(r#"value: Database["rpc_types_contract"]["CompositeTypes"]["role.summary"]"#),
+        "{code}"
+    );
+    assert!(
+        code.contains(r#"value: Database["rpc_types_contract"]["Tables"]["members"]["Row"]"#),
+        "{code}"
+    );
+    assert!(
+        code.contains(r#"Returns: Database["rpc_types_contract"]["Tables"]["members"]["Row"][]"#),
+        "{code}"
+    );
+    assert!(
+        code.contains(r#"member_role: "owner" | "editor" | "viewer";"#),
+        "{code}"
+    );
+    assert!(
+        code.contains(r#"role: Database["rpc_types_contract"]["Enums"]["member_role"] | null;"#),
+        "{code}"
+    );
+    assert!(code.contains("total: number | string | null;"), "{code}");
+}
