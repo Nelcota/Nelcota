@@ -68,6 +68,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- Development environment values are shell-quoted, include a URL-encoded
+  `DATABASE_URL`, and preserve unreadable state instead of replacing credentials.
+
 - Interrupted updates before snapshot capture remain recoverable across repeated
   failures. SSH recovery can explicitly restore a verified snapshot after commit;
   the operator's data-loss decision is durable and never selected by HTTP recovery.

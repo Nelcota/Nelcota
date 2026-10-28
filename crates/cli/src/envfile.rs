@@ -103,7 +103,7 @@ pub fn parse(text: &str) -> Vec<(String, String)> {
                 .and_then(|v| v.strip_suffix('\''))
                 .or_else(|| v.strip_prefix('"').and_then(|v| v.strip_suffix('"')))
                 .unwrap_or(v);
-            (k.trim().to_owned(), v.to_owned())
+            (k.trim().to_owned(), v.replace("'\\''", "'"))
         })
         .collect()
 }

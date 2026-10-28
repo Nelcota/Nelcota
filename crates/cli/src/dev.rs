@@ -37,9 +37,8 @@ struct DevState {
 fn load_state(root: &Path) -> anyhow::Result<Option<DevState>> {
     let text = match fs::read_to_string(root.join(STATE_FILE)) {
         Ok(text) => text,
-        _ => {
-            return Ok(None);
-        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(error).context("could not read development state"),
     };
     let env = parse(&text);
     let get = |key: &str| {
@@ -67,29 +66,50 @@ fn load_state(root: &Path) -> anyhow::Result<Option<DevState>> {
 
 fn save_state(root: &Path, state: &DevState) -> anyhow::Result<()> {
     fs::create_dir_all(root.join(".nelcota"))?;
-    write_private(
-        &root.join(STATE_FILE),
-        &format!(
-            "# Development secrets (do not use in production).\nPOSTGRES_PASSWORD={}\nAUTHENTICATOR_PASSWORD={}\nJWT_PRIVATE_KEY={}\nDB_PORT={}\nADMIN_EMAIL={}\nADMIN_PASSWORD={}\nADMIN_PASSWORD_HASH={}\n",
-            state.postgres_password,
-            state.authenticator_password,
-            state.jwt_private_key,
-            state.db_port,
-            state.admin_email,
-            state.admin_password,
-            state.admin_password_hash
+    let database_url = database_url(state)?;
+    let values = [
+        ("POSTGRES_PASSWORD", state.postgres_password.as_str()),
+        (
+            "AUTHENTICATOR_PASSWORD",
+            state.authenticator_password.as_str(),
         ),
-    )?;
+        ("JWT_PRIVATE_KEY", state.jwt_private_key.as_str()),
+        ("DB_PORT", &state.db_port.to_string()),
+        ("ADMIN_EMAIL", state.admin_email.as_str()),
+        ("ADMIN_PASSWORD", state.admin_password.as_str()),
+        ("ADMIN_PASSWORD_HASH", state.admin_password_hash.as_str()),
+        ("DATABASE_URL", database_url.as_str()),
+    ];
+    let mut text = String::from("# Development secrets (do not use in production).\n");
+    for (key, value) in values {
+        if value.contains(['\n', '\r', '\0']) {
+            bail!("{key} must be a single-line environment value");
+        }
+        // POSIX single quotes prevent parameter, command and history expansion.
+        text.push_str(&format!("{key}='{}'\n", value.replace('\'', "'\\''")));
+    }
+    write_private(&root.join(STATE_FILE), &text)?;
     fs::write(root.join(".nelcota/.gitignore"), "*\n")?;
     Ok(())
 }
 
-fn config_for(root: &Path, state: &DevState, listen: std::net::SocketAddr) -> Config {
-    Config {
-        database_url: Secret::new(format!(
-            "postgres://postgres:{}@127.0.0.1:{}/postgres",
-            state.postgres_password, state.db_port
-        )),
+fn database_url(state: &DevState) -> anyhow::Result<String> {
+    let mut url = url::Url::parse(&format!(
+        "postgres://postgres@127.0.0.1:{}/postgres",
+        state.db_port
+    ))?;
+    url.set_password(Some(&state.postgres_password))
+        .map_err(|()| anyhow::anyhow!("could not encode the development database password"))?;
+    Ok(url.into())
+}
+
+fn config_for(
+    root: &Path,
+    state: &DevState,
+    listen: std::net::SocketAddr,
+) -> anyhow::Result<Config> {
+    Ok(Config {
+        database_url: Secret::new(database_url(state)?),
         authenticator_password: Secret::new(state.authenticator_password.clone()),
         jwt_private_key: Some(Secret::new(state.jwt_private_key.clone())),
         jwt_issuer: "nelcota-dev".into(),
@@ -101,12 +121,14 @@ fn config_for(root: &Path, state: &DevState, listen: std::net::SocketAddr) -> Co
         admin_password_hash: Some(Secret::new(state.admin_password_hash.clone())),
         project_name: Some("nelcota-dev".into()),
         ..Config::default()
-    }
+    })
 }
 
 /// Configuration of the already created dev environment (for `migrate`/`types`).
 pub fn saved_config(root: &Path) -> anyhow::Result<Option<Config>> {
-    Ok(load_state(root)?.map(|s| config_for(root, &s, ([127, 0, 0, 1], 8000).into())))
+    load_state(root)?
+        .map(|s| config_for(root, &s, ([127, 0, 0, 1], 8000).into()))
+        .transpose()
 }
 
 const DEFAULT_DB_PORT: u16 = 54322;
@@ -184,7 +206,8 @@ pub fn run(root: &Path, args: DevArgs) -> anyhow::Result<Outcome> {
         }
     }
 
-    let config = config_for(root, &state, args.listen);
+    save_state(root, &state)?;
+    let config = config_for(root, &state, args.listen)?;
     wait_for_postgres(&config)?;
     ok(&format!("Postgres at 127.0.0.1:{}", state.db_port));
 
@@ -245,7 +268,7 @@ mod tests {
         let second = load_state(root.path()).unwrap().unwrap();
         assert_eq!(first.admin_password, second.admin_password);
         assert_eq!(first.admin_password_hash, second.admin_password_hash);
-        let config = config_for(root.path(), &second, ([127, 0, 0, 1], 8000).into());
+        let config = config_for(root.path(), &second, ([127, 0, 0, 1], 8000).into()).unwrap();
         assert_eq!(config.admin_email.as_deref(), Some("admin@localhost"));
         assert!(config.admin_password_hash.is_some());
         #[cfg(unix)]
@@ -260,6 +283,43 @@ mod tests {
                 0o600
             );
         }
+    }
+
+    #[test]
+    fn development_env_can_be_sourced_without_expanding_secrets() {
+        let root = tempfile::tempdir().unwrap();
+        let mut state = prepare_state(root.path(), None).unwrap();
+        state.postgres_password = "a$b`c@:/?#' space".into();
+        save_state(root.path(), &state).unwrap();
+        let text = fs::read_to_string(root.path().join(STATE_FILE)).unwrap();
+        let parsed = parse(&text);
+        assert_eq!(
+            parsed
+                .iter()
+                .find(|(key, _)| key == "POSTGRES_PASSWORD")
+                .unwrap()
+                .1,
+            state.postgres_password
+        );
+        let output = Command::new("bash")
+            .args([
+                "-c",
+                ". \"$1\"; printf '%s\\n%s' \"$POSTGRES_PASSWORD\" \"$ADMIN_PASSWORD_HASH\"",
+                "test",
+            ])
+            .arg(root.path().join(STATE_FILE))
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        assert_eq!(
+            String::from_utf8(output.stdout).unwrap(),
+            format!("{}\n{}", state.postgres_password, state.admin_password_hash)
+        );
+        let url = database_url(&state).unwrap();
+        assert!(!url.contains("@:/?#"));
+        assert_eq!(url::Url::parse(&url).unwrap().host_str(), Some("127.0.0.1"));
+        let loaded = load_state(root.path()).unwrap().unwrap();
+        assert_eq!(loaded.postgres_password, state.postgres_password);
     }
 
     #[test]

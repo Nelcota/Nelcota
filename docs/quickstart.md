@@ -45,7 +45,18 @@ Its account is `admin@localhost`; read `ADMIN_PASSWORD` locally from
 `.nelcota/dev.env`. Do not share that file.
 
 Generated database passwords, signing keys and panel credentials persist in
-that owner-readable, Git-ignored file. Repeating `dev` reuses them. Use
+that owner-readable, Git-ignored file. Repeating `dev` reuses them.
+The file can also be sourced by Bash or Zsh for local SQL tests:
+
+```sh
+set -a
+. .nelcota/dev.env
+set +a
+# DATABASE_URL includes the URL-encoded database password.
+psql "$DATABASE_URL"
+```
+
+Use
 `--listen 127.0.0.1:9000` or `--db-port 54323` for free ports; changing the database
 port selects another container/volume, rather than moving data. Ctrl+C stops
 the API; the database container and its data remain until you stop/remove them.
