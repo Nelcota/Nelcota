@@ -115,6 +115,19 @@ async fn concurrent_recovery_requests_issue_one_link_and_one_email() {
     lock.commit().await.unwrap();
     assert_eq!(first.await.unwrap().status, StatusCode::OK);
     assert_eq!(second.await.unwrap().status, StatusCode::OK);
+    // Responses acknowledge admission; both issuers still run in the background.
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let status = app.pool.status();
+            if status.available == status.size {
+                return;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("recovery issuers did not release their database clients");
+    app.outbox.wait_for(1).await;
     let active: i64 = app
         .admin_client
         .query_one(
@@ -125,7 +138,6 @@ async fn concurrent_recovery_requests_issue_one_link_and_one_email() {
         .unwrap()
         .get(0);
     assert_eq!(active, 1);
-    app.outbox.wait_for(1).await;
     assert_eq!(app.outbox.sent().len(), 1);
 }
 
