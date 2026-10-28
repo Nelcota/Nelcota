@@ -101,7 +101,7 @@ fn database_url(state: &DevState) -> anyhow::Result<String> {
         "postgres://postgres@127.0.0.1:{}/postgres",
         state.db_port
     ))?;
-    url.set_password(Some(&state.postgres_password))
+    url.set_password(Some(&state.postgres_password.replace('%', "%25")))
         .map_err(|()| anyhow::anyhow!("could not encode the development database password"))?;
     Ok(url.into())
 }
@@ -502,7 +502,7 @@ mod tests {
     fn development_env_can_be_sourced_without_expanding_secrets() {
         let root = tempfile::tempdir().unwrap();
         let mut state = prepare_state(root.path(), None).unwrap();
-        state.postgres_password = "a$b`c@:/?#' space".into();
+        state.postgres_password = "a$b`c@:/?#' space%40%literal".into();
         save_state(root.path(), &state).unwrap();
         let text = fs::read_to_string(root.path().join(STATE_FILE)).unwrap();
         let parsed = parse(&text);
@@ -531,6 +531,11 @@ mod tests {
         let url = database_url(&state).unwrap();
         assert!(!url.contains("@:/?#"));
         assert_eq!(url::Url::parse(&url).unwrap().host_str(), Some("127.0.0.1"));
+        let decoded = url.parse::<tokio_postgres::Config>().unwrap();
+        assert_eq!(
+            decoded.get_password(),
+            Some(state.postgres_password.as_bytes())
+        );
         let loaded = load_state(root.path()).unwrap().unwrap();
         assert_eq!(loaded.postgres_password, state.postgres_password);
     }
