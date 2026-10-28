@@ -99,6 +99,7 @@ pub fn remove(
             ok(&format!("final backup at {}", archived.display()));
         }
     }
+    crate::migration_backup::install::remove(&project)?;
     match manifest.runtime {
         Runtime::Docker if project.exists() => lifecycle::down(&project, true)?,
         Runtime::Docker => {}

@@ -21,7 +21,7 @@ for (const [route, endpoints] of Object.entries(pageContracts)) {
     // Check the actual data contracts and rendered loading state instead.
     // Connect builds an AI context from the generated types; the shared fixture
     // leaves that endpoint unmocked (a 404 would show an error alert).
-    await page.route('**/admin/api/typescript', route => route.fulfill({ contentType: 'text/plain', body: 'export type Database = { public: { Tables: {} } }\n' }))
+    await page.route('**/admin/api/typescript', route => route.fulfill({ headers: { 'x-nelcota-migration-version': '2' }, contentType: 'text/plain', body: 'export type Database = { public: { Tables: {} } }\n' }))
     const responses = endpoints.map(path => page.waitForResponse(response => new URL(response.url()).pathname === `/admin/api${path}`))
     await page.goto(`/admin/${route}`)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()

@@ -37,6 +37,14 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.notes TO authenticated;
 GRANT SELECT ON public.notes TO anon;   -- only if visitors may read it
 ```
 
+For an upsert with column-level grants, `UPDATE` must include every payload
+column, including the conflict column. For `upsert({ id, name })`,
+`GRANT INSERT (id, name), UPDATE (name)` is insufficient: grant
+`UPDATE (id, name)` instead. The generated `ON CONFLICT ... DO UPDATE SET`
+assigns both columns. `upsert(rows, { ignoreDuplicates: true })` uses
+`DO NOTHING`, keeps existing rows and avoids that UPDATE requirement.
+The caller still needs the applicable SELECT grants and RLS policies.
+
 Functions called through `rpc` need `GRANT EXECUTE`. Storage needs policies on
 `storage.objects` ([storage.md](storage.md)).
 
@@ -51,7 +59,7 @@ The server has `NELCOTA_EMAIL_CONFIRMATION_URL` set, so a new account must
 open the link sent by email before it can sign in with a password. Sign-up
 answers with the user and no session while it waits. Send the link again
 with `resendConfirmation(email)` (`resend_confirmation` in Rust). Locally,
-`nelcota dev` leaves confirmation off.
+`nelcota dev` leaves confirmation off; use `nelcota dev --mail` to test it locally.
 
 ## `redirect_not_allowed` when starting an OAuth sign-in
 
@@ -68,6 +76,10 @@ again (`nelcota types -o src/database.ts`, or `--lang rust`), otherwise new
 columns are unknown to the compiler and removed ones still compile, failing
 only at run time with `invalid_query` or `db_error`. Running it in CI and
 failing on a diff catches stale files.
+
+Function arguments and returns preserve enum unions and relation row types.
+Standalone composite types appear in `Database[schema]["CompositeTypes"]`;
+RPC-only enums appear in `Enums` even when no table column uses them.
 
 The server itself reloads its catalog on every DDL. On a managed Postgres
 without the event trigger, reload it by hand: `NOTIFY nelcota, 'reload schema';`.

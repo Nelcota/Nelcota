@@ -27,12 +27,14 @@ export class SessionManager {
   readonly #pkceLockName: string | symbol;
   readonly #margin: number;
   readonly #scheduler: RefreshScheduler;
-  readonly #listeners = new Set<AuthListener>();
+  readonly #listeners = new Set<{ listener: AuthListener; ready: boolean }>();
   readonly #broadcast: Broadcast | undefined;
+  readonly #callerOwned: boolean;
   readonly #onBackgroundError: AuthOptions['onBackgroundError'];
   #refreshing: Promise<Result<Session>> | null = null;
 
   constructor(url: URL, options: AuthOptions, private rotate: (token: string, options: AuthRequestOptions) => Promise<Result<Session>>, accessToken?: TokenSource) {
+    this.#callerOwned = accessToken !== undefined;
     const margin = options.refreshMargin ?? 60;
     if (!Number.isFinite(margin) || margin < 0) throw new NelcotaUsageError('refreshMargin must be a finite non-negative number');
     this.#margin = margin;
@@ -55,13 +57,22 @@ export class SessionManager {
   consumeVerifier(): Promise<string | null> { return this.#store.consumeVerifier(); }
 
   onChange(listener: AuthListener): () => void {
-    this.#listeners.add(listener);
-    return () => this.#listeners.delete(listener);
+    const subscription = { listener, ready: false };
+    this.#listeners.add(subscription);
+    // The lifecycle lock orders this baseline before subsequent writes/refreshes.
+    // Invoke without awaiting user code: listeners may call auth methods themselves.
+    this.#background(this.#locked(async () => {
+      const session = this.#callerOwned ? null : await this.#store.read();
+      if (!this.#listeners.has(subscription)) return;
+      subscription.ready = true;
+      this.#background((async () => listener('initial_session', session))(), false);
+    }));
+    return () => this.#listeners.delete(subscription);
   }
   #emit(event: AuthEvent, session: Session | null): void {
-    for (const listener of this.#listeners) {
-      // Invoke now, preserving unsubscribe order; adopt both throws and promises.
-      this.#background((async () => listener(event, session))(), false);
+    for (const subscription of this.#listeners) {
+      if (!subscription.ready) continue;
+      this.#background((async () => subscription.listener(event, session))(), false);
     }
   }
 

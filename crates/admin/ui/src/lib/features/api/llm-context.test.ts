@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { llmContext, type LlmContextInput } from './llm-context'
+import { latestMigration, llmContext, type LlmContextInput } from './llm-context'
 
 const rls = (enabled: boolean) => ({ state: enabled ? 'ok' as const : 'danger' as const, label: enabled ? 'enabled' : 'disabled', enabled, forced: false, policies: enabled ? 1 : 0 })
 const input = (overrides: Partial<LlmContextInput> = {}): LlmContextInput => ({
   origin: 'https://api.acme.test',
   project: 'acme',
+  migrationVersion: 4,
   generatedAt: new Date('2026-10-26T12:00:00Z'),
   types: 'export type Database = {\n  public: { Tables: { notes: { Row: { id: number; body: string } } } }\n}\n',
   policies: {
@@ -52,8 +53,17 @@ describe('LLM context', () => {
 
   it('says when storage is disabled and falls back to placeholders', () => {
     const text = llmContext(input({ storage: { enabled: false }, policies: { schema: 'public', exposed_without_rls: [], anon_functions: [], tables: [] } }))
+    expect(text).toContain('No tables are exposed yet. Apply your application migrations')
     expect(text).toContain('Storage is disabled on this server.')
     expect(text).toContain("nelcota.from('your_table')")
     expect(text).not.toContain('RLS is off')
   })
+})
+
+it('records the applied version rather than pending/generated versions', () => {
+  expect(llmContext(input())).toContain('Latest applied migration: V4')
+  expect(llmContext(input({ migrationVersion: null }))).toContain('Latest applied migration: none')
+  const migration = (version: number, applied_on: string | null) => ({ version, applied_on, name: 'test', in_folder: true, from_panel: false })
+  expect(latestMigration({ migrations: [migration(9, null), migration(4, 'date'), migration(2, 'date')], pending: [], next_version: 10, folder: null })).toBe(4)
+  expect(latestMigration({ migrations: [], pending: [], next_version: 1, folder: null })).toBeNull()
 })

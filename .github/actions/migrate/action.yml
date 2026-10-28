@@ -1,0 +1,41 @@
+name: Apply Nelcota migrations
+description: Build the pinned CLI and apply repository migrations through the scoped deployment API.
+inputs:
+  url:
+    description: HTTPS origin of the Nelcota project.
+    required: true
+  token:
+    description: Scoped ndp_ deployment token from repository secrets.
+    required: true
+  path:
+    description: Application migrations directory relative to the checked-out application.
+    default: migrations
+  dry-run:
+    description: Validate migration history without applying SQL.
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Build the pinned deployment CLI
+      shell: bash
+      env:
+        NELCOTA_ACTION_PATH: ${{ github.action_path }}
+        NELCOTA_ACTION_TARGET: ${{ runner.temp }}/nelcota-migrate-action
+      run: |
+        set -euo pipefail
+        cd "$NELCOTA_ACTION_PATH/../../.."
+        rustup toolchain install 1.99.1 --profile minimal
+        cargo +1.99.1 build --locked -p nelcota-server --bin nelcota --target-dir "$NELCOTA_ACTION_TARGET"
+    - name: Validate and apply migrations
+      shell: bash
+      env:
+        NELCOTA_DEPLOY_TOKEN: ${{ inputs.token }}
+        NELCOTA_REMOTE_URL: ${{ inputs.url }}
+        NELCOTA_MIGRATIONS_PATH: ${{ inputs.path }}
+        NELCOTA_DRY_RUN: ${{ inputs.dry-run }}
+        NELCOTA_ACTION_BINARY: ${{ runner.temp }}/nelcota-migrate-action/debug/nelcota
+      run: |
+        set -euo pipefail
+        args=(migrate --remote "$NELCOTA_REMOTE_URL" --path "$NELCOTA_MIGRATIONS_PATH")
+        if [ "$NELCOTA_DRY_RUN" = true ]; then args+=(--dry-run); fi
+        "$NELCOTA_ACTION_BINARY" "${args[@]}"

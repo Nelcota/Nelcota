@@ -45,6 +45,7 @@ import { createClient, NelcotaUsageError } from '@nelcota/client';
 import { createRestClient } from '@nelcota/client/rest';
 import { createAuthClient } from '@nelcota/client/auth';
 import { createStorageClient } from '@nelcota/client/storage';
+import { withRollbackTransaction } from '@nelcota/client/testing';
 const session = { access_token: 'access', token_type: 'bearer', expires_in: 900,
   expires_at: Math.floor(Date.now()/1000)+900, refresh_token: 'refresh',
   user: {id:'u1',email:'a@example.com',email_confirmed_at:null,user_metadata:{},created_at:'',last_sign_in_at:null} };
@@ -62,7 +63,8 @@ assert.equal((await auth.signInWithPassword({email:'a@example.com',password:'pw'
 assert.deepEqual((await createStorageClient('https://api.example.com', options).from('files').list()).data, {folders:[],objects:[]});
 assert.throws(()=>createClient('invalid'), NelcotaUsageError);
 auth.dispose();
-console.log('ok  installed JavaScript package and all four entry points');
+assert.equal(typeof withRollbackTransaction, 'function');
+console.log('ok  installed JavaScript package and all five entry points');
 `);
   console.log(run([join(consumer, 'consumer.mjs')], consumer).trim());
   copyFileSync(join(root, 'test/types/database.ts'), join(consumer, 'database.ts'));

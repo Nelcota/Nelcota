@@ -176,7 +176,7 @@ try {
   assert.equal(pending.error, null);
   assert.equal(new URL(new URL(pending.data.url).searchParams.get('redirect_to')).origin, origin);
   const namespace = `${origin}\0${new URL(`http://127.0.0.1:${port}`).href}`;
-  const storedKey = sessionKey([...a.values.values()][0], namespace);
+  const storedKey = await sessionKey([...a.values.values()][0], namespace);
   const originalRow = (await pool.query('SELECT sealed, expires_at FROM nelcota_next.sessions WHERE key=$1', [storedKey])).rows[0];
   for (const [label, sealed, expiry] of [['tampered envelope', originalRow.sealed.slice(0, -4) + 'AAAA', originalRow.expires_at], ['expired envelope', originalRow.sealed, Date.now() - 1]]) {
     await pool.query('UPDATE nelcota_next.sessions SET sealed=$2, expires_at=$3 WHERE key=$1', [storedKey, sealed, expiry]);

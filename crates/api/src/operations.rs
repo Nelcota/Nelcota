@@ -16,6 +16,7 @@ pub(crate) struct ReadResult {
 }
 pub(crate) struct WriteResult {
     pub body: Option<String>,
+    pub rows: u64,
     pub resolution: Option<Resolution>,
 }
 /// A PATCH/DELETE: the representation (if asked for) and the rows changed.
@@ -245,8 +246,10 @@ pub(crate) async fn create(
         upsert.as_ref(),
     )
     .map_err(bad_query)?;
+    let result = write(pool, claims, sql, options.representation).await?;
     Ok(WriteResult {
-        body: write(pool, claims, sql, options.representation).await?.body,
+        body: result.body,
+        rows: result.rows,
         resolution: options.resolution,
     })
 }

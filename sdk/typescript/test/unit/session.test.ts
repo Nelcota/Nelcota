@@ -96,7 +96,7 @@ it('isolates synchronous listener and error-handler failures without stopping re
     await client.auth.setSession(session());
     await vi.advanceTimersByTimeAsync(850_000);
     expect(onBackgroundError).toHaveBeenCalledWith(failure);
-    expect(events).toEqual(['signed_in', 'refreshed']);
+    expect(events).toEqual(['initial_session', 'signed_in', 'refreshed']);
     expect(mock.calls).toHaveLength(1);
     expect((await client.auth.getSession()).data?.refresh_token).toBe('replacement');
   } finally { client.dispose(); vi.useRealTimers(); }

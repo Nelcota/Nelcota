@@ -35,6 +35,7 @@
   "files": [
     "dist",
     "README.md",
+    "docs/edge.md",
     "CHANGELOG.md",
     "sql",
     "LICENSE"
@@ -43,6 +44,7 @@
     "check": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "test": "bun --bun vitest run --maxWorkers=2",
+    "test:edge": "bun scripts/edge-smoke.mjs",
     "test:node": "vitest run --maxWorkers=2",
     "prepack": "bun run build"
   },

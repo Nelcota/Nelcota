@@ -26,6 +26,12 @@ class Ownership(unittest.TestCase):
         self.volume = {"Name": self.fixture.volume,
                        "Labels": {onboarding.VOLUME_OWNER_LABEL: self.fixture.run_id}}
 
+    def test_shell_quoted_development_values_are_decoded_without_expansion(self):
+        state = self.fixture.root / ".nelcota/dev.env"
+        state.parent.mkdir(exist_ok=True)
+        state.write_text("POSTGRES_PASSWORD='literal$hash'\nADMIN_PASSWORD='safe'\n")
+        self.assertEqual(onboarding.state_values(self.fixture.root)["POSTGRES_PASSWORD"], "literal$hash")
+
     def test_matching_password_and_data_volume_establish_ownership(self):
         self.assertTrue(onboarding.owned_container(self.info, {"POSTGRES_PASSWORD": "generated-password"},
                                                   self.fixture.volume))

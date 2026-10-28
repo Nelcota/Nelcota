@@ -13,6 +13,9 @@ Use a framework adapter when one exists:
 | SvelteKit 3 | `@nelcota/ssr/sveltekit` (below) |
 
 Other frameworks call the core directly, as described below.
+The core uses standard Web Crypto and can be bundled for Edge runtimes with a
+compatible shared session store. See [Edge support and the token-cookie
+decision](docs/edge.md); the PostgreSQL adapter remains a separate Node entry.
 
 ## What it provides
 

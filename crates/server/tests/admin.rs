@@ -1,6 +1,9 @@
 //! Panel integration scenarios grouped by feature, sharing the production harness.
 mod common;
 
+#[path = "admin/deploy.rs"]
+mod deploy;
+
 #[path = "admin/access.rs"]
 mod access;
 #[path = "admin/assets.rs"]

@@ -105,6 +105,12 @@ jobs:
               message = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
               print('::error title=SDK contract diagnostics::' + message)
           PY
+      - name: Development, RLS helper and panel browser contracts
+        timeout-minutes: 3
+        run: |
+          cargo build --locked --manifest-path ../../Cargo.toml -p nelcota-server
+          bun install --cwd ../../crates/admin/ui --frozen-lockfile
+          python3 ../../scripts/test-dev.py --binary ../../target/debug/nelcota --testing-helpers --browser
       - name: documented Notes browser example
         timeout-minutes: 5
         run: python3 ../../scripts/test-onboarding.py --binary ../../target/debug/nelcota --browser

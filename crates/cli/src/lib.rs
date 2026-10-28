@@ -12,6 +12,10 @@ mod caddy;
 mod checks;
 mod db;
 mod dev;
+pub use dev::{
+    MigrationWatcher, apply_migrations as apply_development_migrations,
+    watch_migrations as watch_development_migrations,
+};
 mod doctor;
 mod envfile;
 mod host;
@@ -19,6 +23,7 @@ mod init;
 mod lifecycle;
 mod machine;
 mod maintenance;
+mod migration_backup;
 mod naming;
 mod native;
 mod panel_login;
@@ -27,6 +32,7 @@ mod private_fs;
 mod project;
 mod projects;
 mod registry;
+mod remote;
 mod scaffold;
 mod update;
 mod updates;
@@ -137,6 +143,28 @@ pub enum Command {
     Migrate {
         #[arg(long, default_value = "migrations")]
         path: PathBuf,
+        #[command(flatten)]
+        remote: remote::RemoteArgs,
+        /// Validate history and show pending migrations without applying SQL.
+        #[arg(long)]
+        dry_run: bool,
+        #[command(subcommand)]
+        action: Option<MigrateAction>,
+    },
+    /// Configure a project-scoped automatic backup agent for migrations (Linux).
+    MigrationBackup {
+        #[command(subcommand)]
+        action: migration_backup::Action,
+    },
+    /// Local development database maintenance.
+    Db {
+        #[command(subcommand)]
+        action: DbAction,
+    },
+    /// Links an application folder to a remote deployment environment.
+    Link {
+        #[command(flatten)]
+        remote: remote::RemoteArgs,
     },
     /// Updates the app image, with a backup first and a rollback if it fails.
     Upgrade {
@@ -189,6 +217,8 @@ pub enum Command {
     },
     /// Generates TypeScript or Rust types from the exposed schema.
     Types {
+        #[command(flatten)]
+        remote: remote::RemoteArgs,
         #[arg(long, value_enum, default_value_t = TypesLanguage::Typescript)]
         lang: TypesLanguage,
         #[arg(long, short)]
@@ -268,7 +298,8 @@ mod types_tests {
             rust.command,
             Some(Command::Types {
                 lang: TypesLanguage::Rust,
-                out: Some(_)
+                out: Some(_),
+                ..
             })
         ));
         assert!(Cli::try_parse_from(["nelcota", "types", "--lang", "python"]).is_err());
@@ -310,7 +341,29 @@ mod types_tests {
 }
 
 #[derive(Subcommand, Debug)]
+pub enum DbAction {
+    /// Rebuild only this project's owned local development database from migrations and seed.sql.
+    Reset {
+        #[arg(long)]
+        yes: bool,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum MigrateAction {
+    /// Show applied, pending, missing and diverged repository migrations.
+    Status,
+}
+
+#[derive(Subcommand, Debug)]
 pub enum TokenKind {
+    /// Opaque credential scoped to remote migrations and type downloads.
+    Deploy {
+        #[arg(long, default_value_t = 30)]
+        days: u32,
+        #[arg(long, default_value = "cli-deploy")]
+        name: String,
+    },
     /// JWT with the service_role role (BYPASSES RLS: never use it in a frontend).
     ServiceRole {
         #[arg(long, default_value_t = 3650)]
@@ -405,6 +458,16 @@ pub struct InitArgs {
 
 #[derive(Args, Debug)]
 pub struct DevArgs {
+    /// Capture local auth email with Mailpit and require signup confirmation (needs OpenSSL).
+    #[arg(long)]
+    pub mail: bool,
+    /// Application page receiving local email-link fragments.
+    #[arg(
+        long,
+        default_value = "http://localhost:3000/auth/callback",
+        requires = "mail"
+    )]
+    pub mail_callback: String,
     #[arg(long, default_value = "127.0.0.1:8000")]
     pub listen: std::net::SocketAddr,
     /// Local port of the development Postgres (default: the saved one, else 54322).
@@ -476,6 +539,9 @@ pub fn run(cli: Cli) -> anyhow::Result<Outcome> {
         // The newly installed CLI acquires the host lease when it runs upgrade.
         // Holding that lease while waiting for the child would deadlock it.
         Command::Update(args) => done(update::run(&host, selection, args)),
+        Command::MigrationBackup { action } => {
+            done(migration_backup::run(&host, selection, action))
+        }
         Command::Serve => {
             pitr::fence::require_native_clear()?;
             Ok(Outcome::Serve(Box::new(Config::load()?)))
@@ -571,7 +637,27 @@ pub fn run(cli: Cli) -> anyhow::Result<Outcome> {
         }
         Command::PanelLogin { mode } => done(projects::set_panel_login(&host, mode)),
         Command::Dev(args) => dev::run(&dir, args),
-        Command::Migrate { path } => done(db::migrate(&host, selection, &path)),
+        Command::Migrate {
+            path,
+            remote,
+            dry_run,
+            action,
+        } => {
+            let status = matches!(action, Some(MigrateAction::Status));
+            match remote::target(host.root(), &remote)? {
+                Some(link) => done(remote::migrate(
+                    &link,
+                    db::migration_files(&host.root().join(path))?,
+                    status,
+                    dry_run,
+                )),
+                None => done(db::migrate(&host, selection, &path, status, dry_run)),
+            }
+        }
+        Command::Db {
+            action: DbAction::Reset { yes },
+        } => done(dev::reset(&host, yes)),
+        Command::Link { remote } => done(remote::link(host.root(), &remote)),
         Command::Upgrade {
             version,
             all,
@@ -662,7 +748,23 @@ pub fn run(cli: Cli) -> anyhow::Result<Outcome> {
                 PitrAction::Restore { time, yes } => pitr::restore(&project, time.as_deref(), yes),
             })
         }
-        Command::Types { out, lang } => done(db::types(&host, selection, out.as_deref(), lang)),
+        Command::Types { out, lang, remote } => match remote::target(host.root(), &remote)? {
+            Some(link) => {
+                if !matches!(lang, TypesLanguage::Typescript) {
+                    bail!("remote type downloads currently support TypeScript");
+                }
+                let code = remote::types(&link)?;
+                match out {
+                    Some(path) => std::fs::write(path, code)?,
+                    None => print!("{code}"),
+                }
+                Ok(Outcome::Done)
+            }
+            None => done(db::types(&host, selection, out.as_deref(), lang)),
+        },
+        Command::Token {
+            kind: TokenKind::Deploy { days, name },
+        } => done(db::deploy_token(&host, selection, days, &name)),
         Command::Token {
             kind: TokenKind::ServiceRole { days },
         } => done(db::service_role_token(&host, selection, days)),

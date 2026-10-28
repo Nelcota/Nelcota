@@ -17,6 +17,7 @@
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
   import CodeBlock from '$lib/components/shared/CodeBlock.svelte'
   import LangMark from '$lib/features/api/components/LangMark.svelte'
+  import DeployTokenCard from '$lib/features/api/components/DeployTokenCard.svelte'
   import ServiceTokenCard from '$lib/features/api/components/ServiceTokenCard.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
@@ -25,11 +26,11 @@
   import { href, navigate, route } from '$lib/navigation/router.svelte'
   import { RemoteResource } from '$lib/resources/remote-resource.svelte'
   import { api, enc, expireSession, httpError } from '$lib/transport/api'
-  import { llmContext } from '$lib/features/api/llm-context'
+  import { latestMigration, llmContext } from '$lib/features/api/llm-context'
   import { copyText } from '$lib/browser/clipboard'
   import { downloadText } from '$lib/browser/download'
   import { authSnippets, sdkSetup, tableSnippets, type Lang, type Snippet } from '$lib/features/api/api-examples'
-  import type { PoliciesData, ProjectsData, StorageOverview, TableData, TablesResponse } from '$lib/contracts/types'
+  import type { MigrationsData, PoliciesData, ProjectsData, StorageOverview, TableData, TablesResponse } from '$lib/contracts/types'
   import { errorMessage, intlLocale, t } from '$lib/i18n/index.svelte'
   import { formatBytes } from '$lib/features/storage/files'
 
@@ -56,26 +57,42 @@
 
   // Context for AI assistants. Built when the page opens, so the copy button
   // writes to the clipboard within the click (Safari refuses a late write).
-  const contextResource = new RemoteResource<string>()
-  const context = $derived(contextResource.data)
+  const contextResource = new RemoteResource<{ text: string; version: number | null; empty: boolean }>()
+  const migrationResource = new RemoteResource<MigrationsData>()
+  const context = $derived(contextResource.data?.text)
+  const contextOutdated = $derived(!!contextResource.data && !!migrationResource.data && contextResource.data.version !== latestMigration(migrationResource.data))
+  const contextVersion = $derived(contextResource.data?.version === null ? t('connect.ai.noMigration') : `V${contextResource.data?.version}`)
+  const contextUnavailable = $derived(!context || contextOutdated || !!migrationResource.error)
   const contextError = $derived(contextResource.error ? errorMessage(contextResource.error) : '')
   const contextSize = $derived(context ? formatBytes(new Blob([context]).size, intlLocale()) : '')
   async function loadContext() {
     await contextResource.load(async signal => {
+      const before = latestMigration(await api.get<MigrationsData>('/migrations', { signal }))
       const types = fetch(href('/api/typescript'), { signal, credentials: 'same-origin', cache: 'no-store' }).then(async response => {
         if (!response.ok) { expireSession(response.status, '/typescript'); throw httpError(response.status) }
-        return response.text()
+        const version = response.headers.get('x-nelcota-migration-version')
+        if (version === null) throw new Error(t('connect.ai.freshnessFailed'))
+        return { code: await response.text(), version: version === 'none' ? null : Number(version) }
       })
-      const [projects, policies, storage, code] = await Promise.all([
+      const [projects, policies, storage, snapshot] = await Promise.all([
         api.get<ProjectsData>('/projects', { signal }),
         api.get<PoliciesData>('/policies', { signal }),
         api.get<StorageOverview>('/storage', { signal }),
         types,
       ])
-      return llmContext({ origin: base, project: projects.current, generatedAt: new Date(), types: code, policies, storage })
+      const after = await api.get<MigrationsData>('/migrations', { signal })
+      if (before !== latestMigration(after) || before !== snapshot.version) throw new Error(t('connect.ai.changedDuringGeneration'))
+      migrationResource.data = after
+      return { text: llmContext({ origin: base, project: projects.current, generatedAt: new Date(), migrationVersion: before, types: snapshot.code, policies, storage }), version: before, empty: policies.tables.length === 0 }
     })
   }
-  onMount(() => { void loadContext(); return () => contextResource.cancel() })
+  onMount(() => {
+    void loadContext()
+    const check = () => { if (!document.hidden && !contextResource.loading) void migrationResource.load(signal => api.get<MigrationsData>('/migrations', { signal })) }
+    const timer = setInterval(check, 30_000)
+    window.addEventListener('focus', check)
+    return () => { clearInterval(timer); window.removeEventListener('focus', check); contextResource.cancel(); migrationResource.cancel() }
+  })
 
   // Scroll position also selects the matching link in the workspace sidebar.
   const sections = apiSectionPages
@@ -257,14 +274,26 @@
           <h2 class="text-lg font-semibold">{t('connect.ai.title')}</h2>
           <p class="text-sm text-muted-foreground">{t('connect.ai.text')}</p>
         </div>
+        {#if contextResource.data}
+          <p class="text-sm text-muted-foreground">{t('connect.ai.migrationVersion', { version: contextVersion })}</p>
+        {/if}
+        {#if contextResource.data?.empty}
+          <p role="status" class="text-sm text-warning">{t('connect.ai.emptySchema')}</p>
+        {/if}
+        {#if contextOutdated}
+          <p role="status" class="text-sm text-warning">{t('connect.ai.outdated')}</p>
+        {/if}
+        {#if migrationResource.error}
+          <LoadError message={t('connect.ai.freshnessFailed')} onretry={loadContext} busy={contextResource.loading} />
+        {/if}
         {#if contextError}
           <LoadError message={t('connect.ai.failed', { message: contextError })} onretry={loadContext} busy={contextResource.loading} />
         {:else}
           <div class="flex flex-wrap items-center gap-3">
-            <Button disabled={!context} onclick={() => context && copyText(context, t('connect.ai.copied'))}>
+            <Button disabled={contextUnavailable} onclick={() => context && copyText(context, t('connect.ai.copied'))}>
               <Copy data-icon="inline-start" aria-hidden="true" />{context ? t('connect.ai.copy') : t('connect.ai.building')}
             </Button>
-            <Button variant="outline" disabled={!context} onclick={() => context && downloadText('llms.txt', context, 'text/markdown;charset=utf-8')}>
+            <Button variant="outline" disabled={contextUnavailable} onclick={() => context && downloadText('llms.txt', context, 'text/markdown;charset=utf-8')}>
               <Download data-icon="inline-start" aria-hidden="true" />{t('connect.ai.download')}
             </Button>
             <Button variant="ghost" disabled={contextResource.loading} onclick={loadContext}>
@@ -346,7 +375,7 @@
         {/if}
       </section>
 
-      <div id="api-token" class="scroll-mt-20"><ServiceTokenCard /></div>
+      <div id="api-token" class="grid scroll-mt-20 gap-6"><DeployTokenCard /><ServiceTokenCard /></div>
     </div>
   </div>
 </div>

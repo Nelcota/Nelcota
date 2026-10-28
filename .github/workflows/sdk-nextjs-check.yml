@@ -46,6 +46,10 @@ jobs:
       - name: SSR core
         working-directory: sdk/ssr
         run: bun install --frozen-lockfile && bun audit --audit-level=high && bun run check && bun run ${{ matrix.runtime == 'node' && 'test:node' || 'test' }} && bun run build
+      - name: Edge core portability
+        if: matrix.runtime == 'bun' && matrix.browser == 'chromium' && !matrix.next
+        working-directory: sdk/ssr
+        run: bun run test:edge
       - run: bun install --frozen-lockfile
         working-directory: sdk/nextjs
       - run: bun audit --audit-level=high

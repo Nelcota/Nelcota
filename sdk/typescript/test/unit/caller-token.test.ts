@@ -28,7 +28,7 @@ for (const [name, create] of factories) {
             expect(mock.calls[0].method).toBe(update ? 'PUT' : 'GET');
             expect(mock.calls[0].url.pathname).toBe('/auth/v1/user');
             expect(storage.getItem).not.toHaveBeenCalled(); expect(storage.setItem).not.toHaveBeenCalled();
-            expect(storage.removeItem).not.toHaveBeenCalled(); expect(events).toEqual([]);
+            expect(storage.removeItem).not.toHaveBeenCalled(); expect(events).toEqual(['initial_session']);
           } finally { auth.dispose(); }
         });
       }

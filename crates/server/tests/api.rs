@@ -1464,3 +1464,48 @@ async fn every_response_carries_a_request_id() {
         .await;
     assert_eq!(id(&reply), "from-the-proxy");
 }
+
+#[tokio::test]
+async fn insert_and_upsert_report_only_affected_rows_with_count_exact() {
+    let app = TestApp::spawn().await;
+    let service = service_token();
+    for (preference, expected) in [
+        ("count=exact,resolution=merge-duplicates", "*/1"),
+        ("count=exact,resolution=ignore-duplicates", "*/0"),
+        (
+            "count=exact,resolution=merge-duplicates,return=representation",
+            "*/1",
+        ),
+    ] {
+        let reply = app
+            .request_with(
+                Method::POST,
+                "/rest/v1/products",
+                Some(&service),
+                Some(json!({"id": 500, "name": "Counted", "price": 1, "stock": 2})),
+                &[("prefer", preference)],
+            )
+            .await;
+        assert_eq!(reply.status, StatusCode::CREATED, "{}", reply.body);
+        assert_eq!(reply.headers[header::CONTENT_RANGE], expected);
+        assert!(
+            reply
+                .headers
+                .get_all("preference-applied")
+                .iter()
+                .any(|value| value == "count=exact")
+        );
+    }
+    let a = user_token(app.user_a);
+    let hidden = app
+        .request_with(
+            Method::PATCH,
+            "/rest/v1/todos?title=eq.task%20of%20B",
+            Some(&a),
+            Some(json!({"done": true})),
+            &[("prefer", "count=exact")],
+        )
+        .await;
+    assert_eq!(hidden.status, StatusCode::NO_CONTENT);
+    assert_eq!(hidden.headers[header::CONTENT_RANGE], "*/0");
+}

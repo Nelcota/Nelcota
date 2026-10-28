@@ -422,6 +422,7 @@ async fn cancelled_exports_keep_admission_until_postgres_finishes_cleanup() {
     let cookie = common::panel::login(&app).await;
     let gate = CancelGate::start(&app.admin).await;
     let panel = nelcota_admin::AdminState {
+        production: false,
         db_config: gate.config(&app.admin),
         ..app.panel.clone()
     };

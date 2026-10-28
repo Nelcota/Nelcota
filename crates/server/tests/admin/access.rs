@@ -21,6 +21,11 @@ async fn typescript_types_download_like_nelcota_types() {
     assert!(reply.text.contains("export interface Database"));
     assert!(reply.text.contains("todos: {"));
     assert!(reply.text.contains("Relationships:"));
+    assert_eq!(reply.headers["x-nelcota-migration-version"], "none");
+    app.admin_client.batch_execute("CREATE TABLE nelcota.user_migrations (version int4 PRIMARY KEY, name text, applied_on text, checksum text); INSERT INTO nelcota.user_migrations VALUES (4, 'snapshot', 'date', 'checksum'); CREATE TABLE public.context_snapshot_table (id int4)").await.unwrap();
+    let snapshot = get(&app, "/admin/api/typescript", &cookie).await;
+    assert_eq!(snapshot.headers["x-nelcota-migration-version"], "4");
+    assert!(snapshot.text.contains("context_snapshot_table:"));
     // Behind the panel login like every panel route.
     let anonymous = app
         .raw(Method::GET, "/admin/api/typescript", &[], String::new())

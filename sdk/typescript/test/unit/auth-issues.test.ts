@@ -48,7 +48,7 @@ function signOutClient(...replies: Parameters<typeof mockFetch>) {
 const paths = (mock: ReturnType<typeof mockFetch>) => mock.calls.map(call => `${call.url.pathname} ${call.headers.get('authorization') ?? ''}`.trim());
 it('revokes a near-expiry token that is still valid without renewing it', async () => {
   const { auth, mock, events, start } = signOutClient(empty());
-  try { await start(session(30)); expect((await auth.signOut()).error).toBeNull(); expect(paths(mock)).toEqual(['/auth/v1/logout Bearer access-1']); expect(events).toEqual(['signed_out']); } finally { auth.dispose(); }
+  try { await start(session(30)); expect((await auth.signOut()).error).toBeNull(); expect(paths(mock)).toEqual(['/auth/v1/logout Bearer access-1']); expect(events).toEqual(['initial_session', 'signed_out']); } finally { auth.dispose(); }
 });
 it('revokes the current token when renewal inside the clock skew fails', async () => {
   const { auth, mock, start } = signOutClient(json({ code: 'unavailable', message: 'Gateway failure' }, 503), empty());
@@ -56,15 +56,15 @@ it('revokes the current token when renewal inside the clock skew fails', async (
 });
 it('does not revoke with an expired token when renewal fails transiently', async () => {
   const { auth, mock, events, start } = signOutClient(json({ code: 'unavailable', message: 'Gateway failure' }, 503));
-  try { await start(session(-60)); expect((await auth.signOut()).error?.status).toBe(503); expect(paths(mock)).toEqual(['/auth/v1/token']); expect(events).toEqual(['signed_out']); expect((await auth.getSession()).data).toBeNull(); } finally { auth.dispose(); }
+  try { await start(session(-60)); expect((await auth.signOut()).error?.status).toBe(503); expect(paths(mock)).toEqual(['/auth/v1/token']); expect(events).toEqual(['initial_session', 'signed_out']); expect((await auth.getSession()).data).toBeNull(); } finally { auth.dispose(); }
 });
 it('revokes a rotated token held in memory without persisting or announcing it', async () => {
   const { auth, mock, writes, events, start } = signOutClient(json(session(900, 'rotated', 'fresh')), empty());
-  try { await start(session(-60)); expect((await auth.signOut()).error).toBeNull(); expect(paths(mock)).toEqual(['/auth/v1/token', '/auth/v1/logout Bearer fresh']); expect(writes).toEqual([]); expect(events).toEqual(['signed_out']); } finally { auth.dispose(); }
+  try { await start(session(-60)); expect((await auth.signOut()).error).toBeNull(); expect(paths(mock)).toEqual(['/auth/v1/token', '/auth/v1/logout Bearer fresh']); expect(writes).toEqual([]); expect(events).toEqual(['initial_session', 'signed_out']); } finally { auth.dispose(); }
 });
 it('emits signed_out once when sign-out renewal is rejected as invalid_grant', async () => {
   const { auth, mock, events, start } = signOutClient(json({ code: 'invalid_grant', message: 'Spent' }, 400));
-  try { await start(session(-60)); expect((await auth.signOut()).error?.code).toBe('invalid_grant'); expect(paths(mock)).toEqual(['/auth/v1/token']); expect(events).toEqual(['signed_out']); } finally { auth.dispose(); }
+  try { await start(session(-60)); expect((await auth.signOut()).error?.code).toBe('invalid_grant'); expect(paths(mock)).toEqual(['/auth/v1/token']); expect(events).toEqual(['initial_session', 'signed_out']); } finally { auth.dispose(); }
 });
 it('keeps cross-context Web Locks for caller storage in workers', async () => {
   const names: unknown[] = []; vi.stubGlobal('window', undefined); vi.stubGlobal('document', undefined);
