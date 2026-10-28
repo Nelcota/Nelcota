@@ -40,7 +40,7 @@ try {
     { filename: 'V2__browser_next.sql', sql: 'ALTER TABLE public.browser_fixture ADD COLUMN title text;' },
   ] } })
   expect(applied.ok()).toBe(true)
-  await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+  await page.evaluate('window.dispatchEvent(new Event("focus"))')
   await expect(page.getByText('This context is outdated:', { exact: false })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Copy context', exact: true })).toBeDisabled()
   await page.locator('#api-ai').getByRole('button', { name: 'Refresh', exact: true }).click()
