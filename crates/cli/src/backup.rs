@@ -194,7 +194,9 @@ pub fn capture(project: &Project, path: &Path) -> anyhow::Result<()> {
                 dump(project, &partial, None)?;
             }
         }
+        fs::File::open(&partial)?.sync_all()?;
         fs::rename(&partial, path)?;
+        fs::File::open(path.parent().context("invalid backup directory")?)?.sync_all()?;
         Ok(())
     })();
     if result.is_err() {
