@@ -4,7 +4,7 @@ import { fixture } from './fixtures'
 test.beforeEach(async ({ page, context }) => {
   await fixture(page)
   await page.route('**/health', r => r.fulfill({ json: { status: 'ok' } }))
-  await page.route('**/admin/api/typescript', r => r.fulfill({ contentType: 'text/plain', body: 'export type Database = { public: { Tables: { notes: { Row: { id: number } } } } }\n' }))
+  await page.route('**/admin/api/typescript', r => r.fulfill({ headers: { 'x-nelcota-migration-version': '2' }, contentType: 'text/plain', body: 'export type Database = { public: { Tables: { notes: { Row: { id: number } } } } }\n' }))
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
 })
 
@@ -37,4 +37,14 @@ test('reports a failed build with a retry instead of an empty copy', async ({ pa
   const section = page.locator('#api-ai')
   await expect(section.getByText(/Não foi possível montar o contexto/)).toBeVisible()
   await expect(section.getByRole('button', { name: 'Copiar contexto' })).toHaveCount(0)
+})
+
+test('refuses context generation when the schema snapshot has no migration version', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('nelcota.locale', 'en'))
+  await page.route('**/admin/api/typescript', route => route.fulfill({ contentType: 'text/plain', body: 'export type Database = {}' }))
+  await page.goto('/admin/connect?section=api-ai')
+  const section = page.locator('#api-ai')
+  await expect(section.getByRole('alert')).toContainText('Could not verify the current migration version')
+  await expect(section.getByRole('button', { name: 'Copy context', exact: true })).toHaveCount(0)
+  await expect(section.getByRole('button', { name: 'Download llms.txt', exact: true })).toHaveCount(0)
 })
