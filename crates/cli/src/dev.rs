@@ -23,6 +23,8 @@ use crate::{
     util::{self, ok, step},
 };
 
+mod mail;
+
 const STATE_FILE: &str = ".nelcota/dev.env";
 
 struct DevState {
@@ -283,7 +285,10 @@ pub fn run(root: &Path, args: DevArgs) -> anyhow::Result<Outcome> {
     }
 
     save_state(root, &state)?;
-    let config = config_for(root, &state, args.listen)?;
+    let mut config = config_for(root, &state, args.listen)?;
+    if args.mail {
+        mail::configure(root, &container, &args.mail_callback, &mut config)?;
+    }
     wait_for_postgres(&config)?;
     ok(&format!("Postgres at 127.0.0.1:{}", state.db_port));
 

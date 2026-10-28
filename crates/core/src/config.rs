@@ -99,6 +99,8 @@ pub struct Config {
     pub smtp_url: Option<Secret>,
     /// Sender of the emails: `Shop <no-reply@shop.com>`.
     pub smtp_from: Option<String>,
+    /// Additional PEM trust anchor for a private SMTP server. TLS validation stays enabled.
+    pub smtp_ca_file: Option<std::path::PathBuf>,
     /// App page that receives the password recovery link. The token goes in the
     /// fragment (`#type=recovery&token=...`), which never reaches a server.
     pub password_recovery_url: Option<String>,
@@ -202,6 +204,7 @@ impl Default for Config {
             trust_proxy: false,
             smtp_url: None,
             smtp_from: None,
+            smtp_ca_file: None,
             password_recovery_url: None,
             email_confirmation_url: None,
             magic_link_url: None,

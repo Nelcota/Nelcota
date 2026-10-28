@@ -71,7 +71,16 @@ async fn serve(config: Config) -> anyhow::Result<()> {
     let mail = config.mail()?;
     let mailer = match &mail {
         Some(mail) => {
-            let smtp = nelcota_auth::SmtpMailer::new(mail.smtp_url, mail.from)?;
+            let ca = config
+                .smtp_ca_file
+                .as_ref()
+                .map(std::fs::read)
+                .transpose()?;
+            let smtp = nelcota_auth::SmtpMailer::with_root_certificate(
+                mail.smtp_url,
+                mail.from,
+                ca.as_deref(),
+            )?;
             tracing::info!(
                 sender = mail.from,
                 signup_confirmation = mail.confirmation_url.is_some(),

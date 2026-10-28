@@ -69,6 +69,16 @@ for a new isolated database, or dump and restore the legacy data explicitly.
 therefore returns a session immediately. It uses generated settings, not your
 application's `.env` overrides.
 
+To exercise signup confirmation, resend, recovery and magic links locally, run
+`nelcota dev --mail`. It starts project-owned Mailpit, prints its loopback inbox
+URL, and uses verified STARTTLS with a private certificate in `.nelcota/mail/`.
+Docker and OpenSSL are required. The default application callback is
+`http://localhost:3000/auth/callback`; set `--mail-callback` to your app's link
+handler, which consumes the fragment with `auth.verifyEmailLink`. Signup returns
+`session: null` until confirmed, and early password sign-in returns
+`email_not_confirmed`. Mailpit remains available after stopping the API; remove
+its printed project container when finished. Captured links are credentials.
+
 ## 3. Write a migration
 
 Keep `dev` running. Open a second terminal in `notes-app`. This file contains

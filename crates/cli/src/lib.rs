@@ -405,6 +405,16 @@ pub struct InitArgs {
 
 #[derive(Args, Debug)]
 pub struct DevArgs {
+    /// Capture local auth email with Mailpit and require signup confirmation (needs OpenSSL).
+    #[arg(long)]
+    pub mail: bool,
+    /// Application page receiving local email-link fragments.
+    #[arg(
+        long,
+        default_value = "http://localhost:3000/auth/callback",
+        requires = "mail"
+    )]
+    pub mail_callback: String,
     #[arg(long, default_value = "127.0.0.1:8000")]
     pub listen: std::net::SocketAddr,
     /// Local port of the development Postgres (default: the saved one, else 54322).

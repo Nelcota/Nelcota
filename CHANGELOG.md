@@ -12,6 +12,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Added
 
+- `nelcota dev --mail` runs a project-owned Mailpit inbox and enables email
+  confirmation, recovery and magic links over verified local STARTTLS.
+
 - `nelcota update` discovers a stable release, previews the CLI/project versions,
   asks once, preserves the previous CLI and runs the existing backup-backed
   project upgrades. `install.sh --update` provides the same flow for older CLIs;
