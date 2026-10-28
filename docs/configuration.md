@@ -49,6 +49,7 @@ provider IDs or generated values require your own credentials.
 | `NELCOTA_SIGNUP_ENABLED` | `bool` | `true` | `false` | Allows public signup. Provider sign-in for existing linked accounts has its own documented flow. |
 | `NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE` | `u32` | `30` | `30` | Positive password/signup/email/provider budget per IP. Password login also has a per-email-and-IP budget and an escalating per-email delay. Refresh/PKCE use a separate 10x budget. |
 | `NELCOTA_TRUST_PROXY` | `bool` | `false` | `true` | Uses rightmost X-Forwarded-For for caller IP and marks panel session cookies `Secure`. Enable only behind a correctly configured trusted HTTPS proxy with direct access restricted. |
+| `NELCOTA_PRODUCTION` | `bool` | `false` | `true` | Block direct panel table/policy schema writes; deploy repository migrations instead. |
 | `NELCOTA_SMTP_URL` | `Option<Secret>` | `unset` | `smtps://user:REPLACE@smtp.example.com:465` | Auth email transport: `smtps://` or `smtp://` with one `tls=required`. Other TLS/query options, repeated options and fragments are refused. Set sender and recovery page together. Blank is absent. |
 | `NELCOTA_SMTP_CA_FILE` | `Option<PathBuf>` | `unset` | `/path/to/private-ca.pem` | Additional PEM trust anchor for a private SMTP server. Hostname and certificate verification remain enabled. |
 | `NELCOTA_SMTP_FROM` | `Option<String>` | `unset` | `App <no-reply@example.com>` | Sender mailbox/display name. Quote spaces in the deployment environment-file format. |

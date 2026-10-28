@@ -134,6 +134,11 @@ pub struct Config {
     /// The project's `migrations/` folder, read by the panel when generating
     /// migrations. In the project container, `/migrations` is detected on its own.
     pub migrations_dir: Option<std::path::PathBuf>,
+    /// Require application schema changes to arrive through migrations.
+    pub production: bool,
+    /// Local CLI-owned application folder; cannot be enabled through configuration.
+    #[serde(skip)]
+    pub dev_migrations_dir: Option<std::path::PathBuf>,
     /// Schema exposed by the REST API.
     pub db_schema: String,
     /// Row cap per API collection (`None` uses 1000).
@@ -220,6 +225,8 @@ impl Default for Config {
             project_name: None,
             host_registry: None,
             migrations_dir: None,
+            production: false,
+            dev_migrations_dir: None,
             db_schema: "public".into(),
             max_rows: Some(1000),
             max_body_bytes: DEFAULT_MAX_BODY_BYTES,

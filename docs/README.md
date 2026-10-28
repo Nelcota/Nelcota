@@ -33,6 +33,7 @@ independent SDK publication checkpoint.
 
 ## Operate
 
+- [Remote migrations](remote-migrations.md): project links, scoped deploy tokens, CI and migration status.
 - [Deploy](deploy.md): one-command VPS setup, Docker/systemd, HTTPS and isolated projects.
 - [Backup](backup.md): paired snapshots, offsite copies and database PITR.
 - [Controlled updates](panel-updates.md): the 0.5.0 controller, required VPS acceptance and guarded CLI fallback.

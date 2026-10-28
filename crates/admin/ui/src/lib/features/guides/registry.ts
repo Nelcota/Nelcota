@@ -18,6 +18,7 @@ export const guides = [
   { id: 'example', group: 'develop', source: 'examples/notes.sql', code: 'sql', action: '/sql' },
   { id: 'ssr', group: 'develop', source: 'sdk/typescript/examples/server.mjs', code: 'ts', action: '/connect' },
   { id: 'troubleshooting', group: 'operate', source: 'docs/troubleshooting.md', action: '/policies' },
+  { id: 'remote-migrations', group: 'operate', source: 'docs/remote-migrations.md', action: '/migrations' },
   { id: 'deploy', group: 'operate', source: 'docs/deploy.md', action: '/migrations' },
   { id: 'backup', group: 'operate', source: 'docs/backup.md', action: '/storage' },
   { id: 'leaving', group: 'operate', source: 'docs/leaving.md', action: '/tables' },

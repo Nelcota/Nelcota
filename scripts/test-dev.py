@@ -44,12 +44,15 @@ def wait_for(task):
     raise AssertionError('development fixture did not become ready')
 
 
-def run(binary, testing_helpers=False):
+def run(binary, testing_helpers=False, remote_migrations=False):
     with tempfile.TemporaryDirectory(prefix='nelcota-dev-test-') as folder:
         root = pathlib.Path(folder).resolve()
         first, second = root / 'first', root / 'second'
         first.mkdir()
         second.mkdir()
+        if remote_migrations:
+            (first / 'migrations').mkdir()
+            (first / 'migrations/V1__startup.sql').write_text('CREATE TABLE public.startup_fixture(id integer);')
         db_port, api_port = free_port(), free_port()
         suffix = hashlib.sha256(str(first).encode()).hexdigest()[:24]
         pg = f'nelcota-dev-postgres-{suffix}-{db_port}'
@@ -64,6 +67,33 @@ def run(binary, testing_helpers=False):
                 start()
                 base = f'http://127.0.0.1:{api_port}'
                 wait_for(lambda: request(base + '/health')[0] == 200)
+                if remote_migrations:
+                    token = subprocess.check_output([str(binary), 'token', 'deploy', '--days', '1'], cwd=first, text=True).strip()
+                    deploy_env = {**os.environ, 'NELCOTA_DEPLOY_TOKEN': token}
+                    subprocess.run([str(binary), 'link', '--remote', base], cwd=second, env=deploy_env, check=True, capture_output=True)
+                    (second / 'migrations').mkdir()
+                    (second / 'migrations/V1__startup.sql').write_text((first / 'migrations/V1__startup.sql').read_text())
+                    version_two = 'CREATE TABLE public.remote_cli_fixture(id integer);'
+                    (second / 'migrations/V2__remote_cli.sql').write_text(version_two)
+                    def cli(*args):
+                        return subprocess.check_output([str(binary), *args], cwd=second, text=True)
+                    preview = cli('migrate', '--dry-run')
+                    assert 'pending' in preview
+                    assert 'remote_cli_fixture:' not in cli('types')
+                    cli('migrate')
+                    assert 'remote_cli_fixture:' in cli('types')
+                    assert 'applied' in cli('migrate', 'status')
+                    altered = second / 'migrations/V1__startup.sql'
+                    original = altered.read_text()
+                    altered.write_text(original + '\n-- changed checksum')
+                    assert 'diverged' in cli('migrate', 'status')
+                    conflict = subprocess.run([str(binary), 'migrate'], cwd=second, capture_output=True)
+                    assert conflict.returncode != 0
+                    altered.write_text(original)
+                    (first / 'migrations/V2__remote_cli.sql').write_text(version_two)
+                    (first / 'migrations/V3__watched.sql').write_text('CREATE TABLE public.watched_fixture(id integer);')
+                    wait_for(lambda: 'watched_fixture:' in subprocess.check_output([str(binary), 'types'], cwd=first, text=True))
+                    print('PASS: startup/watch migrations, deploy-token issuance, project link, remote status/dry-run/apply/types and checksum divergence')
                 if testing_helpers:
                     values = dict(line.split('=', 1) for line in (first / '.nelcota/dev.env').read_text().splitlines() if line and not line.startswith('#'))
                     database_url = shlex.split(values['DATABASE_URL'])[0]
@@ -93,6 +123,16 @@ def run(binary, testing_helpers=False):
                 start()
                 wait_for(lambda: request(base + '/health')[0] == 200)
                 assert request(base + '/auth/v1/token?grant_type=password', account)[0] == 200
+                if remote_migrations:
+                    processes[-1].terminate()
+                    processes[-1].wait(timeout=15)
+                    (first / 'seed.sql').write_text('INSERT INTO public.startup_fixture VALUES (42)')
+                    refused = subprocess.run([str(binary), 'db', 'reset'], cwd=first, capture_output=True)
+                    assert refused.returncode != 0
+                    subprocess.run([str(binary), 'db', 'reset', '--yes'], cwd=first, check=True)
+                    seed = subprocess.check_output(['docker', 'exec', pg, 'psql', '-U', 'postgres', '-Atc', 'SELECT id FROM public.startup_fixture'], text=True).strip()
+                    assert seed == '42'
+                    print('PASS: local reset requires confirmation, replays migrations and loads seed.sql')
                 print('PASS: isolated projects, occupied-port refusal, STARTTLS delivery, signup confirmation and restart persistence')
             except BaseException:
                 log.seek(0)
@@ -113,5 +153,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', type=pathlib.Path, required=True)
     parser.add_argument('--testing-helpers', action='store_true')
+    parser.add_argument('--remote-migrations', action='store_true')
     args = parser.parse_args()
-    run(args.binary.resolve(), args.testing_helpers)
+    run(args.binary.resolve(), args.testing_helpers, args.remote_migrations)

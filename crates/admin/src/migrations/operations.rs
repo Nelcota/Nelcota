@@ -141,6 +141,8 @@ pub(super) async fn generate(
     }
     let mut client = db.get().await?;
     let tx = client.transaction().await?;
+    tx.batch_execute(nelcota_core::user_migrations::LOCK)
+        .await?;
     // One generation at a time: two tabs never compete for the same number.
     tx.batch_execute("LOCK TABLE nelcota.panel_changes IN SHARE ROW EXCLUSIVE MODE")
         .await?;

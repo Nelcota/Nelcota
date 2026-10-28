@@ -55,6 +55,13 @@ const en: Messages<typeof ptBR> = {
     orCli: 'or from the terminal:',
     docs: 'SDK documentation',
   },
+  deploy: {
+    title: 'Deployment tokens',
+    description: 'Use these credentials for migrations and type downloads from the CLI or CI. They permit administrator SQL through migrations. Keep them in server secrets. Tokens expire after 30 days and can be revoked here.',
+    name: 'Token name', issue: 'Create deployment token', copy: 'Copy deployment token',
+    copyOnce: 'Copy this token now; it is only shown once. Expires: {date}',
+    revoke: 'Revoke', revoked: 'Revoked',
+  },
   ai: {
     migrationVersion: 'Context migration: {version}',
     noMigration: 'none applied',

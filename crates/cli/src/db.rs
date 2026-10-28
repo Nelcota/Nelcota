@@ -8,7 +8,8 @@ use std::{fs, path::Path};
 
 use anyhow::{Context, bail};
 use nelcota_core::Config;
-use refinery::{Migration, Runner};
+use nelcota_core::user_migrations::{self, MigrationFile, MigrationRequest};
+use refinery::Migration;
 use tokio_postgres::NoTls;
 
 use crate::{
@@ -17,9 +18,6 @@ use crate::{
     project::Project,
     util::{ok, step},
 };
-
-/// Control table of the user's migrations (documented in docs/deploy.md).
-pub const USER_MIGRATIONS_TABLE: &str = "nelcota.user_migrations";
 
 enum Target {
     Direct(Box<Config>, Option<nelcota_deployment::HostLock>),
@@ -100,43 +98,95 @@ fn load_migrations(dir: &Path) -> anyhow::Result<Vec<Migration>> {
     Ok(migrations)
 }
 
-pub fn migrate(host: &Host, selection: Option<&str>, dir: &Path) -> anyhow::Result<()> {
-    match target(host, selection, true)? {
+pub fn migration_files(dir: &Path) -> anyhow::Result<Vec<MigrationFile>> {
+    // Preserve the existing filename and duplicate validation before any connection.
+    let migrations = load_migrations(dir)?;
+    Ok(migrations
+        .into_iter()
+        .map(|migration| MigrationFile {
+            filename: format!("V{}__{}.sql", migration.version(), migration.name()),
+            sql: migration.sql().unwrap_or_default().into(),
+        })
+        .collect())
+}
+
+pub fn migrate(
+    host: &Host,
+    selection: Option<&str>,
+    dir: &Path,
+    status: bool,
+    dry_run: bool,
+) -> anyhow::Result<()> {
+    match target(host, selection, !status && !dry_run)? {
         Target::Container(project, _lease) => {
             if dir != Path::new("migrations") {
-                bail!("in a `nelcota init` project, migrations live in ./migrations");
+                bail!("in a nelcota init project, migrations live in ./migrations");
             }
-            project.in_app(&["migrate", "--path", &project.app_migrations_dir()])
+            let path = project.app_migrations_dir();
+            let mut args = vec!["migrate", "--path", &path];
+            if dry_run {
+                args.push("--dry-run");
+            }
+            if status {
+                args.push("status");
+            }
+            project.in_app(&args)
         }
         Target::Direct(config, _lease) => {
-            let migrations = load_migrations(dir)?;
-            if migrations.is_empty() {
-                println!("No migrations in {}.", dir.display());
-                return Ok(());
-            }
+            let files = migration_files(dir)?;
             runtime()?.block_on(async {
                 let mut client = connect(&config).await?;
-                client
-                    .batch_execute("CREATE SCHEMA IF NOT EXISTS nelcota")
-                    .await?;
-                let mut runner = Runner::new(&migrations).set_abort_divergent(true);
-                runner.set_migration_table_name(USER_MIGRATIONS_TABLE);
+                if status {
+                    let statuses = user_migrations::status(&client, &files).await?;
+                    println!("{}", serde_json::to_string_pretty(&statuses)?);
+                    return Ok(());
+                }
                 step(&format!("Applying migrations from {}", dir.display()));
-                let report = runner.run_async(&mut client).await?;
-                if report.applied_migrations().is_empty() {
-                    ok("nothing new: the database is up to date");
+                let report = user_migrations::apply(
+                    &mut client,
+                    &MigrationRequest { files, dry_run },
+                    "cli:local",
+                )
+                .await?;
+                for version in report.applied {
+                    ok(&format!("V{version} applied"));
                 }
-                for migration in report.applied_migrations() {
-                    ok(&migration.to_string());
+                if dry_run {
+                    println!("{}", serde_json::to_string_pretty(&report.migrations)?);
                 }
-                // Reload the catalog even without the event trigger.
-                client
-                    .batch_execute("NOTIFY nelcota, 'reload schema'")
-                    .await?;
                 println!("Regenerate Context for AI in the panel: /admin/connect?section=api-ai");
                 Ok(())
             })
         }
+    }
+}
+
+pub fn deploy_token(
+    host: &Host,
+    selection: Option<&str>,
+    days: u32,
+    name: &str,
+) -> anyhow::Result<()> {
+    if !(1..=90).contains(&days) || name.trim().is_empty() || name.len() > 100 {
+        bail!("deploy token needs a name (1-100 bytes) and validity of 1-90 days");
+    }
+    match target(host, selection, false)? {
+        Target::Container(project, _lease) => {
+            print!("{}", project.in_app_output(&["token", "deploy", "--days", &days.to_string(), "--name", name])?);
+            Ok(())
+        }
+        Target::Direct(config, _lease) => runtime()?.block_on(async {
+            use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
+            use sha2::{Digest, Sha256};
+            let mut bytes = [0u8; 32]; getrandom::fill(&mut bytes)?;
+            let token = format!("ndp_{}", URL_SAFE_NO_PAD.encode(bytes));
+            let hash = base16ct::lower::encode_string(&Sha256::digest(token.as_bytes()));
+            let client = connect(&config).await?;
+            let days = i64::from(days);
+            client.execute("INSERT INTO nelcota.deploy_tokens (token_hash, name, issued_by, expires_at) VALUES ($1, $2, 'cli:local', now() + $3::bigint * interval '1 day')", &[&hash, &name, &days]).await?;
+            println!("{token}");
+            Ok(())
+        }),
     }
 }
 

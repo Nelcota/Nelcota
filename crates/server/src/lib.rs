@@ -125,6 +125,9 @@ pub fn app(
                 ))
                 .layer(CompressionLayer::new()),
         );
+        router = router.merge(nelcota_admin::deployment_router(admin.clone()).layer(
+            TimeoutLayer::with_status_code(StatusCode::GATEWAY_TIMEOUT, Duration::from_secs(180)),
+        ));
         if admin.storage.is_some() {
             router = router.merge(nelcota_admin::upload_router(admin));
         }

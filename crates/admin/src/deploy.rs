@@ -1,0 +1,170 @@
+//! Separate deployment capability: opaque scoped tokens never authenticate REST or panel routes.
+use crate::{
+    AdminState, ApiError,
+    contracts::{DeployToken, DeployTokenInfo, DeployTokens},
+};
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::{HeaderMap, StatusCode, header},
+    response::{IntoResponse, Response},
+};
+use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
+use nelcota_core::user_migrations::{self, MigrationRequest};
+use serde::Deserialize;
+use serde_json::json;
+use sha2::{Digest, Sha256};
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TokenRequest {
+    name: String,
+    days: u32,
+}
+
+pub async fn issue(
+    State(state): State<AdminState>,
+    Json(request): Json<TokenRequest>,
+) -> Result<Response, ApiError> {
+    if !(1..=90).contains(&request.days)
+        || request.name.trim().is_empty()
+        || request.name.len() > 100
+    {
+        return Err(ApiError::bad_request(
+            "invalid_deploy_token",
+            "provide a name (1-100 bytes) and validity of 1-90 days",
+        ));
+    }
+    let mut bytes = [0u8; 32];
+    getrandom::fill(&mut bytes)?;
+    let token = format!("ndp_{}", URL_SAFE_NO_PAD.encode(bytes));
+    let hash = base16ct::lower::encode_string(&Sha256::digest(token.as_bytes()));
+    let days = i64::from(request.days);
+    let client = state.db.get().await?;
+    let row = client.query_one("INSERT INTO nelcota.deploy_tokens (token_hash, name, issued_by, expires_at) VALUES ($1, $2, $3, now() + $4::bigint * interval '1 day') RETURNING id, expires_at::text", &[&hash, &request.name.trim(), &state.credentials.email, &days]).await?;
+    Ok((
+        [(header::CACHE_CONTROL, "no-store")],
+        Json(DeployToken {
+            id: row.get(0),
+            token,
+            expires_at: row.get(1),
+        }),
+    )
+        .into_response())
+}
+
+pub async fn list_tokens(State(state): State<AdminState>) -> Result<Json<DeployTokens>, ApiError> {
+    let rows = state.db.get().await?.query("SELECT id, name, issued_by, issued_at::text, expires_at::text, revoked_at::text FROM nelcota.deploy_tokens ORDER BY id DESC LIMIT 100", &[]).await?;
+    Ok(Json(DeployTokens {
+        tokens: rows
+            .iter()
+            .map(|row| DeployTokenInfo {
+                id: row.get(0),
+                name: row.get(1),
+                issued_by: row.get(2),
+                issued_at: row.get(3),
+                expires_at: row.get(4),
+                revoked_at: row.get(5),
+            })
+            .collect(),
+    }))
+}
+
+pub async fn revoke(
+    State(state): State<AdminState>,
+    Path(id): Path<i64>,
+) -> Result<StatusCode, ApiError> {
+    state.db.get().await?.execute("UPDATE nelcota.deploy_tokens SET revoked_at = coalesce(revoked_at, now()) WHERE id = $1", &[&id]).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn authenticate(state: &AdminState, headers: &HeaderMap) -> Result<String, ApiError> {
+    let denied = || {
+        ApiError::new(
+            StatusCode::UNAUTHORIZED,
+            "invalid_deploy_token",
+            "a valid unexpired deployment token is required",
+        )
+    };
+    // Browser origins do not get a bearer-token alternative to panel CSRF.
+    if headers.contains_key(header::ORIGIN) || headers.contains_key("sec-fetch-site") {
+        return Err(denied());
+    }
+    let token = headers
+        .get(header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.strip_prefix("Bearer "))
+        .ok_or_else(denied)?;
+    if token.len() != 47 || !token.starts_with("ndp_") {
+        return Err(denied());
+    }
+    let hash = base16ct::lower::encode_string(&Sha256::digest(token.as_bytes()));
+    let row = state.db.get().await?.query_opt("SELECT id, issued_by FROM nelcota.deploy_tokens WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > now()", &[&hash]).await?.ok_or_else(denied)?;
+    Ok(format!(
+        "deploy:{}:{}",
+        row.get::<_, i64>(0),
+        row.get::<_, String>(1)
+    ))
+}
+
+fn migration_error(error: user_migrations::Error) -> ApiError {
+    match error {
+        user_migrations::Error::Invalid(message) => {
+            ApiError::bad_request("invalid_migration", message)
+        }
+        user_migrations::Error::Diverged => ApiError::conflict(
+            "migration_diverged",
+            "migration history differs; inspect status and restore the original files",
+        ),
+        user_migrations::Error::Database(error) => ApiError::from(error),
+    }
+}
+
+pub async fn apply(
+    State(state): State<AdminState>,
+    headers: HeaderMap,
+    Json(request): Json<MigrationRequest>,
+) -> Result<Response, ApiError> {
+    let actor = authenticate(&state, &headers).await?;
+    let mut client = state.db.get().await?;
+    let report = user_migrations::apply(&mut client, &request, &actor)
+        .await
+        .map_err(migration_error)?;
+    drop(client);
+    // Catalog failure is post-commit: never ask a client to replay accepted SQL.
+    let ready = state.catalog.refresh(&state.db).await;
+    Ok(Json(json!({"report": report, "catalog_pending": !ready})).into_response())
+}
+
+pub async fn status(
+    State(state): State<AdminState>,
+    headers: HeaderMap,
+    Json(request): Json<MigrationRequest>,
+) -> Result<Response, ApiError> {
+    authenticate(&state, &headers).await?;
+    let client = state.db.get().await?;
+    Ok(Json(json!({"migrations": user_migrations::status(&**client, &request.files).await.map_err(migration_error)?})).into_response())
+}
+
+pub async fn typescript(
+    State(state): State<AdminState>,
+    headers: HeaderMap,
+) -> Result<Response, ApiError> {
+    authenticate(&state, &headers).await?;
+    crate::connect::typescript(State(state)).await
+}
+
+/// Session-authenticated file application for the panel's migration upload.
+pub async fn panel_apply(
+    State(state): State<AdminState>,
+    Json(request): Json<MigrationRequest>,
+) -> Result<Response, ApiError> {
+    let mut client = state.db.get().await?;
+    let actor = format!("panel:{}", state.credentials.email);
+    let report = user_migrations::apply(&mut client, &request, &actor)
+        .await
+        .map_err(migration_error)?;
+    drop(client);
+    let ready = state.catalog.refresh(&state.db).await;
+    Ok(Json(json!({"report": report, "catalog_pending": !ready})).into_response())
+}

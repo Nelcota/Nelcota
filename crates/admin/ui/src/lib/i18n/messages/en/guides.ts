@@ -24,6 +24,7 @@ const en: Messages<typeof ptBR> = {
     roles: { title: 'JWT and access rules', description: 'Roles, tokens and policies that protect your data.' },
     storage: { title: 'Files and S3', description: 'Configure storage, buckets and access rules.' },
     webhooks: { title: 'Events and webhooks', description: 'Destinations, signatures, retries and database event resends.' },
+    'remote-migrations': { title: 'Remote migrations', description: 'Project links, deployment tokens, CI and migration history.' },
     'testing-rls': { title: 'Testing RLS', description: 'Rollback fixtures, API roles and SQLSTATE assertions.' },
     troubleshooting: { title: 'Troubleshooting', description: 'Empty results, access errors, limits and stale types.' },
     deploy: { title: 'Deploying and upgrading', description: 'Projects, domains, migrations and server upgrades.' },

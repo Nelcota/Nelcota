@@ -40,7 +40,8 @@ nelcota dev
 
 The command starts PostgreSQL 17 in `nelcota-dev-postgres-<folder-hash>-54322`, stores data
 in a Docker volume, applies internal migrations and serves the API in the
-foreground. The API is at `http://127.0.0.1:8000`, and the panel is at `/admin/`.
+foreground. Application files in `migrations/` are applied on startup and watched
+for changes. The API is at `http://127.0.0.1:8000`, and the panel is at `/admin/`.
 Its account is `admin@localhost`; read `ADMIN_PASSWORD` locally from
 `.nelcota/dev.env`. Do not share that file.
 

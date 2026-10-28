@@ -9,6 +9,7 @@ const sources = import.meta.glob<string>([
   '../../../../../../../docs/backup.md',
   '../../../../../../../docs/decisions.md',
   '../../../../../../../docs/deploy.md',
+  '../../../../../../../docs/remote-migrations.md',
   '../../../../../../../docs/jwt-and-roles.md',
   '../../../../../../../docs/testing-rls.md',
   '../../../../../../../docs/leaving.md',

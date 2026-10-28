@@ -103,6 +103,21 @@
     return details
   }
 
+  let uploaded = $state<FileList | undefined>()
+  let uploadBusy = $state(false)
+  let uploadResult = $state('')
+  async function applyFiles(dryRun: boolean) {
+    if (!uploaded?.length || uploadBusy) return
+    uploadBusy = true; uploadResult = ''
+    try {
+      const files = await Promise.all(Array.from(uploaded).map(async file => ({ filename: file.name, sql: await file.text() })))
+      const result = await api.post<unknown>('/migrations/apply', { files, dry_run: dryRun })
+      uploadResult = JSON.stringify(result, null, 2)
+      await load()
+    } catch (cause) { uploadResult = errorMessage(cause) }
+    finally { uploadBusy = false }
+  }
+
   function statementsSql(statements: readonly string[]): string {
     return statements.map((statement) => statement.trim().replace(/;$/, '') + ';').join('\n')
   }
@@ -116,6 +131,19 @@
       {/if}
     {/snippet}
   </PageHeader>
+
+  <section class="grid gap-3 rounded-3xl bg-card p-6">
+    <h2 class="text-lg font-semibold">{t('migrations.upload.title')}</h2>
+    <p class="text-sm text-muted-foreground">{t('migrations.upload.description')}</p>
+    <label class="grid gap-2 text-sm">{t('migrations.upload.files')}
+      <input type="file" accept=".sql" multiple bind:files={uploaded} disabled={uploadBusy} />
+    </label>
+    <div class="flex flex-wrap gap-2">
+      <Button variant="outline" disabled={uploadBusy || !uploaded?.length} onclick={() => applyFiles(true)}>{t('migrations.upload.preview')}</Button>
+      <Button disabled={uploadBusy || !uploaded?.length} onclick={() => applyFiles(false)}>{t('migrations.upload.apply')}</Button>
+    </div>
+    {#if uploadResult}<CodeBlock code={uploadResult} />{/if}
+  </section>
 
   {#if error}<LoadError message={error} onretry={load} busy={loading} />{/if}
   {#if data == null && loading}

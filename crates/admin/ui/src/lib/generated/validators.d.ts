@@ -6,6 +6,8 @@ export function UsersResponse(value: unknown): boolean;
 export function PoliciesData(value: unknown): boolean;
 export function ProjectsData(value: unknown): boolean;
 export function ProjectsStatusData(value: unknown): boolean;
+export function DeployToken(value: unknown): boolean;
+export function DeployTokens(value: unknown): boolean;
 export function MigrationsData(value: unknown): boolean;
 export function StorageOverview(value: unknown): boolean;
 export function TypesResponse(value: unknown): boolean;

@@ -17,6 +17,7 @@
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
   import CodeBlock from '$lib/components/shared/CodeBlock.svelte'
   import LangMark from '$lib/features/api/components/LangMark.svelte'
+  import DeployTokenCard from '$lib/features/api/components/DeployTokenCard.svelte'
   import ServiceTokenCard from '$lib/features/api/components/ServiceTokenCard.svelte'
   import LoadError from '$lib/components/shared/LoadError.svelte'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
@@ -374,7 +375,7 @@
         {/if}
       </section>
 
-      <div id="api-token" class="scroll-mt-20"><ServiceTokenCard /></div>
+      <div id="api-token" class="grid scroll-mt-20 gap-6"><DeployTokenCard /><ServiceTokenCard /></div>
     </div>
   </div>
 </div>

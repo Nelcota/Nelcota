@@ -12,6 +12,15 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Added
 
+- Deploy repository migrations through scoped, revocable deployment tokens and
+  the project API, with project links, named environments, status/dry-run and
+  TypeScript downloads. V17 stores token digests and migration audit records.
+- The panel can preview/apply uploaded repository migration files and manage
+  deployment tokens. Production projects can block direct panel schema changes.
+- Development applies/watches application migrations and offers an explicitly
+  confirmed local database reset with optional seed.sql. A composite GitHub
+  Action builds the locked CLI and applies migrations without database credentials.
+
 - AI context records the latest applied migration, warns about an empty schema,
   and detects changed versions before copying or downloading a stale snapshot.
 

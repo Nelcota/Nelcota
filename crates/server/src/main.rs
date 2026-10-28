@@ -38,6 +38,9 @@ async fn serve(config: Config) -> anyhow::Result<()> {
     .await
     .context("could not prepare the database")?;
 
+    nelcota_cli::apply_development_migrations(&config).await?;
+    let _development_migrations = nelcota_cli::watch_development_migrations(&config);
+
     let keys = Arc::new(
         Keys::new(
             config.jwt_private_key(),
@@ -184,6 +187,7 @@ async fn serve(config: Config) -> anyhow::Result<()> {
     let admin = match (&config.admin_email, &config.admin_password_hash) {
         (Some(email), Some(hash)) if !email.is_empty() && !hash.expose().is_empty() => {
             Some(nelcota_admin::AdminState {
+                production: config.production,
                 webhooks: nelcota_webhooks::destination::Policy {
                     allow_loopback: config.webhooks_allow_loopback,
                 },
