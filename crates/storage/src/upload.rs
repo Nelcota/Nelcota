@@ -86,7 +86,7 @@ async fn write(
     let name = path::object(name)?;
     // One deadline covers pool waits, the policy check, admission and bytes.
     // Active uploads are bounded; overload never builds an unbounded queue.
-    let (settings, limit, reservation, _slot) = tokio::time::timeout_at(deadline, async {
+    let (settings, limit, mut reservation, _slot) = tokio::time::timeout_at(deadline, async {
         let slot = state.uploads.clone().try_acquire_owned().map_err(|_| {
             ApiError::new(
                 StatusCode::SERVICE_UNAVAILABLE,
@@ -159,11 +159,11 @@ async fn write(
     let received = tokio::time::timeout_at(
         deadline,
         receive(
-            &state.store,
+            &state,
             &key,
             body,
             limit,
-            &reservation,
+            &mut reservation,
             declared_type,
             settings.allowed_mime_types.as_deref(),
         ),
@@ -290,11 +290,11 @@ struct Received {
 /// Streams the body to `key`, sniffing the type from the first bytes and
 /// enforcing the size limit and the room left as bytes arrive.
 async fn receive(
-    store: &Store,
+    state: &StorageState,
     key: &Key,
     body: UploadStream,
     limit: u64,
-    reservation: &quota::Reservation,
+    reservation: &mut quota::Reservation,
     declared_type: Option<&str>,
     allowed: Option<&[String]>,
 ) -> Result<Received, ApiError> {
@@ -308,13 +308,14 @@ async fn receive(
     let mut stream = body;
     let mut hasher = Sha256::new();
     let mut size = 0u64;
-    let mut take = |chunk: &Bytes| {
+    let store = &state.store;
+    let mut take = async |chunk: &Bytes| {
         size += chunk.len() as u64;
         hasher.update(chunk);
         if size > limit {
             return Err(too_large(limit));
         }
-        reservation.check(size)
+        reservation.check(state, size).await
     };
 
     // The first bytes decide the type before anything is written.
@@ -322,7 +323,7 @@ async fn receive(
     let mut ended = true;
     while let Some(chunk) = stream.next().await {
         let chunk = chunk.map_err(interrupted)?;
-        take(&chunk)?;
+        take(&chunk).await?;
         head.extend_from_slice(&chunk);
         if head.len() >= SNIFF_BYTES {
             ended = false;
@@ -350,16 +351,17 @@ async fn receive(
             writer.write(&head);
             let mut result = Ok(());
             while let Some(chunk) = stream.next().await {
-                let chunk = match chunk
-                    .map_err(interrupted)
-                    .and_then(|c| take(&c).map(|()| c))
-                {
+                let chunk = match chunk.map_err(interrupted) {
                     Ok(chunk) => chunk,
                     Err(err) => {
                         result = Err(err);
                         break;
                     }
                 };
+                if let Err(err) = take(&chunk).await {
+                    result = Err(err);
+                    break;
+                }
                 if let Err(err) = writer.wait_for_capacity(PARTS_IN_FLIGHT).await {
                     result = Err(store_failed(err));
                     break;

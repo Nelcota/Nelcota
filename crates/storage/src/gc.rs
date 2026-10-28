@@ -53,11 +53,11 @@ pub(crate) fn version(key: &Key) -> Option<Uuid> {
     (version.get_version_num() == 7).then_some(version)
 }
 
-fn candidate(key: &Key, now: SystemTime) -> Option<Uuid> {
+fn candidate(key: &Key, now: SystemTime, grace: Duration) -> Option<Uuid> {
     let version = version(key)?;
     let (secs, nanos) = version.get_timestamp()?.to_unix();
     let created = UNIX_EPOCH + Duration::new(secs, nanos);
-    (version.get_version_num() == 7 && created + GRACE <= now).then_some(version)
+    (created.checked_add(grace)? <= now).then_some(version)
 }
 
 /// One pass: returns how many keys were removed.
@@ -66,12 +66,18 @@ pub async fn collect(pool: &Pool, store: &Store, now: SystemTime) -> Result<usiz
         .verify_collection_owner()
         .await
         .map_err(|error| error.to_string())?;
+    let grace = Duration::from_secs(
+        store
+            .collection_grace_secs
+            .load(std::sync::atomic::Ordering::Relaxed),
+    )
+    .max(GRACE);
+    let mut removed = collect_incomplete(store, now, grace).await?;
     let mut listing = store.list();
     let mut batch: Vec<(Key, Uuid)> = Vec::new();
-    let mut removed = 0;
     while let Some(meta) = listing.next().await {
         let meta = meta.map_err(|e| e.to_string())?;
-        if let Some(version) = candidate(&meta.location, now) {
+        if let Some(version) = candidate(&meta.location, now, grace) {
             batch.push((meta.location, version));
         }
         if batch.len() >= BATCH {
@@ -80,6 +86,80 @@ pub async fn collect(pool: &Pool, store: &Store, now: SystemTime) -> Result<usiz
     }
     if !batch.is_empty() {
         removed += sweep(pool, store, batch).await?;
+    }
+    Ok(removed)
+}
+
+// object_store hides local `<uuid>#<part>` files from listings. Walk only our
+// two-level namespace and regular files; foreign names and symlinks stay put.
+async fn collect_incomplete(
+    store: &Store,
+    now: SystemTime,
+    grace: Duration,
+) -> Result<usize, String> {
+    let root = match store.disk_root() {
+        Some(root) => root,
+        None => return Ok(0),
+    };
+    let mut buckets = tokio::fs::read_dir(root).await.map_err(|e| e.to_string())?;
+    let mut removed = 0;
+    while let Some(bucket) = buckets.next_entry().await.map_err(|e| e.to_string())? {
+        let name = bucket.file_name();
+        let name = match name.to_str() {
+            Some(name) if path::bucket(name).is_ok() => name,
+            _ => continue,
+        };
+        if !bucket
+            .file_type()
+            .await
+            .map_err(|e| e.to_string())?
+            .is_dir()
+        {
+            continue;
+        }
+        let mut files = tokio::fs::read_dir(bucket.path())
+            .await
+            .map_err(|e| e.to_string())?;
+        while let Some(file) = files.next_entry().await.map_err(|e| e.to_string())? {
+            let filename = file.file_name();
+            let version = match filename.to_str().and_then(|name| name.rsplit_once('#')) {
+                Some((version, part))
+                    if !part.is_empty() && part.bytes().all(|c| c.is_ascii_digit()) =>
+                {
+                    version
+                }
+                _ => continue,
+            };
+            if candidate(&Key::from(format!("{name}/{version}")), now, grace).is_none()
+                || !file.file_type().await.map_err(|e| e.to_string())?.is_file()
+            {
+                continue;
+            }
+            let metadata = match file.metadata().await {
+                Ok(metadata) => metadata,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                Err(error) => return Err(error.to_string()),
+            };
+            if metadata
+                .modified()
+                .ok()
+                .and_then(|time| time.checked_add(grace))
+                .is_none_or(|deadline| deadline > now)
+            {
+                continue;
+            }
+            store
+                .verify_collection_owner()
+                .await
+                .map_err(|e| e.to_string())?;
+            match tokio::fs::remove_file(file.path()).await {
+                Ok(()) => removed += 1,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(error) => {
+                    tracing::warn!(event = "storage.collector_delete_failed", io_kind = ?error.kind(), "could not delete an incomplete upload; the collector will retry")
+                }
+            }
+        }
     }
     Ok(removed)
 }
@@ -97,8 +177,11 @@ async fn sweep(pool: &Pool, store: &Store, batch: Vec<(Key, Uuid)>) -> Result<us
                 .verify_collection_owner()
                 .await
                 .map_err(|error| error.to_string())?;
-            if store.delete(&key).await.is_ok() {
-                removed += 1;
+            match store.delete(&key).await {
+                Ok(()) => removed += 1,
+                Err(err) => {
+                    tracing::warn!(event = "storage.collector_delete_failed", error_type = std::any::type_name_of_val(&err), io_kind = ?crate::error::diagnostic_io_kind(&err), "could not delete orphaned storage bytes; the collector will retry")
+                }
             }
         }
     }
@@ -115,7 +198,10 @@ mod tests {
         let now = SystemTime::now();
         let old = Uuid::new_v7(Timestamp::from_unix(NoContext, 1_700_000_000, 0));
         let fresh = Uuid::now_v7();
-        assert_eq!(candidate(&Key::from(format!("docs/{old}")), now), Some(old));
+        assert_eq!(
+            candidate(&Key::from(format!("docs/{old}")), now, GRACE),
+            Some(old)
+        );
         for key in [
             format!("docs/{fresh}"),
             format!(
@@ -127,7 +213,11 @@ mod tests {
             format!("{old}"),
             "docs/readme.txt".to_owned(),
         ] {
-            assert_eq!(candidate(&Key::from(key.as_str()), now), None, "{key}");
+            assert_eq!(
+                candidate(&Key::from(key.as_str()), now, GRACE),
+                None,
+                "{key}"
+            );
         }
     }
 }

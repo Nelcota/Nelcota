@@ -4,6 +4,7 @@ mod common;
 use axum::http::{Method, StatusCode, header};
 use common::{panel, *};
 use serde_json::json;
+use std::time::{Duration, SystemTime};
 
 #[tokio::test]
 async fn fixed_width_and_array_filters_compare_complete_values() {
@@ -188,6 +189,35 @@ async fn pooled_connections_rollback_unowned_transactions_before_reuse() {
 }
 
 #[tokio::test]
+async fn incomplete_disk_uploads_are_collected_without_touching_foreign_or_recent_files() {
+    let app = TestApp::spawn().await;
+    let bucket = app.storage_dir.join("docs");
+    std::fs::create_dir_all(&bucket).unwrap();
+    let version = uuid::Uuid::now_v7();
+    let orphan = bucket.join(format!("{version}#1"));
+    let foreign = bucket.join("readme#1");
+    let malformed = bucket.join(format!("{version}#not-a-part"));
+    for path in [&orphan, &foreign, &malformed] {
+        std::fs::write(path, b"keep unless ours").unwrap();
+    }
+    assert_eq!(
+        nelcota_storage::collect_orphans(&app.pool, &app.storage.store, SystemTime::now())
+            .await
+            .unwrap(),
+        0
+    );
+    let later = SystemTime::now() + Duration::from_secs(2 * 86_400);
+    assert_eq!(
+        nelcota_storage::collect_orphans(&app.pool, &app.storage.store, later)
+            .await
+            .unwrap(),
+        1
+    );
+    assert!(!orphan.exists());
+    assert!(foreign.exists() && malformed.exists());
+}
+
+#[tokio::test]
 async fn panel_policy_urls_cannot_alias_a_truncated_identifier() {
     let app = TestApp::spawn().await;
     let original = "p".repeat(63);
@@ -260,6 +290,49 @@ async fn unique_actions_in_one_batch_track_constraints_across_renames() {
     assert_eq!(reply.status, StatusCode::OK, "{}", reply.text);
     let count: i64 = app.admin_client.query_one("SELECT count(*) FROM pg_constraint WHERE conrelid = 'public.products'::regclass AND contype = 'u'", &[]).await.unwrap().get(0);
     assert_eq!(count, 1);
+}
+
+#[tokio::test]
+async fn concurrent_unknown_length_uploads_share_the_available_quota() {
+    use bytes::Bytes;
+    use futures_util::stream;
+    use std::sync::Arc;
+    let mut options = Options::default();
+    options.storage.max_total_size = Some(10);
+    let app = TestApp::spawn_with(options).await;
+    app.admin_client
+        .batch_execute("INSERT INTO storage.buckets (id) VALUES ('docs')")
+        .await
+        .unwrap();
+    let barrier = Arc::new(tokio::sync::Barrier::new(2));
+    let body = || {
+        let barrier = barrier.clone();
+        Box::pin(stream::once(async move {
+            barrier.wait().await;
+            Ok(Bytes::from_static(b"four"))
+        })) as nelcota_storage::UploadStream
+    };
+    let claims = nelcota_core::Claims::from_payload(json!({"role":"service_role"})).unwrap();
+    let (first, second) = tokio::join!(
+        app.storage.upload(
+            claims.clone(),
+            "docs",
+            "one.txt",
+            Default::default(),
+            body()
+        ),
+        app.storage
+            .upload(claims, "docs", "two.txt", Default::default(), body()),
+    );
+    assert!(first.is_ok(), "first upload failed: {:?}", first.err());
+    assert!(second.is_ok(), "second upload failed: {:?}", second.err());
+    let used: i64 = app
+        .admin_client
+        .query_one("SELECT bytes FROM storage.usage WHERE singleton", &[])
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(used, 8);
 }
 
 #[tokio::test]
