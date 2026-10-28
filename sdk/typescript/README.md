@@ -150,6 +150,19 @@ await nelcota.from('products').upsert(rows, { onConflict: 'slug' });      // or 
 const { data: total } = await nelcota.rpc('cart_total', { cart_id: 7 });
 ```
 
+With column-level GRANTs, merging an upsert needs `UPDATE` on **every payload
+column, including the conflict key**. For `upsert({ id, name })`, grant both:
+
+```sql
+GRANT INSERT (id, name), UPDATE (id, name) ON public.products TO authenticated;
+```
+
+The server includes the conflict key in `ON CONFLICT ... DO UPDATE SET`, even
+when its value stays the same. `UPDATE (name)` alone returns SQLSTATE `42501`.
+`ignoreDuplicates: true` uses `DO NOTHING` and does not need the UPDATE grant;
+it keeps the existing row unchanged. SELECT grants and RLS policies still apply.
+
+
 Filters: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`,
 `is` (`null`, `true`, `false`, `'unknown'`), `not(column, op, value)`,
 `match({...})`, `or(...)` and `and(...)`. A column path such as

@@ -74,6 +74,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- Document column-level UPDATE grants on upsert conflict keys and the
+  `ignoreDuplicates` alternative in the SDK and authorization troubleshooting.
+
 - Local PostgreSQL containers and volumes belong to a canonical project folder,
   with ownership checks and an actionable error when another project owns the port.
 
