@@ -145,11 +145,10 @@ pub async fn editor(State(state): State<AdminState>) -> Result<Response, ApiErro
     let client = state.db.get().await?;
     let row = client
         .query_opt(
-            "SELECT a.content_type, a.image, e.content_type, e.image, e.avatar_digest,
-                e.crop_x, e.crop_y, e.zoom, e.rotation
-         FROM nelcota.admin_avatar a
-         LEFT JOIN nelcota.admin_avatar_edits e ON e.email = a.email
-         WHERE a.email = $1",
+            "SELECT content_type, image, source_content_type, source_image, source_digest,
+                    source_crop_x, source_crop_y, source_zoom, source_rotation,
+                    coalesce(source_updated_at = updated_at, false)
+             FROM nelcota.admin_avatar WHERE email = $1",
             &[&owner(&state)],
         )
         .await?
@@ -157,7 +156,8 @@ pub async fn editor(State(state): State<AdminState>) -> Result<Response, ApiErro
     let image: Vec<u8> = row.get(1);
     let digest: Option<Vec<u8>> = row.get(4);
     // An older binary can replace an avatar without updating its editor row.
-    let saved = digest.as_deref() == Some(Sha256::digest(&image).as_slice());
+    let saved =
+        row.get::<_, bool>(9) && digest.as_deref() == Some(Sha256::digest(&image).as_slice());
     let (content_type, image, crop) = match saved {
         true => (
             row.get::<_, String>(2),
@@ -208,55 +208,31 @@ pub async fn upload(
             ));
         }
     };
-    let email = owner(&state);
-    let mut client = state.db.get().await?;
-    let tx = client.transaction().await?;
-    let row = tx
-        .query_one(
-            "INSERT INTO nelcota.admin_avatar (email, content_type, image)
-             VALUES ($1, $2, $3)
-             ON CONFLICT (email) DO UPDATE
-                SET content_type = excluded.content_type,
-                    image = excluded.image,
-                    updated_at = now()
-             RETURNING (extract(epoch FROM updated_at) * 1000)::bigint",
-            &[&email, &content_type, &bytes],
-        )
-        .await?;
+    let (source, source_type, crop) = match edit {
+        Some((image, kind, crop)) => (Some(image), Some(kind), Some(crop)),
+        None => (None, None, None),
+    };
+    let digest = source.as_ref().map(|_| Sha256::digest(&bytes).to_vec());
+    let x = crop.as_ref().map(|crop| crop.x);
+    let y = crop.as_ref().map(|crop| crop.y);
+    let zoom = crop.as_ref().map(|crop| crop.zoom);
+    let rotation = crop.as_ref().map(|crop| crop.rotation as i16);
+    let client = state.db.get().await?;
+    let row = client.query_one(
+        "INSERT INTO nelcota.admin_avatar
+         (email, content_type, image, source_content_type, source_image, source_digest,
+          source_updated_at, source_crop_x, source_crop_y, source_zoom, source_rotation)
+         VALUES ($1,$2,$3,$4,$5,$6,CASE WHEN $5::bytea IS NULL THEN NULL ELSE now() END,$7,$8,$9,$10)
+         ON CONFLICT (email) DO UPDATE SET content_type=excluded.content_type,
+         image=excluded.image, updated_at=now(), source_content_type=excluded.source_content_type,
+         source_image=excluded.source_image, source_digest=excluded.source_digest,
+         source_updated_at=excluded.source_updated_at, source_crop_x=excluded.source_crop_x,
+         source_crop_y=excluded.source_crop_y, source_zoom=excluded.source_zoom,
+         source_rotation=excluded.source_rotation
+         RETURNING (extract(epoch FROM updated_at) * 1000)::bigint",
+        &[&owner(&state), &content_type, &bytes, &source_type, &source, &digest, &x, &y, &zoom, &rotation],
+    ).await?;
     let version: i64 = row.get(0);
-    match edit {
-        Some((image, kind, crop)) => {
-            let digest = Sha256::digest(&bytes).to_vec();
-            tx.execute(
-                "INSERT INTO nelcota.admin_avatar_edits
-                 (email, content_type, image, avatar_digest, crop_x, crop_y, zoom, rotation)
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-                 ON CONFLICT (email) DO UPDATE SET content_type=excluded.content_type,
-                 image=excluded.image, avatar_digest=excluded.avatar_digest,
-                 crop_x=excluded.crop_x, crop_y=excluded.crop_y,
-                 zoom=excluded.zoom, rotation=excluded.rotation",
-                &[
-                    &email,
-                    &kind,
-                    &image,
-                    &digest,
-                    &crop.x,
-                    &crop.y,
-                    &crop.zoom,
-                    &(crop.rotation as i16),
-                ],
-            )
-            .await?;
-        }
-        None => {
-            tx.execute(
-                "DELETE FROM nelcota.admin_avatar_edits WHERE email=$1",
-                &[&email],
-            )
-            .await?;
-        }
-    }
-    tx.commit().await?;
     Ok(Json(json!({ "avatar": version })))
 }
 
@@ -265,7 +241,7 @@ pub async fn remove(State(state): State<AdminState>) -> Result<Json<Value>, ApiE
     let client = state.db.get().await?;
     client
         .execute(
-            "DELETE FROM nelcota.admin_avatar WHERE email = $1",
+            "DELETE FROM nelcota.admin_avatar WHERE email=$1",
             &[&owner(&state)],
         )
         .await?;

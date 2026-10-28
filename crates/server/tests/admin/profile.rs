@@ -138,12 +138,18 @@ async fn avatar_editor_retains_private_source_and_framing_atomically() {
         format!("data:image/png;base64,{source}")
     );
     assert_eq!(editor.body["crop"], crop);
+    assert!(
+        app.admin_client
+            .execute("UPDATE nelcota.admin_avatar SET source_image=NULL", &[])
+            .await
+            .is_err()
+    );
 
     for role in ["anon", "authenticated", "service_role", "nelcota_auth"] {
         let allowed: bool = app
             .admin_client
             .query_one(
-                "SELECT has_table_privilege($1, 'nelcota.admin_avatar_edits', 'SELECT')",
+                "SELECT has_table_privilege($1, 'nelcota.admin_avatar', 'SELECT')",
                 &[&role],
             )
             .await
@@ -207,7 +213,10 @@ async fn avatar_editor_retains_private_source_and_framing_atomically() {
     assert_eq!(legacy.status, StatusCode::OK);
     let remaining: i64 = app
         .admin_client
-        .query_one("SELECT count(*) FROM nelcota.admin_avatar_edits", &[])
+        .query_one(
+            "SELECT count(*) FROM nelcota.admin_avatar WHERE source_image IS NOT NULL",
+            &[],
+        )
         .await
         .unwrap()
         .get(0);
@@ -238,7 +247,10 @@ async fn avatar_editor_retains_private_source_and_framing_atomically() {
     assert_eq!(removed.status, StatusCode::OK);
     let remaining: i64 = app
         .admin_client
-        .query_one("SELECT count(*) FROM nelcota.admin_avatar_edits", &[])
+        .query_one(
+            "SELECT count(*) FROM nelcota.admin_avatar WHERE source_image IS NOT NULL",
+            &[],
+        )
         .await
         .unwrap()
         .get(0);
@@ -281,4 +293,68 @@ async fn a_photo_replaced_by_an_older_binary_cannot_reopen_an_unrelated_source()
         editor.body["crop"],
         json!({"x":0.5,"y":0.5,"zoom":1.0,"rotation":0})
     );
+}
+
+#[tokio::test]
+async fn avatar_editor_storage_allows_legacy_photo_restoration() {
+    use base64::{Engine, engine::general_purpose::STANDARD};
+    let app = TestApp::spawn().await;
+    let cookie = login(&app).await;
+    let image = STANDARD.encode(b"\x89PNG\r\n\x1a\nrendered avatar");
+    let source = STANDARD.encode(b"\x89PNG\r\n\x1a\nretained source");
+    let saved = send(
+        &app,
+        Method::PUT,
+        "/admin/api/profile/avatar",
+        &cookie,
+        json!({"image":image,"source":source,"crop":{"x":0.4,"y":0.6,"zoom":2.0,"rotation":90}}),
+    )
+    .await;
+    assert_eq!(saved.status, StatusCode::OK);
+    app.admin_client
+        .execute(
+            "UPDATE nelcota.admin_avatar SET updated_at=updated_at - interval '1 second'",
+            &[],
+        )
+        .await
+        .unwrap();
+    let older = get(&app, "/admin/api/profile/avatar/editor", &cookie).await;
+    assert_eq!(
+        older.body["source"],
+        format!("data:image/png;base64,{image}")
+    );
+    assert_eq!(older.body["crop"]["zoom"], 1.0);
+    // pg_restore --clean drops the old table, including all newer source fields.
+    app.admin_client
+        .batch_execute("DROP TABLE nelcota.admin_avatar")
+        .await
+        .unwrap();
+    app.admin_client
+        .batch_execute(include_str!("../../../../migrations/V4__foto_do_admin.sql"))
+        .await
+        .unwrap();
+    let bytes = STANDARD.decode(&image).unwrap();
+    app.admin_client.execute("INSERT INTO nelcota.admin_avatar (email, content_type, image) VALUES ($1,'image/png',$2)", &[&ADMIN_EMAIL, &bytes]).await.unwrap();
+    app.admin_client
+        .batch_execute(include_str!(
+            "../../../../migrations/V17__editable_admin_avatars.sql"
+        ))
+        .await
+        .unwrap();
+    let restored = get(&app, "/admin/api/profile/avatar/editor", &cookie).await;
+    assert_eq!(
+        restored.body["source"],
+        format!("data:image/png;base64,{image}")
+    );
+    assert_eq!(restored.body["crop"]["zoom"], 1.0);
+    let remaining: i64 = app
+        .admin_client
+        .query_one(
+            "SELECT count(*) FROM nelcota.admin_avatar WHERE source_image IS NOT NULL",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(remaining, 0);
 }

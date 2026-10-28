@@ -1,12 +1,24 @@
--- Bounded editor sources stay private and are removed with their avatar.
-CREATE TABLE nelcota.admin_avatar_edits (
-    email text PRIMARY KEY REFERENCES nelcota.admin_avatar(email) ON DELETE CASCADE,
-    content_type text NOT NULL CHECK (content_type IN ('image/png', 'image/jpeg', 'image/webp')),
-    image bytea NOT NULL CHECK (octet_length(image) BETWEEN 1 AND 1048576),
-    avatar_digest bytea NOT NULL CHECK (octet_length(avatar_digest) = 32),
-    crop_x double precision NOT NULL CHECK (crop_x BETWEEN 0 AND 1),
-    crop_y double precision NOT NULL CHECK (crop_y BETWEEN 0 AND 1),
-    zoom double precision NOT NULL CHECK (zoom BETWEEN 1 AND 4),
-    rotation smallint NOT NULL CHECK (rotation IN (0, 90, 180, 270))
-);
-REVOKE ALL ON nelcota.admin_avatar_edits FROM PUBLIC, anon, authenticated, service_role, nelcota_auth;
+-- Keep sources in the existing avatar row so legacy backups replace both.
+ALTER TABLE nelcota.admin_avatar
+    ADD COLUMN source_content_type text,
+    ADD COLUMN source_image bytea,
+    ADD COLUMN source_digest bytea,
+    ADD COLUMN source_updated_at timestamptz,
+    ADD COLUMN source_crop_x double precision,
+    ADD COLUMN source_crop_y double precision,
+    ADD COLUMN source_zoom double precision,
+    ADD COLUMN source_rotation smallint,
+    ADD CONSTRAINT admin_avatar_source_valid CHECK (
+        (source_content_type IS NULL AND source_image IS NULL AND source_digest IS NULL
+         AND source_updated_at IS NULL AND source_crop_x IS NULL AND source_crop_y IS NULL
+         AND source_zoom IS NULL AND source_rotation IS NULL)
+        OR
+        (source_content_type IS NOT NULL AND source_content_type IN ('image/png', 'image/jpeg', 'image/webp')
+         AND source_image IS NOT NULL AND octet_length(source_image) BETWEEN 1 AND 1048576
+         AND source_digest IS NOT NULL AND octet_length(source_digest) = 32
+         AND source_updated_at IS NOT NULL
+         AND source_crop_x IS NOT NULL AND source_crop_x BETWEEN 0 AND 1
+         AND source_crop_y IS NOT NULL AND source_crop_y BETWEEN 0 AND 1
+         AND source_zoom IS NOT NULL AND source_zoom BETWEEN 1 AND 4
+         AND source_rotation IS NOT NULL AND source_rotation IN (0, 90, 180, 270))
+    );
