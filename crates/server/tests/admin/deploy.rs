@@ -236,3 +236,35 @@ async fn production_schema_changes_use_migrations_and_panel_files_are_authentica
         .await;
     assert_eq!(anonymous.status, StatusCode::UNAUTHORIZED);
 }
+
+#[tokio::test]
+async fn migrations_discard_session_settings_before_reusing_pool_capacity() {
+    let app = TestApp::spawn_with(Options {
+        admin_pool_size: 1,
+        ..Options::default()
+    })
+    .await;
+    let cookie = login(&app).await;
+    let token = issue(&app, &cookie).await["token"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let reply = deploy(&app, &token, "/admin/deploy/v1/migrations", request("SET application_name = 'migration-session-only'; CREATE TEMP TABLE temporary_migration_fixture(id int4); CREATE TABLE public.session_fixture(id int4);", false)).await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.text);
+    let client = app.panel.db.get().await.unwrap();
+    let application: String = client
+        .query_one("SELECT current_setting('application_name')", &[])
+        .await
+        .unwrap()
+        .get(0);
+    assert_ne!(application, "migration-session-only");
+    let temporary: bool = client
+        .query_one(
+            "SELECT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'temporary_migration_fixture' AND relnamespace = pg_my_temp_schema())",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert!(!temporary);
+}

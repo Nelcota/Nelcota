@@ -126,14 +126,7 @@ pub async fn apply(
     Json(request): Json<MigrationRequest>,
 ) -> Result<Response, ApiError> {
     let actor = authenticate(&state, &headers).await?;
-    let mut client = state.db.get().await?;
-    let report = user_migrations::apply(&mut client, &request, &actor)
-        .await
-        .map_err(migration_error)?;
-    drop(client);
-    // Catalog failure is post-commit: never ask a client to replay accepted SQL.
-    let ready = state.catalog.refresh(&state.db).await;
-    Ok(Json(json!({"report": report, "catalog_pending": !ready})).into_response())
+    apply_response(&state, &request, &actor).await
 }
 
 pub async fn status(
@@ -159,12 +152,36 @@ pub async fn panel_apply(
     State(state): State<AdminState>,
     Json(request): Json<MigrationRequest>,
 ) -> Result<Response, ApiError> {
-    let mut client = state.db.get().await?;
     let actor = format!("panel:{}", state.credentials.email);
-    let report = user_migrations::apply(&mut client, &request, &actor)
-        .await
-        .map_err(migration_error)?;
-    drop(client);
+    apply_response(&state, &request, &actor).await
+}
+
+// Migration SQL can change session settings or create temporary objects. Keep
+// its pool admission for the operation, then discard this physical connection,
+// including on an error or cancellation, before another panel request can use it.
+struct MigrationConnection(Option<deadpool_postgres::Object>);
+impl Drop for MigrationConnection {
+    fn drop(&mut self) {
+        if let Some(client) = self.0.take() {
+            drop(deadpool_postgres::Object::take(client));
+        }
+    }
+}
+async fn apply_response(
+    state: &AdminState,
+    request: &MigrationRequest,
+    actor: &str,
+) -> Result<Response, ApiError> {
+    let mut connection = MigrationConnection(Some(state.db.get().await?));
+    let report = user_migrations::apply(
+        connection.0.as_mut().expect("owned migration connection"),
+        request,
+        actor,
+    )
+    .await
+    .map_err(migration_error)?;
+    drop(connection);
+    // Catalog failure is post-commit: never ask a client to replay accepted SQL.
     let ready = state.catalog.refresh(&state.db).await;
     Ok(Json(json!({"report": report, "catalog_pending": !ready})).into_response())
 }
