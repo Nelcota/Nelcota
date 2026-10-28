@@ -912,7 +912,8 @@ async fn age_links(app: &TestApp) {
 #[tokio::test]
 async fn review_link_requests_do_not_wait_for_account_lookup_or_issuance() {
     let app = spawn_confirming().await;
-    signup(&app, "link-timing@example.com", "strong-password-123").await;
+    let password = Uuid::new_v4().to_string();
+    signup(&app, "link-timing@example.com", &password).await;
     app.outbox.wait_for(1).await;
     app.admin_client
         .batch_execute("BEGIN; LOCK TABLE auth.users IN ACCESS EXCLUSIVE MODE")
