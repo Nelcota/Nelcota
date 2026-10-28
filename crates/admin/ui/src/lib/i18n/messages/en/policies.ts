@@ -1,4 +1,4 @@
-// Policies page, policy sheet and templates, RLS badge, grants editor and SQL preview.
+// Policies page, policy sheet, RLS badge, grants editor and SQL preview.
 import type { Messages } from '../../index.svelte'
 import type ptBR from '../pt-BR/policies'
 
@@ -112,43 +112,6 @@ const en: Messages<typeof ptBR> = {
       anon: 'not signed in',
       authenticated: 'signed in',
       service_role: 'backend',
-    },
-  },
-  templates: {
-    publicRead: {
-      label: 'Public read',
-      description: 'Anyone reads every row, signed in or not.',
-      name: 'public read',
-    },
-    signedInRead: {
-      label: 'Signed-in users read',
-      description: 'Only signed-in users read; anonymous users do not.',
-      name: 'signed in read',
-    },
-    ownerSelect: {
-      label: 'Owner reads their own rows',
-      description: 'Each user sees only the rows they own.',
-      name: 'owner reads',
-    },
-    ownerInsert: {
-      label: 'Owner creates their own rows',
-      description: 'Only accepts new rows on behalf of the signed-in user.',
-      name: 'owner creates',
-    },
-    ownerUpdate: {
-      label: 'Owner changes their own rows',
-      description: 'Changes only what is theirs, without handing the row to another owner.',
-      name: 'owner changes',
-    },
-    ownerDelete: {
-      label: 'Owner deletes their own rows',
-      description: 'Deletes only what is theirs.',
-      name: 'owner deletes',
-    },
-    ownerAll: {
-      label: 'Owner does everything on their own rows',
-      description: 'Reads, creates, changes and deletes only what is theirs (one rule for all).',
-      name: 'owner does everything',
     },
   },
   rls: {

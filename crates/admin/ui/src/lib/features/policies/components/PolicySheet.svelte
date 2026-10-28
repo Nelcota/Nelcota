@@ -20,7 +20,7 @@
   import SqlPreview from '$lib/shared/schema/components/SqlPreview.svelte'
   import { ddl, policyFields, type PolicyDef, type ColumnInfo } from '$lib/shared/schema/ddl'
   import { guidedPolicy, uniquePolicyName, nameProblem, type Audience, type AccessLevel } from '$lib/shared/schema/guided-access'
-  import { guessOwnerColumn } from '$lib/features/policies/policy-templates'
+  import { guessOwnerColumn } from '$lib/features/policies/owner-column'
   import { SqlPreview as Preview } from '$lib/shared/schema/preview.svelte'
   import { errorMessage, t } from '$lib/i18n/index.svelte'
   import { href } from '$lib/navigation/router.svelte'
