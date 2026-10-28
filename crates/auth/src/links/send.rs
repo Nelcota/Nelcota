@@ -53,7 +53,38 @@ pub(crate) async fn send(state: &AuthState, kind: LinkKind, email: &str) -> Resu
     // Admission precedes the account lookup for the same overload response
     // whether or not the account exists. No committed token is dropped.
     let slot = state.mail_delivery.reserve()?;
+    let state = state.clone();
+    // Account lookup and token issuance must not affect public response time.
+    // The same admission budget bounds work for both present and absent users.
+    tokio::spawn(async move {
+        match tokio::time::timeout(
+            std::time::Duration::from_secs(30),
+            send_pending(&state, kind, &email, slot),
+        )
+        .await
+        {
+            Ok(Ok(())) => {}
+            Ok(Err(_)) => tracing::warn!(
+                event = "auth.link_issuance_failed",
+                kind = kind.as_str(),
+                "could not issue an email link"
+            ),
+            Err(_) => tracing::warn!(
+                event = "auth.link_issuance_timeout",
+                kind = kind.as_str(),
+                "email link issuance timed out"
+            ),
+        }
+    });
+    Ok(())
+}
 
+async fn send_pending(
+    state: &AuthState,
+    kind: LinkKind,
+    email: &str,
+    slot: MailSlot,
+) -> Result<(), ApiError> {
     let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
     let tx = begin_auth(&mut client).await?;
     let user: Option<Uuid> = tx
@@ -73,7 +104,7 @@ pub(crate) async fn send(state: &AuthState, kind: LinkKind, email: &str) -> Resu
     tx.commit().await.map_err(db_error)?;
 
     if let Some(token) = token {
-        deliver(state, kind, &email, &token, slot);
+        deliver(state, kind, email, &token, slot);
     }
     Ok(())
 }

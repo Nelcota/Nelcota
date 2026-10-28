@@ -1,5 +1,6 @@
 const ptBR = {
   title: 'Eventos e webhooks', description: 'Envie mudanças do banco para outros serviços, com assinatura e novas tentativas automáticas.',
+  summary: { outstanding: { one: '{count} entrega na fila', other: '{count} entregas na fila' }, retained: { one: '{count} entrega no histórico', other: '{count} entregas no histórico' } },
   configuration: 'Webhooks', deliveries: 'Histórico de entregas', webhook: 'Webhook', create: 'Novo webhook', edit: 'Editar webhook',
   emptyTitle: 'Conecte o banco aos seus serviços', emptyHint: 'Escolha uma tabela, os eventos e a URL que receberá cada mudança.',
   noTables: 'Crie uma tabela primeiro', noTablesHint: 'Webhooks acompanham tabelas comuns do schema exposto. Views e tabelas particionadas não estão disponíveis nesta versão.',
@@ -19,7 +20,7 @@ const ptBR = {
   secretHelp: 'Confira a assinatura e o horário antes de processar. Use o ID do evento para evitar repetir a ação em novas tentativas ou reenvios.',
   guide: 'Como receber e verificar eventos', retryGuide: 'Entregas recebem até 6 tentativas por padrão. Respostas 2xx confirmam; falhas temporárias são tentadas novamente.',
   retention: 'Histórico por até 7 dias. Eventos pendentes ficam na fila até serem concluídos ou cancelados.',
-  outstanding: 'Na fila', retained: 'No histórico', ofLimit: 'de {limit}', attemptsOf: { one: '{done} de {count} tentativa', other: '{done} de {count} tentativas' }, capacity: 'A fila está perto do limite. Confira os destinos com falhas ou pausados para manter as gravações funcionando.',
+  attemptsOf: { one: '{done} de {count} tentativa', other: '{done} de {count} tentativas' }, capacity: 'A fila está perto do limite. Confira os destinos com falhas ou pausados para manter as gravações funcionando.',
   clear: 'Limpar histórico', clearTitle: 'Limpar o histórico concluído?', clearHint: 'Entregas concluídas, com falha ou canceladas serão removidas, incluindo os dados enviados. Entregas pendentes continuam na fila.', cleared: 'Histórico concluído removido.',
   allWebhooks: 'Todos os webhooks', allStatuses: 'Todos os estados', webhookFilter: 'Filtrar por webhook', statusFilter: 'Filtrar por estado',
   status: { pending: 'Aguardando', processing: 'Enviando', succeeded: 'Entregue', failed: 'Falhou', cancelled: 'Cancelada' },

@@ -33,7 +33,10 @@ pub(super) async fn list(pool: &Pool, page: i64, search: &str) -> Result<UsersRe
         &[&pattern, &(SIZE + 1), &offset, &id],
     ).await?;
     let total = client
-        .query_one("SELECT count(*) FROM auth.users", &[])
+        .query_one(
+            "SELECT count(*) FROM auth.users WHERE email ILIKE $1 OR id::text = $2",
+            &[&pattern, &id],
+        )
         .await?
         .get(0);
     Ok(UsersResponse {

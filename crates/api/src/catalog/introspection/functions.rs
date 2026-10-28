@@ -28,6 +28,11 @@ pub(super) async fn load(
                  WHERE n.nspname = $1 AND p.prokind = 'f'
                    AND p.prorettype <> 'trigger'::regtype
                    AND p.prorettype <> 'event_trigger'::regtype
+                   AND p.provariadic = 0
+                   AND NOT EXISTS (
+                       SELECT 1 FROM unnest(p.proargtypes) arg
+                       JOIN pg_type t ON t.oid = arg
+                       WHERE t.typtype = 'p')
                    AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = p.oid AND d.deptype = 'e')
                  ORDER BY p.proname, p.proargtypes::text, p.proargnames",
                 &[&schema],

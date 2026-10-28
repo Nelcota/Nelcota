@@ -202,12 +202,17 @@ async fn finish(
                 &identity,
                 state.settings.signup_enabled,
             )
-            .await?
+            .await
             {
-                Ok(user_id) => flow::issue_code(&tx, pending.id, user_id)
+                Ok(Ok(user_id)) => flow::issue_code(&tx, pending.id, user_id)
                     .await?
                     .ok_or("invalid_state"),
-                Err(refusal) => Err(refusal.code()),
+                Ok(Err(refusal)) => Err(refusal.code()),
+                // A password signup can race provider account creation without
+                // taking its advisory locks. Refuse through the app redirect;
+                // constraint names and account values never become callback JSON.
+                Err(error) if error.sqlstate() == Some("23505") => Err("email_conflict"),
+                Err(error) => return Err(error),
             }
         }
         Err(code) => Err(code),

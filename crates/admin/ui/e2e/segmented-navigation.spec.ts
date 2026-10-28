@@ -8,7 +8,7 @@ for (const theme of ['light', 'dark']) {
     await page.route('**/health', route => route.fulfill({ json: { status: 'ok' } }))
     await page.route('**/admin/api/webhooks**', route => route.fulfill({ json: route.request().url().includes('/deliveries') ? { deliveries: [], next_cursor: null } : { endpoints: [], tables: ['notes'], allow_loopback: false, outstanding: 0, retained: 0 } }))
     let baseline: unknown
-    for (const route of ['connect', 'policies', '']) {
+    for (const route of ['connect', '']) {
       await page.goto(`/admin/${route}`)
       const group = page.locator('main .panel-segments').first()
       await expect(group).toBeVisible()

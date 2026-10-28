@@ -49,7 +49,7 @@
       </button>
       {#if open}
         <div id={panel} class="grid gap-2">
-          <p class="text-xs text-muted-foreground">{option.change === 'disable' ? t('signIn.envHintOff') : t('signIn.envHint')}</p>
+          <p class="text-sm text-muted-foreground">{option.change === 'disable' ? t('signIn.envHintOff') : t('signIn.envHint')}</p>
           <CodeBlock code={envSnippet(option.variables)} label={t('signIn.copyEnv')} lang="env" wrap />
         </div>
       {/if}

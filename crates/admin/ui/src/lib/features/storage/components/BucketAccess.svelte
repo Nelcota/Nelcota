@@ -67,8 +67,8 @@
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div class="grid gap-0.5">
       <h2 id="bucket-access" class="text-base font-semibold">{t('storage.access.title')}</h2>
-      <p class="text-xs text-muted-foreground">{t('storage.access.hint')}</p>
-      {#if technical.on}<p class="text-xs text-muted-foreground">{t('storage.access.technicalHint')}</p>{/if}
+      <p class="text-sm text-muted-foreground">{t('storage.access.hint')}</p>
+      {#if technical.on}<p class="text-sm text-muted-foreground">{t('storage.access.technicalHint')}</p>{/if}
     </div>
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>
@@ -82,7 +82,7 @@
           <DropdownMenu.Item class="items-start" onclick={() => { adding = template; addOpen = true }}>
             <span class="grid gap-0.5">
               <span>{t(`storage.access.templates.${template}.label`)}</span>
-              <span class="text-xs text-muted-foreground">{t(`storage.access.templates.${template}.hint`)}</span>
+              <span class="text-[0.8125rem] text-muted-foreground">{t(`storage.access.templates.${template}.hint`)}</span>
             </span>
           </DropdownMenu.Item>
         {/each}

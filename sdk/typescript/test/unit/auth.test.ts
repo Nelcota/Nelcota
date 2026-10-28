@@ -600,14 +600,15 @@ describe('refresh', () => {
     expect(events).toEqual(['signed_out']);
   });
 
-  it('a transient failure keeps the session and still sends its token (never a silent visitor)', async () => {
+  it('a transient refresh failure keeps the session and reaches the caller without an expired request', async () => {
     const { nelcota, calls, storage } = setup(stored(session(-5)), (request) => {
       if (request.url.pathname === '/auth/v1/token') throw new TypeError('fetch failed');
       return json({ code: 'invalid_token', message: 'expired' }, 401);
     });
     const { error } = await nelcota.from('notes').select();
-    expect(error?.status).toBe(401);
-    expect(calls.at(-1)!.headers.get('authorization')).toBe('Bearer access-1');
+    expect(error?.status).toBe(0);
+    expect(error?.code).toBe('network_error');
+    expect(calls.every(call => call.url.pathname === '/auth/v1/token')).toBe(true);
     expect(await storage.getItem(KEY)).not.toBeNull();
   });
 

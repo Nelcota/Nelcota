@@ -26,6 +26,7 @@
   import { Checkbox } from '$lib/components/ui/checkbox'
   import { toast } from 'svelte-sonner'
   import PageHeader from '$lib/components/shared/PageHeader.svelte'
+  import ChevronDown from '@lucide/svelte/icons/chevron-down'
   import BucketAccess from '$lib/features/storage/components/BucketAccess.svelte'
   import EmptyState from '$lib/components/shared/EmptyState.svelte'
   import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte'
@@ -344,8 +345,11 @@
           </Table.Body>
         </Table.Root>
       </div>
-      <!-- Folders have no actions of their own: say where they come from. -->
-      <p class="mt-3 px-1 text-xs text-muted-foreground">{t('storage.browser.foldersHint')}</p>
+      <!-- Pastas não têm ações próprias: a explicação fica recolhida, para não ocupar a lista. -->
+      <details class="group mt-3 px-1 text-sm text-muted-foreground">
+        <summary class="flex cursor-pointer list-none items-center gap-2 py-1 [&::-webkit-details-marker]:hidden"><ChevronDown class="size-4 shrink-0 -rotate-90 transition-transform group-open:rotate-0" aria-hidden="true" />{t('storage.browser.foldersTitle')}</summary>
+        <p class="pt-1 pl-6">{t('storage.browser.foldersHint')}</p>
+      </details>
       {#if hasNext}
         <div class="mt-4 flex justify-center">
           <Button variant="outline" size="sm" disabled={loading} onclick={() => load(true)}>{t('storage.browser.more')}</Button>

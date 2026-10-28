@@ -162,7 +162,7 @@
         </Field.Field>
         </Field.Group>
         {#if failure}<Field.Error>{failure}</Field.Error>{/if}
-        {#if !bucket && !validBucketName(id)}<p id="bucket-submit-hint" class="text-xs text-muted-foreground">{t('storage.dialog.nameRequired')}</p>{/if}
+        {#if !bucket && !validBucketName(id)}<p id="bucket-submit-hint" class="text-sm text-muted-foreground">{t('storage.dialog.nameRequired')}</p>{/if}
         <Dialog.Footer>
           <Button variant="outline" disabled={saving} onclick={guard.request}>{t('common.cancel')}</Button>
           <Button type="submit" disabled={saving || !ready} aria-describedby={!bucket && !validBucketName(id) ? 'bucket-submit-hint' : undefined}>

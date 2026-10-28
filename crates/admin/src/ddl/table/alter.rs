@@ -9,10 +9,11 @@ use crate::ddl::{
 use crate::tables::structure::{ColumnInfo, Structure};
 use nelcota_api::query::ident;
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 
 /// Column just added to the working copy (constraint names do not exist yet:
 /// Postgres only creates them when it runs).
-fn added_column(col: &ColumnDef) -> ColumnInfo {
+fn added_column(col: &ColumnDef, unique: Option<String>) -> ColumnInfo {
     ColumnInfo {
         name: col.name.clone(),
         data_type: col.data_type.clone(),
@@ -21,10 +22,21 @@ fn added_column(col: &ColumnDef) -> ColumnInfo {
         identity: col.identity.then_some("always"),
         generated: false,
         primary_key: false,
-        unique: None,
+        unique,
         references: None,
         comment: col.comment.clone(),
     }
+}
+
+// Explicit, bounded names let later actions drop a constraint created in the
+// same batch, including after a table/column rename.
+fn unique_name(table: &str, column: &str, sequence: usize) -> String {
+    let digest = Sha256::digest(format!("{table}\0{column}\0{sequence}"));
+    let suffix: String = digest[..16]
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect();
+    format!("nelcota_unique_{suffix}")
 }
 
 fn column_exists<'a>(
@@ -89,14 +101,26 @@ pub fn alter(ctx: &Context, initial: &Structure, actions: &[AlterAction]) -> Res
                         json!({ "column": column.name }),
                     );
                 }
+                let mut definition = column.clone();
+                definition.unique = false;
                 statements.push(alter(format!(
                     "ADD COLUMN {}",
-                    column_sql(ctx, column, false)?
+                    column_sql(ctx, &definition, false)?
                 )));
+                let unique = column
+                    .unique
+                    .then(|| unique_name(&table, &column.name, statements.len()));
+                if let Some(name) = &unique {
+                    statements.push(alter(format!(
+                        "ADD CONSTRAINT {} UNIQUE ({})",
+                        ident(name),
+                        ident(&column.name)
+                    )));
+                }
                 if let Some(comment) = column.comment.as_deref().filter(|c| !c.trim().is_empty()) {
                     statements.push(comment_on_column(&table, &column.name, Some(comment)));
                 }
-                current.columns.push(added_column(column));
+                current.columns.push(added_column(column, unique));
             }
             AlterAction::DropColumn { name } => {
                 column_exists(&current, name)?;
@@ -165,14 +189,25 @@ pub fn alter(ctx: &Context, initial: &Structure, actions: &[AlterAction]) -> Res
             }
             AlterAction::SetUnique { column, unique } => {
                 let info = column_exists(&current, column)?;
-                match (&info.unique, unique) {
+                let mut constraint = info.unique.clone();
+                match (&constraint, unique) {
                     (None, true) => {
-                        statements.push(alter(format!("ADD UNIQUE ({})", ident(column))))
+                        let name = unique_name(&table, column, statements.len());
+                        statements.push(alter(format!(
+                            "ADD CONSTRAINT {} UNIQUE ({})",
+                            ident(&name),
+                            ident(column)
+                        )));
+                        constraint = Some(name);
                     }
                     (Some(name), false) => {
-                        statements.push(alter(format!("DROP CONSTRAINT {}", ident(name))))
+                        statements.push(alter(format!("DROP CONSTRAINT {}", ident(name))));
+                        constraint = None;
                     }
                     _ => {}
+                }
+                if let Some(info) = current.columns.iter_mut().find(|info| info.name == *column) {
+                    info.unique = constraint;
                 }
             }
             AlterAction::SetReference { column, reference } => {

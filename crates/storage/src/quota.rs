@@ -37,6 +37,8 @@ pub(crate) struct Reservation {
     bytes: u64,
     total: u128,
     disk: bool,
+    growing: bool,
+    old_size: u64,
 }
 
 fn full(disk: bool) -> ApiError {
@@ -47,10 +49,41 @@ fn full(disk: bool) -> ApiError {
 }
 
 impl Reservation {
-    pub(crate) fn check(&self, size: u64) -> Result<(), ApiError> {
-        if size > self.bytes {
+    pub(crate) async fn check(&mut self, state: &StorageState, size: u64) -> Result<(), ApiError> {
+        if size <= self.bytes {
+            return Ok(());
+        }
+        if !self.growing {
             return Err(full(self.disk));
         }
+        let _admission = self.quota.admission.lock().await;
+        let used = match state.settings.max_total_size {
+            Some(_) => db::used_bytes(&state.pool).await?,
+            None => 0,
+        };
+        let free = state.store.free_bytes();
+        let mut reserved = self
+            .quota
+            .reserved
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let total = u128::from(size.saturating_sub(self.old_size));
+        if let Some(max) = state.settings.max_total_size
+            && u128::from(used) + reserved.total - self.total + total > u128::from(max)
+        {
+            return Err(full(false));
+        }
+        if let Some(free) = free
+            && u128::from(free)
+                < u128::from(state.settings.min_free_bytes) + reserved.disk - u128::from(self.bytes)
+                    + u128::from(size)
+        {
+            return Err(full(true));
+        }
+        reserved.total = reserved.total - self.total + total;
+        reserved.disk = reserved.disk - u128::from(self.bytes) + u128::from(size);
+        self.total = total;
+        self.bytes = size;
         Ok(())
     }
 }
@@ -106,7 +139,9 @@ pub(crate) async fn reserve(
     if declared.is_some_and(|size| size > bytes) {
         return Err(full(disk));
     }
-    let bytes = declared.unwrap_or(bytes);
+    // Unknown-length uploads reserve only bytes received, growing under the
+    // same admission lock instead of monopolizing the remaining quota.
+    let bytes = declared.unwrap_or(0);
     let total = u128::from(bytes.saturating_sub(old_size));
     reserved.total += total;
     reserved.disk += u128::from(bytes);
@@ -115,6 +150,8 @@ pub(crate) async fn reserve(
         bytes,
         total,
         disk,
+        growing: declared.is_none(),
+        old_size,
     })
 }
 

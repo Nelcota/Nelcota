@@ -12,7 +12,7 @@ const en: Messages<typeof ptBR> = {
     users: 'Users',
     storage: 'Storage',
     policies: 'Policies',
-    connect: 'API',
+    connect: 'Connect',
     guides: 'Guides and references',
     projects: 'Projects',
     updates: 'Updates',
@@ -29,6 +29,7 @@ const en: Messages<typeof ptBR> = {
     breadcrumb: 'Current location',
     shortcuts: 'Workspace shortcuts',
     menu: 'Menu',
+    short: { policies: 'Access', webhooks: 'Webhooks', webhookConfig: 'Settings', deliveries: 'Deliveries', signIn: 'Sign-in methods', attention: 'Attention' },
   },
   topbar: {
     searchLabel: 'Search',

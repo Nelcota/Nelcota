@@ -3,6 +3,13 @@ import { bundledSources, guides, guideLink, loadGuideSearchText, loadGuideSource
 import { headingSlug, readMarkdown } from './markdown'
 
 describe('bundled guides', () => {
+  it('renders malformed image URLs as escaped alternative text', () => {
+    const blocks = readMarkdown('![safe alternative](http://[invalid)\n\nStill readable.', 'docs/api.md');
+    const html = blocks.filter(block => block.type === 'html').map(block => block.html).join('');
+    expect(html).toContain('safe alternative');
+    expect(html).toContain('Still readable.');
+    expect(html).not.toContain('<img');
+  });
   it('includes every reference without fetching remote documentation', async () => {
     for (const guide of guides.filter(guide => guide.id !== 'openapi')) {
       const source = await loadGuideSource(guide)

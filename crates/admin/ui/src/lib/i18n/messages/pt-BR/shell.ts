@@ -9,7 +9,7 @@ const ptBR = {
     users: 'Usuários',
     storage: 'Armazenamento',
     policies: 'Políticas de acesso',
-    connect: 'API',
+    connect: 'Conectar',
     guides: 'Guias e referências',
     projects: 'Projetos',
     updates: 'Atualizações',
@@ -26,6 +26,7 @@ const ptBR = {
     breadcrumb: 'Localização atual',
     shortcuts: 'Atalhos do espaço de trabalho',
     menu: 'Menu',
+    short: { policies: 'Acesso', webhooks: 'Webhooks', webhookConfig: 'Configuração', deliveries: 'Entregas', signIn: 'Formas de entrar', attention: 'Atenção' },
   },
   topbar: {
     searchLabel: 'Buscar',

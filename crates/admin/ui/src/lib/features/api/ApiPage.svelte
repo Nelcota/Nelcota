@@ -242,7 +242,7 @@
             {@render step(2, t('connect.sdk.types'))}
             <div class="col-start-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
               <Button variant="outline" size="sm" href={href('/api/typescript')} download="database.ts"><Download />{t('connect.downloadTypes')}</Button>
-              <span>{t('connect.sdk.orCli')} <code class="text-xs text-foreground">nelcota types -o database.ts</code></span>
+              <span>{t('connect.sdk.orCli')} <code class="text-[0.8125rem] text-foreground">nelcota types -o database.ts</code></span>
             </div>
           </li>
           <li class="grid grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2">
@@ -272,7 +272,7 @@
             </Button>
           </div>
         {/if}
-        <p class="text-xs text-muted-foreground">{t('connect.ai.safe')}</p>
+        <p class="text-sm text-muted-foreground">{t('connect.ai.safe')}</p>
         {#if context}
           <details class="min-w-0">
             <summary class="cursor-pointer text-sm text-muted-foreground hover:text-foreground">{t('connect.ai.preview', { size: contextSize })}</summary>
@@ -294,11 +294,11 @@
           </div>
           {#if topic === 'tables' && tables.length}
             <Select.Root type="single" value={table} onValueChange={(table) => choose({ table })}>
-              <Select.Trigger class="w-52 max-w-full font-mono text-xs" aria-label={t('connect.table')}><span class="truncate">{table}</span></Select.Trigger>
+              <Select.Trigger class="w-52 max-w-full font-mono text-[0.8125rem]" aria-label={t('connect.table')}><span class="truncate">{table}</span></Select.Trigger>
               <Select.Content>
                 <Select.Group>
                 {#each tables as item (item.name)}
-                  <Select.Item value={item.name} class="font-mono text-xs">{item.name}</Select.Item>
+                  <Select.Item value={item.name} class="font-mono text-[0.8125rem]">{item.name}</Select.Item>
                 {/each}
                 </Select.Group>
               </Select.Content>
@@ -341,7 +341,7 @@
           <p class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
             {t('connect.types')}
             <Button variant="outline" size="sm" href={href('/api/typescript')} download="database.ts"><Download />{t('connect.downloadTypes')}</Button>
-            <span>{t('connect.sdk.orCli')} <code class="text-xs text-foreground">nelcota types -o database.ts</code></span>
+            <span>{t('connect.sdk.orCli')} <code class="text-[0.8125rem] text-foreground">nelcota types -o database.ts</code></span>
           </p>
         {/if}
       </section>

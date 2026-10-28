@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte'
-  import * as Dialog from '$lib/components/ui/dialog'
+  import * as Sheet from '$lib/components/ui/sheet'
   import * as Field from '$lib/components/ui/field'
   import { Input } from '$lib/components/ui/input'
   import * as Select from '$lib/components/ui/select'
@@ -40,11 +40,14 @@
   }
 </script>
 
-<Dialog.Root bind:open={() => open, guard.change}>
-  <Dialog.Content class="sm:max-w-xl">
-    <form onsubmit={save} class="grid gap-5">
+<Sheet.Root bind:open={() => open, guard.change}>
+  <Sheet.Content class="flex w-full flex-col gap-0 p-0 data-[side=right]:sm:max-w-xl">
+    <Sheet.Header class="shrink-0 border-b px-6 py-5">
+      <Sheet.Title>{endpoint ? t('webhooks.edit') : t('webhooks.create')}</Sheet.Title>
+      <Sheet.Description>{t('webhooks.description')}</Sheet.Description>
+    </Sheet.Header>
+    <form id="webhook-form" onsubmit={save} class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-6">
       <fieldset disabled={saving} class="contents" aria-busy={saving}>
-        <Dialog.Header><Dialog.Title>{endpoint ? t('webhooks.edit') : t('webhooks.create')}</Dialog.Title></Dialog.Header>
         <Field.Group class="gap-5">
           <Field.Field><Field.Label for="webhook-name">{t('webhooks.name')}</Field.Label><Input id="webhook-name" bind:value={name} maxlength={80} placeholder={t('webhooks.namePlaceholder')} required autocomplete="off" /></Field.Field>
           <Field.Field><Field.Label for="webhook-table">{t('webhooks.table')}</Field.Label>
@@ -67,9 +70,12 @@
           <Field.Field><Field.Field orientation="horizontal"><Checkbox id="webhook-enabled" bind:checked={enabled} /><Field.Label for="webhook-enabled">{t('webhooks.enabled')}</Field.Label></Field.Field><Field.Description>{t('webhooks.pauseHint')}</Field.Description></Field.Field>
         </Field.Group>
         {#if failure}<p role="alert" class="text-sm text-destructive">{failure}</p>{/if}
-        <Dialog.Footer><Button variant="outline" onclick={guard.request}>{t('common.cancel')}</Button><Button type="submit" disabled={!ready || saving}>{saving ? t('common.saving') : t('common.save')}</Button></Dialog.Footer>
       </fieldset>
     </form>
-  </Dialog.Content>
-</Dialog.Root>
+    <Sheet.Footer class="flex shrink-0 flex-row justify-end gap-2 border-t px-6 py-4">
+      <Button variant="outline" disabled={saving} onclick={guard.request}>{t('common.cancel')}</Button>
+      <Button type="submit" form="webhook-form" disabled={!ready || saving}>{saving ? t('common.saving') : t('common.save')}</Button>
+    </Sheet.Footer>
+  </Sheet.Content>
+</Sheet.Root>
 <UnsavedChangesDialog bind:open={guard.pending} ondiscard={guard.discard} />

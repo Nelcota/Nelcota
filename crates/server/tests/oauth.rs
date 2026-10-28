@@ -26,6 +26,84 @@ const AUTHORIZE: &str = "https://github.example/login/oauth/authorize";
 const VERIFIER: &str = "app-verifier-0123456789-abcdefghijklmnopqrstuvwxyz";
 
 #[tokio::test]
+async fn review_signup_confirmation_retires_preverification_provider_access() {
+    let h = Harness::spawn_with(Options {
+        confirm_email: true,
+        ..Options::default()
+    })
+    .await;
+    h.account(780, Some("confirmation-victim@example.com"), false);
+    let old = h.session().await;
+    let pending = h.sign_in().await;
+    let duplicate = h
+        .app
+        .post(
+            "/auth/v1/signup",
+            None,
+            json!({"email":"confirmation-victim@example.com", "password":"owner-password-123"}),
+        )
+        .await;
+    assert_eq!(duplicate.body["code"], "user_already_exists");
+    let resend = h
+        .app
+        .post(
+            "/auth/v1/resend",
+            None,
+            json!({"email":"confirmation-victim@example.com", "type":"signup"}),
+        )
+        .await;
+    assert_eq!(resend.status, StatusCode::OK);
+    let token = link_token(
+        &h.app.outbox.wait_for(1).await[0],
+        CONFIRMATION_URL,
+        "signup",
+    );
+    let owner = h
+        .app
+        .post(
+            "/auth/v1/verify",
+            None,
+            json!({"type":"signup", "token":token}),
+        )
+        .await;
+    assert_eq!(owner.status, StatusCode::OK, "{}", owner.text);
+    assert_eq!(owner.body["user"]["id"], old["user"]["id"]);
+    assert_eq!(
+        h.redeem(&pending["code"], VERIFIER).await.body["code"],
+        "invalid_grant"
+    );
+    assert_eq!(
+        h.sign_in().await.get("error").map(String::as_str),
+        Some("email_conflict")
+    );
+    let refreshed = h
+        .app
+        .post(
+            "/auth/v1/token?grant_type=refresh_token",
+            None,
+            json!({"refresh_token":old["refresh_token"]}),
+        )
+        .await;
+    assert_eq!(refreshed.body["code"], "invalid_grant");
+}
+
+#[tokio::test]
+async fn review_concurrent_first_provider_signins_share_one_identity() {
+    let h = Harness::spawn().await;
+    h.account(781, Some("concurrent-provider@example.com"), true);
+    let (first, second) = tokio::join!(h.sign_in(), h.sign_in());
+    let (first, second) = tokio::join!(
+        h.redeem(&first["code"], VERIFIER),
+        h.redeem(&second["code"], VERIFIER)
+    );
+    assert_eq!(first.status, StatusCode::OK, "{}", first.text);
+    assert_eq!(second.status, StatusCode::OK, "{}", second.text);
+    assert_eq!(first.body["user"]["id"], second.body["user"]["id"]);
+    let count: i64 = h.app.admin_client.query_one("SELECT count(*) FROM auth.identities WHERE provider = 'github' AND provider_id = '781'", &[]).await.unwrap().get(0);
+    assert_eq!(count, 1);
+}
+
+#[tokio::test]
 async fn rust_sdk_finishes_a_real_pkce_flow() {
     let harness = Harness::spawn().await;
     harness.account(9900, Some("rust-oauth@example.com"), true);

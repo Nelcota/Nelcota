@@ -1,8 +1,8 @@
 // API page: endpoints, roles, service_role token and code examples.
 const ptBR = {
-  title: 'API',
+  title: 'Conectar',
   navigation: 'Seções da documentação da API',
-  short: { address: 'Endereço', caller: 'Quem chama', sdk: 'SDK', examples: 'Exemplos', token: 'Token' },
+  short: { address: 'Endereço', caller: 'Quem chama', sdk: 'SDK', ai: 'IA', examples: 'Exemplos', token: 'Token' },
   description: 'Como o seu app conversa com este projeto.',
   start: 'Conectar meu app',
   openapi: 'Documentação OpenAPI',

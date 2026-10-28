@@ -31,6 +31,7 @@ const en: Messages<typeof ptBR> = {
   title: 'Updates', subtitle: 'Verified versions, project maintenance and recovery.',
   controller: 'Host management', authority: 'Sign in with the operator enrolled on the VPS. A project account cannot authorize host operations.',
   open: 'Open update management', unenrolled: 'This host has not been enrolled for panel updates.',
+  unenrolledHint: 'Enrollment happens on the VPS with the operator account. Until then, update from the command line as described in the deployment guide.', guide: 'See the deployment guide',
   current: 'Installed version', available: 'Available version', check: 'Check for updates', checking: 'Checking the official release…',
   disabled: 'Installation is blocked until VPS upgrade and recovery validation is complete.',
   noUpdate: 'There is no newer compatible version for this project.',

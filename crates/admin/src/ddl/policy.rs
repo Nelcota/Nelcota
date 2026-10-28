@@ -203,17 +203,18 @@ pub fn create(schema: &str, table: &str, def: &PolicyDef) -> Result<Vec<String>>
     Ok(vec![sql])
 }
 
-pub fn drop(schema: &str, table: &str, name: &str) -> Vec<String> {
-    vec![format!(
+pub fn drop(schema: &str, table: &str, name: &str) -> Result<Vec<String>> {
+    validate_name("policy", name)?;
+    Ok(vec![format!(
         "DROP POLICY {} ON {}",
         ident(name),
         qualified(schema, table)
-    )]
+    )])
 }
 
 /// Replaces the policy `original` with the new definition (the name may change).
 pub fn replace(schema: &str, table: &str, original: &str, def: &PolicyDef) -> Result<Vec<String>> {
-    let mut statements = drop(schema, table, original);
+    let mut statements = drop(schema, table, original)?;
     statements.extend(create(schema, table, def)?);
     Ok(statements)
 }

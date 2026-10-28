@@ -5,9 +5,9 @@ import type ptBR from '../pt-BR/sql'
 const en: Messages<typeof ptBR> = {
   editor: {
     newQuery: 'New query',
-    unsaved: '(unsaved)',
+    unsaved: '· unsaved draft',
     unsavedTitle: 'Unsaved changes',
-    ownerNote: 'Full access',
+    ownerNote: 'Run as: full access',
     ownerNoteMore: ' · bypasses the rules',
     ownerNoteTitle: 'Queries run as the database owner: access policies (RLS) do not apply and everything can be read and changed.',
     renameHint: 'Click to rename',

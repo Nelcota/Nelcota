@@ -67,12 +67,15 @@ pub enum Action {
         #[arg(long,default_value=POLICY)]
         policy: PathBuf,
     },
-    /// Recover one interrupted job. Never restores an old snapshot after commit.
+    /// Recover one interrupted job; resume the committed version by default.
     Recover {
         #[arg(long,default_value=POLICY)]
         policy: PathBuf,
         #[arg(long)]
         job: String,
+        /// Restore the verified pre-update snapshot after commit, discarding later writes.
+        #[arg(long)]
+        restore_snapshot: bool,
     },
     /// Internal job subprocess; not an HTTP command interface.
     #[command(hide = true)]
@@ -173,9 +176,11 @@ pub fn run(root: &std::path::Path, args: UpdatesArgs) -> anyhow::Result<crate::O
                         )?
                     );
                 }
-                Action::Recover { policy, job } => {
-                    runtime::execute(&policy::Policy::load(&policy)?, &job, true)?
-                }
+                Action::Recover {
+                    policy,
+                    job,
+                    restore_snapshot,
+                } => runtime::recover(&policy::Policy::load(&policy)?, &job, restore_snapshot)?,
                 Action::Execute {
                     policy,
                     job,

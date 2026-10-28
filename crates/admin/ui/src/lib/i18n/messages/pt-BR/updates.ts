@@ -28,6 +28,7 @@ const ptBR = {
   title: 'Atualizações', subtitle: 'Versões verificadas, manutenção e recuperação do projeto.',
   controller: 'Gerenciamento do host', authority: 'Entre com a conta de operador cadastrada na VPS. A conta do projeto não autoriza operações no host.',
   open: 'Abrir gerenciamento de atualizações', unenrolled: 'Este host ainda não foi cadastrado para atualizações pelo painel.',
+  unenrolledHint: 'O cadastro é feito na VPS, com a conta de operador. Até lá, atualize pela linha de comando como descrito no guia de implantação.', guide: 'Ver o guia de implantação',
   current: 'Versão instalada', available: 'Versão disponível', check: 'Verificar atualizações', checking: 'Verificando a versão oficial…',
   disabled: 'A instalação está bloqueada até concluir a validação de atualização e recuperação da VPS.',
   noUpdate: 'Não há uma versão compatível mais nova para este projeto.',

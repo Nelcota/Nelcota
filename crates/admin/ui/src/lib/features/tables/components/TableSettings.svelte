@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { untrack } from 'svelte'
+  import { onMount, untrack } from 'svelte'
   import Save from '@lucide/svelte/icons/save'
   import ShieldCheck from '@lucide/svelte/icons/shield-check'
   import ShieldOff from '@lucide/svelte/icons/shield-off'
@@ -12,6 +12,7 @@
   import ConfirmDialog from '$lib/components/shared/ConfirmDialog.svelte'
   import { API_ROLES, grantChanges, type AlterAction, type GrantDef, type Structure } from '$lib/shared/schema/ddl'
   import { t } from '$lib/i18n/index.svelte'
+  import { route } from '$lib/navigation/router.svelte'
 
   let {
     structure,
@@ -26,6 +27,14 @@
     onalter: (actions: AlterAction[]) => Promise<void>
     ondrop: () => void
   } = $props()
+
+  // "Rename or describe" in the tables list opens the structure here, ready to type.
+  onMount(() => {
+    if (route.query.get('focus') !== 'name') return
+    const input = document.getElementById('settings-name')
+    input?.scrollIntoView({ block: 'center' })
+    input?.focus()
+  })
 
   const fromStructure = (s: Structure): GrantDef[] =>
     API_ROLES.map((role) => ({ role, privileges: [...(s.grants.find((g) => g.role === role)?.privileges ?? [])] }))
@@ -94,7 +103,7 @@
       <!-- Filled only while there is something to save, so the state reads at a glance. -->
       <Button size="sm" type="submit" variant={identityChanges.length ? 'default' : 'outline'} disabled={busy !== null || identityChanges.length === 0}>{#if (busy === 'identity')}<LoaderCircle data-icon="inline-start" class="animate-spin" aria-hidden="true" />{/if}{#if !(busy === 'identity')}<Save data-icon="inline-start" aria-hidden="true" />{/if}{busy === 'identity' ? t('common.saving') : t('tables.settings.save')}</Button>
       {#if identityChanges.length && busy !== 'identity'}
-        <p class="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground sm:col-span-3" role="status">
+        <p class="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground sm:col-span-3" role="status">
           {t('tables.settings.unsaved')}
           <button type="button" class="cursor-pointer text-foreground underline underline-offset-4" onclick={resetIdentity}>{t('tables.settings.undo')}</button>
         </p>
@@ -134,7 +143,7 @@
     <!-- The save sits under the checkboxes it saves, not above them. -->
     <div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
       {#if pendingGrants.length && busy !== 'grants'}
-        <p class="mr-auto flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground" role="status">
+        <p class="mr-auto flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground" role="status">
           {t('tables.settings.unsaved')}
           <button type="button" class="cursor-pointer text-foreground underline underline-offset-4" onclick={() => (grants = fromStructure(structure))}>{t('tables.settings.undo')}</button>
         </p>

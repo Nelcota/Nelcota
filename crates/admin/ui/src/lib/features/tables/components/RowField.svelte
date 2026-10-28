@@ -79,7 +79,7 @@
   {#if !(field.isNull) && !(options.length) && (multiline)}
     <Textarea
       {id}
-      class={['field-sizing-content min-h-20 text-sm', kind === 'json' && 'min-h-28 font-mono text-xs']}
+      class={['field-sizing-content min-h-20 text-sm', kind === 'json' && 'min-h-28 font-mono text-[0.8125rem]']}
       {placeholder}
       bind:value={field.value}
       aria-invalid={problem ? true : undefined}
@@ -89,7 +89,7 @@
   {#if !(field.isNull) && !(options.length) && !(multiline)}
     <Input
       {id}
-      class={['text-sm', (kind === 'number' || kind === 'uuid' || kind === 'temporal') && 'font-mono text-xs']}
+      class={['text-sm', (kind === 'number' || kind === 'uuid' || kind === 'temporal') && 'font-mono text-[0.8125rem]']}
       inputmode={kind === 'number' ? 'decimal' : undefined}
       {placeholder}
       bind:value={field.value}
@@ -99,7 +99,7 @@
   {/if}
 
   {#if (problem)}
-    <p id={`${id}-error`} class="text-xs text-destructive">{t(`tables.row.problems.${problem}`)}</p>
+    <p id={`${id}-error`} class="text-sm text-destructive">{t(`tables.row.problems.${problem}`)}</p>
   {/if}
   {#if !(problem) && (preview && preview.text !== field.value)}
     <p class="text-xs text-muted-foreground">= {preview.text}{canonicalType(column.type) === 'timestamp with time zone' ? ` ${t('tables.row.inYourTimeZone')}` : ''}</p>
@@ -107,5 +107,5 @@
   {#if kind === 'json' && !field.isNull && field.value.trim()}
     <Button variant="ghost" size="xs" class="justify-self-start text-muted-foreground" onclick={formatJson}>{t('tables.row.formatJson')}</Button>
   {/if}
-  {#if column.comment}<p id={`${id}-description`} class="text-xs text-muted-foreground">{column.comment}</p>{/if}
+  {#if column.comment}<p id={`${id}-description`} class="text-sm text-muted-foreground">{column.comment}</p>{/if}
 </div>

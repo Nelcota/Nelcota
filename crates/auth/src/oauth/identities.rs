@@ -47,6 +47,28 @@ pub(super) async fn resolve(
         .as_deref()
         .and_then(|email| normalize_email(email).ok());
 
+    // Serialize first sign-ins before either row exists. Use a consistent lock
+    // order (email, then provider subject); account row locks still arbitrate
+    // inbox claims and code redemption. Hash collisions only serialize work.
+    if let Some(email) = &email {
+        tx.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+            &[&format!("oauth-email:{email}")],
+        )
+        .await
+        .map_err(db_error)?;
+    }
+    tx.execute(
+        "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+        &[&format!(
+            "oauth-identity:{}:{}",
+            provider.as_str(),
+            identity.subject
+        )],
+    )
+    .await
+    .map_err(db_error)?;
+
     // Account before identity/code: an inbox claim removes the credentials
     // established before verification. Recheck the identity after this lock,
     // since it may have been removed while this sign-in waited.

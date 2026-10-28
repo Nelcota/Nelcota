@@ -135,10 +135,11 @@
   {#if config.error}<LoadError message={errorMessage(config.error)} onretry={loadConfig} busy={config.loading} />{/if}
   {#if !config.data && config.loading}<Skeleton class="h-40 rounded-3xl" />{/if}
   {#if config.data}
-    <div class="grid grid-cols-2 gap-4">
-      <div class="grid content-start gap-1 rounded-3xl bg-card p-4 sm:p-5"><p class="text-xs text-muted-foreground sm:text-sm">{t('webhooks.outstanding')}</p><p class="flex flex-wrap items-baseline gap-x-1.5 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">{count(config.data.outstanding)}<span class="text-sm font-medium whitespace-nowrap text-muted-foreground sm:text-base">{t('webhooks.ofLimit', { limit: count(OUTSTANDING_LIMIT) })}</span></p></div>
-      <div class="grid content-start gap-1 rounded-3xl bg-card p-4 sm:p-5"><p class="text-xs text-muted-foreground sm:text-sm">{t('webhooks.retained')}</p><p class="flex flex-wrap items-baseline gap-x-1.5 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">{count(config.data.retained)}<span class="text-sm font-medium whitespace-nowrap text-muted-foreground sm:text-base">{t('webhooks.ofLimit', { limit: count(RETAINED_LIMIT) })}</span></p></div>
-    </div>
+    <p class="-mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-base text-muted-foreground">
+      <span>{t('webhooks.summary.outstanding', { count: config.data.outstanding })}</span>
+      <span aria-hidden="true">·</span>
+      <span>{t('webhooks.summary.retained', { count: config.data.retained })}</span>
+    </p>
     {#if config.data.outstanding >= OUTSTANDING_LIMIT * CAPACITY_WARNING || config.data.retained >= RETAINED_LIMIT * CAPACITY_WARNING}<Callout variant="warning" title={t('webhooks.capacity')} />{/if}
     {#if (tab === 'configuration')}
       {#if !config.data.endpoints.length}
@@ -177,7 +178,7 @@
           </section>
         {/each}
       </div>
-      <p class="text-sm text-muted-foreground">{t('webhooks.retryGuide')} <a href={href('/guides/webhooks')} class="text-brand underline">{t('webhooks.guide')}</a></p>
+      <p class="text-sm text-muted-foreground">{t('webhooks.retryGuide')} <a href={href('/guides/webhooks')} class="text-foreground underline underline-offset-4 decoration-muted-foreground/60 hover:decoration-foreground">{t('webhooks.guide')}</a></p>
     {/if}
     {#if !(tab === 'configuration')}
       {#if history.error}<LoadError message={errorMessage(history.error)} onretry={loadHistory} busy={history.loading} />{/if}

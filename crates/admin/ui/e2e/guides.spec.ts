@@ -27,6 +27,7 @@ test('SDK and S3 help stay in the panel and repository links open the matching g
   await expect(page.getByRole('heading', { name: 'Resolver problemas', exact: true })).toBeVisible()
 
   await page.goto('/admin/storage')
+  await page.locator('main details > summary').click()
   await page.getByRole('link', { name: 'Como usar S3', exact: true }).click()
   await expect(page).toHaveURL(/\/admin\/guides\/storage\?section=turning-it-on$/)
   await expect(page.getByRole('heading', { name: 'Como ativar', exact: true })).toBeInViewport()

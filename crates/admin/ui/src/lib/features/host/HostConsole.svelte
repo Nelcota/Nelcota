@@ -488,7 +488,7 @@
           >
         </div>
       </div>
-      <p class="text-xs text-muted-foreground">{h('estimated')}</p>
+      <p class="text-sm text-muted-foreground">{h('estimated')}</p>
       <Button
         class="w-fit"
         type="submit"
@@ -607,9 +607,9 @@
             onclick={() => void readLogs()}>{h('logs')}</Button
           >
         </div>
-        <p class="text-xs text-muted-foreground">{h('logPrivacy')}</p>
+        <p class="text-sm text-muted-foreground">{h('logPrivacy')}</p>
         {#if logs}<div
-            class="max-h-72 overflow-auto rounded-xl bg-well p-3 text-xs"
+            class="max-h-72 overflow-auto rounded-xl bg-well p-3 text-[0.8125rem]"
             role="log"
             aria-label={h('logs')}
           >
@@ -633,7 +633,7 @@
           {recovery ? h('resume') : h('review')}
         </h3>
         <div class="rounded-2xl bg-well p-4">
-          <p class="text-xs font-medium text-muted-foreground">
+          <p class="text-sm font-medium text-muted-foreground">
             1 · {h('select')}
           </p>
           <p class="mt-2 text-lg font-semibold" translate="no">
@@ -650,7 +650,7 @@
             </p>{/if}
         </div>
         <div class="grid gap-2 rounded-2xl bg-well p-4">
-          <p class="text-xs font-medium text-muted-foreground">
+          <p class="text-sm font-medium text-muted-foreground">
             2 · {h('acknowledge')}
           </p>
           {#if target.kind === 'create'}<p class="text-sm">
@@ -675,11 +675,11 @@
             </p>{/if}{#if plan}<p class="text-sm">
               {h('version')}: <strong translate="no">{plan.version}</strong>
             </p>
-            <p class="break-all text-xs">
+            <p class="break-all text-[0.8125rem]">
               {h('image')}:
               <span translate="no">sha256:{plan.image_digest}</span>
             </p>
-            <p class="text-xs">
+            <p class="text-sm">
               {h('remaining')}: {translate(i18n.locale, 'host.secondsLeft', { count: seconds })}
             </p>{/if}
         </div>
@@ -703,7 +703,7 @@
             offline ||
             (plan !== null && (plan.blockers.length > 0 || seconds === 0))}
         >
-          <legend class="mb-3 text-xs font-medium text-muted-foreground"
+          <legend class="mb-3 text-sm font-medium text-muted-foreground"
             >3 · {h('approve')}</legend
           ><label class="flex items-start gap-3 text-sm"
             ><input
@@ -780,10 +780,10 @@
               {h('lastStage')}: {label(job.last_stage)}
             </p>{/if}{#if job.error}<p class="text-sm">
               {label(job.error)}
-            </p>{/if}{#if job.backup}<p class="break-all text-xs">
+            </p>{/if}{#if job.backup}<p class="break-all text-[0.8125rem]">
               {h('backupSaved')}: <span translate="no">{job.backup}</span>
             </p>{/if}
-          <details class="text-xs text-muted-foreground">
+          <details class="text-[0.8125rem] text-muted-foreground">
             <summary>{h('result')}</summary>
             <p class="mt-2 break-all font-mono" translate="no">{job.id}</p>
             <p>{dateTimeText(job.updated_at * 1000, i18n.locale)}</p>

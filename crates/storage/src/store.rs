@@ -3,8 +3,8 @@
 //! names never reach the store.
 
 use std::{
-    path::PathBuf,
-    sync::{Arc, OnceLock, atomic::AtomicBool},
+    path::{Path, PathBuf},
+    sync::{Arc, OnceLock, atomic::AtomicBool, atomic::AtomicU64},
     time::Duration,
 };
 
@@ -35,6 +35,7 @@ pub struct Store {
     pub(crate) gc_owner: OnceLock<String>,
     pub(crate) ownership_ready: tokio::sync::OnceCell<()>,
     pub(crate) shared: AtomicBool,
+    pub(crate) collection_grace_secs: AtomicU64,
 }
 
 #[cfg(all(test, unix))]
@@ -161,6 +162,7 @@ impl Store {
                     gc_owner: OnceLock::new(),
                     ownership_ready: tokio::sync::OnceCell::new(),
                     shared: AtomicBool::new(false),
+                    collection_grace_secs: AtomicU64::new(86_400),
                 }))
             }
         }
@@ -177,6 +179,7 @@ impl Store {
             gc_owner: OnceLock::new(),
             ownership_ready: tokio::sync::OnceCell::new(),
             shared: AtomicBool::new(false),
+            collection_grace_secs: AtomicU64::new(86_400),
         })
     }
 
@@ -204,6 +207,13 @@ impl Store {
 
     pub fn is_s3(&self) -> bool {
         matches!(self.backend, Backend::S3 { .. })
+    }
+
+    pub(crate) fn disk_root(&self) -> Option<&Path> {
+        match &self.backend {
+            Backend::Disk { root } => Some(root),
+            Backend::S3 { .. } => None,
+        }
     }
 
     /// Starts writing a new object, in parts.

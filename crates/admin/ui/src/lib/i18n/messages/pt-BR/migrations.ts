@@ -1,7 +1,14 @@
 // Migrations page: panel changes still outside migrations and the migration list.
 const ptBR = {
   title: 'Migrações',
-  stats: { pending: 'Alterações pendentes', applied: 'Migrações aplicadas', next: 'Próxima versão' },
+  summary: {
+    pending: { one: '{count} alteração pendente', other: '{count} alterações pendentes' },
+    applied: { one: '{count} migração aplicada', other: '{count} migrações aplicadas' },
+  },
+  timeline: 'Linha do tempo das migrações',
+  next: 'Próxima migração',
+  nextPending: { one: '{count} alteração do painel ainda sem arquivo', other: '{count} alterações do painel ainda sem arquivo' },
+  appliedOn: 'Aplicada em {date}',
   steps: {
     title: 'Como levar a outros ambientes',
     label: 'Etapas para levar as mudanças a outros ambientes',
@@ -15,8 +22,6 @@ const ptBR = {
     pending: 'Aguardando arquivo na pasta',
   },
   description: 'Guarde as mudanças do banco em arquivos para aplicar em outros ambientes.',
-  pendingTitle: 'Alterações do painel fora das migrações',
-  pendingHint: 'Tabelas, colunas e políticas criadas aqui ainda não existem em outro ambiente até virarem arquivo.',
   generate: 'Gerar migração',
   generatedBefore: 'foi baixada. Coloque em',
   generatedMiddle: 'e faça commit: neste banco ela já consta como aplicada, e o',
@@ -34,20 +39,12 @@ const ptBR = {
     policy_updated: 'Política {name} atualizada',
     policy_dropped: 'Política {name} apagada',
   },
-  listTitle: 'Histórico',
   noMigrations: 'Nenhuma migração ainda',
   noMigrationsHint: 'Arquivos V1__nome.sql em migrations/, aplicados com nelcota migrate, aparecem aqui.',
-  columns: {
-    version: 'Versão',
-    name: 'Nome',
-    status: 'Situação',
-    appliedOn: 'Aplicada em',
-  },
   fromPanel: 'gerada pelo painel',
   status: {
     notApplied: 'Não aplicada neste banco',
-    outsideFolder: 'Aplicada, mas fora da pasta',
-    applied: 'Aplicada',
+    outsideFolder: 'arquivo não está na pasta',
   },
   folderRead: 'Pasta lida:',
   folderMissing: 'A pasta migrations/ não está acessível a este servidor: a numeração considera só o banco.',

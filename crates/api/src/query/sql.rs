@@ -141,7 +141,15 @@ pub(super) fn condition_sql(sql: &mut Sql, alias: &str, condition: &Condition) -
 
 pub(super) fn filter_sql(sql: &mut Sql, alias: &str, filter: &Filter) -> String {
     let target = format!("{alias}.{}", ident(&filter.column));
-    let type_name = &filter.type_name;
+    // SQL's character/bit casts default to one element. Their unbounded
+    // counterparts compare the entire input, including overlong values.
+    let type_name = match filter.type_name.as_str() {
+        "character" => "bpchar",
+        "character[]" => "bpchar[]",
+        "bit" => "bit varying",
+        "bit[]" => "bit varying[]",
+        name => name,
+    };
     let condition = match &filter.op {
         Op::Cmp(op, value) => {
             let p = sql.param(Param::Text(value.clone()));
@@ -159,6 +167,17 @@ pub(super) fn filter_sql(sql: &mut Sql, alias: &str, filter: &Filter) -> String 
             format!("{target}::text {op} {p}::text")
         }
         Op::In(items) if items.is_empty() => "false".to_owned(),
+        Op::In(items) if type_name.ends_with("[]") => {
+            let values = items
+                .iter()
+                .map(|item| {
+                    let p = sql.param(Param::Text(item.clone()));
+                    format!("{p}::text::{type_name}")
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!("{target} IN ({values})")
+        }
         Op::In(items) => {
             let p = sql.param(Param::Text(array_literal(items)));
             format!("{target} = ANY({p}::text::{type_name}[])")

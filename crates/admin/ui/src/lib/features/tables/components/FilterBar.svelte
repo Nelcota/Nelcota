@@ -34,13 +34,16 @@
   }
   const blankRow = (column = columns[0]?.name ?? ''): Row => ({ key: nextKey++, column, op: 'eq', value: '', not: false })
 
-  // Local draft, copied once on open: it only reaches the URL (and the API)
-  // when applied.
-  let rows = $state<Row[]>(
-    untrack(() =>
-      preset ? [...filters.map(toRow), blankRow(preset)] : filters.length ? filters.map(toRow) : [blankRow()],
-    ),
-  )
+  // URL changes (including Back/Forward) replace the local draft.
+  let rows = $state<Row[]>([])
+  $effect(() => {
+    const current = filters
+    const column = preset
+    untrack(() => {
+      rows = column ? [...current.map(toRow), blankRow(column)] : current.length ? current.map(toRow) : [blankRow()]
+      attempted = false
+    })
+  })
 
   const opLabel = (op: UiOp) => {
     const key = UI_OPERATORS.find((o) => o.value === op)?.label
@@ -84,10 +87,10 @@
       <span class="w-10 shrink-0 pt-2.5 text-right text-xs text-muted-foreground sm:w-12">{i === 0 ? t('tables.filters.where') : t('tables.filters.and')}</span>
       <div class="grid min-w-0 flex-1 gap-2 sm:flex sm:flex-none sm:flex-wrap sm:items-start">
       <Select.Root type="single" bind:value={row.column}>
-        <Select.Trigger aria-label={t('tables.filters.column')} class="w-full font-mono text-xs sm:w-48">{row.column || t('tables.filters.column')}</Select.Trigger>
+        <Select.Trigger aria-label={t('tables.filters.column')} class="w-full font-mono text-[0.8125rem] sm:w-48">{row.column || t('tables.filters.column')}</Select.Trigger>
         <Select.Content>
           {#each columns as column (column.name)}
-            <Select.Item value={column.name} class="font-mono text-xs">{column.name}</Select.Item>
+            <Select.Item value={column.name} class="font-mono text-[0.8125rem]">{column.name}</Select.Item>
           {/each}
         </Select.Content>
       </Select.Root>
@@ -105,11 +108,11 @@
             bind:value={row.value}
             aria-label={t('tables.filters.value')}
             placeholder={t('tables.filters.value')}
-            class="w-full font-mono text-xs"
+            class="w-full font-mono text-[0.8125rem]"
             aria-invalid={invalid || undefined}
             aria-describedby={invalid ? `filter-${row.key}-error` : undefined}
           />
-          {#if invalid}<p id={`filter-${row.key}-error`} class="px-1 text-xs text-destructive">{t('tables.filters.needsValue')}</p>{/if}
+          {#if invalid}<p id={`filter-${row.key}-error`} class="px-1 text-sm text-destructive">{t('tables.filters.needsValue')}</p>{/if}
         </div>
       {/if}
       </div>

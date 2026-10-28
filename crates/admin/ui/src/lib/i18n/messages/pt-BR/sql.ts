@@ -2,9 +2,9 @@
 const ptBR = {
   editor: {
     newQuery: 'Nova consulta',
-    unsaved: '(não salva)',
+    unsaved: '· rascunho sem salvar',
     unsavedTitle: 'Alterações não salvas',
-    ownerNote: 'Acesso total',
+    ownerNote: 'Executar como: acesso total',
     ownerNoteMore: ' · ignora as regras',
     ownerNoteTitle: 'As consultas rodam como dono do banco: as políticas de acesso (RLS) não se aplicam e tudo pode ser lido e alterado.',
     renameHint: 'Clique para renomear',

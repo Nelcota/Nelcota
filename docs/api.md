@@ -7,6 +7,10 @@ rows each user sees. Functions are exposed only when every input argument is
 named; procedures, trigger functions and functions that belong to extensions
 are not exposed.
 
+Functions with polymorphic or other pseudo-type input arguments, or `VARIADIC`
+parameters, are also excluded from the catalog. JSON argument conversion cannot
+call those signatures reliably.
+
 ## Prerequisites
 
 You need an initialized server, tables/functions in its exposed schema and
@@ -46,6 +50,10 @@ use release-tag documentation for older binaries.
 
 Values reach Postgres as parameters and Postgres itself converts them to the
 column type (`$1::text::<type>`). A value invalid for the type gives 400.
+
+Fixed-width `char(n)` and `bit(n)` filters compare the complete supplied value
+without truncating it to one element. For array columns, `in` accepts quoted
+array literals such as `items=in.("{1,2}","{3}")` and compares whole arrays.
 
 ### Embedding related rows
 
@@ -143,6 +151,10 @@ Same syntax as PostgREST. Inside the parentheses each filter is written
   are rejected; `*` already includes explicitly selected columns.
 
 ## Writes
+
+JSON numbers in insert, patch and RPC bodies retain all supplied decimal digits
+when PostgreSQL converts them to `numeric`. Clients must serialize the original
+value accurately; the server cannot recover digits already rounded by a client.
 
 An insert accepts at most **1000 rows** and **128 distinct column sets** per
 request. Split larger batches into requests. A request body (writes and RPC

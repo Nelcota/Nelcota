@@ -75,6 +75,7 @@ export function createGuard(policy: GuardOptions, ignoredPrefixes: readonly stri
           return { kind: 'redirect', location: target.href, clearCookie: clearable };
         });
       } catch (error) {
+        if (error instanceof SessionError && ['session_store', 'session_capacity'].includes(error.code)) return { kind: 'unavailable' };
         if (error instanceof SessionError && error.code === 'invalid_session') return { kind: 'redirect', location: new URL(`${owner.basePath}${login}`, owner.origin).href, clearCookie: true };
         throw error;
       }

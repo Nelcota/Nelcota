@@ -207,7 +207,7 @@ pub async fn drop(
     Query(params): Query<DropQuery>,
 ) -> ApiResult<crate::contracts::DdlResult> {
     bucket_public(&state, &id).await?;
-    let statements = policy::drop(SCHEMA, TABLE, &name);
+    let statements = policy::drop(SCHEMA, TABLE, &name)?;
     apply(
         &state,
         statements,

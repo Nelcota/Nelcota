@@ -94,6 +94,13 @@ pub struct Job {
     pub manifest_sha256: Option<String>,
     pub files_manifest_sha256: Option<String>,
     pub restored: bool,
+    /// Explicit SSH operator decision to discard writes accepted after commit.
+    #[serde(default, skip_serializing_if = "no_restore_requested")]
+    pub restore_requested: bool,
+}
+
+fn no_restore_requested(requested: &bool) -> bool {
+    !requested
 }
 pub struct HostLock {
     _file: File,
@@ -135,11 +142,14 @@ impl Journal {
     pub fn list(&self) -> anyhow::Result<Vec<Job>> {
         let mut jobs = Vec::new();
         for entry in fs::read_dir(&self.root)? {
+            let entry = entry?;
+            let id = entry.file_name().to_string_lossy().into_owned();
+            if !valid_digest(&id) {
+                continue;
+            }
             if jobs.len() >= 256 {
                 bail!("deployment_history_full");
             }
-            let entry = entry?;
-            let id = entry.file_name().to_string_lossy().into_owned();
             let path = self.directory(&id)?;
             if fs::symlink_metadata(&path)?.file_type().is_symlink() {
                 bail!("unsafe job directory");
@@ -183,6 +193,7 @@ impl Journal {
                         && previous.public != job.public)
                     || (previous.public.committed && !job.public.committed)
                     || (previous.restored && !job.restored)
+                    || (previous.restore_requested && !job.restore_requested)
                     || (previous.public.phase.terminal()
                         && previous.public.phase != job.public.phase)
                 {
@@ -252,13 +263,14 @@ impl Journal {
             manifest_sha256: None,
             files_manifest_sha256: None,
             restored: false,
+            restore_requested: false,
         };
         self.save(&job)?;
         Ok(job)
     }
     pub fn advance(&self, job: &mut Job, phase: Phase, error: Option<&str>) -> anyhow::Result<()> {
         if !job.public.phase.allows(phase)
-            || (job.public.committed && phase == Phase::Recovering)
+            || (job.public.committed && phase == Phase::Recovering && !job.restore_requested)
             || (phase == Phase::Committing
                 && job.public.phase == Phase::NeedsOperator
                 && !job.public.committed)
@@ -267,7 +279,9 @@ impl Journal {
         }
         if phase == Phase::FailedBeforeChange
             && job.public.phase != Phase::Preparing
-            && (job.public.committed || job.interrupted_phase != Some(Phase::Preparing))
+            && (job.public.committed
+                || (job.interrupted_phase != Some(Phase::Preparing)
+                    && !(job.backup.is_none() && job.dump_sha256.is_none() && job.restored)))
         {
             bail!("unsafe preparation failure");
         }
@@ -275,7 +289,13 @@ impl Journal {
             bail!("previous state was not restored");
         }
         let mut next = job.clone();
-        if phase == Phase::NeedsOperator && job.public.phase != Phase::NeedsOperator {
+        if phase == Phase::Recovering && job.public.phase != Phase::NeedsOperator {
+            next.interrupted_phase = Some(job.public.phase);
+        }
+        if phase == Phase::NeedsOperator
+            && job.public.phase != Phase::NeedsOperator
+            && !(job.public.phase == Phase::Recovering && job.interrupted_phase.is_some())
+        {
             next.interrupted_phase = Some(job.public.phase);
         }
         next.public.phase = phase;
@@ -396,7 +416,12 @@ fn validate_job(job: &Job) -> anyhow::Result<()> {
     if matches!(phase, Phase::ResumingPrevious | Phase::Recovered) && !job.restored {
         bail!("missing restored-state decision");
     }
-    if job.public.committed && job.public.phase == Phase::Recovering {
+    if job.restore_requested
+        && (!job.public.committed || job.backup.is_none() || job.dump_sha256.is_none())
+    {
+        bail!("incomplete operator restore decision");
+    }
+    if job.public.committed && job.public.phase == Phase::Recovering && !job.restore_requested {
         bail!("committed recovery cannot restore old data");
     }
     Ok(())

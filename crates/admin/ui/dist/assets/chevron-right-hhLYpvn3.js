@@ -1,1 +1,0 @@
-import{T as e,g as t,w as n}from"./index.svelte-BmceUQi1.js";var r={name:`chevron-right`,size:24,node:[[`path`,{d:`m9 18 6-6-6-6`}]]};r.node;var i=new Set([`$$slots`,`$$events`,`$$legacy`]);function a(a,o){let s=n(o,i);t(a,e(()=>s,{get icon(){return r}}))}export{a as t};

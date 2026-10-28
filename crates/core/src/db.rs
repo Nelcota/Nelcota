@@ -40,13 +40,13 @@ pub fn api_pool(
     max_size: usize,
 ) -> Pool {
     let config = authenticator_config(admin, authenticator_password);
-    // `Fast` runs nothing when a connection is returned: role and claims are
-    // transaction-scoped (`is_local = true`) and die at COMMIT/ROLLBACK.
+    // Cancellation can land after BEGIN was sent but before its transaction
+    // guard exists. Drain pending work and roll back before lending it again.
     let manager = Manager::from_config(
         config,
         NoTls,
         ManagerConfig {
-            recycling_method: RecyclingMethod::Fast,
+            recycling_method: RecyclingMethod::Custom("ROLLBACK".into()),
         },
     );
     Pool::builder(manager)
@@ -54,6 +54,7 @@ pub fn api_pool(
         .runtime(Runtime::Tokio1)
         .wait_timeout(Some(Duration::from_secs(5)))
         .create_timeout(Some(Duration::from_secs(5)))
+        .recycle_timeout(Some(Duration::from_secs(5)))
         .build()
         .expect("runtime is set, build cannot fail")
 }
@@ -69,7 +70,7 @@ pub fn admin_pool(admin: &tokio_postgres::Config, max_size: usize) -> Pool {
         config,
         NoTls,
         ManagerConfig {
-            recycling_method: RecyclingMethod::Fast,
+            recycling_method: RecyclingMethod::Custom("ROLLBACK".into()),
         },
     );
     Pool::builder(manager)
@@ -77,6 +78,7 @@ pub fn admin_pool(admin: &tokio_postgres::Config, max_size: usize) -> Pool {
         .runtime(Runtime::Tokio1)
         .wait_timeout(Some(Duration::from_secs(5)))
         .create_timeout(Some(Duration::from_secs(5)))
+        .recycle_timeout(Some(Duration::from_secs(5)))
         .build()
         .expect("runtime is set, build cannot fail")
 }

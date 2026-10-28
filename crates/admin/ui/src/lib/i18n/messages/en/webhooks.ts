@@ -3,6 +3,7 @@ import type ptBR from '../pt-BR/webhooks'
 
 const en: Messages<typeof ptBR> = {
   title: 'Events and webhooks', description: 'Send database changes to other services, with signatures and automatic retries.',
+  summary: { outstanding: { one: '{count} delivery queued', other: '{count} deliveries queued' }, retained: { one: '{count} delivery in history', other: '{count} deliveries in history' } },
   configuration: 'Webhooks', deliveries: 'Delivery history', webhook: 'Webhook', create: 'New webhook', edit: 'Edit webhook',
   emptyTitle: 'Connect the database to your services', emptyHint: 'Choose a table, events and the URL that will receive each change.',
   noTables: 'Create a table first', noTablesHint: 'Webhooks watch ordinary tables in the exposed schema. Views and partitioned tables are unavailable in this version.',
@@ -22,7 +23,7 @@ const en: Messages<typeof ptBR> = {
   secretHelp: 'Verify the signature and timestamp before processing. Use the event ID to avoid repeating an action on retries or resends.',
   guide: 'How to receive and verify events', retryGuide: 'Deliveries receive up to 6 attempts by default. 2xx responses acknowledge; temporary failures retry automatically.',
   retention: 'History for up to 7 days. Pending events remain queued until completed or cancelled.',
-  outstanding: 'Queued', retained: 'In history', ofLimit: 'of {limit}', attemptsOf: { one: '{done} of {count} attempt', other: '{done} of {count} attempts' }, capacity: 'The queue is approaching its limit. Check failed or paused destinations to keep database writes working.',
+  attemptsOf: { one: '{done} of {count} attempt', other: '{done} of {count} attempts' }, capacity: 'The queue is approaching its limit. Check failed or paused destinations to keep database writes working.',
   clear: 'Clear history', clearTitle: 'Clear completed history?', clearHint: 'Succeeded, failed and cancelled deliveries will be removed, including their payloads. Pending deliveries remain queued.', cleared: 'Completed history cleared.',
   allWebhooks: 'All webhooks', allStatuses: 'All states', webhookFilter: 'Filter by webhook', statusFilter: 'Filter by state',
   status: { pending: 'Waiting', processing: 'Sending', succeeded: 'Delivered', failed: 'Failed', cancelled: 'Cancelled' },

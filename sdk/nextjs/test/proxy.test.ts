@@ -17,6 +17,18 @@ it('redirects anonymous protected pages to a configured origin without fetching 
   expect(target.origin).toBe('http://localhost:3000'); expect(target.pathname).toBe('/login'); expect(target.searchParams.get('next')).toBe('/profile?tab=one');
   expect(response.headers.get('cache-control')).toContain('private'); expect(fetch).not.toHaveBeenCalled();
 });
+
+it('returns 503 for a failed session store without treating it as a logged-out browser', async () => {
+  const { options } = await setup();
+  const read = vi.spyOn(options.store, 'read').mockRejectedValue(new Error('private store diagnostic'));
+  const proxy = await createNelcotaProxy({ ...options, cookieName: 'review-session' }, { protectedPaths: ['/profile'] });
+  const response = await proxy(new NextRequest('http://localhost:3000/profile', { headers: { cookie: `review-session=${'A'.repeat(43)}` } }));
+  expect(response.status).toBe(503);
+  expect(response.headers.get('location')).toBeNull();
+  expect(response.headers.get('set-cookie')).toBeNull();
+  expect(await response.text()).not.toContain('private store diagnostic');
+  expect(read).toHaveBeenCalled();
+});
 it('does not broadly exclude private authentication subroutes', async () => {
   const { proxy } = await setup();
   expect((await proxy(new NextRequest('http://localhost:3000/auth/private'))).status).toBe(303);

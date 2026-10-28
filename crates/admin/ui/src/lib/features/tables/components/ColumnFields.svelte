@@ -8,6 +8,7 @@
   import ChevronDown from '@lucide/svelte/icons/chevron-down'
   import { ON_DELETE, type ColumnDef, type OnDelete } from '$lib/shared/schema/ddl'
   import { pgTypes } from '$lib/shared/schema/pg-types.svelte'
+  import { SIMPLE_TYPES } from '$lib/shared/schema/guided-access'
   import { t } from '$lib/i18n/index.svelte'
 
   let {
@@ -29,6 +30,19 @@
   const compact = $derived(mode === 'create')
   // Starts collapsed only when creating a table (many columns on screen).
   let expanded = $state(untrack(() => mode !== 'create'))
+
+  // Tipos com nome em palavras; qualquer outro vira "Outro tipo" com o campo SQL à vista.
+  const OTHER_TYPE = '__other__'
+  const simpleType = $derived(SIMPLE_TYPES.find((type) => type === column.data_type.trim().toLowerCase()) ?? null)
+  // Começa aberto quando a coluna já tem algo avançado (editar coluna com default, referência etc.).
+  const advancedOpen = untrack(() => mode === 'edit' && (column.default !== null || column.unique || column.identity || column.references !== null || column.comment !== null))
+  function chooseType(value: string) {
+    if (value === OTHER_TYPE) {
+      if (simpleType !== null) column.data_type = ''
+      return
+    }
+    column.data_type = value
+  }
 
   const INTEGER = ['smallint', 'integer', 'bigint']
   const isInteger = $derived(INTEGER.includes(column.data_type.trim().toLowerCase()))
@@ -94,70 +108,8 @@
   />
 {/snippet}
 
-<div class="rounded-2xl bg-well">
-  {#if (!compact)}
-    <!-- One column at a time (Structure tab): visible labels instead of
-         placeholders that vanish as soon as you type. -->
-    <div class="grid gap-3 p-4 sm:grid-cols-3">
-      <div class="grid gap-1.5">
-        <label for={`${id}-name`} class="text-xs font-medium">{t('tables.columns.nameLabel')}</label>
-        {@render nameInput('font-mono text-xs')}
-      </div>
-      <div class="grid gap-1.5">
-        <label for={`${id}-type`} class="text-xs font-medium">{t('tables.columns.typeLabel')}</label>
-        {@render typeInput('font-mono text-xs')}
-      </div>
-      <div class="grid gap-1.5">
-        <label for={`${id}-default`} class="text-xs font-medium">{t('tables.columns.defaultLabel')} <span class="font-normal text-muted-foreground">({t('tables.create.optional')})</span></label>
-        {@render defaultInput('font-mono text-xs')}
-      </div>
-      <label class="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground sm:col-span-3" title="NOT NULL">
-        <Checkbox
-          checked={!column.nullable || column.primary_key}
-          disabled={column.primary_key}
-          onCheckedChange={(v) => (column.nullable = v !== true)}
-        />{t('tables.columns.requiredLong')}
-      </label>
-    </div>
-  {/if}
-  {#if !(!compact)}
-  <div class="flex flex-wrap items-center gap-2 p-3">
-    {@render nameInput('w-32 font-mono text-xs')}
-    {@render typeInput('w-32 font-mono text-xs')}
-    {@render defaultInput('min-w-24 flex-1 font-mono text-xs')}
-
-    {#if mode === 'create'}
-      <label class="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground" title={t('tables.columns.primaryKey')}>
-        <Checkbox bind:checked={column.primary_key} />PK
-      </label>
-    {/if}
-    <label class="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground" title="NOT NULL">
-      <Checkbox
-        checked={!column.nullable || column.primary_key}
-        disabled={column.primary_key}
-        onCheckedChange={(v) => (column.nullable = v !== true)}
-      />{t('tables.columns.required')}
-    </label>
-
-    <div class="ml-auto flex items-center">
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label={t('tables.columns.more')}
-        aria-expanded={expanded}
-        onclick={() => (expanded = !expanded)}
-      >
-        <ChevronDown class={['transition-transform', expanded && 'rotate-180']} />
-      </Button>
-      {#if onremove}
-        <Button variant="ghost" size="icon-sm" aria-label={t('tables.columns.remove')} onclick={onremove}><X /></Button>
-      {/if}
-    </div>
-  </div>
-  {/if}
-
-  {#if expanded || !compact}
-    <div class="grid gap-4 rounded-b-2xl border-t bg-muted/30 p-4 text-xs">
+{#snippet advancedFields()}
+    <div class={['grid gap-4 border-t p-4 text-[0.8125rem]', compact && 'rounded-b-2xl bg-muted/30', !compact && 'border-t-0 pt-0 sm:px-5']}>
       <div class="flex flex-wrap gap-4">
         <label class="flex items-center gap-1.5 text-muted-foreground">
           <Checkbox bind:checked={column.unique} disabled={column.primary_key} />{t('tables.columns.unique')}
@@ -182,31 +134,31 @@
       <div class="flex flex-wrap items-center gap-2">
         <span class="w-24 text-muted-foreground">{t('tables.columns.references')}</span>
         <Select.Root type="single" value={column.references?.table ?? ''} onValueChange={setReference}>
-          <Select.Trigger aria-label={t('tables.columns.references')} size="sm" class="w-40 font-mono text-xs">
+          <Select.Trigger aria-label={t('tables.columns.references')} size="sm" class="w-40 font-mono text-[0.8125rem]">
             {column.references?.table ?? t('tables.columns.noTable')}
           </Select.Trigger>
           <Select.Content>
-            <Select.Item value="" class="text-xs">{t('tables.columns.noTable')}</Select.Item>
+            <Select.Item value="" class="text-[0.8125rem]">{t('tables.columns.noTable')}</Select.Item>
             {#each Object.keys(tables) as table (table)}
-              <Select.Item value={table} class="font-mono text-xs">{table}</Select.Item>
+              <Select.Item value={table} class="font-mono text-[0.8125rem]">{table}</Select.Item>
             {/each}
           </Select.Content>
         </Select.Root>
         {#if column.references}
           <Select.Root type="single" bind:value={column.references.column}>
-            <Select.Trigger aria-label={t('tables.columns.referenceColumn')} size="sm" class="w-32 font-mono text-xs">{column.references.column}</Select.Trigger>
+            <Select.Trigger aria-label={t('tables.columns.referenceColumn')} size="sm" class="w-32 font-mono text-[0.8125rem]">{column.references.column}</Select.Trigger>
             <Select.Content>
               {#each tables[column.references.table] ?? [] as name (name)}
-                <Select.Item value={name} class="font-mono text-xs">{name}</Select.Item>
+                <Select.Item value={name} class="font-mono text-[0.8125rem]">{name}</Select.Item>
               {/each}
             </Select.Content>
           </Select.Root>
           <span class="text-muted-foreground">{t('tables.columns.onDeleteLabel')}</span>
           <Select.Root type="single" bind:value={column.references.on_delete}>
-            <Select.Trigger aria-label={t('tables.columns.onDeleteLabel')} size="sm" class="w-40 text-xs">{onDeleteLabel(column.references.on_delete)}</Select.Trigger>
+            <Select.Trigger aria-label={t('tables.columns.onDeleteLabel')} size="sm" class="w-40 text-[0.8125rem]">{onDeleteLabel(column.references.on_delete)}</Select.Trigger>
             <Select.Content>
               {#each ON_DELETE as option (option.value)}
-                <Select.Item value={option.value} class="text-xs">{t(option.label)}</Select.Item>
+                <Select.Item value={option.value} class="text-[0.8125rem]">{t(option.label)}</Select.Item>
               {/each}
             </Select.Content>
           </Select.Root>
@@ -219,9 +171,89 @@
           id={`${id}-description`}
           bind:value={() => column.comment ?? '', (v) => (column.comment = v || null)}
           placeholder={t('tables.columns.descriptionPlaceholder')}
-          class="flex-1 text-xs"
+          class="flex-1 text-[0.8125rem]"
         />
       </div>
     </div>
+{/snippet}
+
+<div class="rounded-2xl bg-well">
+  {#if (!compact)}
+    <!-- Uma coluna por vez (aba Estrutura): a mesma linguagem do assistente de
+         nova tabela; o que é SQL fica em "Opções avançadas". -->
+    <div class="grid gap-5 p-4 sm:p-5">
+      <div class="grid gap-1.5">
+        <label for={`${id}-name`} class="text-sm font-medium">{t('guided.table.fieldName')}</label>
+        {@render nameInput('')}
+      </div>
+      <div class="grid gap-1.5">
+        <label for={`${id}-type-select`} class="text-sm font-medium">{t('guided.table.fieldType')}</label>
+        <Select.Root type="single" value={simpleType ?? OTHER_TYPE} onValueChange={chooseType}>
+          <Select.Trigger id={`${id}-type-select`} class="w-full"><span class="truncate">{simpleType ? t(`guided.table.types.${simpleType}`) : t('tables.columns.typeOther')}</span></Select.Trigger>
+          <Select.Content><Select.Group>
+            {#each SIMPLE_TYPES as type (type)}<Select.Item value={type}>{t(`guided.table.types.${type}`)}</Select.Item>{/each}
+            <Select.Item value={OTHER_TYPE}>{t('tables.columns.typeOther')}</Select.Item>
+          </Select.Group></Select.Content>
+        </Select.Root>
+        {#if simpleType}<p class="text-sm text-muted-foreground">{t(`guided.table.examples.${simpleType}`)}</p>{/if}
+        {#if simpleType === null}{@render typeInput('font-mono text-[0.8125rem]')}{/if}
+      </div>
+      <label class="flex cursor-pointer items-center gap-2 text-sm font-medium" title="NOT NULL">
+        <Checkbox
+          checked={!column.nullable || column.primary_key}
+          disabled={column.primary_key}
+          onCheckedChange={(v) => (column.nullable = v !== true)}
+        />{t('guided.table.required')}
+      </label>
+    </div>
+    <details class="group border-t" open={advancedOpen}>
+      <summary class="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium sm:px-5 [&::-webkit-details-marker]:hidden">
+        <ChevronDown class="size-4 shrink-0 -rotate-90 text-muted-foreground transition-transform group-open:rotate-0" aria-hidden="true" />{t('tables.columns.advanced')}
+      </summary>
+      <div class="grid gap-1.5 px-4 pb-4 sm:px-5">
+        <label for={`${id}-default`} class="text-sm font-medium">{t('tables.columns.defaultLabel')} <span class="font-normal text-muted-foreground">({t('tables.create.optional')})</span></label>
+        {@render defaultInput('font-mono text-[0.8125rem]')}
+      </div>
+      {@render advancedFields()}
+    </details>
+  {/if}
+  {#if !(!compact)}
+  <div class="flex flex-wrap items-center gap-2 p-3">
+    {@render nameInput('w-32 font-mono text-[0.8125rem]')}
+    {@render typeInput('w-32 font-mono text-[0.8125rem]')}
+    {@render defaultInput('min-w-24 flex-1 font-mono text-[0.8125rem]')}
+
+    {#if mode === 'create'}
+      <label class="flex cursor-pointer items-center gap-1.5 text-[0.8125rem] font-medium text-muted-foreground" title={t('tables.columns.primaryKey')}>
+        <Checkbox bind:checked={column.primary_key} />PK
+      </label>
+    {/if}
+    <label class="flex cursor-pointer items-center gap-1.5 text-[0.8125rem] font-medium text-muted-foreground" title="NOT NULL">
+      <Checkbox
+        checked={!column.nullable || column.primary_key}
+        disabled={column.primary_key}
+        onCheckedChange={(v) => (column.nullable = v !== true)}
+      />{t('tables.columns.required')}
+    </label>
+
+    <div class="ml-auto flex items-center">
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label={t('tables.columns.more')}
+        aria-expanded={expanded}
+        onclick={() => (expanded = !expanded)}
+      >
+        <ChevronDown class={['transition-transform', expanded && 'rotate-180']} />
+      </Button>
+      {#if onremove}
+        <Button variant="ghost" size="icon-sm" aria-label={t('tables.columns.remove')} onclick={onremove}><X /></Button>
+      {/if}
+    </div>
+  </div>
+  {/if}
+
+  {#if compact && expanded}
+    {@render advancedFields()}
   {/if}
 </div>

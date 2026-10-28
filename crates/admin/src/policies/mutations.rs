@@ -92,7 +92,7 @@ pub async fn drop(
 ) -> ApiResult {
     let table = table_or_404(&state, &name)?;
     let schema = state.catalog.get().schema.clone();
-    let statements = policy::drop(&schema, &table.name, &policy_name);
+    let statements = policy::drop(&schema, &table.name, &policy_name)?;
     apply(
         &state,
         statements,

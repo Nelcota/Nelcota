@@ -8,7 +8,6 @@
   import AccountMenu from './AccountMenu.svelte'
   import WorkspaceRail from './WorkspaceRail.svelte'
   import WorkspaceLinks from './WorkspaceLinks.svelte'
-  import Logo from './Logo.svelte'
   import { palette } from '$lib/shell/palette.svelte'
   import { href, route } from '$lib/navigation/router.svelte'
   import { crumbsFor } from '$lib/shell/titles'
@@ -64,8 +63,6 @@
     <div class="panel-content">
       <!-- WorkspaceLinks is the labelled navigation landmark; avoid a second one. -->
       <div class="panel-sidebar">
-        <!-- The rail carries the brand mark only on tablets (D111). -->
-        <a href={href('/')} class="mb-4 inline-flex rounded-xl px-1" aria-label="Nelcota"><Logo mark decorative /></a>
         <p class="px-3 pb-3 text-xs font-medium text-muted-foreground">{t('shell.nav.workspace')}</p>
         <WorkspaceLinks />
       </div>

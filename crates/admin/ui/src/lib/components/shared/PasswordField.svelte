@@ -50,7 +50,7 @@
     <Button variant="outline" class="h-10" onclick={generate}>{t('users.password.generate')}</Button>
     <Button variant="outline" size="icon" class="size-10" aria-label={t('users.password.copy')} disabled={!value} onclick={copy}><Copy /></Button>
   </div>
-  <p id={`${id}-hint`} class={['text-xs', problem ? 'text-destructive' : 'text-muted-foreground']}>
+  <p id={`${id}-hint`} class={['text-sm', problem ? 'text-destructive' : 'text-muted-foreground']}>
     {problem ? t(`users.password.${problem}`) : t('users.password.hint')}
   </p>
 </div>

@@ -207,8 +207,10 @@ pub fn down(host: &Host, runtime: Runtime, volumes: bool) -> anyhow::Result<()> 
     if volumes {
         args.push("--volumes");
     }
-    compose_command(&host.caddy_dir()).args(&args).status()?;
-    Ok(())
+    crate::project::run(
+        compose_command(&host.caddy_dir()).args(&args),
+        "caddy shutdown",
+    )
 }
 
 /// Writes the Caddyfile atomically.

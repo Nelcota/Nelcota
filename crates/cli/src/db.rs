@@ -78,16 +78,24 @@ fn load_migrations(dir: &Path) -> anyhow::Result<Vec<Migration>> {
         .collect();
     paths.sort();
     let mut migrations = Vec::with_capacity(paths.len());
+    let mut versions = std::collections::BTreeMap::new();
     for path in paths {
         let stem = path
             .file_stem()
             .and_then(|s| s.to_str())
             .context("invalid file name")?;
         let sql = fs::read_to_string(&path)?.replace("\r\n", "\n");
-        migrations.push(
-            Migration::unapplied(stem, &sql)
-                .with_context(|| format!("invalid name: {stem} (use V<n>__<name>.sql)"))?,
-        );
+        let migration = Migration::unapplied(stem, &sql)
+            .with_context(|| format!("invalid name: {stem} (use V<n>__<name>.sql)"))?;
+        if let Some(previous) = versions.insert(migration.version(), path.clone()) {
+            bail!(
+                "duplicate migration version {}: {} and {}",
+                migration.version(),
+                previous.display(),
+                path.display()
+            );
+        }
+        migrations.push(migration);
     }
     Ok(migrations)
 }
@@ -184,4 +192,17 @@ pub fn service_role_token(host: &Host, selection: Option<&str>, days: u64) -> an
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn duplicate_versions_are_rejected_before_connecting_to_postgres() {
+        let directory = tempfile::tempdir().unwrap();
+        for name in ["V3__first.sql", "V3__second.sql"] {
+            std::fs::write(directory.path().join(name), "SELECT 1;").unwrap();
+        }
+        let error = super::load_migrations(directory.path()).unwrap_err();
+        assert!(error.to_string().contains("duplicate migration version 3"));
+    }
 }

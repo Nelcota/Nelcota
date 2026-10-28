@@ -7,7 +7,7 @@ use serde_json::Value;
 use super::{LinkKind, tokens};
 use crate::{
     AuthState,
-    accounts::confirm_inbox_owner,
+    accounts::{confirm_inbox_owner, retire_unconfirmed_access},
     db::{begin_auth, db_error},
     error::invalid_grant,
     sessions::start_session,
@@ -41,13 +41,17 @@ pub(crate) async fn sign_in(
         }
         false => {
             // A signup confirmation approves the password from that signup.
-            tx.execute(
-                "UPDATE auth.users SET email_confirmed_at = coalesce(email_confirmed_at, now())
-             WHERE id = $1",
-                &[&user_id],
-            )
-            .await
-            .map_err(db_error)?;
+            let confirmed = tx
+                .execute(
+                    "UPDATE auth.users SET email_confirmed_at = coalesce(email_confirmed_at, now())
+             WHERE id = $1 AND email_confirmed_at IS NULL",
+                    &[&user_id],
+                )
+                .await
+                .map_err(db_error)?;
+            if confirmed > 0 {
+                retire_unconfirmed_access(&tx, user_id).await?;
+            }
         }
     }
     let session = start_session(state, &tx, user_id, ip, user_agent).await?;

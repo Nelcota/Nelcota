@@ -42,6 +42,20 @@ const signIn = (nelcota: Awaited<ReturnType<typeof setup>>['nelcota'], cookies: 
   });
 
 describe('SvelteKit adapter', () => {
+  it('returns unavailable when session storage fails without clearing the cookie', async () => {
+    const store = new DevelopmentSessionStore();
+    const { nelcota, cookies } = await setup({ store });
+    await signIn(nelcota, cookies);
+    const before = [...cookies.values];
+    vi.spyOn(store, 'read').mockRejectedValue(new Error('private database diagnostic'));
+    const resolve = vi.fn(async () => new Response('page'));
+    const response = await nelcota.handle({ protectedPaths: ['/dashboard'] })({ event: event(cookies, '/dashboard'), resolve });
+    expect(response.status).toBe(503);
+    expect(await response.text()).not.toContain('private database diagnostic');
+    expect(resolve).not.toHaveBeenCalled();
+    expect([...cookies.values]).toEqual(before);
+    expect(response.headers.get('set-cookie')).toBeNull();
+  });
   it('signs in through an endpoint and reads the session in a load function', async () => {
     const { nelcota, cookies } = await setup();
     const response = await signIn(nelcota, cookies);

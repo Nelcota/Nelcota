@@ -61,6 +61,10 @@ impl StorageState {
     }
 
     pub fn new(pool: Pool, keys: Arc<Keys>, store: Arc<Store>, settings: StorageSettings) -> Self {
+        store.collection_grace_secs.fetch_max(
+            settings.upload_timeout.as_secs().saturating_add(3600),
+            std::sync::atomic::Ordering::Relaxed,
+        );
         StorageState {
             pool,
             keys,
