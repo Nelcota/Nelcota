@@ -33,7 +33,7 @@ function contractName(method: string, path: string): ContractName | undefined {
   const route = path.split('?')[0]
   if (method === 'GET') {
     const exact: Record<string, ContractName> = {
-      '/overview': 'Overview', '/tables': 'TablesResponse', '/schema': 'SchemaResponse', '/users': 'UsersResponse',
+      '/tokens/deploy': 'DeployTokens', '/overview': 'Overview', '/tables': 'TablesResponse', '/schema': 'SchemaResponse', '/users': 'UsersResponse',
       '/policies': 'PoliciesData', '/projects': 'ProjectsData', '/projects/status': 'ProjectsStatusData', '/migrations': 'MigrationsData',
       '/storage': 'StorageOverview', '/types': 'TypesResponse', '/sign-in': 'SignIn', '/denied': 'DeniedRequests', '/metrics': 'MetricsResponse',
       '/webhooks': 'WebhookEndpoints', '/webhooks/deliveries': 'WebhookDeliveries',
@@ -46,6 +46,7 @@ function contractName(method: string, path: string): ContractName | undefined {
     if (/^\/storage\/buckets\/[^/]+\/access$/.test(route)) return 'StorageAccess'
     if (/^\/webhooks\/deliveries\/[^/]+$/.test(route)) return 'WebhookDetail'
   }
+  if (method === 'POST' && route === '/tokens/deploy') return 'DeployToken'
   if (method === 'POST' && (route === '/webhooks' || /^\/webhooks\/[^/]+\/rotate$/.test(route))) return 'WebhookSecret'
   if (method === 'PUT' && /^\/webhooks\/[^/]+$/.test(route)) return 'WebhookEndpoint'
   if (method === 'POST' && /^\/webhooks\/deliveries\/[^/]+\/replay$/.test(route)) return 'WebhookReplay'

@@ -266,6 +266,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c7f02d4ea65f2c1853089ffd8d2787bdbc63de2f0d29dedbcf8ccdfa0ccd4cf"
 
 [[package]]
+name = "base16ct"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd307490d624467aa6f74b0eabb77633d1f758a7b25f12bceb0b22e08d9726f6"
+
+[[package]]
 name = "base64"
 version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -981,7 +987,7 @@ version = "0.13.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5e6043086bf7973472e0c7dff2142ea0b680d30e18d9cc40f267efbf222bd47"
 dependencies = [
- "base16ct",
+ "base16ct 0.2.0",
  "crypto-bigint",
  "digest 0.10.7",
  "ff",
@@ -2095,7 +2101,7 @@ version = "0.5.6"
 dependencies = [
  "anyhow",
  "axum",
- "base16ct",
+ "base16ct 1.0.0",
  "base64 0.23.1",
  "brotli",
  "bytes",
@@ -2186,7 +2192,7 @@ name = "nelcota-cli"
 version = "0.5.6"
 dependencies = [
  "anyhow",
- "base16ct",
+ "base16ct 1.0.0",
  "base64 0.23.1",
  "clap",
  "getrandom 0.4.3",
@@ -2257,7 +2263,7 @@ name = "nelcota-deployment"
 version = "0.5.6"
 dependencies = [
  "anyhow",
- "base16ct",
+ "base16ct 1.0.0",
  "getrandom 0.4.3",
  "schemars 1.2.3",
  "semver",
@@ -2312,7 +2318,7 @@ version = "0.5.6"
 dependencies = [
  "async-trait",
  "axum",
- "base16ct",
+ "base16ct 1.0.0",
  "bytes",
  "deadpool-postgres",
  "fs4",
@@ -2341,7 +2347,7 @@ dependencies = [
 name = "nelcota-webhooks"
 version = "0.5.6"
 dependencies = [
- "base16ct",
+ "base16ct 1.0.0",
  "deadpool-postgres",
  "getrandom 0.4.3",
  "hmac 0.13.0",
@@ -3481,7 +3487,7 @@ version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3e97a565f76233a6003f9f5c54be1d9c5bdfa3eccfb189469f11ec4901c47dc"
 dependencies = [
- "base16ct",
+ "base16ct 0.2.0",
  "der",
  "generic-array",
  "pkcs8",

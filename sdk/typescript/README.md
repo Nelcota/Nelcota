@@ -150,6 +150,19 @@ await nelcota.from('products').upsert(rows, { onConflict: 'slug' });      // or 
 const { data: total } = await nelcota.rpc('cart_total', { cart_id: 7 });
 ```
 
+With column-level GRANTs, merging an upsert needs `UPDATE` on **every payload
+column, including the conflict key**. For `upsert({ id, name })`, grant both:
+
+```sql
+GRANT INSERT (id, name), UPDATE (id, name) ON public.products TO authenticated;
+```
+
+The server includes the conflict key in `ON CONFLICT ... DO UPDATE SET`, even
+when its value stays the same. `UPDATE (name)` alone returns SQLSTATE `42501`.
+`ignoreDuplicates: true` uses `DO NOTHING` and does not need the UPDATE grant;
+it keeps the existing row unchanged. SELECT grants and RLS policies still apply.
+
+
 Filters: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`,
 `is` (`null`, `true`, `false`, `'unknown'`), `not(column, op, value)`,
 `match({...})`, `or(...)` and `and(...)`. A column path such as
@@ -196,6 +209,28 @@ for await (const page of nelcota.from('notes').select('id,body').order('id').pag
 }
 ```
 
+For optimistic concurrency, include the expected version in the filters and
+request an affected-row count. Zero affected rows is a successful outcome:
+
+```ts
+const result = await nelcota.from('notes')
+  .update({ title: 'Revised', version: expectedVersion + 1 }, { count: 'exact' })
+  .eq('id', id).eq('version', expectedVersion);
+if (result.error) throw result.error;
+if (result.count === 0) {
+  // No visible row matched: reload or show that the save could not be applied.
+}
+```
+
+`insert`, `upsert`, `update` and `delete` accept `count: 'exact'`, including
+with `.select()`. The count respects GRANTs and RLS; zero cannot distinguish a
+stale version from a missing or RLS-hidden row. It does not disclose hidden data.
+
+For database policy tests, import the standalone `@nelcota/client/testing`
+helpers. They reserve a `pg` or Bun SQL connection, impersonate API roles,
+create fixture users and always roll back scenarios. See
+[Testing RLS](../../docs/testing-rls.md) for the recommended test layout.
+
 ## Auth
 
 ```ts
@@ -209,7 +244,7 @@ await nelcota.auth.updateUser({ data: { plan: 'pro' } });     // merged into use
 await nelcota.auth.updateUser({ password: next, currentPassword: password }); // ends the other sessions
 
 const stop = nelcota.auth.onChange((event, session) => {
-  // 'signed_in' | 'signed_out' | 'refreshed' | 'user_updated', also from other tabs
+  // 'initial_session' | 'signed_in' | 'signed_out' | 'refreshed' | 'user_updated'
 });
 ```
 
@@ -223,6 +258,14 @@ Browser storage can be read by any script on the page, so the usual XSS
 hygiene applies (a Content Security Policy, no untrusted HTML). The session
 holds a short-lived access token (15 minutes by default) and a refresh
 token that rotates on every use.
+
+Each `onChange` subscription asynchronously receives `initial_session` once,
+after storage is read, with the stored session or `null`. It precedes later
+sign-in, refresh and user-update events for that subscription. It is a baseline,
+so apps can distinguish restoration from a later identity change. Unsubscribing
+or disposing cancels a pending baseline. Listener promises do not block auth.
+Storage-read failures go to `onBackgroundError`; resubscribe after repairing
+storage to obtain a new baseline.
 
 **Refresh.** The access token is refreshed in the background before it
 expires, and again right before a request when needed.

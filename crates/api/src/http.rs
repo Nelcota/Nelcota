@@ -137,6 +137,7 @@ pub(crate) async fn create(
             .headers_mut()
             .insert("preference-applied", HeaderValue::from_static(applied));
     }
+    apply_write_count(&mut response, result.rows, &prefer);
     Ok(response)
 }
 
@@ -151,9 +152,14 @@ fn write_response(body: Option<String>, with_body: StatusCode, minimal: StatusCo
 /// */<rows changed>`, as PostgREST does.
 fn change_response(result: operations::ChangeResult, prefer: &Prefer) -> Response {
     let mut response = write_response(result.body, StatusCode::OK, StatusCode::NO_CONTENT);
+    apply_write_count(&mut response, result.rows, prefer);
+    response
+}
+
+fn apply_write_count(response: &mut Response, rows: u64, prefer: &Prefer) {
     if prefer.count_exact {
         let headers = response.headers_mut();
-        if let Ok(value) = HeaderValue::from_str(&format!("*/{}", result.rows)) {
+        if let Ok(value) = HeaderValue::from_str(&format!("*/{rows}")) {
             headers.insert(header::CONTENT_RANGE, value);
         }
         headers.append(
@@ -161,7 +167,6 @@ fn change_response(result: operations::ChangeResult, prefer: &Prefer) -> Respons
             HeaderValue::from_static("count=exact"),
         );
     }
-    response
 }
 
 pub(crate) async fn update(

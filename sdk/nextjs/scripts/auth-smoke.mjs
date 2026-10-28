@@ -56,7 +56,7 @@ try {
   // Expire only local access metadata. The real server must rotate its refresh
   // token, and eight independent request contexts must not replay that rotation.
   const namespace = `${origin}\0${new URL(api).href}`;
-  const storedKey = sessionKey([...jar.values.values()][0], namespace);
+  const storedKey = await sessionKey([...jar.values.values()][0], namespace);
   const binding = `nelcota-next/v1\0${origin}\0${new URL(api).href}\0${storedKey}`;
   const sealer = await SessionSealer.create([key]);
   let previousRefresh;

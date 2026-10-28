@@ -337,7 +337,7 @@ async fn avatar_editor_storage_allows_legacy_photo_restoration() {
     app.admin_client.execute("INSERT INTO nelcota.admin_avatar (email, content_type, image) VALUES ($1,'image/png',$2)", &[&ADMIN_EMAIL, &bytes]).await.unwrap();
     app.admin_client
         .batch_execute(include_str!(
-            "../../../../migrations/V17__editable_admin_avatars.sql"
+            "../../../../migrations/V18__editable_admin_avatars.sql"
         ))
         .await
         .unwrap();

@@ -30,7 +30,7 @@ it('releases a definite rate-limit reservation for other tabs (#137)', async () 
   const first = client(mock.fetch); await first.auth.setSession(session());
   const events: AuthEvent[] = []; first.auth.onChange(event => events.push(event));
   expect((await first.auth.refreshSession()).error?.code).toBe('rate_limited'); first.dispose();
-  const other = client(); expect((await other.auth.getSession()).data?.refresh_token).toBe('refresh-1'); expect(mock.calls).toHaveLength(1); expect(events).toEqual([]);
+  const other = client(); expect((await other.auth.getSession()).data?.refresh_token).toBe('refresh-1'); expect(mock.calls).toHaveLength(1); expect(events).toEqual(['initial_session']);
 });
 it('releases the reservation after any other definite client error (#137)', async () => {
   browser(); const first = client(mockFetch(json({ code: 'unsupported_grant_type', message: 'Rejected' }, 400)).fetch);
@@ -50,9 +50,9 @@ it('labels profile and account changes in loaded and unread tabs (#138)', async 
   const events: AuthEvent[] = [], fresh: AuthEvent[] = [];
   loaded.auth.onChange(event => events.push(event)); unread.auth.onChange(event => fresh.push(event));
   await first.auth.updateUser({ data: { name: 'updated' } });
-  await vi.waitFor(() => { expect(events).toEqual(['user_updated']); expect(fresh).toEqual(['user_updated']); });
+  await vi.waitFor(() => { expect(events).toEqual(['initial_session', 'user_updated']); expect(fresh).toEqual(['initial_session', 'user_updated']); });
   await first.auth.signInWithPassword({ email: 'bob@example.test', password: 'pw' });
-  await vi.waitFor(() => { expect(events).toEqual(['user_updated', 'signed_in']); expect(fresh).toEqual(['user_updated', 'signed_in']); });
+  await vi.waitFor(() => { expect(events).toEqual(['initial_session', 'user_updated', 'signed_in']); expect(fresh).toEqual(['initial_session', 'user_updated', 'signed_in']); });
 });
 it('does not broadcast into independent per-tab adapters (#140)', async () => {
   browser(); const isolated = memoryStorage(); vi.stubGlobal('sessionStorage', isolated);
@@ -60,7 +60,7 @@ it('does not broadcast into independent per-tab adapters (#140)', async () => {
   await first.auth.setSession(session()); const own = { ...session(), user: { ...session().user, id: 'carol' } }; await second.auth.setSession(own);
   await second.auth.getSession(); const events: AuthEvent[] = []; second.auth.onChange(event => events.push(event));
   await first.auth.setSession({ ...session(), user: { ...session().user, id: 'bob' } });
-  await new Promise(resolve => setTimeout(resolve, 20)); expect(events).toEqual([]); expect((await second.auth.getSession()).data?.user.id).toBe('carol');
+  await new Promise(resolve => setTimeout(resolve, 20)); expect(events).toEqual(['initial_session']); expect((await second.auth.getSession()).data?.user.id).toBe('carol');
 });
 
 it('does not label a newer identity with a delayed old logout event (#138)', async () => {
@@ -73,7 +73,7 @@ it('does not label a newer identity with a delayed old logout event (#138)', asy
   const unread = client(); const events: AuthEvent[] = []; unread.auth.onChange(event => events.push(event));
   const channel = [...environment.channels].at(-1)!;
   channel.onmessage?.({ data: stale });
-  await vi.waitFor(() => expect(events).toEqual(['signed_in']));
+  await vi.waitFor(() => expect(events).toEqual(['initial_session']));
   expect((await unread.auth.getSession()).data?.user.id).toBe('bob');
 });
 

@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { equalState, sha256 } from './crypto.js';
 import { createClient, type AuthRequestOptions, NelcotaError, type Credentials, type DefaultSchemaName, type FetchLike, type NelcotaClient, type OAuthProvider, type Result, type Session, type SessionStorage, type SignUpInput, type User, type UserUpdate } from '@nelcota/client';
 import { SessionError } from './errors.js';
 import { requireMutation, safeReturnTo, trustedUrl } from './policy.js';
@@ -77,7 +77,7 @@ function refusedRedirect(code: 'storage_redirect_refused' | 'storage_redirect_li
 }
 
 /** Rows that share one browser cookie history share a lineage record. */
-function lineageOf(key: string): string { return createHash('sha256').update('nelcota-next/lineage\0').update(key).digest('hex'); }
+function lineageOf(key: string): Promise<string> { return sha256(`nelcota-next/lineage\0${key}`); }
 interface Loaded {
   state: SessionState | null;
   /** A row existed at the key, readable or not. */
@@ -101,7 +101,7 @@ export class Integration<Database> {
   readonly #options: Omit<SessionOptions, 'keys'>;
   readonly #sealer: SessionSealer;
   readonly #redirects: ReadonlySet<string>;
-  private constructor(options: SessionOptions, sealer: SessionSealer) {
+  private constructor(options: SessionOptions, sealer: SessionSealer, scope: string) {
     const { keys: _keys, ...settings } = options;
     this.#options = settings; this.#sealer = sealer;
     const development = options.allowInsecureDevelopment === true;
@@ -112,7 +112,6 @@ export class Integration<Database> {
     this.#basePath = options.basePath ?? '';
     if (this.#basePath !== '' && (!/^(\/[A-Za-z0-9_~-][A-Za-z0-9._~-]*)+$/.test(this.#basePath))) throw new SessionError('configuration', 'basePath must be empty or a canonical path such as /app');
     this.#namespace = `${this.#origin}\0${this.#api.href}`;
-    const scope = createHash('sha256').update(this.#namespace).digest('hex').slice(0, 12);
     this.#name = options.cookieName ?? `${this.#secure ? '__Host-nelcota' : 'nelcota-dev'}-${scope}`;
     if (!/^[A-Za-z0-9_-]{1,64}$/.test(this.#name) || (this.#secure && !this.#name.startsWith('__Host-')) || (!this.#secure && this.#name.startsWith('__Host-'))) throw new SessionError('configuration', 'Invalid host-only session cookie name');
     this.#ttl = options.sessionTtlSeconds ?? 604800;
@@ -129,7 +128,10 @@ export class Integration<Database> {
   static async create<Database>(options: SessionOptions): Promise<Integration<Database>> {
     // Session keys and tokens must never reach a browser bundle.
     if (typeof (globalThis as { document?: unknown }).document !== 'undefined') throw new SessionError('configuration', '@nelcota/ssr sessions run only on the server');
-    return new Integration<Database>({ ...options }, await SessionSealer.create(options.keys));
+    const development = options.allowInsecureDevelopment === true;
+    const namespace = `${trustedUrl(options.appOrigin, development, true).origin}\0${trustedUrl(options.url, development).href}`;
+    const scope = (await sha256(namespace)).slice(0, 12);
+    return new Integration<Database>({ ...options }, await SessionSealer.create(options.keys), scope);
   }
   get origin(): string { return this.#origin; }
   get basePath(): string { return this.#basePath; }
@@ -265,7 +267,7 @@ export class Integration<Database> {
    * browser may already hold its replacement from a sign-in response still in flight.
    */
   async read<T>(cookies: CookieReader, work: (context: VerifiedContext<Database>, details: { clearable: boolean }) => Promise<T>): Promise<T> {
-    const id = cookies.get(this.#name)?.value ?? '', key = sessionKey(id, this.#namespace);
+    const id = cookies.get(this.#name)?.value ?? '', key = await sessionKey(id, this.#namespace);
     const loaded = key ? await this.#load(key) : null, state = loaded?.state ?? null;
     let alive = true;
     const client = this.#client(() => accessToken(state), () => alive, true);
@@ -275,7 +277,7 @@ export class Integration<Database> {
   /** Explicit same-origin local reset, usable even when old keys/state are unavailable. */
   async forget(cookies: CookieWriter, request: Request): Promise<void> {
     requireMutation(request.headers, request.method, this.#origin);
-    const key = sessionKey(cookies.get(this.#name)?.value ?? '', this.#namespace);
+    const key = await sessionKey(cookies.get(this.#name)?.value ?? '', this.#namespace);
     if (key) await this.#options.store.exclusive(key, lease => lease.remove());
     this.expireCookie(cookies);
   }
@@ -287,9 +289,9 @@ export class Integration<Database> {
     if (callback && !callbackRequest) throw new SessionError('csrf', 'Use the configured GET OAuth callback');
     if (!callbackRequest) requireMutation(request.headers, request.method, this.#origin);
     const existingId = cookies.get(this.#name)?.value ?? '';
-    const presented = sessionKey(existingId, this.#namespace) !== null;
+    const presented = (await sessionKey(existingId, this.#namespace)) !== null;
     let id = presented ? existingId : newSessionId();
-    const initialKey = sessionKey(id, this.#namespace);
+    const initialKey = await sessionKey(id, this.#namespace);
     if (!initialKey) throw new SessionError('invalid_session', 'Invalid generated session id');
     // Session rows a later lineage head replaced; tombstoned after this lease ends,
     // so this request never waits for another key while holding its own.
@@ -300,7 +302,7 @@ export class Integration<Database> {
       let state = loaded.state;
       // Every ID this browser cookie held shares the lineage of the first one: inherited
       // from stored state/tombstones, or seeded by a presented (bootstrap) or fresh ID.
-      const lineage = loaded.lineage ?? lineageOf(initialKey);
+      const lineage = loaded.lineage ?? await lineageOf(initialKey);
       // The lineage generation this response publishes; null for pre-lineage or pending-only state.
       let generation = state?.session !== null && state?.session !== undefined ? state.generation ?? null : null;
       let alive = true, accepting = true, failed = false, cookieNeeded = false;
@@ -314,7 +316,7 @@ export class Integration<Database> {
       // Never adopt a browser-chosen or pre-login ID: move to a fresh unpublished one.
       // `retain` leaves a tombstone so delayed requests with the old ID find the lineage.
       const rotate = async (retain: boolean): Promise<void> => {
-        const nextId = newSessionId(), nextKey = sessionKey(nextId, this.#namespace);
+        const nextId = newSessionId(), nextKey = await sessionKey(nextId, this.#namespace);
         if (!nextKey) throw new SessionError('invalid_session', 'Invalid generated session id');
         try { await lease.rotate(nextKey, retain ? await this.#tombstone(key, lineage) : undefined); id = nextId; key = nextKey; published = false; }
         catch (cause) { failed = true; throw new SessionError('session_store', 'Session publication failed', cause); }
@@ -430,7 +432,7 @@ export class Integration<Database> {
           ensure();
           if (!callbackRequest) throw new SessionError('csrf', 'Use the configured OAuth callback context');
           const supplied = new URL(request.url).searchParams.get('state'), expected = state?.oauthState;
-          if (!state || !supplied || !/^[A-Za-z0-9_-]{43}$/.test(supplied) || !expected || supplied.length !== expected.length || !timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))) throw new SessionError('csrf', 'OAuth callback state did not match');
+          if (!state || !supplied || !/^[A-Za-z0-9_-]{43}$/.test(supplied) || !expected || supplied.length !== expected.length || !equalState(supplied, expected)) throw new SessionError('csrf', 'OAuth callback state did not match');
           await save({ ...state, oauthState: null });
           const result = await identity(() => auth.exchangeCode(code, mutationOptions(options)));
           return result.error ? result : { data: { user: result.data.user, returnTo: safeReturnTo(state?.returnTo) }, error: null };

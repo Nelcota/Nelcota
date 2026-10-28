@@ -1,1 +1,0 @@
-import{O as e,b as t,k as n}from"./router.svelte-Bx1UmjvJ.js";var r={name:`ellipsis`,size:24,node:[[`circle`,{cx:`12`,cy:`12`,r:`1`}],[`circle`,{cx:`19`,cy:`12`,r:`1`}],[`circle`,{cx:`5`,cy:`12`,r:`1`}]],aliases:[`more-horizontal`]};r.node;var i=new Set([`$$slots`,`$$events`,`$$legacy`]);function a(a,o){let s=e(o,i);t(a,n(()=>s,{get icon(){return r}}))}export{a as t};

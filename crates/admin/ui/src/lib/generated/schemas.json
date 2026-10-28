@@ -1220,6 +1220,118 @@
     "title": "DeniedRequests",
     "type": "object"
   },
+  "DeployToken": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+      "expires_at": {
+        "type": "string"
+      },
+      "id": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "token": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "token",
+      "expires_at"
+    ],
+    "title": "DeployToken",
+    "type": "object"
+  },
+  "DeployTokenInfo": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+      "expires_at": {
+        "type": "string"
+      },
+      "id": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "issued_at": {
+        "type": "string"
+      },
+      "issued_by": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "revoked_at": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "issued_by",
+      "issued_at",
+      "expires_at",
+      "revoked_at"
+    ],
+    "title": "DeployTokenInfo",
+    "type": "object"
+  },
+  "DeployTokens": {
+    "$defs": {
+      "DeployTokenInfo": {
+        "properties": {
+          "expires_at": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "issued_at": {
+            "type": "string"
+          },
+          "issued_by": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "revoked_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "issued_by",
+          "issued_at",
+          "expires_at",
+          "revoked_at"
+        ],
+        "type": "object"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+      "tokens": {
+        "items": {
+          "$ref": "#/$defs/DeployTokenInfo"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "tokens"
+    ],
+    "title": "DeployTokens",
+    "type": "object"
+  },
   "ExportedMigration": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "properties": {

@@ -38,6 +38,9 @@ async fn serve(config: Config) -> anyhow::Result<()> {
     .await
     .context("could not prepare the database")?;
 
+    nelcota_cli::apply_development_migrations(&config).await?;
+    let _development_migrations = nelcota_cli::watch_development_migrations(&config);
+
     let keys = Arc::new(
         Keys::new(
             config.jwt_private_key(),
@@ -71,7 +74,16 @@ async fn serve(config: Config) -> anyhow::Result<()> {
     let mail = config.mail()?;
     let mailer = match &mail {
         Some(mail) => {
-            let smtp = nelcota_auth::SmtpMailer::new(mail.smtp_url, mail.from)?;
+            let ca = config
+                .smtp_ca_file
+                .as_ref()
+                .map(std::fs::read)
+                .transpose()?;
+            let smtp = nelcota_auth::SmtpMailer::with_root_certificate(
+                mail.smtp_url,
+                mail.from,
+                ca.as_deref(),
+            )?;
             tracing::info!(
                 sender = mail.from,
                 signup_confirmation = mail.confirmation_url.is_some(),
@@ -175,6 +187,8 @@ async fn serve(config: Config) -> anyhow::Result<()> {
     let admin = match (&config.admin_email, &config.admin_password_hash) {
         (Some(email), Some(hash)) if !email.is_empty() && !hash.expose().is_empty() => {
             Some(nelcota_admin::AdminState {
+                production: config.production,
+                migration_backup: nelcota_core::migration_backup::BackupAgent::from_config(&config),
                 webhooks: nelcota_webhooks::destination::Policy {
                     allow_loopback: config.webhooks_allow_loopback,
                 },

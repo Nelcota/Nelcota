@@ -529,7 +529,7 @@ class UpgradeScenario:
             after["tables"]["storage.objects"] = self.query(
                 "SELECT coalesce(jsonb_agg((to_jsonb(t)-'directory_key'-'directory_scope')::text ORDER BY (to_jsonb(t)-'directory_key'-'directory_scope')::text),'[]'::jsonb) FROM storage.objects t;"
             )
-        if 17 in self.expected_migrations:
+        if 18 in self.expected_migrations:
             avatar_oid = table_oids["nelcota.admin_avatar"]
             fields = {
                 "source_content_type": "text", "source_image": "bytea", "source_digest": "bytea",

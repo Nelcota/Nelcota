@@ -63,6 +63,13 @@ dto!(ProjectStatus { name: String, url: Option<String>, current: bool, healthy: 
 dto!(ProjectsStatusData { current: String, projects: Vec<ProjectStatus> });
 dto!(Migration { version: i64, name: String, applied_on: Option<String>, in_folder: Option<bool>, from_panel: bool });
 dto!(PendingChange { id: i64, applied_at: String, summary: String, statements: Vec<String>, kind: Option<String>, target: Option<String> });
+dto!(DeployToken {
+    id: i64,
+    token: String,
+    expires_at: String
+});
+dto!(DeployTokenInfo { id: i64, name: String, issued_by: String, issued_at: String, expires_at: String, revoked_at: Option<String> });
+dto!(DeployTokens { tokens: Vec<DeployTokenInfo> });
 dto!(MigrationsData { migrations: Vec<Migration>, pending: Vec<PendingChange>, next_version: i64, folder: Option<String> });
 dto!(ExportedMigration {
     version: i64,
@@ -229,6 +236,9 @@ pub fn exports() -> (String, String) {
         Migration,
         PendingChange,
         MigrationsData,
+        DeployToken,
+        DeployTokenInfo,
+        DeployTokens,
         ExportedMigration,
         Bucket,
         StorageBackend,

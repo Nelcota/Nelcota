@@ -1,1 +1,0 @@
-import{sn as e}from"./router.svelte-Bx1UmjvJ.js";e();

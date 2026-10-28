@@ -113,16 +113,52 @@ pub struct SmtpMailer {
 
 impl SmtpMailer {
     pub fn new(url: &str, from: &str) -> Result<Self, MailError> {
+        Self::with_root_certificate(url, from, None)
+    }
+
+    /// Add a private CA while retaining hostname and certificate verification.
+    pub fn with_root_certificate(
+        url: &str,
+        from: &str,
+        pem: Option<&[u8]>,
+    ) -> Result<Self, MailError> {
         let url = encrypted_smtp_url(url)?;
         let from = from
             .parse::<Mailbox>()
             .map_err(|e| MailError(format!("invalid NELCOTA_SMTP_FROM: {e}")))?;
         // lettre's error message does not include the URL (which holds the password).
-        let transport = AsyncSmtpTransport::<Tokio1Executor>::from_url(url.as_str())
+        let mut transport = AsyncSmtpTransport::<Tokio1Executor>::from_url(url.as_str())
             .map_err(|e| MailError(format!("invalid NELCOTA_SMTP_URL: {e}")))?
-            .timeout(Some(Duration::from_secs(15)))
-            .build();
-        Ok(SmtpMailer { transport, from })
+            .timeout(Some(Duration::from_secs(15)));
+        if let Some(pem) = pem {
+            use lettre::transport::smtp::client::{Certificate, Tls, TlsParameters};
+            use rustls::pki_types::{CertificateDer, pem::PemObject};
+            let mut roots = rustls::RootCertStore::empty();
+            for certificate in CertificateDer::pem_slice_iter(pem) {
+                let certificate =
+                    certificate.map_err(|_| MailError("invalid SMTP CA certificate".into()))?;
+                roots
+                    .add(certificate)
+                    .map_err(|_| MailError("invalid SMTP CA certificate".into()))?;
+            }
+            if roots.is_empty() {
+                return Err(MailError("missing SMTP CA certificate".into()));
+            }
+            let certificate = Certificate::from_pem(pem)
+                .map_err(|_| MailError("invalid SMTP CA certificate".into()))?;
+            let tls = TlsParameters::builder(url.host_str().unwrap_or_default().to_owned())
+                .add_root_certificate(certificate)
+                .build()
+                .map_err(|_| MailError("could not configure SMTP trust".into()))?;
+            transport = transport.tls(match url.scheme() {
+                "smtps" => Tls::Wrapper(tls),
+                _ => Tls::Required(tls),
+            });
+        }
+        Ok(SmtpMailer {
+            transport: transport.build(),
+            from,
+        })
     }
 }
 
@@ -179,6 +215,27 @@ impl Mailer for SmtpMailer {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn private_smtp_trust_does_not_relax_the_transport_policy() {
+        for url in [
+            "smtp://127.0.0.1:1025",
+            "smtp://127.0.0.1:1025?tls=opportunistic",
+        ] {
+            assert!(
+                SmtpMailer::with_root_certificate(url, "sender@example.test", Some(b"invalid"))
+                    .is_err()
+            );
+        }
+        assert!(
+            SmtpMailer::with_root_certificate(
+                "smtp://127.0.0.1:1025?tls=required",
+                "sender@example.test",
+                Some(b"invalid")
+            )
+            .is_err()
+        );
+    }
 
     fn smtp_url(scheme: &str, suffix: &str) -> String {
         let mut url =

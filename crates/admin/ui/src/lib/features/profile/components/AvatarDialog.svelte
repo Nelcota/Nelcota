@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { untrack } from 'svelte'
   import * as Dialog from '$lib/components/ui/dialog'
   import { Button } from '$lib/components/ui/button'
   import { toast } from 'svelte-sonner'
@@ -29,7 +28,7 @@
   let read = 0
 
   $effect(() => {
-    const visible = open, session = querySession()
+    const visible = open, session = querySession(), version = profile.avatar
     const controller = new AbortController()
     opening++; read++
     source = null
@@ -39,10 +38,7 @@
     reading = false
     dragging = false
     loadError = ''
-    if (visible) {
-      const version = untrack(() => profile.avatar)
-      if (version !== null) void loadSaved(version, controller.signal, session)
-    }
+    if (visible && version !== null) void loadSaved(version, controller.signal, session)
     return () => { opening++; read++; controller.abort() }
   })
 

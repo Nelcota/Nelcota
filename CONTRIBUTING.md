@@ -138,6 +138,7 @@ publication. Existing results are dated in
 ### Acceptance, upgrades and stress
 
 ```sh
+python3 scripts/test-migration-backup.py --binary target/debug/nelcota
 python3 scripts/test-onboarding.py --binary target/debug/nelcota
 python3 scripts/test-host-management.py --binary target/debug/nelcota
 python3 scripts/check-boundaries.py

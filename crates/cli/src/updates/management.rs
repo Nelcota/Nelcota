@@ -940,6 +940,7 @@ fn apply_with(
                             .context("final backup missing")?,
                     ),
                 )?;
+                crate::migration_backup::install::remove(&target)?;
                 target.down(true)?;
                 // Keep configuration and diagnostics privately with the final paired backup.
                 let retired = host

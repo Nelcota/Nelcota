@@ -138,7 +138,7 @@ Photos saved before the editor can be adjusted from their existing crop; choose
 the original file again to recover image areas that were previously discarded.
 Sources are stored in `nelcota.admin_avatar`, outside the API roles, and
 are served only to a signed-in panel administrator with `Cache-Control: no-store`.
-Internal migration V17 adds nullable editor fields without changing existing avatars.
+Internal migration V18 adds nullable editor fields without changing existing avatars.
 
 When there are no tables, the editor shows a single workspace with a table
 count, a guide link and one primary creation action. The
@@ -324,3 +324,13 @@ host authority. Secret URLs are write-only. A complete VPS outage requires an
 independent heartbeat provider, configured and rehearsed separately. Follow
 [operational alerts](operational-alerts.md) before enabling; these controls
 require server 0.5.2 or later.
+
+## AI context freshness
+
+Connect → Context for AI records the latest applied application migration in
+`llms.txt` and on the page. An empty exposed schema displays a warning in both
+places. Apply your migrations and regenerate before giving the file to an
+assistant. The page checks migration changes every 30 seconds while visible
+and when the window regains focus. Copy/download is disabled for an outdated
+context or a failed freshness check; Refresh regenerates it. Type downloads
+read schema and migration version from one database snapshot.

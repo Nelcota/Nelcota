@@ -5,6 +5,17 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## Unreleased
 
+### Added
+
+- The standalone `@nelcota/client/testing` export supplies rollback scenarios,
+  API-role impersonation, fixture identities and SQLSTATE assertions for pg/Bun SQL.
+
+- All table writes accept `count: 'exact'` and return the number of affected rows,
+  including zero, without requiring a row representation.
+
+- Auth listeners receive one asynchronous `initial_session` baseline per subscription,
+  ordered before subsequent sign-in, refresh and user-update events.
+
 ### Fixed
 
 - Refuse `service_role` tokens in Web Workers and Service Workers as well as pages.

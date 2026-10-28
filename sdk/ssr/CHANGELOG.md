@@ -5,6 +5,13 @@ successful publication; a source version or Git tag alone is insufficient.
 
 ## Unreleased
 
+### Changed
+
+- Replace Node crypto/Buffer in the session core with standard Web Crypto and
+  canonical base64url encoding. Existing v1/v2 rows, cookie names and store/lineage
+  hashes remain compatible. Keep authoritative shared storage on Edge; document
+  the decision against a stateless token-cookie mode and its replay trade-offs.
+
 ### Fixed
 
 - Classify session-store read failures as unavailable in authentication guards,

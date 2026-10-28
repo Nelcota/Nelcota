@@ -17,6 +17,7 @@ mod connect;
 pub mod contracts;
 mod ddl;
 mod denied;
+mod deploy;
 mod error;
 mod metrics;
 mod middleware;
@@ -120,6 +121,11 @@ pub fn router(state: AdminState) -> Router {
         .route("/admin/api/updates", get(updates::information))
         .route("/admin/api/projects/status", get(projects::status))
         .route("/admin/api/sso/handoff", post(sso::handoff))
+        .route(
+            "/admin/api/tokens/deploy",
+            get(deploy::list_tokens).post(deploy::issue),
+        )
+        .route("/admin/api/tokens/deploy/{id}", delete(deploy::revoke))
         .route("/admin/api/tokens/service-role", post(tokens::service_role))
         .route(
             "/admin/api/migrations",
@@ -196,6 +202,24 @@ pub fn upload_router(state: AdminState) -> Router {
             require_session,
         ))
         .layer(axum::extract::DefaultBodyLimit::disable())
+        .layer(axum_middleware::from_fn(same_origin))
+        .layer(axum_middleware::from_fn(security_headers))
+        .with_state(state)
+}
+
+/// Deployment requests have a separate bounded HTTP lifetime for long DDL.
+pub fn deployment_router(state: AdminState) -> Router {
+    let panel = Router::new()
+        .route("/admin/api/migrations/apply", post(deploy::panel_apply))
+        .route_layer(axum_middleware::from_fn_with_state(
+            state.clone(),
+            require_session,
+        ));
+    Router::new()
+        .route("/admin/deploy/v1/migrations", post(deploy::apply))
+        .route("/admin/deploy/v1/migrations/status", post(deploy::status))
+        .route("/admin/deploy/v1/typescript", get(deploy::typescript))
+        .merge(panel)
         .layer(axum_middleware::from_fn(same_origin))
         .layer(axum_middleware::from_fn(security_headers))
         .with_state(state)

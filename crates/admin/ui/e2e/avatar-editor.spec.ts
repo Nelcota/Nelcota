@@ -154,3 +154,42 @@ test('the mobile editor supports drag, pinch and dark mode without horizontal ov
   await page.screenshot({ path: '/tmp/nelcota-avatar-editor-mobile.png' })
   await client.detach()
 })
+
+for (const action of ['save', 'remove'] as const) {
+  test(`a pending ${action} refreshes a reopened avatar editor`, async ({ page }) => {
+    const state = await setup(page)
+    await open(page)
+    await page.getByRole('dialog').locator('input[type=file]').setInputFiles(await photo(page))
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await open(page)
+    await expect(page.getByRole('slider', { name: 'Zoom', exact: true })).toHaveValue('1')
+    let finish: (() => Promise<void>) | undefined
+    let released = false
+    await page.route('**/admin/api/profile/avatar', route => {
+      if (route.request().method() !== (action === 'save' ? 'PUT' : 'DELETE')) return route.fallback()
+      return new Promise<void>(resolve => {
+        finish = async () => {
+          if (released) return
+          released = true
+          state.saved = action === 'save' ? route.request().postDataJSON() as Saved : null
+          try { await route.fulfill({ json: { avatar: action === 'save' ? 124 : null } }) }
+          finally { resolve() }
+        }
+      })
+    })
+    if (action === 'save') await page.getByRole('slider', { name: 'Zoom', exact: true }).press('End')
+    await page.getByRole('button', { name: action === 'save' ? 'Save' : 'Remove photo', exact: true }).click()
+    await expect.poll(() => typeof finish).toBe('function')
+    try {
+      await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+      await expect(page.getByRole('dialog')).toHaveCount(0)
+      await open(page)
+      await expect(page.getByRole('slider', { name: 'Zoom', exact: true })).toHaveValue('1')
+      await finish!()
+      await expect(page.getByRole('dialog')).toBeVisible()
+      if (action === 'save') await expect(page.getByRole('slider', { name: 'Zoom', exact: true })).toHaveValue('4', { timeout: 2000 })
+      if (action === 'remove') await expect(page.getByRole('button', { name: 'Photo framing', exact: true })).toHaveCount(0, { timeout: 2000 })
+    } finally { await finish?.() }
+  })
+}

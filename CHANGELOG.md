@@ -16,7 +16,30 @@ for the October 27 server scope and independent SDK publication checkpoint.
   positioning, zoom, quarter-turn rotation and live avatar previews. A bounded,
   metadata-free source and its framing are saved privately for later editing
   across browsers; removing the avatar deletes its source. Internal migration
-  V17 preserves existing photos and adds private editor fields.
+  V18 preserves existing photos and adds private editor fields.
+- Automatic pre-migration backups through a project-scoped host agent, with
+  database/disk-file verification, configured external readback, production
+  enforcement, and a durable host fence across cancellation and agent recovery.
+  `migration-backup enable` installs the restricted Linux service and socket.
+
+- Deploy repository migrations through scoped, revocable deployment tokens and
+  the project API, with project links, named environments, status/dry-run and
+  TypeScript downloads. V17 stores token digests and migration audit records.
+- The panel can preview/apply uploaded repository migration files and manage
+  deployment tokens. Production projects can block direct panel schema changes.
+- Development applies/watches application migrations and offers an explicitly
+  confirmed local database reset with optional seed.sql. A composite GitHub
+  Action builds the locked CLI and applies migrations without database credentials.
+
+- AI context records the latest applied migration, warns about an empty schema,
+  and detects changed versions before copying or downloading a stale snapshot.
+
+- REST inserts and upserts honor `Prefer: count=exact`, matching PATCH/DELETE
+  affected-row counts and retaining duplicate-resolution response metadata.
+
+- `nelcota dev --mail` runs a project-owned Mailpit inbox and enables email
+  confirmation, recovery and magic links over verified local STARTTLS.
+
 - `nelcota update` discovers a stable release, previews the CLI/project versions,
   asks once, preserves the previous CLI and runs the existing backup-backed
   project upgrades. `install.sh --update` provides the same flow for older CLIs;
@@ -72,6 +95,18 @@ for the October 27 server scope and independent SDK publication checkpoint.
   status.
 
 ### Fixed
+
+- Generated TypeScript RPC arguments and results retain named enums, composite
+  fields and table rows, including arrays and enums used only by functions.
+
+- Document column-level UPDATE grants on upsert conflict keys and the
+  `ignoreDuplicates` alternative in the SDK and authorization troubleshooting.
+
+- Local PostgreSQL containers and volumes belong to a canonical project folder,
+  with ownership checks and an actionable error when another project owns the port.
+
+- Development environment values are shell-quoted, include a URL-encoded
+  `DATABASE_URL`, and preserve unreadable state instead of replacing credentials.
 
 - Interrupted updates before snapshot capture remain recoverable across repeated
   failures. SSH recovery can explicitly restore a verified snapshot after commit;

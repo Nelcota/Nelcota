@@ -1,6 +1,7 @@
 // SQL editor: toolbar, results, saved queries and ready-made templates.
 const ptBR = {
   editor: {
+    migrationWarning: 'SQL editor changes are not recorded as application migrations. Keep schema changes in repository migration files before deploying other environments.',
     newQuery: 'Nova consulta',
     unsaved: '· rascunho sem salvar',
     unsavedTitle: 'Alterações não salvas',

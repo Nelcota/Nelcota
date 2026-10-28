@@ -114,9 +114,26 @@ impl Function {
     }
 }
 
+#[derive(Clone, Debug, serde::Deserialize, Serialize)]
+pub struct TypeField {
+    pub name: String,
+    pub type_name: String,
+    pub nullable: bool,
+}
+
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct NamedType {
+    pub name: String,
+    pub enum_values: Vec<String>,
+    pub fields: Vec<TypeField>,
+    pub relation: Option<String>,
+}
+
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct Catalog {
     pub schema: String,
+    /// Named enum/composite types keyed by PostgreSQL format_type, including RPC-only types.
+    pub named_types: BTreeMap<String, NamedType>,
     pub tables: BTreeMap<String, Table>,
     /// Functions by name (there may be overloads).
     pub functions: BTreeMap<String, Vec<Function>>,
