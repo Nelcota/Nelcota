@@ -266,6 +266,12 @@ because of the `$`), followed by `docker compose up -d --force-recreate app`.
 
 ## Panel development
 
+Ordinary panel requests have at least a 40-second HTTP deadline, allowing their
+30-second PostgreSQL statement timeout and pool wait to settle first. Public API
+requests retain `NELCOTA_REQUEST_TIMEOUT_SECS`. Uploads and streaming exports keep
+their own lifetime limits. Framework rejections use the panel's JSON error shape,
+and public API CORS permission does not apply to `/admin/` routes.
+
 ```sh
 cd crates/admin/ui
 bun install --frozen-lockfile

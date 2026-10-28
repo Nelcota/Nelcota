@@ -58,8 +58,9 @@ equivalent directory ACL; Unix modes do not configure Windows ACLs.
 | `NELCOTA_STORAGE_PUBLIC_URL` | the API's | origin of public file URLs, e.g. `https://files.shop.com` |
 
 Uploads reserve capacity while their bodies are being received. A request
-without `Content-Length` reserves up to its allowed file size or the remaining
-capacity; another upload may receive 507 until that reservation is released.
+without `Content-Length` grows its reservation as bytes arrive, allowing small
+concurrent uploads to share the remaining capacity. Declared lengths reserve
+their full size before reception.
 The committed total is checked in a serialized database transaction, including
 when several server instances share the same database. Replacements receive
 credit for their old bytes against the total quota, but still need disk space
@@ -209,6 +210,13 @@ Replacing or deleting a file removes the old bytes right away:
 checks authoritative metadata and removes unreferenced versions once they are
 a day old, including bytes left by an interrupted upload or an uncertain
 publication. A version still referenced by a row is retained.
+
+On disk, collection also checks hidden `<bucket>/<uuidv7>#<part>` staging files
+left by a process crash. Both the version timestamp and the file's last write
+must be older than the collection grace period. The grace is at least one day
+and exceeds the configured upload deadline by an hour. Foreign names, symlinks
+and directories are retained, and the same ownership checks guard deletion.
+Failed deletes emit `storage.collector_delete_failed` and are retried later.
 
 Use a separate physical disk root or S3 bucket for each independent metadata
 database. Application instances connected to the same writable metadata database

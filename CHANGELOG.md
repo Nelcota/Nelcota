@@ -68,6 +68,28 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- Interrupted updates before snapshot capture remain recoverable across repeated
+  failures. SSH recovery can explicitly restore a verified snapshot after commit;
+  the operator's data-loss decision is durable and never selected by HTTP recovery.
+- Signup confirmation retires unverified OAuth identities, pending codes and old
+  sessions. Proxy IP extraction handles repeated forwarded headers, concurrent
+  provider sign-ins avoid duplicate account races, and public email-link requests
+  queue account work without exposing lookup time.
+- REST filters compare complete `char`/`bit` values and accept array-valued `in`
+  lists. Write/RPC JSON preserves long decimals; unsupported polymorphic and
+  variadic RPC signatures are excluded. Pool recycling clears unowned transactions.
+- Panel deadlines allow database statements to finish; CORS excludes the panel
+  and framework errors keep its JSON shape. User search totals match results,
+  policy URLs reject truncated identifiers, batched UNIQUE actions track their
+  constraints, and exported migrations separate trailing line comments safely.
+- Disk collection removes stale multipart staging files and logs failed deletes.
+  Unknown-length uploads reserve bytes incrementally instead of consuming the
+  full remaining quota.
+- CLI mutation checks ignore unrelated journal files, reject duplicate migration
+  versions, report proxy shutdown failures and sync dumps before publication.
+  Interrupted enrollment can resume its private plan without replacing identities.
+- Panel list selection, filter history, repeated SQL shortcuts, navigation during
+  saves, malformed guide images and modal search shortcuts retain the current state.
 - SQL JSON exports keep every column of a join that selects two columns with
   the same name (`id`, `id_2`), as the grid and CSV already did.
 - The SQL error marker and line point at the right place when the query has an

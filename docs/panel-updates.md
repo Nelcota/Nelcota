@@ -47,8 +47,12 @@ known image/mount entries. Native gates live in a root-owned, readable
 `/var/lib/nelcota-deployment-gates/` directory so the dynamic app user does not
 need access to private host metadata. A custom layout requires operator review; it is not
 silently replaced. DNS/HTTPS, service startup and the root-owned files must be
-checked on the real host before enabling installation. A failed enrollment may
-leave installed files/accounts; inspect and repair them over SSH before retrying.
+checked on the real host before enabling installation. Enrollment records a
+private pending plan before creating its account or installing files. After a
+failure, rerun the same command with the original host, project scope, verifier
+and credentials. The retry preserves project identities and the password hash,
+accepts only the expected compose changes and refuses an altered policy.
+Inspect failures from older binaries without this receipt over SSH.
 
 Native enrollment and every update preflight require the canonical project unit,
 no systemd drop-ins and no pending daemon reload. Overrides can change the actual
@@ -160,6 +164,12 @@ succeeded before fsync reported an error. Older/conflicting sequences cannot
 overwrite newer receipts, revoke either irreversible decision or reopen a
 completed job.
 
+A failure before the snapshot exists resumes the unchanged previous application
+and ends as `failed_before_change`. Repeated recovery failures or timeouts retain
+the original phase, so they cannot turn this case into a missing-snapshot loop.
+Unrelated files in the jobs directory are ignored; malformed job receipts still
+block mutations until inspected.
+
 The browser polls with a single request loop, bounded backoff and stale-sequence
 protection. Closing the page cancels only browser requests. Mutating requests
 are not automatically retried. On a lost response, inspect the journal through
@@ -172,6 +182,22 @@ sudo /usr/local/lib/nelcota-updates/nelcota updates status
 sudo /usr/local/lib/nelcota-updates/nelcota updates recover --job OPERATION_ID
 sudo journalctl -u nelcota-updates-worker -u nelcota-updates-controller
 ```
+
+If a committed candidate cannot become ready, ordinary recovery keeps trying to
+resume it. A root operator can explicitly choose the verified pre-update snapshot
+instead. This discards database/file changes made after that snapshot, including
+background work after commit. Inspect the job and backup before choosing it:
+
+```sh
+sudo /usr/local/lib/nelcota-updates/nelcota updates recover \
+  --job OPERATION_ID --restore-snapshot
+```
+
+This option is restricted to interrupted committed jobs whose previous version
+has not resumed. It records the operator's decision before restoring anything;
+after another interruption, ordinary `recover` continues that recorded decision.
+The HTTP controller never chooses this data-loss recovery path. Preserve the
+receipt; do not remove it to bypass the host lease.
 
 Job state and private runtime diagnostics are under `<host>/updates/jobs/`.
 HTTP responses contain safe phase/error codes, not logs, credentials, dump paths
