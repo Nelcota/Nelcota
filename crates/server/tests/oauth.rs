@@ -88,6 +88,22 @@ async fn review_signup_confirmation_retires_preverification_provider_access() {
 }
 
 #[tokio::test]
+async fn review_concurrent_first_provider_signins_share_one_identity() {
+    let h = Harness::spawn().await;
+    h.account(781, Some("concurrent-provider@example.com"), true);
+    let (first, second) = tokio::join!(h.sign_in(), h.sign_in());
+    let (first, second) = tokio::join!(
+        h.redeem(&first["code"], VERIFIER),
+        h.redeem(&second["code"], VERIFIER)
+    );
+    assert_eq!(first.status, StatusCode::OK, "{}", first.text);
+    assert_eq!(second.status, StatusCode::OK, "{}", second.text);
+    assert_eq!(first.body["user"]["id"], second.body["user"]["id"]);
+    let count: i64 = h.app.admin_client.query_one("SELECT count(*) FROM auth.identities WHERE provider = 'github' AND provider_id = '781'", &[]).await.unwrap().get(0);
+    assert_eq!(count, 1);
+}
+
+#[tokio::test]
 async fn rust_sdk_finishes_a_real_pkce_flow() {
     let harness = Harness::spawn().await;
     harness.account(9900, Some("rust-oauth@example.com"), true);
