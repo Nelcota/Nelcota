@@ -136,9 +136,9 @@ steps), Enter to centre it, and the Zoom slider or a two-finger pinch to zoom.
 Cancel keeps the saved photo unchanged; a failed save keeps the draft for retry.
 Photos saved before the editor can be adjusted from their existing crop; choose
 the original file again to recover image areas that were previously discarded.
-Sources are stored in \`nelcota.admin_avatar_edits\`, outside the API roles, and
+Sources are stored in \`nelcota.admin_avatar\`, outside the API roles, and
 are served only to a signed-in panel administrator with \`Cache-Control: no-store\`.
-Internal migration V17 adds the editor table without changing existing avatars.
+Internal migration V17 adds nullable editor fields without changing existing avatars.
 
 When there are no tables, the editor shows a single workspace with a table
 count, a guide link and one primary creation action. The
