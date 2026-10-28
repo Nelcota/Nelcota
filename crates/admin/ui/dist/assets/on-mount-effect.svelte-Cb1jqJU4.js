@@ -1,1 +1,0 @@
-import{At as e,Ft as t}from"./router.svelte-p2k2zbu5.js";function n(n){t(()=>e(()=>n()))}export{n as t};

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { base64Bytes, centerSquare, cropGeometry, DEFAULT_CROP, moveCrop, parseDataUrl, prepareSource, rotateCrop } from './avatar'
+import { base64Bytes, cropGeometry, DEFAULT_CROP, moveCrop, parseDataUrl, prepareSource, rotateCrop } from './avatar'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -41,20 +41,6 @@ describe('editable framing', () => {
     vi.stubGlobal('createImageBitmap', async () => ({ width: 10_000, height: 10_000, close }))
     await expect(prepareSource(new Blob(['image']))).rejects.toThrow('Image dimensions too large')
     expect(close).toHaveBeenCalledOnce()
-  })
-})
-
-describe('centerSquare', () => {
-  it('crops the sides of a landscape photo', () => {
-    expect(centerSquare(400, 300)).toEqual({ sx: 50, sy: 0, size: 300 })
-  })
-
-  it('crops the top and bottom of a portrait photo', () => {
-    expect(centerSquare(300, 401)).toEqual({ sx: 0, sy: 50, size: 300 })
-  })
-
-  it('leaves a square image alone', () => {
-    expect(centerSquare(256, 256)).toEqual({ sx: 0, sy: 0, size: 256 })
   })
 })
 

@@ -13,14 +13,7 @@ export interface AvatarSource {
   image: CanvasImageSource
   width: number
   height: number
-  dataUrl: string
   base64: string
-}
-
-/** Largest centred square that fits the image. */
-export function centerSquare(width: number, height: number): { sx: number; sy: number; size: number } {
-  const size = Math.min(width, height)
-  return { sx: Math.floor((width - size) / 2), sy: Math.floor((height - size) / 2), size }
 }
 
 export function base64Bytes(base64: string): number {
@@ -94,7 +87,7 @@ function encode(canvas: HTMLCanvasElement, limit: number) {
     }
     const dataUrl = canvas.toDataURL(type, quality)
     const parsed = parseDataUrl(dataUrl)
-    if (parsed?.type === type && base64Bytes(parsed.base64) <= limit) return { dataUrl, base64: parsed.base64 }
+    if (parsed?.type === type && base64Bytes(parsed.base64) <= limit) return { base64: parsed.base64 }
   }
   throw new Error('Could not shrink the image')
 }
@@ -125,7 +118,7 @@ export async function reopenSource(dataUrl: string): Promise<AvatarSource> {
   image.src = dataUrl
   await image.decode()
   if (!image.naturalWidth || !image.naturalHeight || image.naturalWidth * image.naturalHeight > MAX_PIXELS) throw new Error('Image dimensions too large')
-  return { image, width: image.naturalWidth, height: image.naturalHeight, dataUrl, base64: parsed.base64 }
+  return { image, width: image.naturalWidth, height: image.naturalHeight, base64: parsed.base64 }
 }
 
 /** Encodes the live framing at the avatar's existing size and upload budget. */

@@ -48,6 +48,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Changed
 
+- Remove unused panel policy templates and their catalog entries, the legacy
+  avatar crop helper and unused retained URL field, and a redundant alert parser.
+  Keep owner-column inference and validate alert settings through the active
+  status response boundary.
 - The sidebar is wider and uses short labels where the Portuguese page title
   did not fit ("Access", "Webhooks", "Connect", "Sign-in methods"). List
   filters moved from in-page tab bars to sidebar sub-items: Tables (all,

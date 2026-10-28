@@ -1,4 +1,4 @@
-// Policies page, policy sheet and templates, RLS badge, grants editor and SQL preview.
+// Policies page, policy sheet, RLS badge, grants editor and SQL preview.
 const ptBR = {
   title: 'Políticas de acesso',
   search: 'Buscar tabela',
@@ -109,43 +109,6 @@ const ptBR = {
       anon: 'sem login',
       authenticated: 'logados',
       service_role: 'backend',
-    },
-  },
-  templates: {
-    publicRead: {
-      label: 'Leitura pública',
-      description: 'Qualquer um lê todas as linhas, logado ou não.',
-      name: 'leitura pública',
-    },
-    signedInRead: {
-      label: 'Usuários logados leem',
-      description: 'Só quem está logado lê; anônimos não.',
-      name: 'logados leem',
-    },
-    ownerSelect: {
-      label: 'Dono lê as próprias linhas',
-      description: 'Cada usuário vê só as linhas em que é o dono.',
-      name: 'dono lê',
-    },
-    ownerInsert: {
-      label: 'Dono cria as próprias linhas',
-      description: 'Só aceita linhas novas em nome de quem está logado.',
-      name: 'dono cria',
-    },
-    ownerUpdate: {
-      label: 'Dono altera as próprias linhas',
-      description: 'Altera só o que é seu, sem passar a linha para outro dono.',
-      name: 'dono altera',
-    },
-    ownerDelete: {
-      label: 'Dono apaga as próprias linhas',
-      description: 'Apaga só o que é seu.',
-      name: 'dono apaga',
-    },
-    ownerAll: {
-      label: 'Dono faz tudo nas próprias linhas',
-      description: 'Lê, cria, altera e apaga só o que é seu (uma regra para tudo).',
-      name: 'dono faz tudo',
     },
   },
   rls: {

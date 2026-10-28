@@ -6,10 +6,6 @@ export type Incident = { key: string; project: string | null; kind: typeof alert
 export type AlertChannel = { channel: 'email' | 'webhook'; last_success_at: number | null; last_error: string | null; next_attempt_at: number | null }
 export type AlertStatus = { settings: AlertSettings; recipients: string[]; projects: string[]; webhook_configured: boolean; heartbeat_configured: boolean; webhook_host: string | null; heartbeat_host: string | null; last_scan_at: number | null; heartbeat_accepted_at: number | null; heartbeat_error: string | null; monitor_error: string | null; maintenance: boolean; incidents: Incident[]; channels: AlertChannel[] }
 function invalid(): never { throw new ControllerError(502, 'invalid_response') }
-export function parseAlertSettings(v: unknown): AlertSettings {
-  if (contracts.HostAlertSettings(v) === false) return invalid()
-  return v as AlertSettings
-}
 // The wire shapes come from the Rust contracts (D83); these rules span several values.
 export function parseAlertStatus(v: unknown): AlertStatus {
   if (contracts.HostAlertStatus(v) === false) return invalid()
