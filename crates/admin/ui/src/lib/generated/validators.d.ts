@@ -26,6 +26,7 @@ export function WebhookDeliveries(value: unknown): boolean;
 export function WebhookDetail(value: unknown): boolean;
 export function WebhookReplay(value: unknown): boolean;
 export function WebhookCleared(value: unknown): boolean;
+export function AvatarEditor(value: unknown): boolean;
 export function HostAlertStatus(value: unknown): boolean;
 export function HostAlertSettings(value: unknown): boolean;
 export function HostDiagnostics(value: unknown): boolean;

@@ -12,6 +12,11 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Added
 
+- The profile photo editor supports drag-to-frame, touch pinch and keyboard
+  positioning, zoom, quarter-turn rotation and live avatar previews. A bounded,
+  metadata-free source and its framing are saved privately for later editing
+  across browsers; removing the avatar deletes its source. Internal migration
+  V17 preserves existing photos and adds private editor storage.
 - `nelcota update` discovers a stable release, previews the CLI/project versions,
   asks once, preserves the previous CLI and runs the existing backup-backed
   project upgrades. `install.sh --update` provides the same flow for older CLIs;

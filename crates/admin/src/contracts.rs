@@ -120,6 +120,22 @@ dto!(SignInProviders {
 });
 dto!(SignIn { signup_enabled: bool, email: bool, email_confirmation: bool, password_recovery: bool, magic_link: bool, providers: SignInProviders, redirect_urls: Vec<String>, callback_url: Option<String>, access_ttl_secs: u64, refresh_ttl_days: u32, rate_limit_per_minute: u32 });
 dto!(TypesResponse { base: Vec<String>, enums: Vec<String> });
+#[derive(Clone, Serialize, Deserialize, JsonSchema, TS)]
+#[serde(deny_unknown_fields)]
+pub struct AvatarCrop {
+    #[schemars(range(min = 0, max = 1))]
+    pub x: f64,
+    #[schemars(range(min = 0, max = 1))]
+    pub y: f64,
+    #[schemars(range(min = 1, max = 4))]
+    pub zoom: f64,
+    #[schemars(range(min = 0, max = 270))]
+    pub rotation: u16,
+}
+dto!(AvatarEditor {
+    source: String,
+    crop: AvatarCrop
+});
 dto!(WebhookEndpoint { id: String, name: String, schema: String, table: String, table_available: bool, url: String, events: Vec<String>, enabled: bool, max_attempts: i32, created_at: String });
 dto!(WebhookEndpoints { endpoints: Vec<WebhookEndpoint>, tables: Vec<String>, allow_loopback: bool, outstanding: i64, retained: i64 });
 dto!(WebhookSecret {
@@ -231,6 +247,8 @@ pub fn exports() -> (String, String) {
         SignInProviders,
         SignIn,
         TypesResponse,
+        AvatarCrop,
+        AvatarEditor,
         WebhookEndpoint,
         WebhookEndpoints,
         WebhookSecret,

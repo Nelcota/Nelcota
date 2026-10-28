@@ -407,6 +407,99 @@
     "title": "ApiRole",
     "type": "string"
   },
+  "AvatarCrop": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "rotation": {
+        "format": "uint16",
+        "maximum": 270,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "x": {
+        "format": "double",
+        "maximum": 1,
+        "minimum": 0,
+        "type": "number"
+      },
+      "y": {
+        "format": "double",
+        "maximum": 1,
+        "minimum": 0,
+        "type": "number"
+      },
+      "zoom": {
+        "format": "double",
+        "maximum": 4,
+        "minimum": 1,
+        "type": "number"
+      }
+    },
+    "required": [
+      "x",
+      "y",
+      "zoom",
+      "rotation"
+    ],
+    "title": "AvatarCrop",
+    "type": "object"
+  },
+  "AvatarEditor": {
+    "$defs": {
+      "AvatarCrop": {
+        "additionalProperties": false,
+        "properties": {
+          "rotation": {
+            "format": "uint16",
+            "maximum": 270,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "x": {
+            "format": "double",
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "y": {
+            "format": "double",
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "zoom": {
+            "format": "double",
+            "maximum": 4,
+            "minimum": 1,
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "zoom",
+          "rotation"
+        ],
+        "type": "object"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+      "crop": {
+        "$ref": "#/$defs/AvatarCrop"
+      },
+      "source": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "source",
+      "crop"
+    ],
+    "title": "AvatarEditor",
+    "type": "object"
+  },
   "Bucket": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "properties": {

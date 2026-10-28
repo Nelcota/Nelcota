@@ -37,6 +37,7 @@ function contractName(method: string, path: string): ContractName | undefined {
       '/policies': 'PoliciesData', '/projects': 'ProjectsData', '/projects/status': 'ProjectsStatusData', '/migrations': 'MigrationsData',
       '/storage': 'StorageOverview', '/types': 'TypesResponse', '/sign-in': 'SignIn', '/denied': 'DeniedRequests', '/metrics': 'MetricsResponse',
       '/webhooks': 'WebhookEndpoints', '/webhooks/deliveries': 'WebhookDeliveries',
+      '/profile/avatar/editor': 'AvatarEditor',
     }
     if (Object.hasOwn(exact, route)) return exact[route]
     if (/^\/tables\/[^/]+\/structure$/.test(route)) return 'Structure'

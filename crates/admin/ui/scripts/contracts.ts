@@ -8,7 +8,7 @@ const refs: Record<string, string> = {}
 const names = ['Overview', 'TablesResponse', 'SchemaResponse', 'UsersResponse', 'PoliciesData', 'ProjectsData',
   'ProjectsStatusData', 'MigrationsData', 'StorageOverview', 'TypesResponse', 'Structure', 'TableData', 'StorageListing',
   'SqlResponse', 'ExportedMigration', 'DdlResult', 'StorageAccess', 'DeniedRequests', 'SignIn', 'MetricsResponse',
-  'WebhookEndpoints', 'WebhookEndpoint', 'WebhookSecret', 'WebhookDeliveries', 'WebhookDetail', 'WebhookReplay', 'WebhookCleared',
+  'WebhookEndpoints', 'WebhookEndpoint', 'WebhookSecret', 'WebhookDeliveries', 'WebhookDetail', 'WebhookReplay', 'WebhookCleared', 'AvatarEditor',
   // Controller responses (nelcota-deployment), schema only.
   'HostAlertStatus', 'HostAlertSettings', 'HostDiagnostics', 'HostConfigurationView', 'HostStatus', 'HostPlan', 'HostJob', 'HostOperation',
   'HostLogEntry', 'UpdateStatus', 'UpdatePlan', 'UpdateJob']
