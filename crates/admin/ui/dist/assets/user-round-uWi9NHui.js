@@ -1,1 +1,0 @@
-import{O as e,b as t,k as n}from"./router.svelte-Bi_072VH.js";var r={name:`user-round`,size:24,node:[[`circle`,{cx:`12`,cy:`8`,r:`5`}],[`path`,{d:`M20 21a8 8 0 0 0-16 0`}]],aliases:[`user-2`]};r.node;var i=new Set([`$$slots`,`$$events`,`$$legacy`]);function a(a,o){let s=e(o,i);t(a,n(()=>s,{get icon(){return r}}))}export{a as t};
