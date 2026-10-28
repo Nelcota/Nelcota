@@ -1,7 +1,7 @@
 /** Auth inputs and lifecycle options; no HTTP, storage effects or timers. */
 import type { Session, SessionStorage } from './session.js';
 
-export type AuthEvent = 'signed_in' | 'signed_out' | 'refreshed' | 'user_updated';
+export type AuthEvent = 'initial_session' | 'signed_in' | 'signed_out' | 'refreshed' | 'user_updated';
 export type AuthListener = (event: AuthEvent, session: Session | null) => void;
 export interface AuthOptions {
   /** Default: native localStorage with an IndexedDB coordination journal in browsers, memory elsewhere. */

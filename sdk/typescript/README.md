@@ -209,7 +209,7 @@ await nelcota.auth.updateUser({ data: { plan: 'pro' } });     // merged into use
 await nelcota.auth.updateUser({ password: next, currentPassword: password }); // ends the other sessions
 
 const stop = nelcota.auth.onChange((event, session) => {
-  // 'signed_in' | 'signed_out' | 'refreshed' | 'user_updated', also from other tabs
+  // 'initial_session' | 'signed_in' | 'signed_out' | 'refreshed' | 'user_updated'
 });
 ```
 
@@ -223,6 +223,14 @@ Browser storage can be read by any script on the page, so the usual XSS
 hygiene applies (a Content Security Policy, no untrusted HTML). The session
 holds a short-lived access token (15 minutes by default) and a refresh
 token that rotates on every use.
+
+Each `onChange` subscription asynchronously receives `initial_session` once,
+after storage is read, with the stored session or `null`. It precedes later
+sign-in, refresh and user-update events for that subscription. It is a baseline,
+so apps can distinguish restoration from a later identity change. Unsubscribing
+or disposing cancels a pending baseline. Listener promises do not block auth.
+Storage-read failures go to `onBackgroundError`; resubscribe after repairing
+storage to obtain a new baseline.
 
 **Refresh.** The access token is refreshed in the background before it
 expires, and again right before a request when needed.

@@ -5,6 +5,11 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## Unreleased
 
+### Added
+
+- Auth listeners receive one asynchronous `initial_session` baseline per subscription,
+  ordered before subsequent sign-in, refresh and user-update events.
+
 ### Fixed
 
 - Refuse `service_role` tokens in Web Workers and Service Workers as well as pages.
