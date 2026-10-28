@@ -126,8 +126,19 @@ are refused before querying the database. Return to the first page to continue.
 | service_role token | **Connect** page, expandable token section after the examples: issues a token with the chosen validity; shown once and never stored |
 | Create a user / reset a password | **Users** page: "New user" and "Reset password…" in each user's menu, with a password generator. Same rules as public signup. Accounts created here count as confirmed and the panel sends no invitations; end users can recover their own password by email when the project has SMTP configured ([schema-auth.md](schema-auth.md#password-recovery)) |
 | Generate migration | **Migrations** page: schema changes made in the panel (tables, columns, policies) that are not in any file yet, and the project's migrations (applied or only in the folder). "Generate migration" downloads `V<n>__<name>.sql` and registers it as applied in this database; the file goes into `migrations/` (see [deploy](deploy.md#changes-made-in-the-panel)) |
-| Profile photo | account menu, at the top right: "Add photo…". The image is center-cropped and scaled to 256px in the browser; the server accepts PNG, JPEG or WebP up to 256 KB. It lives in the project's database (`nelcota.admin_avatar`, out of reach of the API roles), so it works in any browser, but it is per project |
+| Profile photo | account menu, at the top right: "Add photo…" or "Change photo…". Drag to frame, zoom, rotate by 90°, and check the live previews before saving. The final avatar remains 256px and at most 256 KB. A metadata-free source (up to 2048px and 1 MB) and its framing are saved privately in the project database so editing works across browsers. Removing the photo also deletes its retained source |
 | Dates in the grid | `timestamptz` shows in the viewer's time zone and language; `timestamp` and `date` as stored. The exact value is in the tooltip, in edit mode and in exports |
+
+The avatar editor accepts PNG, JPEG, WebP, GIF and AVIF files up to 20 MB,
+subject to browser decoding support and a 40-megapixel decoded-image limit.
+Use the arrow keys on the framing area to move the photo (Shift for larger
+steps), Enter to centre it, and the Zoom slider or a two-finger pinch to zoom.
+Cancel keeps the saved photo unchanged; a failed save keeps the draft for retry.
+Photos saved before the editor can be adjusted from their existing crop; choose
+the original file again to recover image areas that were previously discarded.
+Sources are stored in `nelcota.admin_avatar`, outside the API roles, and
+are served only to a signed-in panel administrator with `Cache-Control: no-store`.
+Internal migration V18 adds nullable editor fields without changing existing avatars.
 
 When there are no tables, the editor shows a single workspace with a table
 count, a guide link and one primary creation action. The

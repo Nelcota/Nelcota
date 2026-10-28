@@ -517,7 +517,7 @@ class UpgradeScenario:
                 "attidentity": "", "attgenerated": "s",
                 "default_value": "storage.directory_hash(bucket_id, storage.directory_key(name))",
             }
-            added_columns = [c for c in after["columns"] if c not in baseline.schema["columns"]]
+            added_columns = [c for c in after["columns"] if c not in baseline.schema["columns"] and c["attrelid"] == table_oids["storage.objects"]]
             assert added_columns == [expected_column, expected_scope], "Unexpected column addition or generated expression"
             assert int(self.sql("SELECT count(*) FROM storage.objects WHERE directory_key IS DISTINCT FROM storage.directory_key(name);")) == 0
             assert int(self.sql("SELECT count(*) FROM storage.objects WHERE directory_scope IS DISTINCT FROM storage.directory_hash(bucket_id, directory_key);")) == 0
@@ -528,6 +528,34 @@ class UpgradeScenario:
             # still compared byte-for-byte in Postgres' canonical JSON format.
             after["tables"]["storage.objects"] = self.query(
                 "SELECT coalesce(jsonb_agg((to_jsonb(t)-'directory_key'-'directory_scope')::text ORDER BY (to_jsonb(t)-'directory_key'-'directory_scope')::text),'[]'::jsonb) FROM storage.objects t;"
+            )
+        if 18 in self.expected_migrations:
+            avatar_oid = table_oids["nelcota.admin_avatar"]
+            fields = {
+                "source_content_type": "text", "source_image": "bytea", "source_digest": "bytea",
+                "source_updated_at": "timestamp with time zone", "source_crop_x": "double precision",
+                "source_crop_y": "double precision", "source_zoom": "double precision", "source_rotation": "smallint",
+            }
+            originals = [c for c in baseline.schema["columns"] if c["attrelid"] == avatar_oid]
+            last = max(c["attnum"] for c in originals)
+            expected = [{
+                "attrelid": avatar_oid, "attnum": last + index, "attname": name, "type": kind,
+                "attnotnull": False, "attidentity": "", "attgenerated": "", "default_value": None,
+            } for index, (name, kind) in enumerate(fields.items(), 1)]
+            added = [c for c in after["columns"] if c not in baseline.schema["columns"]]
+            assert sorted(added, key=lambda c: c["attnum"]) == expected, "Unexpected avatar source columns"
+            for column in expected:
+                after["columns"].remove(column)
+            constraints = [c for c in after["constraints"] if c not in baseline.schema["constraints"]]
+            assert len(constraints) == 1 and constraints[0]["conrelid"] == avatar_oid
+            assert constraints[0]["conname"] == "admin_avatar_source_valid"
+            assert all(name in constraints[0]["definition"] for name in fields)
+            after["constraints"].remove(constraints[0])
+            for row in after["tables"]["nelcota.admin_avatar"]:
+                assert all(json.loads(row)[name] is None for name in fields), "Existing photos acquired unexpected editor state"
+            projection = "to_jsonb(t) - ARRAY[" + ",".join(quote(name) for name in fields) + "]"
+            after["tables"]["nelcota.admin_avatar"] = self.query(
+                f"SELECT coalesce(jsonb_agg(({projection})::text ORDER BY ({projection})::text),'[]'::jsonb) FROM nelcota.admin_avatar t;"
             )
         added_indexes = [i for i in after["indexes"] if i not in baseline.schema["indexes"]]
         assert sorted(added_indexes, key=lambda i: i["definition"]) == sorted(expected_indexes, key=lambda i: i["definition"]), "Unexpected index addition or missing performance index"

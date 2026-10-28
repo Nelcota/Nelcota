@@ -12,6 +12,11 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Added
 
+- The profile photo editor supports drag-to-frame, touch pinch and keyboard
+  positioning, zoom, quarter-turn rotation and live avatar previews. A bounded,
+  metadata-free source and its framing are saved privately for later editing
+  across browsers; removing the avatar deletes its source. Internal migration
+  V18 preserves existing photos and adds private editor fields.
 - Automatic pre-migration backups through a project-scoped host agent, with
   database/disk-file verification, configured external readback, production
   enforcement, and a durable host fence across cancellation and agent recovery.

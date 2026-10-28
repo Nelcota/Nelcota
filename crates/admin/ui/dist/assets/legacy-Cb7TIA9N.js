@@ -1,0 +1,1 @@
+import{sn as e}from"./router.svelte-p2k2zbu5.js";e();

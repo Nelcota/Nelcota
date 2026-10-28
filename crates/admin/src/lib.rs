@@ -162,6 +162,7 @@ pub fn router(state: AdminState) -> Router {
             post(storage::delete_many),
         )
         .route("/admin/api/profile", get(profile::get))
+        .route("/admin/api/profile/avatar/editor", get(profile::editor))
         .route(
             "/admin/api/profile/avatar",
             get(profile::image)

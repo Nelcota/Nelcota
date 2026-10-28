@@ -114,7 +114,9 @@ all instances of the project. Upgrading from 0.4.0 applies V14, V15 and V16;
 keep a tested paired database/file backup and allow a maintenance window for
 the metadata rewrite. V16 is outside the standalone auth migration selection. V17 adds opaque scoped
 deployment-token digests and application-migration audit records, also outside
-the standalone auth selection. Application migration execution lives in core;
+the standalone auth selection. V18 adds private avatar source/framing columns
+without changing existing photos and is also outside the standalone auth scope.
+Application migration execution lives in core;
 CLI and deployment HTTP share checksums, version validation and per-file
 transaction locks. A project-scoped Unix backup agent retains host backup
 authority; pending production migrations require its verified pre-application
