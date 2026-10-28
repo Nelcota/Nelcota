@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import secrets
 import shutil
+import shlex
 import signal
 import socket
 import subprocess
@@ -121,8 +122,10 @@ def state_values(root):
     values = {}
     for line in (root / ".nelcota/dev.env").read_text().splitlines():
         key, separator, value = line.partition("=")
-        if separator:
-            values[key] = value
+        if separator and not key.strip().startswith("#"):
+            parts = shlex.split(value)
+            require(len(parts) <= 1, "Malformed development environment value")
+            values[key.strip()] = parts[0] if parts else ""
     return values
 
 
@@ -150,7 +153,8 @@ class Quickstart:
         self.db_port = free_port()
         while self.db_port == self.api_port:
             self.db_port = free_port()
-        self.container = f"nelcota-dev-postgres-{self.db_port}"
+        folder_hash = hashlib.sha256(os.fsencode(self.root.resolve())).hexdigest()[:24]
+        self.container = f"nelcota-dev-postgres-{folder_hash}-{self.db_port}"
         self.volume = self.container + "-data"
         self.run_id = secrets.token_hex(16)
         self.api = Api(f"http://127.0.0.1:{self.api_port}")

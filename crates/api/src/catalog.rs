@@ -10,7 +10,10 @@ mod model;
 mod refresh;
 
 pub use listener::{ReloadListener, spawn_reload_listener};
-pub use model::{Argument, Catalog, Column, ForeignKey, Function, Privileges, Table, TableKind};
+pub use model::{
+    Argument, Catalog, Column, ForeignKey, Function, NamedType, Privileges, Table, TableKind,
+    TypeField,
+};
 pub use refresh::CatalogHandle;
 
 /// PostgreSQL notification channel for schema changes.

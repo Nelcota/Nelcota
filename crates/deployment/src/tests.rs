@@ -588,3 +588,19 @@ fn active_jobs_remain_visible_when_wall_clock_moves_backwards() {
     assert_eq!(first.public.id, active.public.id);
     assert!(!first.public.phase.terminal());
 }
+
+#[test]
+fn interrupted_migration_backup_fences_all_host_mutations_until_recovery() {
+    let temp = tempfile::tempdir().unwrap();
+    std::fs::write(
+        temp.path().join(".migration-backup-active"),
+        b"durable fence",
+    )
+    .unwrap();
+    assert!(crate::HostLock::acquire(temp.path()).is_err());
+    let recovery = crate::HostLock::acquire_migration_recovery(temp.path()).unwrap();
+    assert!(crate::HostLock::acquire_migration_recovery(temp.path()).is_err());
+    std::fs::remove_file(temp.path().join(".migration-backup-active")).unwrap();
+    drop(recovery);
+    assert!(crate::HostLock::acquire(temp.path()).is_ok());
+}

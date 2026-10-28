@@ -38,21 +38,47 @@ mkdir notes-app && cd notes-app
 nelcota dev
 ```
 
-The command starts PostgreSQL 17 in `nelcota-dev-postgres-54322`, stores data
+The command starts PostgreSQL 17 in `nelcota-dev-postgres-<folder-hash>-54322`, stores data
 in a Docker volume, applies internal migrations and serves the API in the
-foreground. The API is at `http://127.0.0.1:8000`, and the panel is at `/admin/`.
+foreground. Application files in `migrations/` are applied on startup and watched
+for changes. The API is at `http://127.0.0.1:8000`, and the panel is at `/admin/`.
 Its account is `admin@localhost`; read `ADMIN_PASSWORD` locally from
 `.nelcota/dev.env`. Do not share that file.
 
 Generated database passwords, signing keys and panel credentials persist in
-that owner-readable, Git-ignored file. Repeating `dev` reuses them. Use
+that owner-readable, Git-ignored file. Repeating `dev` reuses them.
+The file can also be sourced by Bash or Zsh for local SQL tests:
+
+```sh
+set -a
+. .nelcota/dev.env
+set +a
+# DATABASE_URL includes the URL-encoded database password.
+psql "$DATABASE_URL"
+```
+
+Use
 `--listen 127.0.0.1:9000` or `--db-port 54323` for free ports; changing the database
 port selects another container/volume, rather than moving data. Ctrl+C stops
 the API; the database container and its data remain until you stop/remove them.
+Container and volume names use the canonical project folder and database port.
+The CLI prints that pairing and refuses a port already owned by another project.
+Legacy containers named only after a port are preserved; use a free `--db-port`
+for a new isolated database, or dump and restore the legacy data explicitly.
 
 `dev` enables disk storage and leaves SMTP/email confirmation off. Signup
 therefore returns a session immediately. It uses generated settings, not your
 application's `.env` overrides.
+
+To exercise signup confirmation, resend, recovery and magic links locally, run
+`nelcota dev --mail`. It starts project-owned Mailpit, prints its loopback inbox
+URL, and uses verified STARTTLS with a private certificate in `.nelcota/mail/`.
+Docker and OpenSSL are required. The default application callback is
+`http://localhost:3000/auth/callback`; set `--mail-callback` to your app's link
+handler, which consumes the fragment with `auth.verifyEmailLink`. Signup returns
+`session: null` until confirmed, and early password sign-in returns
+`email_not_confirmed`. Mailpit remains available after stopping the API; remove
+its printed project container when finished. Captured links are credentials.
 
 ## 3. Write a migration
 

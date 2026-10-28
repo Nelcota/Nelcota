@@ -382,6 +382,7 @@ mod tests {
             schema: "public".into(),
             tables: BTreeMap::from([("notes".into(), table)]),
             functions: BTreeMap::from([("add".into(), vec![function])]),
+            named_types: Default::default(),
         };
         let code = generate(&catalog);
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
