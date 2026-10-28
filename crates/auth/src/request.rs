@@ -21,7 +21,7 @@ impl<S: Send + Sync> FromRequestParts<S> for PeerAddr {
 }
 
 /// Client IP. Behind a proxy (`trust_proxy`), uses the rightmost entry of
-/// `X-Forwarded-For` (the one OUR proxy added).
+/// `X-Forwarded-For`, including repeated header lines (the one OUR proxy added).
 pub fn client_ip(
     trust_proxy: bool,
     headers: &HeaderMap,
@@ -29,7 +29,9 @@ pub fn client_ip(
 ) -> Option<IpAddr> {
     if trust_proxy {
         let forwarded = headers
-            .get("x-forwarded-for")
+            .get_all("x-forwarded-for")
+            .iter()
+            .next_back()
             .and_then(|v| v.to_str().ok())
             .and_then(|v| v.rsplit(',').next())
             .and_then(|v| v.trim().parse().ok());
@@ -77,6 +79,27 @@ mod tests {
         assert_eq!(
             client_ip(settings.trust_proxy, &headers, peer),
             Some("2.2.2.2".parse().unwrap())
+        );
+    }
+
+    #[test]
+    fn repeated_forwarded_headers_use_only_the_last_address_of_the_last_line() {
+        let mut headers = HeaderMap::new();
+        headers.append("x-forwarded-for", "1.1.1.1".parse().unwrap());
+        headers.append("x-forwarded-for", "2.2.2.2, 3.3.3.3".parse().unwrap());
+        let peer = Some("9.9.9.9:1234".parse().unwrap());
+        assert_eq!(
+            client_ip(true, &headers, peer),
+            Some("3.3.3.3".parse().unwrap())
+        );
+        headers.append("x-forwarded-for", "invalid".parse().unwrap());
+        assert_eq!(
+            client_ip(true, &headers, peer),
+            Some("9.9.9.9".parse().unwrap())
+        );
+        assert_eq!(
+            client_ip(false, &headers, peer),
+            Some("9.9.9.9".parse().unwrap())
         );
     }
 }
