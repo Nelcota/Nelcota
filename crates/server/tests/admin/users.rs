@@ -21,6 +21,7 @@ async fn users_and_sessions() {
     let users = get(&app, "/admin/api/users?q=panel", &cookie).await;
     assert_eq!(users.body["users"][0]["email"], "panel@example.com");
     assert_eq!(users.body["users"][0]["sessions"], 1);
+    assert_eq!(users.body["total"], 1);
     assert!(
         !users.text.contains("argon2id"),
         "the hash never leaves the database"
