@@ -68,6 +68,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- Local PostgreSQL containers and volumes belong to a canonical project folder,
+  with ownership checks and an actionable error when another project owns the port.
+
 - Development environment values are shell-quoted, include a URL-encoded
   `DATABASE_URL`, and preserve unreadable state instead of replacing credentials.
 

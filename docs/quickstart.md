@@ -38,7 +38,7 @@ mkdir notes-app && cd notes-app
 nelcota dev
 ```
 
-The command starts PostgreSQL 17 in `nelcota-dev-postgres-54322`, stores data
+The command starts PostgreSQL 17 in `nelcota-dev-postgres-<folder-hash>-54322`, stores data
 in a Docker volume, applies internal migrations and serves the API in the
 foreground. The API is at `http://127.0.0.1:8000`, and the panel is at `/admin/`.
 Its account is `admin@localhost`; read `ADMIN_PASSWORD` locally from
@@ -60,6 +60,10 @@ Use
 `--listen 127.0.0.1:9000` or `--db-port 54323` for free ports; changing the database
 port selects another container/volume, rather than moving data. Ctrl+C stops
 the API; the database container and its data remain until you stop/remove them.
+Container and volume names use the canonical project folder and database port.
+The CLI prints that pairing and refuses a port already owned by another project.
+Legacy containers named only after a port are preserved; use a free `--db-port`
+for a new isolated database, or dump and restore the legacy data explicitly.
 
 `dev` enables disk storage and leaves SMTP/email confirmation off. Signup
 therefore returns a session immediately. It uses generated settings, not your

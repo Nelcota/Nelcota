@@ -12,6 +12,7 @@ use nelcota_core::{
     Config, Secret,
     config::{LogFormat, StorageBackend},
 };
+use sha2::{Digest, Sha256};
 use tokio_postgres::NoTls;
 
 use std::path::Path;
@@ -141,7 +142,7 @@ fn prepare_state(root: &Path, db_port: Option<u16>) -> anyhow::Result<DevState> 
             if let Some(port) = db_port.filter(|port| *port != state.db_port) {
                 util::warn(&format!(
                     "development Postgres moves from port {} to {port}: a new container \
-                     (nelcota-dev-postgres-{port}) with its own data; the old one is left as is",
+                     with its own data; the old container is left as is",
                     state.db_port
                 ));
                 state.db_port = port;
@@ -168,19 +169,98 @@ fn prepare_state(root: &Path, db_port: Option<u16>) -> anyhow::Result<DevState> 
     }
 }
 
+const PROJECT_LABEL: &str = "com.nelcota.dev.project";
+
+fn postgres_container(root: &Path, port: u16) -> anyhow::Result<String> {
+    let root = root
+        .canonicalize()
+        .context("could not resolve the project folder")?;
+    let digest = Sha256::digest(root.as_os_str().as_encoded_bytes());
+    Ok(format!(
+        "nelcota-dev-postgres-{}-{port}",
+        base16ct::lower::encode_string(&digest[..12])
+    ))
+}
+
+fn inspect_container(name: &str) -> anyhow::Result<Option<serde_json::Value>> {
+    let output = Command::new("docker")
+        .args(["container", "inspect", name])
+        .output()
+        .context("Docker not found")?;
+    if !output.status.success() {
+        let reachable = Command::new("docker").arg("info").output()?;
+        if !reachable.status.success() {
+            bail!("cannot reach Docker");
+        }
+        return Ok(None);
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_slice(&output.stdout)?;
+    Ok(rows.into_iter().next())
+}
+
+fn check_owner(container: &str, info: &serde_json::Value, root: &Path) -> anyhow::Result<()> {
+    let owner = info["Config"]["Labels"][PROJECT_LABEL]
+        .as_str()
+        .unwrap_or("unknown (legacy container)");
+    if owner != root.to_string_lossy() {
+        bail!(
+            "container {container} belongs to {owner}; this project is {}. Use --db-port with a free port; existing data has been preserved",
+            root.display()
+        );
+    }
+    Ok(())
+}
+
 pub fn run(root: &Path, args: DevArgs) -> anyhow::Result<Outcome> {
     let state = prepare_state(root, args.db_port)?;
 
-    let container = format!("nelcota-dev-postgres-{}", state.db_port);
+    let root = &root
+        .canonicalize()
+        .context("could not resolve the project folder")?;
+    let container = postgres_container(root, state.db_port)?;
+    println!("  Project:  {}", root.display());
+    println!("  Database: {container} (127.0.0.1:{})", state.db_port);
     step(&format!("Development Postgres ({container})"));
-    let running = Command::new("docker")
-        .args(["inspect", "-f", "{{.State.Running}}", &container])
-        .output()
-        .context("Docker not found")?;
-    match !running.status.success() {
-        true => {
+    match inspect_container(&container)? {
+        Some(info) => {
+            check_owner(&container, &info, root)?;
+            if info["State"]["Running"].as_bool() != Some(true) {
+                let status = Command::new("docker")
+                    .args(["start", &container])
+                    .status()?;
+                if !status.success() {
+                    bail!("could not start {container}");
+                }
+            }
+            ok("reusing this project's development database");
+        }
+        None => {
+            let conflicts = Command::new("docker")
+                .args([
+                    "ps",
+                    "--filter",
+                    &format!("publish={}", state.db_port),
+                    "--format",
+                    "{{.Names}}",
+                ])
+                .output()?;
+            if !conflicts.status.success() {
+                bail!("could not check development database ports");
+            }
+            if let Some(other) = String::from_utf8_lossy(&conflicts.stdout).lines().next() {
+                let info = inspect_container(other)?.unwrap_or_default();
+                let owner = info["Config"]["Labels"][PROJECT_LABEL]
+                    .as_str()
+                    .unwrap_or("unknown (legacy container)");
+                bail!(
+                    "database port {} is used by container {other}, created for {owner}. Use --db-port with a free port; existing data has been preserved",
+                    state.db_port
+                );
+            }
             let status = Command::new("docker")
-                .args(["run", "-d", "--name", &container, "-e"])
+                .args(["run", "-d", "--name", &container, "--label"])
+                .arg(format!("{PROJECT_LABEL}={}", root.display()))
+                .arg("-e")
                 .arg(format!("POSTGRES_PASSWORD={}", state.postgres_password))
                 .arg("-p")
                 .arg(format!("127.0.0.1:{}:5432", state.db_port))
@@ -194,14 +274,10 @@ pub fn run(root: &Path, args: DevArgs) -> anyhow::Result<Outcome> {
                 ])
                 .status()?;
             if !status.success() {
-                bail!("could not create the {container} container");
-            }
-        }
-        false => {
-            if String::from_utf8_lossy(&running.stdout).trim() != "true" {
-                Command::new("docker")
-                    .args(["start", &container])
-                    .status()?;
+                bail!(
+                    "could not create {container}; check whether port {} is available",
+                    state.db_port
+                );
             }
         }
     }
@@ -320,6 +396,28 @@ mod tests {
         assert_eq!(url::Url::parse(&url).unwrap().host_str(), Some("127.0.0.1"));
         let loaded = load_state(root.path()).unwrap().unwrap();
         assert_eq!(loaded.postgres_password, state.postgres_password);
+    }
+
+    #[test]
+    fn database_identity_belongs_to_the_canonical_project_and_port() {
+        let first = tempfile::tempdir().unwrap();
+        let second = tempfile::tempdir().unwrap();
+        let name = postgres_container(first.path(), DEFAULT_DB_PORT).unwrap();
+        assert_ne!(
+            name,
+            postgres_container(second.path(), DEFAULT_DB_PORT).unwrap()
+        );
+        assert_ne!(name, postgres_container(first.path(), 55000).unwrap());
+        let info = serde_json::json!({"Config": {"Labels": {PROJECT_LABEL: first.path().to_str().unwrap()}}});
+        assert!(check_owner(&name, &info, first.path()).is_ok());
+        assert!(check_owner(&name, &info, second.path()).is_err());
+        assert!(check_owner(&name, &serde_json::json!({}), first.path()).is_err());
+        #[cfg(unix)]
+        {
+            let link = second.path().join("alias");
+            std::os::unix::fs::symlink(first.path(), &link).unwrap();
+            assert_eq!(name, postgres_container(&link, DEFAULT_DB_PORT).unwrap());
+        }
     }
 
     #[test]
