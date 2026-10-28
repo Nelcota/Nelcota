@@ -51,7 +51,9 @@ let lastChecked: string | undefined;
  * opens the page could read and change every row. It belongs on a server.
  */
 export function assertTokenAllowed(token: string, browser: boolean = isBrowser()): void {
-  if (!browser || token === lastChecked) return;
+  const scope = globalThis as typeof globalThis & { WorkerGlobalScope?: new (...args: never[]) => object };
+  const worker = typeof scope.WorkerGlobalScope === 'function' && globalThis instanceof scope.WorkerGlobalScope;
+  if ((!browser && !worker) || token === lastChecked) return;
   if (decodeJwt(token)?.role === 'service_role') {
     throw new NelcotaUsageError(
       'A service_role token bypasses RLS and must never reach a browser. Use it only on a server.',

@@ -209,9 +209,14 @@ export class HttpClient {
 
     let token: string | null = typeof spec.auth === 'string' ? spec.auth : null;
     if (spec.auth !== false && typeof spec.auth !== 'string') {
-      const result = await abortable(Promise.resolve(this.#options.token()), spec.signal);
-      if (result.error) return { data: null, response: null, error: result.error };
-      token = result.data;
+      try {
+        const result = await abortable(Promise.resolve(this.#options.token()), spec.signal);
+        if (result.error) return { data: null, response: null, error: result.error };
+        token = result.data;
+      } catch (error) {
+        if (error instanceof NelcotaError) return { data: null, response: null, error };
+        throw error;
+      }
     }
     if (spec.signal?.aborted) {
       return { data: null, response: null, error: clientError('aborted', 'The request was aborted') };

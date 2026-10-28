@@ -7,6 +7,9 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Fixed
 
+- Refuse `service_role` tokens in Web Workers and Service Workers as well as pages.
+- Preserve transient refresh errors for data requests instead of sending an expired
+  access token and replacing the original failure with a later authorization error.
 - `ServerErrorCode` no longer lists `invalid_credentials` and
   `bad_verification_code`, which the server never sends. A wrong email or
   password is `invalid_grant`, now documented on `signInWithPassword`. Code

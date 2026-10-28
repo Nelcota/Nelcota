@@ -1,8 +1,28 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { memoryStorage } from '../../src/index.js';
+import { createClient, memoryStorage } from '../../src/index.js';
 import { createAuthClient } from '../../src/auth/index.js';
-import { empty, json, mockFetch, session } from './helpers.js';
+import { empty, json, jwt, mockFetch, session } from './helpers.js';
+import { assertTokenAllowed } from '../../src/core/jwt.js';
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+
+it('preserves a transient refresh failure without sending an expired access token', async () => {
+  const mock = mockFetch(json({ code: 'unavailable', message: 'Refresh temporarily unavailable' }, 503));
+  const client = createClient('https://api.example.com', { fetch: mock.fetch, retries: 0, auth: { autoRefresh: false } });
+  try {
+    await client.auth.setSession(session(-60));
+    const result = await client.from('notes').select();
+    expect(result.error).toMatchObject({ status: 503, code: 'unavailable', message: 'Refresh temporarily unavailable' });
+    expect(mock.calls.map(call => call.url.pathname)).toEqual(['/auth/v1/token']);
+  } finally { client.dispose(); }
+});
+
+it.each(['WebWorker', 'ServiceWorker'])('refuses service_role inside a %s', () => {
+  vi.stubGlobal('window', undefined);
+  vi.stubGlobal('document', undefined);
+  vi.stubGlobal('WorkerGlobalScope', class { static [Symbol.hasInstance](value: unknown) { return value === globalThis; } });
+  expect(() => assertTokenAllowed(jwt({ role: 'service_role' }))).toThrow(/service_role/);
+  expect(() => assertTokenAllowed(jwt({ role: 'authenticated' }))).not.toThrow();
+});
 it.each(['?code=', '?code=%20', '?error='])('returns error for malformed callback %s (#140)', async search => {
   const mock = mockFetch(json({})); const auth = createAuthClient('https://api.example.com', { fetch: mock.fetch, auth: { autoRefresh: false } });
   try { const result = await auth.handleRedirect('https://app.example.com/callback' + search); expect(result.data).toBeNull(); expect(result.error?.code).toBeTruthy(); expect(mock.calls).toHaveLength(0); } finally { auth.dispose(); }

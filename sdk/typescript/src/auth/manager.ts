@@ -157,7 +157,8 @@ export class SessionManager {
   }
   async accessToken(): Promise<string | null> {
     const result = await this.get();
-    return result.data?.access_token ?? this.#store.session?.access_token ?? null;
+    if (result.error) throw result.error;
+    return result.data?.access_token ?? null;
   }
   refresh(options: AuthRequestOptions = {}, snapshot?: Session): Promise<Result<Session>> {
     if (options.signal?.aborted) return Promise.resolve(fail(clientError('aborted', 'The request was aborted')));
