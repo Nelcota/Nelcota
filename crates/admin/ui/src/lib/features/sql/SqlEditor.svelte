@@ -152,6 +152,7 @@
   })
 
   async function run() {
+    if (execution.running) return
     const code = runsSelection ? selection : sqlStore.draft
     const offset = runsSelection ? cursor.from : 0
     errorAt = null

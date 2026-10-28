@@ -34,13 +34,16 @@
   }
   const blankRow = (column = columns[0]?.name ?? ''): Row => ({ key: nextKey++, column, op: 'eq', value: '', not: false })
 
-  // Local draft, copied once on open: it only reaches the URL (and the API)
-  // when applied.
-  let rows = $state<Row[]>(
-    untrack(() =>
-      preset ? [...filters.map(toRow), blankRow(preset)] : filters.length ? filters.map(toRow) : [blankRow()],
-    ),
-  )
+  // URL changes (including Back/Forward) replace the local draft.
+  let rows = $state<Row[]>([])
+  $effect(() => {
+    const current = filters
+    const column = preset
+    untrack(() => {
+      rows = column ? [...current.map(toRow), blankRow(column)] : current.length ? current.map(toRow) : [blankRow()]
+      attempted = false
+    })
+  })
 
   const opLabel = (op: UiOp) => {
     const key = UI_OPERATORS.find((o) => o.value === op)?.label

@@ -115,6 +115,7 @@
 
   // `/` jumps to the search unless the person is typing somewhere else.
   function onWindowKey(event: KeyboardEvent) {
+    if (event.defaultPrevented || document.querySelector('[role="dialog"], [role="alertdialog"]')) return
     if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return
     const target = event.target
     if (target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return

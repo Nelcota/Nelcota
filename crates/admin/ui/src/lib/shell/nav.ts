@@ -112,7 +112,11 @@ export const navLabel = (item: NavItem): MessageKey => item.label ?? item.title
 
 /** Resolve child selection without marking the whole group as the current page. */
 export function isNavActive(item: NavItem): boolean {
-  if (item.filter) return cleanPath() === pathOf(item) && (route.query.get('filter') ?? 'all') === item.filter
+  if (item.filter) {
+    const filter = route.query.get('filter')
+    const known = navPills.some(group => group.children?.some(child => child.filter === filter && pathOf(child) === cleanPath()))
+    return cleanPath() === pathOf(item) && (known ? filter : 'all') === item.filter
+  }
   if (item.section) return cleanPath() === '/connect' && apiSectionLocation.current === item.section
   if (item.webhookView) {
     const history = route.path.startsWith('/webhooks/deliveries/') || route.query.get('tab') === 'deliveries'

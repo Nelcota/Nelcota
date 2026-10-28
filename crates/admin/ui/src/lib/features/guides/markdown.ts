@@ -36,7 +36,9 @@ export function readMarkdown(markdown: string, source: string, catalog?: Transla
       return `<a href="${escape(target)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${text}</a>`
     },
     image({ href, text }) {
-      const path = new URL(href, `https://nelcota.local/${source}`)
+      let path: URL
+      try { path = new URL(href, `https://nelcota.local/${source}`) }
+      catch { return escape(text) }
       const asset = path.hostname === 'nelcota.local' ? assets[`../../../../../../../${path.pathname.slice(1)}`] : undefined
       return asset ? `<img src="${escape(asset)}" alt="${escape(text)}" loading="lazy" />` : escape(text)
     },
