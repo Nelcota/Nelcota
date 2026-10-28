@@ -910,6 +910,33 @@ async fn age_links(app: &TestApp) {
 }
 
 #[tokio::test]
+async fn review_link_requests_do_not_wait_for_account_lookup_or_issuance() {
+    let app = spawn_confirming().await;
+    signup(&app, "link-timing@example.com", "strong-password-123").await;
+    app.outbox.wait_for(1).await;
+    app.admin_client
+        .batch_execute("BEGIN; LOCK TABLE auth.users IN ACCESS EXCLUSIVE MODE")
+        .await
+        .unwrap();
+    let replies = tokio::time::timeout(std::time::Duration::from_secs(1), async {
+        tokio::join!(
+            recover(&app, "link-timing@example.com"),
+            magic_link(&app, "link-timing@example.com"),
+            resend(&app, "link-timing@example.com"),
+            recover(&app, "missing@example.com")
+        )
+    })
+    .await;
+    app.admin_client.batch_execute("ROLLBACK").await.unwrap();
+    let (recovery, magic, confirmation, missing) =
+        replies.expect("public link endpoints must respond before account work");
+    for reply in [recovery, magic, confirmation, missing] {
+        assert_eq!(reply.status, StatusCode::OK, "{}", reply.text);
+    }
+    app.outbox.wait_for(3).await;
+}
+
+#[tokio::test]
 async fn signup_with_confirmation_waits_for_the_link_before_password_login() {
     let app = spawn_confirming().await;
     let reply = signup(&app, "fabi@example.com", "strong-pass-123").await;
