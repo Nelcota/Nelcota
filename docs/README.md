@@ -22,6 +22,7 @@ independent SDK publication checkpoint.
 
 - [REST API](api.md): queries, relations, writes, RPC, OpenAPI and errors.
 - [Authentication](schema-auth.md) and [JWT/roles](jwt-and-roles.md): identities, sessions and PostgreSQL authorization.
+- [Testing RLS](testing-rls.md): rollback fixtures, role impersonation and SQLSTATE assertions.
 - [Storage](storage.md): disk/S3, policies, signed URLs and consistency.
 - [Webhooks](webhooks.md): durable events, signatures, retries and destination safety.
 - [SDK overview](../sdk/README.md): packages, runtime requirements and source ownership.

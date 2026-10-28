@@ -9,6 +9,7 @@ export const guides = [
   { id: 'api', group: 'develop', source: 'docs/api.md', action: '/connect' },
   { id: 'openapi', group: 'develop', source: '', action: '/policies' },
   { id: 'auth', group: 'develop', source: 'docs/schema-auth.md', action: '/sign-in' },
+  { id: 'testing-rls', group: 'develop', source: 'docs/testing-rls.md', action: '/policies' },
   { id: 'roles', group: 'develop', source: 'docs/jwt-and-roles.md', action: '/policies' },
   { id: 'storage', group: 'develop', source: 'docs/storage.md', action: '/storage' },
   { id: 'webhooks', group: 'develop', source: 'docs/webhooks.md', action: '/webhooks' },

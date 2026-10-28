@@ -7,6 +7,9 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Added
 
+- The standalone `@nelcota/client/testing` export supplies rollback scenarios,
+  API-role impersonation, fixture identities and SQLSTATE assertions for pg/Bun SQL.
+
 - All table writes accept `count: 'exact'` and return the number of affected rows,
   including zero, without requiring a row representation.
 

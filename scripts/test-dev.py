@@ -5,6 +5,8 @@ import hashlib
 import json
 import pathlib
 import socket
+import os
+import shlex
 import subprocess
 import tempfile
 import time
@@ -42,7 +44,7 @@ def wait_for(task):
     raise AssertionError('development fixture did not become ready')
 
 
-def run(binary):
+def run(binary, testing_helpers=False):
     with tempfile.TemporaryDirectory(prefix='nelcota-dev-test-') as folder:
         root = pathlib.Path(folder).resolve()
         first, second = root / 'first', root / 'second'
@@ -62,6 +64,12 @@ def run(binary):
                 start()
                 base = f'http://127.0.0.1:{api_port}'
                 wait_for(lambda: request(base + '/health')[0] == 200)
+                if testing_helpers:
+                    values = dict(line.split('=', 1) for line in (first / '.nelcota/dev.env').read_text().splitlines() if line and not line.startswith('#'))
+                    database_url = shlex.split(values['DATABASE_URL'])[0]
+                    sdk = pathlib.Path(__file__).resolve().parents[1] / 'sdk/typescript'
+                    subprocess.run(['bun', 'run', 'build'], cwd=sdk, check=True)
+                    subprocess.run(['bun', 'test/runtime/testing.mjs'], cwd=sdk, env={**os.environ, 'NELCOTA_TESTING_DATABASE_URL': database_url}, check=True)
                 conflict = subprocess.run([str(binary), 'dev', '--db-port', str(db_port)], cwd=second, capture_output=True, text=True, timeout=20)
                 assert conflict.returncode != 0
                 assert str(first) in conflict.stderr and '--db-port' in conflict.stderr
@@ -104,4 +112,6 @@ def run(binary):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', type=pathlib.Path, required=True)
-    run(parser.parse_args().binary.resolve())
+    parser.add_argument('--testing-helpers', action='store_true')
+    args = parser.parse_args()
+    run(args.binary.resolve(), args.testing_helpers)

@@ -10,6 +10,7 @@ const sources = import.meta.glob<string>([
   '../../../../../../../docs/decisions.md',
   '../../../../../../../docs/deploy.md',
   '../../../../../../../docs/jwt-and-roles.md',
+  '../../../../../../../docs/testing-rls.md',
   '../../../../../../../docs/leaving.md',
   '../../../../../../../docs/panel.md',
   '../../../../../../../docs/quickstart.md',

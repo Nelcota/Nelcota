@@ -226,6 +226,11 @@ if (result.count === 0) {
 with `.select()`. The count respects GRANTs and RLS; zero cannot distinguish a
 stale version from a missing or RLS-hidden row. It does not disclose hidden data.
 
+For database policy tests, import the standalone `@nelcota/client/testing`
+helpers. They reserve a `pg` or Bun SQL connection, impersonate API roles,
+create fixture users and always roll back scenarios. See
+[Testing RLS](../../docs/testing-rls.md) for the recommended test layout.
+
 ## Auth
 
 ```ts
