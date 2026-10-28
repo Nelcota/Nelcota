@@ -5,11 +5,11 @@ import { newSessionId, sessionKey, SessionSealer, type SessionState } from '../s
 
 const state = (): SessionState => ({ schema: 1, session: 'private-session', pkce: 'private-pkce', oauthState: null, returnTo: '/', expiresAt: Date.now() + 60000 });
 describe('session envelope', () => {
-  it('generates bounded opaque ids and hashes keys', () => {
+  it('generates bounded opaque ids and hashes keys', async () => {
     const ids = new Set(Array.from({ length: 100 }, () => newSessionId()));
     expect(ids.size).toBe(100);
-    for (const id of ids) { expect(id).toHaveLength(43); expect(sessionKey(id)).toMatch(/^[a-f0-9]{64}$/); }
-    for (const id of ['', '../session', 'a'.repeat(44), 'a'.repeat(42) + '!']) expect(sessionKey(id)).toBeNull();
+    for (const id of ids) { expect(id).toHaveLength(43); expect(await sessionKey(id)).toMatch(/^[a-f0-9]{64}$/); }
+    for (const id of ['', '../session', 'a'.repeat(44), 'a'.repeat(42) + '!']) expect(await sessionKey(id)).toBeNull();
   });
   it('authenticates identity/binding, hides plaintext and supports key rotation', async () => {
     const first = randomBytes(32).toString('base64url'), second = randomBytes(32).toString('base64url');
