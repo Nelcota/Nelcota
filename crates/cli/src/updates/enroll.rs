@@ -6,6 +6,27 @@ use anyhow::{Context, bail};
 use nelcota_deployment::{atomic_write, private_dir, protocol::ControllerConfig, read_private};
 use std::{fs, path::Path, process::Command};
 
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(deny_unknown_fields)]
+struct Enrollment {
+    root: std::path::PathBuf,
+    origin: String,
+    email: String,
+    projects: Vec<String>,
+    verifier: std::path::PathBuf,
+    management: Option<super::policy::Provisioning>,
+    password_hash: String,
+    project_ids: std::collections::BTreeMap<String, String>,
+}
+
+fn enrolled_proxy_compose(text: &str) -> String {
+    const MOUNT: &str = "      - /run/nelcota-updates-http:/run/nelcota-updates-http:ro\n";
+    text.replace(MOUNT, "").replace(
+        "      - ./config:/etc/caddy:ro\n",
+        &format!("      - ./config:/etc/caddy:ro\n{MOUNT}"),
+    )
+}
+
 pub fn descriptor(root: &Path) -> anyhow::Result<Option<ControllerConfig>> {
     let path = root.join("updates-controller.json");
     if !path.exists() {
@@ -80,6 +101,23 @@ pub fn run(
         bail!("host path must not need shell or systemd escaping");
     }
     let lease = nelcota_deployment::HostLock::acquire(&root)?;
+    nelcota_deployment::management::ensure_idle(&root)?;
+    if nelcota_deployment::Journal::open(&root)?
+        .list()?
+        .iter()
+        .any(|job| !job.public.phase.terminal())
+    {
+        bail!("deployment needs recovery before enrollment");
+    }
+    let pending_path = root.join("updates/enrollment.json");
+    let pending: Option<Enrollment> = match fs::symlink_metadata(&pending_path) {
+        Ok(_) => Some(serde_json::from_slice(&read_private(
+            &pending_path,
+            65536,
+        )?)?),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => return Err(error.into()),
+    };
     let host = crate::host::Host::new(&root);
     let manifest = host.require()?;
     let management = match host_management {
@@ -95,7 +133,7 @@ pub fn run(
         }
         None => None,
     };
-    if Path::new(POLICY).exists() || descriptor(&root)?.is_some() {
+    if pending.is_none() && (Path::new(POLICY).exists() || descriptor(&root)?.is_some()) {
         bail!(
             "host already enrolled; change the root-owned policy over SSH and restart the worker"
         );
@@ -162,31 +200,84 @@ pub fn run(
         let text = fs::read_to_string(host.caddy_dir().join("docker-compose.yml"))?;
         super::policy::trusted_path(&host.caddy_dir().join("docker-compose.yml"))?;
         super::policy::trusted_path(&host.caddy_dir().join("config"))?;
-        if text != include_str!("../../../../deploy/caddy-compose.yml") {
+        if text != include_str!("../../../../deploy/caddy-compose.yml")
+            && !(pending.is_some()
+                && text
+                    == enrolled_proxy_compose(include_str!("../../../../deploy/caddy-compose.yml")))
+        {
             bail!("custom proxy compose requires manual enrollment");
         }
     }
-    if Command::new("id")
+    let account_exists = Command::new("id")
         .arg("nelcota-updates")
         .output()?
         .status
-        .success()
-    {
-        bail!("deployment account already exists; inspect it before enrollment");
+        .success();
+    let group_exists = Command::new("getent")
+        .args(["group", "nelcota-updates"])
+        .output()?
+        .status
+        .success();
+    if (account_exists || group_exists) && pending.is_none() {
+        bail!("deployment account or group already exists; inspect it before enrollment");
     }
-    command(
-        "useradd",
-        &[
+    let enrollment = match pending {
+        Some(plan) => {
+            if plan.root != root
+                || plan.origin != origin
+                || plan.email != email
+                || plan.projects != projects
+                || plan.verifier != verifier
+                || serde_json::to_value(&plan.management)? != serde_json::to_value(&management)?
+                || !nelcota_auth::verify_password(password, &plan.password_hash)
+            {
+                bail!(
+                    "enrollment retry must use the original host, scope, verifier and credentials"
+                );
+            }
+            plan
+        }
+        None => {
+            let mut project_ids = std::collections::BTreeMap::new();
+            for name in projects {
+                project_ids.insert(name.clone(), nelcota_deployment::token()?);
+            }
+            let plan = Enrollment {
+                root: root.clone(),
+                origin: origin.into(),
+                email: email.into(),
+                projects: projects.to_vec(),
+                verifier: verifier.clone(),
+                management: management.clone(),
+                password_hash: nelcota_auth::hash_password(password)
+                    .context("password hashing failed")?,
+                project_ids,
+            };
+            atomic_write(&pending_path, &serde_json::to_vec(&plan)?)?;
+            plan
+        }
+    };
+    if !account_exists {
+        // useradd can leave its group behind if account creation fails.
+        // Only a recorded enrollment may adopt that partial result.
+        let mut args = vec![
             "--system",
-            "--user-group",
             "--no-create-home",
             "--shell",
             "/usr/sbin/nologin",
-            "nelcota-updates",
-        ],
-    )?;
+        ];
+        match group_exists {
+            true => args.extend(["--gid", "nelcota-updates"]),
+            false => args.push("--user-group"),
+        }
+        args.push("nelcota-updates");
+        command("useradd", &args)?;
+    }
     let uid = id("-u", "nelcota-updates")?;
     let gid = id("-g", "nelcota-updates")?;
+    if uid == 0 || gid == 0 {
+        bail!("controller account and group must be unprivileged");
+    }
     let conf = Path::new("/etc/nelcota-updates");
     fs::create_dir_all(conf)?;
     {
@@ -204,14 +295,11 @@ pub fn run(
     fs::set_permissions(bin.join("nelcota"), fs::Permissions::from_mode(0o755))?;
     crate::private_fs::copy(&verifier, bin.join("gh"))?;
     fs::set_permissions(bin.join("gh"), fs::Permissions::from_mode(0o755))?;
-    let mut project_ids = std::collections::BTreeMap::new();
-    for name in projects {
-        let id = nelcota_deployment::token()?;
+    for (name, id) in &enrollment.project_ids {
         atomic_write(
             &host.project_dir(name).join(".deployment-project-id"),
             id.as_bytes(),
         )?;
-        project_ids.insert(name.clone(), id);
     }
     let policy = Policy {
         host_management: management.clone(),
@@ -224,16 +312,22 @@ pub fn run(
         operators: vec![Operator {
             manage_host: management.is_some(),
             email: email.into(),
-            password_hash: nelcota_auth::hash_password(password)
-                .context("password hashing failed")?,
+            password_hash: enrollment.password_hash,
             projects: projects.to_vec(),
         }],
-        project_ids,
+        project_ids: enrollment.project_ids,
         enable_installation: false,
         validation_report: None,
         minimum_free_bytes: 2 * 1024 * 1024 * 1024,
         timeout_seconds: 3600,
     };
+    if Path::new(POLICY).exists() {
+        let existing: serde_json::Value =
+            serde_json::from_slice(&read_private(Path::new(POLICY), 65536)?)?;
+        if existing != serde_json::to_value(&policy)? {
+            bail!("enrollment policy changed; inspect it before retrying");
+        }
+    }
     atomic_write(Path::new(POLICY), &serde_json::to_vec_pretty(&policy)?)?;
     let config = ControllerConfig {
         schema: 1,
@@ -273,7 +367,7 @@ pub fn run(
     }
     if manifest.runtime == crate::host::Runtime::Docker {
         let path = host.caddy_dir().join("docker-compose.yml");
-        let text=fs::read_to_string(&path)?.replace("      - ./config:/etc/caddy:ro","      - ./config:/etc/caddy:ro\n      - /run/nelcota-updates-http:/run/nelcota-updates-http:ro");
+        let text = enrolled_proxy_compose(&fs::read_to_string(&path)?);
         atomic_write(&path, text.as_bytes())?;
     }
     fs::write(
@@ -307,6 +401,13 @@ pub fn run(
         command("systemctl", &["restart", "caddy"])?;
     }
     crate::caddy::reload(&host, manifest.runtime)?;
+    fs::remove_file(&pending_path)?;
+    fs::File::open(
+        pending_path
+            .parent()
+            .context("missing enrollment directory")?,
+    )?
+    .sync_all()?;
     drop(lease);
     println!(
         "Controller enrolled at {origin}/admin/. Installation is disabled until the documented staging validation passes."
@@ -380,6 +481,18 @@ pub(super) fn known_project_compose(project: &crate::project::Project, text: &st
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn retrying_proxy_enrollment_keeps_exactly_one_socket_mount() {
+        let original = include_str!("../../../../deploy/caddy-compose.yml");
+        let enrolled = enrolled_proxy_compose(original);
+        assert_eq!(enrolled_proxy_compose(&enrolled), enrolled);
+        assert_eq!(
+            enrolled
+                .matches("/run/nelcota-updates-http:/run/nelcota-updates-http:ro")
+                .count(),
+            1
+        );
+    }
     #[test]
     fn enrollment_rejects_noncanonical_or_injectable_origins() {
         for origin in [
