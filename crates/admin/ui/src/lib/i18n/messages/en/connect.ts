@@ -56,6 +56,12 @@ const en: Messages<typeof ptBR> = {
     docs: 'SDK documentation',
   },
   ai: {
+    migrationVersion: 'Context migration: {version}',
+    noMigration: 'none applied',
+    emptySchema: 'No tables are exposed yet. Apply migrations and regenerate the context.',
+    outdated: 'This context is outdated: applied migrations have changed. Regenerate it before copying or downloading.',
+    changedDuringGeneration: 'Migrations changed while generating the context. Regenerate it.',
+    freshnessFailed: 'Could not verify the current migration version. Refresh the context before using it.',
     title: 'Context for AI',
     text: 'An llms.txt-style text to paste into ChatGPT, Claude, Cursor or another assistant: this project’s address, the schema as types, the access rules (RLS), the buckets and how to use the SDK. The assistant then writes code that works here instead of inventing tables.',
     safe: 'Contains no keys, passwords or tokens. Generate it again after changing the schema.',

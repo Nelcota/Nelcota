@@ -133,6 +133,7 @@ pub fn migrate(host: &Host, selection: Option<&str>, dir: &Path) -> anyhow::Resu
                 client
                     .batch_execute("NOTIFY nelcota, 'reload schema'")
                     .await?;
+                println!("Regenerate Context for AI in the panel: /admin/connect?section=api-ai");
                 Ok(())
             })
         }

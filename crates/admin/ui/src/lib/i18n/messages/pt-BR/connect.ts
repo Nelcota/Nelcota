@@ -53,6 +53,12 @@ const ptBR = {
     docs: 'Documentação do SDK',
   },
   ai: {
+    migrationVersion: 'Context migration: {version}',
+    noMigration: 'none applied',
+    emptySchema: 'No tables are exposed yet. Apply migrations and regenerate the context.',
+    outdated: 'This context is outdated: applied migrations have changed. Regenerate it before copying or downloading.',
+    changedDuringGeneration: 'Migrations changed while generating the context. Regenerate it.',
+    freshnessFailed: 'Could not verify the current migration version. Refresh the context before using it.',
     title: 'Contexto para IA',
     text: 'Um texto no estilo llms.txt para colar no ChatGPT, Claude, Cursor ou outra IA: traz o endereço deste projeto, o schema com os tipos, as regras de acesso (RLS), os buckets e como usar o SDK. Assim a IA escreve código que funciona aqui, sem inventar tabelas.',
     safe: 'Não inclui chaves, senhas nem tokens. Gere de novo depois de mudar o schema.',

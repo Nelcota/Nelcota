@@ -12,6 +12,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Added
 
+- AI context records the latest applied migration, warns about an empty schema,
+  and detects changed versions before copying or downloading a stale snapshot.
+
 - REST inserts and upserts honor `Prefer: count=exact`, matching PATCH/DELETE
   affected-row counts and retaining duplicate-resolution response metadata.
 
