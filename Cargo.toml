@@ -25,7 +25,7 @@ argon2 = "0.6.0"
 axum = { version = "0.8.9", default-features = false, features = ["http1", "json", "tokio", "query", "macros", "form"] }
 deadpool-postgres = { version = "0.14.2", default-features = false, features = ["rt_tokio_1"] }
 base64 = "0.23.1"
-# Lowercase hex for digests and tokens; already compiled through jsonwebtoken (p256).
+# Lowercase hex for digests and tokens; preserve the existing wire encodings.
 base16ct = { version = "1.0.0", default-features = false, features = ["alloc"] }
 bytes = "1.12.1"
 # Cookie parsing and Set-Cookie building for the panel session (no signing/encryption features).
