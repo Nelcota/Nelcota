@@ -41,7 +41,9 @@ export class SessionSealer {
     const keys = new Map<string, SealingKey>();
     for (const secret of secrets) {
       if (!/^[A-Za-z0-9_-]{43}$/.test(secret)) throw new SessionError('configuration', 'Session keys must be 32 random bytes in canonical base64url');
-      const bytes = fromBase64url(secret);
+      let bytes: Uint8Array<ArrayBuffer>;
+      try { bytes = fromBase64url(secret); }
+      catch (cause) { throw new SessionError('configuration', 'Invalid session encryption key', cause); }
       if (bytes.length !== 32 || base64url(bytes) !== secret) throw new SessionError('configuration', 'Invalid session encryption key');
       const id = (await sha256(bytes)).slice(0, 16);
       if (keys.has(id)) throw new SessionError('configuration', 'Duplicate session encryption key');

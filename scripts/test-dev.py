@@ -44,7 +44,7 @@ def wait_for(task):
     raise AssertionError('development fixture did not become ready')
 
 
-def run(binary, testing_helpers=False, remote_migrations=False):
+def run(binary, testing_helpers=False, remote_migrations=False, browser=False):
     with tempfile.TemporaryDirectory(prefix='nelcota-dev-test-') as folder:
         root = pathlib.Path(folder).resolve()
         first, second = root / 'first', root / 'second'
@@ -67,6 +67,9 @@ def run(binary, testing_helpers=False, remote_migrations=False):
                 start()
                 base = f'http://127.0.0.1:{api_port}'
                 wait_for(lambda: request(base + '/health')[0] == 200)
+                if browser:
+                    panel = pathlib.Path(__file__).resolve().parents[1] / 'crates/admin/ui'
+                    subprocess.run(['bun', 'scripts/dev-panel.ts', base, str(first / '.nelcota/dev.env')], cwd=panel, check=True)
                 if remote_migrations:
                     token = subprocess.check_output([str(binary), 'token', 'deploy', '--days', '1'], cwd=first, text=True).strip()
                     deploy_env = {**os.environ, 'NELCOTA_DEPLOY_TOKEN': token}
@@ -154,5 +157,6 @@ if __name__ == '__main__':
     parser.add_argument('--binary', type=pathlib.Path, required=True)
     parser.add_argument('--testing-helpers', action='store_true')
     parser.add_argument('--remote-migrations', action='store_true')
+    parser.add_argument('--browser', action='store_true')
     args = parser.parse_args()
-    run(args.binary.resolve(), args.testing_helpers, args.remote_migrations)
+    run(args.binary.resolve(), args.testing_helpers, args.remote_migrations, args.browser)

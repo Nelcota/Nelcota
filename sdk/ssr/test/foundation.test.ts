@@ -23,7 +23,7 @@ describe('session envelope', () => {
     await expect(old.open(newValue, 'app/project/session')).rejects.toMatchObject({ code: 'invalid_session' });
   });
   it('refuses weak keys, oversize state and expired state', async () => {
-    for (const keys of [[], ['short'], Array(4).fill('a'.repeat(43)), ['='.repeat(43)]]) await expect(SessionSealer.create(keys)).rejects.toMatchObject({ code: 'configuration' });
+    for (const keys of [[], ['short'], Array(4).fill('a'.repeat(43)), ['='.repeat(43)], ['A'.repeat(42) + 'B']]) await expect(SessionSealer.create(keys)).rejects.toMatchObject({ code: 'configuration' });
     const seal = await SessionSealer.create([randomBytes(32).toString('base64url')]);
     await expect(seal.seal({ ...state(), session: 'x'.repeat(70000) }, 'binding')).rejects.toMatchObject({ code: 'invalid_session' });
     const expired = await seal.seal({ ...state(), expiresAt: 1 }, 'binding');

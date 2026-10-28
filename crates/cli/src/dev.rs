@@ -339,6 +339,131 @@ fn wait_for_postgres(config: &Config) -> anyhow::Result<()> {
     })
 }
 
+/// Apply application files after internal bootstrap, before the development server serves traffic.
+pub async fn apply_migrations(config: &Config) -> anyhow::Result<()> {
+    let directory = match &config.dev_migrations_dir {
+        Some(directory) if directory.is_dir() => directory,
+        _ => return Ok(()),
+    };
+    let files = crate::db::migration_files(directory)?;
+    let (mut client, connection) = config.database_config()?.connect(NoTls).await?;
+    let driver = tokio::spawn(connection);
+    let result = nelcota_core::user_migrations::apply(
+        &mut client,
+        &nelcota_core::user_migrations::MigrationRequest {
+            files,
+            dry_run: false,
+        },
+        "cli:dev",
+    )
+    .await;
+    drop(client);
+    let _ = driver.await;
+    result?;
+    Ok(())
+}
+
+pub struct MigrationWatcher {
+    task: tokio::task::JoinHandle<()>,
+}
+impl Drop for MigrationWatcher {
+    fn drop(&mut self) {
+        self.task.abort();
+    }
+}
+pub fn watch_migrations(config: &Config) -> Option<MigrationWatcher> {
+    let directory = config.dev_migrations_dir.clone()?;
+    let config = config.clone();
+    Some(MigrationWatcher {
+        task: tokio::spawn(async move {
+            let mut previous = Vec::new();
+            let mut previous_error: Option<String> = None;
+            let mut interval = tokio::time::interval(Duration::from_secs(1));
+            loop {
+                interval.tick().await;
+                if !directory.is_dir() {
+                    continue;
+                }
+                let current = match crate::db::migration_files(&directory) {
+                    Ok(files) => files
+                        .into_iter()
+                        .map(|file| (file.filename, file.sql))
+                        .collect::<Vec<_>>(),
+                    Err(error) => {
+                        let message = error.to_string();
+                        if previous_error.as_ref() != Some(&message) {
+                            eprintln!("Development migration files are invalid: {message}");
+                        }
+                        previous_error = Some(message);
+                        continue;
+                    }
+                };
+                previous_error = None;
+                if current == previous {
+                    continue;
+                }
+                previous = current;
+                if let Err(error) = apply_migrations(&config).await {
+                    eprintln!(
+                        "Development migration failed: {error}. Fix the migration file before continuing."
+                    );
+                }
+            }
+        }),
+    })
+}
+
+/// Destructive reset is restricted to the canonical, labeled local development container.
+pub fn reset(host: &crate::host::Host, yes: bool) -> anyhow::Result<()> {
+    if !yes {
+        bail!("db reset deletes this project's local database; stop nelcota dev and pass --yes");
+    }
+    if host.exists() {
+        bail!("db reset is only available in a local nelcota dev application folder");
+    }
+    let root = host.root().canonicalize()?;
+    let state = load_state(&root)?.context("no saved local development database")?;
+    let container = postgres_container(&root, state.db_port)?;
+    let info = inspect_container(&container)?.context("local development container not found")?;
+    check_owner(&container, &info, &root)?;
+    let config = config_for(&root, &state, ([127, 0, 0, 1], 8000).into())?;
+    // Validate the repository files before deleting any local data.
+    if root.join("migrations").is_dir() {
+        crate::db::migration_files(&root.join("migrations"))?;
+    }
+    tokio::runtime::Builder::new_current_thread().enable_all().build()?.block_on(async {
+        let mut maintenance = config.database_config()?;
+        maintenance.dbname("template1");
+        let (client, connection) = maintenance.connect(NoTls).await?;
+        let driver = tokio::spawn(connection);
+        let active: i64 = client.query_one("SELECT count(*) FROM pg_stat_activity WHERE datname = 'postgres'", &[]).await?.get(0);
+        if active > 0 { bail!("stop nelcota dev and close local SQL clients before db reset"); }
+        client.batch_execute("ALTER DATABASE postgres ALLOW_CONNECTIONS false").await?;
+        if let Err(error) = client.batch_execute("DROP DATABASE postgres WITH (FORCE)").await {
+            let _ = client.batch_execute("ALTER DATABASE postgres ALLOW_CONNECTIONS true").await;
+            return Err(error.into());
+        }
+        client.batch_execute("CREATE DATABASE postgres").await?;
+        drop(client); let _ = driver.await;
+        nelcota_core::db::bootstrap(&config.database_config()?, config.authenticator_password.expose(), config.statement_timeout_secs).await?;
+        apply_migrations(&config).await?;
+        let seed = root.join("seed.sql");
+        if seed.exists() {
+            let sql = fs::read_to_string(seed)?;
+            let (mut client, connection) = config.database_config()?.connect(NoTls).await?;
+            let driver = tokio::spawn(connection);
+            let transaction = client.transaction().await?;
+            transaction.batch_execute("CREATE FUNCTION pg_temp.nelcota_seed(script text) RETURNS void LANGUAGE plpgsql AS 'BEGIN EXECUTE script; END'").await?;
+            transaction.query_one("SELECT pg_temp.nelcota_seed($1)", &[&sql]).await?;
+            transaction.commit().await?;
+            drop(client); let _ = driver.await;
+        }
+        Ok::<_, anyhow::Error>(())
+    })?;
+    ok("local development database rebuilt from migrations and seed.sql");
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -448,118 +573,4 @@ mod tests {
         // Saved: later runs without the flag keep the new port.
         assert_eq!(prepare_state(root.path(), None).unwrap().db_port, 55000);
     }
-}
-
-/// Apply application files after internal bootstrap, before the development server serves traffic.
-pub async fn apply_migrations(config: &Config) -> anyhow::Result<()> {
-    let directory = match &config.dev_migrations_dir {
-        Some(directory) if directory.is_dir() => directory,
-        _ => return Ok(()),
-    };
-    let files = crate::db::migration_files(directory)?;
-    let (mut client, connection) = config.database_config()?.connect(NoTls).await?;
-    let driver = tokio::spawn(connection);
-    let result = nelcota_core::user_migrations::apply(
-        &mut client,
-        &nelcota_core::user_migrations::MigrationRequest {
-            files,
-            dry_run: false,
-        },
-        "cli:dev",
-    )
-    .await;
-    drop(client);
-    let _ = driver.await;
-    result?;
-    Ok(())
-}
-
-pub struct MigrationWatcher {
-    task: tokio::task::JoinHandle<()>,
-}
-impl Drop for MigrationWatcher {
-    fn drop(&mut self) {
-        self.task.abort();
-    }
-}
-pub fn watch_migrations(config: &Config) -> Option<MigrationWatcher> {
-    let directory = config.dev_migrations_dir.clone()?;
-    let config = config.clone();
-    Some(MigrationWatcher {
-        task: tokio::spawn(async move {
-            let mut previous = Vec::new();
-            let mut previous_error = None;
-            let mut interval = tokio::time::interval(Duration::from_secs(1));
-            loop {
-                interval.tick().await;
-                let current = match crate::db::migration_files(&directory) {
-                    Ok(files) => files
-                        .into_iter()
-                        .map(|file| (file.filename, file.sql))
-                        .collect::<Vec<_>>(),
-                    Err(_) => continue,
-                };
-                if current == previous {
-                    continue;
-                }
-                previous = current;
-                if let Err(error) = apply_migrations(&config).await {
-                    eprintln!(
-                        "Development migration failed: {error}. Fix the migration file before continuing."
-                    );
-                }
-            }
-        }),
-    })
-}
-
-/// Destructive reset is restricted to the canonical, labeled local development container.
-pub fn reset(host: &crate::host::Host, yes: bool) -> anyhow::Result<()> {
-    if !yes {
-        bail!("db reset deletes this project's local database; stop nelcota dev and pass --yes");
-    }
-    if host.exists() {
-        bail!("db reset is only available in a local nelcota dev application folder");
-    }
-    let root = host.root().canonicalize()?;
-    let state = load_state(&root)?.context("no saved local development database")?;
-    let container = postgres_container(&root, state.db_port)?;
-    let info = inspect_container(&container)?.context("local development container not found")?;
-    check_owner(&container, &info, &root)?;
-    let config = config_for(&root, &state, ([127, 0, 0, 1], 8000).into())?;
-    // Validate the repository files before deleting any local data.
-    if root.join("migrations").is_dir() {
-        crate::db::migration_files(&root.join("migrations"))?;
-    }
-    tokio::runtime::Builder::new_current_thread().enable_all().build()?.block_on(async {
-        let mut maintenance = config.database_config()?;
-        maintenance.dbname("template1");
-        let (client, connection) = maintenance.connect(NoTls).await?;
-        let driver = tokio::spawn(connection);
-        let active: i64 = client.query_one("SELECT count(*) FROM pg_stat_activity WHERE datname = 'postgres'", &[]).await?.get(0);
-        if active > 0 { bail!("stop nelcota dev and close local SQL clients before db reset"); }
-        client.batch_execute("ALTER DATABASE postgres ALLOW_CONNECTIONS false").await?;
-        if let Err(error) = client.batch_execute("DROP DATABASE postgres WITH (FORCE)").await {
-            let _ = client.batch_execute("ALTER DATABASE postgres ALLOW_CONNECTIONS true").await;
-            return Err(error.into());
-        }
-        client.batch_execute("CREATE DATABASE postgres").await?;
-        drop(client); let _ = driver.await;
-        nelcota_core::db::bootstrap(&config.database_config()?, config.authenticator_password.expose(), config.statement_timeout_secs).await?;
-        apply_migrations(&config).await?;
-        let seed = root.join("seed.sql");
-        if seed.exists() {
-            let sql = fs::read_to_string(seed)?;
-            let (mut client, connection) = config.database_config()?.connect(NoTls).await?;
-            let driver = tokio::spawn(connection);
-            let transaction = client.transaction().await?;
-            transaction.batch_execute("CREATE FUNCTION pg_temp.nelcota_seed(script text) RETURNS void LANGUAGE plpgsql AS 'BEGIN EXECUTE script; END'").await?;
-            transaction.query_one("SELECT pg_temp.nelcota_seed($1)", &[&sql]).await?;
-            transaction.commit().await?;
-            drop(client); let _ = driver.await;
-        }
-        Ok::<_, anyhow::Error>(())
-    })?;
-    ok("local development database rebuilt from migrations and seed.sql");
-    Ok(())
 }

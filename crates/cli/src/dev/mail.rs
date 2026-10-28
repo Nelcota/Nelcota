@@ -102,14 +102,13 @@ pub(super) fn configure(
     match inspect_container(&container)? {
         Some(info) => {
             check_owner(&container, &info, root)?;
-            if info["State"]["Running"].as_bool() != Some(true) {
-                if !Command::new("docker")
+            if info["State"]["Running"].as_bool() != Some(true)
+                && !Command::new("docker")
                     .args(["start", &container])
                     .status()?
                     .success()
-                {
-                    bail!("could not start {container}");
-                }
+            {
+                bail!("could not start {container}");
             }
         }
         None => {

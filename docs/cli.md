@@ -182,7 +182,7 @@ Applies SQL migrations from the directory (files V<n>__<name>.sql)
 Usage: nelcota migrate [OPTIONS] [COMMAND]
 
 Commands:
-  status
+  status  Show applied, pending, missing and diverged repository migrations
   help    Print this message or the help of the given subcommand(s)
 
 Options:
@@ -193,7 +193,7 @@ Options:
       --env <ENVIRONMENT>  Linked environment name [default: default]
       --token <TOKEN>      Deployment credential. Prefer NELCOTA_DEPLOY_TOKEN to command-line history [env: NELCOTA_DEPLOY_TOKEN]
       --local              Use the local/host database even when this folder has a project link
-      --dry-run
+      --dry-run            Validate history and show pending migrations without applying SQL
   -h, --help               Print help
 ```
 
@@ -785,6 +785,8 @@ Options:
 ### nelcota migrate status
 
 ```text
+Show applied, pending, missing and diverged repository migrations
+
 Usage: nelcota migrate status [OPTIONS]
 
 Options:

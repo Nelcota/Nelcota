@@ -98,12 +98,17 @@ pub fn parse(text: &str) -> Vec<(String, String)> {
         .filter_map(|l| l.split_once('='))
         .map(|(k, v)| {
             let v = v.trim();
-            let v = v
+            if let Some(single) = v
                 .strip_prefix('\'')
-                .and_then(|v| v.strip_suffix('\''))
-                .or_else(|| v.strip_prefix('"').and_then(|v| v.strip_suffix('"')))
+                .and_then(|value| value.strip_suffix('\''))
+            {
+                return (k.trim().to_owned(), single.replace("'\\''", "'"));
+            }
+            let value = v
+                .strip_prefix('"')
+                .and_then(|value| value.strip_suffix('"'))
                 .unwrap_or(v);
-            (k.trim().to_owned(), v.replace("'\\''", "'"))
+            (k.trim().to_owned(), value.to_owned())
         })
         .collect()
 }

@@ -213,6 +213,17 @@ pub fn types(link: &Link) -> anyhow::Result<String> {
     runtime()?.block_on(send(link, Method::GET, "typescript", None))
 }
 
+impl std::fmt::Debug for RemoteArgs {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("RemoteArgs")
+            .field("remote", &self.remote)
+            .field("environment", &self.environment)
+            .field("local", &self.local)
+            .finish_non_exhaustive()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -232,16 +243,5 @@ mod tests {
             "https://example.com"
         );
         assert!(origin("http://127.0.0.1:8000").is_ok());
-    }
-}
-
-impl std::fmt::Debug for RemoteArgs {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter
-            .debug_struct("RemoteArgs")
-            .field("remote", &self.remote)
-            .field("environment", &self.environment)
-            .field("local", &self.local)
-            .finish_non_exhaustive()
     }
 }

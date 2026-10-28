@@ -98,6 +98,7 @@ jobs:
         timeout-minutes: 5
         run: |
           cargo build --locked -p nelcota-server
+          python3 scripts/test-dev.py --binary target/debug/nelcota --remote-migrations
           python3 scripts/test-onboarding.py --binary target/debug/nelcota
       - name: Notes acceptance report
         if: always()
