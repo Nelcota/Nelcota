@@ -1,5 +1,5 @@
 import { ControllerError } from "../../updates/controller";
-import type { Job, Pending, Plan } from "../controller";
+import type { Job, Pending, Plan, Operation } from "../controller";
 type Approval = {
   recovery: Job | null;
   pending: Pending | null;
@@ -48,4 +48,41 @@ export function rejectedApproval(error: unknown): boolean {
     error instanceof ControllerError &&
     ["reauthentication_failed", "plan_expired", "plan_blocked", "plan_changed"].includes(error.code)
   );
+}
+
+interface Readiness {
+  busy: boolean;
+  offline: boolean;
+  target: Operation | null;
+  password: string;
+  confirmation: string;
+  phrase: string;
+  acknowledged: boolean;
+  rescue: boolean;
+  active: boolean;
+  recovery: Job | null;
+  pending: Pending | null;
+  plan: Plan | null;
+  seconds: number;
+}
+function confirmed(state: Readiness): boolean {
+  return (
+    state.target !== null &&
+    state.password !== "" &&
+    state.confirmation === state.phrase &&
+    state.acknowledged &&
+    state.rescue
+  );
+}
+function available(state: Readiness): boolean {
+  return (
+    state.busy === false &&
+    state.offline === false &&
+    (state.active === false || state.recovery !== null || state.pending !== null)
+  );
+}
+/** Requires confirmation, host admission and a live unblocked plan before submission. */
+export function approvalReady(state: Readiness): boolean {
+  const livePlan = state.plan === null || (state.seconds > 0 && state.plan.blockers.length === 0);
+  return confirmed(state) && available(state) && livePlan;
 }

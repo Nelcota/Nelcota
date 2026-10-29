@@ -1,4 +1,4 @@
-export { approvalBody, rejectedApproval } from "./approval.js";
+export { approvalBody, rejectedApproval, approvalReady } from "./approval.js";
 export { HostConnection } from "./connection.js";
 export { inventoryOutcome, inventorySelection, acceptedJob, planSeconds } from "./inventory.js";
 export { HostLogs } from "./logs.svelte.js";

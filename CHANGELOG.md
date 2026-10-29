@@ -48,6 +48,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Changed
 
+- Separate host/update panel state from presentation and split privileged CLI
+  admission, execution, validation and process supervision into explicit owners.
+  Preserve controller protocols, durable receipts and recovery ordering.
+
 - Remove unused panel policy templates and their catalog entries, the legacy
   avatar crop helper and unused retained URL field, and a redundant alert parser.
   Keep owner-column inference and validate alert settings through the active
