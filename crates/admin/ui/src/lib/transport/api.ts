@@ -9,7 +9,7 @@ import {
 // Panel API client (/admin/api). The session lives in an HttpOnly cookie.
 import { session } from "$lib/resources/session.svelte";
 
-import { ApiError, httpError } from "./api-error";
+import { ApiError, httpError, errorFromBody } from "./api-error";
 import { HTTP_STATUS } from "./http-status";
 import { readBody } from "./read-body";
 export { ApiError, httpError } from "./api-error";
@@ -162,9 +162,6 @@ function decodePanelBody(text: string): { data: unknown; json: boolean } {
   return { data, json };
 }
 
-function missingErrorText(value: string | undefined): boolean {
-  return value == null || value === "";
-}
 function throwResponseError(
   res: Response,
   path: string,
@@ -174,16 +171,7 @@ function throwResponseError(
   // Not our JSON error (e.g. a reverse proxy's HTML 502 page): never show
   // the raw body, say what happened in the user's language instead.
   if (json === false) throw httpError(res.status);
-  const body = data as {
-    error?: string;
-    code?: string;
-    params?: Record<string, string | number>;
-  } | null;
-  if (missingErrorText(body?.error) && missingErrorText(body?.code)) throw httpError(res.status);
-  throw new ApiError(body?.error ?? `HTTP ${res.status}`, res.status, {
-    code: body?.code,
-    params: body?.params,
-  });
+  throw errorFromBody(res.status, data);
 }
 
 export async function parseResponse<T>(
