@@ -1,1 +1,0 @@
-import{gn as e,hn as t,y as n}from"./circle-alert-BawgBsmq.js";var r={name:`maximize-2`,size:24,node:[[`path`,{d:`M15 3h6v6`}],[`path`,{d:`m21 3-7 7`}],[`path`,{d:`m3 21 7-7`}],[`path`,{d:`M9 21H3v-6`}]]};r.node;var i=new Set([`$$slots`,`$$events`,`$$legacy`]);function a(a,o){let s=t(o,i);n(a,e(()=>s,{get icon(){return r}}))}export{a as t};
