@@ -1,6 +1,18 @@
 //! Bounded, read-only checks. Probe output is reduced to known status codes.
-use super::*;
+use super::effects::output;
+use super::policy::control_project;
+use super::policy::free_bytes;
+use crate::backup;
+use crate::host::Host;
+use crate::updates::policy::Policy;
+use crate::updates::policy::trusted_path;
+use anyhow::Context;
 use nelcota_deployment::operations::{Check, CheckStatus as S, Diagnostics};
+use nelcota_deployment::read_private;
+use std::fs;
+use std::path::Path;
+use std::process::Command;
+use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 fn memory(text: &str, key: &str) -> Option<u64> {

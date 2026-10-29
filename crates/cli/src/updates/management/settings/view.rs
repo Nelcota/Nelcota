@@ -1,5 +1,6 @@
 //! Explicit non-secret projection of current configuration and installed cron.
 use super::*;
+use crate::backup;
 pub(crate) fn view(policy: &Policy, name: &str) -> anyhow::Result<ConfigurationView> {
     let p = control_project(policy, name)?;
     let host = Host::new(&policy.root);
