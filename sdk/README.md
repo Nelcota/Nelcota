@@ -34,7 +34,7 @@ not add a public API, runtime dependency or configuration format.
 | `auth/manager.ts` | Session transitions, refresh publication and auth events under one lifecycle lock |
 | `auth/store.ts` | Session persistence, browser journal and coordinated refresh reservations |
 | `auth/scheduler.ts` | Refresh timers, retries and timer cleanup |
-| `auth/browser-state.ts`, `coordination.ts`, `pkce.ts` | Existing browser journal, locks/broadcasts and PKCE primitives |
+| `auth/browser/state.ts`, `auth/browser/coordination.ts`, `auth/pkce.ts` | Existing browser journal, locks/broadcasts and PKCE primitives |
 | `rest/query-types.ts`, `types.ts` | Result/options contracts and generated-schema typing |
 | `rest/query.ts`, `conditions.ts` | Immutable query construction/execution and validated filter grammar |
 | `storage/index.ts` | Bucket administration, standalone composition and the existing public facade |

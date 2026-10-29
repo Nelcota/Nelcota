@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "semi": true,
+  "singleQuote": false,
+  "trailingComma": "all",
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/.git/**",
+    "target/**",
+    ".tools/**",
+    "output/**",
+    ".nelcota/**",
+    "backups/**",
+    "crates/admin/ui/src/lib/generated/**",
+    "sdk/typescript/test/contract/generated/**",
+    "**/bun.lock",
+    "**/Cargo.lock",
+    "docs/goals/**",
+    "docs/i18n/**",
+    "presets/validation.md",
+    "**/*.sql",
+    "**/.next/**",
+    "**/test-results/**",
+    "**/playwright-report/**",
+    "**/*.md"
+  ],
+  "sortImports": true
+}

@@ -126,7 +126,7 @@ export default async function Profile() {
   return (await nelcota).server(async ({ getUser, client }) => {
     const user = await getUser(); // validates with auth service; not decoded JWT trust
     if (user.error) return <a href="/login">Sign in</a>;
-    const notes = await client.from('notes').select();
+    const notes = await client.from('notes').select().execute();
     if (notes.error) throw new Error('Notes unavailable');
     return <p>{user.data.email}: {notes.data.length} notes</p>;
   });

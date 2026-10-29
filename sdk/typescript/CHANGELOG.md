@@ -5,6 +5,14 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## Unreleased
 
+### Changed
+
+- Breaking: REST query builders require `.execute()` and no longer implement
+  `then` or `PromiseLike`. Add `.execute()` when awaiting a query or passing it
+  to `Promise.all`. Authentication, storage and RPC methods remain promises.
+- Breaking: clients without generated database types expose dynamic row fields
+  as `unknown`. Validate a field before using it, or supply the generated type.
+
 ### Added
 
 - The standalone `@nelcota/client/testing` export supplies rollback scenarios,

@@ -8,21 +8,21 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
+    "@nelcota/client": "0.2.4",
     "@nelcota/nextjs": "0.1.2",
     "next": "16.4.3",
-    "react": "19.3.1",
-    "react-dom": "19.3.1",
     "pg": "^8.23.1",
-    "@nelcota/client": "0.2.4"
-  },
-  "engines": {
-    "node": ">=22",
-    "bun": ">=1.4.3"
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.2.0",
     "typescript": "^7.0.2"
+  },
+  "engines": {
+    "bun": ">=1.4.3",
+    "node": ">=22"
   }
 }

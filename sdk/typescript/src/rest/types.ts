@@ -4,7 +4,7 @@
  * still works untyped.
  */
 
-export type { Json } from '../core/json-types.js';
+export type { Json } from "../core/json-types.js";
 
 export interface GenericRelationship {
   foreignKeyName: string;
@@ -43,9 +43,25 @@ export interface GenericSchema {
 export interface AnySchema {
   /** Marks the untyped schema (a generated one never has it). */
   readonly __untyped: true;
-  Tables: Record<string, { Row: any; Insert: any; Update: any; Relationships: [] }>;
-  Views: Record<string, { Row: any; Insert: any; Update: any; Relationships: [] }>;
-  Functions: Record<string, { Args: any; Returns: any }>;
+  Tables: Record<
+    string,
+    {
+      Row: Record<string, unknown>;
+      Insert: Record<string, unknown>;
+      Update: Record<string, unknown>;
+      Relationships: [];
+    }
+  >;
+  Views: Record<
+    string,
+    {
+      Row: Record<string, unknown>;
+      Insert: Record<string, unknown>;
+      Update: Record<string, unknown>;
+      Relationships: [];
+    }
+  >;
+  Functions: Record<string, { Args: Record<string, unknown>; Returns: unknown }>;
 }
 
 /** The schema the client is typed with: the generated one, or `AnySchema`. */
@@ -57,14 +73,20 @@ export type SchemaOf<Database, Name> = 0 extends 1 & Database
       : AnySchema
     : AnySchema;
 
-export type DefaultSchemaName<Database> = 'public' extends keyof Database ? 'public' : string & keyof Database;
+export type DefaultSchemaName<Database> = unknown extends Database
+  ? string
+  : "public" extends keyof Database
+    ? "public"
+    : string & keyof Database;
 
-export type RelationName<S extends GenericSchema> = (string & keyof S['Tables']) | (string & keyof S['Views']);
+export type RelationName<S extends GenericSchema> =
+  | (string & keyof S["Tables"])
+  | (string & keyof S["Views"]);
 
-export type Relation<S extends GenericSchema, Name> = Name extends keyof S['Tables']
-  ? S['Tables'][Name]
-  : Name extends keyof S['Views']
-    ? S['Views'][Name]
+export type Relation<S extends GenericSchema, Name> = Name extends keyof S["Tables"]
+  ? S["Tables"][Name]
+  : Name extends keyof S["Views"]
+    ? S["Views"][Name]
     : never;
 
 export type RowOf<R> = R extends { Row: infer Row } ? Row : never;
@@ -73,7 +95,7 @@ export type UpdateOf<R> = R extends { Update: infer U } ? (unknown extends U ? n
 
 // ------------------------------------------------------------ select parser
 
-type Whitespace = ' ' | '\n' | '\t' | '\r';
+type Whitespace = " " | "\n" | "\t" | "\r";
 
 type Trim<S extends string> = S extends `${Whitespace}${infer R}`
   ? Trim<R>
@@ -85,16 +107,16 @@ type Trim<S extends string> = S extends `${Whitespace}${infer R}`
 type SplitTop<
   S extends string,
   Depth extends unknown[] = [],
-  Current extends string = '',
+  Current extends string = "",
   Out extends string[] = [],
 > = S extends `${infer C}${infer Rest}`
-  ? C extends '('
+  ? C extends "("
     ? SplitTop<Rest, [...Depth, 0], `${Current}${C}`, Out>
-    : C extends ')'
+    : C extends ")"
       ? SplitTop<Rest, Depth extends [unknown, ...infer D] ? D : [], `${Current}${C}`, Out>
-      : C extends ','
+      : C extends ","
         ? Depth extends []
-          ? SplitTop<Rest, Depth, '', [...Out, Trim<Current>]>
+          ? SplitTop<Rest, Depth, "", [...Out, Trim<Current>]>
           : SplitTop<Rest, Depth, `${Current}${C}`, Out>
         : SplitTop<Rest, Depth, `${Current}${C}`, Out>
   : [...Out, Trim<Current>];
@@ -104,11 +126,15 @@ export interface SelectError<Message extends string> {
   readonly __selectError: Message;
 }
 
-type UnionToIntersection<U> = (U extends unknown ? (x: U) => void : never) extends (x: infer I) => void ? I : never;
+type UnionToIntersection<U> = (U extends unknown ? (x: U) => void : never) extends (
+  x: infer I,
+) => void
+  ? I
+  : never;
 
 type Simplify<T> = { [K in keyof T]: T[K] } & {};
 
-type HintMatches<Rel, Hint extends string> = Hint extends ''
+type HintMatches<Rel, Hint extends string> = Hint extends ""
   ? true
   : Rel extends { foreignKeyName: Hint }
     ? true
@@ -138,7 +164,13 @@ type Incoming<S extends GenericSchema, From extends string, To, Hint extends str
 
 type IsUnion<T, U = T> = T extends unknown ? ([U] extends [T] ? false : true) : never;
 
-type EmbedValue<S extends GenericSchema, From extends string, Target extends string, Hint extends string, Inner extends string> =
+type EmbedValue<
+  S extends GenericSchema,
+  From extends string,
+  Target extends string,
+  Hint extends string,
+  Inner extends string,
+> =
   Target extends RelationName<S>
     ? [Outgoing<S, From, Target, Hint>] extends [never]
       ? [Incoming<S, From, Target, Hint>] extends [never]
@@ -157,15 +189,19 @@ type EmbedValue<S extends GenericSchema, From extends string, Target extends str
 type EmbedHead<Head extends string> = Head extends `${infer Alias}:${infer Rest}`
   ? Rest extends `${infer Table}!${infer Hint}`
     ? [Trim<Alias>, Trim<Table>, Trim<Hint>]
-    : [Trim<Alias>, Trim<Rest>, '']
+    : [Trim<Alias>, Trim<Rest>, ""]
   : Head extends `${infer Table}!${infer Hint}`
     ? [Trim<Table>, Trim<Table>, Trim<Hint>]
-    : [Trim<Head>, Trim<Head>, ''];
+    : [Trim<Head>, Trim<Head>, ""];
 
-type ParseItem<S extends GenericSchema, From extends string, Item extends string> = Item extends '*'
+type ParseItem<S extends GenericSchema, From extends string, Item extends string> = Item extends "*"
   ? RowOf<Relation<S, From>>
   : Item extends `${infer Head}(${infer Inner})`
-    ? EmbedHead<Head> extends [infer Alias extends string, infer Target extends string, infer Hint extends string]
+    ? EmbedHead<Head> extends [
+        infer Alias extends string,
+        infer Target extends string,
+        infer Hint extends string,
+      ]
       ? { [K in Alias]: EmbedValue<S, From, Target, Hint, Inner> }
       : never
     : Item extends keyof RowOf<Relation<S, From>>
@@ -177,25 +213,31 @@ type ParseItem<S extends GenericSchema, From extends string, Item extends string
  * `*` for all of them, and embeds typed as an object (or `null`) when this
  * relation holds the foreign key, or an array when the other one does.
  */
-export type ParseSelect<S extends GenericSchema, From extends string, Select extends string> =
-  string extends Select
-    ? RowOf<Relation<S, From>>
-    : Simplify<UnionToIntersection<ParseItem<S, From, SplitTop<Select>[number]>>>;
+export type ParseSelect<
+  S extends GenericSchema,
+  From extends string,
+  Select extends string,
+> = string extends Select
+  ? RowOf<Relation<S, From>>
+  : Simplify<UnionToIntersection<ParseItem<S, From, SplitTop<Select>[number]>>>;
 
 /** The row of a select, or a loose record for an untyped client. */
-export type SelectRow<S extends GenericSchema, From extends string, Select extends string> =
-  S extends { readonly __untyped: true } ? Record<string, any> : ParseSelect<S, From, Select>;
+export type SelectRow<
+  S extends GenericSchema,
+  From extends string,
+  Select extends string,
+> = S extends { readonly __untyped: true } ? Record<string, unknown> : ParseSelect<S, From, Select>;
 
 // ---------------------------------------------------------------- functions
 
-export type FunctionName<S extends GenericSchema> = string & keyof S['Functions'];
-export type FunctionArgs<S extends GenericSchema, F> = F extends keyof S['Functions']
-  ? S['Functions'][F] extends { Args: infer A }
+export type FunctionName<S extends GenericSchema> = string & keyof S["Functions"];
+export type FunctionArgs<S extends GenericSchema, F> = F extends keyof S["Functions"]
+  ? S["Functions"][F] extends { Args: infer A }
     ? A
     : never
   : never;
-export type FunctionReturns<S extends GenericSchema, F> = F extends keyof S['Functions']
-  ? S['Functions'][F] extends { Returns: infer R }
+export type FunctionReturns<S extends GenericSchema, F> = F extends keyof S["Functions"]
+  ? S["Functions"][F] extends { Returns: infer R }
     ? R
     : never
   : never;

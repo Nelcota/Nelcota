@@ -1,0 +1,128 @@
+const ptBR = {
+  title: "Eventos e webhooks",
+  description:
+    "Envie mudanças do banco para outros serviços, com assinatura e novas tentativas automáticas.",
+  summary: {
+    outstanding: { one: "{count} entrega na fila", other: "{count} entregas na fila" },
+    retained: { one: "{count} entrega no histórico", other: "{count} entregas no histórico" },
+  },
+  configuration: "Webhooks",
+  deliveries: "Histórico de entregas",
+  webhook: "Webhook",
+  create: "Novo webhook",
+  edit: "Editar webhook",
+  emptyTitle: "Conecte o banco aos seus serviços",
+  emptyHint: "Escolha uma tabela, os eventos e a URL que receberá cada mudança.",
+  noTables: "Crie uma tabela primeiro",
+  noTablesHint:
+    "Webhooks acompanham tabelas comuns do schema exposto. Views e tabelas particionadas não estão disponíveis nesta versão.",
+  noDeliveries: "Nenhuma entrega por aqui",
+  noDeliveriesHint:
+    "As alterações feitas depois de ativar um webhook aparecem aqui. Ajuste os filtros se estiver procurando uma entrega.",
+  name: "Nome",
+  table: "Tabela",
+  destination: "URL de destino",
+  events: "Quando enviar",
+  attempts: "Máximo de tentativas",
+  namePlaceholder: "Avisar sobre novos pedidos",
+  chooseTable: "Escolha uma tabela",
+  urlHint:
+    "Use HTTPS público, sem usuário, senha, parâmetros ou fragmento. As linhas desta tabela serão enviadas para esse serviço.",
+  localHint:
+    "Neste ambiente, HTTP para localhost, 127.0.0.1 e ::1 também é permitido. Redes privadas continuam bloqueadas.",
+  insert: "Linha inserida",
+  update: "Linha atualizada",
+  delete: "Linha apagada",
+  attemptsHint:
+    "De 1 a 10, incluindo o primeiro envio. Falhas temporárias recebem novas tentativas com intervalos crescentes.",
+  enabled: "Ativo",
+  paused: "Pausado",
+  tableMissing: "Sem tabela",
+  pause: "Pausar",
+  resume: "Ativar",
+  pauseTitle: "Pausar {name}?",
+  pauseConfirm: "Pausar webhook",
+  pauseHint:
+    "Ao pausar, novas mudanças deixam de gerar eventos e as entregas pendentes aguardam a reativação. Um envio já iniciado pode terminar.",
+  missingTable: "A tabela não existe mais",
+  saved: "Webhook salvo.",
+  created: "Webhook criado.",
+  removed: "Webhook apagado.",
+  remove: "Apagar",
+  deleteConfirm: "Apagar webhook",
+  deleteTitle: "Apagar {name}?",
+  deleteHint:
+    "As entregas pendentes serão canceladas. O histórico permanece disponível por até 7 dias. Um envio já iniciado pode chegar ao destino.",
+  rotate: "Trocar chave",
+  rotateTitle: "Trocar a chave de {name}?",
+  rotateHint:
+    "Os próximos envios usarão a nova chave. Atualize o serviço que recebe os eventos; um envio já iniciado pode usar a chave anterior.",
+  secretTitle: "Guarde a chave de assinatura",
+  secretHint:
+    "Ela aparece uma única vez. Copie para o serviço que recebe os eventos. Se perder a chave, você pode trocá-la.",
+  copySecret: "Copiar chave",
+  secretCopied: "Já copiei a chave",
+  closeWithoutCopy: "Fechar sem copiar",
+  secretNotCopied: "Você ainda não copiou a chave. Depois de fechar, ela não aparece de novo.",
+  secretHelp:
+    "Confira a assinatura e o horário antes de processar. Use o ID do evento para evitar repetir a ação em novas tentativas ou reenvios.",
+  guide: "Como receber e verificar eventos",
+  retryGuide:
+    "Entregas recebem até 6 tentativas por padrão. Respostas 2xx confirmam; falhas temporárias são tentadas novamente.",
+  retention:
+    "Histórico por até 7 dias. Eventos pendentes ficam na fila até serem concluídos ou cancelados.",
+  attemptsOf: { one: "{done} de {count} tentativa", other: "{done} de {count} tentativas" },
+  capacity:
+    "A fila está perto do limite. Confira os destinos com falhas ou pausados para manter as gravações funcionando.",
+  clear: "Limpar histórico",
+  clearTitle: "Limpar o histórico concluído?",
+  clearHint:
+    "Entregas concluídas, com falha ou canceladas serão removidas, incluindo os dados enviados. Entregas pendentes continuam na fila.",
+  cleared: "Histórico concluído removido.",
+  allWebhooks: "Todos os webhooks",
+  allStatuses: "Todos os estados",
+  webhookFilter: "Filtrar por webhook",
+  statusFilter: "Filtrar por estado",
+  status: {
+    pending: "Aguardando",
+    processing: "Enviando",
+    succeeded: "Entregue",
+    failed: "Falhou",
+    cancelled: "Cancelada",
+  },
+  sent: "Criada em",
+  event: "Evento",
+  result: "Resultado",
+  view: "Ver entrega",
+  firstPage: "Mais recentes",
+  nextPage: "Mais antigas",
+  deliveryTitle: "Entrega #{id}",
+  eventId: "ID do evento",
+  deliveryId: "ID da entrega",
+  payload: "Dados enviados",
+  attemptHistory: "Tentativas",
+  attempt: "Tentativa",
+  started: "Início",
+  duration: "Duração",
+  nextAttempt: "Próxima tentativa",
+  noAttempts: "Nenhum envio iniciado.",
+  replay: "Reenviar",
+  replayTitle: "Reenviar este evento?",
+  replayHint:
+    "Uma nova entrega usará a URL e a chave atuais do webhook. O ID do evento e os dados permanecem iguais. O serviço pode ignorar um evento já processado.",
+  replayed: "Reenvio adicionado à fila.",
+  replayOf: "Reenvio da entrega #{id}",
+  destinationHint: "Entregas já na fila mantêm a URL original. As novas usam a URL atual.",
+  failures: {
+    http_error: "O destino recusou o envio.",
+    network_error: "Não foi possível conectar ao destino. Confira a URL, o DNS e o certificado.",
+    timeout: "O destino demorou demais para responder.",
+    invalid_destination: "Destino bloqueado pelas regras de segurança.",
+    worker_interrupted: "O envio foi interrompido; a fila recuperou a tentativa.",
+    payload_too_large:
+      "Os dados passaram de 256 KiB. O conteúdo foi omitido e não pode ser reenviado.",
+    endpoint_deleted: "O webhook foi apagado.",
+  },
+};
+
+export default ptBR;

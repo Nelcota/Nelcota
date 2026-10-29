@@ -4,19 +4,19 @@
  * schedule refreshes.
  */
 
-import { NelcotaUsageError } from './errors.js';
+import { NelcotaUsageError } from "./client.errors.js";
+const JWT_SEGMENT_COUNT = 3;
 
 export function base64UrlEncode(bytes: Uint8Array): string {
-  let binary = '';
+  let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }
 
 function base64UrlDecode(text: string): string {
-  return new TextDecoder().decode(Uint8Array.from(
-    atob(text.replace(/-/g, '+').replace(/_/g, '/')),
-    c => c.charCodeAt(0),
-  ));
+  return new TextDecoder().decode(
+    Uint8Array.from(atob(text.replaceAll("-", "+").replaceAll("_", "/")), (c) => c.charCodeAt(0)),
+  );
 }
 
 export interface JwtPayload {
@@ -28,11 +28,11 @@ export interface JwtPayload {
 
 /** The payload of a JWT, or `null` when the text is not one. */
 export function decodeJwt(token: string): JwtPayload | null {
-  const parts = token.split('.');
-  if (parts.length !== 3 || !parts[1]) return null;
+  const parts = token.split(".");
+  if (parts.length !== JWT_SEGMENT_COUNT || parts[1] === undefined || parts[1] === "") return null;
   try {
     const payload: unknown = JSON.parse(base64UrlDecode(parts[1]));
-    return typeof payload === 'object' && payload !== null && !Array.isArray(payload)
+    return typeof payload === "object" && payload !== null && Array.isArray(payload) === false
       ? (payload as JwtPayload)
       : null;
   } catch {
@@ -41,7 +41,7 @@ export function decodeJwt(token: string): JwtPayload | null {
 }
 
 export function isBrowser(): boolean {
-  return typeof window !== 'undefined' && typeof document !== 'undefined';
+  return typeof window !== "undefined" && typeof document !== "undefined";
 }
 
 let lastChecked: string | undefined;
@@ -51,11 +51,16 @@ let lastChecked: string | undefined;
  * opens the page could read and change every row. It belongs on a server.
  */
 export function assertTokenAllowed(token: string, browser: boolean = isBrowser()): void {
-  const scope = (globalThis as { WorkerGlobalScope?: new (...args: never[]) => object }).WorkerGlobalScope;
-  if (token === lastChecked || !(browser || typeof scope === 'function' && globalThis instanceof scope)) return;
-  if (decodeJwt(token)?.role === 'service_role') {
+  const scope = (globalThis as { WorkerGlobalScope?: new (...args: never[]) => object })
+    .WorkerGlobalScope;
+  if (
+    token === lastChecked ||
+    (browser || (typeof scope === "function" && globalThis instanceof scope)) === false
+  )
+    return;
+  if (decodeJwt(token)?.role === "service_role") {
     throw new NelcotaUsageError(
-      'A service_role token bypasses RLS and must never reach a browser. Use it only on a server.',
+      "A service_role token bypasses RLS and must never reach a browser. Use it only on a server.",
     );
   }
   lastChecked = token;

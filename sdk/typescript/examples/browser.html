@@ -1,29 +1,63 @@
 <!doctype html>
 <html lang="en">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Nelcota — JavaScript example</title>
-<script type="importmap">{"imports":{"@nelcota/client":"/dist/index.js"}}</script>
-<style>body{font:16px system-ui;max-width:680px;margin:48px auto;padding:0 20px}form{display:grid;gap:12px;margin:24px 0}label{display:grid;gap:4px}input,button{font:inherit;padding:8px}pre{white-space:pre-wrap;overflow-wrap:anywhere}button{cursor:pointer}</style>
-<h1>Nelcota in JavaScript</h1>
-<p>Apply <code>examples/notes.sql</code> (repository root) to the project and connect to your API.</p>
-<form id="auth">
-  <label>API URL <input name="url" type="url" value="http://127.0.0.1:8000" required></label>
-  <label>Email <input name="email" type="email" autocomplete="username" required></label>
-  <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
-  <button name="action" value="signin">Sign in</button>
-  <button name="action" value="signup">Create account</button>
-</form>
-<form id="note">
-  <label>Note <input name="body" required></label>
-  <button>Save note</button>
-</form>
-<form id="file">
-  <label>File <input name="file" type="file" required></label>
-  <button>Upload file</button>
-</form>
-<button id="list">List notes</button>
-<button id="logout">Sign out</button>
-<pre id="result" role="status" aria-live="polite">Sign in to start.</pre>
-<script type="module" src="/examples/browser.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nelcota — JavaScript example</title>
+  <script type="importmap">
+    { "imports": { "@nelcota/client": "/dist/index.js" } }
+  </script>
+  <style>
+    body {
+      font: 16px system-ui;
+      max-width: 680px;
+      margin: 48px auto;
+      padding: 0 20px;
+    }
+    form {
+      display: grid;
+      gap: 12px;
+      margin: 24px 0;
+    }
+    label {
+      display: grid;
+      gap: 4px;
+    }
+    input,
+    button {
+      font: inherit;
+      padding: 8px;
+    }
+    pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    button {
+      cursor: pointer;
+    }
+  </style>
+  <h1>Nelcota in JavaScript</h1>
+  <p>
+    Apply <code>examples/notes.sql</code> (repository root) to the project and connect to your API.
+  </p>
+  <form id="auth">
+    <label>API URL <input name="url" type="url" value="http://127.0.0.1:8000" required /></label>
+    <label>Email <input name="email" type="email" autocomplete="username" required /></label>
+    <label
+      >Password <input name="password" type="password" autocomplete="current-password" required
+    /></label>
+    <button name="action" value="signin">Sign in</button>
+    <button name="action" value="signup">Create account</button>
+  </form>
+  <form id="note">
+    <label>Note <input name="body" required /></label>
+    <button>Save note</button>
+  </form>
+  <form id="file">
+    <label>File <input name="file" type="file" required /></label>
+    <button>Upload file</button>
+  </form>
+  <button id="list">List notes</button>
+  <button id="logout">Sign out</button>
+  <pre id="result" role="status" aria-live="polite">Sign in to start.</pre>
+  <script type="module" src="/examples/browser.js"></script>
 </html>

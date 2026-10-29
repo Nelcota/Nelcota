@@ -1,0 +1,87 @@
+// Users page and its dialogs (create user, reset password, password field).
+const ptBR = {
+  title: "Usuários",
+  description: "Gerencie as contas e o acesso das pessoas ao seu app.",
+  count: {
+    one: "{count} usuário cadastrado no seu app.",
+    other: "{count} usuários cadastrados no seu app.",
+  },
+  neverSignedIn: "Ainda não entrou",
+  searchPlaceholder: "Buscar por e-mail",
+  searchLabel: "Buscar usuários por e-mail",
+  new: "Novo usuário",
+  noResults: "Nenhum resultado",
+  noResultsFor: 'Nada encontrado para "{query}".',
+  empty: "Nenhum usuário",
+  emptyDescription: "Cadastros feitos pela API aparecem aqui.",
+  clearSearch: "Limpar busca",
+  columns: {
+    email: "E-mail",
+    created: "Criado",
+    lastSignIn: "Último login",
+    sessions: "Sessões ativas",
+    signIn: "Entra com",
+  },
+  methods: {
+    password: "Senha",
+    linkOnly: "Só link por e-mail",
+    linkOnlyHint:
+      "Sem senha nem provedor: entra por link de acesso por e-mail ou pela recuperação de senha.",
+  },
+  copyId: "Copiar ID",
+  copyIdOf: "Copiar o ID de {email}",
+  matchCount: {
+    one: '{count} usuário encontrado para "{query}".',
+    other: '{count} usuários encontrados para "{query}".',
+  },
+  idCopied: "ID copiado",
+  resetPassword: "Redefinir senha…",
+  revokeSessions: "Encerrar sessões",
+  confirmEmail: "Confirmar e-mail",
+  unconfirmed: "Não confirmado",
+  unconfirmedHint:
+    "A pessoa ainda não abriu o link de confirmação enviado por e-mail. Você pode confirmar pelo menu de ações.",
+  emailConfirmed: "E-mail de {email} confirmado",
+  delete: "Apagar usuário",
+  pagination: "Paginação",
+  revoked: "Sessões de {email} encerradas",
+  deleted: "Usuário {email} apagado",
+  confirmRevoke: {
+    title: "Encerrar as sessões?",
+    description:
+      "{email} vai precisar entrar de novo. Os tokens de acesso já emitidos (JWT) continuam valendo até expirar (veja a duração do acesso em Login dos usuários).",
+  },
+  confirmDelete: {
+    title: "Apagar o usuário?",
+    description: "{email} e as sessões dele serão apagados. Não dá para desfazer.",
+  },
+  create: {
+    description: "Crie uma conta que já pode entrar no app com e-mail e senha.",
+    invalidEmail: "Informe um e-mail válido, como ana@exemplo.com.",
+    descriptionBefore: "A conta já pode entrar pela API",
+    descriptionAfter: "com o e-mail e a senha abaixo.",
+    emailPlaceholder: "ana@exemplo.com",
+    password: "Senha",
+    submit: "Criar usuário",
+    created: "Usuário {email} criado",
+  },
+  setPassword: {
+    title: "Redefinir a senha",
+    descriptionBefore: "de",
+    descriptionAfter: "As sessões abertas dele são encerradas.",
+    newPassword: "Nova senha",
+    submit: "Redefinir senha",
+    saved: "Senha de {email} redefinida",
+  },
+  password: {
+    show: "Mostrar senha",
+    generate: "Gerar",
+    copy: "Copiar senha",
+    copied: "Senha copiada",
+    hint: "Mínimo de 8 caracteres. Entregue a senha ao usuário por um canal seguro.",
+    tooShort: "mínimo de 8 caracteres",
+    tooLong: "máximo de 256 caracteres",
+  },
+};
+
+export default ptBR;

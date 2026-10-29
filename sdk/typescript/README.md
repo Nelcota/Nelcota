@@ -95,8 +95,12 @@ anything is sent.
 Custom token/storage adapters may throw their own errors. A response returned
 by `storage.from(bucket).open()` is caller-owned: handle errors while reading its stream.
 
+REST builders send a request only when `.execute()` is called. Add it before
+awaiting a query or passing it to `Promise.all`. Auth, storage and RPC methods
+already return promises.
+
 ```ts
-const { data, error } = await nelcota.from('notes').select('id,body');
+const { data, error } = await nelcota.from('notes').select('id,body').execute();
 if (error) console.error(error.code, error.message);
 ```
 
@@ -107,7 +111,7 @@ returns `data` or throws the `NelcotaError`:
 ```ts
 import { unwrap } from '@nelcota/client';
 
-const { data: notes } = await nelcota.from('notes').select('id,body').throwOnError();
+const { data: notes } = await nelcota.from('notes').select('id,body').throwOnError().execute();
 const user = unwrap(await nelcota.auth.getUser());
 const blob = unwrap(await nelcota.storage.from('files').download('a.txt'));
 ```
@@ -123,28 +127,28 @@ const { data, count } = await nelcota
   .gte('items.qty', 2)                                  // filters the embedded rows
   .order('created_at', { ascending: false })
   .order('qty', { referencedTable: 'items' })
-  .range(0, 19);
+  .range(0, 19).execute();
 // data: { id: number | string; total: number | string; customer: { name: string } | null;
 //         items: { product: string; qty: number }[] }[]
 
 // One row: an error (not_single) unless exactly one matches.
-const { data: order } = await nelcota.from('orders').select().eq('id', 10).single();
+const { data: order } = await nelcota.from('orders').select().eq('id', 10).single().execute();
 
 // Only the count (a HEAD request, no rows).
-const { count: open } = await nelcota.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'open');
+const { count: open } = await nelcota.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'open').execute();
 
 // Groups: conditions are built with typed calls, never strings.
 await nelcota.from('products').select().or((c) => [
   c.eq('status', 'featured'),
   c.and([c.gt('price', 100), c.not(c.is('archived', true))]),
-]);
+]).execute();
 
 // Writes return nothing unless you ask for the rows with select().
-await nelcota.from('notes').insert({ body: 'hi' });
-const { data: created } = await nelcota.from('notes').insert({ body: 'hi' }).select('id').single();
-await nelcota.from('notes').update({ body: 'edited' }).eq('id', 1);
-await nelcota.from('notes').delete().in('id', [1, 2, 3]);
-await nelcota.from('products').upsert(rows, { onConflict: 'slug' });      // or ignoreDuplicates: true
+await nelcota.from('notes').insert({ body: 'hi' }).execute();
+const { data: created } = await nelcota.from('notes').insert({ body: 'hi' }).select('id').single().execute();
+await nelcota.from('notes').update({ body: 'edited' }).eq('id', 1).execute();
+await nelcota.from('notes').delete().in('id', [1, 2, 3]).execute();
+await nelcota.from('products').upsert(rows, { onConflict: 'slug' }).execute();      // or ignoreDuplicates: true
 
 // Functions run with the caller's role.
 const { data: total } = await nelcota.rpc('cart_total', { cart_id: 7 });
@@ -194,7 +198,7 @@ rows exist:
 
 ```ts
 const { data, range, count } = await nelcota
-  .from('notes').select('id,body', { count: 'exact' }).order('id').range(0, 49);
+  .from('notes').select('id,body', { count: 'exact' }).order('id').range(0, 49).execute();
 const more = range !== null && count !== null && range.to + 1 < count;
 ```
 
@@ -215,7 +219,7 @@ request an affected-row count. Zero affected rows is a successful outcome:
 ```ts
 const result = await nelcota.from('notes')
   .update({ title: 'Revised', version: expectedVersion + 1 }, { count: 'exact' })
-  .eq('id', id).eq('version', expectedVersion);
+  .eq('id', id).eq('version', expectedVersion).execute();
 if (result.error) throw result.error;
 if (result.count === 0) {
   // No visible row matched: reload or show that the save could not be applied.
@@ -425,7 +429,7 @@ bounded snapshot. This example assumes an initialized `nelcota` client and a
 async function poll(signal: AbortSignal) {
   const { data, error } = await nelcota.from('notes')
     .select('id,body,created_at').order('id', { ascending: false })
-    .limit(100).abortSignal(signal);
+    .limit(100).abortSignal(signal).execute();
   if (error) return error.retryAfter ?? 30;
   render(data);
   return 5;
@@ -497,7 +501,7 @@ export function cookieStorage(jar: CookieJar): SessionStorage {
 const nelcota = createClient<Database>(process.env.NELCOTA_URL!, {
   auth: { storage: cookieStorage(jar), storageKey: 'nelcota', autoRefresh: false },
 });
-const { data: notes } = await nelcota.from('notes').select('id,body');
+const { data: notes } = await nelcota.from('notes').select('id,body').execute();
 ```
 
 `httpOnly` keeps tokens away from page scripts. This adapter is illustrative:

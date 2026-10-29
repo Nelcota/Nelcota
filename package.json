@@ -1,0 +1,36 @@
+{
+  "name": "nelcota-code-quality",
+  "private": true,
+  "description": "Development-only NelcotaRules checks for the Rust, Svelte and SDK repository",
+  "type": "module",
+  "scripts": {
+    "format": "oxfmt --config .oxfmtrc.json knip.config.ts knip.json package.json tsconfig.json .nelcota-rules.oxlintrc.json .oxfmtrc.json .prettierrc.json crates/admin/ui sdk/typescript sdk/nextjs sdk/ssr lint && prettier --write \"crates/admin/ui/src/**/*.svelte\"",
+    "format:check": "oxfmt --check --config .oxfmtrc.json knip.config.ts knip.json package.json tsconfig.json .nelcota-rules.oxlintrc.json .oxfmtrc.json .prettierrc.json crates/admin/ui sdk/typescript sdk/nextjs sdk/ssr lint && prettier --check \"crates/admin/ui/src/**/*.svelte\"",
+    "lint": "bun lint/checks/contract-types.ts && bun lint/checks/lint.ts",
+    "lint:fix": "bun run lint --fix",
+    "knip": "knip --config knip.config.ts",
+    "package-size": "bun lint/check-package-size.ts",
+    "test:rules": "bun test lint --max-concurrency 2",
+    "check:rules": "bun run typecheck:rules && bun run typecheck:scripts && bun run format:check && bun run lint && bun run knip && bun run package-size && bun run test:rules",
+    "typecheck:rules": "bun lint/checks/typecheck.ts tsconfig.json",
+    "typecheck:scripts": "bun lint/checks/typecheck.ts sdk/nextjs/scripts/tsconfig.json sdk/ssr/scripts/tsconfig.json sdk/typescript/test/tsconfig.json sdk/typescript/examples/tsconfig.json sdk/typescript/tsconfig.scripts.json sdk/ssr/examples/sveltekit/tsconfig.json crates/admin/ui/tsconfig.scripts.json sdk/nextjs/examples/app-router/tsconfig.json sdk/typescript/test/contract/tsconfig.json",
+    "prepare:checks": "bun install --cwd sdk/typescript --frozen-lockfile --ignore-scripts && bun run --cwd sdk/typescript build && bun install --cwd sdk/ssr --frozen-lockfile --ignore-scripts --force && bun run --cwd sdk/ssr build && bun install --cwd sdk/nextjs --frozen-lockfile --ignore-scripts --force && bun run --cwd sdk/nextjs build && bun sdk/nextjs/scripts/link-self.mjs && bun install --cwd sdk/ssr/examples/sveltekit --frozen-lockfile --ignore-scripts && bun install --cwd crates/admin/ui --frozen-lockfile --ignore-scripts",
+    "check": "bun run prepare:checks && bun run --cwd sdk/typescript check && bun run --cwd sdk/ssr check && bun run --cwd sdk/nextjs check && bun run --cwd crates/admin/ui check && bun run check:rules"
+  },
+  "devDependencies": {
+    "@jridgewell/trace-mapping": "0.3.31",
+    "@types/bun": "1.4.2",
+    "@types/estree": "1.0.9",
+    "knip": "6.41.0",
+    "oxfmt": "0.72.0",
+    "oxlint": "1.87.0",
+    "oxlint-tsgolint": "7.0.2003",
+    "prettier": "3.9.10",
+    "prettier-plugin-svelte": "4.1.1",
+    "svelte": "5.57.2",
+    "svelte2tsx": "0.7.61",
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "typescript-7": "npm:typescript@7.0.2"
+  },
+  "packageManager": "bun@1.4.3"
+}

@@ -1,7 +1,7 @@
+import type { Json } from "../core/json-types.js";
 /** Sessions and users as the server returns them, and where they are kept. */
-import { isRecord, parseJson } from '../core/json.js';
-
-import type { Json } from '../core/json-types.js';
+import { isRecord, parseJson } from "../core/json.js";
+const SECOND_IN_MS = 1000;
 
 export interface User {
   id: string;
@@ -14,7 +14,7 @@ export interface User {
 
 export interface Session {
   access_token: string;
-  token_type: 'bearer';
+  token_type: "bearer";
   /** Seconds the access token lives. */
   expires_in: number;
   /** Unix time (seconds) when the access token expires. */
@@ -45,32 +45,40 @@ export function memoryStorage(): SessionStorage {
 }
 
 export function isUser(value: unknown): value is User {
-  if (!isRecord(value)) return false;
+  if (isRecord(value) === false) return false;
   return (
-    typeof value['id'] === 'string' &&
-    value['id'].length > 0 &&
-    typeof value['email'] === 'string' &&
-    (value['email_confirmed_at'] === null || typeof value['email_confirmed_at'] === 'string') &&
-    typeof value['created_at'] === 'string' &&
-    (value['last_sign_in_at'] === null || typeof value['last_sign_in_at'] === 'string') &&
-    isRecord(value['user_metadata'])
+    typeof value["id"] === "string" &&
+    value["id"].length > 0 &&
+    typeof value["email"] === "string" &&
+    (value["email_confirmed_at"] === null || typeof value["email_confirmed_at"] === "string") &&
+    typeof value["created_at"] === "string" &&
+    (value["last_sign_in_at"] === null || typeof value["last_sign_in_at"] === "string") &&
+    isRecord(value["user_metadata"])
+  );
+}
+
+function validSessionLifetime(value: Record<string, unknown>): boolean {
+  return (
+    typeof value["expires_in"] === "number" &&
+    Number.isSafeInteger(value["expires_in"]) &&
+    value["expires_in"] >= 0 &&
+    typeof value["expires_at"] === "number" &&
+    Number.isSafeInteger(value["expires_at"]) &&
+    value["expires_at"] >= 0
   );
 }
 
 /** Whether a value has the shape of a session (stored data is untrusted). */
 export function isSession(value: unknown): value is Session {
-  if (!isRecord(value)) return false;
+  if (isRecord(value) === false) return false;
   return (
-    typeof value['access_token'] === 'string' &&
-    value['access_token'].length > 0 &&
-    typeof value['refresh_token'] === 'string' &&
-    value['refresh_token'].length > 0 &&
-    value['token_type'] === 'bearer' &&
-    typeof value['expires_in'] === 'number' &&
-    Number.isSafeInteger(value['expires_in']) && value['expires_in'] >= 0 &&
-    typeof value['expires_at'] === 'number' &&
-    Number.isSafeInteger(value['expires_at']) && value['expires_at'] >= 0 &&
-    isUser(value['user'])
+    typeof value["access_token"] === "string" &&
+    value["access_token"].length > 0 &&
+    typeof value["refresh_token"] === "string" &&
+    value["refresh_token"].length > 0 &&
+    value["token_type"] === "bearer" &&
+    validSessionLifetime(value) &&
+    isUser(value["user"])
   );
 }
 
@@ -86,5 +94,5 @@ export function parseSession(text: string | null): Session | null {
 
 /** Seconds until the access token expires (negative when it has). */
 export function secondsLeft(session: Session, now: number = Date.now()): number {
-  return session.expires_at - now / 1000;
+  return session.expires_at - now / SECOND_IN_MS;
 }

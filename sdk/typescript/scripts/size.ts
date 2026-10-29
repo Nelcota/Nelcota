@@ -4,22 +4,35 @@
 // minifier, which shrinks it further. The budget also keeps the dependency
 // graph honest, e.g. that importing the REST client never drags auth along.
 
-import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { gzipSync } from 'node:zlib';
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { gzipSync } from "node:zlib";
+const ENTRY_COLUMN_WIDTH = 18;
+const SIZE_COLUMN_WIDTH = 6;
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const dist = mkdtempSync(join(tmpdir(), 'nelcota-sdk-size-'));
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const dist = mkdtempSync(join(tmpdir(), "nelcota-sdk-size-"));
 const tsc = spawnSync(
   process.execPath,
-  [join(root, 'node_modules/typescript/bin/tsc'), '-p', join(root, 'tsconfig.build.json'), '--outDir', dist, '--removeComments', '--declaration', 'false', '--isolatedDeclarations', 'false'],
-  { stdio: 'inherit' },
+  [
+    join(root, "node_modules/typescript/bin/tsc"),
+    "-p",
+    join(root, "tsconfig.build.json"),
+    "--outDir",
+    dist,
+    "--removeComments",
+    "--declaration",
+    "false",
+    "--isolatedDeclarations",
+    "false",
+  ],
+  { stdio: "inherit" },
 );
 if (tsc.status !== 0) process.exit(tsc.status ?? 1);
-process.on('exit', () => rmSync(dist, { recursive: true, force: true }));
+process.on("exit", () => rmSync(dist, { recursive: true, force: true }));
 
 const BUDGETS: Record<string, number> = {
   // Includes shared cancellation, explicit row/bucket contract validation and
@@ -44,20 +57,22 @@ const BUDGETS: Record<string, number> = {
   // entry point below; each budget rose by 50 B for it.
   // Initial-session subscriptions and exact write counts add 127 B at root,
   // 110 B to auth and 21 B to REST; the independent testing entry adds no bytes here.
-  'index.js': 19_250,
+  "index.js": 19_250,
   // Standalone factories include HTTP and keep the other feature modules out.
-  'rest/index.js': 10_100,
+  "rest/index.js": 10_100,
   // Failed persistence must retain rotated tokens; background failures are observed.
-  'auth/index.js': 13_050,
-  'storage/index.js': 8_050,
+  "auth/index.js": 13_050,
+  "storage/index.js": 8_050,
 };
 
 function closure(entry: string, seen = new Set<string>()): Set<string> {
   if (seen.has(entry)) return seen;
   seen.add(entry);
-  const code = readFileSync(entry, 'utf8');
+  const code = readFileSync(entry, "utf8");
   // Runtime imports only: `import type` is erased by tsc.
-  for (const [, specifier = ''] of code.matchAll(/(?:^|\n)\s*(?:import|export)\s[^'"]*?from\s+['"](\.[^'"]+)['"]/g)) {
+  for (const [, specifier = ""] of code.matchAll(
+    /(?:^|\n)\s*(?:import|export)\s[^'"]*?from\s+['"](\.[^'"]+)['"]/g,
+  )) {
     closure(resolve(dirname(entry), specifier), seen);
   }
   return seen;
@@ -66,14 +81,16 @@ function closure(entry: string, seen = new Set<string>()): Set<string> {
 let failed = false;
 for (const [entry, budget] of Object.entries(BUDGETS)) {
   const files = [...closure(resolve(dist, entry))];
-  const source = files.map((f) => readFileSync(f, 'utf8')).join('\n');
+  const source = files.map((f) => readFileSync(f, "utf8")).join("\n");
   const size = gzipSync(source, { level: 9 }).length;
   const ok = size <= budget;
-  failed ||= !ok;
-  const modules = files.map((f) => f.slice(dist.length + 1).replace(/\\/g, '/')).sort();
-  console.log(`${ok ? 'ok  ' : 'OVER'} ${entry.padEnd(18)} ${String(size).padStart(6)} B gzip (budget ${budget})  ${modules.join(', ')}`);
+  failed ||= ok === false;
+  const modules = files.map((f) => f.slice(dist.length + 1).replaceAll("\\", "/")).toSorted();
+  console.log(
+    `${ok ? "ok  " : "OVER"} ${entry.padEnd(ENTRY_COLUMN_WIDTH)} ${String(size).padStart(SIZE_COLUMN_WIDTH)} B gzip (budget ${budget})  ${modules.join(", ")}`,
+  );
 }
 if (failed) {
-  console.error('\nA size budget was exceeded: trim the code or raise the budget on purpose.');
+  console.error("\nA size budget was exceeded: trim the code or raise the budget on purpose.");
   process.exit(1);
 }

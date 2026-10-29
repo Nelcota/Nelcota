@@ -34,6 +34,12 @@ python3 scripts/run-preset.py base
 python3 scripts/run-preset.py performance/imports
 ```
 
+JavaScript and TypeScript changes must also pass the root
+[NelcotaRules quality checks](docs/engineering/nelcota-rules.md), including JSDoc
+types for JavaScript scripts, Svelte formatting, lint and unused-code checks.
+Install the root development tools with `bun install --frozen-lockfile --ignore-scripts`;
+follow that guide for the generated contract fixture and `bun run check`.
+
 ## Testing
 
 Run suites related to the change. Keep Rust tests, Vitest and cargo deny/audit

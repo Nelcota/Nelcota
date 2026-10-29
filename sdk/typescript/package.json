@@ -2,28 +2,35 @@
   "name": "@nelcota/client",
   "version": "0.2.5",
   "description": "TypeScript client for Nelcota: REST under RLS, auth and storage.",
+  "keywords": [
+    "auth",
+    "baas",
+    "nelcota",
+    "postgres",
+    "rest",
+    "rls",
+    "storage"
+  ],
+  "homepage": "https://github.com/Nelcota/Nelcota/blob/main/sdk/typescript/README.md",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Nelcota/Nelcota.git",
     "directory": "sdk/typescript"
   },
-  "homepage": "https://github.com/Nelcota/Nelcota/blob/main/sdk/typescript/README.md",
-  "keywords": [
-    "nelcota",
-    "postgres",
-    "rls",
-    "rest",
-    "auth",
-    "storage",
-    "baas"
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "docs/contract.md",
+    "docs/quickstart.pt-BR.md",
+    "examples/*.html",
+    "examples/*.js",
+    "examples/*.mjs"
   ],
   "type": "module",
   "sideEffects": false,
-  "engines": {
-    "node": ">=22",
-    "bun": ">=1.4.3"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -47,15 +54,6 @@
     },
     "./package.json": "./package.json"
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE",
-    "CHANGELOG.md",
-    "docs/contract.md",
-    "docs/quickstart.pt-BR.md",
-    "examples"
-  ],
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
@@ -77,6 +75,7 @@
     "prepublishOnly": "bun run check && bun run test && bun run test:types && bun run build && bun run size && npm run test:package"
   },
   "devDependencies": {
+    "@types/bun": "1.4.2",
     "@types/node": "^26.6.5",
     "@types/pg": "8.23.1",
     "fake-indexeddb": "6.2.6",
@@ -85,5 +84,9 @@
     "playwright-core": "^1.64.1",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
+  },
+  "engines": {
+    "bun": ">=1.4.3",
+    "node": ">=22"
   }
 }

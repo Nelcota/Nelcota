@@ -3,17 +3,26 @@
   "version": "0.1.2",
   "private": false,
   "description": "Request-scoped Nelcota integration for the Next.js App Router",
+  "homepage": "https://github.com/Nelcota/Nelcota/tree/main/sdk/nextjs",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nelcota/Nelcota.git",
+    "directory": "sdk/nextjs"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "docs",
+    "LICENSE"
+  ],
   "type": "module",
   "sideEffects": [
     "./dist/server.js",
     "./dist/postgres.js",
     "./dist/proxy.js"
   ],
-  "engines": {
-    "node": "^22.0.0 || ^24.0.0 || ^26.0.0",
-    "bun": ">=1.4.3"
-  },
   "exports": {
     "./server": {
       "types": "./dist/server.d.ts",
@@ -36,15 +45,12 @@
       "default": "./dist/proxy.js"
     }
   },
-  "files": [
-    "dist",
-    "README.md",
-    "CHANGELOG.md",
-    "docs",
-    "LICENSE"
-  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
-    "check": "tsc --noEmit",
+    "check": "tsc --noEmit --project tsconfig.build.json && tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "test": "bun --bun vitest run --maxWorkers=2",
     "test:node": "vitest run --maxWorkers=2",
@@ -53,33 +59,29 @@
   "dependencies": {
     "server-only": "0.0.1"
   },
+  "devDependencies": {
+    "@nelcota/client": "file:../typescript",
+    "@nelcota/ssr": "file:../ssr",
+    "@types/bun": "1.4.2",
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.2.0",
+    "next": "16.4.3",
+    "pg": "^8.23.1",
+    "playwright-core": "1.64.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  },
   "peerDependencies": {
     "@nelcota/client": "^0.2.2",
     "@nelcota/ssr": "^0.1.0",
     "next": "^16.4.3",
     "react": "^19.3.1"
   },
-  "devDependencies": {
-    "@nelcota/client": "file:../typescript",
-    "@nelcota/ssr": "file:../ssr",
-    "@types/node": "^26.6.5",
-    "@types/pg": "^8.23.1",
-    "@types/react": "^19.2.0",
-    "next": "16.4.3",
-    "pg": "^8.23.1",
-    "react": "19.3.1",
-    "react-dom": "19.3.1",
-    "typescript": "^7.0.2",
-    "vitest": "^5.0.5"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Nelcota/Nelcota.git",
-    "directory": "sdk/nextjs"
-  },
-  "homepage": "https://github.com/Nelcota/Nelcota/tree/main/sdk/nextjs",
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+  "engines": {
+    "bun": ">=1.4.3",
+    "node": "^22.0.0 || ^24.0.0 || ^26.0.0"
   }
 }

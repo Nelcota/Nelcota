@@ -1,0 +1,52 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["lint/**/*.test.ts"],
+      "project": ["lint/**/*.{js,ts}"],
+      "oxlint": {
+        "config": [".oxlintrc.json", ".nelcota-rules.oxlintrc.json"]
+      }
+    },
+    "crates/admin/ui": {
+      "entry": [
+        "src/main.ts",
+        "src/theme-init.js",
+        "assets/reference.html",
+        "scripts/dev-panel.ts",
+        "src/app.css",
+        "src/**/*.memory.ts",
+        "vite.memory.config.ts"
+      ],
+      "project": ["src/**/*.{js,ts,svelte}", "scripts/**/*.ts", "e2e/**/*.ts"],
+      "ignore": ["src/lib/generated/**"]
+    },
+    "sdk/typescript": {
+      "entry": [
+        "src/index.ts",
+        "src/testing.ts",
+        "test/**/*.{ts,mjs}",
+        "scripts/*.{ts,mjs}",
+        "examples/**/*.{js,mjs}"
+      ],
+      "project": [
+        "src/**/*.ts",
+        "test/**/*.{ts,mjs}",
+        "scripts/**/*.{ts,mjs}",
+        "examples/**/*.{js,mjs}"
+      ]
+    },
+    "sdk/ssr": {
+      "entry": [
+        "src/{index,postgres,memory-store,browser,sveltekit}.ts",
+        "test/**/*.ts",
+        "scripts/*.mjs"
+      ],
+      "project": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.mjs"]
+    },
+    "sdk/nextjs": {
+      "entry": ["src/index.ts", "test/**/*.ts", "scripts/*.{ts,mjs}"],
+      "project": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.{ts,mjs}"]
+    }
+  }
+}

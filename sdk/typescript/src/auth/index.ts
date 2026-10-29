@@ -1,13 +1,13 @@
 /** `@nelcota/client/auth`: accounts, sessions and sign-in. */
 
-import { AuthClient, type AuthOptions } from './client.js';
-import { createHttpClient, type TransportOptions } from '../core/options.js';
+import { createHttpClient, type TransportOptions } from "../core/options.js";
+import { AuthClient, type AuthOptions } from "./client.js";
 
-export { AuthClient } from './client.js';
-export { NelcotaError, NelcotaUsageError, unwrap } from '../core/errors.js';
-export type { Result } from '../core/errors.js';
-export type { TransportOptions } from '../core/options.js';
-export type { FetchLike, TokenSource } from '../core/http.js';
+export { AuthClient } from "./client.js";
+export { NelcotaError, NelcotaUsageError, unwrap } from "../core/client.errors.js";
+export type { Result } from "../core/client.errors.js";
+export type { TransportOptions } from "../core/options.js";
+export type { FetchLike, TokenSource } from "../core/http/client.js";
 
 export interface AuthClientOptions extends TransportOptions {
   auth?: AuthOptions;
@@ -29,6 +29,6 @@ export type {
   OAuthProvider,
   SignUpInput,
   UserUpdate,
-} from './client.js';
-export { memoryStorage } from './session.js';
-export type { Session, SessionStorage, User } from './session.js';
+} from "./client.js";
+export { memoryStorage } from "./session.js";
+export type { Session, SessionStorage, User } from "./session.js";

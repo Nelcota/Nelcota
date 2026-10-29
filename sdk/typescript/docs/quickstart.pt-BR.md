@@ -82,11 +82,11 @@ o email e depois entre. O cadastro não garante uma sessão imediata.
 
 ```js
 const created = await nelcota.from('notes')
-  .insert({ body: 'Minha primeira nota' }).select('id,body').single();
+  .insert({ body: 'Minha primeira nota' }).select('id,body').single().execute();
 if (created.error) throw created.error;
 
 const { data: notes, error: readError } = await nelcota.from('notes')
-  .select('id,body').order('id', { ascending: false }).limit(20);
+  .select('id,body').order('id', { ascending: false }).limit(20).execute();
 if (readError) throw readError;
 console.log(notes);
 ```

@@ -2,44 +2,56 @@
 // translated plural: reuse one per locale and options.
 
 /** Locales × option sets in use stay far below this; the cap only bounds odd inputs. */
-const MAX_CACHED_FORMATTERS = 64
+const MAX_CACHED_FORMATTERS = 64;
 
-const formatters = new Map<string, Intl.DateTimeFormat | Intl.NumberFormat | Intl.PluralRules>()
+const formatters = new Map<string, Intl.DateTimeFormat | Intl.NumberFormat | Intl.PluralRules>();
 
 function cacheKey(kind: string, locale: string, options: object): string {
   // Same options in another order share a formatter; `undefined` options are
   // dropped, as Intl ignores them too.
   const entries = Object.entries(options)
     .filter(([, value]) => value !== undefined)
-    .sort(([left], [right]) => (left < right ? -1 : 1))
-  return `${kind}\u0000${locale}\u0000${JSON.stringify(entries)}`
+    .toSorted(([left], [right]) => (left < right ? -1 : 1));
+  return `${kind}\u0000${locale}\u0000${JSON.stringify(entries)}`;
 }
 
 /** Least recently used first: a hit moves the entry to the end, the cap evicts from the front. */
-function cached<T extends Intl.DateTimeFormat | Intl.NumberFormat | Intl.PluralRules>(key: string, create: () => T): T {
-  const existing = formatters.get(key)
+function cached<T extends Intl.DateTimeFormat | Intl.NumberFormat | Intl.PluralRules>(
+  key: string,
+  create: () => T,
+): T {
+  const existing = formatters.get(key);
   if (existing !== undefined) {
-    formatters.delete(key)
-    formatters.set(key, existing)
-    return existing as T
+    formatters.delete(key);
+    formatters.set(key, existing);
+    return existing as T;
   }
-  const formatter = create()
+  const formatter = create();
   if (formatters.size >= MAX_CACHED_FORMATTERS) {
-    const oldest = formatters.keys().next()
-    if (oldest.done === false) formatters.delete(oldest.value)
+    const oldest = formatters.keys().next();
+    if (oldest.done === false) formatters.delete(oldest.value);
   }
-  formatters.set(key, formatter)
-  return formatter
+  formatters.set(key, formatter);
+  return formatter;
 }
 
-export function dateTimeFormat(locale: string, options: Intl.DateTimeFormatOptions = {}): Intl.DateTimeFormat {
-  return cached(cacheKey('date', locale, options), () => new Intl.DateTimeFormat(locale, options))
+export function dateTimeFormat(
+  locale: string,
+  options: Intl.DateTimeFormatOptions = {},
+): Intl.DateTimeFormat {
+  return cached(cacheKey("date", locale, options), () => new Intl.DateTimeFormat(locale, options));
 }
 
-export function numberFormat(locale: string, options: Intl.NumberFormatOptions = {}): Intl.NumberFormat {
-  return cached(cacheKey('number', locale, options), () => new Intl.NumberFormat(locale, options))
+export function numberFormat(
+  locale: string,
+  options: Intl.NumberFormatOptions = {},
+): Intl.NumberFormat {
+  return cached(cacheKey("number", locale, options), () => new Intl.NumberFormat(locale, options));
 }
 
-export function pluralRules(locale: string, options: Intl.PluralRulesOptions = {}): Intl.PluralRules {
-  return cached(cacheKey('plural', locale, options), () => new Intl.PluralRules(locale, options))
+export function pluralRules(
+  locale: string,
+  options: Intl.PluralRulesOptions = {},
+): Intl.PluralRules {
+  return cached(cacheKey("plural", locale, options), () => new Intl.PluralRules(locale, options));
 }

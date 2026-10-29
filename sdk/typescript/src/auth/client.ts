@@ -1,20 +1,47 @@
+import {
+  type NelcotaError,
+  NelcotaUsageError,
+  clientError,
+  fail,
+  ok,
+  type Result,
+} from "../core/client.errors.js";
 /**
  * Sign-up, sign-in (password, OAuth with PKCE, email links) and the session's
  * life: stored, refreshed before it expires, shared across tabs.
  */
-
-import { isSession, isUser, type Session, type User } from './session.js';
-import { SessionManager } from './manager.js';
-import { NelcotaError, NelcotaUsageError, clientError, fail, ok, type Result } from '../core/errors.js';
-import type { HttpClient } from '../core/http.js';
-import { isBrowser } from '../core/jwt.js';
-import type { AuthListener, AuthOptions, AuthRequestOptions, Credentials, EmailLink, EmailLinkType, OAuthInput, SignUpInput, UserUpdate } from './types.js';
-export type { AuthEvent, AuthListener, AuthOptions, AuthRequestOptions, Credentials, EmailLink, EmailLinkType, OAuthInput, OAuthProvider, SignUpInput, UserUpdate } from './types.js';
-import { challengeFor, createVerifier } from './pkce.js';
-
-const LINK_TYPES = new Set<string>(['recovery', 'signup', 'magiclink']);
+import type { HttpClient } from "../core/http/client.js";
+import { isBrowser } from "../core/jwt.js";
+import { SessionManager } from "./lifecycle/manager.js";
+import { absoluteUrl, parseEmailLink, readOAuthRedirect } from "./redirects.js";
+import { isSession, isUser, type Session, type User } from "./session.js";
+import type {
+  AuthListener,
+  AuthOptions,
+  AuthRequestOptions,
+  Credentials,
+  EmailLink,
+  OAuthInput,
+  SignUpInput,
+  UserUpdate,
+} from "./types.js";
+export type {
+  AuthEvent,
+  AuthListener,
+  AuthOptions,
+  AuthRequestOptions,
+  Credentials,
+  EmailLink,
+  EmailLinkType,
+  OAuthInput,
+  OAuthProvider,
+  SignUpInput,
+  UserUpdate,
+} from "./types.js";
+import { challengeFor, createVerifier } from "./pkce.js";
 function email(value: unknown): string {
-  if (typeof value !== 'string' || value.trim() === '') throw new NelcotaUsageError('An email is required');
+  if (typeof value !== "string" || value.trim() === "")
+    throw new NelcotaUsageError("An email is required");
   return value.trim();
 }
 
@@ -24,36 +51,67 @@ export class AuthClient {
 
   constructor(http: HttpClient, options: AuthOptions = {}) {
     this.#http = http;
-    this.#manager = new SessionManager(http.url, options, (token, request) =>
-      this.#token('refresh_token', { refresh_token: token }, request), http.accessToken);
+    this.#manager = new SessionManager(http.url, options, {
+      rotate: (token, request) => this.#token("refresh_token", { refresh_token: token }, request),
+      accessToken: http.accessToken,
+    });
   }
 
-  onChange(listener: AuthListener): () => void { return this.#manager.onChange(listener); }
-  dispose(): void { this.#manager.dispose(); }
-  getSession(options: AuthRequestOptions = {}): Promise<Result<Session | null>> { return this.#manager.get(options); }
-  accessToken(): Promise<string | null> { return this.#manager.accessToken(); }
-  refreshSession(options: AuthRequestOptions = {}): Promise<Result<Session>> { return this.#manager.refresh(options); }
+  onChange(listener: AuthListener): () => void {
+    return this.#manager.onChange(listener);
+  }
+  dispose(): void {
+    this.#manager.dispose();
+  }
+  getSession(options: AuthRequestOptions = {}): Promise<Result<Session | null>> {
+    return this.#manager.get(options);
+  }
+  accessToken(): Promise<string | null> {
+    return this.#manager.accessToken();
+  }
+  refreshSession(options: AuthRequestOptions = {}): Promise<Result<Session>> {
+    return this.#manager.refresh(options);
+  }
   async setSession(session: Session): Promise<void> {
     await this.#manager.set(session);
   }
   // --------------------------------------------------------------- sign in
 
-  async #token(grant: 'password' | 'refresh_token' | 'pkce', body: Record<string, string>, options: AuthRequestOptions = {}): Promise<Result<Session>> {
+  async #token(
+    grant: "password" | "refresh_token" | "pkce",
+    body: Record<string, string>,
+    options: AuthRequestOptions = {},
+  ): Promise<Result<Session>> {
     const result = await this.#http.json<unknown>({
-      method: 'POST', path: '/auth/v1/token', query: new URLSearchParams({ grant_type: grant }),
-      json: body, auth: false, signal: options.signal, timeout: options.timeout,
+      method: "POST",
+      path: "/auth/v1/token",
+      query: new URLSearchParams({ grant_type: grant }),
+      json: body,
+      auth: false,
+      signal: options.signal,
+      timeout: options.timeout,
     });
-    if (result.error) return fail(result.error);
+    if (result.error != null) return fail(result.error);
     return isSession(result.data) ? ok(result.data) : fail(invalidResponse());
   }
 
   /** Creates an account. `session` is `null` while the email awaits confirmation. */
-  async signUp(input: SignUpInput, options: AuthRequestOptions = {}): Promise<Result<{ user: User; session: Session | null }>> {
+  async signUp(
+    input: SignUpInput,
+    options: AuthRequestOptions = {},
+  ): Promise<Result<{ user: User; session: Session | null }>> {
     const body: Record<string, unknown> = { email: email(input.email), password: input.password };
-    if (input.data !== undefined) body['data'] = input.data;
-    return this.#manager.authenticate<{ user: User; session: Session | null }>(async () => {
-      const result = await this.#http.json<unknown>({ method: 'POST', path: '/auth/v1/signup', json: body, auth: false, signal: options.signal, timeout: options.timeout });
-      if (result.error) return fail(result.error);
+    if (input.data !== undefined) body["data"] = input.data;
+    return await this.#manager.authenticate<{ user: User; session: Session | null }>(async () => {
+      const result = await this.#http.json<unknown>({
+        method: "POST",
+        path: "/auth/v1/signup",
+        json: body,
+        auth: false,
+        signal: options.signal,
+        timeout: options.timeout,
+      });
+      if (result.error != null) return fail(result.error);
       if (isSession(result.data)) return ok({ user: result.data.user, session: result.data });
       const user = (result.data as { user?: unknown } | null)?.user;
       return isUser(user) ? ok({ user, session: null }) : fail(invalidResponse());
@@ -65,9 +123,15 @@ export class AuthClient {
    * `invalid_grant` (400), the same code for both; an account still waiting
    * for its confirmation link fails with `email_not_confirmed`.
    */
-  async signInWithPassword(credentials: Credentials, options: AuthRequestOptions = {}): Promise<Result<Session>> {
+  async signInWithPassword(
+    credentials: Credentials,
+    options: AuthRequestOptions = {},
+  ): Promise<Result<Session>> {
     const body = { email: email(credentials.email), password: credentials.password };
-    return this.#manager.authenticate(() => this.#token('password', body, options), options.signal);
+    return await this.#manager.authenticate(
+      () => this.#token("password", body, options),
+      options.signal,
+    );
   }
 
   /**
@@ -75,9 +139,10 @@ export class AuthClient {
    * browser's storage; the app finishes on `redirectTo` with `handleRedirect()`.
    */
   async signInWithOAuth(input: OAuthInput): Promise<Result<{ url: string }>> {
-    const redirectTo = absoluteUrl(input.redirectTo, 'redirectTo').href;
-    const provider = input.provider, redirect = input.redirect ?? true;
-    return this.#manager.withVerifier(async () => {
+    const redirectTo = absoluteUrl(input.redirectTo, "redirectTo").href;
+    const provider = input.provider,
+      redirect = input.redirect ?? true;
+    return await this.#manager.withVerifier(async () => {
       const verifier = createVerifier();
       const challenge = await challengeFor(verifier);
       await this.#manager.setVerifier(verifier);
@@ -85,9 +150,9 @@ export class AuthClient {
         provider,
         redirect_to: redirectTo,
         code_challenge: challenge,
-        code_challenge_method: 'S256',
+        code_challenge_method: "S256",
       });
-      const url = this.#http.href('/auth/v1/authorize', query);
+      const url = this.#http.href("/auth/v1/authorize", query);
       if (redirect && isBrowser()) globalThis.location.assign(url);
       return ok({ url });
     });
@@ -95,16 +160,23 @@ export class AuthClient {
 
   /** Trades the `code` from the OAuth redirect (and the stored verifier) for a session. */
   async exchangeCode(code: string, options: AuthRequestOptions = {}): Promise<Result<Session>> {
-    if (typeof code !== 'string' || code.trim() === '') throw new NelcotaUsageError('An OAuth code is required');
-    return this.#manager.authenticate(async () => {
+    if (typeof code !== "string" || code.trim() === "")
+      throw new NelcotaUsageError("An OAuth code is required");
+    return await this.#manager.authenticate(async () => {
       const verifier = await this.#manager.withVerifier(async () => {
-        if (options.signal?.aborted) return null;
+        if (options.signal?.aborted === true) return null;
         // Claim once before HTTP; the exchange then owns its bounded lifetime.
-        return this.#manager.consumeVerifier();
+        return await this.#manager.consumeVerifier();
       });
-      if (!verifier && options.signal?.aborted) return fail(clientError('aborted', 'The request was aborted'));
-      if (!verifier) return fail(clientError('pkce_missing', 'PKCE verifier missing; restart sign-in'));
-      return this.#token('pkce', { auth_code: code, code_verifier: verifier }, options.timeout === undefined ? {} : { timeout: options.timeout });
+      if ((verifier == null || verifier === "") && options.signal?.aborted === true)
+        return fail(clientError("aborted", "The request was aborted"));
+      if (verifier == null || verifier === "")
+        return fail(clientError("pkce_missing", "PKCE verifier missing; restart sign-in"));
+      return await this.#token(
+        "pkce",
+        { auth_code: code, code_verifier: verifier },
+        options.timeout === undefined ? {} : { timeout: options.timeout },
+      );
     }, options.signal);
   }
 
@@ -113,20 +185,14 @@ export class AuthClient {
    * `?error=`, removes them from the address bar and history, and signs in.
    * Returns `null` data when the URL carries neither.
    */
-  async handleRedirect(href: string = globalThis.location?.href ?? '', options: AuthRequestOptions = {}): Promise<Result<Session | null>> {
-    if (href === '') return ok(null);
-    const url = absoluteUrl(href, 'URL');
-    const code = url.searchParams.get('code');
-    const error = url.searchParams.get('error');
-    if (code === null && error === null) return ok(null);
-    url.searchParams.delete('code');
-    url.searchParams.delete('error');
-    replaceUrl(href, url);
-    if (error !== null) {
-      return fail(new NelcotaError({ status: 0, code: error.trim() || 'provider_error', message: 'Sign-in failed' }));
-    }
-    if (!code?.trim()) return fail(clientError('invalid_response', 'Missing OAuth code'));
-    return this.exchangeCode(code, options);
+  async handleRedirect(
+    href: string = (globalThis as { location?: Location }).location?.href ?? "",
+    options: AuthRequestOptions = {},
+  ): Promise<Result<Session | null>> {
+    const redirect = readOAuthRedirect(href);
+    if (redirect.kind === "none") return ok(null);
+    if (redirect.kind === "error") return fail(redirect.error);
+    return await this.exchangeCode(redirect.code, options);
   }
 
   /**
@@ -134,63 +200,92 @@ export class AuthClient {
    * from the address bar and history, so the token cannot leak later.
    * Then call `verifyEmailLink` or, for `recovery`, `resetPassword`.
    */
-  readEmailLink(href: string = globalThis.location?.href ?? ''): EmailLink | null {
-    if (href === '') return null;
-    const url = absoluteUrl(href, 'URL');
-    const params = new URLSearchParams(url.hash.slice(1));
-    const type = params.get('type');
-    const token = params.get('token');
-    if (type === null || token === null || !LINK_TYPES.has(type) || token.length === 0 || token.length > 128) {
-      return null;
-    }
-    url.hash = '';
-    replaceUrl(href, url);
-    return { type: type as EmailLinkType, token };
+  readEmailLink(
+    href: string = (globalThis as { location?: Location }).location?.href ?? "",
+  ): EmailLink | null {
+    return parseEmailLink(href);
   }
 
   /** Confirms a sign-up or signs in with a magic link. */
-  async verifyEmailLink(link: { type: 'signup' | 'magiclink'; token: string }, options: AuthRequestOptions = {}): Promise<Result<Session>> {
-    return this.#verify({ type: link.type, token: link.token }, options);
+  async verifyEmailLink(
+    link: { type: "signup" | "magiclink"; token: string },
+    options: AuthRequestOptions = {},
+  ): Promise<Result<Session>> {
+    return await this.#verify({ type: link.type, token: link.token }, options);
   }
 
   /** Sets a new password from a recovery link; other sessions end. */
-  async resetPassword(input: { token: string; password: string }, options: AuthRequestOptions = {}): Promise<Result<Session>> {
-    return this.#verify({ type: 'recovery', token: input.token, password: input.password }, options);
+  async resetPassword(
+    input: { token: string; password: string },
+    options: AuthRequestOptions = {},
+  ): Promise<Result<Session>> {
+    return await this.#verify(
+      { type: "recovery", token: input.token, password: input.password },
+      options,
+    );
   }
 
   #verify(body: Record<string, string>, options: AuthRequestOptions): Promise<Result<Session>> {
     return this.#manager.authenticate(async () => {
-      const result = await this.#http.json<unknown>({ method: 'POST', path: '/auth/v1/verify', json: body, auth: false, signal: options.signal, timeout: options.timeout });
-      if (result.error) return fail(result.error);
+      const result = await this.#http.json<unknown>({
+        method: "POST",
+        path: "/auth/v1/verify",
+        json: body,
+        auth: false,
+        signal: options.signal,
+        timeout: options.timeout,
+      });
+      if (result.error != null) return fail(result.error);
       return isSession(result.data) ? ok(result.data) : fail(invalidResponse());
     }, options.signal);
   }
 
-  async #emailOnly(path: string, body: Record<string, string>, options: AuthRequestOptions): Promise<Result<null>> {
-    const result = await this.#http.json<unknown>({ method: 'POST', path, json: body, auth: false, signal: options.signal, timeout: options.timeout });
-    return result.error ? fail(result.error) : ok(null);
+  async #emailOnly(
+    path: string,
+    body: Record<string, string>,
+    options: AuthRequestOptions,
+  ): Promise<Result<null>> {
+    const result = await this.#http.json<unknown>({
+      method: "POST",
+      path,
+      json: body,
+      auth: false,
+      signal: options.signal,
+      timeout: options.timeout,
+    });
+    return result.error != null ? fail(result.error) : ok(null);
   }
 
   /** Emails a recovery link. Answers the same whether or not the account exists. */
-  async requestPasswordReset(address: string, options: AuthRequestOptions = {}): Promise<Result<null>> {
-    return this.#emailOnly('/auth/v1/recover', { email: email(address) }, options);
+  async requestPasswordReset(
+    address: string,
+    options: AuthRequestOptions = {},
+  ): Promise<Result<null>> {
+    return await this.#emailOnly("/auth/v1/recover", { email: email(address) }, options);
   }
 
   /** Emails a passwordless sign-in link. */
   async sendMagicLink(address: string, options: AuthRequestOptions = {}): Promise<Result<null>> {
-    return this.#emailOnly('/auth/v1/magiclink', { email: email(address) }, options);
+    return await this.#emailOnly("/auth/v1/magiclink", { email: email(address) }, options);
   }
 
   /** Sends the sign-up confirmation email again. */
-  async resendConfirmation(address: string, options: AuthRequestOptions = {}): Promise<Result<null>> {
-    return this.#emailOnly('/auth/v1/resend', { type: 'signup', email: email(address) }, options);
+  async resendConfirmation(
+    address: string,
+    options: AuthRequestOptions = {},
+  ): Promise<Result<null>> {
+    return await this.#emailOnly(
+      "/auth/v1/resend",
+      { type: "signup", email: email(address) },
+      options,
+    );
   }
 
   // ---------------------------------------------------------------- user
 
   /** The signed-in user as the server sees it now. */
   async getUser(options: AuthRequestOptions = {}): Promise<Result<User>> {
-    return this.#user('GET', undefined, options);
+    return await this.#user("GET", undefined, options);
   }
 
   /**
@@ -198,22 +293,36 @@ export class AuthClient {
    * change ends the user's other sessions; this one keeps working.
    */
   async updateUser(input: UserUpdate, options: AuthRequestOptions = {}): Promise<Result<User>> {
-    if (input.password === undefined && input.data === undefined) throw new NelcotaUsageError('updateUser needs password or data');
+    if (input.password === undefined && input.data === undefined)
+      throw new NelcotaUsageError("updateUser needs password or data");
     const body: Record<string, unknown> = {};
-    if (input.password !== undefined) body['password'] = input.password;
-    if (input.currentPassword !== undefined) body['current_password'] = input.currentPassword;
-    if (input.data !== undefined) body['data'] = input.data;
-    return this.#user('PUT', body, options);
+    if (input.password !== undefined) body["password"] = input.password;
+    if (input.currentPassword !== undefined) body["current_password"] = input.currentPassword;
+    if (input.data !== undefined) body["data"] = input.data;
+    return await this.#user("PUT", body, options);
   }
 
-  async #user(method: 'GET' | 'PUT', body: Record<string, unknown> | undefined, options: AuthRequestOptions): Promise<Result<User>> {
+  async #user(
+    method: "GET" | "PUT",
+    body: Record<string, unknown> | undefined,
+    options: AuthRequestOptions,
+  ): Promise<Result<User>> {
     // Caller-owned tokens never read or update a different stored session.
-    const { data: session, error } = await (this.#http.accessToken ? ok(null) : this.getSession(options));
-    if (error) return fail(error);
-    const remember = session ? this.#manager.rememberUser(session) : undefined;
-    const result = await this.#http.json<unknown>({ method, path: '/auth/v1/user', json: body, auth: session?.access_token ?? true, signal: options.signal, timeout: options.timeout });
-    if (result.error) return fail(result.error);
-    if (!isUser(result.data)) return fail(invalidResponse());
+    const { data: session, error } = await (this.#http.accessToken != null
+      ? ok(null)
+      : this.getSession(options));
+    if (error != null) return fail(error);
+    const remember = session != null ? this.#manager.rememberUser(session) : undefined;
+    const result = await this.#http.json<unknown>({
+      method,
+      path: "/auth/v1/user",
+      json: body,
+      auth: session?.access_token ?? true,
+      signal: options.signal,
+      timeout: options.timeout,
+    });
+    if (result.error != null) return fail(result.error);
+    if (isUser(result.data) === false) return fail(invalidResponse());
     await remember?.(result.data);
     return ok(result.data);
   }
@@ -223,31 +332,19 @@ export class AuthClient {
    * forgets it here. The current access token stays valid until it expires.
    */
   async signOut(options: AuthRequestOptions = {}): Promise<Result<null>> {
-    return this.#manager.signOut(async session => {
-      const result = await this.#http.send({ method: 'POST', path: '/auth/v1/logout', auth: session.access_token, signal: options.signal, timeout: options.timeout });
-      return result.error ? fail(result.error) : ok(null);
+    return await this.#manager.signOut(async (session) => {
+      const result = await this.#http.send({
+        method: "POST",
+        path: "/auth/v1/logout",
+        auth: session.access_token,
+        signal: options.signal,
+        timeout: options.timeout,
+      });
+      return result.error != null ? fail(result.error) : ok(null);
     }, options);
   }
 }
 
-function absoluteUrl(value: string, what: string): URL {
-  try {
-    return new URL(value);
-  } catch {
-    throw new NelcotaUsageError(`${what} must be an absolute URL`);
-  }
-}
-
 function invalidResponse(): NelcotaError {
-  return clientError('invalid_response', 'Invalid auth response');
-}
-
-/** Rewrites the address bar, only when `original` is the page being shown. */
-function replaceUrl(original: string, url: URL): void {
-  if (!isBrowser() || globalThis.location?.href !== original) return;
-  try {
-    globalThis.history.replaceState(globalThis.history.state, '', url.href);
-  } catch {
-    // A different origin or a sandboxed frame: nothing to clean.
-  }
+  return clientError("invalid_response", "Invalid auth response");
 }

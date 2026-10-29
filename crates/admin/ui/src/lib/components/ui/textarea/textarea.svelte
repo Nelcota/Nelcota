@@ -1,22 +1,26 @@
 <script lang="ts">
-	import { cn, type WithElementRef, type WithoutChildren } from "$lib/components/utils.js";
-	import type { HTMLTextareaAttributes } from "svelte/elements";
+  import {
+    cn,
+    type WithElementRef,
+    type WithoutChildren,
+  } from "$lib/components/component-props.js";
+  import type { HTMLTextareaAttributes } from "svelte/elements";
 
-	let {
-		ref = $bindable(null),
-		value = $bindable(),
-		class: className,
-		"data-slot": dataSlot = "textarea",
-		...restProps
-	}: WithoutChildren<WithElementRef<HTMLTextareaAttributes>> = $props();
+  let {
+    ref = $bindable(null),
+    value = $bindable(),
+    class: className,
+    "data-slot": dataSlot = "textarea",
+    ...restProps
+  }: WithoutChildren<WithElementRef<HTMLTextareaAttributes>> = $props();
 </script>
 
 <textarea
-	bind:this={ref}
-	data-slot={dataSlot}
-	class={cn(
-		"border-input bg-field hover:border-border-strong focus-visible:border-brand/70 focus-visible:ring-brand/20 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 disabled:bg-input/50 dark:disabled:bg-input/80 rounded-xl border px-3.5 py-2.5 text-base transition-colors focus-visible:ring-3 aria-invalid:ring-3 md:text-sm flex field-sizing-content min-h-16 w-full outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
-		className
-	)}
-	bind:value
-	{...restProps}></textarea>
+  bind:this={ref}
+  data-slot={dataSlot}
+  class={cn(
+    "border-input bg-field hover:border-border-strong focus-visible:border-brand/70 focus-visible:ring-brand/20 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 disabled:bg-input/50 dark:disabled:bg-input/80 rounded-xl border px-3.5 py-2.5 text-base transition-colors focus-visible:ring-3 aria-invalid:ring-3 md:text-sm flex field-sizing-content min-h-16 w-full outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
+    className,
+  )}
+  bind:value
+  {...restProps}></textarea>

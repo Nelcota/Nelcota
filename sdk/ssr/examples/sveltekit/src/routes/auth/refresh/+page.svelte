@@ -1,5 +1,4 @@
-<script>
-  import { onMount } from 'svelte';
+<script>import { onMount } from 'svelte';
 
   /** @type {HTMLFormElement} */
   let form;

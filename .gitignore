@@ -19,3 +19,6 @@ sdk/typescript/test/contract/generated/
 
 # Project-local review tools and disposable reports
 /.tools/
+
+# Root code-quality tools
+/node_modules/

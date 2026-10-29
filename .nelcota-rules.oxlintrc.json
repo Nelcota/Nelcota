@@ -1,0 +1,261 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "import", "jsdoc", "unicorn", "oxc", "react"],
+  "jsPlugins": [
+    "./lint/no-negation.js",
+    "./lint/no-local-date-parse.js",
+    "./lint/no-generic-helpers.js",
+    "./lint/duration-unit-suffix.js",
+    "./lint/no-skipped-tests.js",
+    "./lint/no-inner-html.js",
+    "./lint/no-and-in-names.js"
+  ],
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/.git/**",
+    "target/**",
+    ".tools/**",
+    "output/**",
+    ".nelcota/**",
+    "backups/**",
+    "crates/admin/ui/src/lib/generated/**",
+    "sdk/typescript/test/contract/generated/**",
+    "**/.next/**",
+    "**/test-results/**",
+    "**/playwright-report/**"
+  ],
+  "rules": {
+    "local/no-negation": "error",
+    "dates/no-local-date-parse": "error",
+    "files/no-generic-helpers": "error",
+    "durations/duration-unit-suffix": "error",
+    "tests/no-skipped-tests": "error",
+    "html/no-inner-html": "error",
+    "naming/no-and-in-names": "warn",
+    "react/no-danger": "error",
+    "typescript/strict-boolean-expressions": [
+      "error",
+      {
+        "allowString": false,
+        "allowNumber": false,
+        "allowNullableObject": false
+      }
+    ],
+    "typescript/no-non-null-assertion": "error",
+    "eqeqeq": [
+      "error",
+      "always",
+      {
+        "null": "ignore"
+      }
+    ],
+    "no-else-return": [
+      "error",
+      {
+        "allowElseIf": false
+      }
+    ],
+    "max-depth": ["error", 2],
+    "no-nested-ternary": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/require-await": "error",
+    "typescript/return-await": ["error", "always"],
+    "typescript/no-explicit-any": "error",
+    "typescript/switch-exhaustiveness-check": "error",
+    "typescript/consistent-type-imports": "error",
+    "typescript/only-throw-error": "error",
+    "use-isnan": "error",
+    "no-magic-numbers": [
+      "warn",
+      {
+        "ignore": [-1, 0, 1, 2, 100],
+        "ignoreEnums": true,
+        "ignoreNumericLiteralTypes": true,
+        "ignoreReadonlyClassProperties": true,
+        "ignoreTypeIndexes": true
+      }
+    ],
+    "prefer-const": "error",
+    "no-param-reassign": [
+      "error",
+      {
+        "props": true
+      }
+    ],
+    "no-empty": [
+      "error",
+      {
+        "allowEmptyCatch": false
+      }
+    ],
+    "no-eval": "error",
+    "no-implied-eval": "error",
+    "no-new-func": "error",
+    "import/no-cycle": "error",
+    "import/no-self-import": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "dotenv",
+            "message": "Bun loads .env files natively."
+          },
+          {
+            "name": "node-fetch",
+            "message": "Use the native fetch."
+          },
+          {
+            "name": "jest",
+            "message": "Use bun:test."
+          },
+          {
+            "name": "@jest/globals",
+            "message": "Use bun:test."
+          },
+          {
+            "name": "ts-node",
+            "message": "Bun runs TypeScript directly."
+          },
+          {
+            "name": "tsx",
+            "message": "Bun runs TypeScript directly."
+          }
+        ],
+        "patterns": [
+          {
+            "group": ["dotenv/*", "ts-node/*"],
+            "message": "Bun already does this natively: .env loading, bun:test and running TypeScript."
+          }
+        ]
+      }
+    ],
+    "jsdoc/require-param-type": "off",
+    "jsdoc/require-returns-type": "off",
+    "jsdoc/check-tag-names": [
+      "error",
+      {
+        "definedTags": [
+          "remarks",
+          "typeParam",
+          "defaultValue",
+          "privateRemarks",
+          "packageDocumentation"
+        ]
+      }
+    ],
+    "no-await-in-loop": "warn",
+    "oxc/no-accumulating-spread": "error",
+    "oxc/no-map-spread": "error",
+    "unicorn/prefer-set-has": "error",
+    "unicorn/prefer-array-some": "error",
+    "unicorn/prefer-array-find": "error",
+    "unicorn/prefer-array-flat-map": "error",
+    "unicorn/no-useless-spread": "error",
+    "unicorn/no-unnecessary-await": "error",
+    "unicorn/no-array-sort": [
+      "error",
+      {
+        "allowExpressionStatement": false
+      }
+    ],
+    "unicorn/no-array-reverse": [
+      "error",
+      {
+        "allowExpressionStatement": false
+      }
+    ],
+    "unicorn/prefer-at": "error",
+    "unicorn/prefer-structured-clone": "error",
+    "unicorn/no-array-reduce": "error",
+    "prefer-object-has-own": "error",
+    "unicorn/filename-case": [
+      "error",
+      {
+        "case": "kebabCase"
+      }
+    ],
+    "unicorn/throw-new-error": "error",
+    "unicorn/error-message": "error",
+    "unicorn/custom-error-definition": "error",
+    "no-useless-catch": "error",
+    "typescript/prefer-promise-reject-errors": "error",
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/no-unsafe-call": "error",
+    "typescript/no-unnecessary-condition": "error",
+    "typescript/no-unnecessary-type-assertion": "error",
+    "max-params": ["error", 3],
+    "max-lines-per-function": ["warn", 50],
+    "complexity": ["warn", 10],
+    "max-lines": [
+      "warn",
+      {
+        "max": 300,
+        "skipBlankLines": true,
+        "skipComments": true
+      }
+    ],
+    "import/max-dependencies": [
+      "warn",
+      {
+        "max": 10
+      }
+    ],
+    "max-classes-per-file": ["error", 1],
+    "typescript/prefer-readonly": "error",
+    "typescript/restrict-template-expressions": "error",
+    "typescript/no-base-to-string": "error",
+    "typescript/prefer-nullish-coalescing": "error",
+    "typescript/prefer-optional-chain": "error",
+    "unicorn/prefer-node-protocol": "error",
+    "unicorn/prefer-string-replace-all": "error"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.errors.ts"],
+      "rules": {
+        "max-classes-per-file": "off"
+      }
+    },
+    {
+      "files": [
+        "**/*.test.{ts,tsx,js,mjs}",
+        "**/*.spec.{ts,tsx,js,mjs}",
+        "**/*.test-d.ts",
+        "**/scripts/*-smoke.mjs",
+        "sdk/nextjs/scripts/framework/**/*.mjs",
+        "**/*.memory.ts",
+        "**/test/**/*.{ts,tsx,js,mjs}",
+        "**/e2e/**/*.ts"
+      ],
+      "rules": {
+        "no-magic-numbers": "off"
+      }
+    }
+  ],
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "globals": {
+    "$state": "readonly",
+    "$derived": "readonly",
+    "$effect": "readonly",
+    "$props": "readonly",
+    "$bindable": "readonly",
+    "$inspect": "readonly",
+    "$host": "readonly",
+    "Bun": "readonly",
+    "Deno": "readonly"
+  }
+}

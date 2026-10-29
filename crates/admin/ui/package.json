@@ -1,19 +1,37 @@
 {
   "name": "nelcota-admin-ui",
-  "private": true,
   "version": "0.3.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "bun --bun vite",
     "build": "bun run guides:check && bun --bun vite build",
-    "check": "bun run guides:check && bun --bun svelte-check --tsconfig ./tsconfig.app.json && bun node_modules/typescript-7/bin/tsc -p tsconfig.node.json && bun node_modules/typescript-7/bin/tsc -p tsconfig.e2e.json && bun node_modules/typescript-7/bin/tsc -p tsconfig.scripts.json",
+    "check": "bun run guides:check && bun scripts/typecheck.ts",
     "guides:check": "bun scripts/guides-i18n.ts --check",
     "guides:pending": "bun scripts/guides-i18n.ts --pending",
     "test": "bun --bun vitest run src",
     "test:node": "vitest run src",
-    "test:memory": "vitest run src/lib/resources/query-client.test.ts --pool forks --execArgv=--expose-gc",
+    "test:memory": "vitest run --config vite.memory.config.ts",
     "contracts": "cargo run --manifest-path ../../../Cargo.toml -p nelcota-admin --example export_contracts && bun scripts/contracts.ts",
     "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-sql": "^6.10.0",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.15",
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@lezer/highlight": "^1.2.5",
+    "@scalar/api-reference": "^1.74.0",
+    "@tanstack/svelte-query": "^6.3.5",
+    "@tanstack/svelte-table": "^9.3.1",
+    "@uppy/core": "^6.3.0",
+    "@uppy/xhr-upload": "^6.0.1",
+    "codemirror": "^6.0.2",
+    "marked": "^18.1.1",
+    "shiki": "^4.5.0"
   },
   "devDependencies": {
     "@internationalized/date": "^3.12.4",
@@ -41,29 +59,10 @@
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
   },
-  "dependencies": {
-    "@codemirror/autocomplete": "^6.20.4",
-    "@codemirror/commands": "^6.11.1",
-    "@codemirror/lang-sql": "^6.10.0",
-    "@codemirror/language": "^6.13.1",
-    "@codemirror/state": "^6.7.6",
-    "@codemirror/view": "^6.43.15",
-    "@fontsource-variable/manrope": "^5.3.0",
-    "@fontsource/ibm-plex-mono": "^5.3.0",
-    "@lezer/highlight": "^1.2.5",
-    "@scalar/api-reference": "^1.74.0",
-    "@tanstack/svelte-query": "^6.3.5",
-    "@tanstack/svelte-table": "^9.3.1",
-    "@uppy/core": "^6.3.0",
-    "@uppy/xhr-upload": "^6.0.1",
-    "codemirror": "^6.0.2",
-    "marked": "^18.1.1",
-    "shiki": "^4.5.0"
-  },
   "overrides": {
+    "@ai-sdk/gateway@3": "3.0.221",
     "@ai-sdk/provider-utils@4": "4.0.62",
-    "ai@6": "6.0.315",
     "@ai-sdk/vue@3": "3.0.315",
-    "@ai-sdk/gateway@3": "3.0.221"
+    "ai@6": "6.0.315"
   }
 }
