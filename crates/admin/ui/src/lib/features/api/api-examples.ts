@@ -1,3 +1,5 @@
+import { exampleSelection } from "./example-selection";
+
 const SAMPLE_DECIMAL = 9.9;
 const SAMPLE_COLUMN_LIMIT = 4;
 
@@ -30,6 +32,7 @@ export interface SnippetColumn {
   has_default: boolean;
   generated: boolean;
   nullable: boolean;
+  enum_values?: readonly string[];
 }
 
 /** Plausible sample value for the column type. */
@@ -52,13 +55,13 @@ export function sampleValue(type: string): unknown {
 /** Insert body: columns without DEFAULT that are not generated (required ones first). */
 export function sampleRow(columns: readonly SnippetColumn[]): Record<string, unknown> {
   const fillable = columns.filter((c) => c.has_default === false && c.generated === false);
+  const required = fillable.filter((c) => c.nullable === false);
+  const optional = fillable.filter((c) => c.nullable);
   const ordered = [
-    ...fillable.filter((c) => c.nullable === false),
-    ...fillable.filter((c) => c.nullable),
+    ...required,
+    ...optional.slice(0, Math.max(0, SAMPLE_COLUMN_LIMIT - required.length)),
   ];
-  return Object.fromEntries(
-    ordered.slice(0, SAMPLE_COLUMN_LIMIT).map((c) => [c.name, sampleValue(c.type)]),
-  );
+  return Object.fromEntries(ordered.map((c) => [c.name, columnValue(c)]));
 }
 
 const shellQuote = (text: string) => `'${text.replaceAll("'", `'\\''`)}'`;
@@ -74,6 +77,11 @@ export function jsObject(row: Record<string, unknown>, indent = ""): string {
   const key = (name: string) => (/^[A-Za-z_$][\w$]*$/.test(name) ? name : jsString(name));
   const value = (v: unknown) => (typeof v === "string" ? jsString(v) : JSON.stringify(v));
   return `{\n${entries.map(([k, v]) => `${indent}  ${key(k)}: ${value(v)},`).join("\n")}\n${indent}}`;
+}
+
+/** Uses a declared enum member before a generic type example. */
+function columnValue(column: SnippetColumn): unknown {
+  return column.enum_values?.[0] ?? sampleValue(column.type);
 }
 
 /** How a project creates its client (as in the SDK's README). */
@@ -94,28 +102,51 @@ function filterColumn(columns: readonly SnippetColumn[]): SnippetColumn | undefi
 export function tableSnippets(
   base: string,
   table: string,
-  columns: readonly SnippetColumn[],
+  schema: {
+    columns: readonly SnippetColumn[];
+    primaryKey?: readonly string[];
+    insertable?: boolean;
+  },
 ): Snippet[] {
+  const { columns, primaryKey = [] } = schema;
   const url = `${base}/rest/v1/${encodeURIComponent(table)}`;
   const row = sampleRow(columns);
   const body = JSON.stringify(row);
-  const bodyPretty = JSON.stringify(row, null, 2).replaceAll("\n", "\n  ");
   const filter = filterColumn(columns);
-  const filterQuery =
-    filter != null
-      ? `${encodeURIComponent(filter.name)}=eq.${encodeURIComponent(String(sampleValue(filter.type)))}`
-      : "";
+  const readSelection = filter === undefined ? null : exampleSelection([filter], [filter.name]);
+  const filterQuery = readSelection?.query ?? "";
   const auth = '-H "Authorization: Bearer $TOKEN"';
   const authJs = "headers: { Authorization: `Bearer ${token}` }";
   // The SDK sends the signed-in user's token by itself.
   const from = `nelcota.from(${jsString(table)})`;
-  const filterValue = filter != null ? sampleValue(filter.type) : undefined;
+  const filterValue = filter != null ? columnValue(filter) : undefined;
   const sdkValue =
     typeof filterValue === "string" ? jsString(filterValue) : JSON.stringify(filterValue);
 
+  const selection = exampleSelection(columns, primaryKey);
+  const update = sampleRow(columns.filter((column) => primaryKey.includes(column.name) === false));
   return [
-    ...readSnippets({ url, auth, authJs, from, filter, filterQuery, sdkValue }),
-    ...writeSnippets({ url, auth, authJs, from, row, body, bodyPretty }),
+    ...readSnippets({
+      url,
+      auth,
+      authJs,
+      from,
+      filter: readSelection === null ? undefined : filter,
+      filterQuery,
+      sdkValue,
+    }),
+    ...writeSnippets({
+      url,
+      auth,
+      authJs,
+      from,
+      row,
+      body,
+      bodyPretty: JSON.stringify(row, null, 2).replaceAll("\n", "\n  "),
+      selection,
+      update,
+      insertable: schema.insertable !== false,
+    }),
   ];
 }
 
@@ -173,7 +204,7 @@ function readSnippets({
       id: "list",
       code: {
         curl: `curl ${shellQuote(`${url}?select=*&limit=20`)} \\\n  ${auth}`,
-        js: `const res = await fetch('${url}?select=*&limit=20', {\n  ${authJs},\n})\nconst rows = await res.json()`,
+        js: `const res = await fetch(${jsString(`${url}?select=*&limit=20`)}, {\n  ${authJs},\n})\nconst rows = await res.json()`,
         ts: `const { data, error } = await ${from}\n  .select('*')\n  .limit(20)\n  .execute()`,
       },
     },
@@ -184,7 +215,7 @@ function readSnippets({
             params: { column: filter.name },
             code: {
               curl: `curl ${shellQuote(`${url}?${filterQuery}`)} \\\n  ${auth}`,
-              js: `const res = await fetch('${url}?${filterQuery}', {\n  ${authJs},\n})`,
+              js: `const res = await fetch(${jsString(`${url}?${filterQuery}`)}, {\n  ${authJs},\n})`,
               ts: `const { data, error } = await ${from}\n  .select('*')\n  .eq(${jsString(filter.name)}, ${sdkValue})\n  .execute()`,
             },
           },
@@ -200,6 +231,9 @@ type WriteExample = {
   row: Record<string, unknown>;
   body: string;
   bodyPretty: string;
+  selection: ReturnType<typeof exampleSelection>;
+  update: Record<string, unknown>;
+  insertable: boolean;
 };
 function writeSnippets({
   url,
@@ -209,31 +243,55 @@ function writeSnippets({
   row,
   body,
   bodyPretty,
+  selection,
+  update,
+  insertable,
 }: WriteExample): Snippet[] {
-  return [
-    {
-      id: "insert",
-      code: {
-        curl: `curl -X POST ${shellQuote(url)} \\\n  ${auth} \\\n  -H "Content-Type: application/json" \\\n  -H "Prefer: return=representation" \\\n  -d ${shellQuote(body)}`,
-        js: `const res = await fetch('${url}', {\n  method: 'POST',\n  headers: {\n    Authorization: \`Bearer \${token}\`,\n    'Content-Type': 'application/json',\n    Prefer: 'return=representation',\n  },\n  body: JSON.stringify(${bodyPretty}),\n})`,
-        ts: `const { data, error } = await ${from}\n  .insert(${jsObject(row, "  ")})\n  .select()\n  .single()\n  .execute()`,
-      },
+  const insert: Snippet = {
+    id: "insert",
+    code: {
+      curl: `curl -X POST ${shellQuote(url)} \\\n  ${auth} \\\n  -H "Content-Type: application/json" \\\n  -H "Prefer: return=representation" \\\n  -d ${shellQuote(body)}`,
+      js: `const res = await fetch(${jsString(url)}, {\n  method: 'POST',\n  headers: {\n    Authorization: \`Bearer \${token}\`,\n    'Content-Type': 'application/json',\n    Prefer: 'return=representation',\n  },\n  body: JSON.stringify(${bodyPretty}),\n})`,
+      ts: `const { data, error } = await ${from}\n  .insert(${jsObject(row, "  ")})\n  .select()\n  .single()\n  .execute()`,
     },
-    {
+  };
+  return [
+    ...(insertable ? [insert] : []),
+    ...(selection !== null ? mutationSnippets({ url, auth, authJs, from, selection, update }) : []),
+  ];
+}
+
+type MutationExample = Pick<WriteExample, "url" | "auth" | "authJs" | "from" | "update"> & {
+  selection: NonNullable<WriteExample["selection"]>;
+};
+function mutationSnippets({
+  url,
+  auth,
+  authJs,
+  from,
+  selection,
+  update,
+}: MutationExample): Snippet[] {
+  const selectedUrl = `${url}?${selection.query}`;
+  const body = JSON.stringify(update);
+  const pretty = JSON.stringify(update, null, 2).replaceAll("\n", "\n  ");
+  const snippets: Snippet[] = [];
+  if (Object.keys(update).length > 0)
+    snippets.push({
       id: "update",
       code: {
-        curl: `curl -X PATCH ${shellQuote(`${url}?id=eq.1`)} \\\n  ${auth} \\\n  -H "Content-Type: application/json" \\\n  -d ${shellQuote(body)}`,
-        js: `await fetch('${url}?id=eq.1', {\n  method: 'PATCH',\n  headers: { Authorization: \`Bearer \${token}\`, 'Content-Type': 'application/json' },\n  body: JSON.stringify(${bodyPretty}),\n})`,
-        ts: `const { error } = await ${from}\n  .update(${jsObject(row, "  ")})\n  .eq('id', 1)\n  .execute()`,
+        curl: `curl -X PATCH ${shellQuote(selectedUrl)} \\\n  ${auth} \\\n  -H "Content-Type: application/json" \\\n  -d ${shellQuote(body)}`,
+        js: `await fetch(${jsString(selectedUrl)}, {\n  method: 'PATCH',\n  headers: { Authorization: \`Bearer \${token}\`, 'Content-Type': 'application/json' },\n  body: JSON.stringify(${pretty}),\n})`,
+        ts: `const { error } = await ${from}\n  .update(${jsObject(update, "  ")})${selection.sdk}\n  .execute()`,
       },
+    });
+  snippets.push({
+    id: "delete",
+    code: {
+      curl: `curl -X DELETE ${shellQuote(selectedUrl)} \\\n  ${auth}`,
+      js: `await fetch(${jsString(selectedUrl)}, {\n  method: 'DELETE',\n  ${authJs},\n})`,
+      ts: `const { error } = await ${from}.delete()${selection.sdk}\n  .execute()`,
     },
-    {
-      id: "delete",
-      code: {
-        curl: `curl -X DELETE ${shellQuote(`${url}?id=eq.1`)} \\\n  ${auth}`,
-        js: `await fetch('${url}?id=eq.1', {\n  method: 'DELETE',\n  ${authJs},\n})`,
-        ts: `const { error } = await ${from}.delete().eq('id', 1).execute()`,
-      },
-    },
-  ];
+  });
+  return snippets;
 }

@@ -43,7 +43,10 @@ describe("sample values and body", () => {
 });
 
 describe("table examples", () => {
-  const snippets = tableSnippets("https://shop.example.com", "tasks", columns);
+  const snippets = tableSnippets("https://shop.example.com", "tasks", {
+    columns,
+    primaryKey: ["id"],
+  });
 
   it("covers list, filter, insert, update and delete", () => {
     expect(snippets.map((s) => s.id)).toEqual(["list", "filter", "insert", "update", "delete"]);
@@ -65,7 +68,9 @@ describe("table examples", () => {
   });
 
   it("escapes single quotes for the shell", () => {
-    const quoted = tableSnippets("http://x", "t", [col("o'clock", "text", { nullable: false })]);
+    const quoted = tableSnippets("http://x", "t", {
+      columns: [col("o'clock", "text", { nullable: false })],
+    });
     expect(
       requiredValue(
         quoted.find((s) => s.id === "insert"),
@@ -76,13 +81,19 @@ describe("table examples", () => {
 
   it("encodes the table name in the URL", () => {
     expect(
-      requiredValue(tableSnippets("http://x", "order items", [])[0], "test fixture item").code.js,
+      requiredValue(
+        tableSnippets("http://x", "order items", { columns: [] })[0],
+        "test fixture item",
+      ).code.js,
     ).toContain("/rest/v1/order%20items");
   });
 });
 
 describe("SDK examples", () => {
-  const snippets = tableSnippets("https://shop.example.com", "tasks", columns);
+  const snippets = tableSnippets("https://shop.example.com", "tasks", {
+    columns,
+    primaryKey: ["id"],
+  });
   const byId = Object.fromEntries(snippets.map((s) => [s.id, s.code.ts]));
 
   it("use the typed client with the table and its columns", () => {
@@ -93,16 +104,18 @@ describe("SDK examples", () => {
     expect(byId.insert).toContain(
       ".insert({\n    title: 'example',\n    done: true,\n  })\n  .select()\n  .single()",
     );
-    expect(byId.update).toContain(".eq('id', 1)");
+    expect(byId.update).toContain('.eq("id", 1)');
     expect(byId.delete).toBe(
-      "const { error } = await nelcota.from('tasks').delete().eq('id', 1).execute()",
+      "const { error } = await nelcota.from('tasks').delete()\n  .eq(\"id\", 1)\n  .execute()",
     );
   });
 
   it("quote names and values as JavaScript strings", () => {
     expect(jsString("o'clock\\x")).toBe("'o\\'clock\\\\x'");
     expect(jsObject({ "two words": 1, plain: "a" })).toBe("{\n  'two words': 1,\n  plain: 'a',\n}");
-    const quoted = tableSnippets("http://x", "it's", [col("id", "integer", { nullable: false })]);
+    const quoted = tableSnippets("http://x", "it's", {
+      columns: [col("id", "integer", { nullable: false })],
+    });
     expect(requiredValue(quoted[0], "test fixture item").code.ts).toContain(
       "nelcota.from('it\\'s')",
     );
