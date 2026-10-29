@@ -57,9 +57,11 @@ try {
     buffer: Buffer.from("CREATE TABLE public.browser_fixture(id int4);"),
   });
   await page.getByRole("button", { name: "Preview migrations", exact: true }).click();
-  await expect(page.locator("pre").filter({ hasText: "pending" })).toBeVisible();
+  const history = page.getByRole("table", { name: "Migration status", exact: true });
+  await expect(history.getByRole("row", { name: "V1 browser Pending", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Apply migrations", exact: true }).click();
-  await expect(page.locator("pre").filter({ hasText: '"applied":' })).toBeVisible();
+  await expect(page.getByText("Newly applied migrations: 1.", { exact: true })).toBeVisible();
+  await expect(history.getByRole("row", { name: "V1 browser Applied", exact: true })).toBeVisible();
   await page.goto(`${base}/admin/connect?section=api-ai`);
   await expect(page.getByText("Context migration: V1", { exact: true })).toBeVisible();
   const applied = await context.request.post(`${base}/admin/api/migrations/apply`, {
