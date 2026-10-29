@@ -45,7 +45,12 @@ const nelcota = createClient('https://api.example.com');
 
 ## Version scope
 
-This guide targets 0.2.5. Version 0.2.4 is the previous published baseline.
+This guide targets 0.2.5. Installation commands pin the published 0.2.5 baseline;
+its REST builders already support `.execute()`, so the examples work there too.
+The current checkout makes `.execute()` mandatory and removes `then`/`PromiseLike`;
+it also exposes untyped row fields as `unknown`. Those breaking changes are
+unreleased and require the next package release, not a reinstall of 0.2.5.
+Version 0.2.4 is the previous published baseline.
 The patch parses JSON in large responses about 8 to 12 times faster, with the
 same results: the pass that keeps unsafe integers and long decimals exact is
 skipped when no number in the response can lose digits.

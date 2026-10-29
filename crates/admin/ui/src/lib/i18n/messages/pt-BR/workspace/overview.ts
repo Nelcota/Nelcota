@@ -67,6 +67,30 @@ const ptBR = {
     time: "Horário",
     latency: "p95 (ms)",
   },
+  journey: {
+    title: "Project journey",
+    setup: "Initial setup: {done} of {total} observed steps",
+    verify: "Verify access from your application",
+    verifyHint:
+      "A successful sign-in does not prove that reads and writes pass your grants and row policies. Test a permitted operation and a denied operation with different users.",
+    access: "Preview table access",
+    accessHint:
+      "Open a table and use View as to compare a visitor and a selected user. The administrator view bypasses row policies.",
+    continue: "Continue to deployment and recovery",
+    review: "Review required",
+    migrate: "Version your schema",
+    migrateHint:
+      "Export panel changes, commit the complete migrations folder, preview it and apply it to the intended environment.",
+    publish: "Prepare publication",
+    publishHint:
+      "Choose the target environment, configure its backup agent and use a scoped deployment token. Check status after applying migrations.",
+    recover: "Prepare recovery",
+    recoverHint:
+      "Choose a verified database/file pair, retain the current state and check application data after restoration. This panel has not certified an off-host restore.",
+    openMigrations: "Review migrations",
+    openDeployment: "Prepare deployment",
+    openRecovery: "Review recovery steps",
+  },
   steps: {
     title: "Próximos passos",
     progress: "{done} de {total}",
@@ -88,8 +112,8 @@ const ptBR = {
       action: "Criar usuário",
     },
     connect: {
-      label: "Conectar seu app",
-      hint: "Este passo conclui quando alguém fizer login pelo seu app.",
+      label: "Sign in through the API",
+      hint: "Completes when an API sign-in is observed. Data access still needs verification in your app.",
       action: "Ver como",
     },
   },

@@ -66,6 +66,12 @@
       </p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        href={href(`/tables/${encodeURIComponent(table.name)}?_preview=anon`)}
+        >{t("policies.previewAccess")}</Button
+      >
       {#if table.rls.enabled === false && isOwnerView(table) === false}
         <Button variant="outline" size="sm" disabled={enabling !== null} onclick={onenable}>
           {#if enabling === table.name}<LoaderCircle
@@ -85,6 +91,8 @@
       >
     </div>
   </header>
+
+  <p class="text-sm text-muted-foreground">{t("policies.previewAccessHint")}</p>
 
   {#if table.policies.length === 0}
     <p class="border-t pt-4 text-sm text-muted-foreground">

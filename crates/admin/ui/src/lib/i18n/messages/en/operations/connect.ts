@@ -49,6 +49,12 @@ const en: Messages<typeof ptBR> = {
   },
   table: "Table",
   language: "Language",
+  sampleHint:
+    "Examples contain placeholder values. Replace them with valid application values, including foreign keys and values required by constraints.",
+  mutationHint:
+    "Update/delete examples use every primary-key column. Replace sample values with the intended row key before running them. Tables without a representable key omit these operations.",
+  verifyAccess:
+    "Sign in as an application user, run a permitted read/write, and verify that a second user cannot access the first user’s private rows. A panel administrator or service_role token does not prove RLS works.",
   noTables: "Create a table to see examples with its columns.",
   types: "TypeScript types for the tables:",
   downloadTypes: "Download database.ts",
@@ -61,6 +67,31 @@ const en: Messages<typeof ptBR> = {
     types: "Generate your tables’ types and save them next to the client",
     orCli: "or from the terminal:",
     docs: "SDK documentation",
+  },
+  deployment: {
+    environmentHint:
+      "This name labels the API shown above; it does not switch servers. Linking can replace that name in your application's local configuration.",
+    applyAfterReview: "Apply only after reviewing the preview",
+    applyImpact:
+      "This command executes pending SQL on the target database. Each file commits separately; keep the verified recovery backup and inspect status after an interruption.",
+    title: "Deploy to this environment",
+    scope:
+      "These commands deploy database migrations and download types. Deploy your application code through its own hosting workflow. Use a CLI and server with deployment API support; the published 0.5.6 CLI does not include these commands.",
+    target: "Target API",
+    environment: "Environment name",
+    invalidEnvironment:
+      "Use 1\u201340 letters, numbers, underscores or hyphens for the environment.",
+    backup:
+      "On the target host, configure automatic migration backups and production mode before applying changes.",
+    credential:
+      "Create a named deployment token and supply NELCOTA_DEPLOY_TOKEN through your secret manager or CI secrets. Never commit it.",
+    preview:
+      "From your application folder, commit the complete migrations directory, link the named environment and review status and the dry run before applying.",
+    verify:
+      "After applying, inspect status, regenerate types and test your app. If the response is lost, inspect status before retrying; earlier files may have committed.",
+    migrations: "Open migrations",
+    backupAction: "Configure backup protection",
+    hostAction: "Prepare a production host",
   },
   deploy: {
     title: "Deployment tokens",

@@ -1,23 +1,13 @@
 <script lang="ts">
-  import { onMount, untrack } from "svelte";
-  import {
-    FilePlus,
-    Download,
-    CircleCheck,
-    FolderOpen,
-    ChevronDown,
-    LoaderCircle,
-  } from "@lucide/svelte";
+  import { onMount } from "svelte";
+  import { MigrationUpload, MigrationExport } from "./components";
+  import { Download, CircleCheck, FolderOpen, ChevronDown } from "@lucide/svelte";
 
-  import { PageHeader, LoadError, CodeBlock, UnsavedChangesDialog } from "$lib/components/shared";
+  import { PageHeader, LoadError, CodeBlock } from "$lib/components/shared";
 
-  import { CloseGuard } from "$lib/forms/close-guard.svelte";
+  import { Button, Skeleton } from "$lib/components/ui";
 
-  import { Dialog, Button, Input, Field, Skeleton } from "$lib/components/ui";
-
-  import { toast } from "svelte-sonner";
   import { MigrationCatalog, type ExportedMigration, type MigrationsData } from "./catalog.svelte";
-  import { downloadText } from "$lib/browser/download";
   import {
     migrationStatus,
     needsAction,
@@ -48,43 +38,7 @@
     migrations.filter((migration) => migration.applied_on !== null).length,
   );
 
-  // The generate-migration dialog defaults to a name in the panel language.
-  let dialogOpen = $state(false);
-  let name = $state(t("migrations.dialog.defaultName"));
-  let saving = $state(false);
-  let initialName = $state("");
-  const guard = new CloseGuard({
-    dirty: () => name !== initialName,
-    busy: () => saving,
-    close: () => (dialogOpen = false),
-    active: () => dialogOpen,
-  });
-  $effect(() => {
-    if (dialogOpen) untrack(() => (initialName = name));
-  });
-  // Keep the last migration generated during this visit as the next-step reminder.
   let generated = $state<ExportedMigration | null>(null);
-
-  const MIGRATION_NAME = /^[a-z0-9][a-z0-9_]{0,59}$/;
-  const validName = $derived(MIGRATION_NAME.test(name));
-
-  async function generate(event: SubmitEvent) {
-    event.preventDefault();
-    if (validName === false || saving) return;
-    saving = true;
-    try {
-      const result = await resource.generate(name);
-      downloadText(result.filename, result.sql, "application/sql");
-      generated = result;
-      dialogOpen = false;
-      toast.success(t("migrations.generatedToast", { filename: result.filename }));
-      await load();
-    } catch (e) {
-      toast.error(errorMessage(e));
-    } finally {
-      saving = false;
-    }
-  }
 
   const when = $derived(
     new Intl.DateTimeFormat(intlLocale(), { dateStyle: "short", timeStyle: "short" }),
@@ -147,27 +101,6 @@
     return details;
   }
 
-  let uploaded = $state<FileList | undefined>();
-  let uploadBusy = $state(false);
-  let uploadResult = $state("");
-  async function applyFiles(dryRun: boolean) {
-    if (uploaded?.length == null || uploaded.length === 0 || uploadBusy) return;
-    uploadBusy = true;
-    uploadResult = "";
-    try {
-      const files = await Promise.all(
-        Array.from(uploaded).map(async (file) => ({ filename: file.name, sql: await file.text() })),
-      );
-      const result = await resource.apply(files, dryRun);
-      uploadResult = JSON.stringify(result, null, 2);
-      await load();
-    } catch (cause) {
-      uploadResult = errorMessage(cause);
-    } finally {
-      uploadBusy = false;
-    }
-  }
-
   function statementsSql(statements: readonly string[]): string {
     return statements.map((statement) => statement.trim().replace(/;$/, "") + ";").join("\n");
   }
@@ -178,35 +111,18 @@
 >
   <PageHeader title={t("migrations.title")} description={t("migrations.description")}>
     {#snippet actions()}
-      {#if pendingCount > 0}
-        <Button onclick={() => (dialogOpen = true)}
-          ><FilePlus data-icon="inline-start" aria-hidden="true" />{t(
-            "migrations.generate",
-          )}</Button
-        >
-      {/if}
+      <MigrationExport
+        {resource}
+        {pendingCount}
+        nextVersion={data?.next_version}
+        ongenerated={(result) => {
+          generated = result;
+        }}
+      />
     {/snippet}
   </PageHeader>
 
-  <section class="grid gap-3 rounded-3xl bg-card p-6">
-    <h2 class="text-lg font-semibold">{t("migrations.upload.title")}</h2>
-    <p class="text-sm text-muted-foreground">{t("migrations.upload.description")}</p>
-    <label class="grid gap-2 text-sm"
-      >{t("migrations.upload.files")}
-      <input type="file" accept=".sql" multiple bind:files={uploaded} disabled={uploadBusy} />
-    </label>
-    <div class="flex flex-wrap gap-2">
-      <Button
-        variant="outline"
-        disabled={uploadBusy || !uploaded?.length}
-        onclick={() => applyFiles(true)}>{t("migrations.upload.preview")}</Button
-      >
-      <Button disabled={uploadBusy || !uploaded?.length} onclick={() => applyFiles(false)}
-        >{t("migrations.upload.apply")}</Button
-      >
-    </div>
-    {#if uploadResult}<CodeBlock code={uploadResult} />{/if}
-  </section>
+  <MigrationUpload {resource} onapplied={load} />
 
   {#if error}<LoadError message={error} onretry={load} busy={loading} />{/if}
   {#if data == null && loading}
@@ -409,57 +325,3 @@
     </section>
   {/if}
 </div>
-
-<Dialog.Root bind:open={() => dialogOpen, guard.change}>
-  <Dialog.Content class="sm:max-w-md">
-    <form class="grid gap-5" onsubmit={generate}>
-      <fieldset class="contents" disabled={saving} aria-busy={saving}>
-        <Dialog.Header>
-          <Dialog.Title>{t("migrations.generate")}</Dialog.Title>
-          <Dialog.Description
-            >{t("migrations.dialog.description", { count: pendingCount })}</Dialog.Description
-          >
-        </Dialog.Header>
-        <Field.Group>
-          <Field.Field data-invalid={validName === false}>
-            <Field.Label for="migration-name">{t("common.name")}</Field.Label>
-            <Input
-              id="migration-name"
-              name="migration-name"
-              bind:value={name}
-              maxlength={60}
-              autocomplete="off"
-              spellcheck={false}
-              aria-invalid={validName === false}
-              aria-describedby="migration-name-hint"
-            />
-            {#if validName}
-              <Field.Description id="migration-name-hint"
-                >{t("migrations.dialog.file")}
-                <span class="font-mono">V{data?.next_version}__{name}.sql</span></Field.Description
-              >
-            {/if}
-            {#if validName === false}
-              <Field.Error id="migration-name-hint">{t("migrations.dialog.nameRule")}</Field.Error>
-            {/if}
-          </Field.Field>
-        </Field.Group>
-        <Dialog.Footer>
-          <Button variant="outline" disabled={saving} onclick={guard.request}
-            >{t("common.cancel")}</Button
-          >
-          <Button type="submit" disabled={validName === false || saving}>
-            {#if saving}<LoaderCircle
-                data-icon="inline-start"
-                class="animate-spin"
-                aria-hidden="true"
-              />{/if}
-            {#if saving === false}<FilePlus data-icon="inline-start" aria-hidden="true" />{/if}
-            {saving ? t("migrations.dialog.generating") : t("migrations.dialog.submit")}
-          </Button>
-        </Dialog.Footer>
-      </fieldset>
-    </form>
-  </Dialog.Content>
-</Dialog.Root>
-<UnsavedChangesDialog bind:open={guard.pending} ondiscard={guard.discard} />

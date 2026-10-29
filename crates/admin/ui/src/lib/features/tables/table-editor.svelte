@@ -97,6 +97,16 @@
     rows.clear();
     viewer = next;
   }
+  // A deliberate access-review link starts read-only, without overriding later manual role changes.
+  let lastAccessPreview: string | undefined;
+  $effect(() => {
+    const preview = route.query.get("_preview");
+    const key = JSON.stringify([name, view, preview]);
+    if (key === lastAccessPreview) return;
+    lastAccessPreview = key;
+    if (view !== "data" || preview !== "anon") return;
+    untrack(() => setViewer({ mode: "anon", user: null }));
+  });
   const tableView = $derived(parseTableView(route.query));
   const page = $derived(tableView.page);
   const size = $derived(tableView.size);

@@ -73,6 +73,17 @@ const en: Messages<typeof ptBR> = {
   noLogs: "No structured events available.",
   noProjects: "No projects registered.",
   noHistory: "No operations recorded.",
+  recoveryPoint: "Recovery point encoded in filename (UTC)",
+  recoveryPointUnknown: "Unknown; inspect the verified backup before continuing.",
+  recoveryScope: "Restore scope",
+  recoveryVerificationOnly:
+    "Verification of the already restored database and files. The selected backup will not be replayed.",
+  recoveryPair:
+    "The selected database and paired disk-file snapshot. Writes after this point will be replaced.",
+  recoverySafety:
+    "The app enters maintenance and a safety backup preserves the current database/file state before replacement. Retain SSH access and that backup.",
+  recoveryVerify:
+    "After completion, sign in through your app, inspect expected rows and download a restored file. A healthy service alone does not verify your application data.",
   backupFile: "Selected backup",
   backupSaved: "Preserved backup",
   selectBackup: "Select a backup",

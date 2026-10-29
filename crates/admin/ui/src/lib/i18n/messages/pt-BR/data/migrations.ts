@@ -8,6 +8,35 @@ const ptBR = {
     preview: "Preview migrations",
     apply: "Apply migrations",
   },
+  result: {
+    fileBudget:
+      "Select at most 1,024 SQL files; their complete encoded request must fit within 2 MiB.",
+    previewFirst:
+      "Preview the complete folder before applying. Selecting different files requires a new preview.",
+    working: "Checking migration history and preparing the result\u2026",
+    applying:
+      "Preparing the verified backup and applying migrations. Keep this page open; this can take several minutes.",
+    previewResult: "Preview only: no migrations were applied.",
+    applyResult: "Newly applied migrations: {count}.",
+    noChanges: "No pending files to apply.",
+    catalogPending:
+      "SQL committed, but the API schema refresh is still pending. Refresh status; do not replay the migration.",
+    backup: "Verified recovery backup: {backup}",
+    afterApply:
+      "Regenerate database.ts, test your application and keep the backup with its paired files.",
+    uncertain:
+      "Some earlier files may already have committed. Preview the complete folder to reconcile history before applying again.",
+    history: "Migration status",
+    version: "Version",
+    name: "Name",
+    state: "State",
+    applied: "Applied",
+    pending: "Pending",
+    diverged: "Changed or out of order",
+    missing: "Missing from selected files",
+    backupHelp: "Configure automatic migration backups",
+    deployment: "Prepare deployment",
+  },
   title: "Migrações",
   summary: {
     pending: { one: "{count} alteração pendente", other: "{count} alterações pendentes" },

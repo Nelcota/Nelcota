@@ -217,5 +217,10 @@ async fn apply_response(
     drop(connection);
     // Catalog failure is post-commit: never ask a client to replay accepted SQL.
     let ready = state.catalog.refresh(&state.db).await;
-    Ok(Json(json!({"report": report, "catalog_pending": !ready})).into_response())
+    Ok(
+        crate::contracts::response::<crate::contracts::MigrationApplication>(
+            json!({"report": report, "catalog_pending": !ready}),
+        )?
+        .into_response(),
+    )
 }

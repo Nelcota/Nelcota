@@ -1,5 +1,8 @@
 // Policies page, policy sheet, RLS badge, grants editor and SQL preview.
 const ptBR = {
+  previewAccess: "Preview as visitor",
+  previewAccessHint:
+    "Starts a read-only visitor preview. Use View as to select a user and compare allowed and denied rows; the administrator view bypasses RLS.",
   title: "Políticas de acesso",
   search: "Buscar tabela",
   filters: {

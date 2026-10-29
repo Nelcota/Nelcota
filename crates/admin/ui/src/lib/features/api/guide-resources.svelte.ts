@@ -34,17 +34,18 @@ export class ApiGuideResources {
   loadSnippets(table: string): Promise<boolean> {
     return this.snippets.load(async (signal) => {
       const data = await api.get<TableData>(`/tables/${enc(table)}?size=1`, { signal });
-      return tableSnippets(
-        this.origin,
-        table,
-        data.table.columns.map((column) => ({
+      return tableSnippets(this.origin, table, {
+        columns: data.table.columns.map((column) => ({
           name: column.name,
           type: column.full_type,
           has_default: column.has_default,
           generated: column.generated,
           nullable: column.nullable,
+          enum_values: column.enum_values,
         })),
-      );
+        primaryKey: data.table.primary_key,
+        insertable: data.table.insertable,
+      });
     });
   }
   private async contextSnapshot(signal: AbortSignal): Promise<ContextSnapshot> {

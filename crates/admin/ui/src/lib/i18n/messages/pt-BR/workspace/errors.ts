@@ -75,6 +75,16 @@ const ptBR = {
   unsupported_image_type: "Use uma imagem PNG, JPEG ou WebP.",
 
   // Migrations
+  migration_backup_required:
+    "Configure this project\u2019s automatic backup agent on the host before production migrations. Open Configure automatic migration backups, then preview the complete folder again.",
+  migration_backup_failed:
+    "The automatic backup failed or was interrupted. Inspect the host backup service and migration status before trying again. Do not remove its recovery fence.",
+  migration_busy:
+    "Another protected migration is running. Wait for it to finish, then preview the complete folder.",
+  migration_diverged:
+    "Selected files differ from database history. Restore the original applied files and include the complete folder; create a new version for changes.",
+  invalid_migration:
+    "Check SQL filenames (V<number>__<name>.sql), duplicate versions and file contents, then preview again.",
   invalid_migration_name: "Nome com letras minúsculas, números e _ (até 60), ex.: criar_pedidos.",
   no_pending_changes: "Nenhuma alteração do painel fora das migrações.",
   migration_not_from_panel: "Esta migração não foi gerada pelo painel.",

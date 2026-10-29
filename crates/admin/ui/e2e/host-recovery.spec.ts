@@ -161,6 +161,9 @@ function restoreRecoveryJob() {
 
 async function expectPreservedWrites(page: Page): Promise<void> {
   await expect(
+    page.getByText("Verification of the already restored database and files.", { exact: false }),
+  ).toBeVisible();
+  await expect(
     page.getByText(/A recuperação verifica o estado atual e preserva gravações posteriores/),
   ).toBeVisible();
   await expect(

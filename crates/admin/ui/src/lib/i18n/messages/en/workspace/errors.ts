@@ -69,6 +69,16 @@ const en: Messages<typeof ptBR> = {
   photo_too_large: "The photo must be at most {max_kb} KB.",
   unsupported_image_type: "Use a PNG, JPEG or WebP image.",
 
+  migration_backup_required:
+    "Configure this project\u2019s automatic backup agent on the host before production migrations. Open Configure automatic migration backups, then preview the complete folder again.",
+  migration_backup_failed:
+    "The automatic backup failed or was interrupted. Inspect the host backup service and migration status before trying again. Do not remove its recovery fence.",
+  migration_busy:
+    "Another protected migration is running. Wait for it to finish, then preview the complete folder.",
+  migration_diverged:
+    "Selected files differ from database history. Restore the original applied files and include the complete folder; create a new version for changes.",
+  invalid_migration:
+    "Check SQL filenames (V<number>__<name>.sql), duplicate versions and file contents, then preview again.",
   invalid_migration_name:
     "Name with lowercase letters, digits and _ (up to 60), e.g. create_orders.",
   no_pending_changes: "No panel changes outside migrations.",

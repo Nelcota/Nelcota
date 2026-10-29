@@ -11,6 +11,7 @@ test.beforeEach(async ({ page }) => {
 
 test("scrollable code samples expose a supported accessible name", async ({ page }) => {
   await page.goto("/admin/connect");
+  await page.getByText("Apply only after reviewing the preview", { exact: true }).click();
   const blocks = page.locator('pre[tabindex="0"]');
   await expect(blocks.first()).toBeVisible();
   for (const block of await blocks.all()) {

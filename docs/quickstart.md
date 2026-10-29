@@ -16,7 +16,11 @@ curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/instal
 nelcota --version
 ```
 
-This guide targets server 0.5.6. Confirm published artifacts on the
+This guide targets server 0.5.6. The basic manual migration and SDK path works
+with that published release. Project-owned development containers, migration
+watching and local email testing below are explicitly marked as current-checkout
+capabilities; they are not added by reinstalling the published 0.5.6 binary.
+Confirm published artifacts on the
 [release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.6). To build
 that release on macOS/Windows with Rust 1.99+:
 
@@ -38,10 +42,12 @@ mkdir notes-app && cd notes-app
 nelcota dev
 ```
 
-The command starts PostgreSQL 17 in `nelcota-dev-postgres-<folder-hash>-54322`, stores data
-in a Docker volume, applies internal migrations and serves the API in the
-foreground. Application files in `migrations/` are applied on startup and watched
-for changes. The API is at `http://127.0.0.1:8000`, and the panel is at `/admin/`.
+The command starts PostgreSQL 17, stores data in a Docker volume, applies
+internal migrations and serves the API in the foreground. The API is at
+`http://127.0.0.1:8000`, and the panel is at `/admin/`. Apply application files
+explicitly with `nelcota migrate` in step 4. Current-checkout builds also apply
+existing application migrations on startup and watch for changes; published
+0.5.6 does not watch the folder.
 Its account is `admin@localhost`; read `ADMIN_PASSWORD` locally from
 `.nelcota/dev.env`. Do not share that file.
 
@@ -61,16 +67,20 @@ Use
 `--listen 127.0.0.1:9000` or `--db-port 54323` for free ports; changing the database
 port selects another container/volume, rather than moving data. Ctrl+C stops
 the API; the database container and its data remain until you stop/remove them.
-Container and volume names use the canonical project folder and database port.
-The CLI prints that pairing and refuses a port already owned by another project.
-Legacy containers named only after a port are preserved; use a free `--db-port`
-for a new isolated database, or dump and restore the legacy data explicitly.
+Current-checkout builds name containers and volumes using the canonical project
+folder and database port, print that pairing and refuse a port owned by another
+project. Published 0.5.6 uses a port-based container name: select a different free
+`--db-port` for each application. Preserve existing containers and explicitly dump
+and restore data if moving an application; changing a port does not migrate it.
 
 `dev` enables disk storage and leaves SMTP/email confirmation off. Signup
 therefore returns a session immediately. It uses generated settings, not your
 application's `.env` overrides.
 
-To exercise signup confirmation, resend, recovery and magic links locally, run
+### Optional: local email with the current checkout
+
+This option requires a current-checkout binary; published 0.5.6 does not accept
+`--mail`. To exercise signup confirmation, resend, recovery and magic links locally, run
 `nelcota dev --mail`. It starts project-owned Mailpit, prints its loopback inbox
 URL, and uses verified STARTTLS with a private certificate in `.nelcota/mail/`.
 Docker and OpenSSL are required. The default application callback is
@@ -207,6 +217,31 @@ For occupied ports, select free API/database ports before startup. For
 or missing columns, check [troubleshooting.md](troubleshooting.md).
 Creating `.env` alone does not configure `nelcota serve`: it reads process
 variables and optional TOML. Host Compose/systemd and `dev` load their own settings.
+
+## From local development to recovery
+
+Keep these environments distinct: the application folder owns SQL and generated
+types; a production host owns services, credentials and recovery backups.
+
+1. Use the panel to create a table and review access. Current-checkout panels
+   group these steps under **Project journey**.
+   Open the table's **View as** control to inspect a visitor and a selected user.
+   Confirm both allowed and denied rows; the administrator view bypasses RLS.
+2. Install the SDK, generate types and sign in through your application. Test a
+   permitted read/write and a second user's denied access. A recorded sign-in
+   alone does not certify your grants or row policies.
+3. Keep the complete migration folder in Git. Export changes made through the
+   panel; manual SQL editor changes need a migration file of their own.
+4. For published 0.5.6, provision a separate host using [deploy](deploy.md), copy
+   the complete migration folder into its project and apply it on that host.
+   Current-checkout builds also support the named-environment deployment flow
+   in [remote migrations](remote-migrations.md); use **Connect → Deployment
+   tokens** for its guided sequence and backup prerequisite.
+5. Deploy your application code through its own hosting workflow, using the
+   intended API origin. Applying database migrations does not publish a frontend.
+6. Before relying on production recovery, rehearse [database and file
+   restoration](backup.md#restore) on a disposable project. After restoring,
+   verify sign-in, expected rows and a restored file from your application.
 
 ## Next
 

@@ -1332,6 +1332,61 @@
     "title": "DeployTokens",
     "type": "object"
   },
+  "DeploymentMigration": {
+    "$defs": {
+      "DeploymentMigrationState": {
+        "enum": [
+          "applied",
+          "pending",
+          "diverged",
+          "missing"
+        ],
+        "type": "string"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+      "applied_on": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "checksum": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "state": {
+        "$ref": "#/$defs/DeploymentMigrationState"
+      },
+      "version": {
+        "format": "int32",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "version",
+      "name",
+      "checksum",
+      "applied_on",
+      "state"
+    ],
+    "title": "DeploymentMigration",
+    "type": "object"
+  },
+  "DeploymentMigrationState": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "enum": [
+      "applied",
+      "pending",
+      "diverged",
+      "missing"
+    ],
+    "title": "DeploymentMigrationState",
+    "type": "string"
+  },
   "ExportedMigration": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "properties": {
@@ -3626,6 +3681,173 @@
       "from_panel"
     ],
     "title": "Migration",
+    "type": "object"
+  },
+  "MigrationApplication": {
+    "$defs": {
+      "DeploymentMigration": {
+        "properties": {
+          "applied_on": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "checksum": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/$defs/DeploymentMigrationState"
+          },
+          "version": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "name",
+          "checksum",
+          "applied_on",
+          "state"
+        ],
+        "type": "object"
+      },
+      "DeploymentMigrationState": {
+        "enum": [
+          "applied",
+          "pending",
+          "diverged",
+          "missing"
+        ],
+        "type": "string"
+      },
+      "MigrationApplicationReport": {
+        "properties": {
+          "applied": {
+            "items": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "backup": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dry_run": {
+            "type": "boolean"
+          },
+          "migrations": {
+            "items": {
+              "$ref": "#/$defs/DeploymentMigration"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "migrations",
+          "applied",
+          "dry_run"
+        ],
+        "type": "object"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+      "catalog_pending": {
+        "type": "boolean"
+      },
+      "report": {
+        "$ref": "#/$defs/MigrationApplicationReport"
+      }
+    },
+    "required": [
+      "report",
+      "catalog_pending"
+    ],
+    "title": "MigrationApplication",
+    "type": "object"
+  },
+  "MigrationApplicationReport": {
+    "$defs": {
+      "DeploymentMigration": {
+        "properties": {
+          "applied_on": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "checksum": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/$defs/DeploymentMigrationState"
+          },
+          "version": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "name",
+          "checksum",
+          "applied_on",
+          "state"
+        ],
+        "type": "object"
+      },
+      "DeploymentMigrationState": {
+        "enum": [
+          "applied",
+          "pending",
+          "diverged",
+          "missing"
+        ],
+        "type": "string"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+      "applied": {
+        "items": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "backup": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "dry_run": {
+        "type": "boolean"
+      },
+      "migrations": {
+        "items": {
+          "$ref": "#/$defs/DeploymentMigration"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "migrations",
+      "applied",
+      "dry_run"
+    ],
+    "title": "MigrationApplicationReport",
     "type": "object"
   },
   "MigrationsData": {

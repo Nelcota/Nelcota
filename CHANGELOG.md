@@ -48,6 +48,12 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Changed
 
+- Extend the project journey through access verification, migrations, named-environment
+  deployment and recovery. Render typed migration previews/results, retain explicit
+  approval, and show actionable backup/history errors with the deployment time budget.
+- Show recovery scope, the backup timestamp when available and application-level
+  verification steps without treating a healthy service as a completed data rehearsal.
+
 - Separate host/update panel state from presentation and split privileged CLI
   admission, execution, validation and process supervision into explicit owners.
   Preserve controller protocols, durable receipts and recovery ordering.
@@ -103,6 +109,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
   status.
 
 ### Fixed
+
+- Generate panel CRUD examples from complete primary keys and required columns,
+  including UUID/composite keys and declared enum values; omit unsafe keyless mutations.
+- Align onboarding and CLI guides with published versus current-checkout capabilities.
 
 - REST pages and `Prefer: count=exact` totals use one database snapshot,
   preventing contradictory pagination metadata during concurrent writes.

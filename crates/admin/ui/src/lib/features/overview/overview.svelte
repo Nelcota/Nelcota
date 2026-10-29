@@ -12,18 +12,16 @@
     ArrowUpRight,
     Download,
     CircleAlert,
-    Check,
   } from "@lucide/svelte";
 
   import TechnicalToggle from "$lib/shared/schema/components/technical-toggle.svelte";
   import { PageHeader, LoadError } from "$lib/components/shared";
 
-  import { TrafficChart, Meter, MiniBars } from "$lib/features/overview/components";
+  import { TrafficChart, Meter, MiniBars, ProjectJourney } from "$lib/features/overview/components";
 
   import { href } from "$lib/navigation/router.svelte";
   import {
     attention,
-    nextSteps,
     groupSums,
     OverviewResources,
     downloadTraffic,
@@ -141,8 +139,6 @@
       : [],
   );
 
-  const allSteps = $derived(data != null ? nextSteps(data) : []);
-  const steps = $derived(allSteps.filter((step) => Boolean(step.done) === false));
   const alerts = $derived(data != null ? attention(data) : { exposed: [], locked: [] });
   const needs = $derived([
     ...alerts.exposed.map((table) => ({
@@ -159,8 +155,8 @@
     })),
   ]);
   const recentBlocks = $derived(recentRefusals(denied.data, RECENT_BLOCK_LIMIT));
-  // Show the attention section only for outstanding alerts or onboarding steps.
-  const showNeeds = $derived(needs.length > 0 || steps.length > 0);
+  // Keep outstanding access alerts separate from the persistent project journey.
+  const showNeeds = $derived(needs.length > 0);
 
   const download = () => downloadTraffic(traffic, range);
 
@@ -220,57 +216,10 @@
           {/each}
         </ul>
       {/if}
-      {#if steps.length > 0}
-        <!-- Complete onboarding steps from observed project state, never from clicks. -->
-        <div class="grid gap-2">
-          <p class="flex items-baseline justify-between text-sm text-muted-foreground">
-            {t("overview.steps.title")}<span class="tabular-nums"
-              >{t("overview.steps.progress", {
-                done: allSteps.length - steps.length,
-                total: allSteps.length,
-              })}</span
-            >
-          </p>
-          <ol class="grid gap-1 sm:grid-cols-2">
-            {#each allSteps as step (step.id)}
-              <li>
-                <a
-                  href={href(step.path)}
-                  class="group flex items-center gap-3 rounded-2xl px-2 py-2 transition-colors hover:bg-well"
-                >
-                  {#if step.done}
-                    <span
-                      class="grid size-6 shrink-0 place-items-center rounded-full bg-brand/15 text-brand"
-                      ><Check class="size-3.5" aria-hidden="true" /></span
-                    >
-                  {/if}
-                  {#if step.done === false}
-                    <span
-                      class="size-6 shrink-0 rounded-full border-2 border-dashed border-muted-foreground/40"
-                      aria-hidden="true"
-                    ></span>
-                  {/if}
-                  <span
-                    class={[
-                      "min-w-0 flex-1 text-sm",
-                      step.done
-                        ? "text-muted-foreground line-through decoration-muted-foreground/40"
-                        : "font-medium",
-                    ]}>{t(`overview.steps.${step.id}.label`)}</span
-                  >
-                  <span class="sr-only">{step.done ? t("overview.steps.done") : ""}</span>
-                  {#if step.done === false}<ArrowUpRight
-                      class="size-4 shrink-0 text-muted-foreground group-hover:text-foreground"
-                      aria-hidden="true"
-                    />{/if}
-                </a>
-              </li>
-            {/each}
-          </ol>
-        </div>
-      {/if}
     </section>
   {/if}
+
+  {#if data}<ProjectJourney {data} />{/if}
 
   <!-- Traffic totals, period selection and series share one card. -->
   <section class={["grid min-w-0 content-start gap-4", card]} aria-labelledby="overview-traffic">

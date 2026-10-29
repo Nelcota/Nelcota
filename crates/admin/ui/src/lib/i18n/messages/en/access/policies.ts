@@ -3,6 +3,9 @@ import type { Messages } from "../../../index.svelte";
 import type ptBR from "../../pt-BR/access/policies";
 
 const en: Messages<typeof ptBR> = {
+  previewAccess: "Preview as visitor",
+  previewAccessHint:
+    "Starts a read-only visitor preview. Use View as to select a user and compare allowed and denied rows; the administrator view bypasses RLS.",
   title: "Policies",
   search: "Search tables",
   filters: {
