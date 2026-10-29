@@ -9,85 +9,56 @@
 // --browser also builds the package and runs test/browser/smoke.mjs in Chromium.
 // --nextjs additionally runs the built Next adapter against the same auth/email fixture.
 
-import { spawn, spawnSync, type ChildProcess, type SpawnSyncOptions } from 'node:child_process';
-import { createHmac, randomUUID } from 'node:crypto';
-import { createServer } from 'node:net';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { findExecutable } from './cargo-artifacts.ts';
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { createHmac, randomUUID } from "node:crypto";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const repo = resolve(root, '../..');
-const keep = process.argv.includes('--keep');
-const browser = process.argv.includes('--browser');
-const nextjs = process.argv.includes('--nextjs');
-const vitestArgs = process.argv.slice(2).filter((a) => !['--keep', '--browser', '--nextjs'].includes(a));
-const exe = process.platform === 'win32' ? 'nelcota.exe' : 'nelcota';
-const bin = process.env['NELCOTA_BIN'] ?? join(repo, 'target', 'debug', exe);
+import { findExecutable } from "./cargo-artifacts.js";
+import { freePort, run, docker, mappedPort, waitFor } from "./contract-runtime.js";
+const RUN_ID_LENGTH = 8;
+const SECOND_IN_MS = 1000;
+const INTERRUPTED_EXIT_CODE = 130;
+const CATALOG_WAIT_SECONDS = 15;
+const SERVICE_TOKEN_TTL_SECONDS = 600;
 
-const runId = randomUUID().slice(0, 8);
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const repo = resolve(root, "../..");
+const keep = process.argv.includes("--keep");
+const browser = process.argv.includes("--browser");
+const nextjs = process.argv.includes("--nextjs");
+const vitestArgs = process.argv
+  .slice(2)
+  .filter((a) => ["--keep", "--browser", "--nextjs"].includes(a) === false);
+const exe = process.platform === "win32" ? "nelcota.exe" : "nelcota";
+const bin = process.env["NELCOTA_BIN"] ?? join(repo, "target", "debug", exe);
+
+const runId = randomUUID().slice(0, RUN_ID_LENGTH);
 const PG = `nelcota-sdk-postgres-${runId}`;
 const MAIL = `nelcota-sdk-mailpit-${runId}`;
-const API_PORT = await new Promise<number>((resolvePort, reject) => {
-  const probe = createServer();
-  probe.on('error', reject);
-  probe.listen(0, '127.0.0.1', () => {
-    const address = probe.address();
-    if (address === null || typeof address === 'string') {
-      reject(new Error(`Unexpected probe address: ${String(address)}`));
-      return;
-    }
-    probe.close(() => resolvePort(address.port));
-  });
-});
-const JWT_SECRET = 'sdk-contract-secret-with-more-than-32-characters';
+const API_PORT = await freePort();
+const JWT_SECRET = "sdk-contract-secret-with-more-than-32-characters";
 
-function run(command: string, args: string[], options: SpawnSyncOptions = {}) {
-  const result = spawnSync(command, args, { stdio: 'inherit', ...options });
-  if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} exited with ${result.status}`);
-  return result;
-}
-
-function docker(...args: string[]) {
-  return spawnSync('docker', args, { encoding: 'utf8' });
-}
-
-function mappedPort(container: string, port: string): number {
-  const result = docker('port', container, port);
-  const match = result.stdout?.trim().match(/:(\d+)$/);
-  if (result.status !== 0 || match == null) throw new Error(`No mapped port for ${container}:${port}`);
-  return Number(match[1]);
-}
-
-async function waitFor(what: string, check: () => boolean | Promise<boolean>, seconds = 60): Promise<void> {
-  const deadline = Date.now() + seconds * 1000;
-  while (Date.now() < deadline) {
-    if (await check()) return;
-    await new Promise((r) => setTimeout(r, 300));
-  }
-  throw new Error(`${what} did not come up in ${seconds}s`);
-}
-
-if (!existsSync(bin)) {
+if (existsSync(bin) === false) {
   console.error(`No binary at ${bin}: run \`cargo build -p nelcota-server\` or set NELCOTA_BIN.`);
   process.exit(1);
 }
 
-const storageDir = mkdtempSync(join(tmpdir(), 'nelcota-sdk-storage-'));
+const storageDir = mkdtempSync(join(tmpdir(), "nelcota-sdk-storage-"));
 let server: ChildProcess | undefined;
 
 function teardown() {
   if (keep) return;
   server?.kill();
-  docker('rm', '-f', PG, MAIL);
+  docker("rm", "-f", PG, MAIL);
   rmSync(storageDir, { recursive: true, force: true });
 }
 
-process.on('SIGINT', () => {
+process.on("SIGINT", () => {
   teardown();
-  process.exit(130);
+  process.exit(INTERRUPTED_EXIT_CODE);
 });
 
 let status = 1;
@@ -95,65 +66,154 @@ try {
   // Use the unchanged server entrypoint with a test-only native trust loader.
   // The release binary's Mozilla roots cannot trust a disposable local CA.
   // Building an example keeps the supplied CLI binary untouched.
-  const build = spawnSync('cargo', [
-    'build', '--locked', '-p', 'nelcota-auth', '-p', 'nelcota-server',
-    '--example', 'sdk-contract-server', '--features', 'lettre/rustls-native-certs',
-    '--message-format=json',
-  ], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
-  if (build.status !== 0) throw new Error(`cargo build of sdk-contract-server exited with ${build.status}`);
-  const executable = findExecutable(build.stdout, 'sdk-contract-server');
-  if (executable === undefined) throw new Error('Missing SDK contract server build artifact');
+  const build = spawnSync(
+    "cargo",
+    [
+      "build",
+      "--locked",
+      "-p",
+      "nelcota-auth",
+      "-p",
+      "nelcota-server",
+      "--example",
+      "sdk-contract-server",
+      "--features",
+      "lettre/rustls-native-certs",
+      "--message-format=json",
+    ],
+    { cwd: repo, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] },
+  );
+  if (build.status !== 0)
+    throw new Error(`cargo build of sdk-contract-server exited with ${build.status}`);
+  const executable = findExecutable(build.stdout, "sdk-contract-server");
+  if (executable === undefined) throw new Error("Missing SDK contract server build artifact");
 
-  const certs = join(storageDir, 'smtp-certs');
+  const certs = join(storageDir, "smtp-certs");
   mkdirSync(certs, { mode: 0o700 });
-  const ca = join(certs, 'ca.pem');
-  const caKey = join(certs, 'ca.key');
-  const cert = join(certs, 'smtp.pem');
-  const key = join(certs, 'smtp.key');
-  const csr = join(certs, 'smtp.csr');
-  const extensions = join(certs, 'smtp.ext');
-  writeFileSync(extensions, 'subjectAltName=IP:127.0.0.1\nbasicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n');
-  run('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
-    '-subj', '/CN=Nelcota SDK fixture CA', '-addext', 'basicConstraints=critical,CA:TRUE',
-    '-addext', 'keyUsage=critical,keyCertSign,cRLSign', '-keyout', caKey, '-out', ca]);
-  run('openssl', ['req', '-newkey', 'rsa:2048', '-nodes', '-subj', '/CN=localhost', '-keyout', key, '-out', csr]);
-  run('openssl', ['x509', '-req', '-in', csr, '-CA', ca, '-CAkey', caKey,
-    '-CAcreateserial', '-days', '1', '-extfile', extensions, '-out', cert]);
-  run('docker', ['run', '-d', '--name', PG, '-e', 'POSTGRES_PASSWORD=postgres', '-p', '127.0.0.1::5432', 'postgres:17-alpine']);
+  const ca = join(certs, "ca.pem");
+  const caKey = join(certs, "ca.key");
+  const cert = join(certs, "smtp.pem");
+  const key = join(certs, "smtp.key");
+  const csr = join(certs, "smtp.csr");
+  const extensions = join(certs, "smtp.ext");
+  writeFileSync(
+    extensions,
+    "subjectAltName=IP:127.0.0.1\nbasicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n",
+  );
+  run("openssl", [
+    "req",
+    "-x509",
+    "-newkey",
+    "rsa:2048",
+    "-nodes",
+    "-days",
+    "1",
+    "-subj",
+    "/CN=Nelcota SDK fixture CA",
+    "-addext",
+    "basicConstraints=critical,CA:TRUE",
+    "-addext",
+    "keyUsage=critical,keyCertSign,cRLSign",
+    "-keyout",
+    caKey,
+    "-out",
+    ca,
+  ]);
+  run("openssl", [
+    "req",
+    "-newkey",
+    "rsa:2048",
+    "-nodes",
+    "-subj",
+    "/CN=localhost",
+    "-keyout",
+    key,
+    "-out",
+    csr,
+  ]);
+  run("openssl", [
+    "x509",
+    "-req",
+    "-in",
+    csr,
+    "-CA",
+    ca,
+    "-CAkey",
+    caKey,
+    "-CAcreateserial",
+    "-days",
+    "1",
+    "-extfile",
+    extensions,
+    "-out",
+    cert,
+  ]);
+  run("docker", [
+    "run",
+    "-d",
+    "--name",
+    PG,
+    "-e",
+    "POSTGRES_PASSWORD=postgres",
+    "-p",
+    "127.0.0.1::5432",
+    "postgres:17-alpine",
+  ]);
   // SMTP fixtures must not depend on reverse DNS for Docker bridge addresses.
-  run('docker', ['run', '-d', '--name', MAIL, '-e', 'MP_SMTP_DISABLE_RDNS=true',
-    '-v', `${cert}:/smtp.pem:ro`, '-v', `${key}:/smtp.key:ro`,
-    '-p', '127.0.0.1::1025', '-p', '127.0.0.1::8025', 'axllent/mailpit:v1.27.0',
-    '--smtp-tls-cert', '/smtp.pem', '--smtp-tls-key', '/smtp.key', '--smtp-require-starttls']);
-  const PG_PORT = mappedPort(PG, '5432/tcp');
-  const SMTP_PORT = mappedPort(MAIL, '1025/tcp');
-  const MAIL_PORT = mappedPort(MAIL, '8025/tcp');
-  await waitFor('Postgres', () => docker('exec', PG, 'pg_isready', '-U', 'postgres', '-h', '127.0.0.1').status === 0);
+  run("docker", [
+    "run",
+    "-d",
+    "--name",
+    MAIL,
+    "-e",
+    "MP_SMTP_DISABLE_RDNS=true",
+    "-v",
+    `${cert}:/smtp.pem:ro`,
+    "-v",
+    `${key}:/smtp.key:ro`,
+    "-p",
+    "127.0.0.1::1025",
+    "-p",
+    "127.0.0.1::8025",
+    "axllent/mailpit:v1.27.0",
+    "--smtp-tls-cert",
+    "/smtp.pem",
+    "--smtp-tls-key",
+    "/smtp.key",
+    "--smtp-require-starttls",
+  ]);
+  const PG_PORT = mappedPort(PG, "5432/tcp");
+  const SMTP_PORT = mappedPort(MAIL, "1025/tcp");
+  const MAIL_PORT = mappedPort(MAIL, "8025/tcp");
+  await waitFor(
+    "Postgres",
+    () => docker("exec", PG, "pg_isready", "-U", "postgres", "-h", "127.0.0.1").status === 0,
+  );
 
   const env = {
     ...process.env,
     NELCOTA_DATABASE_URL: `postgres://postgres:postgres@127.0.0.1:${PG_PORT}/postgres`,
-    NELCOTA_AUTHENTICATOR_PASSWORD: 'sdk-contract-authenticator',
+    NELCOTA_AUTHENTICATOR_PASSWORD: "sdk-contract-authenticator",
     NELCOTA_JWT_SECRET: JWT_SECRET,
     NELCOTA_LISTEN: `127.0.0.1:${API_PORT}`,
-    NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE: '100000',
-    NELCOTA_STORAGE_BACKEND: 'disk',
+    NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE: "100000",
+    NELCOTA_STORAGE_BACKEND: "disk",
     NELCOTA_STORAGE_DIR: storageDir,
-    NELCOTA_STORAGE_MIN_FREE_BYTES: '0',
+    NELCOTA_STORAGE_MIN_FREE_BYTES: "0",
     NELCOTA_SMTP_URL: `smtp://127.0.0.1:${SMTP_PORT}?tls=required`,
     SSL_CERT_FILE: ca,
     SSL_CERT_DIR: certs,
-    NELCOTA_SMTP_FROM: 'Nelcota SDK <no-reply@example.com>',
-    NELCOTA_PASSWORD_RECOVERY_URL: 'https://app.example.com/new-password',
-    NELCOTA_MAGIC_LINK_URL: 'https://app.example.com/signed-in',
-    RUST_LOG: 'warn',
+    NELCOTA_SMTP_FROM: "Nelcota SDK <no-reply@example.com>",
+    NELCOTA_PASSWORD_RECOVERY_URL: "https://app.example.com/new-password",
+    NELCOTA_MAGIC_LINK_URL: "https://app.example.com/signed-in",
+    RUST_LOG: "warn",
   };
-  server = spawn(executable, ['serve'], { env, stdio: ['ignore', 'inherit', 'inherit'] });
-  server.on('exit', (code) => {
+  server = spawn(executable, ["serve"], { env, stdio: ["ignore", "inherit", "inherit"] });
+  server.on("exit", (code) => {
     if (code !== null && code !== 0) console.error(`nelcota serve exited with ${code}`);
   });
   const url = `http://127.0.0.1:${API_PORT}`;
-  await waitFor('nelcota serve', async () => {
+  await waitFor("nelcota serve", async () => {
     try {
       return (await fetch(`${url}/health`)).ok;
     } catch {
@@ -161,30 +221,38 @@ try {
     }
   });
 
-  run('docker', ['exec', '-i', PG, 'psql', '-q', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres'], {
-    input: readFileSync(join(root, 'test/contract/fixture.sql')),
-    stdio: ['pipe', 'inherit', 'inherit'],
+  run("docker", ["exec", "-i", PG, "psql", "-q", "-v", "ON_ERROR_STOP=1", "-U", "postgres"], {
+    input: readFileSync(join(root, "test/contract/fixture.sql")),
+    stdio: ["pipe", "inherit", "inherit"],
   });
-  run('docker', ['exec', '-i', PG, 'psql', '-q', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres'], {
-    input: readFileSync(join(root, '../../examples/notes.sql')),
-    stdio: ['pipe', 'inherit', 'inherit'],
+  run("docker", ["exec", "-i", PG, "psql", "-q", "-v", "ON_ERROR_STOP=1", "-U", "postgres"], {
+    input: readFileSync(join(root, "../../examples/notes.sql")),
+    stdio: ["pipe", "inherit", "inherit"],
   });
 
   // The types the tests compile against come from the real generator.
-  const generated = join(root, 'test/contract/generated');
+  const generated = join(root, "test/contract/generated");
   mkdirSync(generated, { recursive: true });
-  run(bin, ['types', '-o', join(generated, 'database.ts')], { env });
-  run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '-p', join(root, 'test/contract/tsconfig.json')]);
+  run(bin, ["types", "-o", join(generated, "database.ts")], { env });
+  run(process.execPath, [
+    join(root, "node_modules/typescript/bin/tsc"),
+    "-p",
+    join(root, "test/contract/tsconfig.json"),
+  ]);
 
   // The catalog reloads on DDL; wait until the fixture tables are served.
-  await waitFor('catalog reload', async () => (await fetch(`${url}/rest/v1/customers`)).ok, 15);
+  await waitFor(
+    "catalog reload",
+    async () => (await fetch(`${url}/rest/v1/customers`)).ok,
+    CATALOG_WAIT_SECONDS,
+  );
 
   const tests = spawnSync(
     process.execPath,
-    [join(root, 'node_modules/vitest/vitest.mjs'), 'run', '--project', 'contract', ...vitestArgs],
+    [join(root, "node_modules/vitest/vitest.mjs"), "run", "--project", "contract", ...vitestArgs],
     {
       cwd: root,
-      stdio: 'inherit',
+      stdio: "inherit",
       env: {
         ...process.env,
         NELCOTA_SDK_TEST_URL: url,
@@ -196,31 +264,55 @@ try {
   status = tests.status ?? 1;
 
   if (nextjs && status === 0) {
-    run(process.execPath, ['--conditions=react-server', join(repo, 'sdk/nextjs/scripts/auth-smoke.mjs')], {
-      env: { ...process.env, NELCOTA_SDK_TEST_URL: url, NELCOTA_SDK_TEST_MAIL: `http://127.0.0.1:${MAIL_PORT}`, NELCOTA_SDK_TEST_DATABASE_URL: env.NELCOTA_DATABASE_URL },
-    });
+    run(
+      process.execPath,
+      ["--conditions=react-server", join(repo, "sdk/nextjs/scripts/auth-smoke.mjs")],
+      {
+        env: {
+          ...process.env,
+          NELCOTA_SDK_TEST_URL: url,
+          NELCOTA_SDK_TEST_MAIL: `http://127.0.0.1:${MAIL_PORT}`,
+          NELCOTA_SDK_TEST_DATABASE_URL: env.NELCOTA_DATABASE_URL,
+        },
+      },
+    );
   }
 
   if (browser && status === 0) {
-    run(process.execPath, [join(root, 'scripts/clean.ts')]);
-    run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '-p', join(root, 'tsconfig.build.json')]);
-    const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
-    const now = Math.floor(Date.now() / 1000);
-    const body = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ role: 'service_role', iat: now, exp: now + 600 })}`;
-    const serviceToken = `${body}.${createHmac('sha256', JWT_SECRET).update(body).digest('base64url')}`;
-    for (const engine of (process.env['NELCOTA_SDK_BROWSERS'] ?? 'chromium').split(',')) {
-      const smoke = spawnSync(process.execPath, [join(root, 'test/browser/smoke.mjs'), url, serviceToken], {
-        stdio: 'inherit', env: { ...process.env, NELCOTA_SDK_BROWSER: engine.trim() },
-      });
-      status = smoke.status ?? 1;
-      if (status !== 0) break;
+    run(process.execPath, [join(root, "scripts/clean.ts")]);
+    run(process.execPath, [
+      join(root, "node_modules/typescript/bin/tsc"),
+      "-p",
+      join(root, "tsconfig.build.json"),
+    ]);
+    const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
+    const now = Math.floor(Date.now() / SECOND_IN_MS);
+    const body = `${encode({ alg: "HS256", typ: "JWT" })}.${encode({ role: "service_role", iat: now, exp: now + SERVICE_TOKEN_TTL_SECONDS })}`;
+    const serviceToken = `${body}.${createHmac("sha256", JWT_SECRET).update(body).digest("base64url")}`;
+    status = runBrowserContracts(serviceToken);
+    function runBrowserContracts(serviceToken: string): number {
+      let status = 0;
+      for (const engine of (process.env["NELCOTA_SDK_BROWSERS"] ?? "chromium").split(",")) {
+        const smoke = spawnSync(
+          process.execPath,
+          [join(root, "test/browser/smoke.mjs"), url, serviceToken],
+          {
+            stdio: "inherit",
+            env: { ...process.env, NELCOTA_SDK_BROWSER: engine.trim() },
+          },
+        );
+        status = smoke.status ?? 1;
+        if (status !== 0) break;
+      }
+      return status;
     }
   }
-  if (keep) console.log(`\nKept running: ${url} (containers ${PG}, ${MAIL}; stop the server with Ctrl+C)`);
+  if (keep)
+    console.log(`\nKept running: ${url} (containers ${PG}, ${MAIL}; stop the server with Ctrl+C)`);
 } catch (error) {
   status = 1;
   console.error(error instanceof Error ? error.message : error);
 } finally {
   teardown();
 }
-if (!keep) process.exit(status);
+if (keep === false) process.exit(status);

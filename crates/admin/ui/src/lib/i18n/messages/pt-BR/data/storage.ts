@@ -1,0 +1,203 @@
+// Storage page: buckets, the bucket dialog and the file browser.
+const ptBR = {
+  title: "Armazenamento",
+  bucketHint:
+    "Abra um bucket para ver e enviar arquivos. Buckets organizam arquivos com as mesmas regras de acesso.",
+  search: "Buscar buckets",
+  diskSummary: {
+    one: "{count} bucket, {size} no disco do servidor.",
+    other: "{count} buckets, {size} no disco do servidor.",
+  },
+  s3Summary: { one: "{count} bucket, {size} no S3.", other: "{count} buckets, {size} no S3." },
+  disabled: "Armazenamento desligado",
+  disabledDescription:
+    "Defina NELCOTA_STORAGE_BACKEND no .env do projeto (disk para o disco do servidor, s3 para um bucket compatível) e reinicie o app.",
+  notes: {
+    title: "Sobre buckets e arquivos",
+    access: {
+      title: "Quem acessa os arquivos",
+      text: "Cada bucket tem as próprias regras de acesso. Sem nenhuma regra, só o painel e o seu backend (service_role) chegam aos arquivos.",
+      action: "Ver as regras de {bucket}",
+      openBucket: "Abra um bucket para ver ou adicionar regras.",
+    },
+    disk: {
+      title: "Arquivos no disco deste servidor",
+      text: "Bom para desenvolver. Em produção, prefira um bucket S3: os arquivos não somem se o servidor for trocado.",
+      action: "Como usar S3",
+    },
+  },
+  accessRules: "Regras de acesso",
+  newBucket: "Novo bucket",
+  empty: "Nenhum bucket",
+  emptyDescription: "Crie um bucket para guardar arquivos.",
+  columns: {
+    name: "Nome",
+    access: "Acesso",
+    files: "Arquivos",
+    size: "Tamanho",
+    limit: "Limite por arquivo",
+    types: "Tipos",
+  },
+  public: "Público",
+  private: "Privado",
+  anyType: "Qualquer",
+  serverLimit: "{size} (servidor)",
+  edit: "Editar…",
+  deleteBucket: "Apagar bucket",
+  emptyBeforeDelete: "Esvazie o bucket antes de apagá-lo.",
+  confirmDeleteBucket: {
+    title: "Apagar o bucket?",
+    description: "O bucket '{bucket}' está vazio e será apagado.",
+  },
+  bucketDeleted: "Bucket '{bucket}' apagado",
+  dialog: {
+    createTitle: "Novo bucket",
+    editTitle: "Bucket '{bucket}'",
+    name: "Nome",
+    nameHint: "Letras minúsculas, números, - e _. Faz parte da URL dos arquivos.",
+    nameInvalid:
+      "Use até 63 caracteres e comece com uma letra minúscula ou número. Depois, pode usar - e _. Os nomes public, sign e list são reservados.",
+    public: "Público",
+    publicHint:
+      "Qualquer pessoa lê os arquivos pela URL pública. Enviar e apagar continua dependendo das regras de acesso.",
+    publicWarning:
+      "Este bucket vai nascer público: qualquer pessoa com o link baixa os arquivos enviados a ele, sem login.",
+    nameRequired: "Informe um nome válido para liberar o botão Criar bucket.",
+    namePlaceholder: "ex.: avatars",
+    confirmPublic: {
+      title: "Tornar o bucket '{bucket}' público?",
+      empty: "Qualquer pessoa com o link vai poder baixar os arquivos enviados a ele, sem login.",
+      description: {
+        one: "O arquivo que já está nele e os próximos ficam acessíveis pela URL pública: qualquer pessoa com o link baixa, sem login.",
+        other:
+          "Os {count} arquivos que já estão nele e os próximos ficam acessíveis pela URL pública: qualquer pessoa com o link baixa, sem login.",
+      },
+      confirm: "Tornar público",
+    },
+    limit: "Limite por arquivo (MiB)",
+    limitHint: "Vazio usa o limite do servidor ({size}).",
+    limitInvalid: "Informe um número maior que zero ou deixe vazio para usar o limite do servidor.",
+    types: "Tipos aceitos",
+    typesHint: "Ex.: image/*, application/pdf. Vazio aceita qualquer tipo.",
+    create: "Criar bucket",
+    save: "Salvar",
+    created: "Bucket '{bucket}' criado",
+    saved: "Bucket '{bucket}' salvo",
+  },
+  access: {
+    title: "Quem acessa os arquivos",
+    hint: "Quem pode baixar e enviar arquivos deste bucket pelo app.",
+    technicalHint:
+      "Cada regra é uma policy do Postgres em storage.objects e entra nas migrações geradas pelo painel.",
+    add: "Adicionar regra",
+    locked:
+      "Ninguém acessa estes arquivos pelo app: só o painel e o seu backend (service_role). Adicione uma regra para liberar.",
+    publicNote:
+      "Bucket público: qualquer pessoa baixa pelo link público, mesmo sem regra. Envios e listagens seguem as regras abaixo.",
+    allBuckets: "Vale para todos os buckets",
+    custom: "Regra personalizada",
+    remove: "Remover regra",
+    removeNamed: 'Remover a regra "{rule}"',
+    removeTitle: "Remover esta regra?",
+    removeText: "Quem dependia dela perde o acesso aos arquivos na hora.",
+    addTitle: "Adicionar esta regra?",
+    addText:
+      "A regra é criada agora no banco (como uma policy do Postgres) e registrada para a próxima migração.",
+    added: "Regra adicionada.",
+    removed: "Regra removida.",
+    templates: {
+      public_read: {
+        label: "Qualquer pessoa pode baixar",
+        hint: "Visitantes e usuários logados leem os arquivos.",
+      },
+      signed_in_read: {
+        label: "Usuários logados podem baixar",
+        hint: "Quem entrou no app lê os arquivos.",
+      },
+      signed_in_upload: {
+        label: "Usuários logados podem enviar",
+        hint: "Quem entrou no app envia arquivos novos.",
+      },
+      own_folder: {
+        label: "Cada usuário só acessa a própria pasta",
+        hint: "A pasta com o id do usuário: ele lê, envia, troca e apaga só ali.",
+      },
+      own_files: {
+        label: "Cada usuário só acessa os arquivos que enviou",
+        hint: "Lê, troca e apaga apenas os próprios arquivos.",
+      },
+    },
+  },
+  browser: {
+    files: "Arquivos neste bucket",
+    access: "Regras de acesso",
+    accessShort: "Acesso",
+    downloadFile: "Baixar {name}",
+    dropHint: "Arraste arquivos para cá ou clique para selecionar",
+    tapHint: "Toque para escolher arquivos",
+    dropLimits: "Até {size} por arquivo · tipos: {types}",
+    settings: "Configurações do bucket",
+    fileCount: { one: "{count} arquivo", other: "{count} arquivos" },
+    uploadProgress: "Progresso dos envios",
+    uploadStatus: {
+      queued: "Na fila",
+      sending: "Enviando…",
+      done: "Enviado",
+      error: "Falhou",
+      conflict: "Já existe",
+    },
+    preview: "Ver arquivo",
+    previewUnavailable:
+      "A prévia não está disponível para este formato ou tamanho. Baixe o arquivo para abri-lo.",
+    pdfHint: "Abra o PDF no visualizador do navegador em uma nova aba.",
+    openPdf: "Abrir PDF",
+    upload: "Enviar arquivos",
+    uploading: "Enviando {done} de {total}…",
+    uploaded: { one: "{count} arquivo enviado", other: "{count} arquivos enviados" },
+    uploadFailed: "O envio falhou. Tente novamente.",
+    emptyFolder: "Pasta vazia",
+    emptyFolderDescription: "Envie arquivos para cá. Uma pasta existe enquanto tiver arquivos.",
+    foldersTitle: "Como funcionam as pastas",
+    foldersHint:
+      "Pastas não são criadas à parte: elas vêm do caminho dos arquivos (ex.: fotos/perfil.png) e somem quando ficam vazias. Os envios daqui vão para a pasta aberta; para uma pasta nova, envie pelo app ou SDK com o caminho no nome.",
+    emptyBucket: "Bucket vazio",
+    columns: { name: "Nome", size: "Tamanho", type: "Tipo", updated: "Alterado" },
+    download: "Baixar",
+    copyUrl: "Copiar URL pública",
+    urlCopied: "URL copiada",
+    copyPath: "Copiar caminho",
+    pathCopied: "Caminho copiado",
+    delete: "Apagar",
+    confirmDelete: {
+      title: "Apagar o arquivo?",
+      description: "'{name}' será apagado do bucket. Não dá para desfazer.",
+    },
+    deleted: "'{name}' apagado",
+    selection: {
+      selected: { one: "{count} arquivo selecionado", other: "{count} arquivos selecionados" },
+      selectAll: "Selecionar todos os arquivos carregados",
+      selectFile: "Selecionar {name}",
+      delete: "Apagar selecionados",
+      clear: "Limpar seleção",
+    },
+    confirmDeleteMany: {
+      title: { one: "Apagar {count} arquivo?", other: "Apagar {count} arquivos?" },
+      description: "Os arquivos selecionados serão apagados do bucket. Não dá para desfazer.",
+    },
+    deletedMany: { one: "{count} arquivo apagado", other: "{count} arquivos apagados" },
+    replace: {
+      title: "Substituir arquivos?",
+      description: {
+        one: "'{names}' já existe em {destination}.",
+        other: "{count} arquivos já existem em {destination}: {names}.",
+      },
+      confirm: "Substituir",
+    },
+    more: "Mostrar mais",
+    path: "Caminho no bucket",
+    notFound: "O bucket '{bucket}' não existe.",
+    back: "Voltar para os buckets",
+  },
+};
+
+export default ptBR;

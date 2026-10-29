@@ -2,61 +2,81 @@
 // address and project, the schema as generated TypeScript types, the RLS
 // policies and buckets, and how to use them through the SDK. Pure function:
 // the page fetches the inputs. It never includes keys, passwords or tokens.
-import type { MigrationsData, PoliciesData, StorageOverview } from '$lib/contracts/types'
+import type { MigrationsData, PoliciesData, StorageOverview } from "$lib/contracts/types";
+const BYTES_PER_UNIT = 1024;
 
 export interface LlmContextInput {
   /** The API address (the panel is served from the same origin). */
-  origin: string
-  project: string
-  generatedAt: Date
-  migrationVersion: number | null
+  origin: string;
+  project: string;
+  generatedAt: Date;
+  migrationVersion: number | null;
   /** `database.ts` as the panel and `nelcota types` generate it. */
-  types: string
-  policies: PoliciesData
-  storage: StorageOverview
+  types: string;
+  policies: PoliciesData;
+  storage: StorageOverview;
+}
+
+function policySummary(policy: PoliciesData["tables"][number]["policies"][number]): string {
+  const parts = [
+    `${policy.command} for ${policy.roles.length > 0 ? policy.roles.join(", ") : "public"}`,
+  ];
+  if (Boolean(policy.permissive) === false) parts.push("restrictive");
+  if (policy.using != null && policy.using !== "") parts.push(`using ${inline(policy.using)}`);
+  if (policy.check != null && policy.check !== "") parts.push(`with check ${inline(policy.check)}`);
+  return `- ${inline(policy.name)}: ${parts.join("; ")}`;
 }
 
 /** A fenced block that a backtick run inside `code` cannot close early. */
 function fence(lang: string, code: string): string {
-  const longest = Math.max(2, ...[...code.matchAll(/`+/g)].map((match) => match[0].length))
-  const ticks = '`'.repeat(longest + 1)
-  return `${ticks}${lang}\n${code.trimEnd()}\n${ticks}`
+  const longest = Math.max(2, ...[...code.matchAll(/`+/g)].map((match) => match[0].length));
+  const ticks = "`".repeat(longest + 1);
+  return `${ticks}${lang}\n${code.trimEnd()}\n${ticks}`;
 }
 
-const inline = (text: string) => `\`${text.replaceAll('`', "'")}\``
+const inline = (text: string) => `\`${text.replaceAll("`", "'")}\``;
 
 function bytes(value: number): string {
-  if (value < 1024) return `${value} B`
-  const units = ['KiB', 'MiB', 'GiB', 'TiB']
-  let size = value / 1024
-  let unit = 0
-  while (size >= 1024 && unit < units.length - 1) { size /= 1024; unit++ }
-  return `${Number(size.toFixed(1))} ${units[unit]}`
+  if (value < BYTES_PER_UNIT) return `${value} B`;
+  const units = ["KiB", "MiB", "GiB", "TiB"];
+  let size = value / BYTES_PER_UNIT;
+  let unit = 0;
+  while (size >= BYTES_PER_UNIT && unit < units.length - 1) {
+    size /= BYTES_PER_UNIT;
+    unit++;
+  }
+  return `${Number(size.toFixed(1))} ${units[unit]}`;
 }
 
-const jsString = (text: string) => `'${text.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`
+const jsString = (text: string) => `'${text.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'`;
 
-function sdkEssentials(origin: string, table: string | undefined, bucket: string | undefined): string {
-  const from = `nelcota.from(${jsString(table ?? 'your_table')})`
-  const files = `nelcota.storage.from(${jsString(bucket ?? 'your_bucket')})`
-  return fence('ts', `import { createClient, unwrap, escapeLike } from '@nelcota/client'
+function sdkEssentials(
+  origin: string,
+  table: string | undefined,
+  bucket: string | undefined,
+): string {
+  const from = `nelcota.from(${jsString(table ?? "your_table")})`;
+  const files = `nelcota.storage.from(${jsString(bucket ?? "your_bucket")})`;
+  return fence(
+    "ts",
+    `import { createClient, unwrap, escapeLike } from '@nelcota/client'
 import type { Database } from './database' // the schema below
 
 export const nelcota = createClient<Database>(${jsString(origin)})
 
-// Every call resolves to { data, error } and does not throw for HTTP or network failures.
-const { data, error } = await ${from}.select('*').limit(20)
+// Execute each REST query to resolve { data, error }; HTTP and network failures do not throw.
+const { data, error } = await ${from}.select('*').limit(20).execute()
 if (error) console.error(error.status, error.code, error.message)
 
 // Filters: eq neq gt gte lt lte like ilike in is not match or and; order/range for paging.
-await ${from}.select('*', { count: 'exact' }).order('id', { ascending: false }).range(0, 49)
-await ${from}.select('*').ilike('name', \`*\${escapeLike(search)}*\`) // * is the wildcard
+await ${from}.select('*', { count: 'exact' }).order('id', { ascending: false }).range(0, 49).execute()
+await ${from}.select('*').ilike('name', \`*\${escapeLike(search)}*\`).execute() // * is the wildcard
 
 // Writes return no rows unless you ask for them with select().
-const { data: created } = await ${from}.insert({ /* columns */ }).select().single()
-await ${from}.update({ /* columns */ }).eq('id', id)  // update/delete require a filter
-await ${from}.delete().eq('id', id)
-await ${from}.upsert(rows, { onConflict: 'id' })
+const { data: created } = await ${from}.insert({ /* columns */ }).select().single().execute()
+await ${from}.update({ /* columns */ }).eq('id', id).execute()  // update/delete require a filter
+await ${from}.delete().eq('id', id).execute()
+await ${from}.upsert(rows, { onConflict: 'id' }).execute()
 const result = await nelcota.rpc('function_name', { /* args */ }) // runs with the caller's role
 
 // Auth: the browser session is persisted and refreshed automatically.
@@ -75,108 +95,137 @@ const { data: url } = await ${files}.createSignedUrl('path/file.pdf', 3600)
 ${files}.publicUrl('logo.png') // public buckets only
 
 // Exceptions instead of { data, error }:
-const rows = unwrap(await ${from}.select('*'))`)
+const rows = unwrap(await ${from}.select('*').execute())`,
+  );
 }
 
 function accessRules(policies: PoliciesData): string[] {
-  const lines: string[] = []
-  if (policies.exposed_without_rls.length) {
-    lines.push(`**Warning:** RLS is off on ${policies.exposed_without_rls.map(inline).join(', ')}. Every role with a grant (including anonymous visitors) can use all their rows. Enable RLS and add policies before relying on them for private data.`, '')
+  const lines: string[] = [];
+  if (policies.exposed_without_rls.length > 0) {
+    lines.push(
+      `**Warning:** RLS is off on ${policies.exposed_without_rls.map(inline).join(", ")}. Every role with a grant (including anonymous visitors) can use all their rows. Enable RLS and add policies before relying on them for private data.`,
+      "",
+    );
   }
-  if (policies.anon_functions.length) {
-    lines.push(`Functions anonymous visitors can call: ${policies.anon_functions.map(inline).join(', ')}.`, '')
+  if (policies.anon_functions.length > 0) {
+    lines.push(
+      `Functions anonymous visitors can call: ${policies.anon_functions.map(inline).join(", ")}.`,
+      "",
+    );
   }
   for (const table of policies.tables) {
-    lines.push(`### ${inline(table.name)}`, `RLS: ${table.rls.label}${table.rls.forced ? ' (forced, also for the table owner)' : ''}.`)
+    lines.push(
+      `### ${inline(table.name)}`,
+      `RLS: ${table.rls.label}${table.rls.forced ? " (forced, also for the table owner)" : ""}.`,
+    );
     if (table.policies.length === 0) {
-      lines.push(table.rls.enabled ? 'No policies: nobody can read or write rows through the API (only service_role).' : '')
+      lines.push(
+        table.rls.enabled
+          ? "No policies: nobody can read or write rows through the API (only service_role)."
+          : "",
+      );
     }
-    for (const policy of table.policies) {
-      const parts = [`${policy.command} for ${policy.roles.length ? policy.roles.join(', ') : 'public'}`]
-      if (!policy.permissive) parts.push('restrictive')
-      if (policy.using) parts.push(`using ${inline(policy.using)}`)
-      if (policy.check) parts.push(`with check ${inline(policy.check)}`)
-      lines.push(`- ${inline(policy.name)}: ${parts.join('; ')}`)
-    }
-    lines.push('')
+    lines.push(...table.policies.map(policySummary));
+    lines.push("");
   }
-  return lines
+  return lines;
 }
 
 function storageSection(storage: StorageOverview): string[] {
-  if (!storage.enabled) return ['Storage is disabled on this server.', '']
-  const lines = [`Maximum file size: ${bytes(storage.max_file_size)}.`]
-  if (storage.buckets.length === 0) lines.push('There are no buckets yet.')
+  if (storage.enabled === false) return ["Storage is disabled on this server.", ""];
+  const lines = [`Maximum file size: ${bytes(storage.max_file_size)}.`];
+  if (storage.buckets.length === 0) lines.push("There are no buckets yet.");
   for (const bucket of storage.buckets) {
-    const details = [bucket.public ? 'public (anyone can download with publicUrl)' : 'private (access through RLS policies on its files)']
-    if (bucket.file_size_limit !== null) details.push(`files up to ${bytes(bucket.file_size_limit)}`)
-    if (bucket.allowed_mime_types?.length) details.push(`types ${bucket.allowed_mime_types.join(', ')}`)
-    lines.push(`- ${inline(bucket.id)}: ${details.join('; ')}`)
+    const details = [
+      bucket.public
+        ? "public (anyone can download with publicUrl)"
+        : "private (access through RLS policies on its files)",
+    ];
+    if (bucket.file_size_limit !== null)
+      details.push(`files up to ${bytes(bucket.file_size_limit)}`);
+    if (bucket.allowed_mime_types != null && bucket.allowed_mime_types.length > 0)
+      details.push(`types ${bucket.allowed_mime_types.join(", ")}`);
+    lines.push(`- ${inline(bucket.id)}: ${details.join("; ")}`);
   }
-  lines.push('')
-  return lines
+  lines.push("");
+  return lines;
 }
 
+const ASSISTANT_INSTRUCTIONS = [
+  "## Instructions for the assistant",
+  "",
+  "- Answer in the language the user writes in.",
+  "- Use the `@nelcota/client` SDK with the `Database` type below. Call the HTTP API directly only when asked.",
+  "- Use only the tables, columns, functions and buckets listed here. Ask before assuming anything else exists; schema changes are made with SQL migrations in the Nelcota panel or CLI.",
+  "- Authorization happens in PostgreSQL (grants and row-level security), never in client code. Hiding a button is not access control: check the policies below and propose SQL policies when access must change.",
+  "- Never put a `service_role` token in a browser, mobile app or public repository. It bypasses RLS and belongs only on a trusted server.",
+  "",
+] as const;
+
+const DOCUMENTATION_LINKS = [
+  "## Documentation",
+  "",
+  "- SDK guide: https://github.com/Nelcota/Nelcota/blob/main/sdk/typescript/README.md",
+  "- Client contract and errors: https://github.com/Nelcota/Nelcota/blob/main/sdk/typescript/docs/contract.md",
+  "- Roles and JWT: https://github.com/Nelcota/Nelcota/blob/main/docs/jwt-and-roles.md",
+  "- Storage: https://github.com/Nelcota/Nelcota/blob/main/docs/storage.md",
+  "- Troubleshooting (empty results, 401/403, row cap): https://github.com/Nelcota/Nelcota/blob/main/docs/troubleshooting.md",
+  "",
+] as const;
+
 export function llmContext(input: LlmContextInput): string {
-  const { origin, project, policies, storage } = input
-  const table = policies.tables[0]?.name
-  const bucket = storage.enabled ? storage.buckets[0]?.id : undefined
+  const { origin, project, policies, storage } = input;
+  const table = policies.tables[0]?.name;
+  const bucket = storage.enabled ? storage.buckets[0]?.id : undefined;
   return [
     `# ${project}: Nelcota backend`,
-    '',
+    "",
     `> Context for an AI coding assistant, generated by the Nelcota admin panel for project ${inline(project)} at ${input.generatedAt.toISOString()}. It holds the API address, the database schema, the access rules and the storage buckets. It contains no keys, passwords or tokens. Regenerate it after changing the schema.`,
-    '',
-    `Latest applied migration: ${input.migrationVersion === null ? 'none' : `V${input.migrationVersion}`}. Regenerate this file after applying another migration.`,
-    '',
-    ...(policies.tables.length === 0 ? ['> **Warning:** No tables are exposed yet. Apply your application migrations and regenerate this context before using it as a schema reference.', ''] : []),
-    '## Instructions for the assistant',
-    '',
-    '- Answer in the language the user writes in.',
-    '- Use the `@nelcota/client` SDK with the `Database` type below. Call the HTTP API directly only when asked.',
-    '- Use only the tables, columns, functions and buckets listed here. Ask before assuming anything else exists; schema changes are made with SQL migrations in the Nelcota panel or CLI.',
-    '- Authorization happens in PostgreSQL (grants and row-level security), never in client code. Hiding a button is not access control: check the policies below and propose SQL policies when access must change.',
-    '- Never put a `service_role` token in a browser, mobile app or public repository. It bypasses RLS and belongs only on a trusted server.',
-    '',
-    '## Connection',
-    '',
+    "",
+    `Latest applied migration: ${input.migrationVersion === null ? "none" : `V${input.migrationVersion}`}. Regenerate this file after applying another migration.`,
+    "",
+    ...(policies.tables.length === 0
+      ? [
+          "> **Warning:** No tables are exposed yet. Apply your application migrations and regenerate this context before using it as a schema reference.",
+          "",
+        ]
+      : []),
+    ...ASSISTANT_INSTRUCTIONS,
+    "## Connection",
+    "",
     `- API URL: ${inline(origin)} (one address for REST, auth and storage)`,
     `- REST: ${inline(`${origin}/rest/v1/`)}; auth: ${inline(`${origin}/auth/v1/`)}; storage: ${inline(`${origin}/storage/v1/`)}; JWKS: ${inline(`${origin}/auth/v1/.well-known/jwks.json`)}`,
     `- Exposed schema: ${inline(policies.schema)}`,
-    '- There is no public API key. Requests without a token run as the `anon` role; requests with a signed-in user\'s access token run as `authenticated` (and `auth.uid()` is that user in policies). `service_role` bypasses RLS.',
-    '- Each request returns at most 1000 rows by default: paginate with `range()`.',
-    '',
-    '## Setup',
-    '',
-    fence('sh', 'bun add @nelcota/client   # or: npm install @nelcota/client'),
-    '',
+    "- There is no public API key. Requests without a token run as the `anon` role; requests with a signed-in user's access token run as `authenticated` (and `auth.uid()` is that user in policies). `service_role` bypasses RLS.",
+    "- Each request returns at most 1000 rows by default: paginate with `range()`.",
+    "",
+    "## Setup",
+    "",
+    fence("sh", "bun add @nelcota/client   # or: npm install @nelcota/client"),
+    "",
     `Save the schema below as \`src/database.ts\` (or download it from the panel: Connect → SDK, or run \`nelcota types -o src/database.ts\`). Other SDKs: \`nelcota-client\` for Rust (crates.io) and \`@nelcota/nextjs\` for the Next.js App Router (server-side sessions; the browser only gets an opaque HttpOnly cookie).`,
-    '',
-    '## SDK essentials',
-    '',
+    "",
+    "## SDK essentials",
+    "",
     sdkEssentials(origin, table, bucket),
-    '',
-    '## Access rules (row-level security)',
-    '',
+    "",
+    "## Access rules (row-level security)",
+    "",
     ...accessRules(policies),
-    '## Storage',
-    '',
+    "## Storage",
+    "",
     ...storageSection(storage),
-    '## Database schema',
-    '',
-    fence('ts', input.types),
-    '',
-    '## Documentation',
-    '',
-    '- SDK guide: https://github.com/Nelcota/Nelcota/blob/main/sdk/typescript/README.md',
-    '- Client contract and errors: https://github.com/Nelcota/Nelcota/blob/main/sdk/typescript/docs/contract.md',
-    '- Roles and JWT: https://github.com/Nelcota/Nelcota/blob/main/docs/jwt-and-roles.md',
-    '- Storage: https://github.com/Nelcota/Nelcota/blob/main/docs/storage.md',
-    '- Troubleshooting (empty results, 401/403, row cap): https://github.com/Nelcota/Nelcota/blob/main/docs/troubleshooting.md',
-    '',
-  ].join('\n')
+    "## Database schema",
+    "",
+    fence("ts", input.types),
+    "",
+    ...DOCUMENTATION_LINKS,
+  ].join("\n");
 }
 
 export function latestMigration(data: MigrationsData): number | null {
-  const versions = data.migrations.filter(migration => migration.applied_on !== null).map(migration => migration.version)
-  return versions.length ? Math.max(...versions) : null
+  const versions = data.migrations
+    .filter((migration) => migration.applied_on !== null)
+    .map((migration) => migration.version);
+  return versions.length > 0 ? Math.max(...versions) : null;
 }

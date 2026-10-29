@@ -3,12 +3,12 @@
  * under the caller's RLS.
  */
 
-import { NelcotaUsageError, type NelcotaError } from '../core/errors.js';
-import { identifier } from '../core/encoding.js';
-import type { HttpClient } from '../core/http.js';
-import { isRecord } from '../core/json.js';
-import { createHttpClient, type TransportOptions } from '../core/options.js';
-import { TableRef } from './query.js';
+import { NelcotaUsageError, type NelcotaError } from "../core/client.errors.js";
+import { identifier } from "../core/encoding.js";
+import type { HttpClient } from "../core/http/client.js";
+import { isRecord } from "../core/json.js";
+import { createHttpClient, type TransportOptions } from "../core/options.js";
+import { TableRef } from "./table-ref.js";
 import type {
   ArgsOptional,
   FunctionArgs,
@@ -22,22 +22,26 @@ import type {
   UpdateOf,
   DefaultSchemaName,
   SchemaOf,
-} from './types.js';
+} from "./types.js";
 
-export { NelcotaError, NelcotaUsageError, unwrap } from '../core/errors.js';
-export { escapeLike } from '../core/encoding.js';
-export type { TransportOptions } from '../core/options.js';
-export type { FetchLike, TokenSource } from '../core/http.js';
+export { NelcotaError, NelcotaUsageError, unwrap } from "../core/client.errors.js";
+export { escapeLike } from "../core/encoding.js";
+export type { TransportOptions } from "../core/options.js";
+export type { FetchLike, TokenSource } from "../core/http/client.js";
 
 /** REST without loading session handling or storage. Supply a token source when needed. */
-export function createRestClient<Database = any, SchemaName extends string = DefaultSchemaName<Database>>(
+export function createRestClient<
+  Database = unknown,
+  SchemaName extends string = DefaultSchemaName<Database>,
+>(
   url: string | URL,
   options: TransportOptions & { schema?: SchemaName } = {},
 ): RestClient<SchemaOf<Database, SchemaName>> {
   return new RestClient(createHttpClient(url, options));
 }
 
-export { Query, TableRef, countFromRange, rangeFromHeader, selectList } from './query.js';
+export { TableRef } from "./table-ref.js";
+export { Query, countFromRange, rangeFromHeader, selectList } from "./query.js";
 export type {
   CountOption,
   FilterColumn,
@@ -49,10 +53,10 @@ export type {
   RowRange,
   SelectOptions,
   UpsertOptions,
-} from './query.js';
-export { Conditions } from './conditions.js';
-export type { CompareOperator, Condition, FilterValue, IsValue } from './conditions.js';
-export type * from './types.js';
+} from "./query.js";
+export { Conditions } from "./conditions.js";
+export type { CompareOperator, Condition, FilterValue, IsValue } from "./conditions.js";
+export type * from "./types.js";
 
 export interface RpcOptions {
   signal?: AbortSignal;
@@ -60,7 +64,9 @@ export interface RpcOptions {
   timeout?: number;
 }
 
-export type RpcResult<T> = { data: T; error: null; status: number } | { data: null; error: NelcotaError; status: number };
+export type RpcResult<T> =
+  | { data: T; error: null; status: number }
+  | { data: null; error: NelcotaError; status: number };
 
 type RpcArgs<S extends GenericSchema, F> =
   ArgsOptional<FunctionArgs<S, F>> extends true
@@ -77,7 +83,13 @@ export class RestClient<S extends GenericSchema> {
   /** A table or view of the exposed schema. */
   from<Name extends RelationName<S>>(
     table: Name,
-  ): TableRef<S, Name, RowOf<Relation<S, Name>>, InsertOf<Relation<S, Name>>, UpdateOf<Relation<S, Name>>> {
+  ): TableRef<
+    S,
+    Name,
+    RowOf<Relation<S, Name>>,
+    InsertOf<Relation<S, Name>>,
+    UpdateOf<Relation<S, Name>>
+  > {
     return new TableRef(this.#http, table);
   }
 
@@ -85,19 +97,23 @@ export class RestClient<S extends GenericSchema> {
    * Calls a function (`POST /rest/v1/rpc/{name}`) with named arguments. It
    * runs with the caller's role, so its GRANTs and RLS apply as usual.
    */
-  async rpc<F extends FunctionName<S>>(name: F, ...rest: RpcArgs<S, F>): Promise<RpcResult<FunctionReturns<S, F>>> {
+  async rpc<F extends FunctionName<S>>(
+    name: F,
+    ...rest: RpcArgs<S, F>
+  ): Promise<RpcResult<FunctionReturns<S, F>>> {
     const [args, options = {}] = rest;
-    if (args !== undefined && !isRecord(args)) {
-      throw new NelcotaUsageError('rpc arguments are one object of named arguments');
+    if (args !== undefined && isRecord(args) === false) {
+      throw new NelcotaUsageError("rpc arguments are one object of named arguments");
     }
     const result = await this.#http.json<FunctionReturns<S, F>>({
-      method: 'POST',
-      path: `/rest/v1/rpc/${encodeURIComponent(identifier(name, 'function'))}`,
+      method: "POST",
+      path: `/rest/v1/rpc/${encodeURIComponent(identifier(name, "function"))}`,
       json: args ?? {},
       signal: options.signal,
       timeout: options.timeout,
     });
-    if (result.error) return { data: null, error: result.error, status: result.error.status };
+    if (result.error != null)
+      return { data: null, error: result.error, status: result.error.status };
     return { data: result.data, error: null, status: result.response.status };
   }
 }

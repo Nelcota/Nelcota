@@ -1,44 +1,47 @@
 <script lang="ts">
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import { cn, type WithoutChildrenOrChild } from "$lib/components/utils.js";
-	import Command from "./command.svelte";
-	import type { Command as CommandPrimitive, Dialog as DialogPrimitive } from "bits-ui";
-	import type { Snippet } from "svelte";
+  import * as Dialog from "$lib/components/ui/dialog/index.js";
+  import { cn, type WithoutChildrenOrChild } from "$lib/components/component-props.js";
+  import Command from "./command.svelte";
+  import type { Command as CommandPrimitive, Dialog as DialogPrimitive } from "bits-ui";
+  import type { Snippet } from "svelte";
 
-	let {
-		open = $bindable(false),
-		ref = $bindable(null),
-		value = $bindable(""),
-		title = "Command Palette",
-		description = "Search for a command to run...",
-		showCloseButton = false,
-		portalProps,
-		children,
-		class: className,
-		...restProps
-	}: WithoutChildrenOrChild<DialogPrimitive.RootProps> &
-		WithoutChildrenOrChild<CommandPrimitive.RootProps> & {
-			portalProps?: DialogPrimitive.PortalProps;
-			children: Snippet;
-			title?: string;
-			description?: string;
-			showCloseButton?: boolean;
-			class?: string;
-		} = $props();
+  let {
+    open = $bindable(false),
+    ref = $bindable(null),
+    value = $bindable(""),
+    title = "Command Palette",
+    description = "Search for a command to run...",
+    showCloseButton = false,
+    portalProps,
+    children,
+    class: className,
+    ...restProps
+  }: WithoutChildrenOrChild<DialogPrimitive.RootProps> &
+    WithoutChildrenOrChild<CommandPrimitive.RootProps> & {
+      portalProps?: DialogPrimitive.PortalProps;
+      children: Snippet;
+      title?: string;
+      description?: string;
+      showCloseButton?: boolean;
+      class?: string;
+    } = $props();
 </script>
 
 <Dialog.Root bind:open {...restProps}>
-	<Dialog.Content
-		class={cn("rounded-3xl! flex flex-col gap-0 overflow-hidden p-0 [&_[data-slot=command]]:min-h-0", className)}
-		{showCloseButton}
-		{portalProps}
-	>
-		<!-- Inside Content: outside it the title stayed loose on the page, even
+  <Dialog.Content
+    class={cn(
+      "rounded-3xl! flex flex-col gap-0 overflow-hidden p-0 [&_[data-slot=command]]:min-h-0",
+      className,
+    )}
+    {showCloseButton}
+    {portalProps}
+  >
+    <!-- Inside Content: outside it the title stayed loose on the page, even
 		     with the palette closed, and screen readers announced it everywhere. -->
-		<Dialog.Header class="sr-only">
-			<Dialog.Title>{title}</Dialog.Title>
-			<Dialog.Description>{description}</Dialog.Description>
-		</Dialog.Header>
-		<Command {...restProps} bind:value bind:ref {children} />
-	</Dialog.Content>
+    <Dialog.Header class="sr-only">
+      <Dialog.Title>{title}</Dialog.Title>
+      <Dialog.Description>{description}</Dialog.Description>
+    </Dialog.Header>
+    <Command {...restProps} bind:value bind:ref {children} />
+  </Dialog.Content>
 </Dialog.Root>

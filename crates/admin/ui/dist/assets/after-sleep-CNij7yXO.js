@@ -1,1 +1,0 @@
-function e(e,t){return setTimeout(t,e)}export{e as t};

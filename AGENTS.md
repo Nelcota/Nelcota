@@ -45,3 +45,10 @@ database. If the user was just added to the `docker` group, use
 
 The container keeps its data in tmpfs; remove it with
 `docker rm -f nelcota-test-postgres`.
+
+## JavaScript and TypeScript standards
+
+Follow [the NelcotaRules integration](docs/engineering/nelcota-rules.md), including
+its upstream provenance, checked JavaScript/JSDoc and explicit REST execution.
+Fix violations at their source; do not hide them with blanket ignores. Preserve
+published contracts and generated files through their established workflows.

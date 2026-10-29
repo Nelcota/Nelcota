@@ -1,0 +1,149 @@
+import type { Messages } from "../../../index.svelte";
+import type ptBR from "../../pt-BR/workspace/guides";
+
+const en: Messages<typeof ptBR> = {
+  title: "Guides and references",
+  description: "Everything to configure, connect and maintain your project, here in the panel.",
+  search: "Search the guides",
+  navigation: "Nelcota guides",
+  choose: "Choose a guide",
+  contents: "In this guide",
+  versionNotes: "What’s new in this version",
+  noResults: "No guides found",
+  noResultsHint: "Try another topic, function name or variable.",
+  openPanel: "Go to the page in the panel",
+  groups: {
+    start: "Start here",
+    develop: "Development",
+    operate: "Operations",
+    internals: "Inside Nelcota",
+  },
+  entries: {
+    quickstart: {
+      title: "Quickstart",
+      description: "From local development to your first API call.",
+    },
+    panel: {
+      title: "Using the panel",
+      description: "Database, users, files and projects in one place.",
+    },
+    sdk: {
+      title: "JavaScript and TypeScript SDK",
+      description: "Client, queries, sessions, files and complete recipes.",
+    },
+    "sdk-start": {
+      title: "Getting started with the SDK",
+      description: "Install the client and connect your app step by step.",
+    },
+    api: {
+      title: "REST API",
+      description: "Filters, relationships, paging, writes and functions.",
+    },
+    openapi: {
+      title: "OpenAPI reference",
+      description: "Routes and models generated from this project’s database.",
+    },
+    auth: {
+      title: "Authentication",
+      description: "Passwords, sessions, email confirmation and social sign-in.",
+    },
+    roles: {
+      title: "JWT and access rules",
+      description: "Roles, tokens and policies that protect your data.",
+    },
+    storage: { title: "Files and S3", description: "Configure storage, buckets and access rules." },
+    webhooks: {
+      title: "Events and webhooks",
+      description: "Destinations, signatures, retries and database event resends.",
+    },
+    "remote-migrations": {
+      title: "Remote migrations",
+      description: "Project links, deployment tokens, CI and migration history.",
+    },
+    "testing-rls": {
+      title: "Testing RLS",
+      description: "Rollback fixtures, API roles and SQLSTATE assertions.",
+    },
+    troubleshooting: {
+      title: "Troubleshooting",
+      description: "Empty results, access errors, limits and stale types.",
+    },
+    deploy: {
+      title: "Deploying and upgrading",
+      description: "Projects, domains, migrations and server upgrades.",
+    },
+    backup: {
+      title: "Backup and restore",
+      description: "Preserve your data and recover the database and files.",
+    },
+    leaving: {
+      title: "Export your project",
+      description: "Take your data, users and files with you.",
+    },
+    "sdk-rust": {
+      title: "Rust SDK",
+      description: "Native client for queries, authentication and storage.",
+    },
+    "sdk-contract": {
+      title: "JavaScript SDK contract",
+      description: "Results, errors, sessions and compatibility.",
+    },
+    "rust-contract": {
+      title: "Rust SDK contract",
+      description: "Protocol, platforms and client guarantees.",
+    },
+    "rust-start": {
+      title: "Getting started with Rust",
+      description: "Generated types and first calls with the Rust client.",
+    },
+    "sdk-releasing": {
+      title: "Releasing the JavaScript SDK",
+      description: "Prepare, verify and publish a package version.",
+    },
+    "rust-releasing": {
+      title: "Releasing the Rust SDK",
+      description: "Prepare and verify a crate version.",
+    },
+    example: {
+      title: "Example: notes and files",
+      description: "SQL schema ready to try in the editor.",
+    },
+    ssr: {
+      title: "Example: server sessions",
+      description: "SDK integration with cookies in a Node server.",
+    },
+    changelog: {
+      title: "SDK changelog",
+      description: "Changes and versions of the JavaScript client.",
+    },
+    architecture: {
+      title: "Architecture",
+      description: "How the server, database and clients work together.",
+    },
+    decisions: {
+      title: "Project decisions",
+      description: "The reasons behind Nelcota’s behavior.",
+    },
+  },
+  openapi: {
+    hint: "The reference below shows what visitors (anon) can call. The panel administrator login is separate from your app’s login.",
+    search: "Search API routes",
+    reload: "Refresh reference",
+    download: "Download OpenAPI",
+    unavailable: "Could not load the API reference.",
+    invalid: "The server returned an incompatible OpenAPI reference.",
+    empty: "No routes available",
+    emptyHint: "Check table permissions for anon on the access page.",
+    noResults: "No routes found",
+    parameters: "Parameters",
+    body: "Request body",
+    responses: "Responses",
+    models: "Data models",
+    required: "Required",
+    name: "Name",
+    location: "Location",
+    details: "Description",
+  },
+};
+
+export default en;

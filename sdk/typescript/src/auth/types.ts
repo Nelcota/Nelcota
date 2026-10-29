@@ -1,8 +1,16 @@
+import type { Result } from "../core/client.errors.js";
+import type { TokenSource } from "../core/http/types.js";
 /** Auth inputs and lifecycle options; no HTTP, storage effects or timers. */
-import type { Session, SessionStorage } from './session.js';
+import type { Session, SessionStorage } from "./session.js";
 
-export type AuthEvent = 'initial_session' | 'signed_in' | 'signed_out' | 'refreshed' | 'user_updated';
-export type AuthListener = (event: AuthEvent, session: Session | null) => void;
+export type AuthEvent =
+  | "initial_session"
+  | "signed_in"
+  | "signed_out"
+  | "refreshed"
+  | "user_updated";
+/** Listener return values are ignored; rejected promises reach onBackgroundError. */
+export type AuthListener = (event: AuthEvent, session: Session | null) => unknown;
 export interface AuthOptions {
   /** Default: native localStorage with an IndexedDB coordination journal in browsers, memory elsewhere. */
   storage?: SessionStorage;
@@ -19,8 +27,8 @@ export interface AuthRequestOptions {
   signal?: AbortSignal;
   timeout?: number;
 }
-export type OAuthProvider = 'google' | 'github';
-export type EmailLinkType = 'recovery' | 'signup' | 'magiclink';
+export type OAuthProvider = "google" | "github";
+export type EmailLinkType = "recovery" | "signup" | "magiclink";
 
 export interface Credentials {
   email: string;
@@ -55,4 +63,9 @@ export interface OAuthInput {
 export interface EmailLink {
   type: EmailLinkType;
   token: string;
+}
+
+export interface SessionTransport {
+  rotate: (token: string, options: AuthRequestOptions) => Promise<Result<Session>>;
+  accessToken: TokenSource | undefined;
 }

@@ -1,0 +1,207 @@
+// Storage page: buckets, the bucket dialog and the file browser.
+import type { Messages } from "../../../index.svelte";
+import type ptBR from "../../pt-BR/data/storage";
+
+const en: Messages<typeof ptBR> = {
+  title: "Storage",
+  bucketHint:
+    "Open a bucket to view and upload files. Buckets group files with the same access rules.",
+  search: "Search buckets",
+  diskSummary: {
+    one: "{count} bucket, {size} on the server's disk.",
+    other: "{count} buckets, {size} on the server's disk.",
+  },
+  s3Summary: { one: "{count} bucket, {size} on S3.", other: "{count} buckets, {size} on S3." },
+  disabled: "Storage is off",
+  disabledDescription:
+    "Set NELCOTA_STORAGE_BACKEND in the project's .env (disk for the server's disk, s3 for a compatible bucket) and restart the app.",
+  notes: {
+    title: "About buckets and files",
+    access: {
+      title: "Who reaches the files",
+      text: "Each bucket has its own access rules. Without any rule, only the panel and your backend (service_role) reach the files.",
+      action: "See the rules of {bucket}",
+      openBucket: "Open a bucket to see or add rules.",
+    },
+    disk: {
+      title: "Files on this server's disk",
+      text: "Fine for development. In production, prefer an S3 bucket: files survive a server replacement.",
+      action: "How to use S3",
+    },
+  },
+  accessRules: "Access rules",
+  newBucket: "New bucket",
+  empty: "No buckets",
+  emptyDescription: "Create a bucket to keep files.",
+  columns: {
+    name: "Name",
+    access: "Access",
+    files: "Files",
+    size: "Size",
+    limit: "Per-file limit",
+    types: "Types",
+  },
+  public: "Public",
+  private: "Private",
+  anyType: "Any",
+  serverLimit: "{size} (server)",
+  edit: "Edit…",
+  deleteBucket: "Delete bucket",
+  emptyBeforeDelete: "Empty the bucket before deleting it.",
+  confirmDeleteBucket: {
+    title: "Delete the bucket?",
+    description: "Bucket '{bucket}' is empty and will be deleted.",
+  },
+  bucketDeleted: "Bucket '{bucket}' deleted",
+  dialog: {
+    createTitle: "New bucket",
+    editTitle: "Bucket '{bucket}'",
+    name: "Name",
+    nameHint: "Lowercase letters, digits, - and _. Part of every file URL.",
+    nameInvalid:
+      "Use up to 63 characters, starting with a lowercase letter or digit. After that, - and _ are allowed. The names public, sign and list are reserved.",
+    public: "Public",
+    publicHint:
+      "Anyone reads the files through the public URL. Uploading and deleting still go through the access rules.",
+    publicWarning:
+      "This bucket will start out public: anyone with the link downloads the files uploaded to it, without signing in.",
+    nameRequired: "Enter a valid name to enable the Create bucket button.",
+    namePlaceholder: "e.g. avatars",
+    confirmPublic: {
+      title: "Make bucket '{bucket}' public?",
+      empty:
+        "Anyone with the link will be able to download the files uploaded to it, without signing in.",
+      description: {
+        one: "The file already in it and any new ones become reachable through the public URL: anyone with the link downloads them, without signing in.",
+        other:
+          "The {count} files already in it and any new ones become reachable through the public URL: anyone with the link downloads them, without signing in.",
+      },
+      confirm: "Make public",
+    },
+    limit: "Per-file limit (MiB)",
+    limitHint: "Empty uses the server's limit ({size}).",
+    limitInvalid: "Enter a number greater than zero, or leave it empty to use the server limit.",
+    types: "Accepted types",
+    typesHint: "E.g. image/*, application/pdf. Empty accepts any type.",
+    create: "Create bucket",
+    save: "Save",
+    created: "Bucket '{bucket}' created",
+    saved: "Bucket '{bucket}' saved",
+  },
+  access: {
+    title: "Who reaches the files",
+    hint: "Who can download and upload this bucket's files from the app.",
+    technicalHint:
+      "Each rule is a Postgres policy on storage.objects and goes into the panel's generated migrations.",
+    add: "Add rule",
+    locked:
+      "Nobody reaches these files from the app: only the panel and your backend (service_role). Add a rule to open them up.",
+    publicNote:
+      "Public bucket: anyone downloads through the public link, even without a rule. Uploads and listings follow the rules below.",
+    allBuckets: "Applies to every bucket",
+    custom: "Custom rule",
+    remove: "Remove rule",
+    removeNamed: 'Remove the rule "{rule}"',
+    removeTitle: "Remove this rule?",
+    removeText: "Whoever relied on it loses access to the files right away.",
+    addTitle: "Add this rule?",
+    addText:
+      "The rule is created in the database now (as a Postgres policy) and recorded for the next migration.",
+    added: "Rule added.",
+    removed: "Rule removed.",
+    templates: {
+      public_read: {
+        label: "Anyone can download",
+        hint: "Visitors and signed-in users read the files.",
+      },
+      signed_in_read: {
+        label: "Signed-in users can download",
+        hint: "Whoever signed in to the app reads the files.",
+      },
+      signed_in_upload: {
+        label: "Signed-in users can upload",
+        hint: "Whoever signed in to the app uploads new files.",
+      },
+      own_folder: {
+        label: "Each user only reaches their own folder",
+        hint: "The folder named after the user's id: they read, upload, replace and delete only there.",
+      },
+      own_files: {
+        label: "Each user only reaches the files they uploaded",
+        hint: "They read, replace and delete only their own files.",
+      },
+    },
+  },
+  browser: {
+    files: "Files in this bucket",
+    access: "Access rules",
+    accessShort: "Access",
+    downloadFile: "Download {name}",
+    dropHint: "Drop files here or click to select",
+    tapHint: "Tap to choose files",
+    dropLimits: "Up to {size} per file · types: {types}",
+    settings: "Bucket settings",
+    fileCount: { one: "{count} file", other: "{count} files" },
+    uploadProgress: "Upload progress",
+    uploadStatus: {
+      queued: "Queued",
+      sending: "Uploading…",
+      done: "Uploaded",
+      error: "Failed",
+      conflict: "Already exists",
+    },
+    preview: "View file",
+    previewUnavailable:
+      "Preview is unavailable for this format or size. Download the file to open it.",
+    pdfHint: "Open the PDF in the browser viewer in a new tab.",
+    openPdf: "Open PDF",
+    upload: "Upload files",
+    uploading: "Uploading {done} of {total}…",
+    uploaded: { one: "{count} file uploaded", other: "{count} files uploaded" },
+    uploadFailed: "Upload failed. Try again.",
+    emptyFolder: "Empty folder",
+    emptyFolderDescription: "Upload files here. A folder exists while it holds files.",
+    foldersTitle: "How folders work",
+    foldersHint:
+      "Folders are not created on their own: they come from file paths (e.g. photos/profile.png) and disappear once empty. Uploads from here go to the open folder; for a new folder, upload from your app or SDK with the path in the name.",
+    emptyBucket: "Empty bucket",
+    columns: { name: "Name", size: "Size", type: "Type", updated: "Changed" },
+    download: "Download",
+    copyUrl: "Copy public URL",
+    urlCopied: "URL copied",
+    copyPath: "Copy path",
+    pathCopied: "Path copied",
+    delete: "Delete",
+    confirmDelete: {
+      title: "Delete the file?",
+      description: "'{name}' will be deleted from the bucket. This cannot be undone.",
+    },
+    deleted: "'{name}' deleted",
+    selection: {
+      selected: { one: "{count} file selected", other: "{count} files selected" },
+      selectAll: "Select all loaded files",
+      selectFile: "Select {name}",
+      delete: "Delete selected",
+      clear: "Clear selection",
+    },
+    confirmDeleteMany: {
+      title: { one: "Delete {count} file?", other: "Delete {count} files?" },
+      description: "The selected files will be deleted from the bucket. This cannot be undone.",
+    },
+    deletedMany: { one: "{count} file deleted", other: "{count} files deleted" },
+    replace: {
+      title: "Replace files?",
+      description: {
+        one: "'{names}' already exists in {destination}.",
+        other: "{count} files already exist in {destination}: {names}.",
+      },
+      confirm: "Replace",
+    },
+    more: "Show more",
+    path: "Path in the bucket",
+    notFound: "Bucket '{bucket}' does not exist.",
+    back: "Back to buckets",
+  },
+};
+
+export default en;

@@ -1,1 +1,0 @@
-var e=class extends Error{status;code;params;constructor(e,t,n,r){super(e),this.status=t,this.code=n,this.params=r}};function t(t){let n=[502,503,504].includes(t)?`server_unreachable`:`unexpected_response`;return new e(`HTTP ${t}`,t,n,{status:t})}export{t as n,e as t};

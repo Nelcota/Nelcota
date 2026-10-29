@@ -185,7 +185,7 @@ try {
     email: 'ana@example.com', password: 'a-development-password',
   }));
   const { data } = await client.from('notes').select('id,body,created_at')
-    .order('id', { ascending: false }).throwOnError();
+    .order('id', { ascending: false }).throwOnError().execute();
   console.log(data);
 } finally { client.dispose(); }
 JS

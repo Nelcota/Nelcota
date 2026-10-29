@@ -1,11 +1,13 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["node"],
-    "lib": ["ES2023"],
+    "types": ["node", "bun"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "allowImportingTsExtensions": true,
     "isolatedDeclarations": false,
-    "declaration": false
+    "declaration": false,
+    "allowJs": true,
+    "checkJs": true
   },
-  "include": ["scripts/*.ts"]
+  "include": ["scripts/*.ts", "scripts/*.mjs"]
 }

@@ -3,24 +3,24 @@
 
 export function readJson<T>(key: string, parse: (data: unknown) => T | null, fallback: T): T {
   try {
-    const raw = localStorage.getItem(key)
-    return raw === null ? fallback : (parse(JSON.parse(raw)) ?? fallback)
+    const raw = localStorage.getItem(key);
+    return raw === null ? fallback : (parse(JSON.parse(raw)) ?? fallback);
   } catch {
-    return fallback
+    return fallback;
   }
 }
 
 export function readText(key: string, fallback: string): string {
   try {
-    return localStorage.getItem(key) ?? fallback
+    return localStorage.getItem(key) ?? fallback;
   } catch {
-    return fallback
+    return fallback;
   }
 }
 
 export function write(key: string, value: string) {
   try {
-    localStorage.setItem(key, value)
+    localStorage.setItem(key, value);
   } catch {
     // Storage unavailable: carry on in memory only.
   }
@@ -28,7 +28,7 @@ export function write(key: string, value: string) {
 
 export function remove(key: string) {
   try {
-    localStorage.removeItem(key)
+    localStorage.removeItem(key);
   } catch {
     // Storage unavailable: nothing was stored there either.
   }

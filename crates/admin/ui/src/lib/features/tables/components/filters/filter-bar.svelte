@@ -1,0 +1,188 @@
+<script lang="ts">
+  import { tick, untrack } from "svelte";
+  import * as Select from "$lib/components/ui/select";
+  import { Button } from "$lib/components/ui/button";
+  import { Input } from "$lib/components/ui/input";
+  import Plus from "@lucide/svelte/icons/plus";
+  import X from "@lucide/svelte/icons/x";
+  import {
+    UI_OPERATORS,
+    fromUi,
+    needsValue,
+    toUi,
+    type TableFilter,
+    type UiOp,
+  } from "$lib/features/tables/filters";
+  import type { Column } from "$lib/contracts/types";
+  import { t } from "$lib/i18n/index.svelte";
+
+  let {
+    columns,
+    filters,
+    preset,
+    onapply,
+    onclose,
+  }: {
+    columns: Column[];
+    filters: TableFilter[];
+    /** Column for a new, prefilled row (column menu). */
+    preset?: string;
+    onapply: (filters: TableFilter[]) => void;
+    onclose: () => void;
+  } = $props();
+
+  // `not` is carried so that applying again doesn't turn `not.eq.x` into `eq.x`.
+  type Row = { key: number; column: string; op: UiOp; value: string; not: boolean };
+
+  let nextKey = 0;
+  const toRow = (f: TableFilter): Row => {
+    const ui = toUi(f);
+    return {
+      key: nextKey++,
+      column: f.column,
+      ...ui,
+      not: Boolean(f.not) && ui.op !== "notnull",
+    };
+  };
+  const blankRow = (column = columns[0]?.name ?? ""): Row => ({
+    key: nextKey++,
+    column,
+    op: "eq",
+    value: "",
+    not: false,
+  });
+
+  function draftRows(current: TableFilter[], column: string | undefined): Row[] {
+    if (column != null && column !== "") return [...current.map(toRow), blankRow(column)];
+    return current.length > 0 ? current.map(toRow) : [blankRow()];
+  }
+
+  // URL changes (including Back/Forward) replace the local draft.
+  let rows = $state<Row[]>([]);
+  $effect(() => {
+    const current = filters;
+    const column = preset;
+    untrack(() => {
+      rows = draftRows(current, column);
+      attempted = false;
+    });
+  });
+
+  const opLabel = (op: UiOp) => {
+    const key = UI_OPERATORS.find((o) => o.value === op)?.label;
+    return key != null ? t(key) : op;
+  };
+  const complete = (r: Row) =>
+    r.column !== "" && (Boolean(needsValue(r.op)) === false || r.value !== "");
+
+  // A filter left without its value used to be dropped silently on Apply,
+  // so the grid ignored what the person thought they had asked for.
+  let attempted = $state(false);
+  const missingValue = (r: Row) => attempted && complete(r) === false && rows.some(complete);
+  let form = $state<HTMLFormElement>();
+
+  async function apply(event: SubmitEvent) {
+    event.preventDefault();
+    // Only blank rows (nothing typed anywhere): same as clearing.
+    if (rows.some(complete) && rows.every(complete) === false) {
+      attempted = true;
+      await tick();
+      form?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+      return;
+    }
+    onapply(
+      rows
+        .filter(complete)
+        .map((r) => fromUi({ column: r.column, op: r.op, value: r.value, not: r.not })),
+    );
+  }
+</script>
+
+<!-- Phones: column, operator and value stack full width; wider screens keep one line per filter. -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<form
+  bind:this={form}
+  class="grid gap-3 border-b bg-muted/40 px-4 py-4"
+  onsubmit={apply}
+  onkeydown={(event) => {
+    if (event.key === "Escape" && !event.defaultPrevented) onclose();
+  }}
+  aria-label={t("tables.toolbar.filter")}
+>
+  {#each rows as row, i (row.key)}
+    {@const invalid = missingValue(row)}
+    <div class="flex items-start gap-2">
+      <span class="w-10 shrink-0 pt-2.5 text-right text-xs text-muted-foreground sm:w-12"
+        >{i === 0 ? t("tables.filters.where") : t("tables.filters.and")}</span
+      >
+      <div class="grid min-w-0 flex-1 gap-2 sm:flex sm:flex-none sm:flex-wrap sm:items-start">
+        <Select.Root type="single" bind:value={row.column}>
+          <Select.Trigger
+            aria-label={t("tables.filters.column")}
+            class="w-full font-mono text-[0.8125rem] sm:w-48"
+            >{row.column || t("tables.filters.column")}</Select.Trigger
+          >
+          <Select.Content>
+            {#each columns as column (column.name)}
+              <Select.Item value={column.name} class="font-mono text-[0.8125rem]"
+                >{column.name}</Select.Item
+              >
+            {/each}
+          </Select.Content>
+        </Select.Root>
+        <Select.Root type="single" bind:value={row.op}>
+          <Select.Trigger aria-label={t("tables.filters.operator")} class="w-full text-sm sm:w-48"
+            >{row.not && needsValue(row.op) ? `${t("tables.filters.not")} ` : ""}{opLabel(
+              row.op,
+            )}</Select.Trigger
+          >
+          <Select.Content>
+            {#each UI_OPERATORS as op (op.value)}
+              <Select.Item value={op.value}>{t(op.label)}</Select.Item>
+            {/each}
+          </Select.Content>
+        </Select.Root>
+        {#if needsValue(row.op)}
+          <div class="grid gap-1 sm:w-56">
+            <Input
+              bind:value={row.value}
+              aria-label={t("tables.filters.value")}
+              placeholder={t("tables.filters.value")}
+              class="w-full font-mono text-[0.8125rem]"
+              aria-invalid={invalid || undefined}
+              aria-describedby={invalid ? `filter-${row.key}-error` : undefined}
+            />
+            {#if invalid}<p id={`filter-${row.key}-error`} class="px-1 text-sm text-destructive">
+                {t("tables.filters.needsValue")}
+              </p>{/if}
+          </div>
+        {/if}
+      </div>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        class="mt-0.5 shrink-0"
+        aria-label={t("tables.filters.remove")}
+        title={t("tables.filters.remove")}
+        onclick={() => (rows = rows.filter((r) => r.key !== row.key))}
+      >
+        <X />
+      </Button>
+    </div>
+  {/each}
+
+  <div class="mt-1 flex flex-wrap items-center gap-2 sm:pl-14">
+    <Button variant="outline" size="sm" onclick={() => (rows = [...rows, blankRow()])}>
+      <Plus />{t("tables.filters.add")}
+    </Button>
+    <div class="ml-auto flex items-center gap-2">
+      {#if filters.length}
+        <Button variant="ghost" size="sm" onclick={() => onapply([])}
+          >{t("tables.filters.clear")}</Button
+        >
+      {/if}
+      <Button variant="ghost" size="sm" onclick={onclose}>{t("common.close")}</Button>
+      <Button type="submit" size="sm">{t("tables.filters.apply")}</Button>
+    </div>
+  </div>
+</form>

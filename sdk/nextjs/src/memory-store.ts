@@ -1,2 +1,2 @@
-import 'server-only';
-export * from '@nelcota/ssr/testing';
+import "server-only";
+export * from "@nelcota/ssr/testing";

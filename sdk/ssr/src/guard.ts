@@ -1,6 +1,12 @@
-import type { CookieReader, Integration } from './context.js';
-import { safeReturnTo } from './policy.js';
-import { SessionError } from './errors.js';
+import type { CookieReader, Integration } from "./context.js";
+import { SessionError } from "./errors.js";
+import { hasPathControls } from "./http/path.js";
+import { safeReturnTo } from "./http/policy.js";
+const MAX_POLICY_PATHS = 32;
+const MAX_PATH_DECODINGS = 3;
+const HTTP_FORBIDDEN = 403;
+const HTTP_UNAUTHORIZED = 401;
+const HTTP_NOT_FOUND = 404;
 
 export interface GuardOptions {
   protectedPaths: readonly string[];
@@ -14,12 +20,12 @@ export interface GuardOptions {
 /** What a framework adapter answers for one request. `allow` and every non-`public`
  * answer carry user-specific state and must be sent with private cache headers. */
 export type GuardDecision =
-  | { kind: 'public' }
-  | { kind: 'allow' }
-  | { kind: 'invalid_path' }
-  | { kind: 'denied' }
-  | { kind: 'unavailable' }
-  | { kind: 'redirect'; location: string; clearCookie: boolean };
+  | { kind: "public" }
+  | { kind: "allow" }
+  | { kind: "invalid_path" }
+  | { kind: "denied" }
+  | { kind: "unavailable" }
+  | { kind: "redirect"; location: string; clearCookie: boolean };
 
 export interface Guard {
   readonly login: string;
@@ -28,57 +34,155 @@ export interface Guard {
   bootstraps(pathname: string): boolean;
   /** Authentication routing only. Backend grants/RLS still decide authorization.
    * Never refreshes: an expired session is sent to the explicit POST-owned flow. */
-  check<Database>(owner: Integration<Database>, cookies: CookieReader, url: URL): Promise<GuardDecision>;
+  check<Database>(
+    owner: Integration<Database>,
+    cookies: CookieReader,
+    url: URL,
+  ): Promise<GuardDecision>;
 }
 
 export function configPath(value: string): string {
-  const url = new URL(value, 'https://path.invalid');
-  if (safeReturnTo(value) !== value || url.search || url.hash) throw new SessionError('configuration', 'Configure canonical local paths without queries or fragments');
+  const url = new URL(value, "https://path.invalid");
+  if (safeReturnTo(value) !== value || url.search !== "" || url.hash !== "")
+    throw new SessionError(
+      "configuration",
+      "Configure canonical local paths without queries or fragments",
+    );
   return value;
 }
 
-/** Validates the policy up front. `ignoredPrefixes` are the framework's own asset
- * routes (`/_next/`, `/_app/`). */
-export function createGuard(policy: GuardOptions, ignoredPrefixes: readonly string[]): Guard {
-  if (!Array.isArray(policy.protectedPaths) || policy.protectedPaths.length < 1 || policy.protectedPaths.length > 32) throw new SessionError('configuration', 'Configure one to thirty-two protected path prefixes');
+interface RoutePolicy {
+  paths: readonly string[];
+  login: string;
+  refresh: string;
+  excluded: ReadonlySet<string>;
+  bootstraps: ReadonlySet<string>;
+  ignored: readonly string[];
+}
+function routePolicy(policy: GuardOptions, ignored: readonly string[]): RoutePolicy {
+  if (
+    Array.isArray(policy.protectedPaths) === false ||
+    policy.protectedPaths.length < 1 ||
+    policy.protectedPaths.length > MAX_POLICY_PATHS
+  )
+    throw new SessionError("configuration", "Configure one to thirty-two protected path prefixes");
   const paths = policy.protectedPaths.map(configPath);
-  const login = configPath(policy.loginPath ?? '/login'), refresh = configPath(policy.refreshPath ?? '/auth/refresh');
-  const excluded = new Set([login, refresh, '/auth/callback', '/auth/session/refresh']);
-  if (policy.bootstrapPaths !== undefined && (!Array.isArray(policy.bootstrapPaths) || policy.bootstrapPaths.length > 32)) throw new SessionError('configuration', 'Configure at most thirty-two bootstrap paths');
-  const bootstraps = new Set((policy.bootstrapPaths ?? [login]).map(configPath));
-  const guarded = (path: string): boolean => paths.some(prefix => prefix === '/' || path === prefix || path.startsWith(`${prefix}/`));
-  // Lenient decoding keeps undecodable runs; it only decides if strict checks apply.
-  const lenient = (path: string): string => path.replace(/(?:%[0-9a-f]{2})+/gi, run => { try { return decodeURIComponent(run); } catch { return run; } });
+  const login = configPath(policy.loginPath ?? "/login");
+  const refresh = configPath(policy.refreshPath ?? "/auth/refresh");
+  if (
+    policy.bootstrapPaths !== undefined &&
+    (Array.isArray(policy.bootstrapPaths) === false ||
+      policy.bootstrapPaths.length > MAX_POLICY_PATHS)
+  )
+    throw new SessionError("configuration", "Configure at most thirty-two bootstrap paths");
   return {
+    paths,
     login,
     refresh,
-    bootstraps: pathname => bootstraps.has(pathname),
-    async check(owner, cookies, url) {
-      let path = url.pathname, loose = path;
-      for (let count = 0; count < 3 && loose.includes('%'); count++) loose = lenient(loose);
-      // Paths that cannot reach a protected prefix pass even with literal `%25`.
-      if (!guarded(path) && !guarded(loose.replaceAll('\\', '/'))) return { kind: 'public' };
-      try { for (let count = 0; count < 3 && path.includes('%'); count++) path = decodeURIComponent(path); }
-      catch { return { kind: 'invalid_path' }; }
-      if (/[\\\u0000-\u001f\u007f]/.test(path) || /%[0-9a-f]{2}/i.test(path)) return { kind: 'invalid_path' };
-      if (excluded.has(path) || ignoredPrefixes.some(prefix => path.startsWith(prefix)) || !guarded(path)) return { kind: 'public' };
-      try {
-        return await owner.read<GuardDecision>(cookies, async (context, { clearable }) => {
-          const user = await context.getUser();
-          if (!user.error) return { kind: 'allow' };
-          if (user.error.status === 403) return { kind: 'denied' };
-          if (user.error.code !== 'session_missing' && ![401, 404].includes(user.error.status)) return { kind: 'unavailable' };
-          const target = new URL(`${owner.basePath}${context.hasSession && user.error.status === 401 ? refresh : login}`, owner.origin);
-          target.searchParams.set('next', safeReturnTo(`${url.pathname}${url.search}`));
-          // A superseded or row-less cookie may already be replaced by a response in flight
-          // (a sign-in rotating a bootstrap ID); leave it.
-          return { kind: 'redirect', location: target.href, clearCookie: clearable };
-        });
-      } catch (error) {
-        if (error instanceof SessionError && ['session_store', 'session_capacity'].includes(error.code)) return { kind: 'unavailable' };
-        if (error instanceof SessionError && error.code === 'invalid_session') return { kind: 'redirect', location: new URL(`${owner.basePath}${login}`, owner.origin).href, clearCookie: true };
-        throw error;
-      }
+    ignored,
+    excluded: new Set([login, refresh, "/auth/callback", "/auth/session/refresh"]),
+    bootstraps: new Set((policy.bootstrapPaths ?? [login]).map(configPath)),
+  };
+}
+function guarded(path: string, paths: readonly string[]): boolean {
+  return paths.some((prefix) => prefix === "/" || path === prefix || path.startsWith(`${prefix}/`));
+}
+// Lenient decoding only decides whether strict validation applies; malformed runs remain intact.
+function lenient(path: string): string {
+  return path.replaceAll(/(?:%[0-9a-f]{2})+/gi, (run) => {
+    try {
+      return decodeURIComponent(run);
+    } catch {
+      return run;
+    }
+  });
+}
+function decodeRepeated(path: string, decoder: (value: string) => string): string {
+  let decoded = path;
+  for (let count = 0; count < MAX_PATH_DECODINGS && decoded.includes("%"); count++)
+    decoded = decoder(decoded);
+  return decoded;
+}
+function pathDecision(url: URL, policy: RoutePolicy): GuardDecision | null {
+  const loose = decodeRepeated(url.pathname, lenient);
+  if (
+    guarded(url.pathname, policy.paths) === false &&
+    guarded(loose.replaceAll("\\", "/"), policy.paths) === false
+  )
+    return { kind: "public" };
+  let path: string;
+  try {
+    path = decodeRepeated(url.pathname, decodeURIComponent);
+  } catch {
+    return { kind: "invalid_path" };
+  }
+  if (hasPathControls(path) || path.includes("\\") || /%[0-9a-f]{2}/i.test(path))
+    return { kind: "invalid_path" };
+  if (
+    policy.excluded.has(path) ||
+    policy.ignored.some((prefix) => path.startsWith(prefix)) ||
+    guarded(path, policy.paths) === false
+  )
+    return { kind: "public" };
+  return null;
+}
+function failureDecision<Database>(
+  error: unknown,
+  owner: Integration<Database>,
+  login: string,
+): GuardDecision | null {
+  if (error instanceof SessionError && ["session_store", "session_capacity"].includes(error.code))
+    return { kind: "unavailable" };
+  if (error instanceof SessionError && error.code === "invalid_session")
+    return {
+      kind: "redirect",
+      location: new URL(`${owner.basePath}${login}`, owner.origin).href,
+      clearCookie: true,
+    };
+  return null;
+}
+async function authenticationDecision<Database>(
+  owner: Integration<Database>,
+  cookies: CookieReader,
+  route: { url: URL; policy: RoutePolicy },
+): Promise<GuardDecision> {
+  try {
+    return await owner.read<GuardDecision>(cookies, async (context, { clearable }) => {
+      const user = await context.getUser();
+      if (user.error === null) return { kind: "allow" };
+      if (user.error.status === HTTP_FORBIDDEN) return { kind: "denied" };
+      if (
+        user.error.code !== "session_missing" &&
+        [HTTP_UNAUTHORIZED, HTTP_NOT_FOUND].includes(user.error.status) === false
+      )
+        return { kind: "unavailable" };
+      const nextPath =
+        context.hasSession && user.error.status === HTTP_UNAUTHORIZED
+          ? route.policy.refresh
+          : route.policy.login;
+      const target = new URL(`${owner.basePath}${nextPath}`, owner.origin);
+      target.searchParams.set("next", safeReturnTo(`${route.url.pathname}${route.url.search}`));
+      // A response still in flight may have replaced a superseded or row-less cookie.
+      return { kind: "redirect", location: target.href, clearCookie: clearable };
+    });
+  } catch (error) {
+    const decision = failureDecision(error, owner, route.policy.login);
+    if (decision !== null) return decision;
+    throw error;
+  }
+}
+
+/** Validates canonical paths before routing; ignored prefixes belong to framework assets. */
+export function createGuard(options: GuardOptions, ignoredPrefixes: readonly string[]): Guard {
+  const policy = routePolicy(options, ignoredPrefixes);
+  return {
+    login: policy.login,
+    refresh: policy.refresh,
+    bootstraps: (pathname) => policy.bootstraps.has(pathname),
+    check: async (owner, cookies, url) => {
+      const decision = pathDecision(url, policy);
+      if (decision !== null) return decision;
+      return await authenticationDecision(owner, cookies, { url, policy });
     },
   };
 }

@@ -46,6 +46,9 @@ jobs:
       - name: SSR core
         working-directory: sdk/ssr
         run: bun install --frozen-lockfile && bun audit --audit-level=high && bun run check && bun run ${{ matrix.runtime == 'node' && 'test:node' || 'test' }} && bun run build
+      - name: SSR PostgreSQL ownership contracts
+        working-directory: sdk/ssr
+        run: bun run ${{ matrix.runtime == 'node' && 'test:integration:node' || 'test:integration' }}
       - name: Edge core portability
         if: matrix.runtime == 'bun' && matrix.browser == 'chromium' && !matrix.next
         working-directory: sdk/ssr

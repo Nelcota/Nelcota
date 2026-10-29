@@ -134,7 +134,7 @@ An adapter supplies a cookie jar with `get(name)` and
 ```ts
 // Rendering: verified identity, no refresh.
 const notes = await sessions.read(cookies, async ({ client, hasSession }) =>
-  hasSession ? (await client.from('notes').select('id, body')).data : []);
+  hasSession ? (await client.from('notes').select('id, body').execute()).data : []);
 
 // Form/API endpoint: same-origin unsafe request only.
 const response = await sessions.write(cookies, request, async ({ auth }) => {

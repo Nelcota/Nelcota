@@ -1,5 +1,4 @@
-<script>
-  let { form } = $props();
+<script>let { form } = $props();
 </script>
 
 <h1>Sign in</h1>

@@ -36,7 +36,7 @@ export interface SessionLease {
 
 export interface SessionStore {
   /** Memory stores cannot be selected accidentally in production. */
-  readonly durability: 'shared' | 'development';
+  readonly durability: "shared" | "development";
   read(key: string): Promise<StoredSession | null>;
   /** Serialize the entire async callback for this key across all app instances.
    * No TTL-only lease: stale owners must be unable to save after ownership loss.

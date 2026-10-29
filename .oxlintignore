@@ -10,3 +10,6 @@ output/**
 backups/**
 crates/admin/ui/src/lib/generated/**
 sdk/typescript/test/contract/generated/**
+**/.next/**
+**/test-results/**
+**/playwright-report/**

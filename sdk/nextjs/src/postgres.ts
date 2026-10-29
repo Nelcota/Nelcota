@@ -1,2 +1,2 @@
-import 'server-only';
-export * from '@nelcota/ssr/postgres';
+import "server-only";
+export * from "@nelcota/ssr/postgres";

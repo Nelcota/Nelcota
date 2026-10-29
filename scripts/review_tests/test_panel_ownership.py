@@ -47,7 +47,7 @@ class PanelOwnership(unittest.TestCase):
             "import { session } from '$lib/features/auth/session.svelte'",
             "import {\n session,\n} from '../features/auth/session.svelte'",
             "export type { Session } from '$lib/features/auth/session.svelte'",
-            "const page = () => import('$lib/shell/App.svelte')",
+            "const page = () => import('$lib/shell/app.svelte')",
         ]:
             with self.subTest(statement=statement):
                 self.write("resources/session.ts", statement)
