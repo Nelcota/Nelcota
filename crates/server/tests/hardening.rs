@@ -265,13 +265,13 @@ async fn storage_counter_tracks_bulk_upsert_delete_truncate_and_rollback() {
 }
 
 #[tokio::test]
-async fn upload_overload_is_immediate_and_pool_wait_has_a_deadline() {
+async fn upload_pool_wait_has_a_deadline() {
     let mut options = Options {
         pool_size: 1,
         ..Options::default()
     };
     options.storage.upload_timeout = Duration::from_millis(600);
-    let app = Arc::new(TestApp::spawn_with(options).await);
+    let app = TestApp::spawn_with(options).await;
     app.admin_client
         .batch_execute("INSERT INTO storage.buckets(id) VALUES ('wait')")
         .await
@@ -282,7 +282,7 @@ async fn upload_overload_is_immediate_and_pool_wait_has_a_deadline() {
     let error = app
         .storage
         .upload(
-            claims.clone(),
+            claims,
             "wait",
             "blocked",
             UploadOptions::default(),
@@ -294,6 +294,26 @@ async fn upload_overload_is_immediate_and_pool_wait_has_a_deadline() {
     assert_eq!(error.code(), "upload_timeout");
     assert!(start.elapsed() < Duration::from_millis(1100));
     drop(connection);
+}
+
+#[tokio::test]
+async fn upload_overload_is_immediate_and_cancelled_slots_are_reusable() {
+    let app = Arc::new(
+        TestApp::spawn_with(Options {
+            pool_size: 1,
+            ..Options::default()
+        })
+        .await,
+    );
+    app.admin_client
+        .batch_execute("INSERT INTO storage.buckets(id) VALUES ('wait')")
+        .await
+        .unwrap();
+    let claims = Claims::from_payload(json!({"role":"service_role"})).unwrap();
+    // Admission setup includes 32 serialized policy checks. Its watchdog must
+    // finish before any admitted stream reaches the fixture's upload deadline.
+    let body_start_budget = Duration::from_secs(10);
+    assert!(body_start_budget < app.storage.settings.upload_timeout);
     let (started, mut receiver) = tokio::sync::mpsc::unbounded_channel();
     let mut active = Vec::new();
     for n in 0..32 {
@@ -316,12 +336,16 @@ async fn upload_overload_is_immediate_and_pool_wait_has_a_deadline() {
                 .await
         }));
     }
-    for _ in 0..32 {
-        tokio::time::timeout(Duration::from_secs(3), receiver.recv())
-            .await
-            .unwrap()
-            .unwrap();
-    }
+    tokio::time::timeout(body_start_budget, async {
+        for _ in 0..32 {
+            receiver
+                .recv()
+                .await
+                .expect("an admitted upload did not reach its body");
+        }
+    })
+    .await
+    .expect("upload admission did not fill before the setup watchdog");
     let start = tokio::time::Instant::now();
     let error = app
         .storage
