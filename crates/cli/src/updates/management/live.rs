@@ -1,5 +1,9 @@
 //! Compare live container metadata without returning or logging its credentials.
-use super::*;
+use super::effects::output;
+use crate::project::Project;
+use anyhow::Context;
+use anyhow::bail;
+use std::process::Command;
 fn inspect(id: &str) -> anyhow::Result<Command> {
     let id = id.trim();
     if !(12..=64).contains(&id.len()) || !id.bytes().all(|c| c.is_ascii_hexdigit()) {

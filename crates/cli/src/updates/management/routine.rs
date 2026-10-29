@@ -1,6 +1,29 @@
 //! Routine actions reuse the host journal, lease, gates and explicit recovery.
+use super::effects::Effects;
+use super::effects::approved_backup;
+use super::effects::backup_identity;
+use super::effects::changed;
+use super::effects::require_identity;
+use super::live;
+use super::policy::control_project;
+use super::settings;
 use super::settings::{Prepared, Target};
-use super::*;
+use crate::backup;
+use crate::host::Host;
+use crate::project::Service;
+use crate::updates::policy::Policy;
+use crate::updates::policy::trusted_path;
+use anyhow::Context;
+use anyhow::bail;
+use nelcota_deployment::atomic_write;
+use nelcota_deployment::digest_file;
+use nelcota_deployment::management::HostJournal;
+use nelcota_deployment::management::Operation;
+use nelcota_deployment::management::Stage;
+use nelcota_deployment::management::Task;
+use nelcota_deployment::read_private;
+use std::path::Path;
+use std::time::Duration;
 
 fn target_path(policy: &Policy, target: &Target) -> anyhow::Result<std::path::PathBuf> {
     let path = match target {
@@ -320,6 +343,7 @@ fn offsite_fingerprint(dump: &Path) -> anyhow::Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
     #[test]
     fn offsite_recovery_identity_covers_dump_bytes_as_well_as_the_file_manifest() {
         let temp = tempfile::tempdir().unwrap();

@@ -1,4 +1,28 @@
-//! Real Docker/database/files effects with explicit provenance/TLS/proxy doubles.
+//! Host task effects with explicit provenance, TLS and proxy doubles.
+use crate::backup;
+use crate::caddy;
+use crate::host::Host;
+use crate::host::Runtime;
+use crate::project::Project;
+use crate::project::Service;
+use crate::registry;
+use crate::updates::policy::Policy;
+use crate::updates::policy::Provisioning;
+use anyhow::bail;
+use nelcota_deployment::atomic_write;
+use nelcota_deployment::digest_file;
+use nelcota_deployment::management::HostJournal;
+use nelcota_deployment::management::Operation;
+use nelcota_deployment::management::Stage;
+use nelcota_deployment::management::Task;
+use nelcota_deployment::read_private;
+use std::fs;
+use std::path::Path;
+use std::process::Command;
+use std::time::Duration;
+
+use super::execution::Native;
+use super::preflight::docker_namespace_blocker;
 use super::*;
 use nelcota_deployment::management::{PublicJob, now};
 use std::cell::Cell;

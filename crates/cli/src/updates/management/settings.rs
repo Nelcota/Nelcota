@@ -1,8 +1,16 @@
 //! Operator-only configuration preparation. Secrets never enter public receipts.
-use super::*;
+use super::policy::control_project;
+use crate::host::Host;
+use crate::project::Project;
+use crate::updates::policy::Policy;
+use crate::updates::policy::trusted_path;
+use anyhow::Context;
+use anyhow::bail;
 use nelcota_deployment::operations::{Configuration, ConfigurationView, Section};
+use nelcota_deployment::read_private;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::path::Path;
 
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
