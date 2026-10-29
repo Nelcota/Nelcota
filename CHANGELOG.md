@@ -100,6 +100,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- REST pages and `Prefer: count=exact` totals use one database snapshot,
+  preventing contradictory pagination metadata during concurrent writes.
+
 - Panel row updates and deletes preserve literal primary-key column names,
   including REST modifier names and punctuation, so only selected rows change.
 
