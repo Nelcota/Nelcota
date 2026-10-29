@@ -100,6 +100,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- Panel row updates and deletes preserve literal primary-key column names,
+  including REST modifier names and punctuation, so only selected rows change.
+
 - Generated TypeScript RPC arguments and results retain named enums, composite
   fields and table rows, including arrays and enums used only by functions.
 
