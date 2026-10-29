@@ -1,0 +1,1 @@
+import{Ar as e,dn as t,pn as n}from"./circle-alert-WPLNRAEB.js";var r=`nelcota.technical`,i=e({on:t(r,`off`)===`on`});function a(){i.on=i.on===!1,n(r,i.on?`on`:`off`)}export{a as n,i as t};
