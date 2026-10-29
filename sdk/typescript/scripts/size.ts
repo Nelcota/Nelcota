@@ -57,12 +57,17 @@ const BUDGETS: Record<string, number> = {
   // entry point below; each budget rose by 50 B for it.
   // Initial-session subscriptions and exact write counts add 127 B at root,
   // 110 B to auth and 21 B to REST; the independent testing entry adds no bytes here.
-  "index.js": 19_250,
+  // NelcotaRules adds explicit unknown-value guards and smaller responsibility-owned
+  // modules. Measured static closures: root 22,076 B, REST 11,428 B, auth 15,255 B,
+  // storage 9,056 B gzip. Keep less than 100 B headroom per entry; do not remove
+  // this gate. Minified browser bundles grow by 1,314/618/1,078/467 B respectively
+  // against d2c3643f with the same Bun bundler (the gate itself is unminified).
+  "index.js": 22_150,
   // Standalone factories include HTTP and keep the other feature modules out.
-  "rest/index.js": 10_100,
+  "rest/index.js": 11_500,
   // Failed persistence must retain rotated tokens; background failures are observed.
-  "auth/index.js": 13_050,
-  "storage/index.js": 8_050,
+  "auth/index.js": 15_350,
+  "storage/index.js": 9_100,
 };
 
 function closure(entry: string, seen = new Set<string>()): Set<string> {
