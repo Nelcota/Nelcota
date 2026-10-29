@@ -723,3 +723,47 @@ async fn refresh_retry_and_successor_use_one_lock_order() {
         driver.await.unwrap().unwrap();
     }
 }
+
+#[tokio::test]
+async fn exact_count_and_rows_share_a_snapshot_during_concurrent_delete() {
+    let app = Arc::new(TestApp::spawn().await);
+    app.admin_client.batch_execute(
+        "CREATE FUNCTION public.wait_for_snapshot() RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$
+         BEGIN PERFORM pg_advisory_xact_lock(734251); RETURN true; END $$;
+         CREATE VIEW public.snapshot_products AS
+         SELECT id, name FROM public.products WHERE id=1 AND public.wait_for_snapshot();
+         GRANT SELECT ON public.snapshot_products TO anon;"
+    ).await.unwrap();
+    app.catalog.reload(&app.pool).await.unwrap();
+    let (mut blocker, connection) = app.admin.connect(tokio_postgres::NoTls).await.unwrap();
+    tokio::spawn(connection);
+    let lock = blocker.transaction().await.unwrap();
+    lock.batch_execute("SELECT pg_advisory_xact_lock(734251)")
+        .await
+        .unwrap();
+    let reading = app.clone();
+    let pending = tokio::spawn(async move {
+        reading
+            .request_with(
+                axum::http::Method::GET,
+                "/rest/v1/snapshot_products?id=eq.1&limit=1",
+                None,
+                None,
+                &[("prefer", "count=exact")],
+            )
+            .await
+    });
+    wait_for_locks(&app, 1, "query LIKE '%snapshot_products%'").await;
+    app.admin_client
+        .execute("DELETE FROM public.products WHERE id=1", &[])
+        .await
+        .unwrap();
+    lock.commit().await.unwrap();
+    let reply = tokio::time::timeout(Duration::from_secs(5), pending)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
+    assert_eq!(reply.body, json!([{"id": 1, "name": "Pen"}]));
+    assert_eq!(reply.headers["content-range"], "0-0/1");
+}

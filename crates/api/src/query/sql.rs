@@ -239,6 +239,23 @@ pub fn select(schema: &str, table: &Table, request: &Request, max_rows: Option<i
     sql
 }
 
+/// Page and filtered total in one statement, so concurrent writes cannot split their snapshots.
+pub fn select_counted(
+    schema: &str,
+    table: &Table,
+    request: &Request,
+    max_rows: Option<i64>,
+) -> Sql {
+    let mut sql = select(schema, table, request, max_rows);
+    let filters = where_clause(&mut sql, &request.filters);
+    sql.text = format!(
+        "SELECT _page.*, (SELECT count(*) FROM {} AS _t{filters}) FROM ({}) AS _page",
+        qualified(schema, table),
+        sql.text,
+    );
+    sql
+}
+
 /// One record per result row, as JSON text: for streaming reads (export)
 /// without building the whole response in memory.
 pub fn select_rows(schema: &str, table: &Table, request: &Request) -> Sql {

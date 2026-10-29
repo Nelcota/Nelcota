@@ -1509,3 +1509,27 @@ async fn insert_and_upsert_report_only_affected_rows_with_count_exact() {
     assert_eq!(hidden.status, StatusCode::NO_CONTENT);
     assert_eq!(hidden.headers[header::CONTENT_RANGE], "*/0");
 }
+
+#[tokio::test]
+async fn exact_count_ignores_paging_but_respects_filters_and_row_policies() {
+    let app = TestApp::spawn().await;
+    let token = user_token(app.user_a);
+    for (query, expected) in [
+        ("id=gte.0&limit=0", "*/1"),
+        ("id=gte.0&offset=100", "*/1"),
+        ("id=lt.0&limit=1", "*/0"),
+    ] {
+        let reply = app
+            .request_with(
+                Method::GET,
+                &format!("/rest/v1/todos?{query}"),
+                Some(&token),
+                None,
+                &[("prefer", "count=exact")],
+            )
+            .await;
+        assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
+        assert_eq!(reply.body, json!([]));
+        assert_eq!(reply.headers[header::CONTENT_RANGE], expected);
+    }
+}

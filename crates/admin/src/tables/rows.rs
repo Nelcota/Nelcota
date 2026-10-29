@@ -454,7 +454,7 @@ fn pk_filters(table: &Table, pk: &Map<String, Value>) -> Result<Vec<query::Condi
             "table without a primary key: editing from the panel is unavailable (use the SQL editor)",
         ));
     }
-    let pairs: Vec<(String, String)> = table
+    table
         .primary_key
         .iter()
         .map(|col| {
@@ -469,12 +469,10 @@ fn pk_filters(table: &Table, pk: &Map<String, Value>) -> Result<Vec<query::Condi
                 }
                 Some(other) => other.to_string(),
             };
-            Ok((col.clone(), format!("eq.{value}")))
+            // Primary-key names are literal catalog columns, never REST modifiers.
+            query::column_filter(table, col, &format!("eq.{value}")).map_err(invalid_query)
         })
-        .collect::<Result<_, _>>()?;
-    Ok(query::parse_request(&pairs, table)
-        .map_err(invalid_query)?
-        .filters)
+        .collect()
 }
 
 /// Runs a write and returns Postgres' error message as a 400.
