@@ -223,7 +223,8 @@ variables and optional TOML. Host Compose/systemd and \`dev\` load their own set
 Keep these environments distinct: the application folder owns SQL and generated
 types; a production host owns services, credentials and recovery backups.
 
-1. Use the panel's **Project journey** to create a table and review access.
+1. Use the panel to create a table and review access. Current-checkout panels
+   group these steps under **Project journey**.
    Open the table's **View as** control to inspect a visitor and a selected user.
    Confirm both allowed and denied rows; the administrator view bypasses RLS.
 2. Install the SDK, generate types and sign in through your application. Test a
