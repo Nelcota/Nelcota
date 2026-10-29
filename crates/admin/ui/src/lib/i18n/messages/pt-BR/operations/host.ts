@@ -73,6 +73,8 @@ const ptBR = {
   recoveryPoint: "Recovery point encoded in filename (UTC)",
   recoveryPointUnknown: "Unknown; inspect the verified backup before continuing.",
   recoveryScope: "Restore scope",
+  recoveryVerificationOnly:
+    "Verification of the already restored database and files. The selected backup will not be replayed.",
   recoveryPair:
     "The selected database and paired disk-file snapshot. Writes after this point will be replaced.",
   recoverySafety:

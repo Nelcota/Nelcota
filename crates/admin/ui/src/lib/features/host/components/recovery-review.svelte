@@ -26,7 +26,7 @@
   </div>
   <div>
     <dt class="text-muted-foreground">{h("recoveryScope")}</dt>
-    <dd>{h(resuming ? "preserveWrites" : "recoveryPair")}</dd>
+    <dd>{h(resuming ? "recoveryVerificationOnly" : "recoveryPair")}</dd>
   </div>
 </dl>
 <p class="mt-3 text-sm">{h(resuming ? "recoveryVerify" : "recoverySafety")}</p>
