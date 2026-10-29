@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import DeploymentGuide from "./deployment-guide.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { api } from "$lib/transport/api";
@@ -59,10 +60,11 @@
     <Button disabled={busy || !name.trim()} onclick={issue}>{t("connect.deploy.issue")}</Button>
   </div>
   {#if error}<p role="alert" class="text-sm text-destructive">{error}</p>{/if}
+  <DeploymentGuide />
   {#if issued}
     <p class="text-sm">{t("connect.deploy.copyOnce", { date: issued.expires_at })}</p>
     <div>
-      <Button variant="outline" onclick={() => copyText(issued!.token)}
+      <Button variant="outline" onclick={() => issued !== null && copyText(issued.token)}
         >{t("connect.deploy.copy")}</Button
       >
     </div>

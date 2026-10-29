@@ -26,6 +26,7 @@ const names = [
   "DeployToken",
   "DeployTokens",
   "MigrationsData",
+  "MigrationApplication",
   "StorageOverview",
   "TypesResponse",
   "Structure",

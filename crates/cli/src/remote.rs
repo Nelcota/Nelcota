@@ -156,11 +156,48 @@ async fn send(
             })
             .unwrap_or_else(|| "remote_error".into());
         bail!(
-            "remote deployment returned HTTP {} ({code}); inspect migrate status before retrying",
-            status.as_u16()
+            "remote deployment returned HTTP {}: {}",
+            status.as_u16(),
+            response_remediation(status, &code)
         );
     }
     String::from_utf8(bytes).context("remote response is not UTF-8")
+}
+
+fn response_remediation(status: reqwest::StatusCode, code: &str) -> &'static str {
+    if status == reqwest::StatusCode::NOT_FOUND {
+        return "deployment API endpoint not found; verify the project origin and install matching deployment-capable CLI/server artifacts; published 0.5.6 does not include these endpoints";
+    }
+    remediation(code)
+}
+
+fn remediation(code: &str) -> &'static str {
+    match code {
+        "migration_backup_required" => {
+            "automatic backup protection is missing; on the project host run `nelcota -C <host> -p <project> migration-backup enable`, set production mode and recreate the app, then inspect migrate status and preview the complete folder"
+        }
+        "migration_backup_failed" => {
+            "automatic backup failed or was interrupted; inspect the project backup service and migrate status; preserve its recovery fence and preview before retrying"
+        }
+        "migration_diverged" => {
+            "migration history differs; restore the original applied files, include the complete folder and run migrate status before creating a new version"
+        }
+        "migration_busy" => {
+            "another migration is running; wait for completion and run migrate status before retrying"
+        }
+        "invalid_migration" => {
+            "invalid migration files; check V<number>__<name>.sql names, duplicate versions and SQL, then run migrate --dry-run"
+        }
+        "db_error" => {
+            "migration SQL failed; inspect private server diagnostics and migrate status; earlier files may have committed, so reconcile the complete folder before retrying"
+        }
+        "invalid_deploy_token" => {
+            "deployment credential was refused; create or renew a scoped token in Connect, supply NELCOTA_DEPLOY_TOKEN and link the intended environment again"
+        }
+        _ => {
+            "remote request failed; verify the linked environment and credential, then inspect migrate status before retrying a write"
+        }
+    }
 }
 
 pub fn link(root: &Path, args: &RemoteArgs) -> anyhow::Result<()> {
@@ -227,6 +264,20 @@ impl std::fmt::Debug for RemoteArgs {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn migration_remediation_is_actionable_and_never_reflects_unknown_body_text() {
+        assert!(remediation("migration_backup_required").contains("migration-backup enable"));
+        assert!(remediation("migration_diverged").contains("original applied files"));
+        let secret = "ndp_private_echo_from_an_untrusted_server";
+        assert!(!remediation(secret).contains(secret));
+        assert!(remediation(secret).contains("migrate status"));
+    }
+    #[test]
+    fn missing_deployment_endpoints_identify_the_capability_mismatch() {
+        let message = response_remediation(reqwest::StatusCode::NOT_FOUND, "private_server_body");
+        assert!(message.contains("deployment-capable CLI/server"));
+        assert!(!message.contains("private_server_body"));
+    }
     #[test]
     fn rejects_unsafe_remote_origins_and_token_redirects() {
         for value in [

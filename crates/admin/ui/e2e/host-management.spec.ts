@@ -109,6 +109,7 @@ test("restore review identifies the exact backup and warns about replacing data"
   await page.getByLabel("Backup selecionado").selectOption("nelcota-shop-pair.dump");
   await page.getByRole("button", { name: "Restaurar backup", exact: true }).click();
   await expect(page.getByText("nelcota-shop-pair.dump", { exact: true }).last()).toBeVisible();
+  await expect(page.getByText("Restore scope", { exact: true })).toBeVisible();
   await expect(
     page.getByText(/Os dados e arquivos serão substituídos pelo par selecionado/),
   ).toBeVisible();

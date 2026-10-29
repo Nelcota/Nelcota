@@ -9,6 +9,7 @@ export function ProjectsStatusData(value: unknown): boolean;
 export function DeployToken(value: unknown): boolean;
 export function DeployTokens(value: unknown): boolean;
 export function MigrationsData(value: unknown): boolean;
+export function MigrationApplication(value: unknown): boolean;
 export function StorageOverview(value: unknown): boolean;
 export function TypesResponse(value: unknown): boolean;
 export function Structure(value: unknown): boolean;

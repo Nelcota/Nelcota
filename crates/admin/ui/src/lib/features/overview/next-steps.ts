@@ -20,7 +20,7 @@ export function nextSteps(overview: Overview): Step[] {
     { id: "table", done: tables.length > 0, path: "/tables?create=true" },
     { id: "protect", done: tables.length > 0 && Boolean(unprotected) === false, path: "/policies" },
     { id: "user", done: overview.counts.users > 0, path: "/users" },
-    // An app is connected once a person signed in through the API.
+    // Observe API sign-in separately from the application data-access verification.
     { id: "connect", done: overview.counts.signed_in_users > 0, path: "/connect" },
   ];
 }

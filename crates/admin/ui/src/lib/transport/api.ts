@@ -16,6 +16,7 @@ export { ApiError, httpError } from "./api-error";
 
 let authentication = Promise.resolve();
 const REQUEST_TIMEOUT_MS = 60_000;
+const MIGRATION_TIMEOUT_MS = 660_000;
 
 async function request<T>(
   method: string,
@@ -67,7 +68,9 @@ async function sendRequest<T>(
   const controller = new AbortController();
   const deadline = new DOMException("Request deadline exceeded", "TimeoutError");
   const abort = () => controller.abort(signal?.reason);
-  const timer = setTimeout(() => controller.abort(deadline), REQUEST_TIMEOUT_MS);
+  const timeoutMs =
+    method === "POST" && path === "/migrations/apply" ? MIGRATION_TIMEOUT_MS : REQUEST_TIMEOUT_MS;
+  const timer = setTimeout(() => controller.abort(deadline), timeoutMs);
   signal?.addEventListener("abort", abort, { once: true });
   try {
     if (signal?.aborted === true) abort();

@@ -71,6 +71,28 @@ dto!(DeployToken {
 dto!(DeployTokenInfo { id: i64, name: String, issued_by: String, issued_at: String, expires_at: String, revoked_at: Option<String> });
 dto!(DeployTokens { tokens: Vec<DeployTokenInfo> });
 dto!(MigrationsData { migrations: Vec<Migration>, pending: Vec<PendingChange>, next_version: i64, folder: Option<String> });
+#[derive(Serialize, Deserialize, JsonSchema, TS)]
+#[serde(rename_all = "snake_case")]
+pub enum DeploymentMigrationState {
+    Applied,
+    Pending,
+    Diverged,
+    Missing,
+}
+dto!(DeploymentMigration { version: i32, name: String, checksum: String, applied_on: Option<String>, state: DeploymentMigrationState });
+#[derive(Serialize, Deserialize, JsonSchema, TS)]
+pub struct MigrationApplicationReport {
+    pub migrations: Vec<DeploymentMigration>,
+    pub applied: Vec<i32>,
+    pub dry_run: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub backup: Option<String>,
+}
+dto!(MigrationApplication {
+    report: MigrationApplicationReport,
+    catalog_pending: bool
+});
 dto!(ExportedMigration {
     version: i64,
     filename: String,
@@ -240,6 +262,10 @@ pub fn exports() -> (String, String) {
         DeployTokenInfo,
         DeployTokens,
         ExportedMigration,
+        DeploymentMigrationState,
+        DeploymentMigration,
+        MigrationApplicationReport,
+        MigrationApplication,
         Bucket,
         StorageBackend,
         StorageEnabled,
@@ -349,6 +375,28 @@ fn safe_integer(schema: &mut schemars::Schema) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn migration_response_preserves_the_core_report_wire_shape() {
+        use nelcota_core::user_migrations::{MigrationReport, MigrationState, MigrationStatus};
+        for backup in [None, Some("nelcota-shop-20261006T030000Z.dump".to_owned())] {
+            let report = MigrationReport {
+                migrations: vec![MigrationStatus {
+                    version: 1,
+                    name: "notes".into(),
+                    checksum: "42".into(),
+                    applied_on: None,
+                    state: MigrationState::Pending,
+                }],
+                applied: vec![],
+                dry_run: true,
+                backup,
+            };
+            let expected = serde_json::json!({"report": report, "catalog_pending": false});
+            let parsed: super::MigrationApplication =
+                serde_json::from_value(expected.clone()).unwrap();
+            assert_eq!(serde_json::to_value(parsed).unwrap(), expected);
+        }
+    }
     #[test]
     fn generated_contracts_are_current() {
         let (types, schemas) = super::exports();

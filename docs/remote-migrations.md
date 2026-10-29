@@ -3,11 +3,16 @@
 Keep application SQL in `migrations/V<n>__<name>.sql`, commit it with the app,
 and apply the same complete folder in every environment. This workflow requires
 a server and CLI built with deployment API support; installing an older release
-does not add these source changes.
+does not add these source changes. Published 0.5.6 lacks `link`, named remote
+environments, deployment tokens and the automatic migration backup agent.
+Use the same reviewed current-checkout capability on the CLI and project server,
+or a later verified release that includes it; check installed `--help` first.
 
 ## Issue and link a deployment credential
 
-In the panel, open Connect → Deployment tokens and create a named credential.
+In the panel, open Connect → Deployment tokens. Its guide shows the target API,
+lets you name the environment, and keeps that environment on every command.
+Create a named credential.
 It is copied once, stored only as a SHA-256 digest on the server, expires after
 30 days and can be revoked from the same page. On the configured project host,
 `nelcota token deploy --days 30 --name ci-production` issues the same kind of
@@ -61,7 +66,11 @@ CLI requests allow eleven minutes for backup plus SQL. A timeout can follow
 earlier committed files, so always inspect status before retrying.
 
 The panel's Migrations page can receive the same complete set of SQL files,
-preview it, and apply it using the signed-in administrator. Files remain owned
+preview it, and apply it using the signed-in administrator. Preview is required
+before application, and selecting different files invalidates that preview.
+The result lists each file's status, newly applied versions, the verified backup
+when one was captured, and any pending catalog refresh. A lost response requires
+a new preview to reconcile history; it never triggers an automatic replay. Files remain owned
 by the repository; uploading does not install a second copy on the server.
 `nelcota.migration_audit` records remote token identity or panel administrator
 and the applied version, checksum and time.

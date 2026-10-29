@@ -189,3 +189,48 @@ it("does not send a caller request that was already cancelled", async () => {
   expect(fetch).not.toHaveBeenCalled();
   expect(vi.getTimerCount()).toBe(0);
 });
+
+it("allows protected migration backup preparation beyond one minute but bounds the full request", async () => {
+  vi.useFakeTimers();
+  let finish: (response: Response) => void = () => {
+    throw new Error("Request not started");
+  };
+  let sent: () => void = () => {
+    throw new Error("Request gate not initialized");
+  };
+  const started = new Promise<void>((resolve) => {
+    sent = resolve;
+  });
+  const fetch = vi.fn(
+    (_input: RequestInfo | URL, options?: RequestInit) =>
+      new Promise<Response>((resolve, reject) => {
+        finish = resolve;
+        options?.signal?.addEventListener(
+          "abort",
+          () => reject(new Error("Migration fixture aborted")),
+          { once: true },
+        );
+        sent();
+      }),
+  );
+  vi.stubGlobal("fetch", fetch);
+  let failure: unknown;
+  const pending = api
+    .post("/migrations/apply", { files: [], dry_run: false })
+    .catch((error: unknown) => {
+      failure = error;
+    });
+  try {
+    await started;
+    await vi.advanceTimersByTimeAsync(60_001);
+    expect(failure).toBeUndefined();
+    expect(fetch).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(failure).toMatchObject({ status: 504, code: "write_timeout" });
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+  } finally {
+    finish(new Response("{}"));
+    await pending;
+  }
+});

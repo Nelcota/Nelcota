@@ -95,9 +95,11 @@ explicit remote lifecycle rules for both dumps and file snapshots. Test readback
 and off-host restore; a successful upload alone does not prove recoverability.
 
 > **Keep `host.env` and each project's `.env` somewhere safe, apart from the
-> bucket.** They are not in the backup (they hold secrets). Without the
-> project's `.env` a restore still works, but the JWT key changes and every
-> user has to sign in again (passwords keep working).
+> bucket.** The local dump/file pair does not include these secret files.
+> Verified external copies can include encrypted project configuration as
+> described below; preserve the host secrets separately and rehearse retrieving
+> both. Without the project's original JWT key, existing access tokens stop
+> working and users must sign in again.
 
 ### Verified external copies
 
@@ -119,8 +121,15 @@ for installation, time budgets, durable interruption recovery and storage limits
 ## Restore
 
 ```sh
-nelcota -p shop restore projects/shop/backups/nelcota-shop-20261006T030000Z.dump
+# Restore the database together with its matching disk-file snapshot:
+nelcota -p shop restore projects/shop/backups/nelcota-shop-20261006T030000Z.dump --files
 ```
+
+Confirm the selected project, backup time and restore scope before continuing.
+The host controller's review shows the filename, its UTC timestamp when encoded,
+and whether recovery will restore a pair or only verify a previously restored
+state. For an intentional database-only restore, omit `--files`; that does not
+rewind stored file bytes and must not be mistaken for a complete file recovery.
 
 The restore asks for confirmation (`--yes` skips it), puts the project's
 Caddy site in maintenance (HTTP 503 with `Retry-After`), stops the app and
@@ -131,7 +140,7 @@ it is healthy. If the app does not become healthy, the site stays in
 maintenance and the error shows how to go back:
 
 ```sh
-nelcota -p shop restore projects/shop/backups/<safety dump> --yes
+nelcota -p shop restore projects/shop/backups/<safety dump> --files --yes
 ```
 
 A restore also takes over a maintenance gate left closed by a failed upgrade
@@ -144,6 +153,12 @@ The immutable versions are copied before restoring the database, so a file-copy
 failure leaves the database untouched. Existing unrelated versions remain for
 the normal orphan collector. Backups made with the former shared storage mirror
 have no historical file manifest; they remain usable for database-only restores.
+
+After the service is healthy, sign in through the application, inspect expected
+rows and download a restored file. Check that access rules still isolate users.
+Keep the safety backup until these checks pass; a healthy service alone does not
+prove that application data was recovered. An off-host rehearsal remains a
+separate acceptance gate.
 
 ### Restore on a new VPS
 

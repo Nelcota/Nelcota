@@ -1,7 +1,20 @@
 # CLI reference
 
-Use `nelcota --help` and `<command> --help` for the installed binary. This reference
-matches server 0.5.6. Match release/tag and checksum, not the version string alone.
+Use `nelcota --help` and `<command> --help` for the installed binary. The baseline
+help below describes published server 0.5.6; the separate current-checkout
+section describes newer commands. Match release/tag and checksum, not the
+version string alone: a source build can still carry the workspace version.
+
+| Workflow | Required capability |
+| --- | --- |
+| Manual local migrations and types | Published 0.5.6 or a current-checkout build |
+| `dev --mail`, migration watching and project-owned development containers | Current-checkout build; absent from published 0.5.6 |
+| `link`, named remote environments, `migrate status`, deployment tokens and `db reset` | Current-checkout CLI and a matching deployment-capable server |
+| Automatic backups before production migrations | Matching backup-capable server/CLI and an explicitly configured project host agent |
+
+A guide or a panel build does not upgrade an installed CLI. If a command is
+unknown, inspect its installed `--help` and install the intended artifact before
+continuing; do not remove project state to work around a version mismatch.
 
 ## Prerequisites and selection
 
@@ -764,6 +777,13 @@ to bypass a blocked host. For permission/SQL/auth errors, see
 
 Related: [configuration](configuration.md), [deploy](deploy.md), [backup](backup.md)
 and [controlled updates](panel-updates.md).
+
+## Current-checkout capabilities
+
+The following commands are not present in the published 0.5.6 CLI. Build the
+current checkout and use its absolute binary path, or use a later verified
+release that includes these capabilities. Remote deployment also requires a
+matching server; a newer CLI alone cannot add its HTTP endpoints.
 
 ### nelcota link
 

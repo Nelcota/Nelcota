@@ -31,6 +31,11 @@
             {index + 1} · {label(stage)}
           </li>{/each}
       </ol>
+      {#if job.stage === "completed" && job.operation.kind === "restore"}<p
+          class="rounded-xl bg-well p-3 text-sm"
+        >
+          {h("recoveryVerify")}
+        </p>{/if}
       {#if job.last_stage}<p class="text-sm">
           {h("lastStage")}: {label(job.last_stage)}
         </p>{/if}{#if job.error}<p class="text-sm">
@@ -51,7 +56,10 @@
           variant="outline"
           disabled={model.busy || model.offline || model.pending !== null}
           onclick={() => model.recover(job)}>{h("resume")}</Button
-        >{/if}{#if job.stage === "completed" && job.operation.kind === "create"}<a
+        >{/if}{#if job.stage === "completed" && job.operation.kind === "create"}<p class="text-sm">
+          {h("successCreate")}
+        </p>
+        <a
           class="w-fit text-sm underline"
           href={`https://${job.operation.domain}/admin/`}
           target="_blank"

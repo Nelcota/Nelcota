@@ -168,14 +168,15 @@
       scroll === false ||
       section === null ||
       section === "" ||
-      Boolean(sections.some((item) => item.section === section)) === false
+      (Boolean(sections.some((item) => item.section === section)) === false &&
+        section !== "api-deploy")
     )
       return;
     let cancelled = false;
     void tick().then(() => {
       if (cancelled) return;
       document.getElementById(section)?.scrollIntoView({ block: "start" });
-      apiLocation.current = section;
+      apiLocation.current = section === "api-deploy" ? "api-token" : section;
     });
     return () => {
       cancelled = true;
@@ -319,6 +320,8 @@
           </li>
         </ol>
       </section>
+
+      <p class="rounded-2xl bg-well p-4 text-sm">{t("connect.verifyAccess")}</p>
 
       <section id="api-ai" class="grid scroll-mt-20 gap-5 rounded-3xl bg-card p-6">
         <div class="grid gap-1">
@@ -476,6 +479,8 @@
         {/if}
         {#if !(topic === "tables" && (tablesLoading || snippetsLoading)) && !(topic === "tables" && !tables.length && !tableError)}
           <div class="grid gap-6 *:min-w-0">
+            <p class="text-sm text-muted-foreground">{t("connect.sampleHint")}</p>
+            <p class="text-sm text-muted-foreground">{t("connect.mutationHint")}</p>
             {#each snippets as snippet (snippet.id)}
               <article class="grid gap-2 *:min-w-0">
                 <div>
@@ -513,7 +518,8 @@
       </section>
 
       <div id="api-token" class="grid scroll-mt-20 gap-6">
-        <DeployTokenCard /><ServiceTokenCard />
+        <div id="api-deploy" class="scroll-mt-20"><DeployTokenCard /></div>
+        <ServiceTokenCard />
       </div>
     </div>
   </div>

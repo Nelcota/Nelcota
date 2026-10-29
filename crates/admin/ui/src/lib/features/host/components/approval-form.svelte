@@ -1,4 +1,5 @@
 <script lang="ts">
+  import RecoveryReview from "./recovery-review.svelte";
   import { Button, Input } from "$lib/components/ui";
   import { i18n, translate } from "$lib/i18n/index.svelte";
   import { hostText as h, serverText, label } from "../model";
@@ -43,9 +44,10 @@
           {serverText("offsiteImpact")}
         </p>{/if}{#if model.target.kind === "test_smtp"}<p class="text-sm">
           {serverText("testImpact")}
-        </p>{/if}{#if model.target.kind === "restore"}<p class="break-all text-sm" translate="no">
-          {model.target.backup}
-        </p>{/if}
+        </p>{/if}{#if model.target.kind === "restore"}<RecoveryReview
+          backup={model.target.backup}
+          resuming={model.recovery?.last_stage === "verifying"}
+        />{/if}
     </div>
     <div class="grid gap-2 rounded-2xl bg-well p-4">
       <p class="text-sm font-medium text-muted-foreground">

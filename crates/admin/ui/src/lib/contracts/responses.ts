@@ -75,6 +75,7 @@ const ROUTE_CONTRACTS: readonly RouteContract[] = [
   { methods: ["DELETE"], pattern: /^\/webhooks\/deliveries$/, name: "WebhookCleared" },
   { methods: ["POST"], pattern: /^\/sql$/, name: "SqlResponse" },
   { methods: ["POST"], pattern: /^\/migrations$/, name: "ExportedMigration" },
+  { methods: ["POST"], pattern: /^\/migrations\/apply$/, name: "MigrationApplication" },
   {
     methods: ["POST", "PATCH", "PUT", "DELETE"],
     pattern:

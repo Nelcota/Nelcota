@@ -25,6 +25,7 @@ describe("response validators that fail to load", () => {
 
   it.each([
     ["POST", "/webhooks"],
+    ["POST", "/migrations/apply"],
     ["POST", "/webhooks/endpoint/rotate"],
     ["PATCH", "/tables/notes"],
     ["DELETE", "/webhooks/deliveries"],
