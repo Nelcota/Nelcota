@@ -319,7 +319,9 @@ use parse::*;
 pub use parse::{parse_request, parse_request_with_relations};
 #[cfg(test)]
 use sql::*;
-pub use sql::{count, delete, insert, resolve_function, rpc, select, select_rows, update};
+pub use sql::{
+    count, delete, insert, resolve_function, rpc, select, select_counted, select_rows, update,
+};
 
 /// A structured transport's literal catalog column, not a URL modifier.
 pub fn column_filter(table: &Table, name: &str, value: &str) -> Result<Condition, QueryError> {

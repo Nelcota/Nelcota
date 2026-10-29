@@ -155,22 +155,19 @@ pub(crate) async fn read(
         .ok_or_else(|| not_found("table", name))?;
     let request = query::parse_request_with_relations(pairs, table, catalog).map_err(bad_query)?;
     reject_on_conflict(&request)?;
-    let sql = query::select(&catalog.schema, table, &request, max_rows);
-    let count_sql = count_exact.then(|| query::count(&catalog.schema, table, &request));
+    let sql = if count_exact {
+        query::select_counted(&catalog.schema, table, &request, max_rows)
+    } else {
+        query::select(&catalog.schema, table, &request, max_rows)
+    };
     let (body, rows, total) = in_request_tx!(pool, claims, |tx| {
-        let (body, rows) = fetch_json(&tx, &sql).await?;
-        let total = match &count_sql {
-            Some(sql) => {
-                let statement = tx.prepare(&sql.text).await?;
-                Some(
-                    tx.query_one(&statement, &sql.param_refs())
-                        .await?
-                        .get::<_, i64>(0),
-                )
-            }
-            None => None,
-        };
-        Ok::<_, tokio_postgres::Error>((body, rows, total))
+        let statement = tx.prepare(&sql.text).await?;
+        let row = tx.query_one(&statement, &sql.param_refs()).await?;
+        Ok::<_, tokio_postgres::Error>((
+            row.get(0),
+            row.get(1),
+            count_exact.then(|| row.get::<_, i64>(2)),
+        ))
     });
     Ok(ReadResult {
         body,
