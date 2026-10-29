@@ -1,9 +1,20 @@
 import type { SnippetColumn } from "./api-examples";
 
-const RESERVED = new Set(["select", "order", "limit", "offset", "on_conflict", "and", "or"]);
+const RESERVED = new Set([
+  "select",
+  "order",
+  "limit",
+  "offset",
+  "on_conflict",
+  "columns",
+  "and",
+  "or",
+]);
 const UNSUPPORTED_NAME = /[.,()":!*\\\s\p{Cc}]/u;
 const MAX_NAME_BYTES = 63;
 const encoder = new TextEncoder();
+const logicOperand = (value: string): string =>
+  `"${value.replaceAll(/[\\"]/g, (char) => `\\${char}`)}"`;
 
 /** Builds complete primary-key filters; refuses keys the REST/SDK grammar cannot represent. */
 export function exampleSelection(
@@ -35,7 +46,7 @@ export function exampleSelection(
     const value = values[index];
     if (value === undefined || value === null) return null;
     if (RESERVED.has(column.name))
-      conditions.push(`${column.name}.eq.${JSON.stringify(String(value))}`);
+      conditions.push(`${column.name}.eq.${logicOperand(String(value))}`);
     if (RESERVED.has(column.name) === false) params.append(column.name, `eq.${String(value)}`);
     sdk.push(`\n  .eq(${JSON.stringify(column.name)}, ${JSON.stringify(value)})`);
   }

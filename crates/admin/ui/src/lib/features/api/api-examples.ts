@@ -35,9 +35,9 @@ export interface SnippetColumn {
   enum_values?: readonly string[];
 }
 
-/** Plausible sample value for the column type. */
 const BOOLEAN_TYPES = new Set(["boolean", "bool"]);
 const JSON_TYPES = new Set(["json", "jsonb"]);
+/** Returns a plausible placeholder for the column type. */
 export function sampleValue(type: string): unknown {
   const t = type.toLowerCase();
   if (t.endsWith("[]")) return [];
@@ -68,7 +68,7 @@ const shellQuote = (text: string) => `'${text.replaceAll("'", `'\\''`)}'`;
 
 /** A single-quoted JavaScript string literal. */
 export const jsString = (text: string) =>
-  `'${text.replaceAll("\\", "\\\\").replaceAll("'", "\\'").replaceAll("\n", "\\n")}'`;
+  `'${text.replaceAll("\\", "\\\\").replaceAll("'", "\\'").replaceAll("\r", "\\r").replaceAll("\n", "\\n")}'`;
 
 /** An object literal, with unquoted keys where JavaScript allows them. */
 export function jsObject(row: Record<string, unknown>, indent = ""): string {

@@ -112,6 +112,7 @@ describe("SDK examples", () => {
 
   it("quote names and values as JavaScript strings", () => {
     expect(jsString("o'clock\\x")).toBe("'o\\'clock\\\\x'");
+    expect(jsString("first\r\nnext")).toBe("'first\\r\\nnext'");
     expect(jsObject({ "two words": 1, plain: "a" })).toBe("{\n  'two words': 1,\n  plain: 'a',\n}");
     const quoted = tableSnippets("http://x", "it's", {
       columns: [col("id", "integer", { nullable: false })],

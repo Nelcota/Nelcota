@@ -37,15 +37,29 @@ it("uses all UUID/text composite key parts and never updates those keys", () => 
   expect(update?.code.ts).toContain(".update({\n    body: 'example',\n  })");
   expect(update?.code.ts).not.toContain(".eq('id'");
 });
-it("puts reserved key names in a logical group instead of treating them as modifiers", () => {
+it.each(["select", "order", "limit", "offset", "on_conflict", "columns", "and", "or"])(
+  "quotes the reserved key %s inside a logical group",
+  (name) => {
+    const selection = exampleSelection(
+      [column(name, "integer"), column("tenant")],
+      [name, "tenant"],
+    );
+    const query = new URLSearchParams(selection?.query);
+    expect(query.get("and")).toBe(`(${name}.eq."1")`);
+    expect(query.get("tenant")).toBe("eq.example");
+    if (name !== "and") expect(query.has(name)).toBe(false);
+  },
+);
+it("preserves quoted enum operands without turning line breaks into JSON escapes", () => {
+  const value = 'first, "quoted"\\part\nnext\rline';
   const selection = exampleSelection(
-    [column("limit", "integer"), column("tenant")],
-    ["limit", "tenant"],
+    [column("limit", "status", { enum_values: [value] })],
+    ["limit"],
   );
-  const query = new URLSearchParams(selection?.query);
-  expect(query.has("limit")).toBe(false);
-  expect(query.get("and")).toBe('(limit.eq."1")');
-  expect(query.get("tenant")).toBe("eq.example");
+  expect(new URLSearchParams(selection?.query).get("and")).toBe(
+    '(limit.eq."first, \\"quoted\\"\\\\part\nnext\rline")',
+  );
+  expect(selection?.sdk).toContain(JSON.stringify(value));
 });
 it.each([{ key: [] }, { key: ["missing"] }, { key: ["key.part"] }])(
   "omits mutations when the complete key is unavailable (%j)",
