@@ -1567,3 +1567,43 @@ async fn reads_are_read_only_even_through_a_view_that_writes() {
     assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
     assert_eq!(logged(&app).await, 1);
 }
+
+#[tokio::test]
+async fn partitions_and_inheritance_children_are_not_exposed() {
+    let app = TestApp::spawn().await;
+    app.admin_client
+        .batch_execute(
+            "CREATE TABLE public.events (id int, at date NOT NULL) PARTITION BY RANGE (at);
+             CREATE TABLE public.events_2026 PARTITION OF public.events
+                 FOR VALUES FROM ('2026-01-01') TO ('2027-01-01');
+             ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+             CREATE POLICY nobody ON public.events FOR SELECT TO anon USING (false);
+             INSERT INTO public.events VALUES (1, '2026-05-01');
+             CREATE TABLE public.base_notes (id int);
+             ALTER TABLE public.base_notes ENABLE ROW LEVEL SECURITY;
+             CREATE TABLE public.child_notes (extra text) INHERITS (public.base_notes);
+             INSERT INTO public.child_notes VALUES (1, 'x');
+             GRANT SELECT ON public.events, public.events_2026,
+                 public.base_notes, public.child_notes TO anon;",
+        )
+        .await
+        .unwrap();
+    app.catalog.reload(&app.pool).await.unwrap();
+    let catalog = app.catalog.get();
+    assert!(catalog.table("events").is_some());
+    assert!(catalog.table("base_notes").is_some());
+    let (_, document) = app.get("/rest/v1/", None).await;
+    for child in ["events_2026", "child_notes"] {
+        // Read directly, a child would skip its parent's row policies.
+        assert!(catalog.table(child).is_none(), "{child}");
+        let (status, body) = app.get(&format!("/rest/v1/{child}"), None).await;
+        assert_eq!(status, StatusCode::NOT_FOUND, "{body}");
+        assert!(document["paths"].get(format!("/{child}")).is_none());
+    }
+    // Through the parent, its policies apply to every child's rows.
+    for parent in ["events", "base_notes"] {
+        let (status, body) = app.get(&format!("/rest/v1/{parent}"), None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body, json!([]), "{parent}");
+    }
+}

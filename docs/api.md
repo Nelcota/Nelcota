@@ -11,6 +11,11 @@ Functions with polymorphic or other pseudo-type input arguments, or `VARIADIC`
 parameters, are also excluded from the catalog. JSON argument conversion cannot
 call those signatures reliably.
 
+Partitions and tables that inherit from another table are not exposed either
+(nor listed in the panel): use their parent, whose GRANTs and row policies
+apply to every child's rows. Read directly, a child would skip the parent's
+policies.
+
 ## Prerequisites
 
 You need an initialized server, tables/functions in its exposed schema and
