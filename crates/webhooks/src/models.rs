@@ -100,4 +100,6 @@ pub(crate) struct Outcome {
     pub retryable: bool,
     pub retry_after: Option<u64>,
     pub duration_ms: i64,
+    /// Nothing was sent: requeue shortly without using an attempt.
+    pub deferred: bool,
 }

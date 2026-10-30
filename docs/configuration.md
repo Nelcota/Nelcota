@@ -79,7 +79,7 @@ provider IDs or generated values require your own credentials.
 | `NELCOTA_REQUEST_TIMEOUT_SECS` | `u64` | `15` | `15` | Positive ordinary HTTP request deadline in seconds. Must exceed nonzero statement timeout; streamed uploads/exports have separate budgets. |
 | `NELCOTA_STATEMENT_TIMEOUT_SECS` | `u64` | `10` | `10` | Request-pool PostgreSQL statement timeout in seconds. 0 disables that timeout; use deliberately. Panel SQL has separate fixed budgets. |
 | `NELCOTA_LOG_FORMAT` | `LogFormat` | `text` | `json` | text or json tracing output; verbosity comes from RUST_LOG. |
-| `NELCOTA_WEBHOOKS_ALLOW_LOOPBACK` | `bool` | `false` | `false` | Development-only HTTP(S) to localhost/127.0.0.1/::1. Does not permit LAN/metadata addresses or arbitrary public HTTP. |
+| `NELCOTA_WEBHOOKS_ALLOW_LOOPBACK` | `bool` | `false` | `false` | Development-only HTTP(S) to localhost/127.0.0.1/::1. Does not permit LAN/metadata addresses or arbitrary public HTTP. Startup fails when combined with `NELCOTA_PRODUCTION=true`. |
 | `NELCOTA_DEPLOYMENT_VALIDATION` | `bool` | `false` | `controller-managed` | Linux controller-owned candidate gate; requires gate path and identity. Never configure manually to enable an update. |
 | `NELCOTA_DEPLOYMENT_GATE` | `Option<PathBuf>` | `unset` | `controller-managed absolute path` | Absolute controller-owned gate path bound to the candidate. Keep ownership and protocol managed by enrollment. |
 | `NELCOTA_DEPLOYMENT_ID` | `Option<String>` | `unset` | `controller-managed 64-character hex ID` | Controller-owned candidate operation identity; 64 lowercase hexadecimal characters while validation is enabled. |

@@ -33,8 +33,7 @@ const ptBR = {
   webhook_paused: "Ative o webhook antes de reenviar.",
   webhook_delivery_active: "A entrega ou um reenvio já está na fila. Aguarde terminar.",
   webhook_payload_omitted:
-    "Os dados passaram do limite e foram omitidos. Este evento não pode ser reenviado.",
-  webhook_queue_full: "A fila atingiu o limite. Retome os envios ou limpe o histórico concluído.",
+    "Este evento foi registrado sem o conteúdo, por isso não pode ser reenviado.",
 
   // Session and access
   route_not_found: "Rota não encontrada.",

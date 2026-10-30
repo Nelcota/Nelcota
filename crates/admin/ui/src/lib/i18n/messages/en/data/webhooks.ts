@@ -74,7 +74,7 @@ const en: Messages<typeof ptBR> = {
   retention: "History for up to 7 days. Pending events remain queued until completed or cancelled.",
   attemptsOf: { one: "{done} of {count} attempt", other: "{done} of {count} attempts" },
   capacity:
-    "The queue is approaching its limit. Check failed or paused destinations to keep database writes working.",
+    "Many deliveries are waiting. Each webhook queues up to 10,000; beyond that, new events are recorded as failed. Check failed or paused destinations.",
   clear: "Clear history",
   clearTitle: "Clear completed history?",
   clearHint:
@@ -113,7 +113,8 @@ const en: Messages<typeof ptBR> = {
     "A new delivery will use the webhook’s current URL and key. The event ID and payload stay the same. The service may ignore an already processed event.",
   replayed: "Resend queued.",
   replayOf: "Resend of delivery #{id}",
-  destinationHint: "Queued deliveries keep their original URL. New deliveries use the current URL.",
+  destinationHint:
+    "Queued deliveries and retries use the current URL. A send in progress finishes at the previous one.",
   failures: {
     http_error: "The destination rejected the send.",
     network_error: "Could not connect to the destination. Check its URL, DNS and certificate.",
@@ -123,6 +124,8 @@ const en: Messages<typeof ptBR> = {
     payload_too_large:
       "The payload exceeded 256 KiB. Its contents were omitted and cannot be resent.",
     endpoint_deleted: "The webhook was deleted.",
+    queue_full:
+      "This webhook already had 10,000 deliveries waiting. The event was recorded without its contents and cannot be resent.",
   },
 };
 

@@ -387,7 +387,7 @@ async fn promotion_preserves_users_tokens_and_checksums_across_auth_instances() 
     nelcota_auth::bootstrap(&database.admin, authenticator_password(), 10)
         .await
         .unwrap();
-    assert_eq!(database.versions().await, (1..=18).collect::<Vec<_>>());
+    assert_eq!(database.versions().await, (1..=20).collect::<Vec<_>>());
     for (version, checksum) in history {
         let current: String = database
             .client
@@ -453,7 +453,7 @@ async fn failed_promotion_rolls_back_lower_gaps_and_can_be_retried() {
     .await
     .unwrap()
     .unwrap();
-    assert_eq!(database.versions().await, (1..=18).collect::<Vec<_>>());
+    assert_eq!(database.versions().await, (1..=20).collect::<Vec<_>>());
 }
 
 #[tokio::test]

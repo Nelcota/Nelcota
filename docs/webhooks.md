@@ -19,7 +19,7 @@ Only ordinary tables in the exposed schema are supported in this version. Views,
 
 Pausing stops capturing new changes and holds existing pending deliveries. Reactivating resumes the queue; changes made while paused are not replayed. Deleting cancels pending work and removes the key, while keeping terminal delivery history. A send already in progress may still arrive after a pause, deletion or key rotation.
 
-Editing a URL affects new events. Queued deliveries keep their original destination. Resending uses the webhook's current URL, key and attempt limit. Key rotation takes effect on newly started sends; update the receiver before resuming a paused webhook.
+Editing a URL applies to every send that starts afterwards. Queued deliveries and retries go to the new URL, signed with the current key, so a backlog is not released to a destination you replaced. A send already started, or claimed while the edit was being saved, still goes once to the previous URL (at most two per webhook). Resending uses the webhook's current URL, key and attempt limit. Key rotation takes effect on newly started sends; update the receiver before resuming a paused webhook.
 
 ## Event payload
 
@@ -79,23 +79,23 @@ Any 2xx response acknowledges delivery. Network errors, timeouts, HTTP 408, 425,
 
 Retry delays start at approximately 5 seconds, 30 seconds, 2 minutes, 10 minutes, 30 minutes and 1 hour, with jitter and a one-hour cap. A numeric `Retry-After` is respected up to one hour without reducing the normal delay. Six attempts by default means the initial send and five retries. A lost worker lease is recovered after two minutes and still counts as an attempt.
 
-Delivery is **at least once**, with no ordering guarantee. A receiver may process an event whose acknowledgement never reaches Nelcota; the next attempt may send it again. Multiple workers claim queue rows with short leases and do not hold a database connection during HTTP calls.
+Delivery is **at least once**, with no ordering guarantee. A receiver may process an event whose acknowledgement never reaches Nelcota; the next attempt may send it again. Multiple workers claim queue rows with short leases and do not hold a database connection during HTTP calls. Each webhook has at most two sends in progress, and every claim takes the oldest due delivery of each webhook in turn, so a slow destination cannot delay the others. A send that cannot start because local DNS lookups are saturated is retried two seconds later without using an attempt, and history shows `dns_busy`. After about a minute of such retries, the next one uses an attempt like any other network failure.
 
 The history shows status, HTTP code, attempts, timestamps and the exact payload. A delivery detail shows every attempt, including sends interrupted by a restart. **Resend** creates a new delivery, preserving the original history and stable event ID. Active deliveries cannot be resent; the webhook must be enabled. Receiver response bodies and signing keys never appear in history.
 
 ## Limits and retention
 
-There are at most 50 webhooks per project (paused ones included, deleted ones excluded) and ten per table. The queue holds at most 10,000 outstanding deliveries and 100,000 retained deliveries. Admission is transactional: if a limit is reached, the business write fails with a retryable database-capacity error instead of silently losing its event. The panel shows usage and warns at 80%.
+There are at most 50 webhooks per project (paused ones included, deleted ones excluded) and ten per table. Each webhook queues at most 10,000 outstanding deliveries. A change captured beyond that limit is recorded as a visibly failed `queue_full` delivery with omitted contents, while the business write still commits, so a stalled destination never blocks database writes or other webhooks. The limit is approximate while several transactions write at once. **Resend** is refused while a webhook is at the limit. After fixing the destination, reconcile those changes from the table itself. The panel shows usage and warns once 8,000 deliveries are waiting in total.
 
-Terminal history is kept for up to seven days and cleaned in bounded batches. Pending deliveries are never deleted by age. **Clear history** removes only terminal deliveries and their payloads. To free a stalled queue, fix or enable its destinations, or delete unwanted webhooks to cancel their pending work. Keep database backups private: they contain signing keys and event payloads.
+Terminal history is kept for up to seven days and at most the newest 100,000 terminal deliveries; older ones are cleaned every minute in bounded batches, which continue while there is more to remove, so cleanup keeps pace with a sustained burst. History never blocks writes. Pending deliveries are never deleted by age. **Clear history** removes only terminal deliveries and their payloads. To free a stalled queue, fix or enable its destinations, or delete unwanted webhooks to cancel their pending work. Keep database backups private: they contain signing keys and event payloads.
 
-A payload larger than 256 KiB produces a visibly failed delivery with omitted contents, while the business row still commits. Such a delivery cannot be resent; reduce the row size or use another integration for large values. Changes to a hook configuration are project configuration, separate from schema migration exports.
+A payload larger than 256 KiB also produces a visibly failed delivery with omitted contents (`payload_too_large`), while the business row still commits. Deliveries with omitted contents cannot be resent; reduce the row size or use another integration for large values. Changes to a hook configuration are project configuration, separate from schema migration exports.
 
 ## Destination safety and local development
 
 Public destinations require HTTPS with certificate verification. Credentials, query parameters and fragments in URLs are rejected. Redirects and environment proxy settings are disabled. Private, loopback, link-local, metadata, carrier-grade NAT, multicast and reserved IP ranges are blocked, including DNS answers at connection time. All addresses in a DNS answer must pass the policy, preventing DNS rebinding into internal services.
 
-For local development only, set `NELCOTA_WEBHOOKS_ALLOW_LOOPBACK=true` and restart. This permits HTTP or HTTPS to `localhost`, `127.0.0.1` and `::1`; it never opens private networks or metadata addresses. Inside Docker, loopback refers to the Nelcota container, not the host. Use a public HTTPS development tunnel when the receiver runs outside that container.
+For local development only, set `NELCOTA_WEBHOOKS_ALLOW_LOOPBACK=true` and restart. This permits HTTP or HTTPS to `localhost`, `127.0.0.1` and `::1`; it never opens private networks or metadata addresses. The server refuses to start when it is combined with `NELCOTA_PRODUCTION=true`. Inside Docker, loopback refers to the Nelcota container, not the host. Use a public HTTPS development tunnel when the receiver runs outside that container.
 
 No Redis, HTTP extension, extra server or Node process is required for dispatch. The queue worker uses a small pool separate from API and panel connections. A graceful shutdown stops claiming work and gives started deliveries time to finish; unfinished leases remain recoverable after startup.
 
