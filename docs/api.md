@@ -256,6 +256,10 @@ function runs with the JWT's role (unless it is `SECURITY DEFINER`):
 > `PUBLIC` (including `anon`). For sensitive functions:
 > `REVOKE EXECUTE ON FUNCTION f() FROM PUBLIC; GRANT EXECUTE ON FUNCTION f() TO authenticated;`
 
+A function must never build SQL from its arguments: injected SQL can switch
+to `service_role` even inside an `anon` request. See
+[JWT and roles](jwt-and-roles.md#functions-must-not-build-sql-from-their-arguments).
+
 ## OpenAPI: `GET /rest/v1/`
 
 An OpenAPI 3.0 document generated from the catalog and **filtered by the

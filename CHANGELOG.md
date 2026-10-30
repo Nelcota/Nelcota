@@ -210,6 +210,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - The REST OpenAPI document lists only the columns, column comments and filters
   the requesting role may use, and includes tables it can reach through
   column-level GRANTs only.
+- The role guide explains why application functions must never build SQL from
+  their arguments: the API's login role can switch to `service_role` and the
+  internal roles, so injected SQL could too.
 
 ## [0.5.6] — 2026-10-27
 
