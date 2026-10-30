@@ -210,8 +210,8 @@ for the October 27 server scope and independent SDK publication checkpoint.
   so many addresses can no longer guess one account's password in parallel,
   and one address cannot spend it alone. Over it, only networks (IPv4 /24,
   IPv6 /64) where the account has an open session from the last 30 days get
-  through, after a delay; other networks receive 429 until the budget
-  refills. The per-email-and-IP budget, which the per-IP budget always
+  through, after a delay and up to a second budget of the same size; other
+  networks receive 429 until the budget refills. The per-email-and-IP budget, which the per-IP budget always
   reached first, is gone.
 
 ## [0.5.6] — 2026-10-27

@@ -238,23 +238,25 @@ bucket allows a burst of its size and refills continuously at that many
 attempts per minute.
 
 Over the account budget, an attempt from a known network waits 125, 250, 500,
-1,000, then at most 2,000 ms and continues; an attempt from any other network
-receives `429` until the budget refills. A network is known when the account
-has an open session, created or refreshed in the last 30 days, from the same
-IPv4 /24 or IPv6 /64. Signing out or changing the password revokes sessions
-and so forgets their networks, and prune removes sessions whose refresh tokens
-expired, so the window is also bounded by `NELCOTA_REFRESH_TOKEN_TTL_DAYS`. The
-check reads the sessions table: it survives restarts and only real sign-ins
-create it. A refill admission resets the delay progression. Waiting holds
-neither a DB connection nor a password worker. Normal request deadlines,
-worker admission/overload responses and bounded limiter capacity still apply.
+1,000, then at most 2,000 ms and continues, drawing from a second account
+budget of the same size; once that is spent too, it also receives `429`. An
+attempt from any other network receives `429` until the first budget refills.
+A network is known when the account has an open session, created or refreshed
+in the last 30 days, from the same IPv4 /24 or IPv6 /64. Signing out or
+changing the password revokes sessions and so forgets their networks, and
+prune removes sessions whose refresh tokens expired, so the window is also
+bounded by `NELCOTA_REFRESH_TOKEN_TTL_DAYS`. The check reads the sessions
+table: it survives restarts and only real sign-ins create it. A refill
+admission resets the delay progression. Waiting holds neither a DB connection
+nor a password worker. Normal request deadlines, worker admission/overload
+responses and bounded limiter capacity still apply.
 
 Trade-off: a strict account-wide ceiling cannot also guarantee admission of
 an unrecognized legitimate network while attackers keep spending it. One
 address cannot spend it alone (it is ten times the per-IP budget); attackers
-with enough addresses can keep the owner out of new networks, never out of
-networks with an open session. Distributed guessing is capped at the account
-budget. While it is spent, the answer shows whether the caller's network is
+with enough addresses can keep the owner out of new networks, and only many
+addresses inside the owner's own networks can spend the second budget too.
+Distributed guessing is capped at twice the account budget. While it is spent, the answer shows whether the caller's network is
 known to an existing account; signup already reveals whether an account
 exists. Keep trusted proxy configuration and upstream abuse controls; limits
 are per process and shared NAT users still share their IP budget.

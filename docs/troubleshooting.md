@@ -115,7 +115,8 @@ IP budgets based on `NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE` (30 by default).
 Password login also has a per-account budget of ten times that value across
 all addresses. Over it, only networks where the account has an open session
 from the last 30 days (same IPv4 /24 or IPv6 /64) still get through, after a
-short delay; others receive 429 until it refills. Refresh and PKCE redemption
+short delay and up to a second budget of the same size; others receive 429
+until it refills. Refresh and PKCE redemption
 share a separate per-IP budget of ten times that value (300 by default).
 
 The REST and storage APIs allow `NELCOTA_API_RATE_LIMIT_PER_MINUTE` requests
