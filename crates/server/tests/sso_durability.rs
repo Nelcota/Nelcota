@@ -256,7 +256,7 @@ async fn process_redemption_child() {
         sessions: Arc::default(),
         limiter: Arc::new(nelcota_auth::RateLimiter::new(30)),
         passwords: Arc::new(nelcota_auth::Passwords::new(1)),
-        trust_proxy: false,
+        proxy_hops: 0,
         secure_cookies: false,
         host: Arc::new(nelcota_admin::HostLink {
             project: "shop".into(),

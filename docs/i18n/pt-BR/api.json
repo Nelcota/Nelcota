@@ -111,7 +111,7 @@
   "the JSON response would exceed the 8 MiB budget": "a resposta JSON excederia o orçamento de 8 MiB",
   "an auth or storage JSON endpoint without `Content-Type: application/json`": "endpoint JSON de autenticação ou armazenamento sem `Content-Type: application/json`",
   "an auth or storage JSON body with a missing field or a field of the wrong type": "corpo JSON de autenticação ou armazenamento com campo ausente ou de tipo incorreto",
-  "too many attempts (`Retry-After`)": "tentativas demais (`Retry-After`)",
+  "too many attempts or API requests (`Retry-After`)": "tentativas ou requisições à API demais (`Retry-After`)",
   "unexpected error; details only in the server log": "erro inesperado; detalhes apenas no log do servidor",
   "database unreachable or pool exhausted (no `Retry-After`, no `sqlstate`), or a transient failure reported by Postgres: serialization failure (`40001`), deadlock (`40P01`), lock not available (`55P03`), too many connections (`53300`), server shutting down or starting (`57P01`, `57P02`, `57P03`); these come with `Retry-After: 1` and `sqlstate`. Retry the request": "banco inacessível ou pool esgotado (sem `Retry-After` e sem `sqlstate`), ou falha transitória informada pelo Postgres: falha de serialização (`40001`), deadlock (`40P01`), bloqueio indisponível (`55P03`), conexões demais (`53300`), servidor encerrando ou iniciando (`57P01`, `57P02`, `57P03`); essas incluem `Retry-After: 1` e `sqlstate`. Repita a requisição",
   "`statement_timeout` (`NELCOTA_STATEMENT_TIMEOUT_SECS`, default 10 s; `sqlstate` `57014`)": "`statement_timeout` (`NELCOTA_STATEMENT_TIMEOUT_SECS`, padrão 10 s; `sqlstate` `57014`)",

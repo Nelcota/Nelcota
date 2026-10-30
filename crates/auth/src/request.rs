@@ -20,26 +20,35 @@ impl<S: Send + Sync> FromRequestParts<S> for PeerAddr {
     }
 }
 
-/// Client IP. Behind a proxy (`trust_proxy`), uses the rightmost entry of
-/// `X-Forwarded-For`, including repeated header lines (the one OUR proxy added).
-pub fn client_ip(
-    trust_proxy: bool,
-    headers: &HeaderMap,
-    peer: Option<SocketAddr>,
-) -> Option<IpAddr> {
-    if trust_proxy {
-        let forwarded = headers
-            .get_all("x-forwarded-for")
-            .iter()
-            .next_back()
-            .and_then(|v| v.to_str().ok())
-            .and_then(|v| v.rsplit(',').next())
-            .and_then(|v| v.trim().parse().ok());
-        if forwarded.is_some() {
-            return forwarded;
+/// Client IP. `proxy_hops` is how many trusted proxies sit in front of the
+/// server, each appending the address it saw to `X-Forwarded-For`: 0 ignores
+/// the header, 1 is Caddy alone, 2 is a CDN in front of Caddy. The client is
+/// then the `proxy_hops`-th entry from the right, across repeated header
+/// lines; anything further left was written by the client and is ignored.
+/// Missing, unreadable or unparsable entries fall back to the TCP peer. With
+/// two or more hops a client can force that fallback (proxies append to the
+/// client's own line), which only moves it into the proxy's shared budget.
+pub fn client_ip(proxy_hops: u8, headers: &HeaderMap, peer: Option<SocketAddr>) -> Option<IpAddr> {
+    let peer_ip = peer.map(|addr| addr.ip());
+    if proxy_hops == 0 {
+        return peer_ip;
+    }
+    let mut remaining = usize::from(proxy_hops);
+    // Walk from the right and stop at the first unreadable line, so a line
+    // that cannot be read never shifts the count onto a client-written entry.
+    for line in headers.get_all("x-forwarded-for").iter().rev() {
+        let text = match line.to_str() {
+            Ok(text) => text,
+            Err(_) => return peer_ip,
+        };
+        for entry in text.rsplit(',') {
+            remaining -= 1;
+            if remaining == 0 {
+                return entry.trim().parse().ok().or(peer_ip);
+            }
         }
     }
-    peer.map(|addr| addr.ip())
+    peer_ip
 }
 
 pub(crate) fn user_agent(headers: &HeaderMap) -> Option<&str> {
@@ -48,8 +57,18 @@ pub(crate) fn user_agent(headers: &HeaderMap) -> Option<&str> {
         .and_then(|v| v.to_str().ok())
 }
 
-pub(crate) fn ip_key(ip: Option<IpAddr>) -> String {
-    ip.map(|i| i.to_string()).unwrap_or_default()
+/// Rate-limit key of a client address. IPv6 is grouped by its /64, the block
+/// a single subscriber usually gets, so rotating addresses inside it does not
+/// buy a fresh budget. An IPv4-mapped IPv6 address counts as the IPv4 one.
+pub fn ip_key(ip: Option<IpAddr>) -> String {
+    match ip.map(|ip| ip.to_canonical()) {
+        Some(IpAddr::V6(ip)) => {
+            let [a, b, c, d, ..] = ip.segments();
+            format!("{a:x}:{b:x}:{c:x}:{d:x}::/64")
+        }
+        Some(ip) => ip.to_string(),
+        None => String::new(),
+    }
 }
 
 #[cfg(test)]
@@ -58,27 +77,60 @@ mod tests {
     use crate::AuthSettings;
 
     #[test]
-    fn x_forwarded_for_only_with_trust_proxy() {
+    fn x_forwarded_for_only_with_trusted_proxies() {
         let mut settings = AuthSettings {
             issuer: "t".into(),
             access_ttl_secs: 1,
             refresh_ttl_days: 1,
             signup_enabled: true,
-            trust_proxy: false,
+            proxy_hops: 0,
             links: Default::default(),
         };
         let mut headers = HeaderMap::new();
         headers.insert("x-forwarded-for", "1.1.1.1, 2.2.2.2".parse().unwrap());
         let peer = Some("9.9.9.9:1234".parse().unwrap());
         assert_eq!(
-            client_ip(settings.trust_proxy, &headers, peer),
+            client_ip(settings.proxy_hops, &headers, peer),
             Some("9.9.9.9".parse().unwrap())
         );
-        settings.trust_proxy = true;
+        settings.proxy_hops = 1;
         // Only the rightmost entry is trustworthy (the client forges the rest).
         assert_eq!(
-            client_ip(settings.trust_proxy, &headers, peer),
+            client_ip(settings.proxy_hops, &headers, peer),
             Some("2.2.2.2".parse().unwrap())
+        );
+    }
+
+    #[test]
+    fn proxy_hops_skip_the_entries_added_by_trusted_proxies() {
+        let peer = Some("10.0.0.2:1234".parse().unwrap());
+        let mut headers = HeaderMap::new();
+        // Forged by the client, then the CDN's view, then Caddy's view.
+        headers.append("x-forwarded-for", "6.6.6.6, 203.0.113.7".parse().unwrap());
+        headers.append("x-forwarded-for", "198.51.100.1".parse().unwrap());
+        assert_eq!(
+            client_ip(2, &headers, peer),
+            Some("203.0.113.7".parse().unwrap())
+        );
+        assert_eq!(
+            client_ip(1, &headers, peer),
+            Some("198.51.100.1".parse().unwrap())
+        );
+        assert_eq!(
+            client_ip(4, &headers, peer),
+            Some("10.0.0.2".parse().unwrap()),
+            "fewer entries than hops falls back to the peer"
+        );
+        let mut unreadable = HeaderMap::new();
+        unreadable.append("x-forwarded-for", "6.6.6.6".parse().unwrap());
+        unreadable.append(
+            "x-forwarded-for",
+            axum::http::HeaderValue::from_bytes(b"\xff").unwrap(),
+        );
+        assert_eq!(
+            client_ip(2, &unreadable, peer),
+            Some("10.0.0.2".parse().unwrap()),
+            "an unreadable line never shifts the count onto a forged entry"
         );
     }
 
@@ -89,17 +141,33 @@ mod tests {
         headers.append("x-forwarded-for", "2.2.2.2, 3.3.3.3".parse().unwrap());
         let peer = Some("9.9.9.9:1234".parse().unwrap());
         assert_eq!(
-            client_ip(true, &headers, peer),
+            client_ip(1, &headers, peer),
             Some("3.3.3.3".parse().unwrap())
         );
         headers.append("x-forwarded-for", "invalid".parse().unwrap());
         assert_eq!(
-            client_ip(true, &headers, peer),
+            client_ip(1, &headers, peer),
             Some("9.9.9.9".parse().unwrap())
         );
         assert_eq!(
-            client_ip(false, &headers, peer),
+            client_ip(0, &headers, peer),
             Some("9.9.9.9".parse().unwrap())
         );
+    }
+
+    #[test]
+    fn ip_key_groups_ipv6_by_64_and_keeps_ipv4_whole() {
+        let key = |ip: &str| ip_key(Some(ip.parse().unwrap()));
+        assert_eq!(key("2001:db8:1:2::1"), "2001:db8:1:2::/64");
+        assert_eq!(
+            key("2001:db8:1:2:ffff:ffff:ffff:ffff"),
+            key("2001:db8:1:2::1"),
+            "one /64 shares a budget"
+        );
+        assert_ne!(key("2001:db8:1:3::1"), key("2001:db8:1:2::1"));
+        assert_eq!(key("203.0.113.7"), "203.0.113.7");
+        assert_ne!(key("203.0.113.7"), key("203.0.113.8"));
+        assert_eq!(key("::ffff:203.0.113.7"), "203.0.113.7");
+        assert_eq!(ip_key(None), "");
     }
 }

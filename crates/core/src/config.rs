@@ -68,6 +68,8 @@ pub enum StorageBackend {
 /// A body is buffered and parsed whole, and a 1000-row insert of typical
 /// rows fits well under it; raise it for larger batches if memory allows.
 pub const DEFAULT_MAX_BODY_BYTES: usize = 2 * 1024 * 1024;
+/// Upper bound of `NELCOTA_TRUSTED_PROXY_HOPS`; real chains are 1 or 2 deep.
+pub const MAX_PROXY_HOPS: u8 = 8;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Config {
@@ -92,8 +94,14 @@ pub struct Config {
     pub signup_enabled: bool,
     /// Requests per minute, per IP, on the login/signup endpoints.
     pub auth_rate_limit_per_minute: u32,
+    /// Requests per minute, per IP, on the REST and storage APIs; 0 turns
+    /// the limit off. `service_role` tokens are exempt.
+    pub api_rate_limit_per_minute: u32,
     /// Trust `X-Forwarded-For` (only behind a proxy such as Caddy).
     pub trust_proxy: bool,
+    /// With `trust_proxy`, how many trusted proxies append to
+    /// `X-Forwarded-For`: 1 for Caddy alone, 2 for a CDN in front of Caddy.
+    pub trusted_proxy_hops: u8,
     /// SMTP for auth emails, as `smtps://user:password@host:465` (or
     /// `smtp://...:587?tls=required`). Without it, password recovery is off.
     pub smtp_url: Option<Secret>,
@@ -209,7 +217,9 @@ impl Default for Config {
             refresh_token_ttl_days: 30,
             signup_enabled: true,
             auth_rate_limit_per_minute: 30,
+            api_rate_limit_per_minute: 600,
             trust_proxy: false,
+            trusted_proxy_hops: 1,
             smtp_url: None,
             smtp_from: None,
             smtp_ca_file: None,
@@ -367,6 +377,11 @@ impl Config {
                 "NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE must be > 0 (requests per minute per IP)",
             ));
         }
+        if self.trust_proxy && !(1..=MAX_PROXY_HOPS).contains(&self.trusted_proxy_hops) {
+            return Err(ConfigError::Invalid(
+                "NELCOTA_TRUSTED_PROXY_HOPS must be between 1 and 8 with NELCOTA_TRUST_PROXY",
+            ));
+        }
         if self.migration_backup_socket.is_some() != self.migration_backup_token.is_some()
             || crate::migration_backup::BackupAgent::from_config(self)
                 .is_some_and(|agent| !agent.valid())
@@ -416,6 +431,15 @@ impl Config {
             ));
         }
         Ok(())
+    }
+
+    /// Trusted proxies in front of the server for reading the client IP:
+    /// 0 without `trust_proxy`, `trusted_proxy_hops` with it.
+    pub fn proxy_hops(&self) -> u8 {
+        match self.trust_proxy {
+            true => self.trusted_proxy_hops,
+            false => 0,
+        }
     }
 
     /// Configured EdDSA key (an empty variable counts as absent).
@@ -673,6 +697,16 @@ mod tests {
                 auth_rate_limit_per_minute: 0,
                 ..valid()
             },
+            Config {
+                trust_proxy: true,
+                trusted_proxy_hops: 0,
+                ..valid()
+            },
+            Config {
+                trust_proxy: true,
+                trusted_proxy_hops: MAX_PROXY_HOPS + 1,
+                ..valid()
+            },
         ] {
             assert!(invalid.validate().is_err(), "{invalid:?}");
         }
@@ -682,6 +716,33 @@ mod tests {
             ..valid()
         };
         assert!(no_statement_timeout.validate().is_ok());
+        let no_api_limit = Config {
+            api_rate_limit_per_minute: 0,
+            ..valid()
+        };
+        assert!(no_api_limit.validate().is_ok(), "0 turns the API limit off");
+        let untrusted = Config {
+            trusted_proxy_hops: 0,
+            ..valid()
+        };
+        assert!(
+            untrusted.validate().is_ok(),
+            "hops only matter when trusted"
+        );
+    }
+
+    #[test]
+    fn proxy_hops_apply_only_when_the_proxy_is_trusted() {
+        let config = Config {
+            trusted_proxy_hops: 2,
+            ..valid()
+        };
+        assert_eq!(config.proxy_hops(), 0);
+        let trusted = Config {
+            trust_proxy: true,
+            ..config
+        };
+        assert_eq!(trusted.proxy_hops(), 2);
     }
 
     #[test]

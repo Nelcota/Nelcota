@@ -45,6 +45,16 @@ for the October 27 server scope and independent SDK publication checkpoint.
   project upgrades. `install.sh --update` provides the same flow for older CLIs;
   both support version/project selection, `--dry-run` and `--yes`, and leave
   controller-enrolled hosts to their existing update workflow.
+- REST and storage requests have a rate limit,
+  `NELCOTA_API_RATE_LIMIT_PER_MINUTE`, **on by default** at 600 per minute
+  (0 turns it off): per account with a user token, per IP without one.
+  `service_role` tokens and public or signed file downloads are exempt.
+  Behind a proxy without `NELCOTA_TRUST_PROXY`, or when pages are rendered on
+  a server with the anonymous key, many visitors share one budget: raise it
+  or turn it off when upgrading.
+- `NELCOTA_TRUSTED_PROXY_HOPS` (default 1) reads the real client IP behind a
+  CDN in front of Caddy (set 2, and list the CDN ranges in Caddy's
+  `trusted_proxies`).
 
 ### Changed
 
@@ -107,6 +117,12 @@ for the October 27 server scope and independent SDK publication checkpoint.
   phone-only breadcrumb, like the storage pages; the delivery history hides its
   pager when everything fits on one page. Webhook card menus sit next to the
   status.
+- **Breaking (Rust):** `AuthSettings::trust_proxy` and
+  `AdminState::trust_proxy` became `proxy_hops: u8` (0 ignores
+  `X-Forwarded-For`), and `client_ip` takes that count instead of a `bool`.
+  `nelcota_server::AppState` gained `api_limit` (built with
+  `ApiRateLimit::new`) and `Config` gained `api_rate_limit_per_minute` and
+  `trusted_proxy_hops`. `ip_key` and `retry_after_secs` are now public.
 
 ### Fixed
 
@@ -180,7 +196,8 @@ for the October 27 server scope and independent SDK publication checkpoint.
   "worker", "heartbeat" and "magic link" in plain words.
 - The page's main scroll area no longer draws an outline after mouse or touch
   navigation; keyboard navigation still shows it.
-
+- `Retry-After` on rate-limited auth requests rounds up, so clients no longer
+  retry a second early and get another 429.
 - Uploads without `Content-Length` no longer read the storage total from the
   database for every received chunk while holding the process-wide admission
   lock. Their reservation grows up to 1 MiB ahead of the bytes received, never
@@ -198,6 +215,18 @@ for the October 27 server scope and independent SDK publication checkpoint.
   stay).
 - A project's sign-in handoff only follows links to that project's own
   address.
+- Auth and panel rate limits group IPv6 clients by their /64, so rotating
+  addresses inside one block no longer buys a fresh budget.
+- Made-up emails can no longer fill the rate limiter and lock new visitors
+  out of sign-up, sign-in and email links: only existing accounts get an
+  account budget, in a store of its own.
+- Password sign-in has an account-wide budget of ten times the per-IP one,
+  so many addresses can no longer guess one account's password in parallel,
+  and one address cannot spend it alone. Over it, only networks (IPv4 /24,
+  IPv6 /64) where the account has an open session from the last 30 days get
+  through, after a delay and up to a second budget of the same size; other
+  networks receive 429 until the budget refills. The per-email-and-IP budget, which the per-IP budget always
+  reached first, is gone.
 - Signed file URLs are bound to the version that was signed (D113). After a
   file is replaced, or deleted and uploaded again under the same name, an
   earlier URL answers 404 instead of serving the new bytes. URLs signed before
