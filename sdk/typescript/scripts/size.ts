@@ -62,12 +62,17 @@ const BUDGETS: Record<string, number> = {
   // storage 9,056 B gzip. Keep less than 100 B headroom per entry; do not remove
   // this gate. Minified browser bundles grow by 1,314/618/1,078/467 B respectively
   // against d2c3643f with the same Bun bundler (the gate itself is unminified).
-  "index.js": 22_150,
+  // The SDK review fixes (refresh-reservation leases, transient-refresh backoff,
+  // session_unavailable results, OAuth verifier retention and error whitelist,
+  // write-modifier guards, a rejecting builder then(), explicit bucket JSON,
+  // response_body_error and shared core time/environment/id modules) measure
+  // root 23,495 B, REST 11,920 B, auth 16,113 B and storage 9,341 B gzip.
+  "index.js": 23_550,
   // Standalone factories include HTTP and keep the other feature modules out.
-  "rest/index.js": 11_500,
+  "rest/index.js": 11_980,
   // Failed persistence must retain rotated tokens; background failures are observed.
-  "auth/index.js": 15_350,
-  "storage/index.js": 9_100,
+  "auth/index.js": 16_180,
+  "storage/index.js": 9_400,
 };
 
 function closure(entry: string, seen = new Set<string>()): Set<string> {

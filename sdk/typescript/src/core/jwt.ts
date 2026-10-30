@@ -5,6 +5,7 @@
  */
 
 import { NelcotaUsageError } from "./client.errors.js";
+import { isBrowser, isWorkerScope } from "./environment.js";
 const JWT_SEGMENT_COUNT = 3;
 
 export function base64UrlEncode(bytes: Uint8Array): string {
@@ -40,10 +41,6 @@ export function decodeJwt(token: string): JwtPayload | null {
   }
 }
 
-export function isBrowser(): boolean {
-  return typeof window !== "undefined" && typeof document !== "undefined";
-}
-
 let lastChecked: string | undefined;
 
 /**
@@ -51,13 +48,7 @@ let lastChecked: string | undefined;
  * opens the page could read and change every row. It belongs on a server.
  */
 export function assertTokenAllowed(token: string, browser: boolean = isBrowser()): void {
-  const scope = (globalThis as { WorkerGlobalScope?: new (...args: never[]) => object })
-    .WorkerGlobalScope;
-  if (
-    token === lastChecked ||
-    (browser || (typeof scope === "function" && globalThis instanceof scope)) === false
-  )
-    return;
+  if (token === lastChecked || (browser || isWorkerScope()) === false) return;
   if (decodeJwt(token)?.role === "service_role") {
     throw new NelcotaUsageError(
       "A service_role token bypasses RLS and must never reach a browser. Use it only on a server.",

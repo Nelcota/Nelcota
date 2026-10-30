@@ -6,14 +6,14 @@ import {
   ok,
   type Result,
 } from "../core/client.errors.js";
+import { isBrowser } from "../core/environment.js";
 /**
  * Sign-up, sign-in (password, OAuth with PKCE, email links) and the session's
  * life: stored, refreshed before it expires, shared across tabs.
  */
 import type { HttpClient } from "../core/http/client.js";
-import { isBrowser } from "../core/jwt.js";
 import { SessionManager } from "./lifecycle/manager.js";
-import { absoluteUrl, parseEmailLink, readOAuthRedirect } from "./redirects.js";
+import { absoluteUrl, clearOAuthRedirect, parseEmailLink, readOAuthRedirect } from "./redirects.js";
 import { isSession, isUser, type Session, type User } from "./session.js";
 import type {
   AuthListener,
@@ -162,28 +162,38 @@ export class AuthClient {
   async exchangeCode(code: string, options: AuthRequestOptions = {}): Promise<Result<Session>> {
     if (typeof code !== "string" || code.trim() === "")
       throw new NelcotaUsageError("An OAuth code is required");
-    return await this.#manager.authenticate(async () => {
-      const verifier = await this.#manager.withVerifier(async () => {
-        if (options.signal?.aborted === true) return null;
-        // Claim once before HTTP; the exchange then owns its bounded lifetime.
-        return await this.#manager.consumeVerifier();
-      });
-      if ((verifier == null || verifier === "") && options.signal?.aborted === true)
-        return fail(clientError("aborted", "The request was aborted"));
-      if (verifier == null || verifier === "")
-        return fail(clientError("pkce_missing", "PKCE verifier missing; restart sign-in"));
-      return await this.#token(
-        "pkce",
-        { auth_code: code, code_verifier: verifier },
-        options.timeout === undefined ? {} : { timeout: options.timeout },
-      );
-    }, options.signal);
+    return await this.#manager.authenticate(
+      () =>
+        // The verifier lock spans the exchange: no other callback can use it,
+        // and a new sign-in cannot replace it until this answer is known.
+        this.#manager.withVerifier(async () => {
+          if (options.signal?.aborted === true)
+            return fail(clientError("aborted", "The request was aborted"));
+          const verifier = await this.#manager.peekVerifier();
+          if (verifier == null || verifier === "")
+            return fail(clientError("pkce_missing", "PKCE verifier missing; restart sign-in"));
+          // The exchange owns its bounded lifetime once it starts.
+          const result = await this.#token(
+            "pkce",
+            { auth_code: code, code_verifier: verifier },
+            options.timeout === undefined ? {} : { timeout: options.timeout },
+          );
+          // A definite answer ends this sign-in; an uncertain one (network,
+          // timeout, 5xx) keeps the verifier so the same callback can retry.
+          if (result.error == null || definiteRefusal(result.error))
+            await this.#manager.consumeVerifier();
+          return result;
+        }),
+      options.signal,
+    );
   }
 
   /**
    * Finishes an OAuth sign-in on the `redirectTo` page: reads `?code=` or
    * `?error=`, removes them from the address bar and history, and signs in.
-   * Returns `null` data when the URL carries neither.
+   * Returns `null` data, leaving the URL untouched, when the URL carries
+   * neither or no sign-in started here is waiting (no stored PKCE verifier):
+   * a `code` parameter of the app's own is not an OAuth callback.
    */
   async handleRedirect(
     href: string = (globalThis as { location?: Location }).location?.href ?? "",
@@ -191,8 +201,13 @@ export class AuthClient {
   ): Promise<Result<Session | null>> {
     const redirect = readOAuthRedirect(href);
     if (redirect.kind === "none") return ok(null);
-    if (redirect.kind === "error") return fail(redirect.error);
-    return await this.exchangeCode(redirect.code, options);
+    const pending = await this.#manager.withVerifier(() => this.#manager.peekVerifier());
+    if (pending == null || pending === "") return ok(null);
+    clearOAuthRedirect(href);
+    if (redirect.kind === "code") return await this.exchangeCode(redirect.code, options);
+    // The provider ended this sign-in: its verifier cannot be used again.
+    await this.#manager.withVerifier(() => this.#manager.consumeVerifier());
+    return fail(redirect.error);
   }
 
   /**
@@ -347,4 +362,12 @@ export class AuthClient {
 
 function invalidResponse(): NelcotaError {
   return clientError("invalid_response", "Invalid auth response");
+}
+
+const HTTP_CLIENT_ERROR_START = 400;
+const HTTP_SERVER_ERROR_START = 500;
+
+/** The server refused the request (4xx): repeating it cannot succeed. */
+function definiteRefusal(error: NelcotaError): boolean {
+  return error.status >= HTTP_CLIENT_ERROR_START && error.status < HTTP_SERVER_ERROR_START;
 }

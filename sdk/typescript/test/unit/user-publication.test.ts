@@ -1,11 +1,11 @@
 import { IDBFactory } from "fake-indexeddb";
 import { afterEach, expect, it, vi } from "vitest";
 
-import { promiseResult } from "../../src/core/promise-result.js";
 import { createClient, type AuthEvent, type Session } from "../../src/index.js";
 import { installNativeJournal } from "./browser-environment.js";
 import { gate } from "./gate.js";
 import { json, session } from "./http-fixtures.js";
+import { promiseResult } from "./promise-result.js";
 
 afterEach(() => vi.unstubAllGlobals());
 

@@ -27,7 +27,9 @@ it.each([false, true, "async"])(
       await vi.advanceTimersByTimeAsync(0);
       expect(onBackgroundError).toHaveBeenCalledExactlyOnceWith(failed);
       expect(vi.getTimerCount()).toBe(0);
-      await expect(nelcota.auth.getSession()).rejects.toBe(failed);
+      const { error } = await nelcota.auth.getSession();
+      expect(error?.code).toBe("session_unavailable");
+      expect(error?.cause).toBe(failed);
     } finally {
       nelcota.dispose();
       vi.useRealTimers();

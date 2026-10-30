@@ -1,10 +1,10 @@
 import { afterEach, expect, it, vi } from "vitest";
 
-import { promiseResult } from "../../src/core/promise-result.js";
 import { requiredValue } from "../../src/core/required-value.js";
 import { createClient, NelcotaUsageError } from "../../src/index.js";
 import { client } from "./http-client-fixtures.js";
 import { empty, json, mockFetch } from "./http-fixtures.js";
+import { promiseResult } from "./promise-result.js";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -60,14 +60,15 @@ it("failures without a response: returns errors for truncated JSON and file bodi
   expect((await client(read).from("t").select().execute()).error).toBeNull();
   expect(read.calls).toHaveLength(2);
   const write = mockFetch(broken);
+  // The write reached the server and may have committed: not "could not be reached".
   expect((await client(write).from("t").insert({ a: 1 }).execute()).error?.code).toBe(
-    "network_error",
+    "response_body_error",
   );
   expect(write.calls).toHaveLength(1);
   const file = mockFetch(broken);
   expect(
     (await client(file, { retries: 0 }).storage.from("files").download("a.txt")).error?.code,
-  ).toBe("network_error");
+  ).toBe("response_body_error");
 });
 
 it("failures without a response: classifies abort and timeout while reading a response body", async () => {

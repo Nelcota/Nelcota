@@ -266,7 +266,7 @@ try {
   if (nextjs && status === 0) {
     run(
       process.execPath,
-      ["--conditions=react-server", join(repo, "sdk/nextjs/scripts/auth-smoke.mjs")],
+      ["--conditions=react-server", join(repo, "sdk/ssr/scripts/auth-smoke.mjs")],
       {
         env: {
           ...process.env,

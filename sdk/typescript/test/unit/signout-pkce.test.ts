@@ -1,11 +1,11 @@
 import { IDBFactory } from "fake-indexeddb";
 import { afterEach, expect, it, vi } from "vitest";
 
-import { promiseResult } from "../../src/core/promise-result.js";
 import { createClient, memoryStorage, NelcotaUsageError, type Session } from "../../src/index.js";
 import { installWebLocks } from "./browser-environment.js";
 import { gate as controlGate } from "./gate.js";
 import { empty, json, mockFetch, session } from "./http-fixtures.js";
+import { promiseResult } from "./promise-result.js";
 
 const KEY = "nelcota.api.example.com.session";
 afterEach(() => vi.unstubAllGlobals());

@@ -1,4 +1,5 @@
-const SECOND_IN_MS = 1_000;
+import { SECOND_IN_MS } from "../time.js";
+
 const BASE_RETRY_WAIT_IN_MS = 200;
 export const MAX_RETRY_WAIT_MS = 30_000;
 /** Seconds from a `Retry-After` header (delay-seconds or HTTP date). */

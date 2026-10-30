@@ -1,17 +1,35 @@
+/**
+ * The IndexedDB journal behind native localStorage sessions. Native storage
+ * visibility is not ordered by Web Locks, so every handoff is a committed
+ * receipt: `ready` holds the current value, `refreshing` reserves its refresh
+ * token for one owner while the rotation is in flight.
+ */
 import { encodeJson } from "../../core/json.js";
-import { requiredValue } from "../../core/required-value.js";
-import { createVerifier } from "../pkce.js";
-/** Native storage visibility is not ordered by Web Locks. Commit the handoff. */
+import { RANDOM_ID_CHARS, randomId } from "../../core/random-id.js";
 import { parseSession, type Session } from "../session.js";
-import { BrowserSessionConflictError } from "./session.errors.js";
+import { BrowserRefreshPendingError, BrowserSessionConflictError } from "./session.errors.js";
 const MAX_OWNER_CHARS = 128;
-const REVISION_CHARS = 64;
+/**
+ * How long a foreign reservation blocks other owners. It matches the server's
+ * refresh-token reuse window: after it, the reserved token is either unused
+ * (and still valid) or spent beyond any retry, so waiting longer gains nothing.
+ * An older reservation is abandoned (its tab closed or crashed) and taken over.
+ */
+export const RESERVATION_LEASE_IN_MS = 10_000;
+/**
+ * A ready receipt whose localStorage mirror has been missing for longer than
+ * this was cleared on purpose (site data, developer tools), not caught between
+ * the journal commit and the mirror write.
+ */
+export const MIRROR_SETTLE_IN_MS = 5_000;
 
 type Receipt = {
   kind: "ready" | "refreshing";
   owner: string;
   value: string | null;
   revision?: string;
+  /** Unix time in ms when the receipt was written; absent in older SDKs. */
+  at?: number;
 };
 type Snapshot = { value: string | null; retainDirty: boolean };
 const DATABASE = "nelcota.auth";
@@ -25,10 +43,16 @@ function receipt(value: unknown): Receipt {
   if (validReceiptFields(fields) === false) throw new Error("Invalid browser session receipt");
   if (
     fields["revision"] !== undefined &&
-    (typeof fields["revision"] !== "string" || fields["revision"].length !== REVISION_CHARS)
+    (typeof fields["revision"] !== "string" || fields["revision"].length !== RANDOM_ID_CHARS)
   )
     throw new Error("Invalid browser session revision");
+  if (validReceiptTime(fields["at"]) === false)
+    throw new Error("Invalid browser session receipt time");
   return value as Receipt;
+}
+
+function validReceiptTime(at: unknown): boolean {
+  return at === undefined || (typeof at === "number" && Number.isFinite(at));
 }
 
 function validReceiptFields(fields: Record<string, unknown>): boolean {
@@ -42,7 +66,7 @@ function validReceiptFields(fields: Record<string, unknown>): boolean {
 }
 
 export class BrowserSessionState {
-  readonly #owner = createVerifier();
+  readonly #owner = randomId();
   revision: string | undefined;
   pending = false;
   constructor(
@@ -51,10 +75,10 @@ export class BrowserSessionState {
   ) {}
 
   async #open(): Promise<IDBDatabase> {
-    if (this.factory == null)
-      throw new Error("IndexedDB is required for coordinated browser sessions");
+    const factory = this.factory;
+    if (factory == null) throw new Error("IndexedDB is required for coordinated browser sessions");
     return await new Promise((resolve, reject) => {
-      const request = requiredValue(this.factory, "required operation value").open(DATABASE, 1);
+      const request = factory.open(DATABASE, 1);
       let settled = false;
       const fail = (error: Error): void => {
         if (settled) return;
@@ -138,18 +162,20 @@ export class BrowserSessionState {
     });
   }
 
-  #record(kind: Receipt["kind"], value: string | null): Receipt {
-    return { kind, owner: this.#owner, value, revision: createVerifier() };
+  #record(kind: Receipt["kind"], value: string | null): Receipt & { at: number } {
+    return { kind, owner: this.#owner, value, revision: randomId(), at: Date.now() };
   }
 
-  async read(
-    legacy: () => string | null,
-    dirty?: string | null,
-    allowPending = false,
-  ): Promise<Snapshot> {
+  /**
+   * The authoritative value. `mirror` reads the localStorage copy: it seeds a
+   * missing journal, and a settled ready session whose mirror was removed is
+   * signed out. `dirty` is a publication of this client that is not persisted
+   * yet; it wins while the receipt it replaced is still current.
+   */
+  async read(mirror: () => string | null, dirty?: string | null): Promise<Snapshot> {
     const result = await this.#transaction((store, previous) => {
       if (previous === undefined) {
-        const value = dirty !== undefined ? dirty : legacy();
+        const value = dirty !== undefined ? dirty : mirror();
         const state = this.#record("ready", value);
         store.put(state, this.key);
         return {
@@ -162,13 +188,18 @@ export class BrowserSessionState {
       const state = receipt(previous);
       // Upgrade the original receipt format in the same committed transaction.
       if (state.revision === undefined) {
-        state.revision = createVerifier();
+        state.revision = randomId();
         store.put(state, this.key);
       }
       const owned = state.owner === this.#owner;
       const retainDirty = dirty !== undefined && (owned || state.revision === this.revision);
-      if (interruptedRefresh(state.kind, { owned, allowPending, retainDirty }))
-        throw new Error("Browser session refresh was interrupted; sign in again");
+      if (retainDirty === false && mirrorCleared(state, mirror)) {
+        const cleared = this.#record("ready", null);
+        store.put(cleared, this.key);
+        return { value: null, retainDirty: false, revision: cleared.revision, pending: false };
+      }
+      // A foreign reservation does not block reads: its access token remains
+      // usable until it expires. Only rotation waits for the reservation owner.
       return {
         value: retainDirty ? dirty : state.value,
         retainDirty,
@@ -181,16 +212,23 @@ export class BrowserSessionState {
     return { value: result.value, retainDirty: result.retainDirty };
   }
 
+  /**
+   * Reserves the session's refresh token for this owner before it is sent. A
+   * foreign reservation younger than the lease refuses with
+   * `BrowserRefreshPendingError`; an older one, or one written by an SDK
+   * without receipt times, is abandoned and taken over.
+   */
   async reserve(session: Session): Promise<void> {
     const next = this.#record("refreshing", encodeJson(session));
     await this.#transaction((store, previous) => {
       const state = receipt(previous);
-      if (state.kind === "refreshing" && state.owner !== this.#owner)
-        throw new Error("Browser session refresh was interrupted; sign in again");
       if (
-        state.kind === "ready" &&
-        parseSession(state.value)?.refresh_token !== session.refresh_token
+        state.kind === "refreshing" &&
+        state.owner !== this.#owner &&
+        abandoned(state, next.at) === false
       )
+        throw new BrowserRefreshPendingError();
+      if (parseSession(state.value)?.refresh_token !== session.refresh_token)
         throw new Error("Browser session changed before refresh");
       store.put(next, this.key);
     });
@@ -210,10 +248,10 @@ export class BrowserSessionState {
     this.revision = next.revision;
   }
 
-  async consume(legacy: () => string | null): Promise<string | null> {
+  async consume(mirror: () => string | null): Promise<string | null> {
     const next = this.#record("ready", null);
     const value = await this.#transaction((store, previous) => {
-      const state = previous === undefined ? this.#record("ready", legacy()) : receipt(previous);
+      const state = previous === undefined ? this.#record("ready", mirror()) : receipt(previous);
       if (state.kind !== "ready") throw new Error("Browser verification state is unavailable");
       store.put(next, this.key);
       return state.value;
@@ -223,15 +261,16 @@ export class BrowserSessionState {
   }
 }
 
-function interruptedRefresh(
-  kind: Receipt["kind"],
-  context: { owned: boolean; allowPending: boolean; retainDirty: boolean },
-): boolean {
+function abandoned(state: Receipt, now: number): boolean {
+  return state.at === undefined || Math.abs(now - state.at) >= RESERVATION_LEASE_IN_MS;
+}
+
+function mirrorCleared(state: Receipt, mirror: () => string | null): boolean {
   return (
-    kind === "refreshing" &&
-    context.owned === false &&
-    context.allowPending === false &&
-    context.retainDirty === false
+    state.kind === "ready" &&
+    state.value !== null &&
+    (state.at === undefined || Math.abs(Date.now() - state.at) >= MIRROR_SETTLE_IN_MS) &&
+    mirror() === null
   );
 }
 

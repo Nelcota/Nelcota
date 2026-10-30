@@ -146,16 +146,69 @@ it("OAuth with PKCE: refuses a relative redirectTo and tolerates a missing page 
 });
 
 it("OAuth with PKCE: reports provider errors and ignores unrelated URLs", async () => {
-  const { nelcota, calls } = setup();
+  const { nelcota, calls, storage } = setup();
+  await storage.setItem(`${KEY}.pkce`, "v".repeat(64));
   expect(
     (await nelcota.auth.handleRedirect("https://app.example.com/back?error=access_denied")).error
       ?.code,
   ).toBe("access_denied");
+  // The provider ended that sign-in: its verifier is gone.
+  expect(await storage.getItem(`${KEY}.pkce`)).toBeNull();
   expect(await nelcota.auth.handleRedirect("https://app.example.com/other")).toEqual({
     data: null,
     error: null,
   });
   expect(calls).toHaveLength(0);
+});
+
+it("OAuth with PKCE: maps unknown redirect error codes to oauth_error with sanitized details", async () => {
+  const { nelcota, storage } = setup();
+  await storage.setItem(`${KEY}.pkce`, "v".repeat(64));
+  const raw = `<script>${"x".repeat(100)}`;
+  const { error } = await nelcota.auth.handleRedirect(
+    `https://app.example.com/back?error=${encodeURIComponent(raw)}`,
+  );
+  expect(error?.code).toBe("oauth_error");
+  expect(error?.details).toBe(`_script_${"x".repeat(56)}`);
+});
+
+it("OAuth with PKCE: leaves a code parameter alone when no sign-in is pending", async () => {
+  vi.stubGlobal("window", {});
+  vi.stubGlobal("document", {});
+  const href = "https://app.example.com/orders?code=SPRING-SALE";
+  const replaceState = vi.fn();
+  vi.stubGlobal("location", { href });
+  vi.stubGlobal("history", { state: null, replaceState });
+  const { nelcota, calls } = setup();
+  try {
+    expect(await nelcota.auth.handleRedirect(href)).toEqual({ data: null, error: null });
+    expect(
+      (await nelcota.auth.handleRedirect("https://app.example.com/back?error=access_denied")).error,
+    ).toBeNull();
+    expect(replaceState).not.toHaveBeenCalled();
+    expect(calls).toHaveLength(0);
+  } finally {
+    nelcota.dispose();
+  }
+});
+
+it("OAuth with PKCE: keeps the verifier after an uncertain exchange so the callback can retry", async () => {
+  const { nelcota, calls, storage } = setup(
+    memoryStorage(),
+    json({ code: "unavailable", message: "Busy" }, 503),
+    json(session()),
+    json({ code: "invalid_grant", message: "Code already used" }, 400),
+  );
+  await storage.setItem(`${KEY}.pkce`, "v".repeat(64));
+  expect((await nelcota.auth.exchangeCode("abc")).error?.status).toBe(503);
+  expect(await storage.getItem(`${KEY}.pkce`)).toBe("v".repeat(64));
+  expect((await nelcota.auth.exchangeCode("abc")).error).toBeNull();
+  expect(await storage.getItem(`${KEY}.pkce`)).toBeNull();
+  await storage.setItem(`${KEY}.pkce`, "w".repeat(64));
+  expect((await nelcota.auth.exchangeCode("abc")).error?.code).toBe("invalid_grant");
+  // A definite refusal ends that sign-in.
+  expect(await storage.getItem(`${KEY}.pkce`)).toBeNull();
+  expect(calls).toHaveLength(3);
 });
 
 it("OAuth with PKCE: the S256 challenge is base64url(SHA-256(verifier)) without padding", async () => {

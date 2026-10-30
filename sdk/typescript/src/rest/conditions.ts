@@ -58,16 +58,13 @@ export function encodeGroup(items: readonly Condition[]): string {
 export type CompareOperator = "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "like" | "ilike";
 export type IsValue = null | boolean | "unknown";
 
-function encodeIsValue(value: unknown): string {
+/** The operand of `is`: `null`, `true`, `false` or `unknown`. */
+export function isOperand(value: unknown): string {
   if (value === null) return "null";
   if (value === true) return "true";
   if (value === false) return "false";
   if (value === "unknown") return "unknown";
   throw new NelcotaUsageError('is accepts null, true, false or "unknown"');
-}
-
-export function isOperand(value: IsValue): string {
-  return encodeIsValue(value);
 }
 
 const COMPARE = new Set<string>(["eq", "neq", "gt", "gte", "lt", "lte", "like", "ilike"]);

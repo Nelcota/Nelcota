@@ -1,4 +1,4 @@
-import { NelcotaError, NelcotaUsageError } from "../core/client.errors.js";
+import { NelcotaError, NelcotaUsageError, clientError } from "../core/client.errors.js";
 import { isRecord } from "../core/json.js";
 import type { State } from "./query-state.js";
 import type { QueryResult, RowRange } from "./query-types.js";
@@ -73,10 +73,11 @@ function singleRow<Out>(
     throw new NelcotaUsageError("single/maybeSingle requires a row representation");
   if (rows.length === 1 || (rows.length === 0 && state.cardinality === "maybe"))
     return { data: (rows[0] ?? null) as Out, error: null, ...metadata };
-  const error = new NelcotaError({
-    status: 406,
-    code: "not_single",
-    message: `Expected ${state.cardinality === "one" ? "exactly one row" : "at most one row"}, got ${rows.length === 2 && state.method === "GET" ? "more than one" : rows.length}`,
-  });
-  return { data: null, error, count: null, range: null, status: error.status };
+  // The server answered successfully; the cardinality check is the client's,
+  // so the error has no HTTP status and the result keeps the real one.
+  const error = clientError(
+    "not_single",
+    `Expected ${state.cardinality === "one" ? "exactly one row" : "at most one row"}, got ${rows.length === 2 && state.method === "GET" ? "more than one" : rows.length}`,
+  );
+  return { data: null, error, count: null, range: null, status: metadata.status };
 }

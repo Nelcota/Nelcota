@@ -1,7 +1,7 @@
 import type { Json } from "../core/json-types.js";
 /** Sessions and users as the server returns them, and where they are kept. */
 import { isRecord, parseJson } from "../core/json.js";
-const SECOND_IN_MS = 1000;
+import { SECOND_IN_MS } from "../core/time.js";
 
 export interface User {
   id: string;
