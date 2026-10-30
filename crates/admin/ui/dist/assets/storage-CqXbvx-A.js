@@ -58,9 +58,10 @@ equivalent directory ACL; Unix modes do not configure Windows ACLs.
 | \`NELCOTA_STORAGE_PUBLIC_URL\` | the API's | origin of public file URLs, e.g. \`https://files.shop.com\` |
 
 Uploads reserve capacity while their bodies are being received. A request
-without \`Content-Length\` grows its reservation as bytes arrive, allowing small
-concurrent uploads to share the remaining capacity. Declared lengths reserve
-their full size before reception.
+without \`Content-Length\` grows its reservation as bytes arrive, up to 1 MiB
+ahead of what it has received but never more than half of the capacity left,
+so small concurrent uploads still share the remaining capacity. Declared
+lengths reserve their full size before reception.
 The committed total is checked in a serialized database transaction, including
 when several server instances share the same database. Replacements receive
 credit for their old bytes against the total quota, but still need disk space
@@ -122,6 +123,12 @@ still go through the policies.
 | download, sign, list | \`SELECT\` |
 | delete | \`SELECT\`, \`DELETE\` |
 
+An upload to a name already taken by a file the caller cannot see answers
+like a policy refusal (403, or 401 for \`anon\`), not 409 \`object_exists\`.
+Names are still unique in a bucket: where policies let callers create files in
+a shared folder, a refused upload can hint that a name is in use. Give each
+user a folder of their own when names must stay private.
+
 \`owner\` is filled with \`auth.uid()\` on upload, so \`owner = auth.uid()\` is the
 simplest private-files policy. Helpers for paths:
 \`storage.foldername('a/b/c.png')\` → \`{a,b}\`, \`storage.filename(...)\` →
@@ -170,6 +177,10 @@ Listing applies \`limit\` and \`offset\` independently to the sorted \`folders\`
 \`objects\` arrays. Advance the offset by the requested limit while either array
 fills a page; a page containing only folders can still have a next page.
 
+A signed URL covers the version of the file that was signed. Once the file is
+replaced, or deleted and uploaded again under the same name, the URL answers
+404 \`object_not_found\`; sign the new version again.
+
 A file the caller may not see answers 404, as if it did not exist. Downloads
 take \`?download\` to force a "save as". Errors: 400 \`invalid_path\`, 404
 \`bucket_not_found\`/\`object_not_found\`, 409 \`object_exists\`, 413
@@ -184,16 +195,22 @@ has the API's JSON shape (see [api.md](api.md#errors)).
 
 - **The type comes from the bytes**, not from the client: a "PNG" that is
   really HTML is stored as \`text/html\` (and refused by an \`image/*\` bucket).
-- **Files are inert.** Every response has \`X-Content-Type-Options: nosniff\` and
-  \`Content-Security-Policy: sandbox\`. Only images (not SVG), audio, video and
-  plain text open in the browser; HTML, SVG, PDF and the rest download.
+- **Files are inert.** Only images (not SVG), audio, video and plain text open
+  in the browser; HTML, SVG, PDF and the rest download. Files served from disk
+  also carry \`X-Content-Type-Options: nosniff\` and
+  \`Content-Security-Policy: sandbox\` (S3: see below).
   For public files on their own origin, point \`NELCOTA_STORAGE_PUBLIC_URL\` at
   a second domain that proxies \`/storage/v1/object/public/*\` to the app.
 - **Disk:** \`Range\` (video seeking, resumed downloads), \`ETag\` and
   \`If-None-Match\`. Public files are cacheable for 60 s; private ones are
   revalidated each time.
 - **S3:** downloads are a \`302\` to a presigned URL valid for at most 5 minutes;
-  the bytes come straight from the provider.
+  the bytes come straight from the provider. The URL fixes the file's
+  \`Content-Type\` and \`Content-Disposition\`, but a presigned URL cannot set
+  security headers, so the provider's response lacks
+  \`X-Content-Type-Options: nosniff\` and \`Content-Security-Policy: sandbox\`.
+  Add both on the provider (bucket response-header settings, where it has them)
+  or on a CDN in front of the bucket.
 
 ## Consistency
 
