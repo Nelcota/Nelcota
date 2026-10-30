@@ -168,12 +168,15 @@ where
 }
 
 /// Who a request counts against: the user for a signed-in token, else the
-/// client's network. `service_role` (a trusted backend) is not limited.
+/// client's network. `service_role` (a trusted backend) is not limited, and
+/// neither is a request without a client address (no `ConnectInfo`, as in
+/// embedded routers), which would otherwise share one key with every other.
 pub(crate) fn caller_key(claims: &Claims, ip: Option<IpAddr>) -> Option<String> {
-    match (claims.role(), claims.sub()) {
-        (Role::ServiceRole, _) => None,
-        (Role::Authenticated, Some(user)) => Some(format!("user:{user}")),
-        _ => Some(format!("ip:{}", network(ip))),
+    match (claims.role(), claims.sub(), ip) {
+        (Role::ServiceRole, _, _) => None,
+        (Role::Authenticated, Some(user), _) => Some(format!("user:{user}")),
+        (_, _, Some(ip)) => Some(format!("ip:{}", network(Some(ip)))),
+        (_, _, None) => None,
     }
 }
 

@@ -64,9 +64,6 @@ pub fn api_pool(
 
 /// How long a dropped request may take to deliver its cancel request.
 const CANCEL_TIMEOUT: Duration = Duration::from_secs(2);
-/// How long the cancelled statement and the `ROLLBACK` after it may take
-/// before the connection is discarded instead of returned to the pool.
-const DRAIN_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// A pooled API connection held for one request.
 ///
@@ -74,10 +71,10 @@ const DRAIN_TIMEOUT: Duration = Duration::from_secs(5);
 /// client disconnected, the request timeout fired), a statement may still be
 /// running in Postgres, which does not notice on its own and would keep the
 /// connection busy until `statement_timeout`. Dropping this guard then sends
-/// Postgres a cancel request and, on a background task, waits for the
-/// cancelled statement and a `ROLLBACK` to finish before the connection goes
-/// back to the pool. A connection whose cleanup fails or takes too long is
-/// discarded, so no request ever receives one that is still mid-statement.
+/// Postgres a cancel request on a background task and discards the
+/// connection instead of returning it to the pool: the cancel signal reaches
+/// the server a little later than the request that sends it, so a reused
+/// connection could see it cancel the next request's statement.
 pub struct RequestConnection {
     client: Option<Object>,
     cancel: CancelToken,
@@ -127,17 +124,8 @@ impl Drop for RequestConnection {
         let cancel = self.cancel.clone();
         runtime.spawn(async move {
             let _ = tokio::time::timeout(CANCEL_TIMEOUT, cancel.cancel_query(NoTls)).await;
-            // Requests on one connection answer in order: this returns once the
-            // cancelled statement has ended and the transaction is gone.
-            let drained =
-                tokio::time::timeout(DRAIN_TIMEOUT, client.batch_execute("ROLLBACK")).await;
-            if !matches!(drained, Ok(Ok(()))) {
-                tracing::warn!(
-                    event = "database.cancel_cleanup_failed",
-                    "discarding an API connection whose cancelled statement did not drain"
-                );
-                let _ = Object::take(client);
-            }
+            // Closing it also ends the session; the pool opens a fresh one.
+            let _ = Object::take(client);
         });
     }
 }

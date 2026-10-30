@@ -149,7 +149,7 @@ pub struct Config {
     /// Largest REST request body (`/rest/v1`), in bytes.
     pub max_body_bytes: usize,
     /// REST requests one caller (a signed-in user, or one client network)
-    /// may run at once. `None` uses a quarter of the pool, at least 1; 0
+    /// may run at once. `None` uses half of the pool, at least 1; 0
     /// disables the limit. See [`Config::api_concurrency_limit`].
     pub api_concurrency_per_caller: Option<usize>,
     pub listen: SocketAddr,

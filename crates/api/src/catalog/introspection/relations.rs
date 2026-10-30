@@ -6,11 +6,12 @@ use tokio_postgres::GenericClient;
 /// Objects created by extensions are left out.
 const NOT_FROM_EXTENSION: &str =
     "NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = c.oid AND d.deptype = 'e')";
-/// Partitions and inheritance children are left out: they are read through
-/// their parent, and the parent's row policies do not apply to a child that is
-/// queried directly, so exposing one would bypass them.
-const NOT_A_CHILD: &str =
-    "NOT c.relispartition AND c.oid NOT IN (SELECT inhrelid FROM pg_inherits)";
+/// Partitions, and inheritance children without row-level security of their
+/// own, are left out: they are read through their parent, and the parent's
+/// row policies do not apply to a child queried directly, so exposing one
+/// would bypass them. A child with RLS enabled was exposed on purpose.
+const NOT_A_CHILD: &str = "NOT c.relispartition
+    AND (c.relrowsecurity OR c.oid NOT IN (SELECT inhrelid FROM pg_inherits))";
 
 pub(super) async fn load(
     client: &impl GenericClient,

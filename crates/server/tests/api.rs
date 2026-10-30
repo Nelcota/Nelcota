@@ -1583,8 +1583,10 @@ async fn partitions_and_inheritance_children_are_not_exposed() {
              ALTER TABLE public.base_notes ENABLE ROW LEVEL SECURITY;
              CREATE TABLE public.child_notes (extra text) INHERITS (public.base_notes);
              INSERT INTO public.child_notes VALUES (1, 'x');
+             CREATE TABLE public.own_notes (extra text) INHERITS (public.base_notes);
+             ALTER TABLE public.own_notes ENABLE ROW LEVEL SECURITY;
              GRANT SELECT ON public.events, public.events_2026,
-                 public.base_notes, public.child_notes TO anon;",
+                 public.base_notes, public.child_notes, public.own_notes TO anon;",
         )
         .await
         .unwrap();
@@ -1600,6 +1602,11 @@ async fn partitions_and_inheritance_children_are_not_exposed() {
         assert_eq!(status, StatusCode::NOT_FOUND, "{body}");
         assert!(document["paths"].get(format!("/{child}")).is_none());
     }
+    // A child with row-level security of its own was exposed on purpose.
+    assert!(catalog.table("own_notes").is_some());
+    let (status, body) = app.get("/rest/v1/own_notes", None).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body, json!([]));
     // Through the parent, its policies apply to every child's rows.
     for parent in ["events", "base_notes"] {
         let (status, body) = app.get(&format!("/rest/v1/{parent}"), None).await;

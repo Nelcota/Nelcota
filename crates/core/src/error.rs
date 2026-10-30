@@ -88,15 +88,13 @@ fn classify(state: &SqlState, role: Role) -> Class {
         | SqlState::CANNOT_CONNECT_NOW => return Class::Transient,
         // Incompatible type/operator, generated column: a client error, not a
         // server one. Upserts: `on_conflict` matching no unique constraint, or
-        // a batch that hits the same key twice. A view or policy writing
-        // during a read-only GET.
+        // a batch that hits the same key twice.
         SqlState::UNDEFINED_FUNCTION
         | SqlState::UNDEFINED_COLUMN
         | SqlState::DATATYPE_MISMATCH
         | SqlState::GENERATED_ALWAYS
         | SqlState::INVALID_COLUMN_REFERENCE
-        | SqlState::CARDINALITY_VIOLATION
-        | SqlState::READ_ONLY_SQL_TRANSACTION => StatusCode::BAD_REQUEST,
+        | SqlState::CARDINALITY_VIOLATION => StatusCode::BAD_REQUEST,
         // Class 22 (invalid data), 23 (integrity) and P0 (PL/pgSQL: `RAISE
         // EXCEPTION` with the default P0001 or a custom `ERRCODE` such as
         // P0002, `ASSERT` failures): 400 with the function's message.
@@ -181,6 +179,18 @@ impl ApiError {
     /// detail, hint and constraint; transient ones become a retryable 503;
     /// anything else is logged and hidden behind a 500.
     pub fn from_db(err: tokio_postgres::Error, role: Role) -> Self {
+        Self::from_db_in(err, role, false)
+    }
+
+    /// [`from_db`](Self::from_db) for a `READ ONLY` request transaction: a
+    /// view or policy that writes during a read (`25006`) is the request's
+    /// fault there (400). Elsewhere a read-only database (a failover, a replica
+    /// configured by mistake) stays a server error.
+    pub fn from_read_db(err: tokio_postgres::Error, role: Role) -> Self {
+        Self::from_db_in(err, role, true)
+    }
+
+    fn from_db_in(err: tokio_postgres::Error, role: Role, read_only: bool) -> Self {
         let db = match err.as_db_error() {
             Some(db) => db,
             _ => {
@@ -200,7 +210,12 @@ impl ApiError {
                 "the JSON response exceeds the 8 MiB budget; narrow the selection or page the results",
             );
         }
-        let (status, api_code) = match classify(db.code(), role) {
+        let writes_in_read = read_only && db.code() == &SqlState::READ_ONLY_SQL_TRANSACTION;
+        let class = match writes_in_read {
+            true => Class::Client(StatusCode::BAD_REQUEST),
+            false => classify(db.code(), role),
+        };
+        let (status, api_code) = match class {
             Class::Client(status) => (status, "db_error"),
             Class::Transient => {
                 tracing::warn!(
@@ -355,7 +370,7 @@ mod tests {
             client("23505", Role::Anon),
             Class::Client(StatusCode::CONFLICT)
         );
-        for raise in ["P0001", "P0002", "P0004", "25006"] {
+        for raise in ["P0001", "P0002", "P0004"] {
             assert_eq!(
                 client(raise, Role::Anon),
                 Class::Client(StatusCode::BAD_REQUEST),
