@@ -226,6 +226,15 @@ async fn uploads_do_not_reveal_names_taken_by_hidden_files() {
             .upload(Method::POST, taken, token, "text/plain", b"x")
             .await;
         assert_eq!(hidden, refused);
+        // A replacement of the hidden file answers like one of a free name.
+        let refused = app
+            .upload(Method::PUT, closed, token, "text/plain", b"x")
+            .await;
+        assert_eq!(refused.0, status, "{}", refused.1);
+        let hidden = app
+            .upload(Method::PUT, taken, token, "text/plain", b"x")
+            .await;
+        assert_eq!(hidden, refused, "PUT must not tell a hidden name either");
     }
 
     // The hidden file is untouched and no refused upload kept bytes.
@@ -639,11 +648,22 @@ async fn signed_urls() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs();
+    // Carry the signed file's real version, so only the deadline is tested.
+    let version: uuid::Uuid = app
+        .admin_client
+        .query_one(
+            "SELECT version FROM storage.objects WHERE bucket_id = 'docs' AND name = $1",
+            &[&name],
+        )
+        .await
+        .unwrap()
+        .get(0);
     for exp in [1, now, now - 1, now - 10, now - 29, now - 31] {
         let expired = app
             .keys
             .sign(&json!({
-                "typ": "nelcota-storage-url", "bucket": "docs", "name": name, "exp": exp
+                "typ": "nelcota-storage-url", "bucket": "docs", "name": name, "exp": exp,
+                "version": version.to_string()
             }))
             .unwrap();
         let (status, _, bytes) = app

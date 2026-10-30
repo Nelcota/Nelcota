@@ -222,9 +222,11 @@ async fn write(
     }
 }
 
-/// A unique violation proves that the name is taken, even when the caller's
-/// policies hide that file. Only a caller who can see it learns that it
-/// exists; anyone else gets the answer of a policy refusal.
+/// A unique violation (POST) or a refused update of an existing row (PUT,
+/// whose RLS message names the USING expression) proves that the name is
+/// taken, even when the caller's policies hide that file. Only a caller who
+/// can see it learns that it exists; anyone else gets the answer of a plain
+/// policy refusal, the same as for a name that is free.
 async fn conceal_hidden(
     state: &StorageState,
     claims: &Claims,
@@ -232,7 +234,8 @@ async fn conceal_hidden(
     name: &str,
     error: ApiError,
 ) -> ApiError {
-    if error.code() != "object_exists" {
+    let telling = error.code() == "object_exists" || error.sqlstate() == Some("42501");
+    if !telling {
         return error;
     }
     match visible(state, claims, bucket, name).await {
