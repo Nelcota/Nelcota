@@ -4,7 +4,8 @@
 //!   `authenticator` role password (admin connection, used only at startup).
 //! - [`api_pool`]: the API pool, always connected as `authenticator`.
 //! - [`begin_request`]: opens a request transaction already carrying the JWT
-//!   role and claims. It is the only way to run SQL on behalf of a user.
+//!   role and claims. It is the only way to run SQL on behalf of a user
+//!   ([`begin_read_request`] is its read-only form).
 //! - [`RequestConnection`]: holds a pooled connection for one request and
 //!   cancels its statement when the request is dropped midway.
 
@@ -176,6 +177,24 @@ pub async fn begin_request<'a>(
     claims: &Claims,
 ) -> Result<Transaction<'a>, tokio_postgres::Error> {
     let tx = client.transaction().await?;
+    assume(tx, claims).await
+}
+
+/// [`begin_request`] in a `READ ONLY` transaction, for requests that only
+/// read: a view or a policy that calls a volatile function cannot write.
+pub async fn begin_read_request<'a>(
+    client: &'a mut Object,
+    claims: &Claims,
+) -> Result<Transaction<'a>, tokio_postgres::Error> {
+    let tx = client.build_transaction().read_only(true).start().await?;
+    assume(tx, claims).await
+}
+
+/// Assumes the JWT role and claims for the rest of the transaction.
+async fn assume<'a>(
+    tx: Transaction<'a>,
+    claims: &Claims,
+) -> Result<Transaction<'a>, tokio_postgres::Error> {
     let statement = tx
         .prepare_cached(
             "SELECT set_config('role', $1, true), set_config('request.jwt.claims', $2, true), set_config('nelcota.response_bytes', '0', true)",

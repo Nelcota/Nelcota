@@ -88,13 +88,15 @@ fn classify(state: &SqlState, role: Role) -> Class {
         | SqlState::CANNOT_CONNECT_NOW => return Class::Transient,
         // Incompatible type/operator, generated column: a client error, not a
         // server one. Upserts: `on_conflict` matching no unique constraint, or
-        // a batch that hits the same key twice.
+        // a batch that hits the same key twice. A view or policy writing
+        // during a read-only GET.
         SqlState::UNDEFINED_FUNCTION
         | SqlState::UNDEFINED_COLUMN
         | SqlState::DATATYPE_MISMATCH
         | SqlState::GENERATED_ALWAYS
         | SqlState::INVALID_COLUMN_REFERENCE
-        | SqlState::CARDINALITY_VIOLATION => StatusCode::BAD_REQUEST,
+        | SqlState::CARDINALITY_VIOLATION
+        | SqlState::READ_ONLY_SQL_TRANSACTION => StatusCode::BAD_REQUEST,
         // Class 22 (invalid data), 23 (integrity) and P0 (PL/pgSQL: `RAISE
         // EXCEPTION` with the default P0001 or a custom `ERRCODE` such as
         // P0002, `ASSERT` failures): 400 with the function's message.
@@ -353,7 +355,7 @@ mod tests {
             client("23505", Role::Anon),
             Class::Client(StatusCode::CONFLICT)
         );
-        for raise in ["P0001", "P0002", "P0004"] {
+        for raise in ["P0001", "P0002", "P0004", "25006"] {
             assert_eq!(
                 client(raise, Role::Anon),
                 Class::Client(StatusCode::BAD_REQUEST),

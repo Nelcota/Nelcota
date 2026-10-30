@@ -200,6 +200,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - A REST `select` embeds at most 16 related tables per request, nested ones
   included; each embed is a correlated subquery per parent row, and up to 127
   were accepted before.
+- REST reads (`GET`/`HEAD`) run in a `READ ONLY` transaction, so a view or
+  policy that calls a writing function cannot change data during a read; such
+  a read now fails with `400 db_error` (`25006`). Function calls and writes
+  are unchanged.
 
 ## [0.5.6] — 2026-10-27
 

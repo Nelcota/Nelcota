@@ -1533,3 +1533,37 @@ async fn exact_count_ignores_paging_but_respects_filters_and_row_policies() {
         assert_eq!(reply.headers[header::CONTENT_RANGE], expected);
     }
 }
+
+#[tokio::test]
+async fn reads_are_read_only_even_through_a_view_that_writes() {
+    let app = TestApp::spawn().await;
+    app.admin_client
+        .batch_execute(
+            "CREATE TABLE public.read_log (id serial PRIMARY KEY);
+             CREATE FUNCTION public.log_read() RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER
+             AS $$ BEGIN INSERT INTO public.read_log DEFAULT VALUES; RETURN true; END $$;
+             CREATE VIEW public.logged_products AS
+             SELECT id, name FROM public.products WHERE public.log_read();
+             GRANT SELECT ON public.logged_products TO anon;",
+        )
+        .await
+        .unwrap();
+    app.catalog.reload(&app.pool).await.unwrap();
+    async fn logged(app: &TestApp) -> i64 {
+        app.admin_client
+            .query_one("SELECT count(*) FROM public.read_log", &[])
+            .await
+            .unwrap()
+            .get(0)
+    }
+    let reply = app
+        .request(Method::GET, "/rest/v1/logged_products", None, None)
+        .await;
+    assert_eq!(reply.status, StatusCode::BAD_REQUEST, "{}", reply.body);
+    assert_eq!(reply.body["sqlstate"], "25006");
+    assert_eq!(logged(&app).await, 0, "a GET must not write");
+    // Function calls (POST /rpc) keep a read-write transaction.
+    let reply = app.post("/rest/v1/rpc/log_read", None, json!({})).await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
+    assert_eq!(logged(&app).await, 1);
+}

@@ -14,6 +14,7 @@
   "group of filters, see below": "grupo de filtros, veja abaixo",
   "ordering": "ordenação",
   "pagination": "paginação",
+  "A read runs in a `READ ONLY` transaction, as in PostgREST: a view, policy or\nfunction that tries to write during a `GET` fails with `400 db_error`\n(`sqlstate` `25006`) and changes nothing. Function calls (`POST /rpc`) and\nwrites run read-write.": "Uma leitura roda em uma transação `READ ONLY`, como no PostgREST: uma view, política ou função que tente escrever durante um `GET` falha com `400 db_error` (`sqlstate` `25006`) e não altera nada. Chamadas de função (`POST /rpc`) e escritas rodam em leitura e escrita.",
   "Operators": "Operadores",
   "Operator": "Operador",
   "SQL": "SQL",

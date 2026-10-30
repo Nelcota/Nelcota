@@ -37,6 +37,11 @@ use release-tag documentation for older binaries.
 | `order` | `order=created_at.desc.nullslast,id` | ordering |
 | `limit`, `offset` | `limit=20&offset=40` | pagination |
 
+A read runs in a `READ ONLY` transaction, as in PostgREST: a view, policy or
+function that tries to write during a `GET` fails with `400 db_error`
+(`sqlstate` `25006`) and changes nothing. Function calls (`POST /rpc`) and
+writes run read-write.
+
 ### Operators
 
 | Operator | SQL | Example |
