@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { isSession, isUser, parseSession } from "../../src/auth/session.js";
-import { promiseResult } from "../../src/core/promise-result.js";
 import { createClient, NelcotaUsageError } from "../../src/index.js";
 import { json, mockFetch, session } from "./http-fixtures.js";
+import { promiseResult } from "./promise-result.js";
 
 it.each([null, undefined, [], 1, "session"])(
   "session boundaries: rejects non-record input %s without throwing",

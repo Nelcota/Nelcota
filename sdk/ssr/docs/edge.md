@@ -9,14 +9,19 @@ These changes are source-only until the next package publication.
 
 Provide an authoritative `SessionStore` reachable from the runtime, preserving
 the contract in `src/store.ts`: shared state, exclusive ownership, fencing,
-lease lifetime/cancellation and atomic rotation. An ordinary eventually
+lease lifetime/cancellation and ordered rotation (a rotated-away row is replaced
+by its tombstone only after the owner's callback succeeded, so a sign-in writes
+its new row, then moves the lineage head, then retires the old row). An ordinary eventually
 consistent key/value cache is insufficient. The repository's PostgreSQL
 adapter demonstrates the contract; it does not imply that a particular Edge
 provider or third-party store has been deployed or validated.
 
 Existing cookie names, hashed store keys, lineage keys and encrypted v1/v2
 session rows remain compatible. New rows keep the v2 HKDF-SHA-256/AES-GCM
-format; the primary key seals and the bounded keyring opens earlier rows.
+format and SHA-256-prefix key id; the primary key seals and the bounded keyring
+opens earlier rows, and also envelopes carrying the HKDF-derived id that a later
+release will write.
+v1 rows open unless `legacyEnvelopes: false`.
 Keep old keys until the maximum configured session lifetime has elapsed.
 
 ## Decision: keep tokens in shared storage

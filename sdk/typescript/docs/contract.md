@@ -9,7 +9,7 @@ by the endpoints and features below, not by matching package version numbers.
 This is the 0.2.5 package contract. It includes queued-auth cancellation, exact
 bucket-limit writes, profile ordering and the input/response guards below.
 Version 0.2.0 predates these corrections, and 0.2.1 predates the
-[0.2.2 hardening](#hardening-in-022). Registry installation requires
+[0.2.2 hardening](../CHANGELOG.md#022--2026-10-24). Registry installation requires
 successful publication of 0.2.5, now confirmed in the
 [registry receipts](https://github.com/Nelcota/Nelcota/pull/202#issuecomment-6445288705);
 a server update does not install the client.
@@ -19,6 +19,28 @@ own bundled documentation.
 Browsers need Chrome or Edge 116, Firefox 124 or Safari 17.4 and later: request
 timeouts combine with a caller's `signal` through `AbortSignal.any`. Server
 runtimes are Node 22 and later, Bun and Deno.
+
+## Unreleased changes
+
+The next release changes these contracts; 0.2.5 keeps the earlier ones.
+
+- REST builders require `.execute()`; awaiting a builder rejects with
+  `NelcotaUsageError`. `single()`/`maybeSingle()` on `update`/`delete`, and
+  modifiers or filters the server rejects on writes, throw before HTTP.
+  `not_single` has error status 0 instead of 406. `pages()` keeps an existing
+  `limit` as its total.
+- `getSession()`, `refreshSession()` and requests return session storage
+  failures as `session_unavailable` instead of rejecting. A transient refresh
+  failure keeps a still-valid access token.
+- A foreign refresh reservation no longer requires a new sign-in: it blocks
+  rotation for 10 seconds (`refresh_pending`) and is then taken over. Removing
+  the `localStorage` mirror signs the session out.
+- A body-read failure after a success status is `response_body_error`, not
+  `network_error`.
+- OAuth: the verifier survives an uncertain exchange; `handleRedirect()`
+  ignores URLs without a pending sign-in; unknown redirect errors become
+  `oauth_error`.
+- `escapeLike` sends a typed `*` as `\*`, which needs a server that supports it.
 
 ## Upgrading from 0.2.4
 
@@ -93,14 +115,18 @@ at runtime. RLS and GRANTs always remain server/Postgres decisions.
 
 - Auth and storage return `{data,error}`. REST adds `status`, `count` and `range`; RPC
   adds `status`. Writes without `.select()` and HEAD responses return null.
-  HEAD is typed as null, including chained selects. `single`/`maybeSingle`
-  require a row representation and refuse minimal writes or HEAD before HTTP.
-  A requested row representation that has no body or is not a JSON array returns
-  `invalid_response`; it never succeeds with null or another shape.
-- HTTP failures preserve server `code`, `message` and status. Network, abort,
-  timeout and interrupted buffered bodies return status 0 and client codes.
+  HEAD is typed as null, including chained selects.
+- A requested row representation that has no body or is not an array of
+  non-null objects returns `invalid_response`; it never succeeds with null or
+  another shape. Empty arrays and null fields inside rows remain valid. RPC
+  results may be scalars or contain scalar/null array elements.
+- HTTP failures preserve server `code`, `message` and status. Client codes
+  carry status 0: `network_error` (no response), `response_body_error` (a
+  success status arrived but its body could not be read, so a write may have
+  committed), `timeout`, `aborted`, `not_single`, `session_missing`,
+  `session_unavailable`, `refresh_pending`, `pkce_missing` and `oauth_error`.
 - HTTP error bodies larger than 64 KiB are discarded; status, a generic code
-  and Retry-After remain available.
+  and Retry-After remain available. An unreadable error body keeps its HTTP status.
 - Invalid JSON returns `invalid_response` with the response's HTTP status.
 - JSON numbers stay numeric when their decimal digits survive JavaScript
   conversion. Unsafe integers and decimals that would lose digits become
@@ -111,23 +137,68 @@ at runtime. RLS and GRANTs always remain server/Postgres decisions.
   nullability; generated arrays therefore use `(T | null)[]`.
 - Scalar RPC result sets also allow null elements and group numeric unions as
   `(number | string | null)[]`. Functions returning view rows reference the
-  generated `Views` section, while table rows reference `Tables`.
-- Non-finite JSON input (`NaN` and infinities) throws `NelcotaUsageError` before
-  authentication or HTTP, instead of silently becoming null. Explicit nulls
-  remain valid. Sessions require the complete session/user shape, with
-  `expires_at` and `expires_in` as safe, non-negative integers;
+  generated `Views` section, while table rows reference `Tables`. Select
+  inference reports ambiguous relationships in both directions; use a column or
+  foreign-key constraint hint to choose one.
+- Non-finite JSON input (`NaN` and infinities), invalid `Date` values and
+  `bigint` values throw `NelcotaUsageError` before authentication or HTTP.
+  Explicit nulls remain valid. Sessions require the complete session/user
+  shape, with `expires_at` and `expires_in` as safe, non-negative integers;
   `refreshMargin` must be finite and non-negative.
-- Invalid developer configuration and unsafe identifiers/paths throw
-  `NelcotaUsageError`. Errors thrown by user-supplied token/storage/fetch
-  configuration outside the HTTP operation remain the caller's responsibility.
-- GET and HEAD retry network failures, body-read failures, 429 and 503; mutations,
-  auth token exchange, storage listing and RPC are not automatically retried.
-- Timeout covers each attempt and its buffered body, excluding session refresh
-  and the wait between retries. Retry-After up to 30 seconds is respected;
-  longer delays return the error immediately with `retryAfter` for the caller.
-- `storage.from(bucket).open()` hands the raw response to the caller. Subsequent stream
-  errors must be handled by the caller; `download()` buffers into a Blob and
-  returns body failures in its result.
+- Invalid developer configuration, unsafe identifiers/paths and invalid HTTP
+  header values throw `NelcotaUsageError`.
+- Thrown versus returned: `getSession()`, `refreshSession()` and every request
+  return session storage and coordination failures as `session_unavailable`
+  (the original error is `cause`). `accessToken()` throws the `NelcotaError`
+  of its session read. `setSession()`, the sign-in methods and `signOut()`
+  reject when session storage fails. Errors thrown by a caller-supplied token
+  function or `fetch` outside the HTTP operation remain the caller's.
+- Serialized errors include `retryAfter` when present, but never include `cause`.
+  Do not log login bodies, bearer tokens, session objects or signed URLs. Server
+  error messages and database details can contain application data; redact them
+  before sending telemetry outside the application's trust boundary.
+
+## Retries, timeouts and cancellation
+
+- GET and HEAD retry network failures, body-read failures, 429 and 503;
+  mutations, auth token exchange, storage listing and RPC are not automatically
+  retried. Retry-After accepts integer seconds or HTTP dates; delays up to 30
+  seconds are respected, longer ones return the error with `retryAfter`.
+- The timeout covers each attempt and its buffered body, excluding session
+  refresh, token-source waits and the wait between retries. It defaults to 30
+  seconds, except `upload`, `download` and `open`, which default to none so a
+  large transfer is not cut off; pass `{ timeout }` or a signal to bound them.
+- A raw response (`open()`) stops its attempt deadline when headers arrive;
+  caller cancellation still owns the accepted stream, and later stream errors
+  belong to the caller. `download()` buffers the whole file and returns body
+  failures in its result.
+- For a total caller deadline use `AbortSignal.timeout(ms)` as the request's
+  signal. It returns `aborted` when it expires and withdraws only that
+  caller's wait, never another caller's refresh. REST/storage signals also
+  cover waiting for the token source or a session refresh.
+
+## REST queries
+
+- Builders are immutable and send one request per `.execute()`. They are not
+  promises: awaiting a builder, returning it from an async function or passing
+  it to `Promise.all` rejects with `NelcotaUsageError`, and the awaited type is
+  `never`.
+- `single()`/`maybeSingle()` require a row representation and refuse minimal
+  writes, HEAD, `update` and `delete` before HTTP: the server has no singular
+  write and would change every matching row before the client could count
+  them. Reads send `limit=2` (also shown by `toString`). A wrong row count
+  returns `not_single` with error status 0; the result keeps the real HTTP status.
+- `update`/`delete` refuse `order`, `limit`, `offset` and `range`, and
+  `insert`/`upsert` refuse filters and those modifiers, before HTTP, because
+  the server rejects them. Modifiers and filters on an embed of the returned
+  representation (`referencedTable`, `orders.total`) remain allowed.
+- `pages(size)` reads from the current offset until an empty page. An existing
+  `limit` or `range` caps the total rows read; it is never replaced by `size`.
+- Reserved modifier column names used as filters (`limit`, `order`...) are sent
+  as logic groups, including embedded paths.
+- `escapeLike` escapes `\`, `%`, `_` and `*` with a backslash. An unescaped `*`
+  means any text; `\*` is a literal `*` on servers that support it. Older
+  servers read `\*` as a literal `%`.
 
 ## Input and response guards
 
@@ -144,6 +215,12 @@ not exhaustive field-by-field schemas. Missing/invalid representations return
 `invalid_response` with the HTTP status and are not retried. Empty collections
 and nullable owner, metadata and bucket limits remain valid.
 
+Explicit upload MIME parts use ASCII letters/digits and `!#$&-^_.+`, with 1–127
+characters per part, matching the server's preserved type/subtype grammar.
+Parameters after a semicolon and space/tab before it remain valid; header bytes
+are sent unchanged. Other HTTP token characters are refused before upload.
+Bucket methods take only `signal` and `timeout` from their options.
+
 Blank OAuth codes are rejected before HTTP or verifier consumption. Sessions
 need a nonempty user identity. Password-reset, magic-link and confirmation
 methods return promises even when email validation fails; handle those errors
@@ -152,91 +229,136 @@ with `await`/`catch` or `.catch()`. Synchronous query builders still throw
 
 ## Sessions and lifecycle
 
-Each client owns its session adapter. Native localStorage uses an IndexedDB
-journal as authoritative session state, with localStorage as a compatibility
-mirror. Elsewhere the default is a separate in-memory adapter. A custom adapter
-can be sync or async. Instantiate a server client per request or supply a per-request token.
-The default storage key includes the host and base path, so projects under
+### Storage
+
+Each client owns its session adapter. A custom adapter can be sync or async.
+Elsewhere than in browsers the default is a separate in-memory adapter; on a
+server, instantiate a client per request or supply a per-request token. The
+default storage key includes the host and base path, so projects under
 different paths cannot overwrite each other's sessions in a shared adapter.
 
-Default server-memory clients use independent coordination queues. A pending
-sign-in on another client cannot delay reading an unrelated request's session.
+Native browser `localStorage` sessions use an IndexedDB journal as the
+authoritative state and `localStorage` as a mirror. The journal requires
+IndexedDB, bounds each database open and transaction to five seconds and
+closes its connection after every operation. It imports an existing
+`localStorage` session once per storage key. Each publication commits a
+receipt with a unique revision and its time; a later committed revision
+supersedes an earlier one even when the value is identical. Reload all tabs
+when upgrading so they use the same coordination protocol.
 
-Refresh calls on one auth client share a promise. Clients sharing an adapter
-and storage key are serialized with Web Locks, with a module-local queue as a
-fallback. Native browser sessions also commit a refresh reservation before HTTP
-and read the replacement only after the IndexedDB transaction commits. Web Locks
-alone do not order another tab's localStorage visibility. Without Web Locks,
-the journal rejects competing owners instead of waiting for their replacement.
-Custom shared adapters require Web Locks or external coordination; otherwise use
-per-tab sessionStorage. The module-local queue cannot coordinate separate tabs.
+A ready session whose `localStorage` mirror has been removed is signed out
+once its receipt is more than five seconds old (younger receipts may be
+between the journal commit and the mirror write); the journal is cleared in
+the same transaction. Other `localStorage` edits do not change the session.
+`sessionStorage` and custom adapters keep their own semantics.
 
-Browsers expose Web Locks only in secure contexts (HTTPS or `localhost`). On a
-plain `http://` origin, such as a LAN address, tabs fall back to the
-module-local queue, so two tabs can refresh at once. The server's 10-second
-retry window accepts the second refresh, but if the token from the first one is
-the copy left in storage, its next refresh counts as reuse and ends the
-session. Serve browser apps over HTTPS when people keep several tabs open.
-
-Native persistence requires IndexedDB and bounds each database open and
-transaction to five seconds. Connections close after every operation. A foreign
-unfinished reservation requires a new sign-in, an owning-client retry, or
-signOut; it never falls back to the potentially spent token in localStorage.
-A committed logout supersedes dirty state in other clients and late refresh
-responses cannot overwrite it. Broadcasts carry change notifications, not tokens.
-
-Each native publication has a unique revision. Explicit sign-in captures the
-prior receipt before HTTP; failed publication retains the local replacement
-or logout while that exact receipt remains current, even with a foreign owner.
-A later committed revision supersedes it even when the value is identical.
-
-The journal imports existing localStorage state once per storage key. Reload all
-tabs when upgrading to avoid mixing SDK coordination protocols. Use `signOut()`
-or clear all site data to remove sessions; editing only localStorage no longer
-changes the authoritative session. Custom adapters retain their existing semantics.
+### Refresh
 
 The refresh margin is capped at half the token lifetime, so short-lived tokens
 and large configured margins do not rotate fresh sessions repeatedly. Background
 jitter stays within the scheduled delay. An already expired token waits ten
-seconds before a background attempt; explicit session reads still refresh it
-immediately.
+seconds before a background attempt; explicit session reads refresh it
+immediately. Background retries after a failure wait 2 seconds, then 10.
 
-Auth methods that perform HTTP accept `{signal,timeout}` as the last argument.
-Signals also cancel queued authentication before HTTP starts; withdrawing a
-wait never cancels another operation's lifecycle ownership. Once a response is
-accepted, its session publication can finish after the caller stops waiting.
-Concurrent refresh callers share the first caller's timeout. Signals cancel
-each caller's wait independently; rotation continues and persists its result
-even when a waiter cancels. An already aborted caller does not start rotation.
-REST/storage signals also cover waiting for the token source or session
-refresh, without aborting an operation shared by other callers. `signOut()` waits
-for a pending refresh and clears locally even when server revocation fails.
-`dispose()` stops timers, closes channels and clears listeners; it neither
-revokes the session nor aborts requests already in flight.
+Refresh calls on one auth client share a promise and the first caller's
+timeout; rotation continues and persists its result even when a waiter
+cancels, and an already aborted caller does not start it. Clients sharing an
+adapter and storage key are serialized with Web Locks (in browsers, and for
+caller storage in Web and Service Workers), with a module-local queue as a
+fallback. Separate server adapters use independent queues. Browsers expose Web
+Locks only in secure contexts; on a plain `http://` origin tabs can refresh at
+once, and the server's 10-second retry window decides whether the second
+refresh is accepted or ends the session. Serve multi-tab apps over HTTPS.
 
-Native PKCE verifiers use the same journal with a separate key. Consumption
-commits a tombstone atomically, preventing stale native views from exchanging
-with an older or already consumed verifier. Cancellation before consumption
-keeps the verifier; once consumption starts, cancellation ends the caller's
-wait while the bounded exchange finishes and persists an accepted session.
-Custom adapters keep their existing storage API and keyed-lock coordination.
+A session read (`getSession()`, a request) refreshes a session within the
+margin. When that refresh fails transiently (network, 429, 5xx,
+`refresh_pending`) and the access token is still valid, the read succeeds with
+the current session and foreground attempts pause for `Retry-After` or two
+seconds. An expired token is never sent; the read returns the failure.
+`invalid_grant` signs out; other definite 4xx rejections leave the session.
 
-Failed session writes keep the newer state in memory: this client never reloads
-a spent refresh token or restores a signed-out session from stale storage.
-Storage errors still reject explicit auth methods. Unexpected background
-adapter errors are observed through the optional `auth.onBackgroundError`
-handler; automatic refresh pauses until a session is written successfully.
-Handler exceptions are isolated. Network errors returned in results keep the
-existing bounded refresh retry. Native clients block on another owner's
-unfinished reservation; an accepted replacement remains with its owner until
-it can be persisted or a newer committed session or logout supersedes it.
-Custom adapters require repair before sharing state that failed to persist.
+### Reservations
+
+Native browser sessions commit a reservation of the refresh token before
+sending it and read the replacement only after the IndexedDB transaction
+commits; Web Locks alone do not order another tab's `localStorage`
+visibility. The reservation's owner publishes the replacement, or gives the
+reservation back after a definite 4xx rejection; `invalid_grant` clears the
+session. A 5xx or a lost response keeps the reservation, because the rotation
+may have committed: the owner retries with the same token inside the server's
+retry window and never rotates an uncertain token a second time to clear it.
+
+Another client can always read a reserved session and use its access token.
+For 10 seconds after the reservation (the server's retry window) it cannot
+rotate it: refreshing returns `refresh_pending`. The owner renews the
+reservation every few seconds while its refresh request is in flight, so a slow
+request keeps it. Once renewals stop for 10 seconds the reservation is
+abandoned (its tab closed or crashed) and the next refresh takes it over,
+retrying the stored token. The server then either rotates it, or answers
+`invalid_grant` when the lost rotation had committed, which signs out. A late
+response from a superseded owner cannot overwrite the newer state: its
+publication is refused and the authoritative state is adopted. A reservation
+from an SDK without receipt times is timed from when this client first sees it.
+
+### Publication and events
+
+Explicit sign-in captures the prior receipt before HTTP. Failed publication
+of a sign-in, refresh replacement or logout keeps the newer local state (this
+client never reloads a spent refresh token or restores a signed-out session)
+while that exact prior receipt remains current, even with a foreign owner. A
+committed logout supersedes dirty state in other clients.
+
+Each change is broadcast as one message carrying its event and revision,
+never tokens; a change without a committed revision sends the legacy
+`"changed"` signal, which receivers still accept from older SDKs. Receivers
+reload under the lifecycle lock; unchanged reloads emit nothing, and a
+revision that no longer matches the journal is not trusted for its event
+kind. Explicit `sessionStorage` does not broadcast.
+
+Auth listeners run in registration order and may return promises. Each
+subscription first receives one asynchronous `initial_session`, ordered before
+later events. Listener completion is not awaited inside the lifecycle lock, so
+a listener can call auth. Listener throws and rejections go to
+`onBackgroundError` without stopping refresh. Background storage failures go
+there too and pause automatic refresh until a session is written successfully.
+Handler failures are isolated.
+
+### Sign-out
+
+`signOut()` waits for a pending refresh and clears locally even when server
+revocation fails. Under its lifecycle owner it renews only an expired access
+token (allowing five seconds of clock skew), and only to revoke the renewal: it
+is never persisted, broadcast or emitted as `refreshed`, and logout emits one
+`signed_out`. A still-valid token is revoked directly, even after a failed
+renewal; a reserved session is revoked with its current token. Signing out also
+consumes the pending PKCE verifier. `dispose()` stops timers, closes channels
+and clears listeners; it neither revokes the session nor aborts requests.
+
+### Caller-owned tokens
 
 An explicit `accessToken` controls REST/storage and `getUser()`/`updateUser()`
 identity. Those user operations do not consult or update stored sessions; null
 returns `session_missing` without HTTP. Automatic refresh is disabled for both
 combined and standalone auth clients. Other explicit auth methods may still
 store sessions; separate managed-login clients from caller-forwarding clients.
+
+### OAuth with PKCE
+
+Each storage key holds one pending verifier; native verifiers use the journal
+under a separate key. Publication, navigation, the code exchange and
+consumption share one lock. The verifier is consumed, as a committed tombstone,
+only after a definite answer (a session or a 4xx refusal); after a network
+failure, timeout or 5xx it stays for a retry of the same callback.
+Cancellation before the exchange keeps it; once the exchange starts it
+persists an accepted session even if the caller stops waiting.
+
+`handleRedirect()` acts only while a verifier is pending; otherwise it returns
+null data and leaves the URL untouched. It removes `code` and `error` from the
+address bar. Known server error codes (`access_denied`, `provider_error`,
+`provider_disabled`, `email_required`, `email_conflict`, `signup_disabled`,
+`invalid_state`) are kept as the error code; any other value becomes
+`oauth_error` with at most 64 sanitized characters in `details`. An error
+redirect consumes the verifier.
 
 ## Bucket settings
 
@@ -253,7 +375,8 @@ string for large int64 limits; the SDK sends it as an unquoted JSON integer.
 Do not first convert an exact string to `number`: JavaScript rounding cannot
 be recovered. The server retains its positive-int64 range and settings validation;
 invalid values return their existing HTTP errors. Non-finite numbers still throw
-before HTTP. Noncanonical decimal strings remain JSON-escaped and quoted.
+before HTTP. Noncanonical decimal strings remain JSON-escaped and quoted. Only
+the known settings fields are sent.
 
 ## Release acceptance
 
@@ -261,66 +384,3 @@ Run `check`, unit/type tests, `build`, `size`, `test:package`, runtime smoke tes
 and `test:contract -- --browser`. CI tests Node 22/24/26, Bun, Deno and
 Chromium/Firefox/WebKit. Edge hosts may consume the Web API implementation but
 are not included in this compatibility guarantee until tested on that host.
-
-
-## Hardening in 0.2.2
-
-These changes are in 0.2.2; the published 0.2.1 and earlier packages lack them.
-Updating the server does not update application SDKs.
-
-Table/view representations require an array of non-null objects. `single()`,
-`maybeSingle()` and `pages()` return or throw `invalid_response` for null, scalar
-or array elements. Empty result arrays and null fields inside rows remain valid.
-RPC results may still be scalars or contain scalar/null array elements. Select
-inference reports ambiguous relationships in both directions; use a column or
-foreign-key constraint hint to choose one.
-
-Auth listeners run in registration order and may return promises. Their completion
-is not awaited inside the lifecycle lock, so an async listener can call auth.
-Synchronous throws and asynchronous rejections are sent to `onBackgroundError`;
-they do not stop refresh or reject an accepted sign-in. Error-handler failures
-are isolated. Without a handler, listener errors are observed and discarded.
-Background storage errors still pause refresh as documented above.
-
-Serialized errors include `retryAfter` when present, but never include `cause`.
-Do not log login bodies, bearer tokens, session objects or signed URLs. Server
-error messages and database details can contain application data; redact them
-before sending telemetry outside the application's trust boundary.
-
-Explicit upload MIME parts use ASCII letters/digits and `!#$&-^_.+`, with 1–127
-characters per part, matching the server's preserved type/subtype grammar.
-Parameters after a semicolon and space/tab before it remain valid; header bytes
-are sent unchanged. HTTP token characters outside this subset are refused before
-upload instead of relying on the server to replace the declaration.
-
-The timeout still covers each HTTP attempt, not token-source/refresh waits or
-backoff. For a total caller deadline use `AbortSignal.timeout(ms)` as the request's
-signal. This returns `aborted` when the caller deadline expires and withdraws its
-wait without cancelling another caller's refresh. Uploads/downloads still have
-no transfer deadline by default. Use `open()` and cancel or finish its body for
-large files; `download()` deliberately buffers the entire file.
-
-## SDK issue corrections
-
-Raw-response attempt deadlines stop when headers arrive; caller cancellation
-still owns an accepted stream. Buffered responses retain their body deadline.
-Invalid HTTP header values are usage errors, and an unreadable error body keeps
-its known HTTP status. Retry-After accepts integer seconds or HTTP date formats;
-empty query/fragment delimiters are invalid in API base URLs.
-
-Logout renews under its lifecycle owner only an expired access token (allowing
-five seconds of clock skew) and revokes any still-valid token, even after a
-failed renewal. The renewal only revokes itself: it is never persisted,
-broadcast or emitted as `refreshed`, and logout emits one `signed_out`. An
-uncertain native refresh is never rotated a second time to clear it; logout can
-still clear local state. Every definite 4xx rejection other than `invalid_grant`
-releases its refresh reservation; `invalid_grant` clears the session. Network
-and gateway failures keep their uncertainty fence.
-Separate server adapters use independent locks; sharing an adapter and key
-coordinates its clients. Caller storage in Web and Service Workers keeps Web
-Locks. Explicit sessionStorage remains local to its tab.
-
-Cross-tab notifications preserve account/profile event kinds without sending
-credentials; unchanged reloads emit nothing. Reserved modifier column filters
-use logic groups, including embedded paths, and cardinality errors report 406.
-The query string returned by toString includes the same implicit limit as HTTP.

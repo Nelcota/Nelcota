@@ -51,6 +51,11 @@ it.each(["?code=", "?code=%20", "?error="])(
       auth: { autoRefresh: false },
     });
     try {
+      await auth.signInWithOAuth({
+        provider: "github",
+        redirectTo: "https://app.example.com/callback",
+        redirect: false,
+      });
       const result = await auth.handleRedirect("https://app.example.com/callback" + search);
       expect(result.data).toBeNull();
       expect(result.error?.code).toBeTruthy();

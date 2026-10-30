@@ -5,11 +5,11 @@
     "": {
       "name": "@nelcota/nextjs",
       "dependencies": {
+        "@nelcota/ssr": "~0.1.0",
         "server-only": "0.0.1",
       },
       "devDependencies": {
         "@nelcota/client": "file:../typescript",
-        "@nelcota/ssr": "file:../ssr",
         "@types/bun": "1.4.2",
         "@types/node": "^26.6.5",
         "@types/pg": "^8.23.1",
@@ -24,11 +24,13 @@
       },
       "peerDependencies": {
         "@nelcota/client": "^0.2.2",
-        "@nelcota/ssr": "^0.1.0",
         "next": "^16.4.3",
         "react": "^19.3.1",
       },
     },
+  },
+  "overrides": {
+    "@nelcota/ssr": "file:../ssr",
   },
   "packages": {
     "@emnapi/runtime": ["@emnapi/runtime@1.11.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA=="],

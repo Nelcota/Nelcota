@@ -1,13 +1,23 @@
 import { NelcotaError, type FetchLike } from "@nelcota/client";
 
-import { isRedirect } from "./status.js";
-
 interface RedirectPolicy {
   api: URL;
   origins: ReadonlySet<string>;
   development: boolean;
 }
 const MAX_STORAGE_HOPS = 3;
+const MOVED_PERMANENTLY = 301;
+const FOUND = 302;
+const SEE_OTHER = 303;
+const TEMPORARY_REDIRECT = 307;
+const PERMANENT_REDIRECT = 308;
+const REDIRECT_STATUSES: ReadonlySet<number> = new Set([
+  MOVED_PERMANENTLY,
+  FOUND,
+  SEE_OTHER,
+  TEMPORARY_REDIRECT,
+  PERMANENT_REDIRECT,
+]);
 const HOP_HEADERS = [
   "accept",
   "range",
@@ -58,7 +68,7 @@ export async function followStorage(
   for (let hop = 0; ; hop++) {
     // oxlint-disable-next-line no-await-in-loop -- Each redirect target and credential policy depend on the preceding response.
     const response = await send(target.href, { ...init, headers, redirect: "manual" });
-    if (isRedirect(response.status) === false) return response;
+    if (REDIRECT_STATUSES.has(response.status) === false) return response;
     const location = response.headers.get("location");
     void response.body?.cancel().catch(() => undefined);
     if (policy.origins.size === 0)

@@ -3,19 +3,21 @@
 This guide uses published `@nelcota/nextjs` 0.1.2 and `@nelcota/client` 0.2.5.
 The minimum base peer remains 0.2.2. See the [English guide](../README.md),
 [runnable example](https://github.com/Nelcota/Nelcota/blob/main/sdk/nextjs/examples/app-router/README.md) and
-[publication evidence](https://github.com/Nelcota/Nelcota/issues/151).
+[verificação e recibos de publicação](verification.md).
 
 ```sh
 bun add --exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.5 pg
 # ou com npm: npm install --save-exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.5 pg
 ```
 
+As dependências pares exigidas são `@nelcota/client` (acima) e o `next`/`react`
+que a aplicação já tem. A partir da 0.2.0 o núcleo de sessões `@nelcota/ssr` é
+instalado automaticamente como dependência comum; não o importe diretamente.
+
 The supported peer range is Next 16 on the Node runtime. The selected matrix
 uses Next 16.4.3 / React 19.3.1 on Bun 1.4.3 with Chromium, Firefox and WebKit,
-plus Node 22/24/26 with Chromium.
-Pinned Next 15.5.28 also passed three browser consumers with PostCSS 8.5.31,
-TypeScript 6 (Next 15 cannot use TypeScript 7) and
-Node middleware adaptations. Pages Router, Edge and earlier majors are outside scope.
+plus Node 22/24/26 with Chromium. Pages Router, Edge and earlier majors are
+outside scope and are not tested.
 
 ## Organização e configuração
 
@@ -26,8 +28,8 @@ para representar visitantes. REST/RPC/storage reutilizam `@nelcota/client`; as
 permissões e RLS do backend continuam sendo a autorização.
 
 Em produção use HTTPS, `appOrigin` explícita e `PostgresSessionStore` de
-`@nelcota/nextjs/postgres`. Execute `sql/session-store.sql` (no `@nelcota/ssr` instalado; até a 0.1.x ele vem no próprio
-`@nelcota/nextjs`) com o proprietário de
+`@nelcota/nextjs/postgres`. Execute `sql/session-store.sql` (até a 0.1.x ele vem no próprio
+`@nelcota/nextjs`; a partir da 0.2.0, na dependência `@nelcota/ssr` instalada) com o proprietário de
 um banco privado de sessões. A role da aplicação precisa somente de CONNECT,
 USAGE no schema e SELECT/INSERT/UPDATE/DELETE na tabela; não conceda acesso às
 roles públicas da API. Configure TLS com verificação de certificado, limite o
@@ -75,7 +77,7 @@ restrito a desenvolvimento loopback; não atende múltiplos processos.
 
 ## Componentes, rotas e ações
 
-- `(await nelcota).server(async ({ getUser, client }) => ...)`: consulta usuário
+- `(await nelcota()).server(async ({ getUser, client }) => ...)`: consulta usuário
   no serviço de auth, sem confiar apenas no JWT decodificado. Não renova sessão,
   não grava cookie nem permite mutações. Renderize páginas de usuário de forma
   dinâmica; não use cache compartilhado/ISR para resultados autenticados.
@@ -110,13 +112,17 @@ auth traz o erro do backend.
 
 Inicie OAuth por POST/Action com `auth.startOAuth({ provider, returnTo })`.
 Na callback, troque o código com `auth.exchangeCode()` e redirecione apenas ao
-`returnTo` local validado. Não reflita o parâmetro `next` nem credenciais da URL.
+`returnTo` local validado por `safeReturnTo`, usando a `origin` e o `basePath`
+validados que a integração expõe (0.2.0+) ou um `Location` relativo. Não reflita o parâmetro `next` nem credenciais da URL.
 Uma tentativa com estado incorreto não consome o verificador válido.
 
 No navegador importe somente `refreshSession` de `@nelcota/nextjs/browser`.
 Crie o POST `/auth/session/refresh` chamando `auth.refresh()`. A página
 `/auth/refresh` pode apresentar um botão Continuar para fazer esse POST. O proxy
-opcional cuida de navegação, não renova sessão nem substitui RLS. Evite loops
+opcional cuida de navegação, não renova sessão nem substitui RLS. Cada
+requisição a um prefixo protegido, inclusive prefetches de `<Link>`, verifica o
+usuário no serviço de auth; mantenha os prefixos estreitos ou use
+`prefetch={false}` nesses links. Evite loops
 excluindo login, callback e as páginas/rotas de renovação. Codificações ambíguas
 recebem 400 só em caminhos que, decodificados, possam atingir um prefixo
 protegido. Caminhos públicos como `/blog/50%25-off` passam normalmente.
@@ -180,10 +186,10 @@ PostgreSQL exige `NELCOTA_NEXT_TEST_DATABASE_URL` e cria/remove um banco própri
 Não use dados nem credenciais de produção. O exemplo App Router é loopback de
 desenvolvimento; não deve ser publicado como configuração de produção.
 
-Os scripts `package-smoke`, `boundary-smoke`, `framework-smoke` (com
-`CHROMIUM_PATH`), `backend-smoke` e `storage-smoke` ficam em `sdk/nextjs/scripts`.
-Rode um de cada vez, depois de `run build`. Os dois últimos usam `node
---conditions=react-server` e exigem `NELCOTA_NEXT_TEST_BINARY` e
+Os scripts `package-smoke`, `boundary-smoke` e `framework-smoke` (com
+`CHROMIUM_PATH`) ficam em `sdk/nextjs/scripts`; `backend-smoke` e `storage-smoke`
+testam só o núcleo e ficam em `sdk/ssr/scripts`. Rode um de cada vez, depois de
+`run build` em cada pacote. Os dois do núcleo exigem `NELCOTA_NEXT_TEST_BINARY` e
 `NELCOTA_NEXT_TEST_DATABASE_URL`. O de storage também exige
 `NELCOTA_NEXT_TEST_S3_ENDPOINT`, `NELCOTA_NEXT_TEST_S3_ACCESS_KEY_ID` e
 `NELCOTA_NEXT_TEST_S3_SECRET_ACCESS_KEY` de um provedor S3 descartável em
@@ -208,7 +214,7 @@ explícita com `storageRedirectOrigins: ['https://meu-bucket.s3.sa-east-1.amazon
   resultam em `storage_redirect_limit`.
 
 Testes unitários e um redirecionamento HTTP real em loopback cobrem isso. Em
-2026-10-24, `scripts/storage-smoke.mjs` rodou um servidor Nelcota do código
+2026-10-24, `sdk/ssr/scripts/storage-smoke.mjs` rodou um servidor Nelcota do código
 atual com backend S3 e um provedor RustFS 1.0.1 em loopback, o mesmo serviço
 compatível com S3 usado na CI. Os binários comunitários do MinIO não são mais
 distribuídos. A API respondeu 302 para uma URL pré-assinada do provedor. Com a

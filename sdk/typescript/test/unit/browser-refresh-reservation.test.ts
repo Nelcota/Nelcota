@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 
+import { BrowserSessionConflictError } from "../../src/auth/browser/session.errors.js";
 import { BrowserSessionState } from "../../src/auth/browser/state.js";
 import { requiredValue } from "../../src/core/required-value.js";
 import { createClient } from "../../src/index.js";
@@ -29,7 +30,9 @@ it("does not send a refresh when the reservation cannot commit", async () => {
         return original.call(this, value);
       });
     try {
-      await expect(client.auth.refreshSession()).rejects.toThrow("reservation failed");
+      const { error } = await client.auth.refreshSession();
+      expect(error?.code).toBe("session_unavailable");
+      expect(error?.cause).toEqual(new Error("reservation failed"));
       expect(mock.calls).toHaveLength(0);
     } finally {
       reservation.mockRestore();
@@ -101,12 +104,13 @@ it("does not emit a replacement session when a late response conflicts with logo
   });
   try {
     const refresh = client.auth.getSession();
-    const rejected = expect(refresh).rejects.toThrow("changed during refresh");
     await pending;
     // An independent owner without a shared Web Lock can commit logout.
     await new BrowserSessionState(KEY, factory).write(null);
     complete();
-    await rejected;
+    const { error } = await refresh;
+    expect(error?.code).toBe("session_unavailable");
+    expect(error?.cause).toBeInstanceOf(BrowserSessionConflictError);
     expect(events).toEqual([
       {
         event: "initial_session",
@@ -132,7 +136,10 @@ it("can reuse the original session on the same owner after an uncertain network 
     auth: { autoRefresh: false },
   });
   try {
-    expect((await client.auth.getSession()).error).not.toBeNull();
+    // The 503 is transient and the access token is still valid: keep using it.
+    const kept = await client.auth.getSession();
+    expect(kept.error).toBeNull();
+    expect(kept.data?.refresh_token).toBe("refresh-1");
     expect((await client.auth.refreshSession()).data?.refresh_token).toBe("replacement");
     expect(mock.calls).toHaveLength(2);
   } finally {

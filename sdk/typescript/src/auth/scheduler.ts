@@ -1,13 +1,17 @@
 /** When the next background refresh is due. It owns the timer, not what the refresh does. */
+import { MAX_TIMER_IN_MS, SECOND_IN_MS } from "../core/runtime.js";
 import { secondsLeft, type Session } from "./session.js";
 
-const SECOND_IN_MS = 1_000;
 const MAX_REFRESH_JITTER_IN_MS = 5_000;
-const MAX_TIMER_IN_MS = 2_147_483_647;
 
 export const RETRY_REFRESH_MS = 10_000;
 // First retry after an uncertain refresh: the server only takes the old token back within 10 s.
 export const QUICK_RETRY_REFRESH_MS = 2_000;
+
+/** How long a failed refresh waits: the server's Retry-After (seconds), else the quick retry. */
+export function retryDelayInMs(retryAfter: number | undefined): number {
+  return retryAfter === undefined ? QUICK_RETRY_REFRESH_MS : retryAfter * SECOND_IN_MS;
+}
 
 export class RefreshScheduler {
   #timer: ReturnType<typeof setTimeout> | undefined;

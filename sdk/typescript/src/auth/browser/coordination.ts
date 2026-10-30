@@ -1,6 +1,7 @@
+import { isWorkerScope } from "../../core/runtime.js";
+import { RANDOM_ID_CHARS } from "../../core/runtime.js";
 import type { SessionStorage } from "../session.js";
 import type { AuthEvent } from "../types.js";
-const REVISION_CHARS = 64;
 
 /**
  * Coordination between tabs of the same app. The server ends a session when a
@@ -20,9 +21,7 @@ function locks(): LockManagerLike | undefined {
 
 /** Web and Service Workers share Web Locks with same-origin tabs; servers do not. */
 function workerScope(): boolean {
-  const scope = (globalThis as { WorkerGlobalScope?: abstract new () => unknown })
-    .WorkerGlobalScope;
-  return typeof scope === "function" && globalThis instanceof scope && locks() !== undefined;
+  return isWorkerScope() && locks() !== undefined;
 }
 
 const adapters = new WeakMap<SessionStorage, Map<string, symbol>>();
@@ -97,7 +96,7 @@ export class Broadcast {
         typeof data === "object" &&
         ["signed_in", "signed_out", "refreshed", "user_updated"].includes(data.event as string) &&
         typeof data.revision === "string" &&
-        data.revision.length === REVISION_CHARS
+        data.revision.length === RANDOM_ID_CHARS
       )
         onMessage(data.event as AuthEvent, data.revision);
     };
@@ -105,11 +104,15 @@ export class Broadcast {
     (this.#channel as { unref?: () => void }).unref?.();
   }
 
+  /**
+   * One message per change: the structured form when the change has an event
+   * and a committed revision, otherwise the legacy `"changed"` signal, which
+   * receivers still accept from tabs running older SDKs.
+   */
   notify(event?: AuthEvent, revision?: string): void {
-    if (event != null && revision != null && revision !== "")
-      this.#channel?.postMessage({ event, revision });
-    // Older tabs only recognize this signal. New receivers deduplicate by state.
-    this.#channel?.postMessage("changed");
+    this.#channel?.postMessage(
+      event != null && revision != null && revision !== "" ? { event, revision } : "changed",
+    );
   }
 
   close(): void {

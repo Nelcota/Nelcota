@@ -10,7 +10,7 @@ it("reads: sends one GET with the filters, order and paging", async () => {
   const { nelcota, calls } = client(json([{ id: 1 }], 200, { "content-range": "0-0/1" }));
   const { data, error, count, status } = await nelcota
     .from("todos")
-    .select("id, title, owner:users(email)", { count: "exact" })
+    .select("id, title, owner:users(email), orders(total, qty)", { count: "exact" })
     .eq("done", false)
     .in("priority", ["high", 'a,"b"'])
     .ilike("title", `*${escapeLike("50%")}*`)
@@ -33,7 +33,7 @@ it("reads: sends one GET with the filters, order and paging", async () => {
   expect(call.url.pathname).toBe("/rest/v1/todos");
   expect(call.headers.get("prefer")).toBe("count=exact");
   expect(query(call.url)).toEqual([
-    ["select", "id,title,owner:users(email)"],
+    ["select", "id,title,owner:users(email),orders(total,qty)"],
     ["done", "eq.false"],
     ["priority", 'in.("high","a,\\"b\\"")'],
     ["title", "ilike.*50\\%*"],

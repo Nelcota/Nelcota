@@ -1,6 +1,6 @@
 #[allow(dead_code)]
 mod generated {
-    include!("../test/generated.rs");
+    include!("fixtures/generated.rs");
 }
 
 #[test]

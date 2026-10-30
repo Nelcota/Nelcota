@@ -2,9 +2,8 @@
 
 App Router integration published as `@nelcota/nextjs` **0.1.2**. Install it with
 the published `@nelcota/client` **0.2.5**; the supported minimum peer remains
-0.2.2. Registry receipts record [0.1.2](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169) and [client 0.2.5](https://github.com/Nelcota/Nelcota/pull/202#issuecomment-6445288705);
-[publication and acceptance](https://github.com/Nelcota/Nelcota/issues/151)
-record the original validation and the explicitly skipped external provider gates. See [releasing](docs/releasing.md) for future releases.
+0.2.2. [Verification](docs/verification.md) records what was tested and the
+publication receipts; see [releasing](docs/releasing.md) for future releases.
 
 Install in a compatible Next App Router application:
 
@@ -12,6 +11,11 @@ Install in a compatible Next App Router application:
 bun add --exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.5 pg
 # or with npm: npm install --save-exact @nelcota/nextjs@0.1.2 @nelcota/client@0.2.5 pg
 ```
+
+The required peers are `@nelcota/client` (named above) and the `next`/`react`
+your application already has. From 0.2.0 the session core, `@nelcota/ssr`, is
+installed automatically as a regular dependency; never import it directly, since
+`@nelcota/nextjs/server` re-exports everything an application needs.
 
 The [standalone App Router example](https://github.com/Nelcota/Nelcota/blob/main/sdk/nextjs/examples/app-router/README.md) installs these
 published versions and includes configuration and startup commands.
@@ -25,11 +29,8 @@ Actions, OAuth callback, optional authentication proxy, and a browser refresh
 helper. The verification matrix uses Next 16.4.3 / React 19.3.1 on Bun 1.4.3
 (`next build` and `next start` under Bun) with Chromium, Firefox and WebKit,
 plus Node 22, 24 and 26 with Chromium. The package
-peer range targets Next 16. A pinned Next 15.5.28 compatibility consumer passed
-all three browsers on Node 24 with PostCSS 8.5.31, TypeScript 6 (Next 15 cannot
-use TypeScript 7) and Node middleware adaptations;
-see the [compatibility evidence](https://github.com/Nelcota/Nelcota/blob/main/docs/goals/nextjs-151-validation.md).
-Pages Router, Edge and earlier Next majors remain outside the supported scope.
+peer range targets Next 16; Pages Router, Edge and earlier Next majors remain
+outside the supported scope and are not tested.
 
 This composes `@nelcota/client`; its REST/RPC/storage types and backend grants/RLS
 remain the data contract. The proxy is navigation assistance, never authorization.
@@ -38,9 +39,10 @@ Never use a service/operator credential as a substitute for a visitor token.
 ## Production configuration
 
 Keep this module server-only. Share configuration/pool, **never a user client**.
-Provision a dedicated PostgreSQL session database with
-[sql/session-store.sql](../ssr/sql/session-store.sql), using its owner for installation
-(shipped by the package up to 0.1.x; from the next minor it ships in `@nelcota/ssr`).
+Provision a dedicated PostgreSQL session database with `sql/session-store.sql`,
+using its owner for installation. Up to 0.1.x the file ships inside
+`@nelcota/nextjs`; from 0.2.0 it ships inside the installed `@nelcota/ssr`
+dependency ([source](../ssr/sql/session-store.sql)).
 Give an application role only CONNECT on that database, USAGE on `nelcota_next`
 and SELECT/INSERT/UPDATE/DELETE on `nelcota_next.sessions`. Do not grant these
 privileges to Nelcota `anon`, `authenticated`, or a public API schema. Runtime
@@ -49,7 +51,7 @@ credentials need no superuser, role administration or schema creation rights.
 ```ts
 import 'server-only';
 import { Pool } from 'pg'; // application-owned dependency
-import { createNelcotaNext } from '@nelcota/nextjs/server';
+import { createNelcotaNext, type NextIntegration } from '@nelcota/nextjs/server';
 import { PostgresSessionStore } from '@nelcota/nextjs/postgres';
 
 const pool = new Pool({
@@ -60,12 +62,21 @@ const pool = new Pool({
 });
 pool.on('error', () => { /* record a stable connection-error event, no raw URL */ });
 const store = new PostgresSessionStore(pool);
-export const nelcota = createNelcotaNext<Database>({
-  url: 'https://api.example.com',
-  appOrigin: 'https://app.example.com',
-  keys: [process.env.NELCOTA_SESSION_KEY!], // validate required environment at boot
-  store,
-});
+// Create on first use, not at module load (a rejection there is unhandled), and
+// drop a failed attempt so the next request retries instead of replaying it.
+let configured: Promise<NextIntegration<Database>> | undefined;
+export function nelcota(): Promise<NextIntegration<Database>> {
+  configured ??= createNelcotaNext<Database>({
+    url: 'https://api.example.com',
+    appOrigin: 'https://app.example.com',
+    keys: [process.env.NELCOTA_SESSION_KEY!], // validate required environment at boot
+    store,
+  }).catch((error: unknown) => {
+    configured = undefined;
+    throw error;
+  });
+  return configured;
+}
 ```
 
 Generate each key with `openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n'`.
@@ -123,7 +134,7 @@ on restart, is not shared between workers, and is refused by default in producti
 
 ```tsx
 export default async function Profile() {
-  return (await nelcota).server(async ({ getUser, client }) => {
+  return (await nelcota()).server(async ({ getUser, client }) => {
     const user = await getUser(); // validates with auth service; not decoded JWT trust
     if (user.error) return <a href="/login">Sign in</a>;
     const notes = await client.from('notes').select().execute();
@@ -144,7 +155,7 @@ ends; a stored context is not a reusable client.
 
 ```ts
 export async function POST(request: Request): Promise<Response> {
-  return (await nelcota).route(request, async ({ auth }) => {
+  return (await nelcota()).route(request, async ({ auth }) => {
     const result = await auth.refresh();
     return Response.json(result, { status: result.error ? 401 : 200 });
   });
@@ -167,7 +178,7 @@ refresh fails with a 429/5xx or network error, the callback still runs with the
 stored session. Sign-out still clears local state, and the auth result carries
 the backend error.
 
-An Action uses `(await nelcota).action(async ({ auth }) => { ... })`. Next only
+An Action uses `(await nelcota()).action(async ({ auth }) => { ... })`. Next only
 invokes Actions by POST, so the method check never fails for them. Their CSRF
 defense is the exact `Origin` check above plus Next's own Server Action origin
 check; do not widen `serverActions.allowedOrigins` beyond your own origin. Call
@@ -197,13 +208,19 @@ state/PKCE bind it to the initiating browser. Proxy redirects also include
 
 ```ts
 export async function GET(request: Request): Promise<Response> {
-  return (await nelcota).callback(request, async ({ auth }) => {
+  return (await nelcota()).callback(request, async ({ auth }) => {
     const result = await auth.exchangeCode(new URL(request.url).searchParams.get('code') ?? '');
     if (result.error) return Response.json({ error: 'sign_in_failed' }, { status: 400 });
-    return Response.redirect(new URL(result.data.returnTo, 'https://app.example.com'), 303);
+    const { origin, basePath } = await nelcota(); // validated configuration (0.2.0+)
+    return Response.redirect(new URL(`${basePath}${safeReturnTo(result.data.returnTo)}`, origin), 303);
   });
 }
 ```
+
+The integration exposes its validated `origin` and `basePath` (read-only, from
+0.2.0) so absolute redirects never depend on raw environment values or request
+headers. A relative `Location` of a `safeReturnTo` path also works, as in the
+example.
 
 It requires the initiating browser cookie and one-use state/PKCE verifier.
 Wrong state does not consume a valid verifier. Successful exchange clears state
@@ -223,6 +240,14 @@ get a 400 only on paths that could reach a protected prefix after decoding.
 Public paths such as `/blog/50%25-off` pass through. A proxy never refreshes
 or writes cookies itself; storage failures must surface instead of silently
 adopting another identity.
+
+**Cost.** Each request to a protected prefix verifies the user with the auth
+service (`getUser()`, one network call) in the proxy, and the page verifies
+again. Next's `<Link>` prefetches count as requests, so a page with many links
+to protected paths multiplies those calls. The proxy does not skip prefetches:
+an application may rely on it to keep signed-out visitors away from a page, and
+a prefetch must never receive that page's content unverified. Keep the protected
+prefixes narrow, or set `prefetch={false}` on links to them.
 
 ## Cookies, concurrency and remaining gates
 
@@ -285,24 +310,17 @@ lost: that row lives until a later sign-in or sign-out in the lineage, or until
 it expires. Tombstoning only deletes local state. It does not revoke a
 superseded refresh token at the auth server.
 
-Tests cover memory and PostgreSQL stores (mocked pool with two store instances,
-and real PostgreSQL with two pools/instances): reordered responses for
-different and identical users, publication withheld for a later winner, a
-delayed sign-out with an older cookie, no clearing by stale requests, the
-proxy bootstrap, and the cookie-less residual. The production framework smoke
-uses two Next processes and a shared disposable PostgreSQL store. Two tabs
-with one cookie jar sign in concurrently after loading the bootstrap path.
-Reversed or lost replies leave the browser signed out; natural order shows the
-newer identity. The next lineage sign-in retires a lost winner. WebKit's
-provisional intercepted requests omit Cookie, so their controlled replay uses
-the browser's cookie jar for that exact URL. Tabs that skip bootstrap retain
-the cookie-less residual above. These checks run in the documented browser and
-Node matrix; the execution ledger retains each artifact and result.
+[Verification](docs/verification.md) lists the tests and browser runs that cover
+these cases.
 
 ## Local verification
 
-From the repository root, install/build the base SDK, then `bun install --cwd
-sdk/nextjs --frozen-lockfile`. Run Rust, Vitest and audits sequentially:
+From the repository root, install/build the base SDK and then the SSR core
+(`bun install --cwd sdk/ssr --frozen-lockfile && bun run --cwd sdk/ssr build`),
+then `bun install --cwd sdk/nextjs --frozen-lockfile`. That install copies the
+built core (a Bun `resolutions` entry points `@nelcota/ssr` at `../ssr`):
+`check` type-checks against its `dist`, while Vitest runs the core's sources,
+so rebuild and reinstall after changing `sdk/ssr`. Run Rust, Vitest and audits sequentially:
 
 ```sh
 bun run --cwd sdk/nextjs check
@@ -328,40 +346,15 @@ node scripts/boundary-smoke.mjs    # Client Component importing /server must fai
 NELCOTA_NEXT_TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/postgres \
   node scripts/framework-smoke.mjs
 node scripts/package-smoke.mjs --published-base # actual npm base SDK dependency
-NELCOTA_NEXT_TEST_BINARY=/abs/target/debug/nelcota \
-NELCOTA_NEXT_TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/postgres \
-  node --conditions=react-server scripts/backend-smoke.mjs
-# same two variables plus a disposable loopback S3 provider and its bucket-admin key:
-NELCOTA_NEXT_TEST_S3_ENDPOINT=http://127.0.0.1:9100 \
-NELCOTA_NEXT_TEST_S3_ACCESS_KEY_ID=... NELCOTA_NEXT_TEST_S3_SECRET_ACCESS_KEY=... \
-  node --conditions=react-server scripts/storage-smoke.mjs
 ```
 
-The boundary and framework smokes link the package into its own
-`node_modules` (so the example shares one `next`/`react`) and run a production
-build of the example. Set `NELCOTA_NEXT_BROWSER=firefox` or `webkit` to select
-another installed Playwright engine; Chromium is the default. `CHROMIUM_PATH`
-optionally overrides its executable. The framework smoke starts two `next start`
-processes sharing PostgreSQL against a local transport fixture: it is not RLS
-evidence. It exercises password, signup/confirmation, resend, user update,
-refresh, recovery, magic links and OAuth callbacks, including replay rejection.
-The example's `/api/auth` POST handler demonstrates these operations without
-returning session tokens. Email-link tokens belong in the POST body.
+The session-core smokes against a real Nelcota server (`backend-smoke`,
+`storage-smoke`, `auth-smoke`, `oauth-smoke`) live in
+[`sdk/ssr/scripts`](../ssr/scripts); see the
+[SSR core README](../ssr/README.md#backend-smokes).
 
-After building the server and both SDK packages, run the real auth/email
-contract from the repository root:
-
-```sh
-bun sdk/typescript/scripts/contract.ts --nextjs test/contract/auth.test.ts
-```
-
-This owns disposable PostgreSQL and STARTTLS Mailpit fixtures, tests real
-recovery/magic-link delivery and token consumption, and verifies eight
-concurrent refresh contexts through independent session stores. The reusable
-Next verification workflow runs these checks, backend/RLS, storage/S3 and the
-server OAuth contract before release publication. Live Google/GitHub accounts and AWS S3/R2 HTTPS remain explicitly unvalidated
-at the maintainer's request. Controlled provider endpoints and loopback RustFS
-checks do not complete those gates.
+What each smoke covers, the real auth/email contract and the CI evidence are
+described in [verification](docs/verification.md).
 
 ## Storage downloads and S3 redirects
 
@@ -390,13 +383,6 @@ createNelcotaNext<Database>({
   code is `storage_redirect_refused` and the destination is never contacted.
   Too many hops give `storage_redirect_limit`.
 
-Unit tests and a real loopback HTTP redirect cover this. On 2026-10-24,
-`scripts/storage-smoke.mjs` ran a current-source Nelcota server on the S3
-backend against a loopback RustFS 1.0.1 provider, the S3-compatible service
-CI uses. MinIO community binaries are no longer distributed. The API answered
-302 to a presigned provider URL. With the provider origin listed, the download
-returned the uploaded bytes and a range request returned 206. Only allow-listed
-headers reached the provider, with no `Authorization`, cookie or `apikey`.
-Without the option, or with another origin listed, the result was
-`storage_redirect_refused` and the provider was never contacted. AWS S3, R2
-and other providers, and HTTPS endpoints, were not exercised.
+Unit tests and a real loopback HTTP redirect cover this; the S3 provider run
+and the providers that were not exercised are listed in
+[verification](docs/verification.md).

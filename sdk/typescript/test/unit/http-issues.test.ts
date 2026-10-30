@@ -1,9 +1,9 @@
 import { afterEach, expect, it, vi } from "vitest";
 
 import { parseRetryAfter } from "../../src/core/http/client.js";
-import { promiseResult } from "../../src/core/promise-result.js";
 import { createClient, NelcotaUsageError } from "../../src/index.js";
 import { empty, mockFetch } from "./http-fixtures.js";
+import { promiseResult } from "./promise-result.js";
 
 afterEach(() => {
   vi.useRealTimers();

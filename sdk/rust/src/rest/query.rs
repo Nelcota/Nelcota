@@ -16,6 +16,8 @@ pub struct Query {
     method: Method,
     params: Vec<(String, String)>,
     prefer: Vec<String>,
+    /// `select` on a write asks for the written rows, whatever the call order.
+    returning: bool,
     body: Option<Value>,
     cardinality: Cardinality,
     error: Option<Error>,
@@ -32,6 +34,7 @@ impl Query {
             method: Method::GET,
             params: Vec::new(),
             prefer: Vec::new(),
+            returning: false,
             body: None,
             cardinality: Cardinality::Many,
             error: encoding::identifier(name).err(),
@@ -88,26 +91,21 @@ impl Query {
         if let Some(value) = self.record(encoding::select(columns)) {
             self.replace("select".into(), value);
         }
-        if self.method != Method::GET && self.method != Method::HEAD {
-            self.preference("return=", "return=representation");
-        }
+        self.returning = true;
         self
     }
     pub fn insert(mut self, values: &impl Serialize) -> Self {
         self.method = Method::POST;
         self.set_body(values, true);
-        self.preference("return=", "return=minimal");
         self
     }
     pub fn update(mut self, values: &impl Serialize) -> Self {
         self.method = Method::PATCH;
         self.set_body(values, false);
-        self.preference("return=", "return=minimal");
         self
     }
     pub fn delete(mut self) -> Self {
         self.method = Method::DELETE;
-        self.preference("return=", "return=minimal");
         self
     }
     pub fn upsert(mut self, values: &impl Serialize, options: UpsertOptions) -> Self {
@@ -361,11 +359,9 @@ impl Query {
         if let Some(error) = self.error {
             return Err(error);
         }
+        let write = self.method != Method::GET && self.method != Method::HEAD;
         if self.cardinality != Cardinality::Many
-            && (self.method == Method::HEAD
-                || (!self.rpc
-                    && self.method != Method::GET
-                    && !self.prefer.iter().any(|p| p == "return=representation")))
+            && (self.method == Method::HEAD || (!self.rpc && write && !self.returning))
         {
             return Err(Error::Usage(
                 "single/maybe_single requires rows: select a representation and omit head".into(),
@@ -378,6 +374,12 @@ impl Query {
         }
         if !self.rpc && self.method == Method::POST && self.filters > 0 {
             return Err(Error::Usage("insert/upsert does not accept filters".into()));
+        }
+        // Built here, so `select` and the write method combine in any order.
+        if write && self.returning {
+            self.preference("return=", "return=representation");
+        } else if write && !self.rpc {
+            self.preference("return=", "return=minimal");
         }
         let mut spec = Spec::new(self.method.clone(), self.path);
         spec.params = self.params;

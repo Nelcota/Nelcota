@@ -1,6 +1,11 @@
 import { IDBFactory } from "fake-indexeddb";
 import { afterEach, expect, it, vi } from "vitest";
 
+import {
+  BrowserSessionState,
+  MIRROR_SETTLE_IN_MS,
+  RESERVATION_LEASE_IN_MS,
+} from "../../src/auth/browser/state.js";
 import { requiredValue } from "../../src/core/required-value.js";
 import {
   createClient,
@@ -11,9 +16,11 @@ import {
 } from "../../src/index.js";
 import { installWebLocks } from "./browser-environment.js";
 import { json, mockFetch, session } from "./http-fixtures.js";
+const KEY = "nelcota.api.example.com.session";
 const clients: NelcotaClient[] = [];
 afterEach(() => {
   for (const client of clients.splice(0)) client.dispose();
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 function browser() {
@@ -92,7 +99,78 @@ it("keeps a gateway failure fenced because rotation may have committed (#137)", 
   await first.auth.setSession(session());
   expect((await first.auth.refreshSession()).error?.status).toBe(503);
   first.dispose();
-  await expect(client().auth.getSession()).rejects.toThrow("interrupted");
+  const mock = mockFetch(json(session(900, "taken-over", "taken-over-access")));
+  const other = client(mock.fetch);
+  // The reserved session stays readable; only its rotation waits for the lease.
+  expect((await other.auth.getSession()).data?.refresh_token).toBe("refresh-1");
+  expect((await other.auth.refreshSession()).error?.code).toBe("refresh_pending");
+  expect(mock.calls).toHaveLength(0);
+  // Past the lease the owner is presumed gone: the reservation is taken over.
+  const now = Date.now();
+  vi.spyOn(Date, "now").mockReturnValue(now + RESERVATION_LEASE_IN_MS);
+  expect((await other.auth.refreshSession()).data?.refresh_token).toBe("taken-over");
+  expect(mock.calls).toHaveLength(1);
+});
+it("recovers a reservation left by a tab that closed mid-refresh after reload (#1)", async () => {
+  browser();
+  await client().auth.setSession(session(30));
+  // A tab that closed mid-refresh: its committed reservation has no owner left.
+  const closed = new BrowserSessionState(KEY, globalThis.indexedDB);
+  await closed.read(() => JSON.stringify(session(30)));
+  await closed.reserve(session(30));
+  const mock = mockFetch(json(session(900, "recovered", "recovered-access")));
+  const reloaded = client(mock.fetch);
+  // Within the lease the still-valid access token keeps working, without HTTP.
+  const early = await reloaded.auth.getSession();
+  expect(early.error).toBeNull();
+  expect(early.data?.refresh_token).toBe("refresh-1");
+  expect(mock.calls).toHaveLength(0);
+  const now = Date.now();
+  vi.spyOn(Date, "now").mockReturnValue(now + RESERVATION_LEASE_IN_MS);
+  const { data, error } = await reloaded.auth.refreshSession();
+  expect(error).toBeNull();
+  expect(data?.refresh_token).toBe("recovered");
+  expect(mock.calls).toHaveLength(1);
+});
+it("treats a removed localStorage mirror as sign-out once the receipt has settled (#5)", async () => {
+  const environment = browser();
+  const first = client();
+  await first.auth.setSession(session());
+  environment.native.removeItem(KEY);
+  // Just after a commit the mirror may still be on its way: keep the session.
+  expect((await first.auth.getSession()).data?.refresh_token).toBe("refresh-1");
+  const now = Date.now();
+  vi.spyOn(Date, "now").mockReturnValue(now + MIRROR_SETTLE_IN_MS);
+  const reloaded = client();
+  expect((await reloaded.auth.getSession()).data).toBeNull();
+  // The journal was cleared too: the session does not come back.
+  expect(
+    (await new BrowserSessionState(KEY, globalThis.indexedDB).read(() => null)).value,
+  ).toBeNull();
+  expect((await first.auth.getSession()).data).toBeNull();
+});
+it("broadcasts one message per change and still accepts the legacy signal", async () => {
+  const environment = browser();
+  const first = client(),
+    second = client();
+  const events: AuthEvent[] = [];
+  second.auth.onChange((event) => events.push(event));
+  await vi.waitFor(() => expect(events).toEqual(["initial_session"]));
+  environment.messages.length = 0;
+  await first.auth.setSession(session());
+  expect(environment.messages).toEqual([
+    { event: "signed_in", revision: expect.any(String) as unknown },
+  ]);
+  await vi.waitFor(() => expect(events).toEqual(["initial_session", "signed_in"]));
+  // A tab running an older SDK commits without a structured message and only
+  // sends "changed": the receiver reloads and infers the event.
+  const replacement = JSON.stringify(session(900, "refresh-2", "access-2"));
+  await new BrowserSessionState(KEY, globalThis.indexedDB).write(replacement);
+  environment.native.setItem(KEY, replacement);
+  const receiver = requiredValue([...environment.channels].at(-1), "receiving channel");
+  receiver.onmessage?.({ data: "changed" });
+  await vi.waitFor(() => expect(events).toEqual(["initial_session", "signed_in", "refreshed"]));
+  expect((await second.auth.getSession()).data?.refresh_token).toBe("refresh-2");
 });
 it("labels profile and account changes in loaded and unread tabs (#138)", async () => {
   browser();

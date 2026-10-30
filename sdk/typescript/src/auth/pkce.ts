@@ -1,6 +1,6 @@
 /** PKCE (RFC 7636) with S256, on Web Crypto. */
 
-import { base64UrlEncode } from "../core/jwt.js";
+import { base64UrlEncode } from "../core/runtime.js";
 const VERIFIER_BYTES = 48;
 
 /** 64 characters from 48 random bytes (the RFC allows 43 to 128). */

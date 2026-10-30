@@ -1,5 +1,13 @@
-import { requiredValue } from "../core/required-value.js";
-import { filterParam, referenced, nonNegative, selectList } from "./query-encoding.js";
+import {
+  filterParam,
+  pageCursor,
+  referenced,
+  nonNegative,
+  requireFilterable,
+  requirePageable,
+  requireRows,
+  selectList,
+} from "./query-encoding.js";
 import { executeQuery, queryParams } from "./query-execution.js";
 import type { TableRow, ValueFor, GroupRow, Reselected } from "./query-types.js";
 export { selectList } from "./query-encoding.js";
@@ -62,6 +70,7 @@ export class Query<
   }
 
   #param(key: string, value: string): this {
+    requireFilterable(this.#state.method, key);
     return this.#with({ params: [...this.#state.params, [key, value]] });
   }
 
@@ -131,6 +140,7 @@ export class Query<
     const filters = Object.entries(values).flatMap(([column, value]) =>
       value === undefined ? [] : [filterParam(column, "eq", scalar(value))],
     );
+    for (const [key] of filters) requireFilterable(this.#state.method, key);
     return filters.length === 0
       ? this
       : this.#with({ params: [...this.#state.params, ...filters] });
@@ -142,7 +152,7 @@ export class Query<
     value: unknown,
   ): this {
     if (op === "in") return this.#filter(column, "not.in", inList(value as readonly unknown[]));
-    if (op === "is") return this.#filter(column, "not.is", isOperand(value as IsValue));
+    if (op === "is") return this.#filter(column, "not.is", isOperand(value));
     return this.#filter(column, `not.${compareOperator(op)}`, scalar(value));
   }
   /** Any of the conditions: `.or((c) => [c.eq('a', 1), c.gt('b', 2)])`. */
@@ -173,33 +183,35 @@ export class Query<
   order(column: string, options?: OrderOptions): this;
   order(column: string, options: OrderOptions = {}): this {
     const key = referenced("order", options);
+    requirePageable(this.#state.method, "order", key);
     let term = identifier(column, "column");
     term += options.ascending === false ? ".desc" : ".asc";
     if (options.nullsFirst !== undefined) term += options.nullsFirst ? ".nullsfirst" : ".nullslast";
+    const index = this.#state.params.findIndex(([k]) => k === key);
+    const existing = this.#state.params[index];
+    if (existing === undefined) return this.#with({ params: [...this.#state.params, [key, term]] });
     const params = [...this.#state.params];
-    const index = params.findIndex(([k]) => k === key);
-    if (index >= 0) {
-      params[index] = [
-        key,
-        `${requiredValue(params[index], "required operation value")[1]},${term}`,
-      ];
-      return this.#with({ params });
-    }
-    params.push([key, term]);
+    params[index] = [key, `${existing[1]},${term}`];
     return this.#with({ params });
   }
 
+  /** At most `count` rows. Reads only (and embeds of a write's `select()`). */
   limit(count: number, options?: ReferencedOption): this {
-    return this.#replace(referenced("limit", options), nonNegative("limit", count));
+    const key = referenced("limit", options);
+    requirePageable(this.#state.method, "limit", key);
+    return this.#replace(key, nonNegative("limit", count));
   }
 
   /** Skips the first `count` rows (combine with `limit`, or use `range`). */
   offset(count: number, options?: ReferencedOption): this {
-    return this.#replace(referenced("offset", options), nonNegative("offset", count));
+    const key = referenced("offset", options);
+    requirePageable(this.#state.method, "offset", key);
+    return this.#replace(key, nonNegative("offset", count));
   }
 
   /** Rows `from` to `to`, both included (zero-based). */
   range(from: number, to: number, options?: ReferencedOption): this {
+    requirePageable(this.#state.method, "range", referenced("limit", options));
     nonNegative("range start", from);
     if (to < from) throw new NelcotaUsageError("range end must be >= start");
     return this.#replace(referenced("offset", options), String(from)).#replace(
@@ -217,7 +229,7 @@ export class Query<
   single(
     this: [Out] extends [null] ? never : Query<S, Name, Row, Out, Head, Throws>,
   ): Query<S, Name, Row, Row, Head, Throws> {
-    this.#requireRows();
+    requireRows(this.#state);
     return this.#with({ cardinality: "one" }) as unknown as Query<S, Name, Row, Row, Head, Throws>;
   }
 
@@ -225,7 +237,7 @@ export class Query<
   maybeSingle(
     this: [Out] extends [null] ? never : Query<S, Name, Row, Out, Head, Throws>,
   ): Query<S, Name, Row, Row | null, Head, Throws> {
-    this.#requireRows();
+    requireRows(this.#state);
     return this.#with({ cardinality: "maybe" }) as unknown as Query<
       S,
       Name,
@@ -234,14 +246,6 @@ export class Query<
       Head,
       Throws
     >;
-  }
-
-  #requireRows(): void {
-    if (this.#state.returnsRows === false || this.#state.method === "HEAD") {
-      throw new NelcotaUsageError(
-        "single/maybeSingle requires rows: call select() on writes and omit head: true",
-      );
-    }
   }
 
   /**
@@ -288,7 +292,7 @@ export class Query<
 
   /** The query string this builder sends, for logs and tests. */
   toString(): string {
-    return this.#params().toString();
+    return queryParams(this.#state).toString();
   }
 
   // ------------------------------------------------------------ sending
@@ -313,23 +317,36 @@ export class Query<
    * @throws When the request fails after `throwOnError()` has been enabled.
    */
   async execute(): Promise<QueryOutcome<Out, Throws>> {
-    const result = await this.#run();
+    const result: QueryResult<Out> = await executeQuery<Out>(this.#state);
     if (result.error != null && this.#state.throws === true) throw result.error;
     return result as QueryOutcome<Out, Throws>;
   }
 
-  #params(): URLSearchParams {
-    return queryParams(this.#state);
-  }
-  async #run(): Promise<QueryResult<Out>> {
-    return await executeQuery<Out>(this.#state);
+  /**
+   * Builders are not promises. Awaiting one (or returning it from an async
+   * function, or passing it to `Promise.all`) rejects with a
+   * `NelcotaUsageError` instead of silently resolving to the builder, and the
+   * awaited type is `never`. Call `.execute()`.
+   *
+   * @deprecated Not a promise: call `.execute()`.
+   * @param _onfulfilled - Never called.
+   * @param onrejected - Receives the usage error.
+   */
+  // oxlint-disable-next-line unicorn/no-thenable -- An accidental `await builder` must fail loudly instead of resolving to the builder.
+  then(_onfulfilled?: unknown, onrejected?: (reason: NelcotaUsageError) => unknown): void {
+    const error = new NelcotaUsageError(
+      "A query builder is not a promise: call .execute() and await its result",
+    );
+    if (typeof onrejected !== "function") throw error;
+    onrejected(error);
   }
 
   /**
    * Reads every matching row, `size` rows per request, from the current
    * offset on. Order by a unique column so pages do not overlap. It ends at
    * the first empty page, so a server row cap smaller than `size` cannot cut
-   * it short; a failed page throws its `NelcotaError`.
+   * it short; a failed page throws its `NelcotaError`. A `limit` (or `range`)
+   * already set caps the total number of rows read.
    *
    * @yields The next page of matching rows, in the query order.
    *
@@ -349,15 +366,16 @@ export class Query<
     }
     if (Number.isSafeInteger(size) === false || size < 1)
       throw new NelcotaUsageError("page size must be an integer >= 1");
-    const start = state.params.find(([k]) => k === "offset")?.[1];
-    let offset = start === undefined ? 0 : Number(start);
-    for (;;) {
+    let { offset, remaining } = pageCursor(state.params);
+    while (remaining > 0) {
+      const page = this.offset(offset).limit(Math.min(size, remaining));
       // oxlint-disable-next-line no-await-in-loop -- Advance pagination only after accepting the previous page and checking its terminal result.
-      const { data, error } = await this.offset(offset).limit(size).#run();
+      const { data, error } = await executeQuery<Row[]>(page.#state);
       if (error != null) throw error;
       if (data.length === 0) return;
       yield data;
       offset += data.length;
+      remaining -= data.length;
     }
   }
 }

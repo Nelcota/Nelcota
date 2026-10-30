@@ -5,6 +5,66 @@ Dates identify release entries; registry availability requires a successful publ
 
 ## Unreleased
 
+### Added
+
+- `AuthClient::try_start_auto_refresh` returns an error outside a Tokio runtime
+  instead of panicking; `start_auto_refresh` (documented to panic there) and the
+  `AutoRefresh` handle are `#[must_use]`.
+- `Client::try_with_access_token` refuses an invalid explicit token at once.
+- `Condition::is_null`, matching `Query::is_null`.
+
+### Changed
+
+- Session reads are lock-free snapshots: requests and `get_session` of a fresh
+  session no longer wait behind sign-in, refresh, sign-out or session
+  persistence. While a token inside the refresh margin is still valid, requests
+  keep sending it and the shared rotation runs in the background; only an
+  expired token waits for it. After a transient refresh failure they start
+  another rotation only once Retry-After (or 2 s) has elapsed. Mutations still
+  serialize on one lifecycle lock.
+- Session expiry is tracked on the local monotonic clock from `expires_in`.
+  Sessions received from the server have `expires_at` rewritten to the local
+  clock plus `expires_in`, so stored copies are not affected by server clock
+  skew. The serialized format is unchanged.
+- `select` combines with `insert`/`update`/`upsert`/`delete` in either order;
+  `select(...).insert(...)` used to fall back to `return=minimal`.
+- `escape_like` escapes `*` as `\*` instead of turning it into `_`. Matching a
+  literal `*` needs a server that reads `\*` as a literal (newer than 0.5.6);
+  older servers still treat each `*` as `%`.
+- `FileStorage` runs its filesystem calls on the blocking pool and creates
+  missing parent directories with mode 0700 on Unix. On Windows the file keeps
+  inheriting its directory's ACL (documented).
+- `Error::Network` messages include the transport's cause chain (still without
+  request URLs).
+- The published crate contains only `src`, `examples`, README, changelog,
+  license and manifest. The generator fixture moved to
+  `tests/fixtures/generated.rs`; the package check is `scripts/test-package.py`.
+- `docs/contract.md` is reorganized into the protocol contract and a short
+  upgrade section.
+
+### Fixed
+
+- An expired token is no longer sent after a transient refresh failure: the
+  request returns the refresh error (retryable, with Retry-After) instead of a
+  401 from the stale token.
+- A corrupt or invalid stored session no longer makes every call fail: it
+  counts as signed out, emits `SignedOut` and is removed on a best-effort basis;
+  `sign_out` always clears storage. Stores report corrupt content with the new
+  `Error::SessionInvalid` (`FileStorage` does); any other `load` error, such as
+  a sharing violation, is returned and the stored session is kept.
+- Background refresh backs off (up to 60 s) instead of waking every second when
+  a refreshed session is immediately due again.
+- Concurrent refresh callers on a multi-threaded runtime share one rotation;
+  the decision to join or start one is atomic.
+  A rotation task that panics no longer leaves later callers waiting on it.
+- Serializing a bare `Field::Omit` (a hand-written struct without
+  `skip_serializing_if = "Field::is_omitted"`) fails with an explanation
+  instead of silently writing `null`.
+- `Condition` refuses dotted column names, which the server's logic-tree
+  grammar rejects.
+- `with_access_token` validates its token like `ClientBuilder::access_token`;
+  an invalid one fails each request with the same `Error::Usage`.
+
 ## 0.1.7 — 2026-10-26
 
 ### Fixed

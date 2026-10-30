@@ -20,6 +20,10 @@ export type {
 export type NextOptions = SessionOptions;
 
 export interface NextIntegration<Database> {
+  /** The validated, configured application origin (`appOrigin`), e.g. for absolute redirects. */
+  readonly origin: string;
+  /** The configured `basePath` ('' when unset); prefix it to local paths you redirect to. */
+  readonly basePath: string;
   server<T>(work: (context: VerifiedContext<Database>) => Promise<T>): Promise<T>;
   route(
     request: Request,
@@ -37,6 +41,8 @@ export async function createNelcotaNext<Database = unknown>(
 ): Promise<NextIntegration<Database>> {
   const owner = await Integration.create<Database>(options);
   return {
+    origin: owner.origin,
+    basePath: owner.basePath,
     server: async (work) => await owner.read(await cookies(), (context) => work(context)),
     route: async (request, work) =>
       privateResponse(await owner.write(await cookies(), request, work)),

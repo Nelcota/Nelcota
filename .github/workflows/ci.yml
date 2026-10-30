@@ -280,3 +280,6 @@ jobs:
 
   nextjs-sdk:
     uses: ./.github/workflows/sdk-nextjs-check.yml
+
+  ssr-sdk:
+    uses: ./.github/workflows/sdk-ssr-check.yml

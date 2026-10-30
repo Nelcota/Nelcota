@@ -62,7 +62,16 @@ it("observes a late rejection even when every caller starts already aborted", as
   });
   const controller = new AbortController();
   controller.abort();
-  expect((await abortable(operation, controller.signal)).error?.code).toBe("aborted");
-  fail(new Error("late failure"));
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  const unhandled = vi.fn();
+  process.on("unhandledRejection", unhandled);
+  try {
+    expect((await abortable(operation, controller.signal)).error?.code).toBe("aborted");
+    fail(new Error("late failure"));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    // abortable() observed the rejection: nothing reached the process handler.
+    expect(unhandled).not.toHaveBeenCalled();
+    await expect(operation).rejects.toThrow("late failure");
+  } finally {
+    process.off("unhandledRejection", unhandled);
+  }
 });

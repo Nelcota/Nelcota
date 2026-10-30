@@ -1,38 +1,21 @@
-"use client";
-import { refreshSession } from "@nelcota/nextjs/browser";
-import { useState } from "react";
-export default function Refresh() {
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
-  async function renew() {
-    setPending(true);
-    setError("");
-    try {
-      const response = await refreshSession();
-      if (Boolean(response.ok) === false) {
-        window.location.assign("/login");
-        return;
-      }
-      window.location.assign("/profile");
-    } catch {
-      setError("Could not renew the session. Try again.");
-    } finally {
-      setPending(false);
-    }
-  }
+import { safeReturnTo } from "@nelcota/nextjs/server";
+
+import { Continue } from "./continue";
+export const dynamic = "force-dynamic";
+const DEFAULT_RETURN = "/profile";
+
+export default async function Refresh({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
+  // The proxy names the page that needs a renewed session; only a local path survives.
+  const { next } = await searchParams;
   return (
     <main>
       <h1>Continue your session</h1>
-      <p>Renew the session before returning to your profile.</p>
-      <button
-        disabled={pending}
-        onClick={() => {
-          void renew();
-        }}
-      >
-        {pending ? "Renewing…" : "Continue"}
-      </button>
-      <p role="status">{error}</p>
+      <p>Renew the session before returning to the page you opened.</p>
+      <Continue next={typeof next === "string" ? safeReturnTo(next) : DEFAULT_RETURN} />
     </main>
   );
 }

@@ -5,9 +5,15 @@ through a form action, `/dashboard` is protected by `hooks.server.js` and shows
 the signed-in user, `/auth/refresh` renews an expired session and returns, and
 the dashboard's form signs out.
 
-It uses the in-memory development store, so it is **loopback development
-only**. Production uses `PostgresSessionStore` from `@nelcota/ssr/postgres` with
-[sql/session-store.sql](../../sql/session-store.sql).
+The session store depends on the environment. With
+`NELCOTA_SESSION_DATABASE_URL` set it uses `PostgresSessionStore` from
+`@nelcota/ssr/postgres` on a database provisioned with
+[sql/session-store.sql](../../sql/session-store.sql); this is the production
+setup. Without it, the example falls back to the in-memory development store,
+which the core accepts only for a plain-HTTP loopback `ORIGIN` (the only case in
+which the example sets `allowInsecureDevelopment`). The commands below, and the
+CI smoke test, build for production but run on loopback with the in-memory store;
+they are not a production deployment.
 
 ```sh
 bun install --cwd ../../../typescript --frozen-lockfile && bun run --cwd ../../../typescript build
@@ -19,6 +25,10 @@ PORT=5173 HOST=127.0.0.1 ORIGIN=http://127.0.0.1:5173 \
   NELCOTA_SESSION_KEY="$(node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))")" \
   bun build/index.js   # or with Node: node build
 ```
+
+For a production-like run, add
+`NELCOTA_SESSION_DATABASE_URL=postgres://…` (a dedicated session database) and
+serve an HTTPS `ORIGIN`.
 
 `NELCOTA_URL` is your Nelcota server. `ORIGIN` must be the URL the browser uses,
 both when building (SvelteKit's trusted origin for CSRF checks) and when running

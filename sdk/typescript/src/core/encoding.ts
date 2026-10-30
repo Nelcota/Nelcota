@@ -92,12 +92,16 @@ export function inList(values: readonly unknown[]): string {
 }
 
 /**
- * Escapes the LIKE wildcards in text a person typed, for `like`/`ilike`
- * patterns: `%` and `_` become literal. The API reads `*` as `%` and has no
- * escape for it, so a typed `*` matches any single character instead.
+ * Escapes the wildcards in text a person typed, for `like`/`ilike` patterns:
+ * `%`, `_`, `*` and `\` all match themselves. The API reads an unescaped `*`
+ * as `%` and `\*` as a literal `*`.
+ *
+ * @remarks
+ * Literal `*` needs a server that understands `\*`. An older server reads
+ * `\*` as `\%`, so a typed `*` there matches a literal `%` instead.
  */
 export function escapeLike(text: string): string {
-  return text.replaceAll(/[\\%_]/g, (c) => `\\${c}`).replaceAll("*", "_");
+  return text.replaceAll(/[\\%_*]/g, (c) => `\\${c}`);
 }
 
 const BUCKET = /^[a-z0-9][a-z0-9_-]{0,62}$/;

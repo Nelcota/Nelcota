@@ -1,7 +1,7 @@
 import "server-only";
 import { PostgresSessionStore } from "@nelcota/nextjs/postgres";
 import type { NextOptions } from "@nelcota/nextjs/server";
-import { DevelopmentSessionStore } from "@nelcota/nextjs/testing";
+import type { DevelopmentSessionStore } from "@nelcota/nextjs/testing";
 import { Pool } from "pg";
 
 // Loopback fixture ONLY. Production must use PostgresSessionStore and HTTPS.
@@ -10,8 +10,11 @@ const shared = globalThis as typeof globalThis & {
   nelcotaFixtureStore?: DevelopmentSessionStore;
   nelcotaFixturePool?: Pool;
 };
-export function options(): NextOptions {
+export async function options(): Promise<NextOptions> {
   const { url, appOrigin, key } = exampleEnvironment();
+  // Plain HTTP is only for a loopback fixture (the SDK refuses it elsewhere); an HTTPS
+  // origin never enables the insecure development mode, whatever the session store.
+  const allowInsecureDevelopment = new URL(appOrigin).protocol === "http:";
   const connectionString = process.env.NELCOTA_NEXT_SESSION_DATABASE_URL;
   if (connectionString != null && connectionString !== "") {
     if (shared.nelcotaFixturePool == null) {
@@ -28,16 +31,19 @@ export function options(): NextOptions {
       appOrigin,
       keys: [key],
       store: new PostgresSessionStore(shared.nelcotaFixturePool),
-      allowInsecureDevelopment: true,
+      allowInsecureDevelopment,
     };
   }
+  // Loaded only when selected, so a PostgreSQL configuration never imports the
+  // volatile development store.
+  const { DevelopmentSessionStore } = await import("@nelcota/nextjs/testing");
   shared.nelcotaFixtureStore ??= new DevelopmentSessionStore();
   return {
     url,
     appOrigin,
     keys: [key],
     store: shared.nelcotaFixtureStore,
-    allowInsecureDevelopment: true,
+    allowInsecureDevelopment,
   };
 }
 

@@ -113,7 +113,8 @@ it("values > group values read back exactly and never add conditions (server gra
 });
 
 it("values > escapes LIKE wildcards in typed text", () => {
-  expect(escapeLike("50%_off\\*")).toBe("50\\%\\_off\\\\_");
+  expect(escapeLike("50%_off\\*")).toBe("50\\%\\_off\\\\\\*");
+  expect(escapeLike("a*b")).toBe("a\\*b");
 });
 
 describe("conditions", () => {

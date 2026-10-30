@@ -1,11 +1,10 @@
 import { isAborted } from "../cancellation.js";
 import { NelcotaError, NelcotaUsageError, clientError } from "../client.errors.js";
 import { assertTokenAllowed } from "../jwt.js";
+import { SECOND_IN_MS } from "../runtime.js";
 import { HTTP_STATUS } from "./errors.js";
 import { MAX_RETRY_WAIT_MS } from "./retry.js";
 import type { RequestSpec, Attempt } from "./types.js";
-
-const SECOND_IN_MS = 1_000;
 
 const BEARER_PREFIX = "bearer ";
 
@@ -79,23 +78,36 @@ export function successfulResponse(response: Response): boolean {
   );
 }
 
+function timedOut(cause: unknown, signal: AbortSignal | undefined): boolean {
+  const reason: unknown = signal?.reason;
+  return (
+    (signal?.aborted === true &&
+      reason instanceof DOMException &&
+      reason.name === "TimeoutError") ||
+    (cause instanceof DOMException && cause.name === "TimeoutError")
+  );
+}
+
 export function attemptError(
   cause: unknown,
   {
     signal,
     requested,
     timeoutInMs,
-  }: { signal: AbortSignal | undefined; requested: AbortSignal | undefined; timeoutInMs: number },
+    reading = false,
+  }: {
+    signal: AbortSignal | undefined;
+    requested: AbortSignal | undefined;
+    timeoutInMs: number;
+    /** The status arrived and the failure happened while reading the body. */
+    reading?: boolean;
+  },
 ): NelcotaError {
   if (cause instanceof NelcotaError) return cause;
   if (isAborted(requested)) return clientError("aborted", "The request was aborted", cause);
-  const reason: unknown = signal?.reason;
-  const timedOut =
-    (signal?.aborted === true &&
-      reason instanceof DOMException &&
-      reason.name === "TimeoutError") ||
-    (cause instanceof DOMException && cause.name === "TimeoutError");
-  return timedOut
-    ? clientError("timeout", `No response within ${timeoutInMs} ms`, cause)
-    : clientError("network_error", "The server could not be reached", cause);
+  if (timedOut(cause, signal))
+    return clientError("timeout", `No response within ${timeoutInMs} ms`, cause);
+  // The server answered (a write may have committed); only its body was lost.
+  if (reading) return clientError("response_body_error", "The response could not be read", cause);
+  return clientError("network_error", "The server could not be reached", cause);
 }

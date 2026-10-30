@@ -1,11 +1,12 @@
 import type { NelcotaClient, Result, Session, User } from "@nelcota/client";
 
-import { HTTP_STATUS } from "../http/status.js";
-import { identityOperation, mutationOptions } from "./mutation-options.js";
+import { mutationOptions } from "./mutation-options.js";
 import { oauthOperations } from "./oauth.js";
 import type { AuthOperations, MutationOptions } from "./types.js";
 import type { WriteState } from "./write-state.js";
 
+const HTTP_UNAUTHORIZED = 401;
+const HTTP_NOT_FOUND = 404;
 type SessionAuth = NelcotaClient["auth"];
 function onlyUser(result: Result<Session>): Result<User> {
   return result.error != null ? result : { data: result.data.user, error: null };
@@ -18,16 +19,12 @@ function credentialOperations(
     signInWithPassword: async (input, options) => {
       state.mutate();
       return onlyUser(
-        await identityOperation(state, () =>
-          auth.signInWithPassword(input, mutationOptions(options)),
-        ),
+        await state.identity(() => auth.signInWithPassword(input, mutationOptions(options))),
       );
     },
     signUp: async (input, options) => {
       state.mutate();
-      const result = await identityOperation(state, () =>
-        auth.signUp(input, mutationOptions(options)),
-      );
+      const result = await state.identity(() => auth.signUp(input, mutationOptions(options)));
       return result.error != null
         ? result
         : {
@@ -41,13 +38,13 @@ function credentialOperations(
     verifyEmailLink: async (input, options) => {
       state.mutate();
       return onlyUser(
-        await identityOperation(state, () => auth.verifyEmailLink(input, mutationOptions(options))),
+        await state.identity(() => auth.verifyEmailLink(input, mutationOptions(options))),
       );
     },
     resetPassword: async (input, options) => {
       state.mutate();
       return onlyUser(
-        await identityOperation(state, () => auth.resetPassword(input, mutationOptions(options))),
+        await state.identity(() => auth.resetPassword(input, mutationOptions(options))),
       );
     },
   };
@@ -109,10 +106,7 @@ async function refresh(
   if (current.data === null) return { data: null, error: null };
   let expiresAt = current.data.expires_at;
   let verified = await auth.getUser(request);
-  if (
-    verified.error?.status === HTTP_STATUS.unauthorized ||
-    verified.error?.status === HTTP_STATUS.notFound
-  ) {
+  if (verified.error?.status === HTTP_UNAUTHORIZED || verified.error?.status === HTTP_NOT_FOUND) {
     const renewed = await auth.refreshSession(request);
     if (renewed.error != null) return renewed;
     verified = await auth.getUser(request);

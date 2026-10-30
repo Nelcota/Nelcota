@@ -1,7 +1,7 @@
 import { abortable, isAborted } from "../cancellation.js";
 import { NelcotaError, NelcotaUsageError, clientError } from "../client.errors.js";
 import { encodeJson, parseJson } from "../json.js";
-import { promiseResult } from "../promise-result.js";
+import { MAX_TIMER_IN_MS } from "../runtime.js";
 import { errorFromResponse } from "./errors.js";
 import {
   requestHeaders,
@@ -23,8 +23,6 @@ import type {
 export type { FetchLike, TokenSource, HttpOptions, RequestSpec } from "./types.js";
 export { errorFromResponse } from "./errors.js";
 export { parseRetryAfter } from "./retry.js";
-
-const MAX_TIMER_IN_MS = 2_147_483_647;
 
 function nonNegativeInteger(value: number, name: string, maximum = Number.MAX_SAFE_INTEGER): void {
   if (Number.isSafeInteger(value) === false || value < 0 || value > maximum) {
@@ -66,8 +64,7 @@ export class HttpClient {
     spec: RequestSpec,
     read: (response: Response) => Promise<T>,
   ): Promise<HttpResult<T>> {
-    const timeoutInMs = spec.timeout ?? this.#options.timeout;
-    nonNegativeInteger(timeoutInMs, "timeout", MAX_TIMER_IN_MS);
+    const timeoutInMs = this.#timeout(spec);
     if (isAborted(spec.signal)) {
       return {
         data: null,
@@ -77,7 +74,7 @@ export class HttpClient {
     }
     if (spec.json !== undefined && spec.body !== undefined)
       throw new NelcotaUsageError("A request has either json or body, not both");
-    const encodedBody = spec.json === undefined ? spec.body : encodeJson(spec.json);
+    const body = spec.json === undefined ? spec.body : encodeJson(spec.json);
     const headers = requestHeaders(this.#options.headers, spec.headers);
     const authentication = this.#authenticate(spec, headers);
     const authenticationError =
@@ -91,12 +88,18 @@ export class HttpClient {
         error: clientError("aborted", "The request was aborted"),
       };
     }
-    const body = encodedBody;
     if (spec.json !== undefined) {
       headers.set("content-type", "application/json");
     }
 
     return await this.#retry(spec, { body, headers, timeoutInMs }, read);
+  }
+
+  /** The request's timeout; the default was validated by the constructor. */
+  #timeout(spec: RequestSpec): number {
+    if (spec.timeout === undefined) return this.#options.timeout;
+    nonNegativeInteger(spec.timeout, "timeout", MAX_TIMER_IN_MS);
+    return spec.timeout;
   }
 
   #authenticate(
@@ -169,10 +172,14 @@ export class HttpClient {
     };
     if (signal != null) init.signal = signal;
     if (attempt.streaming) init.duplex = "half";
+    // Set once a successful status arrived: a later failure reads the body.
+    let reading = false;
     try {
       const response = await this.#options.fetch(attempt.href, init);
-      if (successfulResponse(response))
+      if (successfulResponse(response)) {
+        reading = true;
         return { data: await read(response), response, error: null };
+      }
       const failure = await errorFromResponse(response);
       if (retryResponse(response.status, failure, attempt)) return { retry: failure };
       return { data: null, response: null, error: failure };
@@ -181,6 +188,7 @@ export class HttpClient {
         signal,
         requested: spec.signal,
         timeoutInMs: attempt.timeoutInMs,
+        reading,
       });
       if (
         cause instanceof NelcotaError ||
@@ -198,7 +206,7 @@ export class HttpClient {
   async send(
     spec: RequestSpec,
   ): Promise<{ response: Response; error: null } | { response: null; error: NelcotaError }> {
-    const result = await this.#request(spec, (response) => promiseResult(() => response));
+    const result = await this.#request(spec, (response) => Promise.resolve(response));
     return result.error != null
       ? { response: null, error: result.error }
       : { response: result.data, error: null };

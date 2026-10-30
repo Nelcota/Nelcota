@@ -1,10 +1,17 @@
 import { SessionError } from "./errors.js";
 import { promiseResult } from "./lifecycle/promise-result.js";
+import { MAX_SEALED_CHARS } from "./sealing/seal.js";
 import type { SessionLease, SessionStore, StoredSession } from "./store.js";
 const DEFAULT_SESSION_CAPACITY = 1000;
 const MAX_SESSION_CAPACITY = 10000;
-const MAX_SEALED_SESSION_CHARS = 131072;
+const MAX_SEALED_SESSION_CHARS = MAX_SEALED_CHARS;
 const MAX_QUEUED_OWNERS = 256;
+
+interface OwnedLease {
+  lease: SessionLease;
+  close: () => void;
+  retireRotated: () => void;
+}
 
 /** Explicit development/test store. It loses sessions on restart and is not shared. */
 export class DevelopmentSessionStore implements SessionStore {
@@ -35,7 +42,7 @@ export class DevelopmentSessionStore implements SessionStore {
       return { ...value };
     });
   }
-  #put(key: string, value: StoredSession): void {
+  #validate(value: StoredSession): void {
     if (
       Number.isSafeInteger(value.expiresAt) === false ||
       value.expiresAt <= Date.now() ||
@@ -43,6 +50,9 @@ export class DevelopmentSessionStore implements SessionStore {
     ) {
       throw new SessionError("invalid_session", "Invalid bounded session state");
     }
+  }
+  #put(key: string, value: StoredSession): void {
+    this.#validate(value);
     if (this.#sessions.has(key) === false && this.#sessions.size >= this.capacity) {
       this.#pruneExpired();
       if (this.#sessions.size >= this.capacity)
@@ -60,8 +70,12 @@ export class DevelopmentSessionStore implements SessionStore {
       throw new SessionError("session_capacity", "Development owner capacity reached");
     this.#waiting++;
     const previous = this.#pending.get(key) ?? Promise.resolve();
-    const { lease, close } = this.#lease(key);
-    const running = previous.then(() => work(lease));
+    const { lease, close, retireRotated } = this.#lease(key);
+    const running = previous.then(async () => {
+      const result = await work(lease);
+      retireRotated();
+      return result;
+    });
     const tail = running.then(
       () => undefined,
       () => undefined,
@@ -75,9 +89,18 @@ export class DevelopmentSessionStore implements SessionStore {
       if (this.#pending.get(key) === tail) this.#pending.delete(key);
     }
   }
-  #lease(key: string): { lease: SessionLease; close: () => void } {
+  #retire(rotated: readonly { key: string; retain: StoredSession | undefined }[]): void {
+    for (const row of rotated) {
+      if (row.retain != null) this.#put(row.key, row.retain);
+      else this.#sessions.delete(row.key);
+    }
+  }
+  /** Same publication order as the PostgreSQL store: rotated-away rows are
+   * replaced only after the owner's callback succeeded (`retireRotated`). */
+  #lease(key: string): OwnedLease {
     let active = true,
       current = key;
+    const rotated: { key: string; retain: StoredSession | undefined }[] = [];
     const lifetime = new AbortController();
     const requireOwner = (): void => {
       if (active === false)
@@ -105,14 +128,18 @@ export class DevelopmentSessionStore implements SessionStore {
       rotate: (next, retain) => {
         return promiseResult(() => {
           requireOwner();
-          if (retain != null) this.#put(current, retain);
-          if (retain == null) this.#sessions.delete(current);
+          if (retain != null) this.#validate(retain);
+          rotated.push({ key: current, retain });
           current = next;
         });
       },
     };
     return {
       lease,
+      retireRotated: () => {
+        requireOwner();
+        this.#retire(rotated);
+      },
       close: () => {
         active = false;
         lifetime.abort();

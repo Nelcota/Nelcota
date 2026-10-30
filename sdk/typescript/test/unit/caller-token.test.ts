@@ -1,10 +1,10 @@
 import { expect, it, vi } from "vitest";
 
 import { createAuthClient, type AuthClientOptions } from "../../src/auth/index.js";
-import { promiseResult } from "../../src/core/promise-result.js";
 import { requiredValue } from "../../src/core/required-value.js";
 import { createClient, memoryStorage, type AuthEvent } from "../../src/index.js";
 import { json, mockFetch, session } from "./http-fixtures.js";
+import { promiseResult } from "./promise-result.js";
 
 const url = "https://api.example.com";
 const factories = [

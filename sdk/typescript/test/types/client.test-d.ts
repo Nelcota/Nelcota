@@ -290,3 +290,9 @@ it("accepts embedded logic columns while retaining parent filter validation (#14
       return [conditions.gt("id", 5)];
     });
 });
+
+it("query builders are not promises: awaiting one has type never", () => {
+  const query = nelcota.from("orders").select();
+  expectTypeOf<Awaited<typeof query>>().toBeNever();
+  expectTypeOf(query).not.toExtend<PromiseLike<unknown>>();
+});

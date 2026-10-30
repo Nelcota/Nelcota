@@ -1,8 +1,9 @@
 import { afterEach, expect, it, vi } from "vitest";
 
 import { refreshSession } from "../src/browser.js";
+import { DEFAULT_REFRESH_ENDPOINT, DEFAULT_REFRESH_PAGE } from "../src/index.js";
 import { promiseResult } from "../src/lifecycle/promise-result.js";
-import { requiredValue } from "../src/required-value.js";
+import { requiredValue } from "./required-value.js";
 
 afterEach(() => vi.unstubAllGlobals());
 function browser() {
@@ -26,6 +27,16 @@ it("uses a same-origin bounded POST without JavaScript tokens", async () => {
     cache: "no-store",
     redirect: "error",
   });
+  // No marker header: nothing checks one, and the Origin check is the CSRF boundary.
+  expect(requiredValue(fetch.mock.calls[0], "recorded request")[1]?.headers).toBeUndefined();
+});
+it("shares its default endpoint with the guard's public routes", async () => {
+  const fetch = browser();
+  await refreshSession();
+  expect(new Request(requiredValue(fetch.mock.calls[0], "recorded request")[0]).url).toBe(
+    `https://app.test${DEFAULT_REFRESH_ENDPOINT}`,
+  );
+  expect(DEFAULT_REFRESH_PAGE).toBe("/auth/refresh");
 });
 it("refuses foreign/ambiguous refresh endpoints before fetch", async () => {
   const fetch = browser();

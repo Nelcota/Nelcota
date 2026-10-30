@@ -1,25 +1,66 @@
 import { SessionError } from "../../errors.js";
-import { boundedOperation } from "./deadlines.js";
+import { boundedOperation, type StoreDeadlines } from "./deadlines.js";
 import type { OwnedConnection, SessionConnection, SessionPool } from "./types.js";
 
-const MAX_CONNECTIONS = 32;
+interface LeaseWaiter {
+  grant: () => void;
+  timer: ReturnType<typeof setTimeout>;
+}
 
-/** Count pending and borrowed connections together, including late pool resolutions. */
+/** Borrows pooled connections and bounds how many of them write leases may hold.
+ * Reads borrow without a slot and queue in the pool, so a burst of slow writes
+ * cannot take every connection away from rendering.
+ */
 export class SessionConnections {
   readonly #pool: SessionPool;
   readonly timeout: number;
   readonly leaseTimeout: number;
-  #connecting = 0;
-  #borrowed = 0;
-  constructor(pool: SessionPool, timeout: number, leaseTimeout: number) {
+  readonly #maxLeases: number;
+  #leases = 0;
+  readonly #waiters: LeaseWaiter[] = [];
+  constructor(pool: SessionPool, deadlines: StoreDeadlines) {
     this.#pool = pool;
-    this.timeout = timeout;
-    this.leaseTimeout = leaseTimeout;
+    this.timeout = deadlines.timeout;
+    this.leaseTimeout = deadlines.leaseTimeout;
+    this.#maxLeases = deadlines.maxLeases;
+  }
+
+  /** Waits (FIFO) for a write-lease slot until `deadline`; resolves to its release. */
+  async leaseSlot(deadline: number): Promise<() => void> {
+    let released = false;
+    const release = (): void => {
+      if (released) return;
+      released = true;
+      const next = this.#waiters.shift();
+      if (next === undefined) {
+        this.#leases--;
+        return;
+      }
+      clearTimeout(next.timer);
+      next.grant();
+    };
+    if (this.#leases < this.#maxLeases) {
+      this.#leases++;
+      return release;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const waiter: LeaseWaiter = {
+        grant: resolve,
+        timer: setTimeout(
+          () => {
+            const index = this.#waiters.indexOf(waiter);
+            if (index >= 0) this.#waiters.splice(index, 1);
+            reject(new SessionError("session_capacity", "Session store lease capacity reached"));
+          },
+          Math.max(0, deadline - Date.now()),
+        ),
+      };
+      this.#waiters.push(waiter);
+    });
+    return release;
   }
 
   #accepted(client: SessionConnection): OwnedConnection {
-    this.#connecting--;
-    this.#borrowed++;
     let released = false;
     const connection = new AbortController();
     const lost = (): void => connection.abort();
@@ -35,7 +76,6 @@ export class SessionConnections {
         if (released)
           throw new SessionError("closed_context", "Session connection already released");
         released = true;
-        this.#borrowed--;
         const destroyed = destroy === true || connection.signal.aborted;
         // Observe terminal FATAL errors from destroyed clients until the connection ends.
         try {
@@ -48,28 +88,17 @@ export class SessionConnections {
   }
 
   async connect(timeout: number = this.timeout): Promise<OwnedConnection> {
-    if (this.#connecting + this.#borrowed >= MAX_CONNECTIONS)
-      throw new SessionError("session_capacity", "Session store connection capacity reached");
-    this.#connecting++;
     let connect: Promise<SessionConnection>;
     try {
       connect = this.#pool.connect();
     } catch (cause) {
-      this.#connecting--;
       throw new SessionError("session_store", "Session connection failed", cause);
     }
-    const pending = connect.then(
-      (client) => this.#accepted(client),
-      (error: unknown) => {
-        this.#connecting--;
-        // oxlint-disable-next-line typescript/only-throw-error -- Preserve the pool adapter's original rejection identity.
-        throw error;
-      },
-    );
+    const pending = connect.then((client) => this.#accepted(client));
     try {
       return await boundedOperation(pending, Math.min(timeout, this.timeout));
     } catch (cause) {
-      // A late borrow remains counted until it settles, then is destroyed.
+      // A late borrow is destroyed as soon as it arrives.
       void pending.then(
         (client) => client.release(true),
         () => undefined,

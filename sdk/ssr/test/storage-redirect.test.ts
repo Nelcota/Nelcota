@@ -4,7 +4,7 @@ import { expect, it } from "vitest";
 
 import { Integration } from "../src/context.js";
 import { promiseResult } from "../src/lifecycle/promise-result.js";
-import { requiredValue } from "../src/required-value.js";
+import { requiredValue } from "./required-value.js";
 import { api, post, setup, object, presigned } from "./storage-redirect-fixtures.js";
 
 it("storage redirects: follows an allow-listed presigned redirect without credentials", async () => {

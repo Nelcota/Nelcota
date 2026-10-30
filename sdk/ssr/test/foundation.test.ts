@@ -3,9 +3,9 @@ import { createHash, randomBytes, webcrypto } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import { DevelopmentSessionStore } from "../src/memory-store.js";
-import { requiredValue } from "../src/required-value.js";
 import { newSessionId, sessionKey, SessionSealer, type SessionState } from "../src/sealing/seal.js";
 import { gate as controlGate } from "./gate.js";
+import { requiredValue } from "./required-value.js";
 
 const state = (): SessionState => ({
   schema: 1,
