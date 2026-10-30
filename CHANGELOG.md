@@ -188,6 +188,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
   stay).
 - A project's sign-in handoff only follows links to that project's own
   address.
+- A REST request dropped mid-statement (client disconnect or request timeout)
+  cancels its PostgreSQL statement. The connection returns to the pool only
+  after the cancelled work and a `ROLLBACK` finish, instead of staying busy
+  until `statement_timeout`.
 
 ## [0.5.6] — 2026-10-27
 

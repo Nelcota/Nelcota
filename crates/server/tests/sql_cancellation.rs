@@ -1,11 +1,12 @@
-//! Dedicated SQL admission must include database cleanup after caller cancellation.
+//! Dedicated SQL admission must include database cleanup after caller cancellation,
+//! and a dropped REST request must not leave its statement running.
 mod common;
 
 use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
-use common::TestApp;
+use common::{Options, TestApp};
 use http_body_util::BodyExt;
 use nelcota_admin::{SqlBusy, SqlExecutor, contracts::SqlResponse};
 use std::{
@@ -547,4 +548,63 @@ async fn cancelled_exports_keep_admission_until_postgres_finishes_cleanup() {
         "export admission reopened before backend cleanup"
     );
     assert_eq!(third_json["code"], "export_busy");
+}
+
+async fn sleeping_api_statements(app: &TestApp) -> i64 {
+    app.admin_client.query_one(
+        "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND application_name='nelcota' AND state='active' AND wait_event='PgSleep'",
+        &[],
+    ).await.unwrap().get(0)
+}
+
+#[tokio::test]
+async fn dropped_rest_request_cancels_its_statement_and_frees_the_connection() {
+    let app = TestApp::spawn_with(Options {
+        pool_size: 1,
+        ..Options::default()
+    })
+    .await;
+    app.admin_client
+        .batch_execute(
+            "CREATE FUNCTION public.slow_rest_call() RETURNS integer LANGUAGE plpgsql
+             AS $$ BEGIN PERFORM pg_sleep(30); RETURN 1; END $$;",
+        )
+        .await
+        .unwrap();
+    app.catalog.reload(&app.pool).await.unwrap();
+    let request = Request::post("/rest/v1/rpc/slow_rest_call")
+        .header("content-type", "application/json")
+        .body(Body::from("{}"))
+        .unwrap();
+    let pending = tokio::spawn(app.router.clone().oneshot(request));
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while sleeping_api_statements(&app).await != 1 {
+        assert!(
+            Instant::now() < deadline,
+            "the REST statement did not start"
+        );
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    // A client disconnect or the request timeout drops the handler future.
+    let dropped = Instant::now();
+    pending.abort();
+    let cancelled = match pending.await {
+        Err(error) => error.is_cancelled(),
+        Ok(_) => false,
+    };
+    assert!(cancelled);
+    // Well before the 10 s statement timeout, Postgres stops the statement.
+    let deadline = dropped + Duration::from_secs(3);
+    while sleeping_api_statements(&app).await != 0 {
+        assert!(
+            Instant::now() < deadline,
+            "the dropped request's statement kept running"
+        );
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    // The only pooled connection serves the next request, in a clean state.
+    let (status, rows) = app.get("/rest/v1/products?limit=1", None).await;
+    assert_eq!(status, StatusCode::OK, "{rows}");
+    assert_eq!(rows.as_array().unwrap().len(), 1);
+    assert!(dropped.elapsed() < Duration::from_secs(8));
 }
