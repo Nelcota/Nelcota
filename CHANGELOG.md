@@ -207,9 +207,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
   policy that calls a writing function cannot change data during a read; such
   a read now fails with `400 db_error` (`25006`). Function calls and writes
   are unchanged.
-- Partitions and inheritance children are no longer exposed as REST tables
-  (or listed in the panel). Read directly they skipped their parent's row
-  policies, so a broadly granted partition returned every row; use the parent.
+- Partitions, and inheritance children without row-level security of their
+  own, are no longer exposed as REST tables (or listed in the panel). Read
+  directly they skipped their parent's row policies, so a broadly granted
+  partition returned every row; use the parent, or enable RLS on the child.
 - The REST OpenAPI document lists only the columns, column comments and filters
   the requesting role may use, and includes tables it can reach through
   column-level GRANTs only.

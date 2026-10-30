@@ -11,10 +11,10 @@ Functions with polymorphic or other pseudo-type input arguments, or `VARIADIC`
 parameters, are also excluded from the catalog. JSON argument conversion cannot
 call those signatures reliably.
 
-Partitions and tables that inherit from another table are not exposed either
-(nor listed in the panel): use their parent, whose GRANTs and row policies
-apply to every child's rows. Read directly, a child would skip the parent's
-policies.
+Partitions, and tables that inherit from another table without enabling row
+level security of their own, are not exposed either (nor listed in the panel):
+use their parent, whose GRANTs and row policies apply to every child's rows.
+Read directly, such a child would skip the parent's policies.
 
 ## Prerequisites
 
@@ -172,8 +172,9 @@ otherwise the client address (the forwarded one with `NELCOTA_TRUST_PROXY`),
 with IPv6 addresses grouped by /64 network. `service_role` is not limited. A
 request beyond the limit waits up to one second for a slot, then gets
 `429 rate_limited` with `Retry-After: 1`; `0` turns the limit off. A server
-that renders pages with the anonymous key is one caller: send user tokens from
-it, or raise the limit.
+that renders pages with the anonymous key is one caller, and so are visitors
+behind one NAT, or behind a proxy without `NELCOTA_TRUST_PROXY`: send user
+tokens, configure the proxy, or raise the limit.
 
 When the client disconnects or the request times out, the server cancels the
 statement still running in Postgres instead of letting it run until
