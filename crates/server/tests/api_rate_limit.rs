@@ -21,7 +21,10 @@ async fn api_budget_is_per_caller_and_exempts_service_role() {
     })
     .await;
     for _ in 0..2 {
-        assert_ne!(openapi(&app, None).await.status, StatusCode::TOO_MANY_REQUESTS);
+        assert_ne!(
+            openapi(&app, None).await.status,
+            StatusCode::TOO_MANY_REQUESTS
+        );
     }
     let blocked = openapi(&app, None).await;
     assert_eq!(blocked.status, StatusCode::TOO_MANY_REQUESTS);
@@ -64,6 +67,9 @@ async fn api_budget_is_per_caller_and_exempts_service_role() {
 async fn api_budget_is_off_when_zero() {
     let app = TestApp::spawn_with(Options::default()).await;
     for _ in 0..20 {
-        assert_ne!(openapi(&app, None).await.status, StatusCode::TOO_MANY_REQUESTS);
+        assert_ne!(
+            openapi(&app, None).await.status,
+            StatusCode::TOO_MANY_REQUESTS
+        );
     }
 }

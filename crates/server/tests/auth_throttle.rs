@@ -81,7 +81,9 @@ async fn account_budget_refuses_fresh_sources_but_admits_a_known_one() {
     assert_eq!(blocked.status, StatusCode::TOO_MANY_REQUESTS);
     assert!(blocked.headers.contains_key(header::RETRY_AFTER));
     assert_eq!(
-        login_from(&app, &email, &password, "192.0.2.3").await.status,
+        login_from(&app, &email, &password, "192.0.2.3")
+            .await
+            .status,
         StatusCode::TOO_MANY_REQUESTS,
         "a fresh source is refused even with the right password"
     );
@@ -153,7 +155,9 @@ async fn ipv6_addresses_in_one_64_share_a_budget() {
     // A different account, so only the per-network budget is in play.
     let other = format!("{}@example.test", Uuid::new_v4().simple());
     assert_eq!(
-        login_from(&app, &other, &wrong, "[2001:db8:0:2::1]").await.status,
+        login_from(&app, &other, &wrong, "[2001:db8:0:2::1]")
+            .await
+            .status,
         StatusCode::BAD_REQUEST,
         "another /64 keeps its own budget"
     );

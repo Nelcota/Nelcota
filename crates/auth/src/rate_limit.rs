@@ -269,14 +269,22 @@ impl<C: Clock + Clone> RateLimiter<C> {
     }
 
     fn reset_login_delay(&self, key: &str) {
-        let state = self.accounts.state.read().unwrap_or_else(|e| e.into_inner());
+        let state = self
+            .accounts
+            .state
+            .read()
+            .unwrap_or_else(|e| e.into_inner());
         if let Some(entry) = state.entries.get(key) {
             entry.login_delay_step.store(0, Ordering::Relaxed);
         }
     }
 
     fn next_login_delay(&self, key: &str) -> Duration {
-        let state = self.accounts.state.read().unwrap_or_else(|e| e.into_inner());
+        let state = self
+            .accounts
+            .state
+            .read()
+            .unwrap_or_else(|e| e.into_inner());
         // A cleanup may have dropped an idle entry in between: nothing to delay.
         let entry = match state.entries.get(key) {
             Some(entry) => entry,
@@ -523,8 +531,14 @@ mod tests {
     fn login_gate_delays_known_sources_and_refuses_others_over_budget() {
         let (limiter, clock) = limiter(2);
         limiter.remember_source("account", "home");
-        assert_eq!(limiter.login_gate("account", "attacker"), Ok(Duration::ZERO));
-        assert_eq!(limiter.login_gate("account", "attacker"), Ok(Duration::ZERO));
+        assert_eq!(
+            limiter.login_gate("account", "attacker"),
+            Ok(Duration::ZERO)
+        );
+        assert_eq!(
+            limiter.login_gate("account", "attacker"),
+            Ok(Duration::ZERO)
+        );
         assert_eq!(
             limiter.login_gate("account", "attacker"),
             Err(Duration::from_secs(30)),
@@ -539,7 +553,10 @@ mod tests {
         }
         assert_eq!(limiter.login_gate("other", "attacker"), Ok(Duration::ZERO));
         clock.advance(Duration::from_secs(30));
-        assert_eq!(limiter.login_gate("account", "attacker"), Ok(Duration::ZERO));
+        assert_eq!(
+            limiter.login_gate("account", "attacker"),
+            Ok(Duration::ZERO)
+        );
         assert_eq!(
             limiter.login_gate("account", "home"),
             Ok(Duration::from_millis(125)),
@@ -561,7 +578,10 @@ mod tests {
         clock.advance(Duration::from_secs(1));
         limiter.remember_source("third", "y");
         assert!(limiter.is_known("third", "y"));
-        assert!(!limiter.is_known("account", "e"), "the stalest account left");
+        assert!(
+            !limiter.is_known("account", "e"),
+            "the stalest account left"
+        );
         assert!(limiter.is_known("second", "x"));
         clock.advance(KNOWN_SOURCE_TTL);
         assert!(!limiter.is_known("third", "y"), "known sources expire");
@@ -581,7 +601,10 @@ mod tests {
         assert_eq!(len(&limiter.network), 0);
         assert!(limiter.check("signup:1.2.3.4").is_ok(), "IPs keep working");
         assert!(limiter.check("token:1.2.3.4").is_ok());
-        assert!(limiter.check("verify:1.2.3.4").is_err(), "network store full");
+        assert!(
+            limiter.check("verify:1.2.3.4").is_err(),
+            "network store full"
+        );
         assert!(
             limiter.check_lenient("api:1.2.3.4").is_ok(),
             "lenient checks pass untracked while full"
