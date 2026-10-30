@@ -204,14 +204,15 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - Auth and panel rate limits group IPv6 clients by their /64, so rotating
   addresses inside one block no longer buys a fresh budget.
 - Made-up emails can no longer fill the rate limiter and lock new visitors
-  out of sign-up, sign-in and email links: account budgets use their own
-  store.
+  out of sign-up, sign-in and email links: only existing accounts get an
+  account budget, in a store of its own.
 - Password sign-in has an account-wide budget of ten times the per-IP one,
   so many addresses can no longer guess one account's password in parallel,
-  and one address cannot spend it alone. Over it, only networks where the
-  account has a session from the last 30 days get through, after a delay;
-  other networks receive 429 until the budget refills. The per-email-and-IP
-  budget, which the per-IP budget always reached first, is gone.
+  and one address cannot spend it alone. Over it, only networks (IPv4 /24,
+  IPv6 /64) where the account has an open session from the last 30 days get
+  through, after a delay; other networks receive 429 until the budget
+  refills. The per-email-and-IP budget, which the per-IP budget always
+  reached first, is gone.
 
 ## [0.5.6] — 2026-10-27
 

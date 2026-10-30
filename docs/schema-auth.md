@@ -159,9 +159,10 @@ In-memory limiters keep two stores of at most 50,000 keys each. At capacity
 the per-IP store rejects new keys with `429` and a one-second retry hint,
 while existing keys keep their independent quotas. Each network holds one key
 per endpoint, so filling it takes thousands of networks kept busy every minute.
-Account budgets live in a separate store, so made-up emails cannot fill the
-per-IP one; while it is full, an account it does not track counts as over its
-budget (see below). Cleanup runs at most once per second under capacity
+Account budgets live in a separate store and only existing accounts get one,
+so made-up emails cannot fill either; while the account store is full, an
+account it does not track is bounded only by its caller's per-IP budget, and a
+warning is logged. Cleanup runs at most once per second under capacity
 pressure and removes only keys idle since their last accepted request for a
 full minute, enough to recover the complete GCRA burst.
 
@@ -230,26 +231,32 @@ SMTP errors and timeouts are logged; sending remains a best-effort background
 operation rather than a durable delivery queue.
 
 Password: 8 to 256 characters. Password login has a hard limit of
-`NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE` per IP (default 30) and an account-wide
-budget of ten times that per normalized email. All attempts count, including
-successful and unknown-account attempts. Each bucket allows a burst of its
-size and refills continuously at that many attempts per minute.
+`NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE` per IP (default 30) and, for existing
+accounts, an account-wide budget of ten times that. All attempts count against
+the per-IP limit, including successful and unknown-account attempts. Each
+bucket allows a burst of its size and refills continuously at that many
+attempts per minute.
 
-Over the account budget, an attempt from a network where the account has a
-session created in the last 30 days (the same IPv4 address or IPv6 /64) waits
-125, 250, 500, 1,000, then at most 2,000 ms and continues; an attempt from any
-other network receives `429` until the budget refills. The check reads the
-sessions table, so it survives restarts and only real sign-ins create it. A
-refill admission resets the delay progression. Waiting holds neither a DB
-connection nor a password worker. Normal request deadlines, worker
-admission/overload responses and bounded limiter capacity still apply.
+Over the account budget, an attempt from a known network waits 125, 250, 500,
+1,000, then at most 2,000 ms and continues; an attempt from any other network
+receives `429` until the budget refills. A network is known when the account
+has an open session, created or refreshed in the last 30 days, from the same
+IPv4 /24 or IPv6 /64. Signing out or changing the password revokes sessions
+and so forgets their networks, and prune removes sessions whose refresh tokens
+expired, so the window is also bounded by `NELCOTA_REFRESH_TOKEN_TTL_DAYS`. The
+check reads the sessions table: it survives restarts and only real sign-ins
+create it. A refill admission resets the delay progression. Waiting holds
+neither a DB connection nor a password worker. Normal request deadlines,
+worker admission/overload responses and bounded limiter capacity still apply.
 
 Trade-off: a strict account-wide ceiling cannot also guarantee admission of
 an unrecognized legitimate network while attackers keep spending it. One
 address cannot spend it alone (it is ten times the per-IP budget); attackers
 with enough addresses can keep the owner out of new networks, never out of
-networks they already used. Distributed guessing is capped at the account
-budget. Keep trusted proxy configuration and upstream abuse controls; limits
+networks with an open session. Distributed guessing is capped at the account
+budget. While it is spent, the answer shows whether the caller's network is
+known to an existing account; signup already reveals whether an account
+exists. Keep trusted proxy configuration and upstream abuse controls; limits
 are per process and shared NAT users still share their IP budget.
 
 Refreshes and PKCE redemptions (`grant_type=refresh_token` / `pkce`) draw from
