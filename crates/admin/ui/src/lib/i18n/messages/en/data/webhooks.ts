@@ -113,7 +113,8 @@ const en: Messages<typeof ptBR> = {
     "A new delivery will use the webhook’s current URL and key. The event ID and payload stay the same. The service may ignore an already processed event.",
   replayed: "Resend queued.",
   replayOf: "Resend of delivery #{id}",
-  destinationHint: "Queued deliveries keep their original URL. New deliveries use the current URL.",
+  destinationHint:
+    "Queued deliveries and retries use the current URL. A send in progress finishes at the previous one.",
   failures: {
     http_error: "The destination rejected the send.",
     network_error: "Could not connect to the destination. Check its URL, DNS and certificate.",

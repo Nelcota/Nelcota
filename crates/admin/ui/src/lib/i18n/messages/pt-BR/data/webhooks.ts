@@ -112,7 +112,8 @@ const ptBR = {
     "Uma nova entrega usará a URL e a chave atuais do webhook. O ID do evento e os dados permanecem iguais. O serviço pode ignorar um evento já processado.",
   replayed: "Reenvio adicionado à fila.",
   replayOf: "Reenvio da entrega #{id}",
-  destinationHint: "Entregas já na fila mantêm a URL original. As novas usam a URL atual.",
+  destinationHint:
+    "Entregas na fila e novas tentativas usam a URL atual. Um envio em andamento termina na anterior.",
   failures: {
     http_error: "O destino recusou o envio.",
     network_error: "Não foi possível conectar ao destino. Confira a URL, o DNS e o certificado.",

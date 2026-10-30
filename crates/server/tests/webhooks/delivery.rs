@@ -325,56 +325,66 @@ async fn a_slow_backlog_cannot_take_every_worker_slot_from_other_webhooks() {
 }
 
 #[tokio::test]
-async fn paused_queue_current_key_and_new_replay_destination_are_respected() {
+async fn queued_sends_and_retries_follow_the_current_url_and_key() {
     let app = TestApp::spawn().await;
-    let original = Receiver::new([204]).await;
-    let replacement = Receiver::new([204]).await;
+    let release = Arc::new(Notify::new());
+    let original = Receiver::with_options([503], Some(release.clone()), None).await;
+    let replacement = Receiver::new([]).await;
     let hook = support::hook(&app, &original.url, 3).await;
-    support::insert(&app, "stable payload").await;
-    let id = support::latest(&app).await;
     let pool = db::admin_pool(&app.admin, 2);
+    let loopback = Policy {
+        allow_loopback: true,
+    };
+    support::insert(&app, "in flight").await;
+    let in_flight = support::latest(&app).await;
+    let first = support::worker(&app);
+    let running = tokio::spawn(async move { first.run_once().await.unwrap() });
+    original.wait_for(1).await;
+    support::insert(&app, "queued").await;
+    let queued = support::latest(&app).await;
+    // Pause, move the destination and rotate the key while a send is running.
     let mut input = support::input(&replacement.url);
     input.enabled = false;
-    management::update(
-        &pool,
-        &hook.endpoint.id,
-        input,
-        Policy {
-            allow_loopback: true,
-        },
-    )
-    .await
-    .unwrap();
-    assert_eq!(support::worker(&app).run_once().await.unwrap(), 0);
-    assert!(original.requests().is_empty());
-    let rotated = management::rotate(&pool, &hook.endpoint.id).await.unwrap();
-    management::update(
-        &pool,
-        &hook.endpoint.id,
-        support::input(&replacement.url),
-        Policy {
-            allow_loopback: true,
-        },
-    )
-    .await
-    .unwrap();
-    assert_eq!(support::worker(&app).run_once().await.unwrap(), 1);
-    assert_eq!(original.requests().len(), 1);
-    assert!(replacement.requests().is_empty());
-    let first = original.requests().pop().unwrap();
-    let event_id = first.headers["x-nelcota-event-id"].to_str().unwrap();
-    let ts = first.headers["x-nelcota-timestamp"]
-        .to_str()
-        .unwrap()
-        .parse()
+    management::update(&pool, &hook.endpoint.id, input, loopback)
+        .await
         .unwrap();
-    assert_eq!(
-        first.headers["x-nelcota-signature"],
-        signing::signature(rotated.secret.expose(), event_id, ts, first.body.as_bytes())
-    );
-    let replay = management::replay(&pool, &id).await.unwrap();
+    assert_eq!(support::worker(&app).run_once().await.unwrap(), 0);
+    let rotated = management::rotate(&pool, &hook.endpoint.id).await.unwrap();
+    let resumed = support::input(&replacement.url);
+    management::update(&pool, &hook.endpoint.id, resumed, loopback)
+        .await
+        .unwrap();
+    let detail = management::detail(&pool, &queued).await.unwrap();
+    assert_eq!(detail.delivery.url, replacement.url);
+    // The running send finishes where it started; its retry moves on.
+    release.notify_one();
+    assert_eq!(running.await.unwrap(), 1);
+    support::make_due(&app).await;
+    assert_eq!(support::worker(&app).run_once().await.unwrap(), 2);
+    assert_eq!(original.requests().len(), 1, "old host");
+    let requests = replacement.requests();
+    assert_eq!(requests.len(), 2);
+    for request in &requests {
+        let event_id = request.headers["x-nelcota-event-id"].to_str().unwrap();
+        let ts = request.headers["x-nelcota-timestamp"]
+            .to_str()
+            .unwrap()
+            .parse()
+            .unwrap();
+        let body = request.body.as_bytes();
+        assert_eq!(
+            request.headers["x-nelcota-signature"],
+            signing::signature(rotated.secret.expose(), event_id, ts, body)
+        );
+    }
+    for id in [&in_flight, &queued] {
+        let detail = management::detail(&pool, id).await.unwrap();
+        assert_eq!(detail.delivery.status, "succeeded");
+        assert_eq!(detail.delivery.url, replacement.url);
+    }
+    let replay = management::replay(&pool, &queued).await.unwrap();
     support::worker(&app).run_once().await.unwrap();
-    assert_eq!(replacement.requests().len(), 1);
+    assert_eq!(replacement.requests().len(), 3);
     assert_eq!(
         management::detail(&pool, &replay)
             .await

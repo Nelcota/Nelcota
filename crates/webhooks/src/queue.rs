@@ -13,7 +13,8 @@ use uuid::Uuid;
 const PER_ENDPOINT: i64 = 2;
 
 /// Leases whose worker stopped. Recovering them frees no new capacity.
-const EXPIRED: &str = "SELECT d.id,d.event_id,d.url,d.payload,d.attempts,d.max_attempts,d.status,e.enabled,e.signing_secret
+/// Every send resolves the webhook's current URL and key, never a stored copy.
+const EXPIRED: &str = "SELECT d.id,d.event_id,e.url,d.payload,d.attempts,d.max_attempts,d.status,e.enabled,e.signing_secret
     FROM nelcota.webhook_deliveries d JOIN nelcota.webhook_endpoints e ON e.id=d.endpoint_id
     WHERE e.deleted_at IS NULL AND d.status='processing' AND d.locked_until<=statement_timestamp()
     ORDER BY d.locked_until,d.id LIMIT $1 FOR UPDATE OF d SKIP LOCKED";
@@ -22,15 +23,15 @@ const EXPIRED: &str = "SELECT d.id,d.event_id,d.url,d.payload,d.attempts,d.max_a
 /// in-flight limit, oldest first. The advisory lock makes the limit exact
 /// across concurrent workers; a webhook being claimed elsewhere is skipped.
 const DUE: &str = "WITH ready AS MATERIALIZED (
-        SELECT e.id,e.signing_secret FROM nelcota.webhook_endpoints e
+        SELECT e.id,e.url,e.signing_secret FROM nelcota.webhook_endpoints e
         WHERE e.enabled AND e.deleted_at IS NULL
         AND pg_try_advisory_xact_lock(173471, hashtext(e.id::text))
         AND (SELECT count(*) FROM nelcota.webhook_deliveries busy
             WHERE busy.endpoint_id=e.id AND busy.status='processing'
             AND busy.locked_until>statement_timestamp()) < $2)
-    SELECT d.id,d.event_id,d.url,d.payload,d.attempts,d.max_attempts,d.status,true AS enabled,ready.signing_secret
+    SELECT d.id,d.event_id,ready.url,d.payload,d.attempts,d.max_attempts,d.status,true AS enabled,ready.signing_secret
     FROM ready CROSS JOIN LATERAL (
-        SELECT pick.id,pick.event_id,pick.url,pick.payload,pick.attempts,pick.max_attempts,pick.status,pick.next_attempt_at
+        SELECT pick.id,pick.event_id,pick.payload,pick.attempts,pick.max_attempts,pick.status,pick.next_attempt_at
         FROM nelcota.webhook_deliveries pick
         WHERE pick.endpoint_id=ready.id AND pick.status='pending' AND pick.next_attempt_at<=statement_timestamp()
         ORDER BY pick.next_attempt_at,pick.id LIMIT 1 FOR UPDATE SKIP LOCKED) d
@@ -81,7 +82,9 @@ async fn lease(tx: &Transaction<'_>, row: &Row, jobs: &mut Vec<Job>) -> Result<(
     }
     let lease = Uuid::new_v4();
     let attempt = previous_attempts + 1;
-    tx.execute("UPDATE nelcota.webhook_deliveries SET status='processing',attempts=$2,lease_token=$3,locked_until=clock_timestamp()+interval '120 seconds',finished_at=NULL WHERE id=$1", &[&id,&attempt,&lease]).await?;
+    let url: String = row.get("url");
+    // History shows the destination of the latest send.
+    tx.execute("UPDATE nelcota.webhook_deliveries SET status='processing',attempts=$2,lease_token=$3,locked_until=clock_timestamp()+interval '120 seconds',finished_at=NULL,url=$4 WHERE id=$1", &[&id,&attempt,&lease,&url]).await?;
     tx.execute(
         "INSERT INTO nelcota.webhook_attempts (delivery_id,number) VALUES ($1,$2)",
         &[&id, &attempt],
@@ -92,7 +95,7 @@ async fn lease(tx: &Transaction<'_>, row: &Row, jobs: &mut Vec<Job>) -> Result<(
         event_id: row.get("event_id"),
         attempt,
         lease,
-        url: row.get("url"),
+        url,
         payload: row.get("payload"),
         secret: Secret::new(row.get::<_, String>("signing_secret")),
     });

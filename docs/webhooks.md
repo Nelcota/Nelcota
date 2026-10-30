@@ -19,7 +19,7 @@ Only ordinary tables in the exposed schema are supported in this version. Views,
 
 Pausing stops capturing new changes and holds existing pending deliveries. Reactivating resumes the queue; changes made while paused are not replayed. Deleting cancels pending work and removes the key, while keeping terminal delivery history. A send already in progress may still arrive after a pause, deletion or key rotation.
 
-Editing a URL affects new events. Queued deliveries keep their original destination. Resending uses the webhook's current URL, key and attempt limit. Key rotation takes effect on newly started sends; update the receiver before resuming a paused webhook.
+Editing a URL applies to every send that starts afterwards. Queued deliveries and retries go to the new URL, signed with the current key, so a backlog is never released to a destination you replaced; a send already in progress finishes against the previous URL. Resending uses the webhook's current URL, key and attempt limit. Key rotation takes effect on newly started sends; update the receiver before resuming a paused webhook.
 
 ## Event payload
 

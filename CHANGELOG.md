@@ -201,6 +201,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - The server refuses to start with both `NELCOTA_WEBHOOKS_ALLOW_LOOPBACK=true`
   and `NELCOTA_PRODUCTION=true`, so a production project cannot send plain-HTTP
   webhooks to local ports.
+- Changing a webhook's URL now also moves its queued deliveries and retries to
+  the new destination. Previously a paused backlog was still released to the
+  old, possibly no longer trusted, host after resuming, signed with the
+  current key. A send already in progress finishes against the previous URL.
 
 ## [0.5.6] — 2026-10-27
 
