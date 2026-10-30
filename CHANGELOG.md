@@ -110,6 +110,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- REST `like`/`ilike` filters can match a literal `*`: an unescaped `*` is still
+  the `%` wildcard, while `\*` now means `*`. Other backslash escapes (`\%`,
+  `\_`, `\\`) keep their SQL LIKE meaning. Previously every `*` became `%`.
 - Generate panel CRUD examples from complete primary keys and required columns,
   including UUID/composite keys and declared enum values; omit unsafe keyless mutations.
 - Align onboarding and CLI guides with published versus current-checkout capabilities.
