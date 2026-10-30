@@ -1,1 +1,0 @@
-import{Ar as e}from"./circle-alert-DDyCNAfq.js";var t=e({current:`api-address`});export{t};
