@@ -116,6 +116,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
   Terminal history is pruned to the newest 100,000 deliveries instead of
   blocking writes, and concurrent writers and the delivery worker no longer
   wait on one shared counter row. Internal migration V19 replaces the counter.
+- One slow webhook destination no longer starves the others. Each webhook has
+  at most two sends in flight, claims take the oldest due delivery of every
+  webhook in turn, and a send blocked by saturated local DNS lookups is retried
+  shortly without using an attempt. Internal migration V20 adds the indexes.
 - Generate panel CRUD examples from complete primary keys and required columns,
   including UUID/composite keys and declared enum values; omit unsafe keyless mutations.
 - Align onboarding and CLI guides with published versus current-checkout capabilities.

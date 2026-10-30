@@ -3,66 +3,119 @@ use crate::{
     Error,
     models::{Job, Outcome},
 };
-use deadpool_postgres::Pool;
+use deadpool_postgres::{Pool, Transaction};
 use nelcota_core::config::Secret;
+use tokio_postgres::Row;
 use uuid::Uuid;
+
+/// Sends in flight per webhook, so one slow destination cannot hold every
+/// worker slot while other webhooks wait behind it.
+const PER_ENDPOINT: i64 = 2;
+
+/// Leases whose worker stopped. Recovering them frees no new capacity.
+const EXPIRED: &str = "SELECT d.id,d.event_id,d.url,d.payload,d.attempts,d.max_attempts,d.status,e.enabled,e.signing_secret
+    FROM nelcota.webhook_deliveries d JOIN nelcota.webhook_endpoints e ON e.id=d.endpoint_id
+    WHERE e.deleted_at IS NULL AND d.status='processing' AND d.locked_until<=statement_timestamp()
+    ORDER BY d.locked_until,d.id LIMIT $1 FOR UPDATE OF d SKIP LOCKED";
+
+/// One round: the oldest due delivery of each enabled webhook below its
+/// in-flight limit, oldest first. The advisory lock makes the limit exact
+/// across concurrent workers; a webhook being claimed elsewhere is skipped.
+const DUE: &str = "WITH ready AS MATERIALIZED (
+        SELECT e.id,e.signing_secret FROM nelcota.webhook_endpoints e
+        WHERE e.enabled AND e.deleted_at IS NULL
+        AND pg_try_advisory_xact_lock(173471, hashtext(e.id::text))
+        AND (SELECT count(*) FROM nelcota.webhook_deliveries busy
+            WHERE busy.endpoint_id=e.id AND busy.status='processing'
+            AND busy.locked_until>statement_timestamp()) < $2)
+    SELECT d.id,d.event_id,d.url,d.payload,d.attempts,d.max_attempts,d.status,true AS enabled,ready.signing_secret
+    FROM ready CROSS JOIN LATERAL (
+        SELECT pick.id,pick.event_id,pick.url,pick.payload,pick.attempts,pick.max_attempts,pick.status,pick.next_attempt_at
+        FROM nelcota.webhook_deliveries pick
+        WHERE pick.endpoint_id=ready.id AND pick.status='pending' AND pick.next_attempt_at<=statement_timestamp()
+        ORDER BY pick.next_attempt_at,pick.id LIMIT 1 FOR UPDATE SKIP LOCKED) d
+    ORDER BY d.next_attempt_at,d.id LIMIT $1";
 
 pub(crate) async fn claim(pool: &Pool, limit: usize) -> Result<Vec<Job>, Error> {
     let mut client = pool.get().await?;
     let tx = client.transaction().await?;
     tx.batch_execute("SET LOCAL ROLE nelcota_webhooks; SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='3s'").await?;
     let mut jobs = Vec::with_capacity(limit);
-    for _ in 0..4 {
+    for row in tx.query(EXPIRED, &[&(limit as i64)]).await? {
+        lease(&tx, &row, &mut jobs).await?;
+    }
+    // Each round adds at most one delivery per webhook. Claimed deliveries
+    // are processing, so the next round counts them against the limit.
+    for _ in 0..limit {
         let remaining = limit.saturating_sub(jobs.len());
         if remaining == 0 {
             break;
         }
-        let rows = tx.query("SELECT d.id,d.event_id,d.url,d.payload,d.attempts,d.max_attempts,d.status,e.enabled,e.signing_secret FROM nelcota.webhook_deliveries d JOIN nelcota.webhook_endpoints e ON e.id=d.endpoint_id WHERE e.deleted_at IS NULL AND ((d.status='pending' AND e.enabled AND d.next_attempt_at<=statement_timestamp()) OR (d.status='processing' AND d.locked_until<=statement_timestamp())) ORDER BY d.next_attempt_at,d.id LIMIT $1 FOR UPDATE OF d SKIP LOCKED", &[&(remaining as i64)]).await?;
-        let fetched = rows.len();
-        for row in rows {
-            let id: i64 = row.get("id");
-            let previous_attempts: i32 = row.get("attempts");
-            if row.get::<_, &str>("status") == "processing" {
-                tx.execute("UPDATE nelcota.webhook_attempts SET finished_at=clock_timestamp(),error='worker_interrupted' WHERE delivery_id=$1 AND finished_at IS NULL", &[&id]).await?;
-                if previous_attempts >= row.get::<_, i32>("max_attempts") {
-                    tx.execute("UPDATE nelcota.webhook_deliveries SET status='failed',finished_at=clock_timestamp(),last_error='worker_interrupted',lease_token=NULL,locked_until=NULL WHERE id=$1", &[&id]).await?;
-                    continue;
-                }
-                if !row.get::<_, bool>("enabled") {
-                    tx.execute("UPDATE nelcota.webhook_deliveries SET status='pending',last_error='worker_interrupted',lease_token=NULL,locked_until=NULL WHERE id=$1", &[&id]).await?;
-                    continue;
-                }
-            }
-            let lease = Uuid::new_v4();
-            let attempt = previous_attempts + 1;
-            tx.execute("UPDATE nelcota.webhook_deliveries SET status='processing',attempts=$2,lease_token=$3,locked_until=clock_timestamp()+interval '120 seconds',finished_at=NULL WHERE id=$1", &[&id,&attempt,&lease]).await?;
-            tx.execute(
-                "INSERT INTO nelcota.webhook_attempts (delivery_id,number) VALUES ($1,$2)",
-                &[&id, &attempt],
-            )
-            .await?;
-            jobs.push(Job {
-                id,
-                event_id: row.get("event_id"),
-                attempt,
-                lease,
-                url: row.get("url"),
-                payload: row.get("payload"),
-                secret: Secret::new(row.get::<_, String>("signing_secret")),
-            });
-        }
-        if fetched < remaining {
+        let batch = remaining as i64;
+        let rows = tx.query(DUE, &[&batch, &PER_ENDPOINT]).await?;
+        if rows.is_empty() {
             break;
+        }
+        for row in rows {
+            lease(&tx, &row, &mut jobs).await?;
         }
     }
     tx.commit().await?;
     Ok(jobs)
 }
 
+/// Starts the next attempt, or settles an interrupted one that cannot run now.
+async fn lease(tx: &Transaction<'_>, row: &Row, jobs: &mut Vec<Job>) -> Result<(), Error> {
+    let id: i64 = row.get("id");
+    let previous_attempts: i32 = row.get("attempts");
+    if row.get::<_, &str>("status") == "processing" {
+        tx.execute("UPDATE nelcota.webhook_attempts SET finished_at=clock_timestamp(),error='worker_interrupted' WHERE delivery_id=$1 AND finished_at IS NULL", &[&id]).await?;
+        if previous_attempts >= row.get::<_, i32>("max_attempts") {
+            tx.execute("UPDATE nelcota.webhook_deliveries SET status='failed',finished_at=clock_timestamp(),last_error='worker_interrupted',lease_token=NULL,locked_until=NULL WHERE id=$1", &[&id]).await?;
+            return Ok(());
+        }
+        if !row.get::<_, bool>("enabled") {
+            tx.execute("UPDATE nelcota.webhook_deliveries SET status='pending',last_error='worker_interrupted',lease_token=NULL,locked_until=NULL WHERE id=$1", &[&id]).await?;
+            return Ok(());
+        }
+    }
+    let lease = Uuid::new_v4();
+    let attempt = previous_attempts + 1;
+    tx.execute("UPDATE nelcota.webhook_deliveries SET status='processing',attempts=$2,lease_token=$3,locked_until=clock_timestamp()+interval '120 seconds',finished_at=NULL WHERE id=$1", &[&id,&attempt,&lease]).await?;
+    tx.execute(
+        "INSERT INTO nelcota.webhook_attempts (delivery_id,number) VALUES ($1,$2)",
+        &[&id, &attempt],
+    )
+    .await?;
+    jobs.push(Job {
+        id,
+        event_id: row.get("event_id"),
+        attempt,
+        lease,
+        url: row.get("url"),
+        payload: row.get("payload"),
+        secret: Secret::new(row.get::<_, String>("signing_secret")),
+    });
+    Ok(())
+}
+
 pub(crate) async fn finish(pool: &Pool, job: &Job, outcome: Outcome) -> Result<(), Error> {
     let mut client = pool.get().await?;
     let tx = client.transaction().await?;
     tx.batch_execute("SET LOCAL ROLE nelcota_webhooks; SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='3s'").await?;
+    if outcome.deferred {
+        // Nothing left this host: give the attempt back and retry shortly.
+        let updated = tx.execute("UPDATE nelcota.webhook_deliveries SET status='pending',attempts=attempts-1,next_attempt_at=clock_timestamp()+interval '2 seconds',lease_token=NULL,locked_until=NULL WHERE id=$1 AND lease_token=$2 AND status='processing'", &[&job.id, &job.lease]).await?;
+        if updated != 0 {
+            tx.execute(
+                "DELETE FROM nelcota.webhook_attempts WHERE delivery_id=$1 AND number=$2",
+                &[&job.id, &job.attempt],
+            )
+            .await?;
+        }
+        tx.commit().await?;
+        return Ok(());
+    }
     let delay = retry_delay(job.attempt, job.id, outcome.retry_after) as i64;
     // The lease token fences off a worker whose lease was recovered or cancelled.
     let updated = tx.execute("UPDATE nelcota.webhook_deliveries SET status=CASE WHEN $3::text IS NULL THEN 'succeeded' WHEN $4 AND attempts<max_attempts THEN 'pending' ELSE 'failed' END, next_attempt_at=clock_timestamp()+$5::bigint*interval '1 second', finished_at=CASE WHEN $3::text IS NOT NULL AND $4 AND attempts<max_attempts THEN NULL ELSE clock_timestamp() END, last_status=$6,last_error=$3,lease_token=NULL,locked_until=NULL WHERE id=$1 AND lease_token=$2 AND status='processing'", &[&job.id,&job.lease,&outcome.error,&outcome.retryable,&delay,&outcome.status]).await?;

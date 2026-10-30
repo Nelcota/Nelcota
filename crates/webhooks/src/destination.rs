@@ -14,6 +14,36 @@ use std::{
 use tokio::sync::Semaphore;
 use url::{Host, Url};
 
+/// Blocking system DNS lookups running at once for webhook destinations.
+const DNS_SLOTS: usize = 4;
+
+/// Local DNS capacity was exhausted, so no request left this host.
+#[derive(Debug)]
+struct DnsBusy;
+impl std::fmt::Display for DnsBusy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("webhook DNS capacity reached")
+    }
+}
+impl std::error::Error for DnsBusy {}
+
+/// Whether a request failed only because local DNS capacity was exhausted.
+/// Such a failure is retried shortly and does not use a delivery attempt.
+pub(crate) fn dns_busy(error: &(dyn std::error::Error + 'static)) -> bool {
+    let mut current = Some(error);
+    while let Some(error) = current {
+        let wrapped = error
+            .downcast_ref::<io::Error>()
+            .and_then(io::Error::get_ref)
+            .is_some_and(|inner| inner.is::<DnsBusy>());
+        if wrapped || error.is::<DnsBusy>() {
+            return true;
+        }
+        current = error.source();
+    }
+    false
+}
+
 #[derive(Clone, Copy, Default)]
 pub struct Policy {
     /// Explicit development opt-in; only localhost/127.0.0.1/::1, never LANs.
@@ -62,6 +92,13 @@ impl Policy {
     }
 
     pub(crate) fn client(self) -> Result<reqwest::Client, reqwest::Error> {
+        self.client_with(SafeResolver::new(self, DNS_SLOTS))
+    }
+
+    pub(crate) fn client_with(
+        self,
+        resolver: SafeResolver,
+    ) -> Result<reqwest::Client, reqwest::Error> {
         let _ = rustls::crypto::ring::default_provider().install_default();
         reqwest::Client::builder()
             // The release image has no OS certificate store.
@@ -70,7 +107,7 @@ impl Policy {
             }))
             .no_proxy()
             .redirect(reqwest::redirect::Policy::none())
-            .dns_resolver(Arc::new(SafeResolver::new(self)))
+            .dns_resolver(Arc::new(resolver))
             .connect_timeout(Duration::from_secs(3))
             .timeout(Duration::from_secs(10))
             .pool_max_idle_per_host(2)
@@ -89,15 +126,15 @@ fn is_loopback_host(host: &Host<&str>) -> bool {
     }
 }
 
-struct SafeResolver {
+pub(crate) struct SafeResolver {
     policy: Policy,
     lookups: Arc<Semaphore>,
 }
 impl SafeResolver {
-    fn new(policy: Policy) -> Self {
+    pub(crate) fn new(policy: Policy, slots: usize) -> Self {
         Self {
             policy,
-            lookups: Arc::new(Semaphore::new(4)),
+            lookups: Arc::new(Semaphore::new(slots)),
         }
     }
 }
@@ -108,7 +145,7 @@ where
 {
     let permit = slots
         .try_acquire_owned()
-        .map_err(|_| io::Error::new(io::ErrorKind::WouldBlock, "webhook DNS capacity reached"))?;
+        .map_err(|_| io::Error::new(io::ErrorKind::WouldBlock, DnsBusy))?;
     // System DNS runs blocking work which cannot be cancelled once started.
     // Keep its slot until that work ends, even if the HTTP deadline expires.
     tokio::task::spawn_blocking(move || {
@@ -211,20 +248,30 @@ mod tests {
     }
     #[tokio::test]
     async fn resolver_checks_the_connected_addresses() {
-        assert!(
-            SafeResolver::new(Policy::default())
-                .resolve("localhost".parse().unwrap())
-                .await
-                .is_err()
-        );
-        assert!(
-            SafeResolver::new(Policy {
-                allow_loopback: true
-            })
-            .resolve("localhost".parse().unwrap())
+        let name = || "localhost".parse::<Name>().unwrap();
+        let public = SafeResolver::new(Policy::default(), DNS_SLOTS);
+        assert!(public.resolve(name()).await.is_err());
+        let loopback = Policy {
+            allow_loopback: true,
+        };
+        let development = SafeResolver::new(loopback, DNS_SLOTS);
+        assert!(development.resolve(name()).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn exhausted_dns_capacity_is_recognised_through_the_http_client() {
+        let loopback = Policy {
+            allow_loopback: true,
+        };
+        let resolver = SafeResolver::new(loopback, 0);
+        let client = loopback.client_with(resolver).unwrap();
+        let error = client
+            .post("http://localhost:9/hook")
+            .send()
             .await
-            .is_ok()
-        );
+            .unwrap_err();
+        assert!(dns_busy(&error));
+        assert!(!dns_busy(&io::Error::other("connection refused")));
     }
 
     #[tokio::test]

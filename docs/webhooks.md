@@ -79,7 +79,7 @@ Any 2xx response acknowledges delivery. Network errors, timeouts, HTTP 408, 425,
 
 Retry delays start at approximately 5 seconds, 30 seconds, 2 minutes, 10 minutes, 30 minutes and 1 hour, with jitter and a one-hour cap. A numeric `Retry-After` is respected up to one hour without reducing the normal delay. Six attempts by default means the initial send and five retries. A lost worker lease is recovered after two minutes and still counts as an attempt.
 
-Delivery is **at least once**, with no ordering guarantee. A receiver may process an event whose acknowledgement never reaches Nelcota; the next attempt may send it again. Multiple workers claim queue rows with short leases and do not hold a database connection during HTTP calls.
+Delivery is **at least once**, with no ordering guarantee. A receiver may process an event whose acknowledgement never reaches Nelcota; the next attempt may send it again. Multiple workers claim queue rows with short leases and do not hold a database connection during HTTP calls. Each webhook has at most two sends in progress, and every claim takes the oldest due delivery of each webhook in turn, so a slow destination cannot delay the others. A send that cannot start because local DNS lookups are saturated is retried two seconds later without using an attempt.
 
 The history shows status, HTTP code, attempts, timestamps and the exact payload. A delivery detail shows every attempt, including sends interrupted by a restart. **Resend** creates a new delivery, preserving the original history and stable event ID. Active deliveries cannot be resent; the webhook must be enabled. Receiver response bodies and signing keys never appear in history.
 

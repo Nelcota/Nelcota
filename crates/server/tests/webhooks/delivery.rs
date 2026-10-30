@@ -267,14 +267,21 @@ async fn leases_recover_without_holding_connections_and_fence_old_workers() {
 async fn parallel_workers_do_not_claim_the_same_live_deliveries() {
     let app = TestApp::spawn().await;
     let receiver = Receiver::new([]).await;
-    support::hook(&app, &receiver.url, 3).await;
-    for n in 0..8 {
+    // Four webhooks, so the per-webhook in-flight limit leaves work for both.
+    for _ in 0..4 {
+        support::hook(&app, &receiver.url, 3).await;
+    }
+    for n in 0..2 {
         support::insert(&app, &format!("parallel {n}")).await;
     }
     let a = support::worker(&app);
     let b = support::worker(&app);
-    let (a, b) = tokio::join!(a.run_once(), b.run_once());
-    assert_eq!(a.unwrap() + b.unwrap(), 8);
+    let mut claimed = 0;
+    for _ in 0..4 {
+        let (first, second) = tokio::join!(a.run_once(), b.run_once());
+        claimed += first.unwrap() + second.unwrap();
+    }
+    assert_eq!(claimed, 8);
     let requests = receiver.requests();
     assert_eq!(requests.len(), 8);
     let ids: std::collections::BTreeSet<_> = requests
@@ -283,6 +290,38 @@ async fn parallel_workers_do_not_claim_the_same_live_deliveries() {
         .collect();
     assert_eq!(ids.len(), 8);
     assert_eq!(app.admin_client.query_one("SELECT count(*) FROM nelcota.webhook_deliveries WHERE status='succeeded' AND attempts=1", &[]).await.unwrap().get::<_,i64>(0),8);
+}
+
+#[tokio::test]
+async fn a_slow_backlog_cannot_take_every_worker_slot_from_other_webhooks() {
+    let app = TestApp::spawn().await;
+    let busy = Receiver::new([]).await;
+    let other = Receiver::new([]).await;
+    support::hook(&app, &busy.url, 3).await;
+    for n in 0..6 {
+        support::insert(&app, &format!("backlog {n}")).await;
+    }
+    // Created later: its only delivery is newer than the whole backlog.
+    support::hook(&app, &other.url, 3).await;
+    support::insert(&app, "newer event").await;
+    // One claim of four slots: at most two for the backlog, one for the other.
+    assert_eq!(support::worker(&app).run_once().await.unwrap(), 3);
+    assert_eq!(busy.requests().len(), 2);
+    assert_eq!(other.requests().len(), 1);
+    let waiting: i64 = app
+        .admin_client
+        .query_one(
+            "SELECT count(*) FROM nelcota.webhook_deliveries WHERE status='pending'",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(waiting, 5);
+    // A lease held elsewhere counts against the limit until it ends.
+    app.admin_client.batch_execute("UPDATE nelcota.webhook_deliveries SET status='processing',attempts=1,lease_token=gen_random_uuid(),locked_until=clock_timestamp()+interval '1 minute' WHERE id=(SELECT min(id) FROM nelcota.webhook_deliveries WHERE status='pending')").await.unwrap();
+    assert_eq!(support::worker(&app).run_once().await.unwrap(), 1);
+    assert_eq!(busy.requests().len(), 3);
 }
 
 #[tokio::test]
