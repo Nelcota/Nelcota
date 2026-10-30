@@ -1047,7 +1047,7 @@ the page. Sidebar items may carry a short label when the page title does not
 fit the sidebar; the page itself keeps the full title. Views of one object
 (a table's data and structure) and example languages stay beside the content.
 
-**D112. Webhook admission never aborts the business write.** V13 counted the
+**D114. Webhook admission never aborts the business write.** V13 counted the
 queue in one `webhook_queue_usage` row and raised `53300` above 10,000
 outstanding or 100,000 retained deliveries. Every captured write locked that row
 until commit, and healthy history or one stalled destination froze writes on all
