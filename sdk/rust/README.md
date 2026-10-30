@@ -42,7 +42,7 @@ The patch runs the shared session refresh under the client's timeout rather than
 the first caller's, rotates a due session after a concurrent user update, and
 retries background refresh inside the server's 10-second reuse window.
 It preserves public imports, Rust 1.88+, native Tokio and the server protocol.
-See the [changelog](CHANGELOG.md) and [upgrade notes](docs/contract.md#upgrading-from-016).
+See the [changelog](CHANGELOG.md) and [upgrade notes](docs/contract.md#upgrading).
 Version 0.1.7 is available on crates.io; [registry receipts](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169)
 record its checksum and a fresh consumer. A server upgrade does not
 update installed clients.
@@ -81,12 +81,16 @@ let total = client.rpc("cart_total", &json!({"cart_id":7}))
 
 Filters: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in_values`,
 `not_in`, `is`/`is_null`, `not_is`, `not`, `matches`, `and`, `or`.
-Conditions are constructed, never assembled from untrusted syntax strings.
+Conditions are constructed, never assembled from untrusted syntax strings;
+`Condition` columns are plain names of the filtered table (no `relation.column`).
+`escape_like(text)` makes `like`/`ilike` match text literally, escaping `\`, `%`,
+`_` and `*` (a literal `*` needs a server newer than 0.5.6; older servers treat
+every `*` as a wildcard).
 Embedded filters use paths such as `items.qty`; `order_on`, `limit_on`,
 `range_on`, `and_on`, `or_on` target embedded rows. `order` calls accumulate.
 
-Writes return an empty body by default (`execute::<()>()`); call `select` for
-representation. `single` requires exactly one row; `maybe_single` returns null
+Writes return an empty body by default (`execute::<()>()`); call `select`,
+before or after `insert`/`update`/`upsert`/`delete`, for representation. `single` requires exactly one row; `maybe_single` returns null
 for zero rows (decode to `Option<T>`). Use `head().count_exact().execute::<()>()`
 for count-only reads. Update/delete require a parent filter before any HTTP is
 sent. Exact counts scan all matching rows; only request them when needed.
@@ -110,7 +114,7 @@ client.auth().update_user(nelcota_client::auth::UserUpdate {
     ..Default::default()
 }).await?;
 let mut events = client.auth().subscribe();
-let background = client.auth().start_auto_refresh(); // opt-in; retain this handle
+let background = client.auth().try_start_auto_refresh()?; // opt-in; retain this handle
 client.auth().request_password_reset("ana@example.com").await?;
 client.auth().send_magic_link("ana@example.com").await?;
 client.auth().resend_confirmation("ana@example.com").await?;
@@ -121,7 +125,10 @@ drop(background);
 
 Session storage defaults to memory. For a CLI or desktop app,
 `auth::FileStorage::new(path)` keeps the session in a JSON file, written
-atomically and readable by its owner only (0600 on Unix). Implement
+atomically and readable by its owner only on Unix (0600 file, 0700 for the
+directories it creates). On Windows the file inherits its directory's ACL, so
+keep it under the user's profile. An unreadable stored session counts as
+signed out: the client emits `SignedOut` and removes it. Implement
 `auth::SessionStorage` for a keychain, encrypted file or per-request cookie
 store.
 
@@ -139,13 +146,18 @@ lifecycle lock and refresh result. Independent clients/processes sharing a
 persistent store need external coordination: the store interface alone does
 not serialize refresh. A spent refresh token terminates its server session.
 
-Refresh runs before expiry when a request needs a token. Opt-in background
+Reading the session never waits for sign-in, refresh or persistence. Refresh
+starts when a request needs a token inside the refresh margin; the request keeps
+sending the still-valid token, and only an expired token waits for the shared
+rotation. Expiry is measured on this machine's clock from `expires_in`, so
+server clock skew does not cause early or late refresh. Opt-in background
 refresh stops when its handle is dropped. Both paths cap the configured refresh
 margin at half the token lifetime, avoiding repeated rotation of fresh
 short-lived tokens. Rotation continues if a waiter is
 cancelled/dropped, so a consumed refresh token can still be replaced locally.
-A transient failure keeps the previous identity; an invalid grant clears the
-session and returns the failure to the initiating request. Logout waits for
+A transient failure keeps a still-valid identity; once the token has expired the
+request returns the refresh error (with its status and Retry-After) instead of
+sending it. An invalid grant clears the session and returns the failure. Logout waits for
 rotation and clears locally even if server revocation fails. Existing access
 tokens may remain valid until expiry.
 
@@ -158,6 +170,10 @@ let caller = client.with_access_token(caller_token);
 let visitor = client.anonymous();
 # }
 ```
+
+A token that cannot be sent as a header makes every request of that clone fail
+with the same `Error::Usage` that `ClientBuilder::build` returns for
+`access_token`; `try_with_access_token` returns that error immediately.
 
 OAuth uses PKCE S256 with Google/GitHub. `begin_oauth` returns `PkceFlow { url,
 verifier }`; keep it private, open its URL in your application's browser flow,
@@ -229,7 +245,10 @@ have serde-renamed enums. Generated/identity-always columns are omitted from
 write models; views have write models except materialized views. Projections
 and embeds need structs matching their selected shape.
 
-`Field::Omit` skips a write field, keeping its default/current value;
+`Field::Omit` skips a write field, keeping its default/current value. Hand-written
+structs need `#[serde(default, skip_serializing_if = "nelcota_client::Field::is_omitted")]`
+on each `Field` (generated ones have it); a bare `Omit` fails to serialize rather
+than writing null.
 `Field::Value(None)` sends explicit null for nullable columns. UUID/date/time
 and unknown scalar types use strings. Bigint uses i64, numeric uses
 `serde_json::Number` with arbitrary precision, and arrays allow null elements.

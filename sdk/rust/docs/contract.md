@@ -1,11 +1,14 @@
 # Rust SDK contract
 
 `nelcota-client` 0.1.7 supports Nelcota server 0.3.0 or later; its release
-checks run against the server source in the same checkout (currently 0.5.6). The released v0.2.0 tag is a legacy baseline
-without the newer OAuth routes and generators; see the README compatibility
-matrix. Package and server versions are independent. Native Tokio on Linux,
-Windows and macOS is the supported target; blocking and WASM interfaces are
-not part of 0.1.
+checks run against the server source in the same checkout (currently 0.5.6).
+The released v0.2.0 tag is a legacy baseline without the newer OAuth routes and
+generators; see the README compatibility matrix. Package and server versions are
+independent: a server upgrade never changes a client already compiled into an
+application. Native Tokio on Linux, Windows and macOS is the supported target;
+blocking and WASM interfaces are not part of 0.1. Minimum Rust: 1.88.
+
+## HTTP surface
 
 | Module | HTTP contract |
 |---|---|
@@ -20,149 +23,124 @@ not part of 0.1.
 | Buckets | GET/POST bucket; GET/PUT/DELETE bucket/{id} |
 
 The query grammar and server capabilities match the TypeScript contract.
-Responses become Rust Result values; empty bodies become JSON null (decode to
-unit or an appropriate Option). `Response<T>` carries status, count and headers.
-Auth/storage convenience methods return the decoded model or structured error.
+Responses become Rust `Result` values; empty bodies become JSON null (decode to
+unit or an appropriate `Option`). `Response<T>` carries status, count and
+headers. Auth/storage convenience methods return the decoded model or a
+structured error.
 
-Version 0.1.4 cardinality preflight rejects HEAD and minimal writes with
-`single`/`maybe_single` before HTTP. Request write rows with `.select(...)`;
-array-returning RPC calls remain supported. Version 0.1.3 predates this guard.
+## Queries
 
-Oversized or interrupted HTTP error bodies are discarded; status, a generic
-error code and Retry-After remain available. Error-body deadlines and cancellation
-remain effective. Successful responses keep their existing buffering or streaming
-contract.
+- Invalid input (identifiers, select syntax, non-finite floats at any depth,
+  empty groups, a bare `Field::Omit`) fails with `Error::Usage` before HTTP.
+- Writes send `Prefer: return=minimal` unless `select` was called, before or
+  after the write method; then `return=representation`. `single` and
+  `maybe_single` are refused before HTTP for HEAD and minimal writes;
+  array-returning RPC calls are allowed.
+- Update/delete require a parent filter; insert/upsert refuse filters.
+- Reserved column names (`limit`, `order`...) used as filters are sent inside a
+  logic group so they stay predicates.
+- `Condition` columns are plain identifiers of the filtered table; the server's
+  logic-tree grammar has no dotted columns.
+- `like`/`ilike` patterns use `*` as the wildcard. `escape_like` backslash-escapes
+  `\`, `%`, `_` and `*`; servers after 0.5.6 read `\*` as a literal `*`, older
+  ones turn every `*` into `%`.
 
-One Client and its clones share lifecycle coordination. Explicit token clones
-control REST/storage, get_user and update_user only; other auth methods manage the shared
-login session. Refresh waiters share one background rotation task; cancelling
-or dropping them does not leave a task per waiter or stop an accepted rotation.
-Default sessions never persist outside memory. Shared stores across independently
-constructed clients/processes require their own coordination.
+## Transport
 
-Version 0.1.4 token cancellation also covers authentication waiting for the lifecycle
-gate and session reads. It does not interrupt persistence of an accepted session;
-detached refresh rotation keeps its existing owner. Logout still waits for that
-owner and clears locally even if revocation fails.
-These changes require a new client package; server installation does not add them.
+- Timeout precedence: explicit query timeout, scoped `RequestOptions.timeout`,
+  then the client default. Zero disables the deadline. File transfers keep their
+  unbounded default unless `RequestOptions.timeout` is set. Wrap the whole
+  operation in `tokio::time::timeout` for a total deadline.
+- Only GET/HEAD are retried (network errors, 429, 503, bounded by Retry-After
+  ≤ 30 s); mutations are never replayed.
+- Oversized or interrupted error bodies are discarded; status, a generic error
+  code and Retry-After remain. Cancellation covers retries and buffered bodies.
+- An explicit token (`ClientBuilder::access_token`, `with_access_token`) that is
+  not a valid header value fails with the same `Error::Usage` everywhere.
 
-On-demand and background refresh cap the configured margin at half the token
-lifetime. Short-lived fresh sessions and oversized margins do not cause a
-rotation on every request or timer tick; explicit refresh remains available.
+## Sessions
+
+- One `Client` and its clones share one session. Explicit-token and anonymous
+  clones control REST/storage, `get_user` and `update_user` only; other auth
+  methods manage the shared login session.
+- Reads (requests, `get_session` of a fresh session) are lock-free snapshots.
+  Sign-in, rotation, user updates and sign-out serialize on one lifecycle lock
+  together with their HTTP and persistence.
+- A token inside the refresh margin (capped at half its lifetime) is still sent
+  while one shared, detached rotation runs; only an expired token waits for it.
+  Cancelling waiters neither stops an accepted rotation nor leaves a task each.
+  The rotation uses the client's timeout, not a caller's.
+- If refresh fails transiently and the token has expired, the request returns
+  that error (retryable, with Retry-After). `invalid_grant` clears the session.
+- Expiry is tracked on the local monotonic clock from `expires_in`. Sessions
+  received from the server get `expires_at` rewritten to local time plus
+  `expires_in`, so a persisted copy is also skew-free; `set_session` and stored
+  sessions use `expires_at` against the local wall clock.
+- A store `load` error or invalid stored session counts as signed out: a
+  `SignedOut` event is emitted and the store is asked to remove it.
+- Sign-out renews only an expired token (5 s skew) for revocation, never
+  publishes that renewal, and always clears locally.
+- `try_start_auto_refresh` returns an error outside a Tokio runtime;
+  `start_auto_refresh` panics there. Dropping the handle stops the task. When a
+  refreshed session is immediately due again, wake-ups back off up to 60 s.
+- `FileStorage` writes atomically (temporary file + rename), owner-only on Unix
+  (0600 file, 0700 created directories) with directory sync; on Windows the
+  file inherits the directory ACL. A dropped save removes only its own
+  temporary file. Independent clients/processes sharing a store must coordinate
+  rotation themselves.
+
+## Models
 
 Generated models provide serde shapes, not compile-time verification of string
 queries. Missing required selected columns fail decoding. Numeric precision is
-preserved by arbitrary_precision; write null and omitted fields differ.
+preserved by `arbitrary_precision`. `Field::Omit` and `Field::Value(None)`
+differ; every `Field` needs `skip_serializing_if = "Field::is_omitted"`, which
+generated models always carry.
 
-REST writes and RPC reject non-finite floating-point input, including nested
-fields, before HTTP. Serde must not silently turn NaN or infinity into JSON
-null. Explicit null and omitted fields retain their existing semantics, and
-serialization runs once without adding dependencies.
+## Acceptance checks
 
-Acceptance checks: SDK tests/doctests/examples, server HTTP contract tests,
-Rust generator snapshot and generated model compile/serialization tests,
-Clippy/rustfmt, docs, package verification and an external consumer smoke test.
+SDK tests/doctests/examples, server HTTP contract tests, Rust generator snapshot
+(`tests/fixtures/generated.rs`) and generated-model serialization tests,
+Clippy/rustfmt, docs, package verification (`scripts/test-package.py`) and an
+external consumer smoke test.
 
-Version 0.1.4 retains the core HTTP contract and minimum Rust/server versions
-of 0.1.3. Its corrections require an updated client build/package. Registry
-availability requires successful publication; server and SDK releases remain
-independent. See the [upgrade notes](#upgrading-from-013).
+## Upgrading
 
-## Upgrading from 0.1.6
+Set the new version in `Cargo.toml`, run
+`cargo update -p nelcota-client --precise <version>`, then rebuild and exercise
+login/refresh/sign-out, a write with representation and a file transfer in
+staging. Public imports, Rust 1.88+ and the server protocol are unchanged unless
+noted below; the [changelog](../CHANGELOG.md) lists every change.
 
-Set `nelcota-client = "0.1.7"`, run
-`cargo update -p nelcota-client --precise 0.1.7`, then rebuild. Public imports
-and server requirements are unchanged. A shared session refresh now uses the
-client's timeout, so a zero or very short per-request timeout no longer applies
-to it; a session that is due is rotated even when a user update ran meanwhile;
-and background refresh retries within 2 seconds after an uncertain failure.
+### Unreleased
 
-## Upgrading from 0.1.5
+- `select` before `insert`/`update`/`delete` now returns rows; previously the
+  write method reset it to minimal.
+- Serializing a bare `Field::Omit` (a hand-written struct without
+  `skip_serializing_if`) is an error instead of writing null.
+- `Condition` refuses dotted columns, which the server rejected anyway.
+- `escape_like` escapes `*` as `\*` (was `_`); upgrade the server past 0.5.6 for
+  literal-star matching.
+- Requests no longer wait behind a slow refresh while the token is valid, and
+  an expired token is no longer sent after a failed refresh.
+- `Session::expires_at` from the server is rewritten to the local clock.
 
-Set `nelcota-client = "0.1.7"`, run
-`cargo update -p nelcota-client --precise 0.1.7`, then rebuild. The
-[published registry consumer](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294)
-passed on Rust 1.88 and 1.99. Interrupted HTTP error bodies preserve the received
-status and Retry-After, so a definite rejection is not retried as a network
-failure. Deadlines and cancellation remain effective; successful response-body
-failures keep their existing behavior. Public imports and server requirements
-are unchanged.
+### Upgrading from 0.1.6
 
-The following sections describe changes since older baselines. Their install
-commands also select the current 0.1.7 release for a direct upgrade.
+A shared session refresh uses the client's timeout, so a zero or very short
+per-request timeout no longer applies to it; a due session is rotated even when
+a user update ran meanwhile; background refresh retries within 2 seconds after
+an uncertain failure.
 
-## Upgrading from 0.1.4
+### Older baselines
 
-Set `nelcota-client = "0.1.7"` and run
-`cargo update -p nelcota-client --precise 0.1.7`. Public imports, Rust 1.88+,
-native Tokio and the server protocol are unchanged. Exercise these corrected
-boundaries in your application:
-
-- Logout revokes a still-valid token without refreshing it. An expired session
-  is renewed only for revocation; that renewal is never persisted or announced.
-- Filters for reserved columns such as `limit` and `order` remain predicates
-  when pagination or ordering is also configured.
-- Cancelling a file-store save removes only that operation's temporary file;
-  the previous session and concurrent writers' files remain intact.
-- An explicit query timeout takes precedence over a scoped default, including
-  zero when disabling the per-attempt timeout.
-- Explicit MIME types must match the server's validation contract.
-
-The package also reorganizes private modules and decodes single rows without
-copying their JSON; public entry points and wire formats remain unchanged.
-
-## Upgrading from 0.1.3
-
-Set `nelcota-client = "0.1.7"`, update Cargo.lock with
-`cargo update -p nelcota-client --precise 0.1.7`, then build and test the
-application. Rust 1.88+, native Tokio on the supported platforms, server 0.3.0+
-and public Rust imports remain unchanged. Server upgrades do not update this crate.
-
-- Request a row with `.select(...)` before `single`/`maybe_single` on a write;
-  HEAD and minimal writes are refused before HTTP. The SDK therefore cannot
-  commit such a write and only afterward report missing cardinality.
-- Handle `Error::Usage` for blank OAuth codes and malformed MIME type/subtype
-  components. Valid content-type parameters, optional space/tab before their
-  delimiter, and zero-byte uploads remain supported; headers are sent unchanged.
-- Cancellation releases queued auth/session callers without interrupting an
-  accepted refresh/persistence owner. Older user reads preserve newer cached
-  profile/session state. Retry limits and mutation replay policy are unchanged.
-
-Exercise login/refresh/sign-out, row representation/cardinality and a file
-transfer in staging. Registry installation requires the selected version to be
-published; before then, use a reviewed local path or packaged archive.
-
-
-## Version 0.1.5 hardening
-
-These changes require crate 0.1.5; server updates do not replace the
-0.1.4 crate already compiled into consumer applications.
-
-Timeout precedence is explicit query timeout, scoped `RequestOptions.timeout`,
-then the client default. Zero explicitly disables the deadline. File transfers
-retain their unbounded default unless `RequestOptions.timeout` is supplied.
-Refresh and backoff remain outside the HTTP attempt deadline. Use Tokio's
-`time::timeout` around the complete operation for a total caller deadline;
-dropping that wait does not stop an already owned shared refresh or undo an
-acknowledged server mutation.
-
-FileStorage owns and cleans up only its pending temporary file on cancellation.
-The old session remains until atomic rename; cancellation after rename cannot
-undo publication. Unix additionally syncs the containing directory after rename
-and removal. Windows retains atomic replacement without a directory-sync
-promise. Filesystem failures can still prevent cleanup; keep the directory
-private and inspect adapter errors. Independent clients/processes must still
-coordinate rotations externally.
-
-Explicit upload MIME parts match the server: ASCII letters/digits and
-`!#$&-^_.+`, 1–127 characters per part. Parameters and optional space/tab before
-the semicolon remain supported, and header bytes are sent unchanged. Previously
-accepted HTTP tokens outside this subset are now refused before upload because
-the server cannot preserve their declaration.
-
-Private auth modules separate persistence, endpoint adaptation, OAuth and refresh
-task ownership. REST separates request preparation from decoding and consumes
-single-row JSON without cloning it. Public Rust imports and method signatures
-are unchanged. Shared fixtures with TypeScript cover precision, MIME and errors;
-they complement real-server contracts and do not prove compatibility with every
-historical server version by themselves.
+- 0.1.5 → 0.1.6: interrupted HTTP error bodies keep status and Retry-After, so a
+  definite rejection is not retried as a network failure.
+- 0.1.4 → 0.1.5: logout revokes a still-valid token without refreshing it;
+  reserved-column filters stay predicates; cancelled file saves remove only
+  their own temporary file; an explicit query timeout (including zero) beats a
+  scoped default; explicit MIME types follow the server's rules (ASCII letters,
+  digits and `!#$&-^_.+`, 1–127 characters per part).
+- 0.1.3 → 0.1.4: `single`/`maybe_single` need `.select(...)` on writes; blank
+  OAuth codes and malformed MIME types fail with `Error::Usage`; cancellation
+  releases queued auth callers without interrupting an accepted refresh.

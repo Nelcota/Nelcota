@@ -25,16 +25,14 @@ local implementation/testing does not publish or create tags.
 Example external package check (after `cargo package -p nelcota-client`):
 
 ```sh
-python sdk/rust/scripts/package-test.py
+python sdk/rust/scripts/test-package.py
 ```
 
-The consumer resolves the archive under Cargo's effective `target_directory`,
-including `CARGO_TARGET_DIR` and Cargo configuration. Use the same configuration
-for packaging and verification. To run the archive-selection regressions:
-
-```sh
-python3 sdk/rust/scripts/test_package.py
-```
+The consumer resolves the archive under Cargo's effective `target_directory`
+(from `cargo metadata`), including `CARGO_TARGET_DIR` and Cargo configuration.
+Use the same configuration for packaging and verification. The archive holds
+only `src`, `examples`, the README, changelog, license and manifest; tests,
+fixtures and these docs stay in the repository.
 
 To intentionally verify default HTTPS outside the workspace:
 

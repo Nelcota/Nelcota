@@ -50,10 +50,6 @@ async fn cardinality_without_representation_is_rejected_before_http() {
             .update(&json!({"body": "two"}))
             .eq("id", 1),
         client.from("notes").delete().eq("id", 1),
-        client
-            .from("notes")
-            .select("*")
-            .insert(&json!({"body": "three"})),
         client.from("notes").head(),
     ];
     for query in minimal {
@@ -688,9 +684,14 @@ async fn explicit_query_timeout_overrides_a_scoped_default() {
         .build()
         .unwrap()
         .with_options(RequestOptions {
-            timeout: Some(Duration::from_millis(300)),
+            // Shorter than the server's delay: only an override can succeed.
+            timeout: Some(Duration::from_millis(20)),
             cancellation: None,
         });
+    assert!(matches!(
+        client.from("notes").select("*").execute::<Value>().await,
+        Err(Error::Timeout)
+    ));
     assert!(matches!(
         client
             .from("notes")
@@ -911,4 +912,132 @@ async fn stalled_error_metadata_still_obeys_deadlines_and_cancellation() {
         Err(Error::Cancelled)
     ));
     task.abort();
+}
+
+#[tokio::test]
+async fn select_and_write_methods_combine_in_either_order() {
+    let (url, task) = serve(Router::new().fallback(any(|request: Request| async move {
+        let prefer = request
+            .headers()
+            .get("prefer")
+            .map(|v| v.to_str().unwrap().to_owned());
+        axum::Json(json!([{ "prefer": prefer }]))
+    })))
+    .await;
+    let client = Client::builder(url).retries(0).build().unwrap();
+    let body = json!({"body":"x"});
+    let prefer = |query: nelcota_client::rest::Query| async move {
+        let rows = query.execute::<Vec<Value>>().await.unwrap();
+        rows.data[0]["prefer"].clone()
+    };
+    let notes = || client.from("notes");
+    for (query, expected) in [
+        (notes().insert(&body).select("id"), "return=representation"),
+        (notes().select("id").insert(&body), "return=representation"),
+        (
+            notes().select("id").update(&body).eq("id", 1),
+            "return=representation",
+        ),
+        (
+            notes().eq("id", 1).select("id").delete(),
+            "return=representation",
+        ),
+        (notes().insert(&body), "return=minimal"),
+        (notes().delete().eq("id", 1), "return=minimal"),
+    ] {
+        assert_eq!(prefer(query).await, expected);
+    }
+    assert_eq!(prefer(notes().select("id")).await, Value::Null);
+    // Cardinality sees the representation whichever came first.
+    assert!(
+        notes()
+            .select("id")
+            .insert(&body)
+            .single()
+            .execute::<Value>()
+            .await
+            .is_ok()
+    );
+    task.abort();
+}
+
+#[test]
+fn conditions_take_plain_column_names_and_offer_is_null() {
+    let client = Client::builder("https://api.example.com").build().unwrap();
+    for condition in [
+        Condition::eq("items.id", 1),
+        Condition::is("items.deleted", IsValue::Null),
+        Condition::in_values("items.id", [1]),
+    ] {
+        assert!(matches!(
+            client.from("notes").or([condition]).query_string(),
+            Err(Error::Usage(_))
+        ));
+    }
+    let query = client
+        .from("notes")
+        .or([Condition::is_null("deleted")])
+        .query_string()
+        .unwrap();
+    assert_eq!(query, "or=%28deleted.is.null%29");
+}
+
+#[test]
+fn escape_like_escapes_wildcards_including_a_literal_star() {
+    assert_eq!(
+        nelcota_client::escape_like(r"50%_off*\x"),
+        r"50\%\_off\*\\x"
+    );
+    assert_eq!(nelcota_client::escape_like("plain"), "plain");
+}
+
+#[test]
+fn a_bare_omitted_field_refuses_to_serialize_as_null() {
+    use nelcota_client::Field;
+    #[derive(serde::Serialize)]
+    struct Missing {
+        body: Field<Option<String>>,
+    }
+    let error = serde_json::to_string(&Missing { body: Field::Omit }).unwrap_err();
+    assert!(error.to_string().contains("skip_serializing_if"), "{error}");
+    assert_eq!(
+        serde_json::to_string(&Field::<Option<String>>::Value(None)).unwrap(),
+        "null"
+    );
+    let client = Client::builder("http://127.0.0.1:1").build().unwrap();
+    assert!(matches!(
+        client
+            .from("notes")
+            .insert(&Missing { body: Field::Omit })
+            .query_string(),
+        Err(Error::Usage(_))
+    ));
+}
+
+#[tokio::test]
+async fn invalid_scoped_tokens_fail_like_invalid_builder_tokens() {
+    let client = Client::builder("http://127.0.0.1:1").build().unwrap();
+    let bad = "bad\r\nvalue";
+    let built = Client::builder("http://127.0.0.1:1")
+        .access_token(bad)
+        .build()
+        .unwrap_err();
+    let eager = client.try_with_access_token(bad).unwrap_err();
+    let scoped = client
+        .with_access_token(bad)
+        .from("notes")
+        .select("*")
+        .execute::<Value>()
+        .await
+        .unwrap_err();
+    let user = client
+        .with_access_token(bad)
+        .auth()
+        .get_user()
+        .await
+        .unwrap_err();
+    for error in [&eager, &scoped, &user] {
+        assert_eq!(error.to_string(), built.to_string());
+    }
+    assert!(client.try_with_access_token("good-token").is_ok());
 }

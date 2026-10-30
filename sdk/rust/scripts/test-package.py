@@ -46,6 +46,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let field: Field<Option<String>> = Field::Value(None);
     assert!(!field.is_omitted());
     assert_eq!(serde_json::to_string(&field)?, "null");
+    // A bare Omit (no skip_serializing_if) is refused rather than sent as null.
+    assert!(serde_json::to_string(&Field::<Option<String>>::Omit).is_err());
+    assert_eq!(nelcota_client::escape_like("a*"), "a\\\\*");
     println!("Published archive consumer works");
     Ok(())
 }

@@ -203,7 +203,7 @@ async fn fresh_sessions_do_not_rotate_with_short_lifetimes_or_large_margins() {
     }
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn concurrent_clones_refresh_once_and_logout_cannot_restore_session() {
     let (url, count, server) = server(false).await;
     let client = Client::builder(url).build().unwrap();
@@ -254,8 +254,15 @@ async fn rotation_finishes_when_waiter_is_cancelled_and_failed_rotation_is_share
     while count.load(Ordering::SeqCst) == 0 {
         tokio::task::yield_now().await;
     }
+    let mut events = client.auth().subscribe();
     token.cancel();
     assert_eq!(task.await.unwrap().unwrap_err().code(), "aborted");
+    // Reads do not wait for the rotation; it still finishes and publishes.
+    let event = tokio::time::timeout(Duration::from_secs(5), events.recv())
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(event.kind, AuthEventKind::Refreshed);
     assert_eq!(
         client
             .auth()
@@ -450,17 +457,21 @@ async fn custom_storage_restores_sessions_and_background_refresh_stops_on_drop()
     server_task.abort();
 }
 
-#[tokio::test]
-async fn file_storage_round_trips_atomically_and_privately() {
-    use nelcota_client::auth::{FileStorage, SessionStorage};
-    let dir = std::env::temp_dir().join(format!(
-        "nelcota-sdk-file-storage-{}-{}",
+fn temporary_dir(name: &str) -> std::path::PathBuf {
+    std::env::temp_dir().join(format!(
+        "nelcota-sdk-{name}-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_nanos()
-    ));
+    ))
+}
+
+#[tokio::test]
+async fn file_storage_round_trips_atomically() {
+    use nelcota_client::auth::{FileStorage, SessionStorage};
+    let dir = temporary_dir("file-storage");
     let store = FileStorage::new(dir.join("nested").join("session.json"));
     assert!(store.load().await.unwrap().is_none());
     store.save(Some(&session("a0", "r0"))).await.unwrap();
@@ -471,15 +482,6 @@ async fn file_storage_round_trips_atomically_and_privately() {
         .map(|e| e.unwrap().file_name())
         .collect();
     assert_eq!(entries, vec![std::ffi::OsString::from("session.json")]);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let mode = std::fs::metadata(store.path())
-            .unwrap()
-            .permissions()
-            .mode();
-        assert_eq!(mode & 0o777, 0o600);
-    }
     store.save(None).await.unwrap();
     store.save(None).await.unwrap();
     assert!(store.load().await.unwrap().is_none());
@@ -489,6 +491,211 @@ async fn file_storage_round_trips_atomically_and_privately() {
         "session_storage_error"
     );
     std::fs::remove_dir_all(&dir).unwrap();
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn file_storage_creates_owner_only_files_and_directories_on_unix() {
+    use nelcota_client::auth::{FileStorage, SessionStorage};
+    use std::os::unix::fs::PermissionsExt;
+    let dir = temporary_dir("file-storage-private");
+    let store = FileStorage::new(dir.join("nested").join("session.json"));
+    store.save(Some(&session("a0", "r0"))).await.unwrap();
+    let mode =
+        |path: &std::path::Path| std::fs::metadata(path).unwrap().permissions().mode() & 0o777;
+    assert_eq!(mode(store.path()), 0o600);
+    assert_eq!(mode(&dir.join("nested")), 0o700);
+    assert_eq!(mode(&dir), 0o700);
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+#[tokio::test]
+async fn an_unreadable_stored_session_counts_as_signed_out_and_is_removed() {
+    use nelcota_client::auth::FileStorage;
+    let dir = temporary_dir("corrupt-session");
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("session.json");
+    std::fs::write(&path, "not json").unwrap();
+    let client = Client::builder("http://127.0.0.1:1")
+        .session_storage(Arc::new(FileStorage::new(&path)))
+        .build()
+        .unwrap();
+    let mut events = client.auth().subscribe();
+    assert!(client.auth().get_session().await.unwrap().is_none());
+    assert_eq!(kinds(&mut events), [AuthEventKind::SignedOut]);
+    assert!(!path.exists(), "the unreadable session must be removed");
+    client.auth().sign_out().await.unwrap();
+    assert!(client.auth().get_session().await.unwrap().is_none());
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+#[tokio::test]
+async fn sign_out_clears_a_session_the_store_cannot_load() {
+    use nelcota_client::auth::{SessionStorage, StorageFuture};
+    #[derive(Default)]
+    struct Broken(std::sync::Mutex<Vec<bool>>);
+    impl SessionStorage for Broken {
+        fn load(&self) -> StorageFuture<'_, Option<Session>> {
+            Box::pin(async { Err(nelcota_client::Error::SessionStorage("corrupt".into())) })
+        }
+        fn save<'a>(&'a self, session: Option<&'a Session>) -> StorageFuture<'a, ()> {
+            self.0.lock().unwrap().push(session.is_some());
+            Box::pin(async { Ok(()) })
+        }
+    }
+    let store = Arc::new(Broken::default());
+    let client = Client::builder("http://127.0.0.1:1")
+        .session_storage(store.clone())
+        .build()
+        .unwrap();
+    client.auth().sign_out().await.unwrap();
+    assert!(client.auth().get_session().await.unwrap().is_none());
+    // Removed when found unreadable, then again by sign-out; never written.
+    assert_eq!(*store.0.lock().unwrap(), [false, false]);
+}
+
+type TokenReply = Arc<dyn Fn() -> (StatusCode, Value) + Send + Sync>;
+
+async fn rest_server(
+    token: TokenReply,
+    token_delay: Duration,
+) -> (String, Arc<AtomicUsize>, tokio::task::JoinHandle<()>) {
+    let count = Arc::new(AtomicUsize::new(0));
+    let router = Router::new()
+        .route(
+            "/auth/v1/token",
+            post({
+                let count = count.clone();
+                move || {
+                    count.fetch_add(1, Ordering::SeqCst);
+                    let (status, body) = token();
+                    async move {
+                        tokio::time::sleep(token_delay).await;
+                        (status, Json(body))
+                    }
+                }
+            }),
+        )
+        .route(
+            "/rest/v1/notes",
+            axum::routing::get(|headers: axum::http::HeaderMap| async move {
+                let auth = headers
+                    .get("authorization")
+                    .and_then(|value| value.to_str().ok())
+                    .unwrap_or_default()
+                    .to_owned();
+                Json(json!([{ "auth": auth }]))
+            }),
+        );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    let task = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    (url, count, task)
+}
+
+fn replying(status: StatusCode, body: Value) -> TokenReply {
+    Arc::new(move || (status, body.clone()))
+}
+
+async fn sent_token(client: &Client) -> nelcota_client::Result<String> {
+    let rows = client
+        .from("notes")
+        .select("*")
+        .execute::<Vec<Value>>()
+        .await?;
+    Ok(rows.data[0]["auth"].as_str().unwrap().to_owned())
+}
+
+#[tokio::test]
+async fn a_stalled_refresh_does_not_hold_up_requests_with_a_valid_token() {
+    let fresh = serde_json::to_value(session("a1", "r1")).unwrap();
+    let (url, count, task) =
+        rest_server(replying(StatusCode::OK, fresh), Duration::from_secs(60)).await;
+    let client = Client::builder(url).build().unwrap();
+    // Inside the 60 s refresh margin, but still valid.
+    client.auth().set_session(expiring_in(30)).await.unwrap();
+    for _ in 0..3 {
+        let token = tokio::time::timeout(Duration::from_secs(5), sent_token(&client))
+            .await
+            .expect("a request waited for the stalled refresh")
+            .unwrap();
+        assert_eq!(token, "Bearer a0");
+    }
+    assert_eq!(count.load(Ordering::SeqCst), 1, "one shared rotation");
+    task.abort();
+}
+
+#[tokio::test]
+async fn an_expired_token_is_not_sent_when_its_refresh_fails() {
+    let failure = json!({"code":"unavailable","message":"try later"});
+    let (url, count, task) = rest_server(
+        replying(StatusCode::SERVICE_UNAVAILABLE, failure),
+        Duration::ZERO,
+    )
+    .await;
+    let client = Client::builder(url).build().unwrap();
+    client.auth().set_session(expiring_in(-60)).await.unwrap();
+    let error = sent_token(&client).await.unwrap_err();
+    task.abort();
+    assert_eq!(error.code(), "unavailable");
+    assert!(error.is_retryable());
+    assert_eq!(count.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn session_lifetime_follows_expires_in_not_the_servers_clock() {
+    // A server clock far behind this machine's: its expires_at is in the past.
+    let mut issued = session("a1", "r1");
+    issued.expires_at = 1;
+    let issued = serde_json::to_value(issued).unwrap();
+    let (url, count, task) = rest_server(replying(StatusCode::OK, issued), Duration::ZERO).await;
+    let client = Client::builder(url).build().unwrap();
+    let signed_in = client
+        .auth()
+        .sign_in_with_password("a@example.com", "fixture")
+        .await
+        .unwrap();
+    assert!(signed_in.expires_in_now() > Duration::from_secs(890));
+    assert_eq!(sent_token(&client).await.unwrap(), "Bearer a1");
+    assert_eq!(
+        client
+            .auth()
+            .get_session()
+            .await
+            .unwrap()
+            .unwrap()
+            .access_token,
+        "a1"
+    );
+    task.abort();
+    assert_eq!(count.load(Ordering::SeqCst), 1, "no refresh after sign-in");
+}
+
+#[test]
+fn auto_refresh_outside_a_runtime_is_an_error() {
+    let client = Client::builder("http://127.0.0.1:1").build().unwrap();
+    assert_eq!(
+        client.auth().try_start_auto_refresh().err().unwrap().code(),
+        "invalid_input"
+    );
+}
+
+#[tokio::test]
+async fn auto_refresh_backs_off_while_the_session_stays_due() {
+    // Every refresh returns a session that is already inside its margin.
+    let mut short = session("a1", "r1");
+    short.expires_in = 1;
+    let short = serde_json::to_value(short).unwrap();
+    let (url, count, task) = rest_server(replying(StatusCode::OK, short), Duration::ZERO).await;
+    let client = Client::builder(url).build().unwrap();
+    client.auth().set_session(expiring_in(-1)).await.unwrap();
+    let background = client.auth().start_auto_refresh();
+    tokio::time::sleep(Duration::from_millis(5500)).await;
+    drop(background);
+    task.abort();
+    // Once a second would be five or six refreshes.
+    let refreshes = count.load(Ordering::SeqCst);
+    assert!((1..=3).contains(&refreshes), "refreshed {refreshes} times");
 }
 
 #[tokio::test]

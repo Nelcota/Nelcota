@@ -3,17 +3,15 @@ mod auto_refresh;
 mod oauth;
 pub use auto_refresh::AutoRefresh;
 
-use super::manager::State;
+use super::manager::{Current, Guard, Manager, RefreshResult, Rotation, outcome};
 use super::{
-    AuthEvent, AuthEventKind, EmailLink, EmailLinkType, Session, SignUp, StorageFuture, User,
-    UserUpdate,
+    AuthEvent, AuthEventKind, EmailLink, EmailLinkType, Session, SignUp, User, UserUpdate,
 };
-use crate::{Client, Error, Result, TokenMode, http::Spec};
+use crate::{BoxFuture, Client, Error, RequestOptions, Result, TokenMode, http::Spec};
 use reqwest::Method;
 use serde_json::{Value, json};
-use std::sync::atomic::Ordering;
 use std::time::Duration;
-use tokio::sync::{broadcast, watch};
+use tokio::sync::broadcast;
 
 /// Sign-out renews only an expired token, allowing this much clock skew.
 const SIGN_OUT_SKEW: Duration = Duration::from_secs(5);
@@ -25,49 +23,59 @@ pub struct AuthClient {
 
 impl AuthClient {
     pub fn subscribe(&self) -> broadcast::Receiver<AuthEvent> {
-        self.client.inner.auth.events.subscribe()
+        self.manager().subscribe()
     }
 
-    /// Cancellation may withdraw a queued request, before HTTP or session publication.
-    async fn lock_state(&self) -> Result<tokio::sync::MutexGuard<'_, State>> {
-        crate::http::cancel(&self.client.options, async {
-            Ok(self.client.inner.auth.gate.lock().await)
-        })
-        .await
+    fn manager(&self) -> &Manager {
+        &self.client.inner.auth
+    }
+    fn options(&self) -> &RequestOptions {
+        &self.client.options
     }
 
-    /// Current session, refreshed on demand. Explicit tokens do not change this session.
+    /// Current session, refreshed when it is within the refresh margin. Reading
+    /// a fresh session never waits for sign-in, rotation or persistence.
+    /// Explicit tokens do not change this session.
     pub async fn get_session(&self) -> Result<Option<Session>> {
-        crate::http::cancel(&self.client.options, async {
-            let manager = &self.client.inner.auth;
-            let mut state = manager.gate.lock().await;
-            let observed = manager.epoch.load(Ordering::Acquire);
-            manager.load(&mut state).await?;
-            match &state.session {
+        crate::http::cancel(self.options(), async {
+            let manager = self.manager();
+            let snapshot = manager.loaded(self.options()).await?;
+            match &snapshot.current {
                 None => Ok(None),
-                Some(session) if session.expires_in_now() > manager.margin_for(session) => {
-                    Ok(Some(session.clone()))
-                }
-                _ => {
-                    drop(state);
-                    self.refresh_since(observed).await.map(Some)
-                }
+                Some(current) if manager.is_fresh(current) => Ok(Some(current.session.clone())),
+                Some(_) => self.refresh_since(snapshot.revision).await.map(Some),
             }
         })
         .await
     }
 
-    pub(crate) fn access_token(&self) -> StorageFuture<'_, Option<String>> {
+    /// The token for a session-mode request. A due but still valid token is
+    /// sent while it rotates in the background; only an expired one waits.
+    pub(crate) fn access_token(&self) -> BoxFuture<'_, Option<String>> {
         Box::pin(async move {
-            match self.get_session().await {
-                Ok(session) => Ok(session.map(|s| s.access_token)),
+            let manager = self.manager();
+            let snapshot = manager.loaded(self.options()).await?;
+            let Some(current) = &snapshot.current else {
+                return Ok(None);
+            };
+            if manager.is_fresh(current) {
+                return Ok(Some(current.session.access_token.clone()));
+            }
+            if !current.remaining().is_zero() {
+                // The rotation is detached and shared; this request need not wait.
+                drop(self.rotation(snapshot.revision));
+                return Ok(Some(current.session.access_token.clone()));
+            }
+            match self.refresh_since(snapshot.revision).await {
+                Ok(session) => Ok(Some(session.access_token)),
                 Err(error) => {
-                    // A transient refresh failure still sends the previous identity, never anon.
-                    let state = self.client.inner.auth.gate.lock().await;
+                    // Fall back only to an identity that is still valid (one
+                    // published meanwhile); never send an expired token.
                     if error.code() != "invalid_grant"
-                        && let Some(session) = &state.session
+                        && let Some(current) = manager.snapshot().current
+                        && !current.remaining().is_zero()
                     {
-                        return Ok(Some(session.access_token.clone()));
+                        return Ok(Some(current.session.access_token));
                     }
                     Err(error)
                 }
@@ -76,126 +84,124 @@ impl AuthClient {
     }
 
     pub async fn refresh_session(&self) -> Result<Session> {
-        self.refresh_since(self.client.inner.auth.epoch.load(Ordering::Acquire))
-            .await
+        self.refresh_since(self.manager().snapshot().revision).await
     }
 
-    async fn refresh_since(&self, observed: u64) -> Result<Session> {
+    /// Join the rotation that started from `observed`, or start it. Rotations
+    /// are detached: cancelling waiters neither stops them nor leaves a task each.
+    fn rotation(&self, observed: u64) -> Option<RefreshResult> {
+        match self.manager().rotation(observed) {
+            Rotation::Join(result) => Some(result),
+            Rotation::Stale => None,
+            Rotation::Start(sender, result) => {
+                let mut auth = self.clone();
+                // Shared by every waiter: the client's timeout applies, not the first caller's.
+                auth.client.options = RequestOptions::default();
+                tokio::spawn(async move {
+                    let outcome = auth.rotate_from(observed).await;
+                    sender.send_replace(Some(outcome));
+                });
+                Some(result)
+            }
+        }
+    }
+
+    async fn refresh_since(&self, mut observed: u64) -> Result<Session> {
         if self
-            .client
-            .options
+            .options()
             .cancellation
             .as_ref()
             .is_some_and(|t| t.is_cancelled())
         {
             return Err(Error::Cancelled);
         }
-        // Keep one detached rotation, rather than one task waiting for the
-        // lifecycle lock per caller. Cancelling waiters must not retain them.
-        let mut receiver = {
-            let manager = &self.client.inner.auth;
-            let mut running = manager.refreshing.lock().unwrap_or_else(|e| e.into_inner());
-            match running.as_ref().filter(|r| r.has_changed().is_ok()) {
-                Some(receiver) => receiver.clone(),
-                None => {
-                    let (sender, receiver) = watch::channel(None);
-                    *running = Some(receiver.clone());
-                    let mut auth = self.clone();
-                    // Once started, rotation continues when its waiters cancel, and it is
-                    // shared: the client's timeout applies, not the first caller's.
-                    auth.client.options = Default::default();
-                    tokio::spawn(async move {
-                        let result = auth.rotate_since(observed).await;
-                        let manager = &auth.client.inner.auth;
-                        let mut running =
-                            manager.refreshing.lock().unwrap_or_else(|e| e.into_inner());
-                        sender.send_replace(Some(result));
-                        *running = None;
-                    });
-                    receiver
+        let manager = self.manager();
+        let result = loop {
+            if let Some(result) = self.rotation(observed) {
+                break result;
+            }
+            // The session changed after it was observed.
+            let snapshot = manager.snapshot();
+            match &snapshot.current {
+                None => return Err(Error::SessionMissing),
+                Some(current) if manager.is_fresh(current) => {
+                    return Ok(current.session.clone());
                 }
+                Some(_) => observed = snapshot.revision,
             }
         };
-        let wait = async move {
-            loop {
-                let result = receiver.borrow_and_update().clone();
-                if let Some(result) = result {
-                    return result;
-                }
-                if receiver.changed().await.is_err() {
-                    return receiver
-                        .borrow()
-                        .clone()
-                        .unwrap_or_else(|| Err(Error::Network("refresh task failed".into())));
-                }
-            }
-        };
-        if let Some(token) = &self.client.options.cancellation {
-            return tokio::select! { biased; _ = token.cancelled() => Err(Error::Cancelled), result = wait => result };
-        }
-        wait.await
+        crate::http::cancel(self.options(), outcome(result)).await
     }
 
-    async fn rotate_since(&self, observed: u64) -> Result<Session> {
-        let manager = &self.client.inner.auth;
-        let mut state = manager.gate.lock().await;
-        manager.load(&mut state).await?;
-        if manager.epoch.load(Ordering::Acquire) != observed {
-            if let Some(result) = &state.last_refresh {
-                return result.clone();
-            }
-            // A user update moves the epoch without rotating: a due session still rotates.
-            match &state.session {
-                None => return Err(Error::SessionMissing),
-                Some(session) if session.expires_in_now() > manager.margin_for(session) => {
-                    return Ok(session.clone());
-                }
-                Some(_) => {}
-            }
+    async fn rotate_from(&self, from: u64) -> Result<Session> {
+        let manager = self.manager();
+        let guard = manager.lock_detached().await;
+        manager.load(&guard).await;
+        let snapshot = manager.snapshot();
+        let Some(current) = snapshot.current else {
+            manager.finish_rotation(&guard);
+            return Err(Error::SessionMissing);
+        };
+        // Another publication won the lock first. A user update moves the
+        // revision without rotating, so a due session still rotates.
+        if snapshot.revision != from && manager.is_fresh(&current) {
+            manager.finish_rotation(&guard);
+            return Ok(current.session);
         }
-        let current = state.session.as_ref().ok_or(Error::SessionMissing)?;
-        let result = self
-            .token(
-                "refresh_token",
-                json!({"refresh_token": current.refresh_token}),
-            )
-            .await;
-        let result = match result {
-            Ok(session) => manager
-                .save(&mut state, Some(session.clone()), AuthEventKind::Refreshed)
-                .await
-                .map(|()| session),
+        let body = json!({"refresh_token": current.session.refresh_token});
+        match self.token("refresh_token", body).await {
+            Ok(current) => {
+                let session = current.session.clone();
+                manager
+                    .publish(&guard, Some(current), AuthEventKind::Refreshed)
+                    .await
+                    .map(|()| session)
+            }
             Err(error) => {
                 if error.code() == "invalid_grant" {
                     let _ = manager
-                        .save(&mut state, None, AuthEventKind::SignedOut)
+                        .publish(&guard, None, AuthEventKind::SignedOut)
                         .await;
+                } else {
+                    manager.finish_rotation(&guard);
                 }
                 Err(error)
             }
-        };
-        manager.epoch.fetch_add(1, Ordering::Release);
-        state.last_refresh = Some(result.clone());
-        result
+        }
     }
 
+    /// Adopt a session from elsewhere (a cookie, another process). Its expiry
+    /// is read from `expires_at` against this machine's clock.
     pub async fn set_session(&self, session: Session) -> Result<()> {
         session.validate()?;
-        let manager = &self.client.inner.auth;
-        let mut state = manager.gate.lock().await;
+        let manager = self.manager();
+        let guard = manager.lock(self.options()).await?;
         manager
-            .save(&mut state, Some(session), AuthEventKind::SignedIn)
+            .publish(
+                &guard,
+                Some(Current::restored(session)),
+                AuthEventKind::SignedIn,
+            )
             .await
     }
 
-    async fn token(&self, grant: &str, body: Value) -> Result<Session> {
+    async fn token(&self, grant: &str, body: Value) -> Result<Current> {
         let mut spec = Spec::new(Method::POST, "/auth/v1/token")
             .json(body)
             .unauthenticated();
         spec.params.push(("grant_type".into(), grant.into()));
         let response = self.client.json::<Session>(spec).await?;
         response.data.validate()?;
-        Ok(response.data)
+        Ok(Current::received(response.data))
+    }
+
+    /// Publish a session the server just issued and return it.
+    async fn signed_in(&self, guard: &Guard<'_>, current: Current) -> Result<Session> {
+        let session = current.session.clone();
+        self.manager()
+            .publish(guard, Some(current), AuthEventKind::SignedIn)
+            .await?;
+        Ok(session)
     }
 
     pub async fn sign_up(
@@ -211,8 +217,7 @@ impl AuthClient {
             }
             body["data"] = data;
         }
-        let manager = &self.client.inner.auth;
-        let mut state = self.lock_state().await?;
+        let guard = self.manager().lock(self.options()).await?;
         let response = self
             .client
             .json::<Value>(
@@ -224,9 +229,7 @@ impl AuthClient {
         if response.data.get("access_token").is_some() {
             let session: Session = decode(response.data, response.status)?;
             session.validate()?;
-            manager
-                .save(&mut state, Some(session.clone()), AuthEventKind::SignedIn)
-                .await?;
+            let session = self.signed_in(&guard, Current::received(session)).await?;
             return Ok(SignUp {
                 user: session.user.clone(),
                 session: Some(session),
@@ -240,13 +243,9 @@ impl AuthClient {
 
     pub async fn sign_in_with_password(&self, email: &str, password: &str) -> Result<Session> {
         let body = json!({"email": address(email)?, "password": password});
-        let manager = &self.client.inner.auth;
-        let mut state = self.lock_state().await?;
-        let session = self.token("password", body).await?;
-        manager
-            .save(&mut state, Some(session.clone()), AuthEventKind::SignedIn)
-            .await?;
-        Ok(session)
+        let guard = self.manager().lock(self.options()).await?;
+        let current = self.token("password", body).await?;
+        self.signed_in(&guard, current).await
     }
 
     /// Read the server's current user. Scoped clients use their explicit caller token.
@@ -295,23 +294,17 @@ impl AuthClient {
     }
 
     async fn caller_token(&self) -> Result<(String, u64)> {
-        let manager = &self.client.inner.auth;
+        let manager = self.manager();
         match &self.client.token {
-            TokenMode::Fixed(Some(token)) => {
-                Ok((token.clone(), manager.epoch.load(Ordering::Acquire)))
-            }
+            TokenMode::Fixed(Some(token)) => Ok((token.clone(), manager.snapshot().revision)),
             TokenMode::Fixed(None) => Err(Error::SessionMissing),
+            TokenMode::Invalid => Err(crate::invalid_token()),
             TokenMode::Session => {
                 self.get_session().await?.ok_or(Error::SessionMissing)?;
-                // Capture the token and publication epoch from one locked state.
-                let state = self.lock_state().await?;
-                let token = state
-                    .session
-                    .as_ref()
-                    .ok_or(Error::SessionMissing)?
-                    .access_token
-                    .clone();
-                Ok((token, manager.epoch.load(Ordering::Acquire)))
+                // The token and its revision come from one snapshot.
+                let snapshot = manager.snapshot();
+                let current = snapshot.current.ok_or(Error::SessionMissing)?;
+                Ok((current.session.access_token, snapshot.revision))
             }
         }
     }
@@ -319,50 +312,54 @@ impl AuthClient {
     /// Store a fresher user in the session the request was made with, unless
     /// the session rotated or changed meanwhile.
     async fn remember_user(&self, token: &str, revision: u64, user: &User) -> Result<()> {
-        let manager = &self.client.inner.auth;
-        let mut state = manager.gate.lock().await;
-        if manager.epoch.load(Ordering::Acquire) != revision {
+        let manager = self.manager();
+        let guard = manager.lock(self.options()).await?;
+        let snapshot = manager.snapshot();
+        if snapshot.revision != revision {
             return Ok(());
         }
-        if let Some(session) = state
-            .session
-            .as_ref()
-            .filter(|s| s.access_token == token && s.user != *user)
+        if let Some(current) = snapshot
+            .current
+            .filter(|c| c.session.access_token == token && c.session.user != *user)
         {
-            let mut session = session.clone();
-            session.user = user.clone();
             manager
-                .save(&mut state, Some(session), AuthEventKind::UserUpdated)
+                .publish(
+                    &guard,
+                    Some(current.with_user(user.clone())),
+                    AuthEventKind::UserUpdated,
+                )
                 .await?;
         }
         Ok(())
     }
 
-    /// Serialize against refresh and clear locally even when server revocation fails.
+    /// Serialize against refresh and clear locally even when server revocation
+    /// fails or the stored session is unreadable.
     pub async fn sign_out(&self) -> Result<()> {
-        let manager = &self.client.inner.auth;
-        let mut state = manager.gate.lock().await;
-        manager.load(&mut state).await?;
+        let manager = self.manager();
+        let guard = manager.lock_detached().await;
+        manager.load(&guard).await;
+        let current = manager.snapshot().current;
         let result = async {
-            let Some(session) = state.session.clone() else {
+            let Some(current) = current else {
                 return Ok(());
             };
-            let left = session.expires_in_now();
+            let left = current.remaining();
             let token = match left <= SIGN_OUT_SKEW {
-                // Already under the lifecycle gate: do not recursively refresh.
+                // Already under the lifecycle lock: do not recursively refresh.
                 // The replacement only revokes itself; it is never published.
                 true => match self
                     .token(
                         "refresh_token",
-                        json!({"refresh_token":session.refresh_token}),
+                        json!({"refresh_token": current.session.refresh_token}),
                     )
                     .await
                 {
-                    Ok(renewed) => renewed.access_token,
+                    Ok(renewed) => renewed.session.access_token,
                     Err(error) if left.is_zero() => return Err(error),
-                    Err(_) => session.access_token,
+                    Err(_) => current.session.access_token,
                 },
-                false => session.access_token,
+                false => current.session.access_token,
             };
             self.client
                 .bytes(Spec::new(Method::POST, "/auth/v1/logout").token(&token))
@@ -371,7 +368,7 @@ impl AuthClient {
         }
         .await;
         let cleared = manager
-            .save(&mut state, None, AuthEventKind::SignedOut)
+            .publish(&guard, None, AuthEventKind::SignedOut)
             .await;
         result.and(cleared)
     }
@@ -410,8 +407,7 @@ impl AuthClient {
             .await
     }
     async fn verify(&self, body: Value) -> Result<Session> {
-        let manager = &self.client.inner.auth;
-        let mut state = self.lock_state().await?;
+        let guard = self.manager().lock(self.options()).await?;
         let session = self
             .client
             .json::<Session>(
@@ -422,10 +418,7 @@ impl AuthClient {
             .await?
             .data;
         session.validate()?;
-        manager
-            .save(&mut state, Some(session.clone()), AuthEventKind::SignedIn)
-            .await?;
-        Ok(session)
+        self.signed_in(&guard, Current::received(session)).await
     }
 }
 

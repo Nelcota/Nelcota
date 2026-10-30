@@ -112,18 +112,17 @@ pub(crate) fn quote(value: &str) -> String {
     format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
 }
 
-/// Escape text for a LIKE/ILIKE pattern. The protocol cannot express a literal `*`.
+/// Escape text so a LIKE/ILIKE pattern matches it literally: `\`, `%`, `_`
+/// and the URL wildcard `*` are backslash-escaped. A literal `*` (`\*`) needs
+/// a server that understands that escape (see the changelog); older servers
+/// turn every `*` into `%`.
 pub fn escape_like(value: &str) -> String {
-    let mut out = String::new();
+    let mut out = String::with_capacity(value.len());
     for c in value.chars() {
-        match c {
-            '\\' | '%' | '_' => {
-                out.push('\\');
-                out.push(c);
-            }
-            '*' => out.push('_'),
-            _ => out.push(c),
+        if matches!(c, '\\' | '%' | '_' | '*') {
+            out.push('\\');
         }
+        out.push(c);
     }
     out
 }

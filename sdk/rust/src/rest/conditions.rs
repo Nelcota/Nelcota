@@ -46,7 +46,8 @@ impl IsValue {
     }
 }
 
-/// Conditions safely quote values in the server's group grammar.
+/// Conditions safely quote values in the server's group grammar. Columns are
+/// plain names of the filtered table: the grammar has no `relation.column`.
 #[derive(Clone, Debug)]
 pub struct Condition {
     pub(super) encoded: Result<String>,
@@ -56,7 +57,7 @@ pub struct Condition {
 impl Condition {
     pub fn compare(column: &str, op: Operator, value: impl Serialize) -> Self {
         let encoded = (|| {
-            encoding::column(column)?;
+            encoding::identifier(column)?;
             let value = scalar(value)?;
             Ok(format!(
                 "{column}.{}.{}",
@@ -90,15 +91,20 @@ impl Condition {
     }
     pub fn is(column: &str, value: IsValue) -> Self {
         Self {
-            encoded: encoding::column(column).map(|()| format!("{column}.is.{}", value.as_str())),
+            encoded: encoding::identifier(column)
+                .map(|()| format!("{column}.is.{}", value.as_str())),
             leaves: 1,
             depth: 0,
         }
     }
+    /// `column IS NULL`, the condition form of [`Query::is_null`](super::Query::is_null).
+    pub fn is_null(column: &str) -> Self {
+        Self::is(column, IsValue::Null)
+    }
     pub fn in_values(column: &str, values: impl Serialize) -> Self {
         Self {
             encoded: (|| {
-                encoding::column(column)?;
+                encoding::identifier(column)?;
                 Ok(format!("{column}.in.{}", in_list(values)?))
             })(),
             leaves: 1,

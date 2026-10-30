@@ -142,12 +142,13 @@ impl Client {
             AuthHeader::Token(token) => Some(token.clone()),
             AuthHeader::Default => match &self.token {
                 TokenMode::Fixed(token) => token.clone(),
+                TokenMode::Invalid => return Err(crate::invalid_token()),
                 TokenMode::Session => cancel(&self.options, self.auth().access_token()).await?,
             },
         };
         if let Some(token) = token {
             let mut value = HeaderValue::from_str(&format!("Bearer {token}"))
-                .map_err(|_| Error::Usage("invalid access token header".into()))?;
+                .map_err(|_| crate::invalid_token())?;
             value.set_sensitive(true);
             spec.headers.insert(AUTHORIZATION, value);
         }
