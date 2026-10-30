@@ -93,7 +93,13 @@ async fn execute(tx: &Transaction<'_>, sql: &Sql) -> Result<u64, tokio_postgres:
 /// cancels the statement still running in Postgres.
 macro_rules! in_request_tx {
     ($pool:expr, $claims:expr, |$tx:ident| $body:block) => {
-        in_request_tx!($pool, $claims, db::begin_request, ApiError::from_db, |$tx| $body)
+        in_request_tx!(
+            $pool,
+            $claims,
+            db::begin_request,
+            ApiError::from_db,
+            |$tx| $body
+        )
     };
     ($pool:expr, $claims:expr, $begin:path, $error:path, |$tx:ident| $body:block) => {{
         let role = $claims.role();

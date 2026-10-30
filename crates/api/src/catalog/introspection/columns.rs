@@ -9,9 +9,8 @@ pub(super) async fn load(
     tables: &mut BTreeMap<String, Table>,
 ) -> Result<(), tokio_postgres::Error> {
     // Table GRANTs count too: has_column_privilege includes them.
-    let privilege = |role: &str, p: &str| {
-        format!("has_column_privilege('{role}', c.oid, a.attnum, '{p}')")
-    };
+    let privilege =
+        |role: &str, p: &str| format!("has_column_privilege('{role}', c.oid, a.attnum, '{p}')");
     let mut privilege_columns = Vec::new();
     for role in ["anon", "authenticated", "service_role"] {
         for p in ["SELECT", "INSERT", "UPDATE"] {
