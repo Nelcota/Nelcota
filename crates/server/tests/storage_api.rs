@@ -690,7 +690,9 @@ async fn signed_urls_cover_only_the_signed_version() {
         .upload(Method::POST, &path, Some(&a), "text/plain", b"first")
         .await;
     assert_eq!(status, StatusCode::CREATED);
-    let reply = app.post(&sign, Some(&a), json!({ "expires_in": 600 })).await;
+    let reply = app
+        .post(&sign, Some(&a), json!({ "expires_in": 600 }))
+        .await;
     assert_eq!(reply.status, StatusCode::OK);
     let first = reply.body["signed_url"].as_str().unwrap().to_owned();
     let (status, _, bytes) = app.bytes(Method::GET, &first, None, &[], vec![]).await;
@@ -705,7 +707,9 @@ async fn signed_urls_cover_only_the_signed_version() {
     let (status, _, bytes) = app.bytes(Method::GET, &first, None, &[], vec![]).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     assert_ne!(bytes, b"second");
-    let reply = app.post(&sign, Some(&a), json!({ "expires_in": 600 })).await;
+    let reply = app
+        .post(&sign, Some(&a), json!({ "expires_in": 600 }))
+        .await;
     let second = reply.body["signed_url"].as_str().unwrap().to_owned();
     let (status, _, bytes) = app.bytes(Method::GET, &second, None, &[], vec![]).await;
     assert_eq!(status, StatusCode::OK);
