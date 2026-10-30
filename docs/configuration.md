@@ -73,7 +73,7 @@ provider IDs or generated values require your own credentials.
 | `NELCOTA_MAX_BODY_BYTES` | `usize` | `2097152` | `2097152` | Positive REST write/RPC body cap in bytes; bodies are buffered. Does not set the streamed file-upload limit. |
 | `NELCOTA_LISTEN` | `SocketAddr` | `0.0.0.0:8000` | `127.0.0.1:8000` | HTTP bind socket. Raw serve defaults to all interfaces; dev overrides to loopback, and host runtime controls binding separately. |
 | `NELCOTA_DB_POOL_SIZE` | `usize` | `10` | `10` | Positive request-pool capacity; does not set separate panel/webhook/export budgets. |
-| `NELCOTA_API_CONCURRENCY_PER_CALLER` | `Option<usize>` | `unset` (a quarter of the pool, at least 1) | `2` | Concurrent REST requests per caller (signed-in user, else client address; IPv6 per /64; `service_role` exempt). Extras wait up to 1 s, then get 429 with Retry-After. 0 disables. |
+| `NELCOTA_API_CONCURRENCY_PER_CALLER` | `Option<usize>` | `unset` (half the pool, at least 1) | `5` | Concurrent REST requests per caller (signed-in user, else client address; IPv6 per /64; `service_role` exempt). Extras wait up to 1 s, then get 429 with Retry-After. 0 disables. |
 | `NELCOTA_REQUEST_TIMEOUT_SECS` | `u64` | `15` | `15` | Positive ordinary HTTP request deadline in seconds. Must exceed nonzero statement timeout; streamed uploads/exports have separate budgets. |
 | `NELCOTA_STATEMENT_TIMEOUT_SECS` | `u64` | `10` | `10` | Request-pool PostgreSQL statement timeout in seconds. 0 disables that timeout; use deliberately. Panel SQL has separate fixed budgets. |
 | `NELCOTA_LOG_FORMAT` | `LogFormat` | `text` | `json` | text or json tracing output; verbosity comes from RUST_LOG. |

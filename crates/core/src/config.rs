@@ -532,12 +532,13 @@ impl Config {
         }))
     }
 
-    /// Concurrent REST requests per caller; 0 means unlimited. By default a
-    /// quarter of `NELCOTA_DB_POOL_SIZE` (at least 1), so one caller cannot
-    /// keep every pooled connection busy.
+    /// Concurrent REST requests per caller; 0 means unlimited. By default half
+    /// of `NELCOTA_DB_POOL_SIZE` (at least 1): one caller cannot keep every
+    /// pooled connection busy, while a server rendering pages with the
+    /// anonymous key, which counts as one caller, still has room.
     pub fn api_concurrency_limit(&self) -> usize {
         self.api_concurrency_per_caller
-            .unwrap_or((self.db_pool_size / 4).max(1))
+            .unwrap_or((self.db_pool_size / 2).max(1))
     }
 
     pub fn database_config(&self) -> Result<tokio_postgres::Config, ConfigError> {
@@ -671,15 +672,15 @@ mod tests {
     }
 
     #[test]
-    fn api_concurrency_defaults_to_a_quarter_of_the_pool() {
+    fn api_concurrency_defaults_to_half_of_the_pool() {
         let config = |db_pool_size, api_concurrency_per_caller| Config {
             db_pool_size,
             api_concurrency_per_caller,
             ..valid()
         };
-        assert_eq!(config(10, None).api_concurrency_limit(), 2);
-        assert_eq!(config(40, None).api_concurrency_limit(), 10);
-        assert_eq!(config(2, None).api_concurrency_limit(), 1);
+        assert_eq!(config(10, None).api_concurrency_limit(), 5);
+        assert_eq!(config(40, None).api_concurrency_limit(), 20);
+        assert_eq!(config(1, None).api_concurrency_limit(), 1);
         assert_eq!(config(10, Some(0)).api_concurrency_limit(), 0);
         assert_eq!(config(10, Some(7)).api_concurrency_limit(), 7);
         assert!(config(10, Some(0)).validate().is_ok());

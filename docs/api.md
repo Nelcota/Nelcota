@@ -166,12 +166,14 @@ Same syntax as PostgREST. Inside the parentheses each filter is written
 ### Concurrent requests
 
 Each caller runs at most `NELCOTA_API_CONCURRENCY_PER_CALLER` REST requests at
-a time; by default that is a quarter of `NELCOTA_DB_POOL_SIZE`, at least 1 (2
-with the default pool of 10). The caller is the user of a signed-in token, and
+a time; by default that is half of `NELCOTA_DB_POOL_SIZE`, at least 1 (5 with
+the default pool of 10). The caller is the user of a signed-in token, and
 otherwise the client address (the forwarded one with `NELCOTA_TRUST_PROXY`),
 with IPv6 addresses grouped by /64 network. `service_role` is not limited. A
 request beyond the limit waits up to one second for a slot, then gets
-`429 rate_limited` with `Retry-After: 1`; `0` turns the limit off.
+`429 rate_limited` with `Retry-After: 1`; `0` turns the limit off. A server
+that renders pages with the anonymous key is one caller: send user tokens from
+it, or raise the limit.
 
 When the client disconnects or the request times out, the server cancels the
 statement still running in Postgres instead of letting it run until

@@ -255,6 +255,7 @@ class UpgradeScenario:
             "NELCOTA_LISTEN": f"127.0.0.1:{self.port}",
             "NELCOTA_DB_POOL_SIZE": "4",
             "NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE": "100000",
+            "NELCOTA_API_CONCURRENCY_PER_CALLER": "0",
             "NELCOTA_STORAGE_BACKEND": "disk",
             "NELCOTA_STORAGE_DIR": str(self.storage_dir),
             "NELCOTA_STORAGE_MIN_FREE_BYTES": "0",

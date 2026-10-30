@@ -197,9 +197,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
   until `statement_timeout`.
 - One caller can no longer keep every REST connection busy: each signed-in
   user, or each client address (IPv6 per /64), runs at most
-  `NELCOTA_API_CONCURRENCY_PER_CALLER` requests at a time, a quarter of the
+  `NELCOTA_API_CONCURRENCY_PER_CALLER` requests at a time, half of the
   pool by default. Extras wait up to one second, then get `429 rate_limited`
-  with `Retry-After: 1`; `service_role` is exempt and `0` disables it (D112).
+  with `Retry-After: 1`; `service_role` is exempt and `0` disables it (D115).
 - A REST `select` embeds at most 16 related tables per request, nested ones
   included; each embed is a correlated subquery per parent row, and up to 127
   were accepted before.
