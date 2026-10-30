@@ -280,7 +280,6 @@ impl<C: Clock + Clone> RateLimiter<C> {
             .expect("delay update always supplies a value");
         LOGIN_DELAY_BASE * (1_u32 << step.min(LOGIN_DELAY_MAX_STEP))
     }
-
 }
 
 /// Whole seconds for `Retry-After`, rounded up so a client never retries

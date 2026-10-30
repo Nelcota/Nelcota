@@ -58,6 +58,27 @@ async fn signup(app: &TestApp, email: &str, password: &str) {
     );
 }
 
+/// A network address that no earlier attempt in this test used.
+fn fresh_network(next: &mut u32) -> String {
+    *next += 1;
+    format!("10.0.{}.{}", *next / 250, *next % 250 + 1)
+}
+
+/// Wrong passwords from fresh networks until the account budget is spent,
+/// however much it refilled meanwhile; returns the refusal.
+async fn spend_account_budget(app: &TestApp, email: &str, next: &mut u32) -> Reply {
+    let wrong = Uuid::new_v4().to_string();
+    for _ in 0..200 {
+        let source = fresh_network(next);
+        let reply = login_from(app, email, &wrong, &source).await;
+        if reply.status == StatusCode::TOO_MANY_REQUESTS {
+            return reply;
+        }
+        assert_eq!(reply.status, StatusCode::BAD_REQUEST);
+    }
+    panic!("the account budget was never spent");
+}
+
 #[tokio::test]
 async fn account_budget_refuses_fresh_networks_but_admits_a_known_one() {
     let app = TestApp::spawn_with(Options {
@@ -75,26 +96,27 @@ async fn account_budget_refuses_fresh_networks_but_admits_a_known_one() {
         login_from(&app, &email, &password, home).await.status,
         StatusCode::OK
     );
-    // The account budget is ten times the per-IP one (20 here); many
-    // addresses together use up the rest of it.
-    let wrong = Uuid::new_v4().to_string();
-    for host in 100..119 {
-        let source = format!("192.0.2.{host}");
-        assert_eq!(
-            login_from(&app, &email, &wrong, &source).await.status,
-            StatusCode::BAD_REQUEST
-        );
-    }
-    let blocked = login_from(&app, &email, &wrong, "192.0.2.2").await;
-    assert_eq!(blocked.status, StatusCode::TOO_MANY_REQUESTS);
+    // The account budget is ten times the per-IP one (20 a minute here), so
+    // it takes many addresses to spend. It refills while the test runs, so it
+    // is spent again right before each check.
+    let mut next = 0;
+    let blocked = spend_account_budget(&app, &email, &mut next).await;
     assert!(blocked.headers.contains_key(header::RETRY_AFTER));
-    assert_eq!(
-        login_from(&app, &email, &password, "192.0.2.3")
-            .await
-            .status,
-        StatusCode::TOO_MANY_REQUESTS,
-        "a fresh network is refused even with the right password"
-    );
+    // A fresh network is refused even with the right password. Only a refill
+    // between the two requests can let it in; then spend the budget again.
+    let mut refused = false;
+    for _ in 0..5 {
+        let source = fresh_network(&mut next);
+        let reply = login_from(&app, &email, &password, &source).await;
+        if reply.status == StatusCode::TOO_MANY_REQUESTS {
+            refused = true;
+            break;
+        }
+        assert_eq!(reply.status, StatusCode::OK);
+        spend_account_budget(&app, &email, &mut next).await;
+    }
+    assert!(refused, "fresh networks are refused over budget");
+    spend_account_budget(&app, &email, &mut next).await;
     // This is a bound on the deliberately introduced throttle delay plus local
     // test work, not a production latency SLO or a hash-admission change.
     let reply = tokio::time::timeout(
