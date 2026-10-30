@@ -160,6 +160,10 @@ const MAX_IDENTIFIER_BYTES: usize = 63;
 /// Deepest embedding accepted (`a(b(c(d(*))))`): bounds the recursion and
 /// the correlated subqueries a single request can stack.
 const MAX_EMBED_DEPTH: usize = 4;
+/// Most embedded relations one request may ask for, nested ones included.
+/// Each is a correlated subquery per parent row, so this bounds how much
+/// work a single read stacks onto one connection.
+const MAX_EMBEDS: usize = 16;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum CmpOp {
@@ -923,6 +927,27 @@ mod tests {
             .map(|e| (e.alias.as_str(), e.join[0].1.as_str()))
             .collect();
         assert_eq!(picked, [("buyer", "buyer_id"), ("seller", "seller_id")]);
+    }
+
+    #[test]
+    fn a_request_embeds_a_bounded_number_of_relations() {
+        fn embeds(n: usize, table: &str) -> String {
+            (0..n)
+                .map(|i| format!("e{i}:{table}"))
+                .collect::<Vec<_>>()
+                .join(",")
+        }
+        let flat = embeds(MAX_EMBEDS, "customers(name)");
+        assert!(select_of("orders", &flat).is_ok());
+        let err = select_of("orders", &format!("{flat},items(*)"))
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("at most 16 relations"), "{err}");
+        // Nested embeds count towards the same budget.
+        let nested = format!("orders(id,{})", embeds(MAX_EMBEDS - 1, "items(qty)"));
+        assert!(select_of("customers", &nested).is_ok());
+        let nested = format!("orders(id,{})", embeds(MAX_EMBEDS, "items(qty)"));
+        assert!(select_of("customers", &nested).is_err());
     }
 
     #[test]

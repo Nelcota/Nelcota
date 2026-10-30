@@ -95,6 +95,18 @@ pub(super) fn parse_select(
             "select accepts at most {MAX_SELECT_ITEMS} items including nested relations"
         )));
     }
+    fn embed_count(select: &Select) -> usize {
+        select
+            .embeds
+            .iter()
+            .map(|embed| 1 + embed_count(&embed.select))
+            .sum()
+    }
+    if depth == 0 && embed_count(&select) > MAX_EMBEDS {
+        return Err(invalid(format!(
+            "select embeds at most {MAX_EMBEDS} relations per request, nested ones included"
+        )));
+    }
     Ok(select)
 }
 

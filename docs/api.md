@@ -147,8 +147,9 @@ Same syntax as PostgREST. Inside the parentheses each filter is written
   return `413 response_too_large`; a write requesting such a representation
   rolls back. A single database value must still be serialized before its size
   can be checked. Administrative streaming exports remain available for large data.
-- `select` accepts at most 128 items across the relation tree. Repeated columns
-  are rejected; `*` already includes explicitly selected columns.
+- `select` accepts at most 128 items across the relation tree, and at most 16
+  embedded relations per request, nested ones included. Repeated columns are
+  rejected; `*` already includes explicitly selected columns.
 
 ### Concurrent requests
 

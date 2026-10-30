@@ -197,6 +197,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
   `NELCOTA_API_CONCURRENCY_PER_CALLER` requests at a time, a quarter of the
   pool by default. Extras wait up to one second, then get `429 rate_limited`
   with `Retry-After: 1`; `service_role` is exempt and `0` disables it (D112).
+- A REST `select` embeds at most 16 related tables per request, nested ones
+  included; each embed is a correlated subquery per parent row, and up to 127
+  were accepted before.
 
 ## [0.5.6] — 2026-10-27
 
