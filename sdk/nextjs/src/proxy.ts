@@ -6,7 +6,9 @@ const HTTP_SEE_OTHER = 303;
 export type ProxyOptions = GuardOptions;
 function privateHeaders(response: NextResponse): NextResponse {
   response.headers.set("cache-control", "private, no-store, max-age=0");
-  response.headers.set("referrer-policy", "no-referrer");
+  // same-origin, not no-referrer: Chromium sends `Origin: null` on native same-origin
+  // form POSTs under no-referrer, which the CSRF check refuses.
+  response.headers.set("referrer-policy", "same-origin");
   return response;
 }
 /** Authentication routing only. Backend grants/RLS still decide authorization.

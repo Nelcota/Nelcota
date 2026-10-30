@@ -174,7 +174,7 @@ async fn nextjs_sdk_finishes_a_real_pkce_flow() {
         .unwrap();
     });
     let script = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../sdk/nextjs/scripts/oauth-smoke.mjs");
+        .join("../../sdk/ssr/scripts/oauth-smoke.mjs");
     let output = tokio::process::Command::new("node")
         .arg("--conditions=react-server")
         .arg(script)

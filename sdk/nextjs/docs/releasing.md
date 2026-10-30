@@ -6,6 +6,13 @@ The package has independent semver and requires the published
 The App Router example stays on 0.2.4 until 0.2.5 passes its 14-day
 `minimumReleaseAge`. The minimum peer remains 0.2.2.
 
+`@nelcota/ssr` is a regular dependency with a patch-only (`~`) range, not a
+peer: applications never import it. Publish the required core release (tag
+`ssr-sdk-v*`) first; the release workflow checks that the range resolves on npm.
+The `overrides` entry pointing it at `file:../ssr` only applies inside this
+checkout (npm ignores `overrides` of installed dependencies), and
+`scripts/package-smoke.mjs` verifies the range accepts the packed core.
+
 ## Verification
 
 `.github/workflows/sdk-nextjs-check.yml` is shared by PR CI and tagged releases.
@@ -53,7 +60,7 @@ for account requirements and configuration expiry.
 
 ## Tagged releases
 
-1. Update package/lock versions, the dated changelog and compatibility evidence.
+1. Update package/lock versions, the dated changelog and [verification](verification.md).
 2. Merge the reviewed change after all CI jobs pass.
 3. Tag that exact commit `nextjs-sdk-v<version>` and push the tag.
 4. The workflow verifies the tagged source before the OIDC publish job. Existing
