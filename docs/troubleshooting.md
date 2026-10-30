@@ -112,11 +112,11 @@ cost more memory; responses also have an 8 MiB budget
 
 Password sign-in, signup, email links and provider sign-in use per-endpoint
 IP budgets based on `NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE` (30 by default).
-Password login also has a per-email-and-IP budget and the same budget per
-account across all addresses. Over the account budget, only addresses where the
-account signed in during the last 30 days still get through, after a short
-delay; others receive 429 until it refills. Refresh and PKCE redemption share
-a separate per-IP budget of ten times that value (300 by default).
+Password login also has a per-account budget of ten times that value across
+all addresses. Over it, only networks where the account has a session from the
+last 30 days still get through, after a short delay; others receive 429 until
+it refills. Refresh and PKCE redemption share a separate per-IP budget of ten
+times that value (300 by default).
 
 The REST and storage APIs allow `NELCOTA_API_RATE_LIMIT_PER_MINUTE` requests
 (600 by default, 0 turns it off): per account with a user token, per IP without

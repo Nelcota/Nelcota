@@ -155,22 +155,15 @@ requests have a separate per-IP budget from `/authorize`.
 Per-IP budgets group IPv6 addresses by their /64, the block a single
 subscriber usually gets; IPv4-mapped addresses count as their IPv4 address.
 
-Password sign-in also has an account-wide budget equal to the per-IP one, so
-many addresses cannot guess one account's password faster than one address.
-Over it, addresses where the account signed in during the last 30 days (up to
-four per account, kept in memory) still get through after a delay of up to two
-seconds; any other address receives `429` until the budget refills. An attack
-therefore slows the owner down on their usual network but does not lock them
-out.
-
 In-memory limiters keep two stores of at most 50,000 keys each. At capacity
 the per-IP store rejects new keys with `429` and a one-second retry hint,
-while existing keys keep their independent quotas. Login keys that contain an
-email live in a separate store, so made-up emails cannot fill the per-IP one;
-while it is full, a new email is let through untracked and stays bounded by
-its IP's budget. Cleanup runs at most once per second under capacity pressure
-and removes only keys idle since their last accepted request for a full
-minute, enough to recover the complete GCRA burst.
+while existing keys keep their independent quotas. Each network holds one key
+per endpoint, so filling it takes thousands of networks kept busy every minute.
+Account budgets live in a separate store, so made-up emails cannot fill the
+per-IP one; while it is full, an account it does not track counts as over its
+budget (see below). Cleanup runs at most once per second under capacity
+pressure and removes only keys idle since their last accepted request for a
+full minute, enough to recover the complete GCRA burst.
 
 ## Endpoints
 
@@ -236,27 +229,28 @@ it completes or times out.
 SMTP errors and timeouts are logged; sending remains a best-effort background
 operation rather than a durable delivery queue.
 
-Password: 8 to 256 characters. Password login has hard limits of
-`NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE` per IP (default 30) and per normalized
-email/IP pair. All attempts count, including successful and unknown-account
-attempts. Each bucket allows a burst of that size and refills continuously
-at that many attempts per minute; the shared per-IP budget remains unchanged.
+Password: 8 to 256 characters. Password login has a hard limit of
+`NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE` per IP (default 30) and an account-wide
+budget of ten times that per normalized email. All attempts count, including
+successful and unknown-account attempts. Each bucket allows a burst of its
+size and refills continuously at that many attempts per minute.
 
-The account aggregate uses the same quota for backpressure, rather than hard
-rejection: excess attempts wait 125, 250, 500, 1,000, then at most 2,000 ms.
-A refill admission resets the delay progression. Waiting holds neither a DB
-connection nor a password worker. A correct login from an independent source
-with available IP/pair budgets inherits at most two seconds of throttle delay,
-even during continuing account-targeted abuse. Normal request deadlines,
-worker admission/overload responses and bounded limiter capacity still apply.
+Over the account budget, an attempt from a network where the account has a
+session created in the last 30 days (the same IPv4 address or IPv6 /64) waits
+125, 250, 500, 1,000, then at most 2,000 ms and continues; an attempt from any
+other network receives `429` until the budget refills. The check reads the
+sessions table, so it survives restarts and only real sign-ins create it. A
+refill admission resets the delay progression. Waiting holds neither a DB
+connection nor a password worker. Normal request deadlines, worker
+admission/overload responses and bounded limiter capacity still apply.
 
-Trade-off: a strict account-wide verification ceiling cannot also guarantee
-admission of an unrecognized legitimate source when attackers continuously
-spend that ceiling. Distributed sources can now exceed the former aggregate
-ceiling; each source and email/source pair retain the original hard quota.
-The aggregate delay is backpressure, not a distributed brute-force ceiling.
-Keep trusted proxy configuration and upstream abuse controls; limits are per
-process and shared NAT users still share their IP budget.
+Trade-off: a strict account-wide ceiling cannot also guarantee admission of
+an unrecognized legitimate network while attackers keep spending it. One
+address cannot spend it alone (it is ten times the per-IP budget); attackers
+with enough addresses can keep the owner out of new networks, never out of
+networks they already used. Distributed guessing is capped at the account
+budget. Keep trusted proxy configuration and upstream abuse controls; limits
+are per process and shared NAT users still share their IP budget.
 
 Refreshes and PKCE redemptions (`grant_type=refresh_token` / `pkce`) draw from
 a separate per-IP budget of 10 times that (300 by default), so open tabs
