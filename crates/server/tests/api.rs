@@ -1607,3 +1607,41 @@ async fn partitions_and_inheritance_children_are_not_exposed() {
         assert_eq!(body, json!([]), "{parent}");
     }
 }
+
+#[tokio::test]
+async fn openapi_lists_only_the_columns_a_role_can_use() {
+    let app = TestApp::spawn().await;
+    app.admin_client
+        .batch_execute(
+            "CREATE TABLE public.staff (id int PRIMARY KEY, name text, salary numeric);
+             COMMENT ON COLUMN public.staff.salary IS 'confidential pay';
+             INSERT INTO public.staff VALUES (1, 'Ana', 100);
+             GRANT SELECT (id, name) ON public.staff TO anon;
+             GRANT SELECT ON public.staff TO service_role;",
+        )
+        .await
+        .unwrap();
+    app.catalog.reload(&app.pool).await.unwrap();
+    let (_, anon) = app.get("/rest/v1/", None).await;
+    let staff = &anon["components"]["schemas"]["staff"]["properties"];
+    assert!(staff.get("name").is_some(), "{staff}");
+    assert!(staff.get("salary").is_none(), "{staff}");
+    assert!(!anon.to_string().contains("confidential pay"));
+    let names: Vec<&str> = anon["paths"]["/staff"]["get"]["parameters"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|p| p["name"].as_str())
+        .collect();
+    assert!(names.contains(&"id"), "{names:?}");
+    assert!(!names.contains(&"salary"), "{names:?}");
+    // What the document shows is what the API serves to this role.
+    let (status, body) = app.get("/rest/v1/staff?select=id,name", None).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body, json!([{ "id": 1, "name": "Ana" }]));
+    let (status, _) = app.get("/rest/v1/staff?select=salary", None).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    let (_, service) = app.get("/rest/v1/", Some(&service_token())).await;
+    let staff = &service["components"]["schemas"]["staff"]["properties"];
+    assert!(staff.get("salary").is_some(), "{staff}");
+}

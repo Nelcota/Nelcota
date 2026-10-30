@@ -207,6 +207,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - Partitions and inheritance children are no longer exposed as REST tables
   (or listed in the panel). Read directly they skipped their parent's row
   policies, so a broadly granted partition returned every row; use the parent.
+- The REST OpenAPI document lists only the columns, column comments and filters
+  the requesting role may use, and includes tables it can reach through
+  column-level GRANTs only.
 
 ## [0.5.6] — 2026-10-27
 

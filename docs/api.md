@@ -259,7 +259,9 @@ function runs with the JWT's role (unless it is `SECURITY DEFINER`):
 ## OpenAPI: `GET /rest/v1/`
 
 An OpenAPI 3.0 document generated from the catalog and **filtered by the
-request's role**: `anon` only sees what `anon` may use.
+request's role**: `anon` only sees what `anon` may use. A table appears when
+the role holds a table or column GRANT on it, with only the columns (and their
+comments) the role may read or write; filters list only the readable ones.
 
 Schema models: `nelcota types -o database.ts` (TypeScript, default), or
 `nelcota types --lang rust -o database.rs` for the

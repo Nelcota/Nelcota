@@ -358,6 +358,7 @@ mod tests {
             has_default: false,
             generated: false,
             comment: None,
+            privileges: Default::default(),
         }
     }
 

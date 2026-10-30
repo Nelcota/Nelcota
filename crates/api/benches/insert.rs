@@ -18,6 +18,7 @@ fn column(n: usize) -> Column {
         has_default: false,
         generated: false,
         comment: None,
+        privileges: Default::default(),
     }
 }
 
