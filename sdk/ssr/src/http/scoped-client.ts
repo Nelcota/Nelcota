@@ -56,7 +56,7 @@ function scopedFetch(owner: ClientOwner, scope: ClientScope, send: FetchLike): F
       throw new NelcotaError({
         status: 0,
         code: "read_only",
-        message: "Server Components cannot mutate data or session state",
+        message: "This read-only session context cannot mutate data or session state",
       });
     const url = requestUrl(input, owner);
     const headers = headerLifetime(

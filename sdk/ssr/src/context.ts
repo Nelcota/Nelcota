@@ -1,10 +1,11 @@
 import type { NelcotaClient } from "@nelcota/client";
 
 import { SessionError } from "./errors.js";
-import { requireMutation } from "./http/policy.js";
+import { OAUTH_CALLBACK_PATH, requireMutation } from "./http/policy.js";
 import { requestClient, dataClient } from "./http/scoped-client.js";
 import { SessionRecords } from "./sealing/records.js";
 import { newSessionId, sessionKey } from "./sealing/seal.js";
+import { revokeSession } from "./session/auth-client.js";
 import { accessToken } from "./session/mutation-options.js";
 import type {
   CookieReader,
@@ -141,7 +142,7 @@ export class Integration<Database = unknown> {
     const callbackRequest =
       callback &&
       request.method === "GET" &&
-      new URL(request.url).pathname === `${this.#config.basePath}/auth/callback`;
+      new URL(request.url).pathname === `${this.#config.basePath}${OAUTH_CALLBACK_PATH}`;
     if (callback && callbackRequest === false)
       throw new SessionError("csrf", "Use the configured GET OAuth callback");
     if (callbackRequest === false)
@@ -159,26 +160,74 @@ export class Integration<Database = unknown> {
       throw new SessionError("invalid_session", "Invalid generated session id");
     return { existingId, presented, id, initialKey };
   }
+  /** Unsafe same-origin request (POST/PUT/PATCH/DELETE) that may sign in, sign out,
+   * refresh or call the API. The fourth `callback` flag is deprecated: use
+   * `oauthCallback` for the OAuth callback GET. */
   async write<T>(
     cookies: CookieWriter,
     request: Request,
     ...operation: [work: (context: WritableContext<Database>) => Promise<T>, callback?: boolean]
   ): Promise<T> {
     const [work, callback = false] = operation;
+    return await this.#write({ cookies, request, callback }, work);
+  }
+  /** The configured OAuth callback GET (`basePath + /auth/callback`); only
+   * `auth.exchangeCode` is permitted. */
+  async oauthCallback<T>(
+    cookies: CookieWriter,
+    request: Request,
+    work: (context: WritableContext<Database>) => Promise<T>,
+  ): Promise<T> {
+    return await this.#write({ cookies, request, callback: true }, work);
+  }
+  async #write<T>(
+    { cookies, request, callback }: { cookies: CookieWriter; request: Request; callback: boolean },
+    work: (context: WritableContext<Database>) => Promise<T>,
+  ): Promise<T> {
     const callbackRequest = this.#callbackRequest(request, callback);
     const identity = await this.#initialIdentity(cookies);
-    const retired = new Set<string>();
-    try {
-      return await this.#config.options.store.exclusive(identity.initialKey, (lease) =>
-        writeSession(this.#records, lease, {
-          setup: { ...identity, callbackRequest, cookies, request, retired },
-          work,
-        }),
-      );
-    } finally {
-      // Retired rows are already dead; remove credentials after releasing the owning lease.
-      // oxlint-disable-next-line no-await-in-loop -- Retire each old row only after the current lease has ended.
-      for (const key of retired) await this.#records.retire(key).catch(() => undefined);
-    }
+    const retired = new Set<string>(),
+      replaced: string[] = [];
+    const result = await this.#config.options.store.exclusive(identity.initialKey, (lease) =>
+      writeSession(this.#records, lease, {
+        setup: { ...identity, callbackRequest, cookies, request, retired, replaced },
+        work,
+      }),
+    );
+    // Only a published identity retires what it replaced. Retired rows are already
+    // dead (the lineage head no longer names them); this removes their credentials.
+    await this.#retire(retired, replaced);
+    return result;
+  }
+  /** Retires replaced rows and revokes replaced upstream sessions concurrently
+   * (bounded by the request's auth queue). Failures never fail the request; they
+   * reach `onBackgroundError` without tokens or causes. */
+  async #retire(retired: ReadonlySet<string>, replaced: readonly string[]): Promise<void> {
+    const report = (operation: "retire" | "revoke") => (): void => {
+      try {
+        this.#config.options.onBackgroundError?.(
+          new SessionError(
+            "session_store",
+            operation === "retire"
+              ? "A replaced session row could not be retired"
+              : "A replaced upstream session could not be revoked",
+          ),
+        );
+      } catch {
+        // A failing hook must not turn a published sign-in into an error.
+      }
+    };
+    const revoke = (session: string): Promise<void> =>
+      revokeSession(this.#config, session).catch(report("revoke"));
+    await Promise.all([
+      ...[...retired].map(async (key) => {
+        const orphan = await this.#records.retire(key).catch(() => {
+          report("retire")();
+          return null;
+        });
+        if (orphan !== null) await revoke(orphan);
+      }),
+      ...replaced.map(revoke),
+    ]);
   }
 }

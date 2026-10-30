@@ -1,8 +1,8 @@
 import { expect, it } from "vitest";
 
 import { type SessionOptions } from "../src/context.js";
-import { requiredValue } from "../src/required-value.js";
 import { post, setup } from "./context-fixtures.js";
+import { requiredValue } from "./required-value.js";
 
 const start = async (overrides: Partial<SessionOptions> = {}) => {
   const fixture = await setup(overrides);

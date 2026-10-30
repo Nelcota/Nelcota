@@ -2,9 +2,9 @@ import { expect, it, vi } from "vitest";
 
 import { promiseResult } from "../src/lifecycle/promise-result.js";
 import { DevelopmentSessionStore } from "../src/memory-store.js";
-import { requiredValue } from "../src/required-value.js";
 import { newSessionId } from "../src/sealing/seal.js";
 import { Jar, post, setup, credentials } from "./context-fixtures.js";
+import { requiredValue } from "./required-value.js";
 
 it("supports an explicit local reset without decrypting unavailable state", async () => {
   const store = new DevelopmentSessionStore();

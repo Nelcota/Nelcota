@@ -1,7 +1,12 @@
 import type { CookieReader, Integration } from "./context.js";
 import { SessionError } from "./errors.js";
-import { hasPathControls } from "./http/path.js";
-import { safeReturnTo } from "./http/policy.js";
+import {
+  DEFAULT_REFRESH_ENDPOINT,
+  DEFAULT_REFRESH_PAGE,
+  hasPathControls,
+  OAUTH_CALLBACK_PATH,
+  safeReturnTo,
+} from "./http/policy.js";
 const MAX_POLICY_PATHS = 32;
 const MAX_PATH_DECODINGS = 3;
 const HTTP_FORBIDDEN = 403;
@@ -11,6 +16,9 @@ const HTTP_NOT_FOUND = 404;
 export interface GuardOptions {
   protectedPaths: readonly string[];
   loginPath?: string;
+  /** Page the guard sends an expired session to (default `/auth/refresh`). It is a
+   * navigation target that POSTs the refresh, distinct from the POST endpoint used by
+   * `refreshSession()` (`/auth/session/refresh`); both are always public. */
   refreshPath?: string;
   /** Paths where a cookie-less browser receives a credential-free bootstrap ID, so
    * concurrent first sign-ins from its tabs are ordered. Default: `[loginPath]`. */
@@ -26,6 +34,13 @@ export type GuardDecision =
   | { kind: "denied" }
   | { kind: "unavailable" }
   | { kind: "redirect"; location: string; clearCookie: boolean };
+
+/** How the framework adapter routes. */
+export interface GuardAdapterOptions {
+  /** Write `next` with the app basePath, for frameworks whose redirect helpers do
+   * not add it (SvelteKit). Next.js adds basePath itself, so the default is false. */
+  nextIncludesBasePath?: boolean;
+}
 
 export interface Guard {
   readonly login: string;
@@ -58,8 +73,13 @@ interface RoutePolicy {
   excluded: ReadonlySet<string>;
   bootstraps: ReadonlySet<string>;
   ignored: readonly string[];
+  nextIncludesBasePath: boolean;
 }
-function routePolicy(policy: GuardOptions, ignored: readonly string[]): RoutePolicy {
+function routePolicy(
+  policy: GuardOptions,
+  ignored: readonly string[],
+  adapter: GuardAdapterOptions,
+): RoutePolicy {
   if (
     Array.isArray(policy.protectedPaths) === false ||
     policy.protectedPaths.length < 1 ||
@@ -68,7 +88,7 @@ function routePolicy(policy: GuardOptions, ignored: readonly string[]): RoutePol
     throw new SessionError("configuration", "Configure one to thirty-two protected path prefixes");
   const paths = policy.protectedPaths.map(configPath);
   const login = configPath(policy.loginPath ?? "/login");
-  const refresh = configPath(policy.refreshPath ?? "/auth/refresh");
+  const refresh = configPath(policy.refreshPath ?? DEFAULT_REFRESH_PAGE);
   if (
     policy.bootstrapPaths !== undefined &&
     (Array.isArray(policy.bootstrapPaths) === false ||
@@ -80,7 +100,8 @@ function routePolicy(policy: GuardOptions, ignored: readonly string[]): RoutePol
     login,
     refresh,
     ignored,
-    excluded: new Set([login, refresh, "/auth/callback", "/auth/session/refresh"]),
+    nextIncludesBasePath: adapter.nextIncludesBasePath === true,
+    excluded: new Set([login, refresh, OAUTH_CALLBACK_PATH, DEFAULT_REFRESH_ENDPOINT]),
     bootstraps: new Set((policy.bootstrapPaths ?? [login]).map(configPath)),
   };
 }
@@ -161,7 +182,11 @@ async function authenticationDecision<Database>(
           ? route.policy.refresh
           : route.policy.login;
       const target = new URL(`${owner.basePath}${nextPath}`, owner.origin);
-      target.searchParams.set("next", safeReturnTo(`${route.url.pathname}${route.url.search}`));
+      const base = route.policy.nextIncludesBasePath ? owner.basePath : "";
+      target.searchParams.set(
+        "next",
+        safeReturnTo(`${base}${route.url.pathname}${route.url.search}`),
+      );
       // A response still in flight may have replaced a superseded or row-less cookie.
       return { kind: "redirect", location: target.href, clearCookie: clearable };
     });
@@ -173,8 +198,12 @@ async function authenticationDecision<Database>(
 }
 
 /** Validates canonical paths before routing; ignored prefixes belong to framework assets. */
-export function createGuard(options: GuardOptions, ignoredPrefixes: readonly string[]): Guard {
-  const policy = routePolicy(options, ignoredPrefixes);
+export function createGuard(
+  options: GuardOptions,
+  ignoredPrefixes: readonly string[],
+  adapter: GuardAdapterOptions = {},
+): Guard {
+  const policy = routePolicy(options, ignoredPrefixes, adapter);
   return {
     login: policy.login,
     refresh: policy.refresh,

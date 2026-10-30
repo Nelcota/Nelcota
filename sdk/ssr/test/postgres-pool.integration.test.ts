@@ -1,9 +1,9 @@
 import { expect, it } from "vitest";
 
 import { PostgresSessionStore } from "../src/postgres.js";
-import { requiredValue } from "../src/required-value.js";
 import { PostgresDatabase } from "./postgres-database.js";
 import { fairOwnership, cancelledOwner } from "./postgres-ownership-fixtures.js";
+import { requiredValue } from "./required-value.js";
 
 it("makes progress with one pooled connection for session and lineage ownership", async () => {
   const database = new PostgresDatabase({ sizes: [1], timeoutInMs: 500, adminTimeoutInMs: 1000 });

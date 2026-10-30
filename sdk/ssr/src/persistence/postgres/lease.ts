@@ -6,6 +6,22 @@ import { keyCheck, requireBoundedState, stored } from "./rows.js";
 import type { OwnedConnection, OwnershipRequest } from "./types.js";
 
 const QUERY_DEADLINE_MARGIN_IN_MS = 25;
+// Frozen lock key: 0.1.x instances lock the same single-bigint key, so old and new
+// instances exclude each other during a rolling deploy. The key space is shared
+// with any other pg_advisory_lock(bigint) user of the database; a collision only
+// serializes unrelated work, and a dedicated session database avoids it.
+const LOCK = "pg_advisory_lock(hashtextextended($1, 0))";
+const TRY_LOCK = "pg_try_advisory_lock(hashtextextended($1, 0))";
+const UNLOCK = "pg_advisory_unlock(hashtextextended($1, 0))";
+const QUERY_CANCELED = "57014";
+
+function queryCanceled(cause: unknown): boolean {
+  return (
+    typeof cause === "object" &&
+    cause !== null &&
+    (cause as { code?: unknown }).code === QUERY_CANCELED
+  );
+}
 
 /** One connection owns every lock and statement until cleanup or destruction. */
 class ConnectionOwner {
@@ -13,6 +29,8 @@ class ConnectionOwner {
   readonly #request: OwnershipRequest;
   readonly #client: OwnedConnection;
   readonly #held: string[];
+  /** Rows rotated away from, replaced only once the callback has succeeded. */
+  readonly #rotated: { key: string; retain: StoredSession | undefined }[] = [];
   readonly #lifetime = new AbortController();
   #active = true;
   #locked = false;
@@ -92,16 +110,22 @@ class ConnectionOwner {
   async #rotate(next: string, retain?: StoredSession): Promise<void> {
     keyCheck(next);
     if (retain != null) requireBoundedState(retain);
-    if (
-      (await this.#query("SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS locked", [next]))
-        .rows[0]?.["locked"] !== true
-    )
+    if ((await this.#query(`SELECT ${TRY_LOCK} AS locked`, [next])).rows[0]?.["locked"] !== true)
       throw new SessionError("session_store", "Fresh session key is already owned");
     this.#held.push(next);
-    if (retain != null) await this.#upsert(this.#current, retain);
-    if (retain == null)
-      await this.#query("DELETE FROM nelcota_next.sessions WHERE key = $1", [this.#current]);
+    this.#rotated.push({ key: this.#current, retain });
     this.#current = next;
+  }
+
+  /** Publication order: the new row and lineage head are written by the callback;
+   * only after it succeeded is the previous row replaced (tombstone) or removed. */
+  async #retireRotated(): Promise<void> {
+    for (const { key, retain } of this.#rotated) {
+      // oxlint-disable-next-line no-await-in-loop -- Replace rotated rows in rotation order on the owning connection.
+      if (retain != null) await this.#upsert(key, retain);
+      // oxlint-disable-next-line no-await-in-loop -- Replace rotated rows in rotation order on the owning connection.
+      else await this.#query("DELETE FROM nelcota_next.sessions WHERE key = $1", [key]);
+    }
   }
 
   get #lease(): SessionLease {
@@ -129,7 +153,7 @@ class ConnectionOwner {
     for (const key of this.#held) {
       // oxlint-disable-next-line no-await-in-loop -- Release locks on their owning connection in order; stop on the first lost-ownership failure.
       const result = await boundedOperation(
-        this.#client.query("SELECT pg_advisory_unlock(hashtextextended($1, 0)) AS released", [key]),
+        this.#client.query(`SELECT ${UNLOCK} AS released`, [key]),
         this.#connections.timeout,
       );
       if (result.rows[0]?.["released"] !== true)
@@ -168,17 +192,49 @@ class ConnectionOwner {
     if (remaining <= 0)
       throw new SessionError("session_store", "Session lock acquisition timed out");
     await this.#query("SELECT set_config('statement_timeout', $1, false)", [`${remaining}ms`]);
-    await this.#query("SELECT pg_advisory_lock(hashtextextended($1, 0))", [this.#request.key]);
+    try {
+      // The server cancels the wait first (57014); the local bound only catches a
+      // server that stopped answering, after which the connection is unusable.
+      await boundedOperation(
+        this.#client.query(`SELECT ${LOCK}`, [this.#request.key]),
+        remaining + this.#connections.timeout,
+      );
+    } catch (cause) {
+      if (queryCanceled(cause)) await this.#abandonWait(previous, cause);
+      this.#lost();
+      throw new SessionError("session_store", "Session persistence failed", cause);
+    }
     this.#locked = true;
     await this.#query("SELECT set_config('statement_timeout', $1, false)", [previous]);
     this.#authDeadline = Date.now() + this.#connections.leaseTimeout - this.#connections.timeout;
+  }
+
+  /** A cancelled lock wait is an ordinary timeout: restore the session setting and
+   * keep the connection poolable. A nested owner shares its parent's locks, so it
+   * cannot prove it holds none and the parent discards the connection instead.
+   * `pg_advisory_unlock_all` covers a grant racing the cancel: the pool must never
+   * receive a connection holding a lock, since its next borrower would re-enter it.
+   */
+  async #abandonWait(previous: string, cause: unknown): Promise<never> {
+    if (this.#request.borrowed === undefined) {
+      await this.#query("SELECT set_config('statement_timeout', $1, false)", [previous]);
+      await this.#query("SELECT pg_advisory_unlock_all()");
+      throw new SessionError("session_store", "Session lock acquisition timed out", cause);
+    }
+    this.#lost();
+    throw new SessionError("session_store", "Session lock acquisition timed out", cause);
   }
 
   async run<T>(work: (lease: SessionLease) => Promise<T>): Promise<T> {
     try {
       await this.#acquire();
       return await boundedOperation(
-        Promise.resolve().then(() => work(this.#lease)),
+        Promise.resolve()
+          .then(() => work(this.#lease))
+          .then(async (result) => {
+            await this.#retireRotated();
+            return result;
+          }),
         this.#connections.leaseTimeout,
       );
     } catch (cause) {

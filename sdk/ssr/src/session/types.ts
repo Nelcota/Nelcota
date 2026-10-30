@@ -11,6 +11,7 @@ import type {
   UserUpdate,
 } from "@nelcota/client";
 
+import type { SessionError } from "../errors.js";
 import type { SessionStore } from "../store.js";
 
 export interface CookieReader {
@@ -41,6 +42,15 @@ export interface SessionOptions {
    * e.g. a presigned S3 endpoint. HTTPS only (loopback HTTP with
    * `allowInsecureDevelopment`). Unset: storage redirects are refused. */
   storageRedirectOrigins?: readonly string[];
+  /** Open legacy v1 sealed rows (raw-key AES-GCM, written before the v2 format).
+   * Default true. Deprecated: set false once no v1 row can still be live (the
+   * longest session TTL after the last v1 writer) so the raw key is never used
+   * directly for AES-GCM. */
+  legacyEnvelopes?: boolean;
+  /** Receives failures of best-effort work that runs after a write succeeded:
+   * retiring replaced rows and revoking replaced upstream sessions. Errors carry
+   * only a code and message, never tokens or causes. */
+  onBackgroundError?: (error: SessionError) => void;
 }
 
 export type DataClient<Database> = Pick<

@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@nelcota/client": "file:../../../typescript",
-    "@nelcota/ssr": "file:../.."
+    "@nelcota/ssr": "file:../..",
+    "pg": "8.23.1"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "6.0.0",

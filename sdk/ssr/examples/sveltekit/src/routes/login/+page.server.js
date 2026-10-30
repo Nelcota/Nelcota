@@ -9,9 +9,8 @@ const HTTP_BAD_REQUEST = 400;
 export const actions = {
   default: async (event) => {
     const form = await event.request.formData();
-    const result = await (
-      await nelcota()
-    ).action(event, ({ auth }) =>
+    const sessions = await nelcota();
+    const result = await sessions.action(event, ({ auth }) =>
       auth.signInWithPassword({
         email: formText(form, "email"),
         password: formText(form, "password"),
@@ -19,7 +18,11 @@ export const actions = {
     );
     if (result.error !== null)
       return fail(HTTP_BAD_REQUEST, { error: "Invalid email or password" });
-    redirect(HTTP_SEE_OTHER, safeReturnTo(event.url.searchParams.get("next") ?? "/dashboard"));
+    // The guard writes `next` with paths.base already included.
+    redirect(
+      HTTP_SEE_OTHER,
+      safeReturnTo(event.url.searchParams.get("next") ?? `${sessions.basePath}/dashboard`),
+    );
   },
 };
 

@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import { promiseResult } from "../src/lifecycle/promise-result.js";
 import { DevelopmentSessionStore } from "../src/memory-store.js";
-import { requiredValue } from "../src/required-value.js";
 import { newSessionId } from "../src/sealing/seal.js";
 import type { SessionStore } from "../src/store.js";
 import { user, session, Jar, post, setup, credentials } from "./context-fixtures.js";
+import { requiredValue } from "./required-value.js";
 
 it("session fixation: rotates the ID when a login replaces an existing session and leaves only a tombstone", async () => {
   const { integration, jar } = await setup();

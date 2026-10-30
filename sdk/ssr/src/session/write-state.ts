@@ -13,7 +13,10 @@ interface WriteInput {
   existingId: string;
   presented: boolean;
   callbackRequest: boolean;
+  /** Lineage heads this write replaced; retired after the lease succeeds. */
   retired: Set<string>;
+  /** Stored sessions (JSON) an identity change replaced; revoked upstream after success. */
+  replaced: string[];
 }
 
 /** Mutable state belongs to one store lease and is never shared across requests. */
@@ -53,6 +56,7 @@ export class WriteState {
     this.clearPresented =
       setup.input.existingId !== "" &&
       (setup.input.presented === false || (setup.loaded.row && setup.loaded.superseded === false));
+    // Frozen: the in-request storage key name predates the neutral package name.
     this.storageKey = `nelcota-next.${setup.input.initialKey}.session`;
   }
 
@@ -121,7 +125,10 @@ export class WriteState {
     }
   }
 
-  async register(): Promise<number> {
+  /** Moves the lineage head to this key. `beforePublish` runs under the lineage
+   * lock with the new generation, so the new row is durable before the head names
+   * it; the rotated-away row is replaced only when the whole lease succeeds. */
+  async register(beforePublish?: (generation: number) => Promise<void>): Promise<number> {
     this.ensure();
     try {
       const store = this.records.config.options.store;
@@ -129,6 +136,7 @@ export class WriteState {
       return await exclusive(this.lineage, async (owner) => {
         const head = await this.records.head(this.lineage, owner);
         const generation = (head?.generation ?? 0) + 1;
+        if (beforePublish !== undefined) await beforePublish(generation);
         const expiresAt = Date.now() + this.records.config.ttl * SECOND_IN_MS;
         await owner.save({
           sealed: await this.records.sealer.seal(
@@ -214,15 +222,19 @@ export class WriteState {
       return;
     }
     const expiresAt = Date.now() + this.records.config.ttl * SECOND_IN_MS;
-    this.generation = await this.register();
-    await this.save({
-      ...next,
-      session: value,
-      expiresAt,
-      pkce: null,
-      oauthState: null,
-      generation: this.generation,
+    const previous = this.state?.session ?? null;
+    this.generation = await this.register(async (generation) => {
+      await this.save({
+        ...next,
+        session: value,
+        expiresAt,
+        pkce: null,
+        oauthState: null,
+        generation,
+      });
     });
+    // A different identity replaced a live upstream session: end it after success.
+    if (previous !== null && previous !== value) this.input.replaced.push(previous);
   }
 
   async #removeItem(name: string): Promise<void> {

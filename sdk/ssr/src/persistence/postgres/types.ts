@@ -12,6 +12,8 @@ export interface OwnedConnection {
 }
 export interface SessionPool {
   connect(): Promise<SessionConnection>;
+  /** node-postgres exposes its configuration here; `max` sizes the write-lease limit. */
+  readonly options?: { readonly max?: number | undefined } | undefined;
 }
 export interface OwnershipRequest {
   key: string;

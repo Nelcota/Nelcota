@@ -21,6 +21,7 @@ export function sessionConfiguration(options: SessionOptions, scope: string): Se
   const app = applicationUrl(options.appOrigin, development);
   const secure = app.protocol === "https:";
   const basePath = checkedBasePath(options.basePath ?? "");
+  // Frozen: default cookie names are wire format; changing them signs everyone out.
   const name = cookieName(
     options.cookieName ?? `${secure ? "__Host-nelcota" : "nelcota-dev"}-${scope}`,
     secure,

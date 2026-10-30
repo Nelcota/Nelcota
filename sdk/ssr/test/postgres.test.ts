@@ -2,28 +2,29 @@ import { expect, it, vi } from "vitest";
 
 import { promiseResult } from "../src/lifecycle/promise-result.js";
 import { PostgresSessionStore, type SessionConnection } from "../src/postgres.js";
+import { FakePostgres } from "./fake-postgres.js";
 import { key, value, lockOnly, fixture } from "./postgres-fixtures.js";
+import { requiredValue } from "./required-value.js";
 
-it("commits each save before returning and closes the lease before unlocking", async () => {
-  const { pool, query, release } = fixture();
-  const store = new PostgresSessionStore(pool);
+it("commits each save before returning, then unlocks and returns a clean connection", async () => {
+  const database = new FakePostgres(),
+    pool = database.pool();
+  const store = new PostgresSessionStore(pool),
+    other = new PostgresSessionStore(database.pool());
   let late: (() => Promise<unknown>) | undefined;
   await store.exclusive(key, async (lease) => {
-    await lease.save(value());
+    const saved = value();
+    await lease.save(saved);
+    // Durable before the promise resolves: another process reads it immediately.
+    expect(await other.read(key)).toEqual(saved);
     late = () => lease.remove();
     expect(lease.signal.aborted).toBe(false);
   });
   await expect(late?.()).rejects.toMatchObject({ code: "closed_context" });
-  expect(query.mock.calls.map(([sql]) => sql.split(" ")[0])).toEqual([
-    "SELECT",
-    "SELECT",
-    "SELECT",
-    "SELECT",
-    "INSERT",
-    "SELECT",
-  ]);
-  expect(query.mock.calls.some(([sql]) => /BEGIN|COMMIT/.test(sql))).toBe(false);
-  expect(release).toHaveBeenCalledExactlyOnceWith(false);
+  expect(pool.idle).toHaveLength(1);
+  expect(database.heldBy(requiredValue(pool.idle[0], "idle backend"))).toEqual([]);
+  expect(database.leakedLocks).toEqual([]);
+  await expect(other.exclusive(key, () => promiseResult(() => "next"))).resolves.toBe("next");
 });
 
 it("surfaces unlock ownership loss and destroys the connection", async () => {
@@ -172,18 +173,20 @@ it("times out a local waiter without borrowing and keeps later callers ordered",
   await expect(next).resolves.toBe("next");
 });
 
-it("bounds a queued backend lock with a server deadline and destroys a timed-out connection", async () => {
+it("bounds a queued backend lock with a server deadline and destroys a connection after other failures", async () => {
   const { pool, query, release } = fixture();
   query.mockImplementation((sql) => {
     return promiseResult(() => {
       if (sql.includes("current_setting")) return { rows: [{ timeout: "3s" }] };
-      if (sql.includes("pg_advisory_lock("))
-        throw new Error("canceling statement due to statement timeout");
+      if (sql.includes("pg_advisory_lock(")) throw new Error("server closed the connection");
       return { rows: [] };
     });
   });
   await expect(
-    new PostgresSessionStore(pool, 100, 200).exclusive(key, () => promiseResult(() => "never")),
+    new PostgresSessionStore(pool, { timeout: 100, leaseTimeout: 200, lockTimeout: 100 }).exclusive(
+      key,
+      () => promiseResult(() => "never"),
+    ),
   ).rejects.toMatchObject({ code: "session_store" });
   const setting = query.mock.calls.find(([sql]) => sql.includes("set_config"));
   expect(setting?.[1]?.[0]).toMatch(/^\d+ms$/);
@@ -191,31 +194,47 @@ it("bounds a queued backend lock with a server deadline and destroys a timed-out
   expect(release).toHaveBeenCalledExactlyOnceWith(true);
 });
 
-it("rotates to a fresh key on the same connection and releases both locks", async () => {
+it("never returns a connection that may hold a lock, even when a grant races the cancel", async () => {
   const { pool, query, release } = fixture();
+  const calls: string[] = [];
+  query.mockImplementation((sql) => {
+    return promiseResult(() => {
+      calls.push(sql);
+      if (sql.includes("current_setting")) return { rows: [{ timeout: "3s" }] };
+      if (sql.includes("pg_advisory_lock("))
+        throw Object.assign(new Error("canceling statement due to statement timeout"), {
+          code: "57014",
+        });
+      return { rows: [] };
+    });
+  });
+  await expect(
+    new PostgresSessionStore(pool, 100, 200).exclusive(key, () => promiseResult(() => "never")),
+  ).rejects.toMatchObject({ code: "session_store", message: "Session lock acquisition timed out" });
+  const cancelled = calls.findIndex((sql) => sql.includes("pg_advisory_lock("));
+  expect(calls.slice(cancelled + 1)).toEqual([
+    expect.stringContaining("set_config"),
+    "SELECT pg_advisory_unlock_all()",
+  ]);
+  expect(release).toHaveBeenCalledExactlyOnceWith(false);
+});
+
+it("rotates to a fresh key on the same connection and releases both locks", async () => {
+  const database = new FakePostgres(),
+    pool = database.pool();
   const fresh = "c".repeat(64);
+  database.rows.set(key, { sealed: "old", expires_at: String(Date.now() + 60000) });
+  const saved = value();
   await new PostgresSessionStore(pool).exclusive(key, async (lease) => {
     await lease.rotate(fresh);
-    await lease.save(value());
+    await lease.save(saved);
+    expect(pool.borrowed.size).toBe(1);
   });
-  const calls = query.mock.calls
-    .filter(
-      ([sql]) => sql.includes("current_setting") === false && sql.includes("set_config") === false,
-    )
-    .map(([sql, values]) => [
-      sql.split(/[ (]/)[0] === "SELECT" ? sql.match(/pg_\w+/)?.[0] : sql.split(" ")[0],
-      values?.[0],
-    ]);
-  expect(calls).toEqual([
-    ["pg_advisory_lock", key],
-    ["pg_try_advisory_lock", fresh],
-    ["DELETE", key],
-    ["INSERT", fresh],
-    ["pg_advisory_unlock", key],
-    ["pg_advisory_unlock", fresh],
-  ]);
-  expect(pool.connect).toHaveBeenCalledTimes(1);
-  expect(release).toHaveBeenCalledExactlyOnceWith(false);
+  expect(database.rows.has(key)).toBe(false);
+  expect(database.rows.get(fresh)?.sealed).toBe(saved.sealed);
+  expect(pool.idle).toHaveLength(1);
+  expect(database.heldBy(requiredValue(pool.idle[0], "idle backend"))).toEqual([]);
+  expect(database.leakedLocks).toEqual([]);
 });
 
 it("requires a lease that leaves auth time after reserving the final save", async () => {

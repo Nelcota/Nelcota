@@ -1,0 +1,135 @@
+name: SSR SDK check
+
+# Unit and PostgreSQL integration tests of @nelcota/ssr, plus its backend and
+# storage smokes against a real server. The Next.js workflow adds the framework
+# and browser checks on top of this core.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sdk/ssr/**'
+      - 'sdk/typescript/**'
+      - 'crates/**'
+      - 'migrations/**'
+      - 'Cargo.lock'
+      - 'scripts/test.sh'
+      - '.github/workflows/sdk-ssr-check.yml'
+  pull_request:
+    paths:
+      - 'sdk/ssr/**'
+      - 'sdk/typescript/**'
+      - 'crates/**'
+      - 'migrations/**'
+      - 'Cargo.lock'
+      - 'scripts/test.sh'
+      - '.github/workflows/sdk-ssr-check.yml'
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runtime: bun, node: 24 }
+          - { runtime: node, node: 22 }
+          - { runtime: node, node: 26 }
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      # CI is set by GitHub Actions: without this URL the integration suite fails
+      # instead of being skipped.
+      NELCOTA_SSR_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:55432/postgres
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.3
+      - name: Build base SDK
+        run: bun install --cwd sdk/typescript --frozen-lockfile && bun run --cwd sdk/typescript build
+      - name: Type-check and unit tests
+        working-directory: sdk/ssr
+        run: bun install --frozen-lockfile && bun run check && bun run ${{ matrix.runtime == 'node' && 'test:node' || 'test' }}
+      - name: PostgreSQL integration tests
+        working-directory: sdk/ssr
+        run: bun run ${{ matrix.runtime == 'node' && 'test:integration:node' || 'test:integration' }}
+      - name: Build
+        working-directory: sdk/ssr
+        run: bun run build
+
+  # The SSR core against a real Nelcota server: adversarial session matrix,
+  # sustained pool contention, and S3 storage redirects (moved from the Next.js
+  # verification workflow; these smokes never load @nelcota/nextjs).
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CARGO_PROFILE_DEV_DEBUG: line-tables-only
+      NELCOTA_NEXT_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:55432/postgres
+      NELCOTA_NEXT_TEST_S3_ENDPOINT: http://127.0.0.1:9100
+      NELCOTA_NEXT_TEST_S3_ACCESS_KEY_ID: nelcotatest
+      NELCOTA_NEXT_TEST_S3_SECRET_ACCESS_KEY: nelcotatestsecret
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.3
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.99.1'
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - run: scripts/test.sh db
+      - run: bun install --cwd sdk/typescript --frozen-lockfile && bun run --cwd sdk/typescript build
+      - run: bun install --frozen-lockfile && bun run build
+        working-directory: sdk/ssr
+      - run: cargo build --locked -p nelcota-server
+      - name: Final backend adversarial matrix and sustained pool contention
+        env:
+          NELCOTA_NEXT_SOAK_SECONDS: '120'
+        run: NELCOTA_NEXT_TEST_BINARY="$GITHUB_WORKSPACE/target/debug/nelcota" bun scripts/backend-smoke.mjs > backend-evidence.json
+        working-directory: sdk/ssr
+      - name: Preserve backend validation evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ssr-backend-evidence
+          path: sdk/ssr/backend-evidence.json
+          if-no-files-found: error
+      - name: Start disposable S3 provider
+        run: |
+          docker run -d --name nelcota-next-s3 -p 127.0.0.1:9100:9000             -e RUSTFS_ACCESS_KEY=nelcotatest -e RUSTFS_SECRET_KEY=nelcotatestsecret             rustfs/rustfs:1.0.1
+          for _ in $(seq 1 60); do
+            if curl --fail --silent "$NELCOTA_NEXT_TEST_S3_ENDPOINT/health" >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+      - name: S3 redirects, credential stripping and range reads
+        run: NELCOTA_NEXT_TEST_BINARY="$GITHUB_WORKSPACE/target/debug/nelcota" bun scripts/storage-smoke.mjs
+        working-directory: sdk/ssr
+      - name: Remove disposable services
+        if: always()
+        run: docker rm -f nelcota-test-postgres nelcota-next-s3 || true

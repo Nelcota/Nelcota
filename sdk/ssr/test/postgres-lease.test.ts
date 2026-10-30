@@ -2,26 +2,32 @@ import { expect, it } from "vitest";
 
 import { promiseResult } from "../src/lifecycle/promise-result.js";
 import { PostgresSessionStore } from "../src/postgres.js";
-import { requiredValue } from "../src/required-value.js";
+import { FakePostgres } from "./fake-postgres.js";
 import { key, value, queryRows, fixture } from "./postgres-fixtures.js";
+import { requiredValue } from "./required-value.js";
 
 it("replaces the rotated-away row with a retained tombstone instead of deleting it", async () => {
-  const { pool, query, release } = fixture();
+  const database = new FakePostgres(),
+    pool = database.pool();
   const fresh = "c".repeat(64),
     tombstone = value();
+  database.rows.set(key, { sealed: "credential", expires_at: String(Date.now() + 60000) });
   await new PostgresSessionStore(pool).exclusive(key, async (lease) => {
     await lease.rotate(fresh, tombstone);
   });
-  const writes = query.mock.calls.filter(([sql]) => sql.startsWith("SELECT") === false);
-  expect(writes).toEqual([
-    [expect.stringMatching(/^INSERT/), [key, tombstone.sealed, tombstone.expiresAt]],
-  ]);
+  expect(database.rows.get(key)).toEqual({
+    sealed: tombstone.sealed,
+    expires_at: String(tombstone.expiresAt),
+  });
+  // Nothing was saved under the fresh key, so nothing is published there.
+  expect(database.rows.has(fresh)).toBe(false);
   await expect(
     new PostgresSessionStore(pool).exclusive(key, (lease) =>
       lease.rotate(fresh, { sealed: "x", expiresAt: 1 }),
     ),
   ).rejects.toMatchObject({ code: "invalid_session" });
-  expect(release.mock.calls.every(([destroy]) => destroy === false)).toBe(true);
+  expect(pool.borrowed.size).toBe(0);
+  expect(database.leakedLocks).toEqual([]);
 });
 
 it("reads lineage and takes nested locks without borrowing another connection", async () => {
@@ -97,4 +103,14 @@ it("ends a nested lease when its parent times out and refuses late writes", asyn
   ).rejects.toMatchObject({ code: "session_store" });
   await expect(late?.()).rejects.toMatchObject({ code: "closed_context" });
   expect(release).toHaveBeenCalledExactlyOnceWith(true);
+});
+
+it("locks the same advisory key as 0.1.x so mixed versions exclude each other", async () => {
+  const { pool, query } = fixture();
+  await new PostgresSessionStore(pool).exclusive(key, () => promiseResult(() => undefined));
+  const locks = query.mock.calls.filter(([sql]) => sql.includes("advisory"));
+  expect(locks.map(([sql, values]) => [sql.replace(/ AS \w+$/, ""), values?.[0]])).toEqual([
+    ["SELECT pg_advisory_lock(hashtextextended($1, 0))", key],
+    ["SELECT pg_advisory_unlock(hashtextextended($1, 0))", key],
+  ]);
 });

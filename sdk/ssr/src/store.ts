@@ -19,17 +19,21 @@ export interface SessionLease {
   read?(key: string): Promise<StoredSession | null>;
   /** Acquires nested ownership using this owner's connection when supported.
    * @remarks
-   * Keep a consistent lock order and finish the nested owner before using this
-   * lease. Nested ownership ends when the parent ends, including on failure.
+   * Keep a consistent lock order and finish the nested owner before taking other
+   * locks through this lease; saving this lease's own row meanwhile is allowed (a
+   * sign-in writes its new row under the lineage lock, before moving the head).
+   * Nested ownership ends when the parent ends, including on failure.
    */
   exclusive?<T>(key: string, work: (lease: SessionLease) => Promise<T>): Promise<T>;
   load(): Promise<StoredSession | null>;
   save(value: StoredSession): Promise<void>;
   remove(): Promise<void>;
-  /** Owns a fresh, never-published key until this lease ends, then replaces
-   * the current row with `retain` (a credential-free tombstone) or removes it
-   * when `retain` is omitted, and directs later load/save/remove calls to the
-   * new key. `retain` has the same bounds as `save`.
+  /** Owns a fresh, never-published key until this lease ends and directs later
+   * load/save/remove calls to it. The previous row is left untouched while the
+   * callback runs; only when the callback succeeds is it replaced with `retain` (a
+   * credential-free tombstone) or removed when `retain` is omitted, before the
+   * lease releases. A failed callback leaves it as it was. `retain` has the same
+   * bounds as `save`.
    */
   rotate(key: string, retain?: StoredSession): Promise<void>;
 }

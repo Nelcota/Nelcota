@@ -2,7 +2,6 @@ import { SessionError } from "../errors.js";
 import type { SessionState } from "../sealing/seal.js";
 import { SESSION_LIMITS } from "./configuration.js";
 import type { MutationOptions } from "./types.js";
-import type { WriteState } from "./write-state.js";
 
 export function mutationOptions(options?: MutationOptions): MutationOptions {
   if (options?.timeout === undefined) return {};
@@ -24,11 +23,4 @@ export function accessToken(state: SessionState | null): string | null {
   if (typeof token !== "string" || token.length === 0 || token.length > SESSION_LIMITS.tokenChars)
     throw new SessionError("invalid_session", "Invalid stored access token");
   return token;
-}
-
-export async function identityOperation<T>(
-  state: WriteState,
-  operation: () => Promise<T>,
-): Promise<T> {
-  return await state.identity(operation);
 }

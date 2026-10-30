@@ -13,13 +13,14 @@ export type {
   MutationOptions,
 } from "./context.js";
 export { SessionError, type SessionErrorCode } from "./errors.js";
-export { safeReturnTo } from "./http/policy.js";
+export { DEFAULT_REFRESH_ENDPOINT, DEFAULT_REFRESH_PAGE, safeReturnTo } from "./http/policy.js";
 export {
   createGuard,
   configPath,
   type Guard,
   type GuardOptions,
   type GuardDecision,
+  type GuardAdapterOptions,
 } from "./guard.js";
 export type { SessionStore, SessionLease, StoredSession } from "./store.js";
 export { privateResponse } from "./http/private.js";

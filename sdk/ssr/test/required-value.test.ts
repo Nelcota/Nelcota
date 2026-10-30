@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 
-import { requiredValue } from "../src/required-value.js";
+import { requiredValue } from "./required-value.js";
 
 it.each([null, undefined])("rejects an absent required value (%s)", (value) => {
   expect(() => requiredValue(value, "test field")).toThrow("Missing test field");

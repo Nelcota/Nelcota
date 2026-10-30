@@ -3,7 +3,15 @@ import { readFile } from "node:fs/promises";
 
 import { Pool } from "pg";
 
-import { requiredValue } from "../src/required-value.js";
+import { requiredValue } from "./required-value.js";
+
+/** Disposable PostgreSQL fixture URL. `NELCOTA_SSR_TEST_DATABASE_URL` is the neutral
+ * name; `NELCOTA_NEXT_TEST_DATABASE_URL` is still accepted. */
+export const testDatabaseUrl: string | undefined = [
+  process.env["NELCOTA_SSR_TEST_DATABASE_URL"],
+  process.env["NELCOTA_NEXT_TEST_DATABASE_URL"],
+].find((value) => value !== undefined && value.trim() !== "");
+
 interface PoolOptions {
   sizes: readonly number[];
   timeoutInMs: number;
@@ -16,9 +24,10 @@ export class PostgresDatabase {
   readonly pools: Pool[];
   private created = false;
   constructor(options: PoolOptions) {
+    // vitest.config.ts skips this suite locally without a URL and fails it in CI.
     const connectionString = requiredValue(
-      process.env["NELCOTA_NEXT_TEST_DATABASE_URL"],
-      "test database URL",
+      testDatabaseUrl,
+      "NELCOTA_SSR_TEST_DATABASE_URL for the disposable PostgreSQL fixture",
     );
     const url = new URL(connectionString);
     url.pathname = `/${this.name}`;
