@@ -188,6 +188,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
   stay).
 - A project's sign-in handoff only follows links to that project's own
   address.
+- The server refuses to start with both `NELCOTA_WEBHOOKS_ALLOW_LOOPBACK=true`
+  and `NELCOTA_PRODUCTION=true`, so a production project cannot send plain-HTTP
+  webhooks to local ports.
 
 ## [0.5.6] — 2026-10-27
 

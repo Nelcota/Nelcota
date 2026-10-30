@@ -95,7 +95,7 @@ A payload larger than 256 KiB produces a visibly failed delivery with omitted co
 
 Public destinations require HTTPS with certificate verification. Credentials, query parameters and fragments in URLs are rejected. Redirects and environment proxy settings are disabled. Private, loopback, link-local, metadata, carrier-grade NAT, multicast and reserved IP ranges are blocked, including DNS answers at connection time. All addresses in a DNS answer must pass the policy, preventing DNS rebinding into internal services.
 
-For local development only, set `NELCOTA_WEBHOOKS_ALLOW_LOOPBACK=true` and restart. This permits HTTP or HTTPS to `localhost`, `127.0.0.1` and `::1`; it never opens private networks or metadata addresses. Inside Docker, loopback refers to the Nelcota container, not the host. Use a public HTTPS development tunnel when the receiver runs outside that container.
+For local development only, set `NELCOTA_WEBHOOKS_ALLOW_LOOPBACK=true` and restart. This permits HTTP or HTTPS to `localhost`, `127.0.0.1` and `::1`; it never opens private networks or metadata addresses. The server refuses to start when it is combined with `NELCOTA_PRODUCTION=true`. Inside Docker, loopback refers to the Nelcota container, not the host. Use a public HTTPS development tunnel when the receiver runs outside that container.
 
 No Redis, HTTP extension, extra server or Node process is required for dispatch. The queue worker uses a small pool separate from API and panel connections. A graceful shutdown stops claiming work and gives started deliveries time to finish; unfinished leases remain recoverable after startup.
 
