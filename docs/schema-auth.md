@@ -155,6 +155,14 @@ requests have a separate per-IP budget from `/authorize`.
 Per-IP budgets group IPv6 addresses by their /64, the block a single
 subscriber usually gets; IPv4-mapped addresses count as their IPv4 address.
 
+Password sign-in also has an account-wide budget equal to the per-IP one, so
+many addresses cannot guess one account's password faster than one address.
+Over it, addresses where the account signed in during the last 30 days (up to
+four per account, kept in memory) still get through after a delay of up to two
+seconds; any other address receives `429` until the budget refills. An attack
+therefore slows the owner down on their usual network but does not lock them
+out.
+
 In-memory limiters keep two stores of at most 50,000 keys each. At capacity
 the per-IP store rejects new keys with `429` and a one-second retry hint,
 while existing keys keep their independent quotas. Login keys that contain an

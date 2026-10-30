@@ -45,6 +45,13 @@ for the October 27 server scope and independent SDK publication checkpoint.
   project upgrades. `install.sh --update` provides the same flow for older CLIs;
   both support version/project selection, `--dry-run` and `--yes`, and leave
   controller-enrolled hosts to their existing update workflow.
+- REST and storage requests have a rate limit,
+  `NELCOTA_API_RATE_LIMIT_PER_MINUTE` (600 by default, 0 turns it off):
+  per account with a user token, per IP without one. `service_role` tokens
+  are exempt.
+- `NELCOTA_TRUSTED_PROXY_HOPS` (default 1) reads the real client IP behind a
+  CDN in front of Caddy (set 2, and list the CDN ranges in Caddy's
+  `trusted_proxies`).
 
 ### Changed
 
@@ -107,6 +114,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
   phone-only breadcrumb, like the storage pages; the delivery history hides its
   pager when everything fits on one page. Webhook card menus sit next to the
   status.
+- **Breaking (Rust):** `AuthSettings::trust_proxy` and
+  `AdminState::trust_proxy` became `proxy_hops: u8` (0 ignores
+  `X-Forwarded-For`), and `client_ip` takes that count instead of a `bool`.
+  `ip_key` and `retry_after_secs` are now public.
 
 ### Fixed
 
@@ -180,6 +191,8 @@ for the October 27 server scope and independent SDK publication checkpoint.
   "worker", "heartbeat" and "magic link" in plain words.
 - The page's main scroll area no longer draws an outline after mouse or touch
   navigation; keyboard navigation still shows it.
+- `Retry-After` on rate-limited auth requests rounds up, so clients no longer
+  retry a second early and get another 429.
 
 ### Security
 
@@ -193,6 +206,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - Made-up emails can no longer fill the rate limiter and lock new visitors
   out of sign-up, sign-in and email links: email-based login keys use their
   own store, and while it is full a new email is bounded by its IP's budget.
+- Password sign-in has an account-wide budget, so many addresses can no
+  longer guess one account's password faster than one address. Over it, only
+  addresses where the account signed in during the last 30 days get through,
+  after a delay; other addresses receive 429 until the budget refills.
 
 ## [0.5.6] — 2026-10-27
 
