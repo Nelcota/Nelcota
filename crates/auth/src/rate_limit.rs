@@ -14,7 +14,7 @@
 //! times the per-IP one, so many addresses cannot guess one account's password
 //! much faster than one address could, while one address alone cannot use it
 //! up. Over that budget the caller decides (see `password_grant`): networks
-//! where the account already has sessions get through after a growing delay.
+//! where the account has open sessions get through after a growing delay.
 
 use crate::AuthState;
 use nelcota_core::ApiError;
@@ -227,11 +227,12 @@ impl<C: Clock + Clone> RateLimiter<C> {
     }
 
     /// The account-wide budget of password attempts: `None` while it lasts,
-    /// `Some(wait)` once it is spent. A full account store counts as spent
-    /// for accounts it does not track yet (with a one-second hint): letting
-    /// them through untracked would let made-up emails switch the budget off.
-    /// The caller admits a spent budget only for networks the account knows,
-    /// after `login_delay`.
+    /// `Some(wait)` once it is spent. Only existing accounts are charged, so
+    /// filling the store takes that many real accounts; while it is full an
+    /// account it does not track passes untracked (a warning is logged), still
+    /// bounded by its caller's per-IP budget, rather than refusing every new
+    /// network for everyone. The caller admits a spent budget only for
+    /// networks the account knows, after `login_delay`.
     pub(crate) fn login_budget(&self, account: &str) -> Option<Duration> {
         let key = format!("login:{account}");
         match self.admit(&self.accounts, &key) {
@@ -240,7 +241,7 @@ impl<C: Clock + Clone> RateLimiter<C> {
                 None
             }
             Admission::Limited(wait) => Some(wait),
-            Admission::Full => Some(CLEANUP_INTERVAL),
+            Admission::Full => None,
         }
     }
 
@@ -516,20 +517,23 @@ mod tests {
     }
 
     #[test]
-    fn a_full_account_store_counts_as_a_spent_budget() {
+    fn a_full_account_store_keeps_tracked_budgets_and_passes_new_accounts() {
         let clock = FakeRelativeClock::default();
         let limiter = RateLimiter::with_capacity(1, clock.clone(), 2);
-        assert_eq!(limiter.login_budget("a"), None);
+        for _ in 0..10 {
+            assert_eq!(limiter.login_budget("a"), None);
+        }
+        assert!(limiter.login_budget("a").is_some(), "a is spent");
         assert_eq!(limiter.login_budget("b"), None);
         assert_eq!(
-            limiter.login_budget("made-up"),
-            Some(CLEANUP_INTERVAL),
-            "untracked accounts cannot slip past the budget"
+            limiter.login_budget("new"),
+            None,
+            "a full store does not refuse every new network"
         );
-        assert_eq!(limiter.login_delay("made-up"), Duration::ZERO);
+        assert!(limiter.login_budget("a").is_some(), "a stays spent");
         assert_eq!(len(&limiter.accounts), 2);
         clock.advance(Duration::from_secs(60));
-        assert_eq!(limiter.login_budget("made-up"), None);
+        assert_eq!(limiter.login_budget("new"), None);
         assert_eq!(len(&limiter.accounts), 1, "idle keys were cleaned up");
     }
 

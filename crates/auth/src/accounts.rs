@@ -171,34 +171,43 @@ pub(crate) async fn password_grant(
     if password_exceeds_limit(&password) {
         return Err(invalid_grant("invalid email or password"));
     }
-    // The handler already charged the per-IP `token:` budget. Over the
-    // account-wide budget, only networks where the account already has a
-    // session get through, after a growing delay: distributed guessing is
-    // capped, and an attack slows the owner down without locking them out of
-    // the networks they use.
-    if let Some(wait) = state.limiter.login_budget(&email) {
-        if !known_network(state, &email, ip).await? {
+    let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
+    let tx = begin_auth(&mut client).await?;
+    let found: Option<(Uuid, Option<String>)> = tx
+        .query_opt(
+            "SELECT id, encrypted_password
+             FROM auth.users WHERE email = $1",
+            &[&email],
+        )
+        .await
+        .map_err(db_error)?
+        .map(|r| (r.get(0), r.get(1)));
+    // The handler already charged the per-IP `token:` budget. Existing
+    // accounts also have an account-wide budget (made-up emails cannot fill
+    // its store). Over it, only networks where the account has an open session
+    // get through, after a growing delay: distributed guessing is capped, and
+    // an attack slows the owner down without locking them out of the networks
+    // they use. Signup already reveals whether an account exists (409).
+    let over_budget = match &found {
+        Some((user_id, _)) => state
+            .limiter
+            .login_budget(&email)
+            .map(|wait| (*user_id, wait)),
+        None => None,
+    };
+    let mut delay = std::time::Duration::ZERO;
+    if let Some((user_id, wait)) = over_budget {
+        if !known_network(&tx, user_id, ip).await? {
             return Err(ApiError::rate_limited(retry_after_secs(wait)));
         }
-        tokio::time::sleep(state.limiter.login_delay(&email)).await;
+        delay = state.limiter.login_delay(&email);
     }
-
-    let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
-    let found: Option<(Uuid, Option<String>)> = {
-        let tx = begin_auth(&mut client).await?;
-        let row = tx
-            .query_opt(
-                "SELECT id, encrypted_password
-                 FROM auth.users WHERE email = $1",
-                &[&email],
-            )
-            .await
-            .map_err(db_error)?;
-        tx.commit().await.map_err(db_error)?;
-        row.map(|r| (r.get(0), r.get(1)))
-    };
-    // The connection is released while argon2 runs.
+    tx.commit().await.map_err(db_error)?;
+    // Neither the throttle delay nor argon2 holds the connection.
     drop(client);
+    if !delay.is_zero() {
+        tokio::time::sleep(delay).await;
+    }
 
     let (user_id, phc) = match found {
         Some((id, phc)) => (Some(id), phc),
@@ -233,36 +242,42 @@ pub(crate) async fn password_grant(
 /// How long a session keeps its network known for the account budget.
 const KNOWN_NETWORK_DAYS: i32 = 30;
 
-/// Whether `email`'s account has a session in use during the last 30 days
-/// (created or refreshed) that was opened from the network of `ip`: the same
-/// IPv4 address, also when stored IPv4-mapped by a dual-stack listener, or
-/// the same IPv6 /64. Sessions persist across restarts and only real sign-ins
-/// create them.
+/// Whether the account has an open session, used (created or refreshed) in
+/// the last 30 days, that was opened from the network of `ip`: the same IPv4
+/// /24 (also when stored IPv4-mapped by a dual-stack listener), so rotating
+/// carrier and residential addresses still match, or the same IPv6 /64.
+/// Revoked sessions do not count, so a network stops being known after a
+/// password change or sign-out there. Prune removes sessions whose refresh
+/// tokens expired, so the window is also bounded by the refresh lifetime.
 async fn known_network(
-    state: &AuthState,
-    email: &str,
+    tx: &Transaction<'_>,
+    user_id: Uuid,
     ip: Option<IpAddr>,
 ) -> Result<bool, ApiError> {
     let networks = match ip.map(|ip| ip.to_canonical()) {
         None => return Ok(false),
-        Some(IpAddr::V4(ip)) => vec![ip.to_string(), ip.to_ipv6_mapped().to_string()],
+        Some(IpAddr::V4(ip)) => {
+            let [a, b, c, _] = ip.octets();
+            vec![
+                format!("{a}.{b}.{c}.0/24"),
+                format!("::ffff:{a}.{b}.{c}.0/120"),
+            ]
+        }
         Some(ip) => vec![crate::request::ip_key(Some(ip))],
     };
-    let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
-    let tx = begin_auth(&mut client).await?;
     let row = tx
         .query_one(
             "SELECT EXISTS (
-                 SELECT 1 FROM auth.sessions s JOIN auth.users u ON u.id = s.user_id
-                 WHERE u.email = $1 AND s.ip <<= ANY ($2::text[]::inet[])
+                 SELECT 1 FROM auth.sessions s
+                 WHERE s.user_id = $1 AND s.revoked_at IS NULL
+                   AND s.ip <<= ANY ($2::text[]::inet[])
                    AND coalesce(s.refreshed_at, s.created_at)
                        > now() - make_interval(days => $3)
              )",
-            &[&email, &networks, &KNOWN_NETWORK_DAYS],
+            &[&user_id, &networks, &KNOWN_NETWORK_DAYS],
         )
         .await
         .map_err(db_error)?;
-    tx.commit().await.map_err(db_error)?;
     Ok(row.get(0))
 }
 

@@ -58,10 +58,10 @@ async fn signup(app: &TestApp, email: &str, password: &str) {
     );
 }
 
-/// A network address that no earlier attempt in this test used.
+/// An address in an IPv4 /24 that no earlier attempt in this test used.
 fn fresh_network(next: &mut u32) -> String {
     *next += 1;
-    format!("10.0.{}.{}", *next / 250, *next % 250 + 1)
+    format!("10.{}.{}.1", *next / 250, *next % 250)
 }
 
 /// Wrong passwords from fresh networks until the account budget is spent,
@@ -96,6 +96,16 @@ async fn account_budget_refuses_fresh_networks_but_admits_a_known_one() {
         login_from(&app, &email, &password, home).await.status,
         StatusCode::OK
     );
+    // A session that the owner then signs out of.
+    let session = login_from(&app, &email, &password, "198.51.100.9").await;
+    assert_eq!(session.status, StatusCode::OK);
+    let token = session.body["access_token"].as_str().unwrap().to_owned();
+    assert_eq!(
+        app.post("/auth/v1/logout", Some(&token), json!({}))
+            .await
+            .status,
+        StatusCode::NO_CONTENT
+    );
     // The account budget is ten times the per-IP one (20 a minute here), so
     // it takes many addresses to spend. It refills while the test runs, so it
     // is spent again right before each check.
@@ -126,6 +136,33 @@ async fn account_budget_refuses_fresh_networks_but_admits_a_known_one() {
     .await
     .unwrap();
     assert_eq!(reply.status, StatusCode::OK, "the owner keeps access");
+    spend_account_budget(&app, &email, &mut next).await;
+    assert_eq!(
+        login_from(&app, &email, &password, "192.0.2.77")
+            .await
+            .status,
+        StatusCode::OK,
+        "a rotated address in the same IPv4 /24 is known"
+    );
+    // A network stops being known once its session is revoked (sign-out,
+    // password change), so a stolen session's network cannot keep skipping
+    // the budget. A wrong password probes it without opening a session; a
+    // refill between the spend and the probe only yields a 400 and a retry.
+    // Each probe comes from another address in the cafe's /24, so the per-IP
+    // budget is never what refuses it.
+    let wrong = Uuid::new_v4().to_string();
+    let mut refused = false;
+    for host in 10..15 {
+        spend_account_budget(&app, &email, &mut next).await;
+        let source = format!("198.51.100.{host}");
+        let reply = login_from(&app, &email, &wrong, &source).await;
+        if reply.status == StatusCode::TOO_MANY_REQUESTS {
+            refused = true;
+            break;
+        }
+        assert_eq!(reply.status, StatusCode::BAD_REQUEST);
+    }
+    assert!(refused, "a signed-out network is no longer known");
     assert_eq!(
         app.post("/auth/v1/recover", None, json!({"email": email}))
             .await

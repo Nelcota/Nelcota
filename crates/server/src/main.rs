@@ -73,6 +73,15 @@ async fn serve(config: Config) -> anyhow::Result<()> {
             config.proxy_hops(),
         ),
     };
+    if config.api_rate_limit_per_minute > 0 {
+        // Behind a proxy without NELCOTA_TRUST_PROXY every anonymous caller
+        // shares the proxy's budget; say which address the limit counts.
+        tracing::info!(
+            per_minute = config.api_rate_limit_per_minute,
+            trust_proxy = config.trust_proxy,
+            "REST and storage rate limit on, per account or client IP"
+        );
+    }
     // Auth email (single-use links). Without SMTP those endpoints answer
     // `*_disabled`; a half-done configuration already failed in `validate`.
     let mail = config.mail()?;
