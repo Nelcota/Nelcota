@@ -203,10 +203,11 @@ for the October 27 server scope and independent SDK publication checkpoint.
   earlier URL answers 404 instead of serving the new bytes. URLs signed before
   this upgrade name no version and stop working (403 `invalid_signature`);
   sign them again.
-- An upload (`POST`) to a name taken by a file the caller's policies hide
-  answers like a policy refusal (403, or 401 for `anon`) instead of 409
-  `object_exists`, which revealed that the hidden file exists. Callers who can
-  see the file still get 409.
+- An upload (`POST`) or replacement (`PUT`) to a name taken by a file the
+  caller's policies hide answers exactly like a policy refusal (403, or 401
+  for `anon`) instead of 409 `object_exists` or a distinct RLS message, which
+  revealed that the hidden file exists. Callers who can see the file still get
+  409.
 
 ## [0.5.6] — 2026-10-27
 
