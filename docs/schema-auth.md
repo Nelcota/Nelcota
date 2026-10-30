@@ -152,11 +152,17 @@ responding. Failed or cancelled exchanges require a new `/authorize`; no
 database transaction remains open during provider HTTP requests. Callback
 requests have a separate per-IP budget from `/authorize`.
 
-In-memory limiters track at most 50,000 keys. At capacity they reject new
-keys with `429` and a one-second retry hint, while existing keys keep their
-independent quotas. Cleanup runs at most once per second under capacity
-pressure and removes only keys idle since their last accepted request for
-a full minute, enough to recover the complete GCRA burst.
+Per-IP budgets group IPv6 addresses by their /64, the block a single
+subscriber usually gets; IPv4-mapped addresses count as their IPv4 address.
+
+In-memory limiters keep two stores of at most 50,000 keys each. At capacity
+the per-IP store rejects new keys with `429` and a one-second retry hint,
+while existing keys keep their independent quotas. Login keys that contain an
+email live in a separate store, so made-up emails cannot fill the per-IP one;
+while it is full, a new email is let through untracked and stays bounded by
+its IP's budget. Cleanup runs at most once per second under capacity pressure
+and removes only keys idle since their last accepted request for a full
+minute, enough to recover the complete GCRA burst.
 
 ## Endpoints
 

@@ -188,6 +188,11 @@ for the October 27 server scope and independent SDK publication checkpoint.
   stay).
 - A project's sign-in handoff only follows links to that project's own
   address.
+- Auth and panel rate limits group IPv6 clients by their /64, so rotating
+  addresses inside one block no longer buys a fresh budget.
+- Made-up emails can no longer fill the rate limiter and lock new visitors
+  out of sign-up, sign-in and email links: email-based login keys use their
+  own store, and while it is full a new email is bounded by its IP's budget.
 
 ## [0.5.6] — 2026-10-27
 
