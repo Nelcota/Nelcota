@@ -4,6 +4,11 @@
 //! `60 / limit` seconds) instead of resetting at the turn of a fixed minute,
 //! which let a client spend almost twice the limit across the boundary.
 //! Still in memory: a single binary per install needs no Redis (D26).
+//!
+//! Keys live in two bounded stores. Network keys (an IP or an IPv6 /64) cost
+//! an attacker one address each. Account keys contain an email the client
+//! picks freely, so they are kept apart: a flood of made-up emails can fill
+//! only the account store, never the one the per-IP budgets rely on.
 
 use crate::AuthState;
 use nelcota_core::ApiError;
@@ -29,7 +34,7 @@ use governor::{
 /// password sign-in (`NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE`).
 pub const SESSION_RATE_LIMIT_FACTOR: u32 = 10;
 
-/// Capacity is enforced without evicting a key's active rate limit.
+/// Capacity of each store, enforced without evicting a key's active limit.
 const MAX_KEYS: usize = 50_000;
 const CLEANUP_INTERVAL: Duration = Duration::from_secs(1);
 const FULL_REFILL: Duration = Duration::from_secs(60);
@@ -52,13 +57,42 @@ struct State<C: Clock> {
     cleanups: usize,
 }
 
+/// One bounded key store.
+struct Store<C: Clock> {
+    state: RwLock<State<C>>,
+    capacity: usize,
+    name: &'static str,
+}
+
+impl<C: Clock> Store<C> {
+    fn new(name: &'static str, capacity: usize, start: C::Instant) -> Self {
+        Store {
+            state: RwLock::new(State {
+                entries: HashMap::new(),
+                last_cleanup: start,
+                #[cfg(test)]
+                cleanups: 0,
+            }),
+            capacity,
+            name,
+        }
+    }
+}
+
+enum Admission {
+    Accepted,
+    Limited(Duration),
+    /// The store is full and the key is not tracked yet.
+    Full,
+}
+
 /// Generic over the clock only so tests can drive time by hand.
 pub struct RateLimiter<C: Clock + Clone = DefaultClock> {
-    state: RwLock<State<C>>,
+    network: Store<C>,
+    accounts: Store<C>,
     quota: Quota,
     clock: C,
     start: C::Instant,
-    capacity: usize,
 }
 
 impl RateLimiter {
@@ -76,16 +110,11 @@ impl<C: Clock + Clone> RateLimiter<C> {
         let limit = NonZeroU32::new(limit_per_minute).unwrap_or(NonZeroU32::MIN);
         let start = clock.now();
         RateLimiter {
-            state: RwLock::new(State {
-                entries: HashMap::new(),
-                last_cleanup: start,
-                #[cfg(test)]
-                cleanups: 0,
-            }),
+            network: Store::new("network", capacity, start),
+            accounts: Store::new("account", capacity, start),
             quota: Quota::per_minute(limit),
             clock,
             start,
-            capacity,
         }
     }
 
@@ -101,43 +130,29 @@ impl<C: Clock + Clone> RateLimiter<C> {
         Ok(())
     }
 
-    /// An account aggregate supplies backpressure, never a renewable lockout.
-    /// A full key store still fails closed; do not bypass bounded admission.
-    pub(crate) fn login_delay(&self, key: &str) -> Result<Duration, Duration> {
-        let result = self.check(key);
-        let state = self.state.read().unwrap_or_else(|e| e.into_inner());
-        let entry = state.entries.get(key).ok_or(CLEANUP_INTERVAL)?;
-        if result.is_ok() {
-            entry.login_delay_step.store(0, Ordering::Relaxed);
-            return Ok(Duration::ZERO);
+    fn outcome(&self, entry: &Entry<C>) -> Admission {
+        match self.check_entry(entry) {
+            Ok(()) => Admission::Accepted,
+            Err(wait) => Admission::Limited(wait),
         }
-        let step = entry
-            .login_delay_step
-            .try_update(Ordering::Relaxed, Ordering::Relaxed, |step| {
-                Some(step.saturating_add(1).min(LOGIN_DELAY_MAX_STEP))
-            })
-            .expect("delay update always supplies a value");
-        Ok(LOGIN_DELAY_BASE * (1_u32 << step.min(LOGIN_DELAY_MAX_STEP)))
     }
 
-    /// `Ok` while the key has budget; `Err(wait)` until its budget refills.
-    /// Unknown keys are also refused while capacity is full, with a retry hint.
-    pub fn check(&self, key: &str) -> Result<(), Duration> {
+    fn admit(&self, store: &Store<C>, key: &str) -> Admission {
         {
-            let state = self.state.read().unwrap_or_else(|e| e.into_inner());
+            let state = store.state.read().unwrap_or_else(|e| e.into_inner());
             if let Some(entry) = state.entries.get(key) {
-                return self.check_entry(entry);
+                return self.outcome(entry);
             }
         }
 
         // Serialize new-key admission only. Existing keys share a read lock
         // and governor still atomically enforces each independent GCRA budget.
-        let mut state = self.state.write().unwrap_or_else(|e| e.into_inner());
+        let mut state = store.state.write().unwrap_or_else(|e| e.into_inner());
         if let Some(entry) = state.entries.get(key) {
-            return self.check_entry(entry);
+            return self.outcome(entry);
         }
         let now = self.clock.now();
-        if state.entries.len() >= self.capacity
+        if state.entries.len() >= store.capacity
             && now.duration_since(state.last_cleanup) >= CLEANUP_INTERVAL.into()
         {
             let elapsed = now.duration_since(self.start).as_u64();
@@ -150,11 +165,19 @@ impl<C: Clock + Clone> RateLimiter<C> {
             {
                 state.cleanups += 1;
             }
+            if state.entries.len() >= store.capacity {
+                // At most once per second per store, so it cannot flood logs.
+                tracing::warn!(
+                    store = store.name,
+                    capacity = store.capacity,
+                    "rate limit key store is full"
+                );
+            }
         }
-        // Fail closed for unknown keys while full. Dropping a recent entry
-        // would let its next attempt obtain a fresh burst and bypass the quota.
-        if state.entries.len() >= self.capacity {
-            return Err(CLEANUP_INTERVAL);
+        // Never drop a recent entry to make room: its next attempt would
+        // obtain a fresh burst and bypass the quota.
+        if state.entries.len() >= store.capacity {
+            return Admission::Full;
         }
         let entry = state
             .entries
@@ -164,7 +187,57 @@ impl<C: Clock + Clone> RateLimiter<C> {
                 last_accepted: AtomicU64::new(now.duration_since(self.start).as_u64()),
                 login_delay_step: AtomicU64::new(0),
             });
-        self.check_entry(entry)
+        self.outcome(entry)
+    }
+
+    /// `Ok` while the key has budget; `Err(wait)` until its budget refills.
+    /// For network keys (an IP from `ip_key`, optionally with a prefix).
+    /// Unknown keys are refused while the store is full, with a retry hint:
+    /// filling it takes as many addresses as it has keys.
+    pub fn check(&self, key: &str) -> Result<(), Duration> {
+        match self.admit(&self.network, key) {
+            Admission::Accepted => Ok(()),
+            Admission::Limited(wait) => Err(wait),
+            Admission::Full => Err(CLEANUP_INTERVAL),
+        }
+    }
+
+    /// Like `check`, for keys that contain an email chosen by the client.
+    /// While the account store is full an unknown key is let through
+    /// untracked. Refusing it would let made-up emails lock every new user
+    /// out; callers must already have charged a per-IP budget with `check`.
+    pub(crate) fn check_account(&self, key: &str) -> Result<(), Duration> {
+        match self.admit(&self.accounts, key) {
+            Admission::Accepted | Admission::Full => Ok(()),
+            Admission::Limited(wait) => Err(wait),
+        }
+    }
+
+    /// An account aggregate supplies backpressure, never a renewable lockout.
+    /// Kept in the account store; untracked (no delay) while it is full.
+    pub(crate) fn login_delay(&self, key: &str) -> Duration {
+        let limited = match self.admit(&self.accounts, key) {
+            Admission::Accepted => false,
+            Admission::Limited(_) => true,
+            Admission::Full => return Duration::ZERO,
+        };
+        let state = self.accounts.state.read().unwrap_or_else(|e| e.into_inner());
+        // A cleanup may have dropped an idle entry in between: nothing to delay.
+        let entry = match state.entries.get(key) {
+            Some(entry) => entry,
+            None => return Duration::ZERO,
+        };
+        if !limited {
+            entry.login_delay_step.store(0, Ordering::Relaxed);
+            return Duration::ZERO;
+        }
+        let step = entry
+            .login_delay_step
+            .try_update(Ordering::Relaxed, Ordering::Relaxed, |step| {
+                Some(step.saturating_add(1).min(LOGIN_DELAY_MAX_STEP))
+            })
+            .expect("delay update always supplies a value");
+        LOGIN_DELAY_BASE * (1_u32 << step.min(LOGIN_DELAY_MAX_STEP))
     }
 }
 
@@ -192,6 +265,14 @@ mod tests {
     fn limiter(limit: u32) -> (RateLimiter<FakeRelativeClock>, FakeRelativeClock) {
         let clock = FakeRelativeClock::default();
         (RateLimiter::with_clock(limit, clock.clone()), clock)
+    }
+
+    fn len(store: &Store<FakeRelativeClock>) -> usize {
+        store.state.read().unwrap().entries.len()
+    }
+
+    fn cleanups(store: &Store<FakeRelativeClock>) -> usize {
+        store.state.read().unwrap().cleanups
     }
 
     #[test]
@@ -254,10 +335,10 @@ mod tests {
             );
         }
         assert_eq!(limiter.check("key:0"), Err(Duration::from_secs(60)));
-        let state = limiter.state.read().unwrap();
-        assert_eq!(state.entries.len(), MAX_KEYS);
+        assert_eq!(len(&limiter.network), MAX_KEYS);
         assert_eq!(
-            state.cleanups, 0,
+            cleanups(&limiter.network),
+            0,
             "a frozen clock must not trigger repeated scans"
         );
     }
@@ -272,12 +353,12 @@ mod tests {
         for i in 0..100 {
             assert!(limiter.check(&format!("new:{i}")).is_err());
         }
-        assert_eq!(limiter.state.read().unwrap().cleanups, 1);
+        assert_eq!(cleanups(&limiter.network), 1);
         assert_eq!(limiter.check("a"), Err(Duration::from_secs(59)));
         clock.advance(Duration::from_secs(59));
         assert!(limiter.check("new").is_ok());
-        assert_eq!(limiter.state.read().unwrap().entries.len(), 1);
-        assert_eq!(limiter.state.read().unwrap().cleanups, 2);
+        assert_eq!(len(&limiter.network), 1);
+        assert_eq!(cleanups(&limiter.network), 2);
         // The evicted key had fully recovered, so its normal budget is valid.
         assert!(limiter.check("a").is_ok());
         assert_eq!(limiter.check("a"), Err(Duration::from_secs(60)));
@@ -335,42 +416,61 @@ mod tests {
                 .count(),
             8
         );
-        assert_eq!(limiter.state.read().unwrap().entries.len(), 8);
-    }
-    #[test]
-    fn login_aggregate_delay_is_progressive_bounded_and_refills() {
-        let (limiter, clock) = limiter(2);
-        assert_eq!(limiter.login_delay("account"), Ok(Duration::ZERO));
-        assert_eq!(limiter.login_delay("account"), Ok(Duration::ZERO));
-        for milliseconds in [125, 250, 500, 1_000, 2_000, 2_000, 2_000] {
-            assert_eq!(
-                limiter.login_delay("account"),
-                Ok(Duration::from_millis(milliseconds))
-            );
-        }
-        assert_eq!(limiter.login_delay("other"), Ok(Duration::ZERO));
-        clock.advance(Duration::from_secs(30));
-        assert_eq!(limiter.login_delay("account"), Ok(Duration::ZERO));
-        assert_eq!(
-            limiter.login_delay("account"),
-            Ok(Duration::from_millis(125))
-        );
+        assert_eq!(len(&limiter.network), 8);
     }
 
     #[test]
-    fn login_delay_does_not_bypass_key_capacity_or_pair_limits() {
+    fn login_aggregate_delay_is_progressive_bounded_and_refills() {
+        let (limiter, clock) = limiter(2);
+        assert_eq!(limiter.login_delay("account"), Duration::ZERO);
+        assert_eq!(limiter.login_delay("account"), Duration::ZERO);
+        for milliseconds in [125, 250, 500, 1_000, 2_000, 2_000, 2_000] {
+            assert_eq!(
+                limiter.login_delay("account"),
+                Duration::from_millis(milliseconds)
+            );
+        }
+        assert_eq!(limiter.login_delay("other"), Duration::ZERO);
+        clock.advance(Duration::from_secs(30));
+        assert_eq!(limiter.login_delay("account"), Duration::ZERO);
+        assert_eq!(limiter.login_delay("account"), Duration::from_millis(125));
+    }
+
+    #[test]
+    fn account_keys_cannot_fill_the_network_store() {
         let clock = FakeRelativeClock::default();
         let limiter = RateLimiter::with_capacity(1, clock.clone(), 2);
-        assert!(limiter.check("pair").is_ok());
-        assert_eq!(limiter.login_delay("account"), Ok(Duration::ZERO));
-        assert!(limiter.check("pair").is_err());
+        for i in 0..100 {
+            assert!(limiter.check_account(&format!("login-source:{i}@x:ip")).is_ok());
+            assert_eq!(limiter.login_delay(&format!("login:{i}@x")), Duration::ZERO);
+        }
+        assert_eq!(len(&limiter.accounts), 2);
+        assert_eq!(len(&limiter.network), 0);
+        assert!(limiter.check("signup:1.2.3.4").is_ok(), "IPs keep working");
+        assert!(limiter.check("token:1.2.3.4").is_ok());
+        assert!(limiter.check("verify:1.2.3.4").is_err(), "network store full");
+    }
+
+    #[test]
+    fn full_account_store_lets_unknown_keys_through_but_keeps_tracked_limits() {
+        let clock = FakeRelativeClock::default();
+        let limiter = RateLimiter::with_capacity(1, clock.clone(), 2);
+        assert!(limiter.check_account("pair").is_ok());
+        assert_eq!(limiter.login_delay("account"), Duration::ZERO);
         assert_eq!(
-            limiter.login_delay("account"),
-            Ok(Duration::from_millis(125))
+            limiter.check_account("pair"),
+            Err(Duration::from_secs(60)),
+            "a tracked key keeps its budget"
         );
-        assert_eq!(limiter.login_delay("unknown"), Err(CLEANUP_INTERVAL));
-        assert_eq!(limiter.state.read().unwrap().entries.len(), 2);
+        assert_eq!(limiter.login_delay("account"), Duration::from_millis(125));
+        assert!(
+            limiter.check_account("unknown").is_ok(),
+            "a full store does not lock new users out"
+        );
+        assert_eq!(limiter.login_delay("unknown"), Duration::ZERO);
+        assert_eq!(len(&limiter.accounts), 2);
         clock.advance(Duration::from_secs(60));
-        assert_eq!(limiter.login_delay("unknown"), Ok(Duration::ZERO));
+        assert!(limiter.check_account("unknown").is_ok());
+        assert_eq!(len(&limiter.accounts), 1, "idle keys were cleaned up");
     }
 }

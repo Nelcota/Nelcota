@@ -173,14 +173,16 @@ pub(crate) async fn password_grant(
     }
     // A fresh source must not inherit a renewable account-wide rejection.
     // Keep the hard pair/IP budgets and delay before pool/hash admission.
-    limit(
-        state,
-        &format!("login-source:{email}:{}", crate::request::ip_key(ip)),
-    )?;
-    let delay = state
+    // The per-IP `token:` budget was charged by the handler; these keys hold
+    // a client-chosen email, so they live in the separate account store.
+    state
         .limiter
-        .login_delay(&format!("login:{email}"))
+        .check_account(&format!(
+            "login-source:{email}:{}",
+            crate::request::ip_key(ip)
+        ))
         .map_err(|wait| ApiError::rate_limited(wait.as_secs()))?;
+    let delay = state.limiter.login_delay(&format!("login:{email}"));
     if !delay.is_zero() {
         tokio::time::sleep(delay).await;
     }
