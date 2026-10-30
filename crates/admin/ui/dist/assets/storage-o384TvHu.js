@@ -60,8 +60,10 @@ equivalent directory ACL; Unix modes do not configure Windows ACLs.
 Uploads reserve capacity while their bodies are being received. A request
 without \`Content-Length\` grows its reservation as bytes arrive, up to 1 MiB
 ahead of what it has received but never more than half of the capacity left,
-so small concurrent uploads still share the remaining capacity. Declared
-lengths reserve their full size before reception.
+so small concurrent uploads still share the remaining capacity. Near a full
+quota, that room held ahead can refuse another upload slightly early, by at
+most 1 MiB per upload in progress. Declared lengths reserve their full size
+before reception.
 The committed total is checked in a serialized database transaction, including
 when several server instances share the same database. Replacements receive
 credit for their old bytes against the total quota, but still need disk space
@@ -123,11 +125,12 @@ still go through the policies.
 | download, sign, list | \`SELECT\` |
 | delete | \`SELECT\`, \`DELETE\` |
 
-An upload to a name already taken by a file the caller cannot see answers
-like a policy refusal (403, or 401 for \`anon\`), not 409 \`object_exists\`.
-Names are still unique in a bucket: where policies let callers create files in
-a shared folder, a refused upload can hint that a name is in use. Give each
-user a folder of their own when names must stay private.
+An upload (\`POST\` or \`PUT\`) to a name already taken by a file the caller
+cannot see answers exactly like a policy refusal (403, or 401 for \`anon\`), not
+409 \`object_exists\`. Names are still unique in a bucket: where policies let a
+caller create files in a shared folder, a refusal there, where another name
+would be accepted, reveals that the name is in use. Give each user a folder of
+their own when names must stay private.
 
 \`owner\` is filled with \`auth.uid()\` on upload, so \`owner = auth.uid()\` is the
 simplest private-files policy. Helpers for paths:

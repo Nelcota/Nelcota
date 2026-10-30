@@ -567,7 +567,7 @@ outside the request timeout and the gzip layer.
 
 **D79. User files are served as inert content.** Every object response
 carries \`X-Content-Type-Options: nosniff\` and \`Content-Security-Policy:
-sandbox\`; only raster images, audio, video and plain text are served
+sandbox\` (on the S3 backend the redirected download cannot, see \`storage.md\`); only raster images, audio, video and plain text are served
 \`inline\`, everything else (HTML, SVG, PDF...) as an \`attachment\`. The type is
 sniffed from the first bytes, not taken from the client. Paths reject \`..\`,
 empty segments, control characters and over-long names, and are normalized
