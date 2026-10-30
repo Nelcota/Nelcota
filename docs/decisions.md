@@ -1047,7 +1047,7 @@ the page. Sidebar items may carry a short label when the page title does not
 fit the sidebar; the page itself keeps the full title. Views of one object
 (a table's data and structure) and example languages stay beside the content.
 
-**D112. Signed URLs are bound to one stored version.** Amends D79: a signed
+**D113. Signed URLs are bound to one stored version.** Amends D79: a signed
 URL names the version (the key of the bytes, D78) the signer could read, not
 only the bucket and path. Replacing a file, or deleting it and uploading again
 under the same name, creates another version, which the old URL answers with
