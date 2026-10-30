@@ -48,8 +48,18 @@ pub(crate) fn user_agent(headers: &HeaderMap) -> Option<&str> {
         .and_then(|v| v.to_str().ok())
 }
 
-pub(crate) fn ip_key(ip: Option<IpAddr>) -> String {
-    ip.map(|i| i.to_string()).unwrap_or_default()
+/// Rate-limit key of a client address. IPv6 is grouped by its /64, the block
+/// a single subscriber usually gets, so rotating addresses inside it does not
+/// buy a fresh budget. An IPv4-mapped IPv6 address counts as the IPv4 one.
+pub fn ip_key(ip: Option<IpAddr>) -> String {
+    match ip.map(|ip| ip.to_canonical()) {
+        Some(IpAddr::V6(ip)) => {
+            let [a, b, c, d, ..] = ip.segments();
+            format!("{a:x}:{b:x}:{c:x}:{d:x}::/64")
+        }
+        Some(ip) => ip.to_string(),
+        None => String::new(),
+    }
 }
 
 #[cfg(test)]
@@ -101,5 +111,21 @@ mod tests {
             client_ip(false, &headers, peer),
             Some("9.9.9.9".parse().unwrap())
         );
+    }
+
+    #[test]
+    fn ip_key_groups_ipv6_by_64_and_keeps_ipv4_whole() {
+        let key = |ip: &str| ip_key(Some(ip.parse().unwrap()));
+        assert_eq!(key("2001:db8:1:2::1"), "2001:db8:1:2::/64");
+        assert_eq!(
+            key("2001:db8:1:2:ffff:ffff:ffff:ffff"),
+            key("2001:db8:1:2::1"),
+            "one /64 shares a budget"
+        );
+        assert_ne!(key("2001:db8:1:3::1"), key("2001:db8:1:2::1"));
+        assert_eq!(key("203.0.113.7"), "203.0.113.7");
+        assert_ne!(key("203.0.113.7"), key("203.0.113.8"));
+        assert_eq!(key("::ffff:203.0.113.7"), "203.0.113.7");
+        assert_eq!(ip_key(None), "");
     }
 }

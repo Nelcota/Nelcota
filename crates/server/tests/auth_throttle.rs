@@ -111,3 +111,31 @@ async fn one_source_keeps_its_existing_hard_ceiling() {
         StatusCode::BAD_REQUEST
     );
 }
+
+#[tokio::test]
+async fn ipv6_addresses_in_one_64_share_a_budget() {
+    let app = TestApp::spawn_with(Options {
+        rate_limit_per_minute: 2,
+        ..Options::default()
+    })
+    .await;
+    let email = format!("{}@example.test", Uuid::new_v4().simple());
+    let wrong = Uuid::new_v4().to_string();
+    for source in ["[2001:db8:0:1::1]", "[2001:db8:0:1::2]"] {
+        assert_eq!(
+            login_from(&app, &email, &wrong, source).await.status,
+            StatusCode::BAD_REQUEST
+        );
+    }
+    let blocked = login_from(&app, &email, &wrong, "[2001:db8:0:1:ffff::3]").await;
+    assert_eq!(
+        blocked.status,
+        StatusCode::TOO_MANY_REQUESTS,
+        "a new address in the same /64 has no fresh budget"
+    );
+    assert_eq!(
+        login_from(&app, &email, &wrong, "[2001:db8:0:2::1]").await.status,
+        StatusCode::BAD_REQUEST,
+        "another /64 keeps its own budget"
+    );
+}
