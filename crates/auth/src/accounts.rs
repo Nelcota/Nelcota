@@ -138,9 +138,6 @@ pub(crate) async fn signup(
         _ => {
             let session = start_session(state, &tx, user_id, ip, user_agent).await?;
             tx.commit().await.map_err(db_error)?;
-            state
-                .limiter
-                .remember_source(&email, &crate::request::ip_key(ip));
             return Ok(session);
         }
     };
@@ -174,21 +171,16 @@ pub(crate) async fn password_grant(
     if password_exceeds_limit(&password) {
         return Err(invalid_grant("invalid email or password"));
     }
-    // Charge the pair and account budgets before pool/hash admission. The
-    // per-IP `token:` budget was charged by the handler; these keys hold a
-    // client-chosen email, so they live in the separate account store. Over
-    // the account budget only sources where it signed in before get through.
-    let source = crate::request::ip_key(ip);
-    state
-        .limiter
-        .check_account(&format!("login-source:{email}:{source}"))
-        .map_err(|wait| ApiError::rate_limited(retry_after_secs(wait)))?;
-    let delay = state
-        .limiter
-        .login_gate(&email, &source)
-        .map_err(|wait| ApiError::rate_limited(retry_after_secs(wait)))?;
-    if !delay.is_zero() {
-        tokio::time::sleep(delay).await;
+    // The handler already charged the per-IP `token:` budget. Over the
+    // account-wide budget, only networks where the account already has a
+    // session get through, after a growing delay: distributed guessing is
+    // capped, and an attack slows the owner down without locking them out of
+    // the networks they use.
+    if let Some(wait) = state.limiter.login_budget(&email) {
+        if !known_network(state, &email, ip).await? {
+            return Err(ApiError::rate_limited(retry_after_secs(wait)));
+        }
+        tokio::time::sleep(state.limiter.login_delay(&email)).await;
     }
 
     let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
@@ -235,8 +227,39 @@ pub(crate) async fn password_grant(
     confirmation::ensure_confirmed(state, current.get(1))?;
     let session = start_session(state, &tx, user_id, ip, user_agent).await?;
     tx.commit().await.map_err(db_error)?;
-    state.limiter.remember_source(&email, &source);
     Ok(session)
+}
+
+/// How long a session keeps its network known for the account budget.
+const KNOWN_NETWORK_DAYS: i32 = 30;
+
+/// Whether `email`'s account has a session from the last 30 days opened from
+/// the network of `ip` (`ip_key`: the address, or its IPv6 /64). Sessions
+/// persist across restarts and only real sign-ins create them.
+async fn known_network(
+    state: &AuthState,
+    email: &str,
+    ip: Option<IpAddr>,
+) -> Result<bool, ApiError> {
+    let network = crate::request::ip_key(ip);
+    if network.is_empty() {
+        return Ok(false);
+    }
+    let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
+    let tx = begin_auth(&mut client).await?;
+    let row = tx
+        .query_one(
+            "SELECT EXISTS (
+                 SELECT 1 FROM auth.sessions s JOIN auth.users u ON u.id = s.user_id
+                 WHERE u.email = $1 AND s.ip <<= $2::text::inet
+                   AND s.created_at > now() - make_interval(days => $3)
+             )",
+            &[&email, &network, &KNOWN_NETWORK_DAYS],
+        )
+        .await
+        .map_err(db_error)?;
+    tx.commit().await.map_err(db_error)?;
+    Ok(row.get(0))
 }
 
 /// `GET /auth/v1/user` (Bearer): data of the token's user.

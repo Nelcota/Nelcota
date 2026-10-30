@@ -25,7 +25,9 @@ impl<S: Send + Sync> FromRequestParts<S> for PeerAddr {
 /// the header, 1 is Caddy alone, 2 is a CDN in front of Caddy. The client is
 /// then the `proxy_hops`-th entry from the right, across repeated header
 /// lines; anything further left was written by the client and is ignored.
-/// Missing, unreadable or unparsable entries fall back to the TCP peer.
+/// Missing, unreadable or unparsable entries fall back to the TCP peer. With
+/// two or more hops a client can force that fallback (proxies append to the
+/// client's own line), which only moves it into the proxy's shared budget.
 pub fn client_ip(proxy_hops: u8, headers: &HeaderMap, peer: Option<SocketAddr>) -> Option<IpAddr> {
     let peer_ip = peer.map(|addr| addr.ip());
     if proxy_hops == 0 {
