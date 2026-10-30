@@ -372,7 +372,9 @@ impl Store {
     }
 
     /// S3 only: a presigned GET that also fixes the response's type and
-    /// disposition, so the provider serves the file as this server would.
+    /// disposition. S3 offers no query override for `X-Content-Type-Options`
+    /// or `Content-Security-Policy`; docs/storage.md asks operators to set
+    /// them on the provider or the CDN in front of it.
     pub async fn presigned_get(
         &self,
         key: &Key,

@@ -186,6 +186,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
   lock. Their reservation grows up to 1 MiB ahead of the bytes received, never
   past half of the remaining capacity; the committed total is still checked
   at publication.
+- The storage guide no longer claims that every download carries
+  `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox`:
+  S3 downloads redirect to presigned URLs that cannot set them. It now asks S3
+  deployments to add both on the provider or a CDN in front of the bucket.
 
 ### Security
 

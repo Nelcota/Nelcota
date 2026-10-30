@@ -189,16 +189,22 @@ has the API's JSON shape (see [api.md](api.md#errors)).
 
 - **The type comes from the bytes**, not from the client: a "PNG" that is
   really HTML is stored as `text/html` (and refused by an `image/*` bucket).
-- **Files are inert.** Every response has `X-Content-Type-Options: nosniff` and
-  `Content-Security-Policy: sandbox`. Only images (not SVG), audio, video and
-  plain text open in the browser; HTML, SVG, PDF and the rest download.
+- **Files are inert.** Only images (not SVG), audio, video and plain text open
+  in the browser; HTML, SVG, PDF and the rest download. Files served from disk
+  also carry `X-Content-Type-Options: nosniff` and
+  `Content-Security-Policy: sandbox` (S3: see below).
   For public files on their own origin, point `NELCOTA_STORAGE_PUBLIC_URL` at
   a second domain that proxies `/storage/v1/object/public/*` to the app.
 - **Disk:** `Range` (video seeking, resumed downloads), `ETag` and
   `If-None-Match`. Public files are cacheable for 60 s; private ones are
   revalidated each time.
 - **S3:** downloads are a `302` to a presigned URL valid for at most 5 minutes;
-  the bytes come straight from the provider.
+  the bytes come straight from the provider. The URL fixes the file's
+  `Content-Type` and `Content-Disposition`, but a presigned URL cannot set
+  security headers, so the provider's response lacks
+  `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox`.
+  Add both on the provider (bucket response-header settings, where it has them)
+  or on a CDN in front of the bucket.
 
 ## Consistency
 
