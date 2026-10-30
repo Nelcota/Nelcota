@@ -181,6 +181,12 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - The page's main scroll area no longer draws an outline after mouse or touch
   navigation; keyboard navigation still shows it.
 
+- Uploads without `Content-Length` no longer read the storage total from the
+  database for every received chunk while holding the process-wide admission
+  lock. Their reservation grows up to 1 MiB ahead of the bytes received, never
+  past half of the remaining capacity; the committed total is still checked
+  at publication.
+
 ### Security
 
 - Signing out in one tab signs out the panel's other tabs, and signing out

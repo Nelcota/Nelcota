@@ -58,9 +58,10 @@ equivalent directory ACL; Unix modes do not configure Windows ACLs.
 | `NELCOTA_STORAGE_PUBLIC_URL` | the API's | origin of public file URLs, e.g. `https://files.shop.com` |
 
 Uploads reserve capacity while their bodies are being received. A request
-without `Content-Length` grows its reservation as bytes arrive, allowing small
-concurrent uploads to share the remaining capacity. Declared lengths reserve
-their full size before reception.
+without `Content-Length` grows its reservation as bytes arrive, up to 1 MiB
+ahead of what it has received but never more than half of the capacity left,
+so small concurrent uploads still share the remaining capacity. Declared
+lengths reserve their full size before reception.
 The committed total is checked in a serialized database transaction, including
 when several server instances share the same database. Replacements receive
 credit for their old bytes against the total quota, but still need disk space
