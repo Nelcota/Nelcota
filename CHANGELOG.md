@@ -46,9 +46,12 @@ for the October 27 server scope and independent SDK publication checkpoint.
   both support version/project selection, `--dry-run` and `--yes`, and leave
   controller-enrolled hosts to their existing update workflow.
 - REST and storage requests have a rate limit,
-  `NELCOTA_API_RATE_LIMIT_PER_MINUTE` (600 by default, 0 turns it off):
-  per account with a user token, per IP without one. `service_role` tokens
-  are exempt.
+  `NELCOTA_API_RATE_LIMIT_PER_MINUTE`, **on by default** at 600 per minute
+  (0 turns it off): per account with a user token, per IP without one.
+  `service_role` tokens and public or signed file downloads are exempt.
+  Behind a proxy without `NELCOTA_TRUST_PROXY`, or when pages are rendered on
+  a server with the anonymous key, many visitors share one budget: raise it
+  or turn it off when upgrading.
 - `NELCOTA_TRUSTED_PROXY_HOPS` (default 1) reads the real client IP behind a
   CDN in front of Caddy (set 2, and list the CDN ranges in Caddy's
   `trusted_proxies`).
@@ -117,7 +120,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - **Breaking (Rust):** `AuthSettings::trust_proxy` and
   `AdminState::trust_proxy` became `proxy_hops: u8` (0 ignores
   `X-Forwarded-For`), and `client_ip` takes that count instead of a `bool`.
-  `ip_key` and `retry_after_secs` are now public.
+  `nelcota_server::AppState` gained `api_limit` (built with
+  `ApiRateLimit::new`) and `Config` gained `api_rate_limit_per_minute` and
+  `trusted_proxy_hops`. `ip_key` and `retry_after_secs` are now public.
 
 ### Fixed
 

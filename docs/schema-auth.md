@@ -256,9 +256,9 @@ an unrecognized legitimate network while attackers keep spending it. One
 address cannot spend it alone (it is ten times the per-IP budget); attackers
 with enough addresses can keep the owner out of new networks, and only many
 addresses inside the owner's own networks can spend the second budget too.
-Distributed guessing is capped at twice the account budget. While it is spent, the answer shows whether the caller's network is
-known to an existing account; signup already reveals whether an account
-exists. Keep trusted proxy configuration and upstream abuse controls; limits
+Distributed guessing is capped at twice the account budget. Emails without an account spend shared decoy budgets of the
+same size, so a spent budget does not reveal which emails have accounts; it
+does show whether the caller's network is known to an existing one. Keep trusted proxy configuration and upstream abuse controls; limits
 are per process and shared NAT users still share their IP budget.
 
 Refreshes and PKCE redemptions (`grant_type=refresh_token` / `pkce`) draw from

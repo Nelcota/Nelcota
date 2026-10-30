@@ -121,8 +121,9 @@ share a separate per-IP budget of ten times that value (300 by default).
 
 The REST and storage APIs allow `NELCOTA_API_RATE_LIMIT_PER_MINUTE` requests
 (600 by default, 0 turns it off): per account with a user token, per IP without
-one. `service_role` tokens are exempt. Server-side rendering with the anonymous
-key shares the server's IP budget; raise the value or send user tokens.
+one. `service_role` tokens and public or signed file downloads are exempt.
+Server-side rendering with the anonymous key shares the server's IP budget;
+raise the value or send user tokens.
 
 IPv6 addresses count by their /64. Quotas are per process, not distributed
 across server instances. Clients behind a NAT can share an IP budget. The
@@ -134,7 +135,9 @@ restrict direct API access. Each trusted proxy appends to `X-Forwarded-For`, so
 `NELCOTA_TRUSTED_PROXY_HOPS` says how many there are: 1 (the default) for Caddy
 alone, 2 for a CDN in front of Caddy. With a CDN, Caddy must also trust the
 CDN's address ranges (`trusted_proxies` in its global `servers` options);
-otherwise Caddy replaces the header and every user shares the CDN's budget.
+otherwise Caddy replaces the header, too few entries remain and every user is
+counted as Caddy's own address. Never count more hops than trusted proxies
+actually add: entries further left are written by the client.
 
 A 503 `unavailable` means the database could not be reached or is
 overloaded; it may also carry `Retry-After`. The SDKs retry reads on 429 and
