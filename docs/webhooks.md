@@ -85,11 +85,11 @@ The history shows status, HTTP code, attempts, timestamps and the exact payload.
 
 ## Limits and retention
 
-There are at most 50 webhooks per project (paused ones included, deleted ones excluded) and ten per table. The queue holds at most 10,000 outstanding deliveries and 100,000 retained deliveries. Admission is transactional: if a limit is reached, the business write fails with a retryable database-capacity error instead of silently losing its event. The panel shows usage and warns at 80%.
+There are at most 50 webhooks per project (paused ones included, deleted ones excluded) and ten per table. Each webhook queues at most 10,000 outstanding deliveries. A change captured beyond that limit is recorded as a visibly failed `queue_full` delivery with omitted contents, while the business write still commits, so a stalled destination never blocks database writes or other webhooks. The limit is approximate while several transactions write at once. After fixing the destination, reconcile those changes from the table itself. The panel shows usage and warns once 8,000 deliveries are waiting in total.
 
-Terminal history is kept for up to seven days and cleaned in bounded batches. Pending deliveries are never deleted by age. **Clear history** removes only terminal deliveries and their payloads. To free a stalled queue, fix or enable its destinations, or delete unwanted webhooks to cancel their pending work. Keep database backups private: they contain signing keys and event payloads.
+Terminal history is kept for up to seven days and at most the newest 100,000 terminal deliveries; older ones are cleaned in bounded batches every minute. History never blocks writes. Pending deliveries are never deleted by age. **Clear history** removes only terminal deliveries and their payloads. To free a stalled queue, fix or enable its destinations, or delete unwanted webhooks to cancel their pending work. Keep database backups private: they contain signing keys and event payloads.
 
-A payload larger than 256 KiB produces a visibly failed delivery with omitted contents, while the business row still commits. Such a delivery cannot be resent; reduce the row size or use another integration for large values. Changes to a hook configuration are project configuration, separate from schema migration exports.
+A payload larger than 256 KiB also produces a visibly failed delivery with omitted contents (`payload_too_large`), while the business row still commits. Deliveries with omitted contents cannot be resent; reduce the row size or use another integration for large values. Changes to a hook configuration are project configuration, separate from schema migration exports.
 
 ## Destination safety and local development
 

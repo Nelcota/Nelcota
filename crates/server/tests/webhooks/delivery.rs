@@ -2,6 +2,7 @@ use crate::{
     common::{
         TestApp,
         panel::{get, login, send},
+        user_token,
     },
     support::{self, Receiver},
 };
@@ -429,5 +430,52 @@ async fn interrupted_paused_and_exhausted_leases_recover_and_retention_keeps_pen
         detail.attempts[1].error.as_deref(),
         Some("worker_interrupted")
     );
+    assert_eq!(receiver.requests().len(), 1);
+}
+
+#[tokio::test]
+async fn history_beyond_the_old_cap_never_blocks_writes_and_is_pruned_to_its_limit() {
+    let app = TestApp::spawn().await;
+    let receiver = Receiver::new([]).await;
+    let hook = support::hook(&app, &receiver.url, 3).await;
+    let pool = db::admin_pool(&app.admin, 2);
+    // A busy week: more terminal history than the old 100,000-row admission cap.
+    app.admin_client.execute("INSERT INTO nelcota.webhook_deliveries (endpoint_id,event_id,schema_name,table_name,event,url,payload,max_attempts,status,attempts,finished_at) SELECT $1::text::uuid,gen_random_uuid(),'public','todos','INSERT','https://example.com/old','{}',3,'succeeded',1,clock_timestamp()-interval '1 hour' FROM generate_series(1,100005)", &[&hook.endpoint.id]).await.unwrap();
+    let oldest: i64 = app
+        .admin_client
+        .query_one("SELECT min(id) FROM nelcota.webhook_deliveries", &[])
+        .await
+        .unwrap()
+        .get(0);
+    let inserted = app
+        .request(
+            Method::POST,
+            "/rest/v1/todos",
+            Some(&user_token(app.user_a)),
+            Some(json!({"title":"after a busy week"})),
+        )
+        .await;
+    assert_eq!(inserted.status, StatusCode::CREATED, "{}", inserted.text);
+    assert_eq!(support::worker(&app).run_once().await.unwrap(), 1);
+    let newest = support::latest(&app).await;
+    let handle = support::worker(&app).spawn();
+    let pruned = tokio::time::timeout(Duration::from_secs(10), async {
+        while support::count(&app).await != 100_000 {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+    })
+    .await;
+    handle.shutdown().await;
+    let remaining = support::count(&app).await;
+    assert!(pruned.is_ok(), "{remaining} deliveries kept");
+    let detail = management::detail(&pool, &newest).await.unwrap();
+    assert_eq!(detail.delivery.status, "succeeded");
+    let kept: i64 = app
+        .admin_client
+        .query_one("SELECT min(id) FROM nelcota.webhook_deliveries", &[])
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(kept, oldest + 6, "the oldest terminal rows go first");
     assert_eq!(receiver.requests().len(), 1);
 }

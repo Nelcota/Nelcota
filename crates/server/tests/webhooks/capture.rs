@@ -206,7 +206,7 @@ async fn pause_rename_delete_and_large_payload_have_explicit_outcomes() {
 }
 
 #[tokio::test]
-async fn keyset_history_and_capacity_protect_data_and_queue() {
+async fn keyset_history_pages_and_clearing_keeps_active_work() {
     let app = TestApp::spawn().await;
     support::hook(&app, "https://example.com/hook", 6).await;
     let pool = db::admin_pool(&app.admin, 2);
@@ -238,34 +238,152 @@ async fn keyset_history_and_capacity_protect_data_and_queue() {
         0,
         "active deliveries cannot be cleared"
     );
+}
+
+async fn outcomes(app: &TestApp, endpoint: &str) -> Vec<(String, Option<String>)> {
+    app.admin_client
+        .query(
+            "SELECT status,last_error FROM nelcota.webhook_deliveries WHERE endpoint_id=$1::text::uuid ORDER BY id",
+            &[&endpoint],
+        )
+        .await
+        .unwrap()
+        .iter()
+        .map(|row| (row.get(0), row.get(1)))
+        .collect()
+}
+
+#[tokio::test]
+async fn overflow_is_a_visible_failure_per_webhook_and_the_write_commits() {
+    let app = TestApp::spawn().await;
+    let full = support::hook(&app, "https://example.com/full", 6).await;
+    let healthy = support::hook(&app, "https://example.com/healthy", 6).await;
+    let pool = db::admin_pool(&app.admin, 2);
+    // One delivery below the per-webhook limit, as if its destination stalled.
     app.admin_client
         .execute(
-            "UPDATE nelcota.webhook_queue_usage SET outstanding=10000 WHERE singleton",
+            "UPDATE nelcota.webhook_queue_shards SET outstanding=9999 WHERE endpoint_id=$1::text::uuid AND shard=0",
+            &[&full.endpoint.id],
+        )
+        .await
+        .unwrap();
+    // The limit is counted per row, also inside one statement.
+    app.admin_client.execute("INSERT INTO public.todos (user_id,title) SELECT $1,'burst '||n FROM generate_series(1,3) n", &[&app.user_a]).await.unwrap();
+    let inserted = app
+        .request(
+            Method::POST,
+            "/rest/v1/todos",
+            Some(&user_token(app.user_a)),
+            Some(json!({"title":"after the limit"})),
+        )
+        .await;
+    assert_eq!(inserted.status, StatusCode::CREATED, "{}", inserted.text);
+    let committed: i64 = app
+        .admin_client
+        .query_one(
+            "SELECT count(*) FROM public.todos WHERE title LIKE 'burst %' OR title='after the limit'",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(committed, 4);
+    let pending = (String::from("pending"), None);
+    let failed = (String::from("failed"), Some(String::from("queue_full")));
+    assert_eq!(
+        outcomes(&app, &full.endpoint.id).await,
+        vec![pending.clone(), failed.clone(), failed.clone(), failed]
+    );
+    let unaffected = outcomes(&app, &healthy.endpoint.id).await;
+    assert_eq!(unaffected, vec![pending; 4]);
+    let id: String = app
+        .admin_client
+        .query_one(
+            "SELECT id::text FROM nelcota.webhook_deliveries WHERE last_error='queue_full' ORDER BY id DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    let detail = management::detail(&pool, &id).await.unwrap();
+    assert_eq!(detail.delivery.attempts, 0);
+    assert!(detail.delivery.finished_at.is_some());
+    let payload: Value = serde_json::from_str(&detail.payload).unwrap();
+    assert_eq!(payload["payload_omitted"], true);
+    assert_eq!(payload["type"], "INSERT");
+    assert!(payload["record"].is_null());
+    assert!(management::replay(&pool, &id).await.is_err());
+    let outstanding: i64 = app
+        .admin_client
+        .query_one("SELECT outstanding FROM nelcota.webhook_queue_usage", &[])
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(outstanding, 10_000 + 4);
+}
+
+#[tokio::test]
+async fn concurrent_writers_and_the_worker_do_not_wait_for_one_counter() {
+    use std::time::Duration;
+    let app = TestApp::spawn().await;
+    let receiver = support::Receiver::new([]).await;
+    support::hook(&app, &receiver.url, 6).await;
+    support::insert(&app, "already queued").await;
+    let queued = support::latest(&app).await;
+    let (mut first, connection) = app.admin.connect(tokio_postgres::NoTls).await.unwrap();
+    tokio::spawn(connection);
+    let holding = first.transaction().await.unwrap();
+    holding
+        .execute(
+            "INSERT INTO public.todos (user_id,title) VALUES ($1,'held open')",
+            &[&app.user_a],
+        )
+        .await
+        .unwrap();
+    // The open writer keeps its counter row locked. A second writer must not
+    // queue behind it: with one global counter row this hits lock_timeout.
+    let (mut second, connection) = app.admin.connect(tokio_postgres::NoTls).await.unwrap();
+    tokio::spawn(connection);
+    let other = second.transaction().await.unwrap();
+    other
+        .batch_execute("SET LOCAL lock_timeout = '1s'")
+        .await
+        .unwrap();
+    other
+        .execute(
+            "INSERT INTO public.todos (user_id,title) VALUES ($1,'concurrent')",
+            &[&app.user_a],
+        )
+        .await
+        .unwrap();
+    // The worker saves its result while both writers are still open.
+    let worker = support::worker(&app);
+    tokio::time::timeout(Duration::from_secs(5), worker.run_once())
+        .await
+        .unwrap()
+        .unwrap();
+    let status: String = app
+        .admin_client
+        .query_one(
+            "SELECT status FROM nelcota.webhook_deliveries WHERE id=$1::text::bigint",
+            &[&queued],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(status, "succeeded");
+    other.commit().await.unwrap();
+    holding.commit().await.unwrap();
+    let usage = app
+        .admin_client
+        .query_one(
+            "SELECT outstanding,retained FROM nelcota.webhook_queue_usage",
             &[],
         )
         .await
         .unwrap();
-    let failed = app
-        .admin_client
-        .execute(
-            "INSERT INTO public.todos (user_id,title) VALUES ($1,'must roll back')",
-            &[&app.user_a],
-        )
-        .await
-        .unwrap_err();
-    assert_eq!(failed.code().unwrap().code(), "53300");
-    assert_eq!(support::count(&app).await, 31);
-    assert_eq!(
-        app.admin_client
-            .query_one(
-                "SELECT count(*) FROM public.todos WHERE title='must roll back'",
-                &[]
-            )
-            .await
-            .unwrap()
-            .get::<_, i64>(0),
-        0
-    );
+    assert_eq!(usage.get::<_, i64>(0), 2);
+    assert_eq!(usage.get::<_, i64>(1), 3);
 }
 
 #[tokio::test]

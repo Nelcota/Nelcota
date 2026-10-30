@@ -31,9 +31,7 @@ const en: Messages<typeof ptBR> = {
   webhook_not_found: "Webhook or delivery not found. Completed history may have expired.",
   webhook_paused: "Enable the webhook before resending.",
   webhook_delivery_active: "This delivery or a resend is already queued. Wait for it to finish.",
-  webhook_payload_omitted:
-    "The payload exceeded the limit and was omitted. This event cannot be resent.",
-  webhook_queue_full: "The queue reached its limit. Resume processing or clear completed history.",
+  webhook_payload_omitted: "This event was recorded without its contents, so it cannot be resent.",
   route_not_found: "Route not found.",
   session_expired: "Session expired: sign in again.",
   origin_not_allowed: "Origin not allowed.",

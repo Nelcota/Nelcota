@@ -86,10 +86,14 @@ pub async fn replay(pool: &Pool, id: &str) -> Result<String, Error> {
             message: "Wait for the current delivery to finish",
         });
     }
-    if old.get::<_, Option<&str>>("last_error") == Some("payload_too_large") {
+    // Both failures store the event without its row data, so it cannot be resent.
+    if matches!(
+        old.get::<_, Option<&str>>("last_error"),
+        Some("payload_too_large" | "queue_full")
+    ) {
         return Err(Error::Conflict {
             code: "webhook_payload_omitted",
-            message: "This event exceeded the payload limit and cannot be resent",
+            message: "This event was recorded without its contents and cannot be resent",
         });
     }
     let endpoint_id: uuid::Uuid = old.get("endpoint_id");

@@ -110,6 +110,12 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- Webhook queue limits no longer abort writes to watched tables. Beyond 10,000
+  outstanding deliveries for one webhook, a change is recorded as a failed
+  `queue_full` delivery with omitted contents and the row still commits.
+  Terminal history is pruned to the newest 100,000 deliveries instead of
+  blocking writes, and concurrent writers and the delivery worker no longer
+  wait on one shared counter row. Internal migration V19 replaces the counter.
 - Generate panel CRUD examples from complete primary keys and required columns,
   including UUID/composite keys and declared enum values; omit unsafe keyless mutations.
 - Align onboarding and CLI guides with published versus current-checkout capabilities.

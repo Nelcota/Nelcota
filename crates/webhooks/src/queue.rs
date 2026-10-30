@@ -88,16 +88,44 @@ fn retry_delay(attempt: i32, id: i64, retry_after: Option<u64>) -> u64 {
         .min(3600)
 }
 
+/// Terminal deliveries kept by retention. History never blocks business
+/// writes; the oldest terminal rows beyond this cap are pruned instead.
+const HISTORY_LIMIT: i64 = 100_000;
+const PRUNE_BATCH: u64 = 500;
+/// Batches per cleanup run, so a burst of history is caught up within minutes.
+const PRUNE_BATCHES: usize = 40;
+
 /// Retention runs in small batches so cascade cleanup does not monopolize the
-/// queue pool. Pending/processing events are never deleted by time.
+/// queue pool. It deletes terminal history older than 7 days or beyond the
+/// newest `HISTORY_LIMIT` terminal deliveries. Pending/processing work is kept.
 pub(crate) async fn prune(pool: &Pool) -> Result<(), Error> {
+    for _ in 0..PRUNE_BATCHES {
+        if prune_batch(pool).await? < PRUNE_BATCH {
+            break;
+        }
+    }
+    Ok(())
+}
+
+async fn prune_batch(pool: &Pool) -> Result<u64, Error> {
     let mut client = pool.get().await?;
     let tx = client.transaction().await?;
     tx.batch_execute("SET LOCAL ROLE nelcota_webhooks; SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='3s'").await?;
-    tx.execute("DELETE FROM nelcota.webhook_deliveries WHERE id IN (SELECT id FROM nelcota.webhook_deliveries WHERE finished_at<statement_timestamp()-interval '7 days' AND status IN ('succeeded','failed','cancelled') ORDER BY finished_at,id LIMIT 500 FOR UPDATE SKIP LOCKED)", &[]).await?;
+    let deleted = tx
+        .execute(PRUNE, &[&HISTORY_LIMIT, &(PRUNE_BATCH as i64)])
+        .await?;
     tx.commit().await?;
-    Ok(())
+    Ok(deleted)
 }
+
+const PRUNE: &str = "DELETE FROM nelcota.webhook_deliveries WHERE id IN (
+    SELECT id FROM nelcota.webhook_deliveries
+    WHERE finished_at IS NOT NULL AND status IN ('succeeded','failed','cancelled')
+    AND (finished_at < statement_timestamp() - interval '7 days'
+        OR (finished_at, id) <= (SELECT k.finished_at, k.id FROM nelcota.webhook_deliveries k
+            WHERE k.finished_at IS NOT NULL AND k.status IN ('succeeded','failed','cancelled')
+            ORDER BY k.finished_at DESC, k.id DESC OFFSET $1 LIMIT 1))
+    ORDER BY finished_at, id LIMIT $2 FOR UPDATE SKIP LOCKED)";
 
 #[cfg(test)]
 mod tests {

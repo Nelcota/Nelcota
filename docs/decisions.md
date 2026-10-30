@@ -1047,6 +1047,20 @@ the page. Sidebar items may carry a short label when the page title does not
 fit the sidebar; the page itself keeps the full title. Views of one object
 (a table's data and structure) and example languages stay beside the content.
 
+**D112. Webhook admission never aborts the business write.** V13 counted the
+queue in one `webhook_queue_usage` row and raised `53300` above 10,000
+outstanding or 100,000 retained deliveries. Every captured write locked that row
+until commit, and healthy history or one stalled destination froze writes on all
+watched tables. V19 counts outstanding work per webhook in sixteen shard rows: a
+transaction updates a shard no other transaction holds (`SKIP LOCKED`, its
+backend's shard first), and capture sums them. Beyond 10,000 outstanding
+deliveries for one webhook, the event is stored as a failed `queue_full`
+delivery with omitted contents, like an oversized payload, and the row commits.
+Concurrent transactions cannot see each other's uncommitted work, so the limit
+is approximate by what they add together. History is bounded by retention
+instead: the worker deletes terminal deliveries older than seven days or beyond
+the newest 100,000. `nelcota.webhook_queue_usage` remains as a read-only view.
+
 ### Known pending items
 
 - Filtering parent rows by their embeds (`!inner`) and self-referencing embeds.
