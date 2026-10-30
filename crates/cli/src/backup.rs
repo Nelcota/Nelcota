@@ -6,12 +6,15 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 mod files;
 mod remote;
-pub(crate) use remote::{
-    publish_remote, s3_configured, test_remote, valid_destination, verify_remote,
-};
+pub(crate) use remote::{s3_configured, verify_remote};
+// Host updates are Linux-only and are the only remote publisher/prober.
+#[cfg(target_os = "linux")]
+pub(crate) use remote::{publish_remote, test_remote, valid_destination};
 pub(crate) mod outcome;
 mod verification;
-pub(crate) use verification::{latest_verified, verify_copy};
+#[cfg(target_os = "linux")]
+pub(crate) use verification::latest_verified;
+pub(crate) use verification::verify_copy;
 mod workflow;
 #[cfg(test)]
 pub(crate) use workflow::prune;

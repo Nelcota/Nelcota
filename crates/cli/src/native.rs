@@ -17,6 +17,7 @@ mod ownership;
 mod postgres;
 mod provisioning;
 mod units;
+#[cfg(target_os = "linux")]
 pub(crate) use units::render_unit;
 
 pub(crate) use backup_config::{

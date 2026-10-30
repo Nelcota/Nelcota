@@ -53,6 +53,11 @@ fn backup_inner(
     let path = dir.join(&name);
     step(&format!("Backup of {}: {name}", project.name));
 
+    if let Err(error) = sweep_interrupted(&dir) {
+        util::warn(&format!(
+            "could not remove interrupted backup leftovers: {error:#}"
+        ));
+    }
     crate::backup::capture(project, &path)?;
     let size = fs::metadata(&path)?.len();
     ok(&format!("{} ({} KB)", path.display(), size / 1024));
@@ -67,6 +72,46 @@ fn backup_inner(
         prune(&dir, keep)?;
     }
     Ok(path)
+}
+
+/// Removes what an interrupted backup leaves behind: its partial dump, a file
+/// snapshot whose dump never completed, and verification scratch directories
+/// (they hold a copy of the project's `.env`). Every caller of [`backup`] holds
+/// the host deployment lease, so none of these can belong to a running backup.
+fn sweep_interrupted(dir: &Path) -> anyhow::Result<()> {
+    let entries = match fs::read_dir(dir) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(error.into()),
+    };
+    for entry in entries {
+        let entry = entry?;
+        let name = entry.file_name();
+        let name = match name.to_str() {
+            Some(name) => name,
+            None => continue,
+        };
+        // DirEntry::file_type does not follow links: a link is removed, never its target.
+        let kind = entry.file_type()?;
+        let stale = name.ends_with(".dump.partial")
+            || kind.is_dir() && name.starts_with(".tmp")
+            || name
+                .strip_suffix(".files")
+                .is_some_and(|dump| dump.ends_with(".dump") && !dir.join(dump).exists());
+        if !stale {
+            continue;
+        }
+        let path = entry.path();
+        match kind.is_dir() {
+            true => fs::remove_dir_all(&path)?,
+            false => fs::remove_file(&path)?,
+        }
+        ok(&format!(
+            "removed interrupted backup leftover {}",
+            path.display()
+        ));
+    }
+    Ok(())
 }
 
 /// When the newest local dump of the project was written.
@@ -207,4 +252,36 @@ pub(crate) fn restore_dump(project: &Project, file: &Path) -> anyhow::Result<()>
     }
     ok("data restored");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn interrupted_backup_leftovers_are_removed_and_complete_backups_kept() {
+        let temp = tempfile::tempdir().unwrap();
+        let dir = temp.path();
+        fs::write(dir.join("a.dump"), b"dump").unwrap();
+        fs::create_dir(dir.join("a.dump.files")).unwrap();
+        fs::write(dir.join("a.dump.files/manifest.json"), b"{}").unwrap();
+        fs::write(dir.join("b.dump.partial"), b"partial").unwrap();
+        fs::create_dir(dir.join("b.dump.files")).unwrap();
+        fs::write(dir.join("b.dump.files/manifest.json"), b"{}").unwrap();
+        fs::create_dir_all(dir.join(".tmpAbC123/c.dump")).unwrap();
+        fs::write(dir.join(".tmpAbC123/c.dump/previous.env"), b"SECRET=1").unwrap();
+        fs::write(dir.join(".tmpReceipt"), b"receipt").unwrap();
+        fs::write(dir.join("notes.files"), b"unrelated").unwrap();
+        sweep_interrupted(dir).unwrap();
+        let mut left: Vec<String> = fs::read_dir(dir)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+            .collect();
+        left.sort();
+        assert_eq!(
+            left,
+            [".tmpReceipt", "a.dump", "a.dump.files", "notes.files"]
+        );
+        assert!(dir.join("a.dump.files/manifest.json").is_file());
+        sweep_interrupted(&dir.join("missing")).unwrap();
+    }
 }

@@ -3,7 +3,9 @@ use super::object_path;
 use anyhow::{Context, bail};
 #[cfg(unix)]
 use rustix::fs::{self, AtFlags, Gid, Mode, OFlags, Uid};
-use std::{fs::File, io::Read, path::Path};
+#[cfg(unix)]
+use std::io::Read;
+use std::{fs::File, path::Path};
 #[cfg(unix)]
 fn directory(path: &Path) -> anyhow::Result<File> {
     Ok(File::from(fs::open(
@@ -107,10 +109,9 @@ pub(super) fn restore(
         Ok(())
     }
 }
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests {
     use super::*;
-    #[cfg(unix)]
     #[test]
     fn read_and_restore_cannot_escape_through_bucket_or_object_links() {
         use std::os::unix::fs::symlink;

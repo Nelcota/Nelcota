@@ -193,11 +193,12 @@
     if (previewing && resultsPane != null && resultsPane.getSize() <= PREVIEW_SIZE)
       resultsPane.resize(RESULTS_SIZE);
     previewing = false;
-    if (await execution.run(code, runAsRequest())) {
-      sqlStore.remember(code);
-      // New or changed tables and columns show up in autocomplete right away.
-      if (changesSchema(code)) void execution.loadSchema();
-    }
+    // A stopped or failed run keeps the previous response, whose error
+    // position belongs to another statement.
+    if ((await execution.run(code, runAsRequest())) === false) return;
+    sqlStore.remember(code);
+    // New or changed tables and columns show up in autocomplete right away.
+    if (changesSchema(code)) void execution.loadSchema();
     errorAt = queryErrorOffset(code, offset);
   }
   function queryErrorOffset(code: string, offset: number): number | null {

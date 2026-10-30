@@ -163,6 +163,7 @@ pub fn confirm(question: &str) -> bool {
 pub fn healthcheck(addr: &str) -> bool {
     http_ok(addr, "/health")
 }
+#[cfg(target_os = "linux")]
 pub(crate) fn deployment_ready(addr: &str) -> bool {
     http_ok(addr, "/admin/api/whoami")
 }

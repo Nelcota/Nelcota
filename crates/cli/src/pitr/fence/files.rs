@@ -1,5 +1,7 @@
 //! Descriptor-relative PITR state. Never resolve a symlink in a fence path.
-use anyhow::{Context, bail};
+use anyhow::Context;
+#[cfg(unix)]
+use anyhow::bail;
 #[cfg(unix)]
 use rustix::fs::{AtFlags, FileType, Mode, OFlags, mkdirat, openat, renameat, statat, unlinkat};
 #[cfg(unix)]

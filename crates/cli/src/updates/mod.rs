@@ -23,7 +23,9 @@ use std::path::PathBuf;
 
 pub const POLICY: &str = "/etc/nelcota-updates/policy.json";
 pub const CONTROLLER: &str = "/etc/nelcota-updates/controller.json";
+#[cfg(target_os = "linux")]
 pub const WORKER_SOCKET: &str = "/run/nelcota-updates-worker/worker.sock";
+#[cfg(target_os = "linux")]
 pub const HTTP_SOCKET: &str = "/run/nelcota-updates-http/http.sock";
 /// Where enrollment installs the controller's own copy of the binary.
 pub const CONTROLLER_BIN_DIR: &str = "/usr/local/lib/nelcota-updates";

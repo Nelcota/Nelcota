@@ -223,6 +223,43 @@ for the October 27 server scope and independent SDK publication checkpoint.
   `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox`:
   S3 downloads redirect to presigned URLs that cannot set them. It now asks S3
   deployments to add both on the provider or a CDN in front of the bucket.
+- `nelcota-server` builds on Windows again: the host update controller's
+  worker call is Unix-only and now reports that it is unavailable elsewhere.
+- The panel grid and CSV export show json/jsonb values as their JSON text.
+  A stored JSON string such as `"42"` no longer appears as `42`, so editing
+  it keeps it a string instead of saving a number.
+- A host update no longer stops for an operator when a brief host-lock
+  holder (an alert check, a scheduled backup starting) wins the race as the
+  update starts: the update waits up to 30 seconds for the lock, and a job that
+  ends before changing the host is recorded as failed before change instead of
+  blocking host changes until `updates recover`.
+- The host update worker logs and keeps serving after a failed connection
+  accept or caller lookup instead of exiting.
+- Native (systemd) installs and upgrades flush the new and previous binaries
+  and their directory, so a power loss during `init` or `upgrade` cannot leave
+  a truncated or non-executable server binary.
+- Each backup first removes what an interrupted backup left in `backups/`: a
+  `.dump.partial` file, a `.dump.files` snapshot without its dump, and
+  verification scratch directories that held a copy of the project's `.env`.
+- `NELCOTA_STATEMENT_TIMEOUT_SECS` and `NELCOTA_STORAGE_UPLOAD_TIMEOUT_SECS`
+  are capped at 86400 (one day) at startup. Larger values made startup fail
+  while configuring PostgreSQL, or panicked on the first upload.
+- Dropping a view, materialized view or foreign table from the panel emits
+  the matching `DROP VIEW`, `DROP MATERIALIZED VIEW` or `DROP FOREIGN TABLE`
+  instead of a `DROP TABLE` that PostgreSQL rejects.
+- Signing out of the panel works again: the panel returns to the sign-in
+  screen, other tabs sign out, and executed SQL and open drafts are removed
+  from the browser. The request's own session change had made the
+  sign-out stop early, leaving the panel open until a later request got 401.
+- A panel tab no longer writes back SQL drafts that a sign-out in another tab
+  removed.
+- Stopping a running SQL query no longer underlines the previous query's error
+  position in the new text.
+- Applying migrations sends exactly the SQL the preview checked, even if a
+  selected file changes on disk in between.
+- An upload whose body sends nothing for a minute is dropped with
+  `upload_timeout`, so slow uploads can no longer hold every upload slot for
+  the whole upload timeout.
 
 ### Security
 
@@ -285,6 +322,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
   for `anon`) instead of 409 `object_exists` or a distinct RLS message, which
   revealed that the hidden file exists. Callers who can see the file still get
   409.
+- The migration backup agent serves up to 8 connections at once and drops a
+  caller that has not presented the project capability within 1 second, so
+  local users who can reach its socket can no longer stall a migration's
+  backup. The capability is compared in constant time.
 
 ## [0.5.6] — 2026-10-27
 

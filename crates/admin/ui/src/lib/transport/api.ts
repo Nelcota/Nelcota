@@ -32,10 +32,13 @@ async function request<T>(
             throw new Error(t("common.invalidNumber"));
           return value;
         });
-  await loadContractFirst(method, path);
+  // Synchronously, before the first await, like uploadFile: a caller such as
+  // logout() reads the session right after starting the request and must see
+  // the new one, and a request belongs to the session it was started in.
   const changesSession = ["/login", "/logout", "/sso"].includes(path);
   if (changesSession) clearQuerySession();
   const started = querySession();
+  await loadContractFirst(method, path);
   const send = () =>
     sendRequest<T>(method, path, { encoded, hasBody: body !== undefined, signal, started });
   if (changesSession === false) return await send();

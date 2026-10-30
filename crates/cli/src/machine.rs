@@ -97,6 +97,7 @@ fn cron_file(exe: &str, root: &str) -> String {
 /// Changes only the time and local retention of the installed daily job. The
 /// executable and host directory chosen by `nelcota init` are preserved, so a
 /// panel change never retargets the job to the controller's private binary.
+#[cfg(any(target_os = "linux", test))]
 pub(crate) fn backup_schedule(
     current: &str,
     hour: u8,

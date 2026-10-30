@@ -8,7 +8,7 @@ use axum::{
 use futures_util::future::try_join;
 use nelcota_api::{
     Catalog,
-    catalog::{Table, TableKind},
+    catalog::{Column, Table, TableKind},
     query,
 };
 use serde::Deserialize;
@@ -22,15 +22,24 @@ const MAX_PAGE_SIZE: i64 = 500;
 
 /// Text of a JSON value coming from Postgres, without going through `f64`
 /// (numeric keeps every digit). `None` = NULL.
-pub(crate) fn raw_text(value: Option<&RawValue>) -> Option<String> {
+///
+/// json/jsonb values are already JSON, so their text is kept as is: a stored
+/// string `"42"` must not read back (and save) as the number 42. Postgres
+/// renders SQL NULL and a JSON `null` alike; both read as NULL.
+pub(crate) fn raw_text(value: Option<&RawValue>, json: bool) -> Option<String> {
     let raw = value?.get();
     if raw == "null" {
         return None;
     }
-    if raw.starts_with('"') {
+    if !json && raw.starts_with('"') {
         return serde_json::from_str::<String>(raw).ok();
     }
     Some(raw.to_owned())
+}
+
+/// Columns whose values the panel edits as JSON text.
+pub(crate) fn is_json(column: &Column) -> bool {
+    matches!(column.type_name.as_str(), "json" | "jsonb")
 }
 
 pub async fn tables(
@@ -350,7 +359,7 @@ pub async fn table(
                 .columns
                 .iter()
                 .map(|c| {
-                    let text = raw_text(r.get(&c.name).map(AsRef::as_ref));
+                    let text = raw_text(r.get(&c.name).map(AsRef::as_ref), is_json(c));
                     (c.name.clone(), text.map_or(Value::Null, Value::String))
                 })
                 .collect();
@@ -429,15 +438,13 @@ fn to_values(table: &Table, values: Map<String, Value>) -> Result<Map<String, Va
         };
         let json = match value {
             Value::Null => Value::Null,
-            Value::String(s) if matches!(col.type_name.as_str(), "json" | "jsonb") => {
-                serde_json::from_str(&s).map_err(|e| {
-                    ApiError::bad_request(
-                        "invalid_json_value",
-                        format!("{}: invalid JSON ({e})", col.name),
-                    )
-                    .params(json!({ "column": col.name, "detail": e.to_string() }))
-                })?
-            }
+            Value::String(s) if is_json(col) => serde_json::from_str(&s).map_err(|e| {
+                ApiError::bad_request(
+                    "invalid_json_value",
+                    format!("{}: invalid JSON ({e})", col.name),
+                )
+                .params(json!({ "column": col.name, "detail": e.to_string() }))
+            })?,
             Value::String(s) => Value::String(s),
             other => Value::String(other.to_string()),
         };
@@ -579,15 +586,35 @@ mod tests {
     #[test]
     fn values_keep_postgres_text() {
         let raw = |s: &str| serde_json::from_str::<Box<RawValue>>(s).unwrap();
-        assert_eq!(raw_text(Some(&raw("\"<b>\""))).as_deref(), Some("<b>"));
         assert_eq!(
-            raw_text(Some(&raw("12345678901234567890.10"))).as_deref(),
+            raw_text(Some(&raw("\"<b>\"")), false).as_deref(),
+            Some("<b>")
+        );
+        assert_eq!(
+            raw_text(Some(&raw("12345678901234567890.10")), false).as_deref(),
             Some("12345678901234567890.10")
         );
-        assert_eq!(raw_text(Some(&raw("null"))), None);
+        assert_eq!(raw_text(Some(&raw("null")), false), None);
         assert_eq!(
-            raw_text(Some(&raw("{\"a\": 1}"))).as_deref(),
+            raw_text(Some(&raw("{\"a\": 1}")), false).as_deref(),
             Some("{\"a\": 1}")
         );
+    }
+
+    #[test]
+    fn json_values_keep_their_json_text() {
+        let raw = |s: &str| serde_json::from_str::<Box<RawValue>>(s).unwrap();
+        // A jsonb string "42" stays a string when it is edited and saved again.
+        assert_eq!(
+            raw_text(Some(&raw("\"42\"")), true).as_deref(),
+            Some("\"42\"")
+        );
+        assert_eq!(
+            raw_text(Some(&raw("\"a \\\"q\\\"\"")), true).as_deref(),
+            Some("\"a \\\"q\\\"\"")
+        );
+        assert_eq!(raw_text(Some(&raw("42")), true).as_deref(), Some("42"));
+        assert_eq!(raw_text(Some(&raw("null")), true), None);
+        assert_eq!(raw_text(None, true), None);
     }
 }

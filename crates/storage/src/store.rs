@@ -304,6 +304,8 @@ impl Store {
             mode: object_store::PutMode::Create,
             ..Default::default()
         };
+        // Only Unix narrows the new marker's permissions.
+        #[cfg_attr(not(unix), allow(unused_variables))]
         let created = match self
             .inner
             .put_opts(&Key::from(name), bytes.into(), options)

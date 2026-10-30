@@ -219,3 +219,8 @@ pub fn call(socket: &std::path::Path, request: &Request) -> anyhow::Result<Respo
     stream.read_exact(&mut bytes)?;
     Ok(serde_json::from_slice(&bytes)?)
 }
+/// The host update worker listens on a Unix socket; other platforms have no worker.
+#[cfg(not(unix))]
+pub fn call(_socket: &std::path::Path, _request: &Request) -> anyhow::Result<Response> {
+    anyhow::bail!("host updates require Unix sockets");
+}

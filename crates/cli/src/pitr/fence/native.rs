@@ -90,7 +90,7 @@ fn arm_at(fence: &Fence<'_>, units: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 pub(super) fn arm_fixture(fence: &Fence<'_>, units: &Path) -> anyhow::Result<()> {
     arm_at(fence, units)
 }
