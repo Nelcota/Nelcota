@@ -172,6 +172,37 @@ async fn account_budget_refuses_fresh_networks_but_admits_a_known_one() {
 }
 
 #[tokio::test]
+async fn many_addresses_inside_a_known_network_still_hit_a_ceiling() {
+    let app = TestApp::spawn_with(Options {
+        rate_limit_per_minute: 1,
+        mail: false,
+        ..Options::default()
+    })
+    .await;
+    let email = format!("{}@example.test", Uuid::new_v4().simple());
+    let password = Uuid::new_v4().to_string();
+    signup(&app, &email, &password).await;
+    assert_eq!(
+        login_from(&app, &email, &password, "192.0.2.9").await.status,
+        StatusCode::OK
+    );
+    // Every address below is in the known 192.0.2.0/24 with a fresh per-IP
+    // budget. Without a ceiling for known networks they would never be
+    // refused; with it, both account budgets (10 + 10 a minute) run out.
+    let wrong = Uuid::new_v4().to_string();
+    for host in 20..250 {
+        let source = format!("192.0.2.{host}");
+        let reply = login_from(&app, &email, &wrong, &source).await;
+        if reply.status == StatusCode::TOO_MANY_REQUESTS {
+            assert!(reply.headers.contains_key(header::RETRY_AFTER));
+            return;
+        }
+        assert_eq!(reply.status, StatusCode::BAD_REQUEST);
+    }
+    panic!("attempts from a known network were never refused");
+}
+
+#[tokio::test]
 async fn one_address_cannot_use_up_the_account_budget() {
     let app = TestApp::spawn_with(Options {
         rate_limit_per_minute: 2,

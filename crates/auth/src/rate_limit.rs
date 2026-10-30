@@ -14,7 +14,9 @@
 //! times the per-IP one, so many addresses cannot guess one account's password
 //! much faster than one address could, while one address alone cannot use it
 //! up. Over that budget the caller decides (see `password_grant`): networks
-//! where the account has open sessions get through after a growing delay.
+//! where the account has open sessions get through after a growing delay,
+//! drawing from a second budget of the same size, so many addresses inside a
+//! known network cannot guess without limit either.
 
 use crate::AuthState;
 use nelcota_core::ApiError;
@@ -242,6 +244,18 @@ impl<C: Clock + Clone> RateLimiter<C> {
             }
             Admission::Limited(wait) => Some(wait),
             Admission::Full => None,
+        }
+    }
+
+    /// The account's second budget, the same size, for attempts from known
+    /// networks once `login_budget` is spent: `None` while it lasts. The
+    /// owner never comes close to both, while attackers with many addresses
+    /// inside a known network (a shared /24, a hosting range) still hit a
+    /// ceiling. Untracked while the store is full, like `login_budget`.
+    pub(crate) fn known_network_budget(&self, account: &str) -> Option<Duration> {
+        match self.admit(&self.accounts, &format!("login-known:{account}")) {
+            Admission::Accepted | Admission::Full => None,
+            Admission::Limited(wait) => Some(wait),
         }
     }
 
@@ -493,6 +507,26 @@ mod tests {
             Duration::from_millis(125),
             "the delay restarts once the budget refilled"
         );
+    }
+
+    #[test]
+    fn known_networks_have_a_budget_of_their_own() {
+        let (limiter, clock) = limiter(1);
+        for _ in 0..10 {
+            assert_eq!(limiter.login_budget("account"), None);
+        }
+        assert!(limiter.login_budget("account").is_some(), "spent");
+        for _ in 0..10 {
+            assert_eq!(limiter.known_network_budget("account"), None);
+        }
+        assert_eq!(
+            limiter.known_network_budget("account"),
+            Some(Duration::from_secs(6)),
+            "known networks hit a ceiling too"
+        );
+        assert_eq!(limiter.known_network_budget("other"), None);
+        clock.advance(Duration::from_secs(6));
+        assert_eq!(limiter.known_network_budget("account"), None, "refilled");
     }
 
     #[test]

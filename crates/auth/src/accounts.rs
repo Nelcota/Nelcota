@@ -187,7 +187,9 @@ pub(crate) async fn password_grant(
     // its store). Over it, only networks where the account has an open session
     // get through, after a growing delay: distributed guessing is capped, and
     // an attack slows the owner down without locking them out of the networks
-    // they use. Signup already reveals whether an account exists (409).
+    // they use. Those networks draw from a second budget of the same size, so
+    // many addresses inside one cannot guess without limit either. Signup
+    // already reveals whether an account exists (409).
     let over_budget = match &found {
         Some((user_id, _)) => state
             .limiter
@@ -198,6 +200,9 @@ pub(crate) async fn password_grant(
     let mut delay = std::time::Duration::ZERO;
     if let Some((user_id, wait)) = over_budget {
         if !known_network(&tx, user_id, ip).await? {
+            return Err(ApiError::rate_limited(retry_after_secs(wait)));
+        }
+        if let Some(wait) = state.limiter.known_network_budget(&email) {
             return Err(ApiError::rate_limited(retry_after_secs(wait)));
         }
         delay = state.limiter.login_delay(&email);
