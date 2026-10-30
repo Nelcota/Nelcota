@@ -725,7 +725,10 @@ mod tests {
             trusted_proxy_hops: 0,
             ..valid()
         };
-        assert!(untrusted.validate().is_ok(), "hops only matter when trusted");
+        assert!(
+            untrusted.validate().is_ok(),
+            "hops only matter when trusted"
+        );
     }
 
     #[test]
