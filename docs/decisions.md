@@ -567,7 +567,7 @@ outside the request timeout and the gzip layer.
 
 **D79. User files are served as inert content.** Every object response
 carries `X-Content-Type-Options: nosniff` and `Content-Security-Policy:
-sandbox`; only raster images, audio, video and plain text are served
+sandbox` (on the S3 backend the redirected download cannot, see `storage.md`); only raster images, audio, video and plain text are served
 `inline`, everything else (HTML, SVG, PDF...) as an `attachment`. The type is
 sniffed from the first bytes, not taken from the client. Paths reject `..`,
 empty segments, control characters and over-long names, and are normalized
@@ -1046,6 +1046,13 @@ sidebar sub-items, kept in the URL (`?filter=`), and keeps only the search on
 the page. Sidebar items may carry a short label when the page title does not
 fit the sidebar; the page itself keeps the full title. Views of one object
 (a table's data and structure) and example languages stay beside the content.
+
+**D113. Signed URLs are bound to one stored version.** Amends D79: a signed
+URL names the version (the key of the bytes, D78) the signer could read, not
+only the bucket and path. Replacing a file, or deleting it and uploading again
+under the same name, creates another version, which the old URL answers with
+404 as if the file were gone; a grant that names no version is refused.
+Sharing a file does not share whatever is stored under its name later.
 
 ### Known pending items
 

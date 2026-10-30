@@ -110,11 +110,22 @@ async fn signed_expiration(app: &TestApp, name: &str, body: &[u8]) {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs();
+    // Carry the signed file's real version, so only the deadline is tested.
+    let version: uuid::Uuid = app
+        .admin_client
+        .query_one(
+            "SELECT version FROM storage.objects WHERE bucket_id = 'docs' AND name = $1",
+            &[&name],
+        )
+        .await
+        .unwrap()
+        .get(0);
     for exp in [now, now - 1, now - 10, now - 29] {
         let token = app
             .keys
             .sign(&json!({
-                "typ": "nelcota-storage-url", "bucket": "docs", "name": name, "exp": exp
+                "typ": "nelcota-storage-url", "bucket": "docs", "name": name, "exp": exp,
+                "version": version.to_string()
             }))
             .unwrap();
         let (status, headers, _) = app
