@@ -1051,9 +1051,10 @@ fit the sidebar; the page itself keeps the full title. Views of one object
 D26 and D69. Keys group IPv6 by /64. Existing accounts get an account-wide
 password budget of ten times the per-IP one, in a store of their own; over it,
 only networks (IPv4 /24, IPv6 /64) where the account has an open recent
-session in \`auth.sessions\` get through. This trades admission from new
-networks under a sustained distributed attack for a hard cap on distributed
-guessing, without letting one address lock anyone out. The REST and storage
+session in \`auth.sessions\` get through, up to a second budget of the same
+size. This trades admission from new networks under a sustained distributed
+attack for a hard cap on distributed guessing, without letting one address
+lock anyone out. The REST and storage
 APIs have a per-account or per-IP budget (\`NELCOTA_API_RATE_LIMIT_PER_MINUTE\`,
 \`service_role\` exempt). The client IP skips \`NELCOTA_TRUSTED_PROXY_HOPS\`
 trusted proxies from the right.
