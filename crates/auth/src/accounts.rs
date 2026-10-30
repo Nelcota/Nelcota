@@ -233,28 +233,32 @@ pub(crate) async fn password_grant(
 /// How long a session keeps its network known for the account budget.
 const KNOWN_NETWORK_DAYS: i32 = 30;
 
-/// Whether `email`'s account has a session from the last 30 days opened from
-/// the network of `ip` (`ip_key`: the address, or its IPv6 /64). Sessions
-/// persist across restarts and only real sign-ins create them.
+/// Whether `email`'s account has a session in use during the last 30 days
+/// (created or refreshed) that was opened from the network of `ip`: the same
+/// IPv4 address, also when stored IPv4-mapped by a dual-stack listener, or
+/// the same IPv6 /64. Sessions persist across restarts and only real sign-ins
+/// create them.
 async fn known_network(
     state: &AuthState,
     email: &str,
     ip: Option<IpAddr>,
 ) -> Result<bool, ApiError> {
-    let network = crate::request::ip_key(ip);
-    if network.is_empty() {
-        return Ok(false);
-    }
+    let networks = match ip.map(|ip| ip.to_canonical()) {
+        None => return Ok(false),
+        Some(IpAddr::V4(ip)) => vec![ip.to_string(), ip.to_ipv6_mapped().to_string()],
+        Some(ip) => vec![crate::request::ip_key(Some(ip))],
+    };
     let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
     let tx = begin_auth(&mut client).await?;
     let row = tx
         .query_one(
             "SELECT EXISTS (
                  SELECT 1 FROM auth.sessions s JOIN auth.users u ON u.id = s.user_id
-                 WHERE u.email = $1 AND s.ip <<= $2::text::inet
-                   AND s.created_at > now() - make_interval(days => $3)
+                 WHERE u.email = $1 AND s.ip <<= ANY ($2::text[]::inet[])
+                   AND coalesce(s.refreshed_at, s.created_at)
+                       > now() - make_interval(days => $3)
              )",
-            &[&email, &network, &KNOWN_NETWORK_DAYS],
+            &[&email, &networks, &KNOWN_NETWORK_DAYS],
         )
         .await
         .map_err(db_error)?;
