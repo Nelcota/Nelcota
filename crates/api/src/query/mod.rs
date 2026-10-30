@@ -160,6 +160,10 @@ const MAX_IDENTIFIER_BYTES: usize = 63;
 /// Deepest embedding accepted (`a(b(c(d(*))))`): bounds the recursion and
 /// the correlated subqueries a single request can stack.
 const MAX_EMBED_DEPTH: usize = 4;
+/// Most embedded relations one request may ask for, nested ones included.
+/// Each is a correlated subquery per parent row, so this bounds how much
+/// work a single read stacks onto one connection.
+const MAX_EMBEDS: usize = 16;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum CmpOp {
@@ -354,6 +358,7 @@ mod tests {
             has_default: false,
             generated: false,
             comment: None,
+            privileges: Default::default(),
         }
     }
 
@@ -926,6 +931,36 @@ mod tests {
     }
 
     #[test]
+    fn embed_keys_cannot_take_the_generated_sql_names() {
+        let err = select_of("orders", "id,_r:customers(name)")
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("cannot start with '_'"), "{err}");
+        assert!(select_of("orders", "id,r_:customers(name)").is_ok());
+    }
+
+    #[test]
+    fn a_request_embeds_a_bounded_number_of_relations() {
+        fn embeds(n: usize, table: &str) -> String {
+            (0..n)
+                .map(|i| format!("e{i}:{table}"))
+                .collect::<Vec<_>>()
+                .join(",")
+        }
+        let flat = embeds(MAX_EMBEDS, "customers(name)");
+        assert!(select_of("orders", &flat).is_ok());
+        let err = select_of("orders", &format!("{flat},items(*)"))
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("at most 16 relations"), "{err}");
+        // Nested embeds count towards the same budget.
+        let nested = format!("orders(id,{})", embeds(MAX_EMBEDS - 1, "items(qty)"));
+        assert!(select_of("customers", &nested).is_ok());
+        let nested = format!("orders(id,{})", embeds(MAX_EMBEDS, "items(qty)"));
+        assert!(select_of("customers", &nested).is_err());
+    }
+
+    #[test]
     fn bad_embeds_are_rejected() {
         let long = format!("{}:customers(name)", "a".repeat(64));
         for (table, select) in [
@@ -943,6 +978,8 @@ mod tests {
             ("orders", "*,id:customers(name)"),
             ("orders", "customers(name),customers(id)"), // same key twice
             ("orders", "x:customers(n:name)"),           // column alias
+            ("orders", "id,_r:customers(name)"),
+            ("customers", "name,_j0:orders(id)"),
             ("orders", long.as_str()),
             ("orders", "orders(id)"), // self-reference
             ("orders", "\"customers\"; drop table x(id)"),

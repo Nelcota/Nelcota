@@ -11,6 +11,11 @@ Functions with polymorphic or other pseudo-type input arguments, or `VARIADIC`
 parameters, are also excluded from the catalog. JSON argument conversion cannot
 call those signatures reliably.
 
+Partitions, and tables that inherit from another table without enabling row
+level security of their own, are not exposed either (nor listed in the panel):
+use their parent, whose GRANTs and row policies apply to every child's rows.
+Read directly, such a child would skip the parent's policies.
+
 ## Prerequisites
 
 You need an initialized server, tables/functions in its exposed schema and
@@ -36,6 +41,11 @@ use release-tag documentation for older binaries.
 | `or`, `and` | `or=(status.eq.paid,status.eq.shipped)` | group of filters, see below |
 | `order` | `order=created_at.desc.nullslast,id` | ordering |
 | `limit`, `offset` | `limit=20&offset=40` | pagination |
+
+A read runs in a `READ ONLY` transaction, as in PostgREST: a view, policy or
+function that tries to write during a `GET` fails with `400 db_error`
+(`sqlstate` `25006`) and changes nothing. Function calls (`POST /rpc`) and
+writes run read-write.
 
 ### Operators
 
@@ -79,7 +89,9 @@ GET /rest/v1/orders?select=id,total,customers(name),items(product,qty)
 - Embeds nest, up to 4 levels: `customers?select=name,orders(id,items(product))`.
   A table cannot be embedded into itself (self-reference). A key that repeats
   a selected column is a 400: rename it with an alias. Plain columns cannot be
-  aliased (`alias:column` is a 400); only embeds can be renamed.
+  aliased (`alias:column` is a 400); only embeds can be renamed. An embed key
+  (its alias, or the table name) cannot start with `_`, which the generated SQL
+  reserves: rename such a table with an alias.
 - **RLS applies to the embedded table** too: each embed runs with the request's
   role, so it shows exactly what a direct read of that table would. A related
   row the user cannot see becomes `null` or is left out of the array.
@@ -147,8 +159,26 @@ Same syntax as PostgREST. Inside the parentheses each filter is written
   return `413 response_too_large`; a write requesting such a representation
   rolls back. A single database value must still be serialized before its size
   can be checked. Administrative streaming exports remain available for large data.
-- `select` accepts at most 128 items across the relation tree. Repeated columns
-  are rejected; `*` already includes explicitly selected columns.
+- `select` accepts at most 128 items across the relation tree, and at most 16
+  embedded relations per request, nested ones included. Repeated columns are
+  rejected; `*` already includes explicitly selected columns.
+
+### Concurrent requests
+
+Each caller runs at most `NELCOTA_API_CONCURRENCY_PER_CALLER` REST requests at
+a time; by default that is half of `NELCOTA_DB_POOL_SIZE`, at least 1 (5 with
+the default pool of 10). The caller is the user of a signed-in token, and
+otherwise the client address (the forwarded one with `NELCOTA_TRUST_PROXY`),
+with IPv6 addresses grouped by /64 network. `service_role` is not limited. A
+request beyond the limit waits up to one second for a slot, then gets
+`429 rate_limited` with `Retry-After: 1`; `0` turns the limit off. A server
+that renders pages with the anonymous key is one caller, and so are visitors
+behind one NAT, or behind a proxy without `NELCOTA_TRUST_PROXY`: send user
+tokens, configure the proxy, or raise the limit.
+
+When the client disconnects or the request times out, the server cancels the
+statement still running in Postgres instead of letting it run until
+`statement_timeout`.
 
 ## Writes
 
@@ -231,10 +261,16 @@ function runs with the JWT's role (unless it is `SECURITY DEFINER`):
 > `PUBLIC` (including `anon`). For sensitive functions:
 > `REVOKE EXECUTE ON FUNCTION f() FROM PUBLIC; GRANT EXECUTE ON FUNCTION f() TO authenticated;`
 
+A function must never build SQL from its arguments: injected SQL can switch
+to `service_role` even inside an `anon` request. See
+[JWT and roles](jwt-and-roles.md#functions-must-not-build-sql-from-their-arguments).
+
 ## OpenAPI: `GET /rest/v1/`
 
 An OpenAPI 3.0 document generated from the catalog and **filtered by the
-request's role**: `anon` only sees what `anon` may use.
+request's role**: `anon` only sees what `anon` may use. A table appears when
+the role holds a table or column GRANT on it, with only the columns (and their
+comments) the role may read or write; filters list only the readable ones.
 
 Schema models: `nelcota types -o database.ts` (TypeScript, default), or
 `nelcota types --lang rust -o database.rs` for the
@@ -294,7 +330,7 @@ methods, body limits and timeouts) is JSON with the same shape:
 | 413 | `response_too_large` | the JSON response would exceed the 8 MiB budget |
 | 415 | `unsupported_media_type` | an auth or storage JSON endpoint without `Content-Type: application/json` |
 | 422 | `invalid_body` | an auth or storage JSON body with a missing field or a field of the wrong type |
-| 429 | `rate_limited` | too many attempts or API requests (`Retry-After`) |
+| 429 | `rate_limited` | too many attempts or API requests, or too many concurrent requests from one caller (`Retry-After`) |
 | 500 | `internal` | unexpected error; details only in the server log |
 | 503 | `unavailable` | database unreachable or pool exhausted (no `Retry-After`, no `sqlstate`), or a transient failure reported by Postgres: serialization failure (`40001`), deadlock (`40P01`), lock not available (`55P03`), too many connections (`53300`), server shutting down or starting (`57P01`, `57P02`, `57P03`); these come with `Retry-After: 1` and `sqlstate`. Retry the request |
 | 504 | `db_error` | `statement_timeout` (`NELCOTA_STATEMENT_TIMEOUT_SECS`, default 10 s; `sqlstate` `57014`) |

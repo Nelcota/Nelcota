@@ -25,6 +25,24 @@ member of the other roles and assumes one of them in each request.
 > **Warning:** **A JWT with `role: service_role` bypasses all RLS. It must
 > NEVER go to the frontend, a mobile app or anywhere outside your server.**
 
+### Functions must not build SQL from their arguments
+
+To assume a role in each request, `authenticator` is a member of `anon`,
+`authenticated` and `service_role`, and also of the internal `nelcota_auth` and
+`nelcota_storage` roles. PostgreSQL lets any statement in a session switch to a
+role the session's login user belongs to, whatever role the statement currently
+runs as. So SQL injected into one of your functions runs inside an `anon`
+request but can still execute `SET ROLE service_role` (all RLS bypassed) or
+`SET ROLE nelcota_auth` (sessions and password hashes), and keep that role for
+the rest of the request.
+
+The API's own SQL passes every request value as a parameter. In your
+functions, do the same: avoid dynamic SQL, or pass values with
+`EXECUTE ... USING` and quote identifiers with `format('%I', ...)`; never
+concatenate arguments into a statement or use `format('%s', ...)` with them.
+Inside a `SECURITY DEFINER` function injected SQL cannot change role, but it
+already runs with the owner's privileges, so the same rule applies.
+
 ## What happens in each request
 
 1. The API reads `Authorization: Bearer <jwt>` (the scheme is case-insensitive:

@@ -11,6 +11,22 @@ pub struct Privileges {
     pub delete: bool,
 }
 
+impl Privileges {
+    pub fn any(self) -> bool {
+        self.select || self.insert || self.update || self.delete
+    }
+
+    /// What either grants.
+    pub fn union(self, other: Privileges) -> Privileges {
+        Privileges {
+            select: self.select || other.select,
+            insert: self.insert || other.insert,
+            update: self.update || other.update,
+            delete: self.delete || other.delete,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TableKind {
@@ -37,6 +53,16 @@ pub struct Column {
     pub has_default: bool,
     pub generated: bool,
     pub comment: Option<String>,
+    /// SELECT/INSERT/UPDATE on this column (from a table or column GRANT) for
+    /// anon, authenticated and service_role, in that order; `delete` is unused.
+    #[serde(skip)]
+    pub privileges: [Privileges; 3],
+}
+
+impl Column {
+    pub fn privileges_for(&self, role: Role) -> Privileges {
+        self.privileges[role_index(role)]
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]

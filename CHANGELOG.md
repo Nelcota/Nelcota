@@ -126,6 +126,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- REST embed keys starting with `_` (`select=id,_r:customers(name)`) are
+  refused with `400 invalid_query`; they shadowed the generated SQL's own
+  subquery names and changed the response shape.
 - Generate panel CRUD examples from complete primary keys and required columns,
   including UUID/composite keys and declared enum values; omit unsafe keyless mutations.
 - Align onboarding and CLI guides with published versus current-checkout capabilities.
@@ -215,6 +218,31 @@ for the October 27 server scope and independent SDK publication checkpoint.
   stay).
 - A project's sign-in handoff only follows links to that project's own
   address.
+- A REST request dropped mid-statement (client disconnect or request timeout)
+  cancels its PostgreSQL statement and closes that connection, so the pool
+  opens a fresh one instead of waiting for `statement_timeout`.
+- One caller can no longer keep every REST connection busy: each signed-in
+  user, or each client address (IPv6 per /64), runs at most
+  `NELCOTA_API_CONCURRENCY_PER_CALLER` requests at a time, half of the
+  pool by default. Extras wait up to one second, then get `429 rate_limited`
+  with `Retry-After: 1`; `service_role` is exempt and `0` disables it (D115).
+- A REST `select` embeds at most 16 related tables per request, nested ones
+  included; each embed is a correlated subquery per parent row, and up to 127
+  were accepted before.
+- REST reads (`GET`/`HEAD`) run in a `READ ONLY` transaction, so a view or
+  policy that calls a writing function cannot change data during a read; such
+  a read now fails with `400 db_error` (`25006`). Function calls and writes
+  are unchanged.
+- Partitions, and inheritance children without row-level security of their
+  own, are no longer exposed as REST tables (or listed in the panel). Read
+  directly they skipped their parent's row policies, so a broadly granted
+  partition returned every row; use the parent, or enable RLS on the child.
+- The REST OpenAPI document lists only the columns, column comments and filters
+  the requesting role may use, and includes tables it can reach through
+  column-level GRANTs only.
+- The role guide explains why application functions must never build SQL from
+  their arguments: the API's login role can switch to `service_role` and the
+  internal roles, so injected SQL could too.
 - Auth and panel rate limits group IPv6 clients by their /64, so rotating
   addresses inside one block no longer buys a fresh budget.
 - Made-up emails can no longer fill the rate limiter and lock new visitors

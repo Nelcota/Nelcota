@@ -9,12 +9,13 @@ use axum::{
 use bytes::Bytes;
 use common::{ADMIN_EMAIL, ADMIN_PASSWORD, Options, TestApp, service_token};
 use futures_util::stream;
+use http_body_util::BodyExt;
 use nelcota_core::{Claims, db::begin_request};
 use nelcota_storage::UploadOptions;
 use serde_json::json;
 use std::{
     sync::{Arc, Mutex},
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tower::ServiceExt;
 
@@ -504,4 +505,99 @@ async fn malformed_email_is_rejected_before_any_account_is_written() {
         );
         assert_eq!(reply.body["code"], "invalid_email");
     }
+}
+
+/// A REST request from `peer`, as the listener would see it.
+fn from_peer(method: Method, path: &str, peer: &str, body: &str) -> Request<Body> {
+    Request::builder()
+        .method(method)
+        .uri(path)
+        .header("content-type", "application/json")
+        .extension(ConnectInfo(peer.parse::<std::net::SocketAddr>().unwrap()))
+        .body(Body::from(body.to_owned()))
+        .unwrap()
+}
+
+fn with_token(mut request: Request<Body>, token: &str) -> Request<Body> {
+    let value = format!("Bearer {token}");
+    request
+        .headers_mut()
+        .insert("authorization", value.parse().unwrap());
+    request
+}
+
+async fn api_lock_waits(app: &TestApp) -> i64 {
+    app.admin_client.query_one(
+        "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND application_name='nelcota' AND wait_event_type='Lock'",
+        &[],
+    ).await.unwrap().get(0)
+}
+
+#[tokio::test]
+async fn one_caller_cannot_hold_more_than_its_share_of_api_connections() {
+    let app = TestApp::spawn_with(Options {
+        pool_size: 4,
+        api_concurrency_per_caller: 1,
+        ..Options::default()
+    })
+    .await;
+    app.admin_client
+        .batch_execute(
+            "CREATE FUNCTION public.held_call() RETURNS integer LANGUAGE plpgsql
+             AS $$ BEGIN PERFORM pg_advisory_xact_lock(734252); RETURN 1; END $$;",
+        )
+        .await
+        .unwrap();
+    app.catalog.reload(&app.pool).await.unwrap();
+    let (mut blocker, connection) = app.admin.connect(tokio_postgres::NoTls).await.unwrap();
+    tokio::spawn(connection);
+    let lock = blocker.transaction().await.unwrap();
+    lock.batch_execute("SELECT pg_advisory_xact_lock(734252)")
+        .await
+        .unwrap();
+    let request = from_peer(
+        Method::POST,
+        "/rest/v1/rpc/held_call",
+        "192.0.2.1:1000",
+        "{}",
+    );
+    let held = tokio::spawn(app.router.clone().oneshot(request));
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while api_lock_waits(&app).await != 1 {
+        assert!(Instant::now() < deadline, "held_call did not start");
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    let get = |peer: &str| {
+        let request = from_peer(Method::GET, "/rest/v1/products?limit=1", peer, "");
+        app.router.clone().oneshot(request)
+    };
+    // The same client, from another port: its only slot is taken.
+    let refused = get("192.0.2.1:1001").await.unwrap();
+    assert_eq!(refused.status(), StatusCode::TOO_MANY_REQUESTS);
+    assert_eq!(refused.headers()["retry-after"], "1");
+    let bytes = refused.into_body().collect().await.unwrap().to_bytes();
+    let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(body["code"], "rate_limited");
+    // Other callers keep the rest of the pool: another client, a signed-in
+    // user from the same address, and the trusted backend.
+    let other = get("192.0.2.2:1000").await.unwrap();
+    assert_eq!(other.status(), StatusCode::OK);
+    let user = common::user_token(app.user_a);
+    let request = from_peer(Method::GET, "/rest/v1/todos", "192.0.2.1:1002", "");
+    let reply = app.router.clone().oneshot(with_token(request, &user));
+    assert_eq!(reply.await.unwrap().status(), StatusCode::OK);
+    let service = service_token();
+    let request = from_peer(Method::GET, "/rest/v1/products", "192.0.2.1:1003", "");
+    let reply = app.router.clone().oneshot(with_token(request, &service));
+    assert_eq!(reply.await.unwrap().status(), StatusCode::OK);
+    // Once the held request ends, its caller is admitted again.
+    lock.commit().await.unwrap();
+    let reply = tokio::time::timeout(Duration::from_secs(5), held)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    assert_eq!(reply.status(), StatusCode::OK);
+    let again = get("192.0.2.1:1001").await.unwrap();
+    assert_eq!(again.status(), StatusCode::OK);
 }

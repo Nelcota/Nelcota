@@ -2,7 +2,7 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::Context;
 use clap::Parser;
-use nelcota_api::{ApiSettings, spawn_reload_listener};
+use nelcota_api::{ApiSettings, CallerLimit, spawn_reload_listener};
 use nelcota_auth::{AuthSettings, AuthState, Keys, Passwords, RateLimiter};
 use nelcota_cli::{Cli, Outcome};
 use nelcota_core::{Config, config::LogFormat, db};
@@ -67,6 +67,8 @@ async fn serve(config: Config) -> anyhow::Result<()> {
         api: Arc::new(ApiSettings {
             max_rows: config.max_rows,
             max_body_bytes: config.max_body_bytes,
+            callers: Arc::new(CallerLimit::new(config.api_concurrency_limit())),
+            proxy_hops: config.proxy_hops(),
         }),
         api_limit: nelcota_server::ApiRateLimit::new(
             config.api_rate_limit_per_minute,

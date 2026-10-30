@@ -1,5 +1,7 @@
 //! REST transport: URL decoding, preferences and HTTP responses.
-use crate::{ApiSettings, CatalogHandle, openapi, operations, query::Resolution};
+use crate::{
+    ApiSettings, CatalogHandle, concurrency::Admitted, openapi, operations, query::Resolution,
+};
 use axum::{
     Json,
     body::Bytes,
@@ -63,12 +65,12 @@ pub(crate) async fn read(
     Path(name): Path<String>,
     RawQuery(raw): RawQuery,
     headers: HeaderMap,
-    Auth(claims): Auth,
+    admitted: Admitted,
 ) -> Result<Response, ApiError> {
     let prefer = Prefer::from_headers(&headers);
     let result = operations::read(
         &pool,
-        &claims,
+        &admitted.claims,
         &catalog.get(),
         &name,
         &pairs(raw),
@@ -110,13 +112,13 @@ pub(crate) async fn create(
     Path(name): Path<String>,
     RawQuery(raw): RawQuery,
     headers: HeaderMap,
-    Auth(claims): Auth,
+    admitted: Admitted,
     bytes: Bytes,
 ) -> Result<Response, ApiError> {
     let prefer = Prefer::from_headers(&headers);
     let result = operations::create(
         &pool,
-        &claims,
+        &admitted.claims,
         &catalog.get(),
         &name,
         &pairs(raw),
@@ -175,13 +177,13 @@ pub(crate) async fn update(
     Path(name): Path<String>,
     RawQuery(raw): RawQuery,
     headers: HeaderMap,
-    Auth(claims): Auth,
+    admitted: Admitted,
     bytes: Bytes,
 ) -> Result<Response, ApiError> {
     let prefer = Prefer::from_headers(&headers);
     let result = operations::update(
         &pool,
-        &claims,
+        &admitted.claims,
         &catalog.get(),
         &name,
         &pairs(raw),
@@ -198,12 +200,12 @@ pub(crate) async fn remove(
     Path(name): Path<String>,
     RawQuery(raw): RawQuery,
     headers: HeaderMap,
-    Auth(claims): Auth,
+    admitted: Admitted,
 ) -> Result<Response, ApiError> {
     let prefer = Prefer::from_headers(&headers);
     let result = operations::remove(
         &pool,
-        &claims,
+        &admitted.claims,
         &catalog.get(),
         &name,
         &pairs(raw),
@@ -218,12 +220,12 @@ pub(crate) async fn rpc(
     State(settings): State<Arc<ApiSettings>>,
     State(catalog): State<Arc<CatalogHandle>>,
     Path(name): Path<String>,
-    Auth(claims): Auth,
+    admitted: Admitted,
     bytes: Bytes,
 ) -> Result<Response, ApiError> {
     let body = operations::rpc(
         &pool,
-        &claims,
+        &admitted.claims,
         &catalog.get(),
         &name,
         &bytes,
