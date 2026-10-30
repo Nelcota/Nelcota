@@ -931,6 +931,15 @@ mod tests {
     }
 
     #[test]
+    fn embed_keys_cannot_take_the_generated_sql_names() {
+        let err = select_of("orders", "id,_r:customers(name)")
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("cannot start with '_'"), "{err}");
+        assert!(select_of("orders", "id,r_:customers(name)").is_ok());
+    }
+
+    #[test]
     fn a_request_embeds_a_bounded_number_of_relations() {
         fn embeds(n: usize, table: &str) -> String {
             (0..n)
@@ -969,6 +978,8 @@ mod tests {
             ("orders", "*,id:customers(name)"),
             ("orders", "customers(name),customers(id)"), // same key twice
             ("orders", "x:customers(n:name)"),           // column alias
+            ("orders", "id,_r:customers(name)"),
+            ("customers", "name,_j0:orders(id)"),
             ("orders", long.as_str()),
             ("orders", "orders(id)"), // self-reference
             ("orders", "\"customers\"; drop table x(id)"),

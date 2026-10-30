@@ -110,6 +110,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- REST embed keys starting with `_` (`select=id,_r:customers(name)`) are
+  refused with `400 invalid_query`; they shadowed the generated SQL's own
+  subquery names and changed the response shape.
 - Generate panel CRUD examples from complete primary keys and required columns,
   including UUID/composite keys and declared enum values; omit unsafe keyless mutations.
 - Align onboarding and CLI guides with published versus current-checkout capabilities.

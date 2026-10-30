@@ -146,6 +146,13 @@ pub(super) fn parse_embed(
     if alias.is_empty() || alias.len() > MAX_IDENTIFIER_BYTES || alias.contains('\0') {
         return Err(invalid(format!("invalid embed alias: '{alias}'")));
     }
+    // The generated SQL names its own subqueries `_r`, `_e<n>`, `_j<n>`...: a
+    // key of that form would shadow them and change the response.
+    if alias.starts_with('_') {
+        return Err(invalid(format!(
+            "embed key '{alias}' cannot start with '_': rename it with key:{name}(...)"
+        )));
+    }
     let (many, join) = resolve_relation(&catalog.schema, parent, target, hint)?;
     if inner.trim().is_empty() {
         return Err(invalid(format!("empty column list in '{item}'")));

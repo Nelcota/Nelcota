@@ -89,7 +89,9 @@ GET /rest/v1/orders?select=id,total,customers(name),items(product,qty)
 - Embeds nest, up to 4 levels: `customers?select=name,orders(id,items(product))`.
   A table cannot be embedded into itself (self-reference). A key that repeats
   a selected column is a 400: rename it with an alias. Plain columns cannot be
-  aliased (`alias:column` is a 400); only embeds can be renamed.
+  aliased (`alias:column` is a 400); only embeds can be renamed. An embed key
+  (its alias, or the table name) cannot start with `_`, which the generated SQL
+  reserves: rename such a table with an alias.
 - **RLS applies to the embedded table** too: each embed runs with the request's
   role, so it shows exactly what a direct read of that table would. A related
   row the user cannot see becomes `null` or is left out of the array.
