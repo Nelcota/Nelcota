@@ -1048,14 +1048,13 @@ fit the sidebar; the page itself keeps the full title. Views of one object
 (a table's data and structure) and example languages stay beside the content.
 
 **D112. Rate limits cover the whole public API and every account.** Amends
-D26 and D69. Keys group IPv6 by /64. Account budgets use their own bounded
-store, so made-up emails cannot fill the per-IP one. Password sign-in has an
-account-wide budget of ten times the per-IP one; over it, or while its store
-is full, only networks where the account has a recent session (read from
-\`auth.sessions\`) get through. This trades admission from new networks under a
-sustained distributed attack for a hard cap on distributed guessing, without
-letting one address lock anyone out. The REST and storage APIs have a
-per-account or per-IP budget (\`NELCOTA_API_RATE_LIMIT_PER_MINUTE\`,
+D26 and D69. Keys group IPv6 by /64. Existing accounts get an account-wide
+password budget of ten times the per-IP one, in a store of their own; over it,
+only networks (IPv4 /24, IPv6 /64) where the account has an open recent
+session in \`auth.sessions\` get through. This trades admission from new
+networks under a sustained distributed attack for a hard cap on distributed
+guessing, without letting one address lock anyone out. The REST and storage
+APIs have a per-account or per-IP budget (\`NELCOTA_API_RATE_LIMIT_PER_MINUTE\`,
 \`service_role\` exempt). The client IP skips \`NELCOTA_TRUSTED_PROXY_HOPS\`
 trusted proxies from the right.
 
