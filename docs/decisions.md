@@ -1047,6 +1047,16 @@ the page. Sidebar items may carry a short label when the page title does not
 fit the sidebar; the page itself keeps the full title. Views of one object
 (a table's data and structure) and example languages stay beside the content.
 
+**D112. One caller cannot hold the REST pool.** The request pool is small and
+RLS says which rows a query may see, not how much it may cost, so the server
+bounds who uses the pool: each REST request takes one of its caller's slots
+(the signed-in user, otherwise the client address with IPv6 grouped per /64;
+`service_role` is exempt), `NELCOTA_API_CONCURRENCY_PER_CALLER` at a time and a
+quarter of the pool by default. Extras wait one second, then get 429. A request
+that is dropped cancels its PostgreSQL statement, and its connection returns to
+the pool only after the cancelled work and a rollback finish. This limits
+concurrency, not request rate; a per-minute rate limit is a separate control.
+
 ### Known pending items
 
 - Filtering parent rows by their embeds (`!inner`) and self-referencing embeds.

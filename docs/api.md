@@ -150,6 +150,20 @@ Same syntax as PostgREST. Inside the parentheses each filter is written
 - `select` accepts at most 128 items across the relation tree. Repeated columns
   are rejected; `*` already includes explicitly selected columns.
 
+### Concurrent requests
+
+Each caller runs at most `NELCOTA_API_CONCURRENCY_PER_CALLER` REST requests at
+a time; by default that is a quarter of `NELCOTA_DB_POOL_SIZE`, at least 1 (2
+with the default pool of 10). The caller is the user of a signed-in token, and
+otherwise the client address (the forwarded one with `NELCOTA_TRUST_PROXY`),
+with IPv6 addresses grouped by /64 network. `service_role` is not limited. A
+request beyond the limit waits up to one second for a slot, then gets
+`429 rate_limited` with `Retry-After: 1`; `0` turns the limit off.
+
+When the client disconnects or the request times out, the server cancels the
+statement still running in Postgres instead of letting it run until
+`statement_timeout`.
+
 ## Writes
 
 JSON numbers in insert, patch and RPC bodies retain all supplied decimal digits
@@ -294,7 +308,7 @@ methods, body limits and timeouts) is JSON with the same shape:
 | 413 | `response_too_large` | the JSON response would exceed the 8 MiB budget |
 | 415 | `unsupported_media_type` | an auth or storage JSON endpoint without `Content-Type: application/json` |
 | 422 | `invalid_body` | an auth or storage JSON body with a missing field or a field of the wrong type |
-| 429 | `rate_limited` | too many attempts (`Retry-After`) |
+| 429 | `rate_limited` | too many attempts, or too many concurrent requests from one caller (`Retry-After`) |
 | 500 | `internal` | unexpected error; details only in the server log |
 | 503 | `unavailable` | database unreachable or pool exhausted (no `Retry-After`, no `sqlstate`), or a transient failure reported by Postgres: serialization failure (`40001`), deadlock (`40P01`), lock not available (`55P03`), too many connections (`53300`), server shutting down or starting (`57P01`, `57P02`, `57P03`); these come with `Retry-After: 1` and `sqlstate`. Retry the request |
 | 504 | `db_error` | `statement_timeout` (`NELCOTA_STATEMENT_TIMEOUT_SECS`, default 10 s; `sqlstate` `57014`) |
