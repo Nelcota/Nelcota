@@ -5,7 +5,7 @@ use crate::{
     db::{USER_JSON, begin_auth, db_error},
     error::{invalid_email, invalid_grant, validation, weak_password},
     links::{self, LinkKind},
-    rate_limit::limit,
+    rate_limit::{limit, retry_after_secs},
     sessions::{session_of, start_session},
 };
 use axum::http::StatusCode;
@@ -138,6 +138,9 @@ pub(crate) async fn signup(
         _ => {
             let session = start_session(state, &tx, user_id, ip, user_agent).await?;
             tx.commit().await.map_err(db_error)?;
+            state
+                .limiter
+                .remember_source(&email, &crate::request::ip_key(ip));
             return Ok(session);
         }
     };
@@ -171,18 +174,19 @@ pub(crate) async fn password_grant(
     if password_exceeds_limit(&password) {
         return Err(invalid_grant("invalid email or password"));
     }
-    // A fresh source must not inherit a renewable account-wide rejection.
-    // Keep the hard pair/IP budgets and delay before pool/hash admission.
-    // The per-IP `token:` budget was charged by the handler; these keys hold
-    // a client-chosen email, so they live in the separate account store.
+    // Charge the pair and account budgets before pool/hash admission. The
+    // per-IP `token:` budget was charged by the handler; these keys hold a
+    // client-chosen email, so they live in the separate account store. Over
+    // the account budget only sources where it signed in before get through.
+    let source = crate::request::ip_key(ip);
     state
         .limiter
-        .check_account(&format!(
-            "login-source:{email}:{}",
-            crate::request::ip_key(ip)
-        ))
-        .map_err(|wait| ApiError::rate_limited(wait.as_secs()))?;
-    let delay = state.limiter.login_delay(&format!("login:{email}"));
+        .check_account(&format!("login-source:{email}:{source}"))
+        .map_err(|wait| ApiError::rate_limited(retry_after_secs(wait)))?;
+    let delay = state
+        .limiter
+        .login_gate(&email, &source)
+        .map_err(|wait| ApiError::rate_limited(retry_after_secs(wait)))?;
     if !delay.is_zero() {
         tokio::time::sleep(delay).await;
     }
@@ -231,6 +235,7 @@ pub(crate) async fn password_grant(
     confirmation::ensure_confirmed(state, current.get(1))?;
     let session = start_session(state, &tx, user_id, ip, user_agent).await?;
     tx.commit().await.map_err(db_error)?;
+    state.limiter.remember_source(&email, &source);
     Ok(session)
 }
 

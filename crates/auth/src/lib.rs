@@ -42,7 +42,7 @@ pub use mail::{Email, MailDelivery, MailError, Mailer, SmtpMailer};
 pub use oauth::{OAuth, Provider, ProviderEndpoints, ProviderKind};
 pub use password::{Passwords, hash_password, verify_password};
 pub use prune::{Pruned, prune, pruner_task, spawn_pruner};
-pub use rate_limit::{RateLimiter, SESSION_RATE_LIMIT_FACTOR};
+pub use rate_limit::{RateLimiter, SESSION_RATE_LIMIT_FACTOR, retry_after_secs};
 pub use state::{AuthSettings, AuthState, EmailLinks, SettingsError};
 
 #[derive(Debug, thiserror::Error)]

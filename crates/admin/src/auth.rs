@@ -110,7 +110,7 @@ pub(crate) async fn login(
     headers: HeaderMap,
     Json(form): Json<LoginRequest>,
 ) -> Response {
-    let ip = nelcota_auth::client_ip(state.trust_proxy, &headers, peer);
+    let ip = nelcota_auth::client_ip(state.proxy_hops, &headers, peer);
     let key = format!("admin-login:{}", nelcota_auth::ip_key(ip));
     if state.limiter.check(&key).is_err() {
         return ApiError::new(

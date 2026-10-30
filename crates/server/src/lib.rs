@@ -4,11 +4,11 @@
 
 pub mod deployment;
 
-use std::time::Duration;
+use std::{net::SocketAddr, time::Duration};
 
 use axum::{
     Json, Router,
-    extract::{DefaultBodyLimit, FromRef, MatchedPath, Request, State},
+    extract::{ConnectInfo, DefaultBodyLimit, FromRef, MatchedPath, Request, State},
     http::{HeaderName, Method, StatusCode, header},
     middleware::{self, Next},
     response::{IntoResponse, Response},
@@ -17,7 +17,7 @@ use axum::{
 use deadpool_postgres::Pool;
 use nelcota_api::{ApiSettings, Catalog, CatalogHandle};
 use nelcota_auth::{AuthState, SharedVerifier};
-use nelcota_core::{ApiError, ErrorInfo};
+use nelcota_core::{ApiError, ErrorInfo, Role};
 use serde_json::json;
 use std::sync::Arc;
 use tower_http::{
@@ -34,6 +34,74 @@ pub struct AppState {
     pub verifier: SharedVerifier,
     pub catalog: Arc<CatalogHandle>,
     pub api: Arc<ApiSettings>,
+    /// Per-caller budget of the REST and storage APIs; `None` turns it off.
+    pub api_limit: Option<Arc<ApiRateLimit>>,
+}
+
+/// Per-caller budget of the REST and storage APIs
+/// (`NELCOTA_API_RATE_LIMIT_PER_MINUTE`). Signed-in users count by account,
+/// so users behind one NAT or one server-side renderer do not share a budget;
+/// other callers count by IP (`nelcota_auth::ip_key`). `service_role` tokens,
+/// the project's own backend, are exempt. While the key store is full an
+/// untracked caller passes: this budget protects capacity, not a boundary.
+pub struct ApiRateLimit {
+    limiter: nelcota_auth::RateLimiter,
+    proxy_hops: u8,
+}
+
+impl ApiRateLimit {
+    /// `None` when `per_minute` is 0 (the limit is off). `proxy_hops` as in
+    /// `nelcota_auth::client_ip`.
+    pub fn new(per_minute: u32, proxy_hops: u8) -> Option<Arc<Self>> {
+        if per_minute == 0 {
+            return None;
+        }
+        Some(Arc::new(ApiRateLimit {
+            limiter: nelcota_auth::RateLimiter::new(per_minute),
+            proxy_hops,
+        }))
+    }
+
+    /// The budget key of a request, or `None` for an exempt `service_role`
+    /// call. Invalid tokens count by IP; the API itself answers their 401.
+    fn caller(&self, verifier: &SharedVerifier, request: &Request) -> Option<String> {
+        let claims = request
+            .headers()
+            .get(header::AUTHORIZATION)
+            .and_then(|v| v.to_str().ok())
+            .and_then(nelcota_auth::bearer_token)
+            .and_then(|token| verifier.verify(token).ok());
+        if let Some(claims) = &claims {
+            if claims.role() == Role::ServiceRole {
+                return None;
+            }
+            if let Some(user) = claims.sub() {
+                return Some(format!("user:{user}"));
+            }
+        }
+        let peer = request
+            .extensions()
+            .get::<ConnectInfo<SocketAddr>>()
+            .map(|c| c.0);
+        let ip = nelcota_auth::client_ip(self.proxy_hops, request.headers(), peer);
+        Some(format!("ip:{}", nelcota_auth::ip_key(ip)))
+    }
+}
+
+async fn api_rate_limit(
+    State((limit, verifier)): State<(Arc<ApiRateLimit>, SharedVerifier)>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let caller = match limit.caller(&verifier, &request) {
+        Some(caller) => caller,
+        None => return next.run(request).await,
+    };
+    let wait = match limit.limiter.check_lenient(&caller) {
+        Ok(()) => return next.run(request).await,
+        Err(wait) => wait,
+    };
+    ApiError::rate_limited(nelcota_auth::retry_after_secs(wait)).into_response()
 }
 
 /// Runs the first introspection of the exposed schema.
@@ -94,9 +162,18 @@ pub fn app(
         .max_age(Duration::from_secs(2 * 60 * 60));
 
     let verifier = state.verifier.clone();
+    let api_limit = state
+        .api_limit
+        .clone()
+        .map(|limit| middleware::from_fn_with_state((limit, verifier.clone()), api_rate_limit));
+    let body_limit = DefaultBodyLimit::max(state.api.max_body_bytes);
+    let mut rest = nelcota_api::router().layer(body_limit);
+    if let Some(api_limit) = api_limit.clone() {
+        rest = rest.layer(api_limit);
+    }
     let mut router = Router::new()
         .route("/health", get(health))
-        .merge(nelcota_api::router().layer(DefaultBodyLimit::max(state.api.max_body_bytes)))
+        .merge(rest)
         .with_state(state)
         .merge(nelcota_auth::router(auth))
         .layer(TimeoutLayer::with_status_code(
@@ -111,7 +188,11 @@ pub fn app(
     // Storage stays outside the timeout (uploads take as long as they take,
     // with their own cap) and gzip (files are served byte for byte, by range).
     if let Some(storage) = storage {
-        router = router.merge(nelcota_storage::router(storage));
+        let mut files = nelcota_storage::router(storage);
+        if let Some(api_limit) = api_limit {
+            files = files.layer(api_limit);
+        }
+        router = router.merge(files);
     }
     router = router.layer(cors);
     if let Some(admin) = admin {

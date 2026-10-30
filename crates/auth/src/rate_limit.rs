@@ -9,6 +9,12 @@
 //! an attacker one address each. Account keys contain an email the client
 //! picks freely, so they are kept apart: a flood of made-up emails can fill
 //! only the account store, never the one the per-IP budgets rely on.
+//!
+//! Password attempts also have an account-wide budget, so many addresses
+//! cannot guess one account's password faster than one address could. Over
+//! that budget only sources where the account signed in before still get
+//! through (after a growing delay): an attack slows its owner down but does
+//! not lock them out of their usual network.
 
 use crate::AuthState;
 use nelcota_core::ApiError;
@@ -40,6 +46,10 @@ const CLEANUP_INTERVAL: Duration = Duration::from_secs(1);
 const FULL_REFILL: Duration = Duration::from_secs(60);
 const LOGIN_DELAY_BASE: Duration = Duration::from_millis(125);
 const LOGIN_DELAY_MAX_STEP: u64 = 4;
+/// Sources remembered per account, most recent first.
+const KNOWN_SOURCES_PER_ACCOUNT: usize = 4;
+/// A source stays known this long after its last successful sign-in.
+const KNOWN_SOURCE_TTL: Duration = Duration::from_secs(30 * 24 * 60 * 60);
 
 type Direct<C> =
     governor::RateLimiter<NotKeyed, InMemoryState, C, NoOpMiddleware<<C as Clock>::Instant>>;
@@ -86,10 +96,20 @@ enum Admission {
     Full,
 }
 
+/// Sources (`ip_key`) where each account signed in, with the time of the
+/// last success in nanoseconds since the limiter started. Only successful
+/// sign-ins add entries, so made-up emails cannot grow it. Dropping an entry
+/// only removes a privilege, so a full map may evict its stalest account.
+struct KnownSources {
+    accounts: HashMap<String, Vec<(String, u64)>>,
+    capacity: usize,
+}
+
 /// Generic over the clock only so tests can drive time by hand.
 pub struct RateLimiter<C: Clock + Clone = DefaultClock> {
     network: Store<C>,
     accounts: Store<C>,
+    known: RwLock<KnownSources>,
     quota: Quota,
     clock: C,
     start: C::Instant,
@@ -112,6 +132,10 @@ impl<C: Clock + Clone> RateLimiter<C> {
         RateLimiter {
             network: Store::new("network", capacity, start),
             accounts: Store::new("account", capacity, start),
+            known: RwLock::new(KnownSources {
+                accounts: HashMap::new(),
+                capacity,
+            }),
             quota: Quota::per_minute(limit),
             clock,
             start,
@@ -202,6 +226,16 @@ impl<C: Clock + Clone> RateLimiter<C> {
         }
     }
 
+    /// Like `check`, but an unknown key passes untracked while the store is
+    /// full. For abuse budgets whose refusal would hurt more than an
+    /// occasional untracked request, such as the REST and storage APIs.
+    pub fn check_lenient(&self, key: &str) -> Result<(), Duration> {
+        match self.admit(&self.network, key) {
+            Admission::Accepted | Admission::Full => Ok(()),
+            Admission::Limited(wait) => Err(wait),
+        }
+    }
+
     /// Like `check`, for keys that contain an email chosen by the client.
     /// While the account store is full an unknown key is let through
     /// untracked. Refusing it would let made-up emails lock every new user
@@ -213,24 +247,41 @@ impl<C: Clock + Clone> RateLimiter<C> {
         }
     }
 
-    /// An account aggregate supplies backpressure, never a renewable lockout.
-    /// Kept in the account store; untracked (no delay) while it is full.
-    pub(crate) fn login_delay(&self, key: &str) -> Duration {
-        let limited = match self.admit(&self.accounts, key) {
-            Admission::Accepted => false,
-            Admission::Limited(_) => true,
-            Admission::Full => return Duration::ZERO,
+    /// The account-wide budget of password attempts. `Ok(delay)` admits the
+    /// attempt after `delay`; `Err(wait)` refuses it. Over budget, a source
+    /// where the account signed in before (`remember_source`) is admitted
+    /// after a growing delay, and any other source is refused until the
+    /// budget refills. Untracked (no limit) while the account store is full.
+    pub(crate) fn login_gate(&self, account: &str, source: &str) -> Result<Duration, Duration> {
+        let key = format!("login:{account}");
+        let wait = match self.admit(&self.accounts, &key) {
+            Admission::Accepted => {
+                self.reset_login_delay(&key);
+                return Ok(Duration::ZERO);
+            }
+            Admission::Full => return Ok(Duration::ZERO),
+            Admission::Limited(wait) => wait,
         };
+        if !self.is_known(account, source) {
+            return Err(wait);
+        }
+        Ok(self.next_login_delay(&key))
+    }
+
+    fn reset_login_delay(&self, key: &str) {
+        let state = self.accounts.state.read().unwrap_or_else(|e| e.into_inner());
+        if let Some(entry) = state.entries.get(key) {
+            entry.login_delay_step.store(0, Ordering::Relaxed);
+        }
+    }
+
+    fn next_login_delay(&self, key: &str) -> Duration {
         let state = self.accounts.state.read().unwrap_or_else(|e| e.into_inner());
         // A cleanup may have dropped an idle entry in between: nothing to delay.
         let entry = match state.entries.get(key) {
             Some(entry) => entry,
             None => return Duration::ZERO,
         };
-        if !limited {
-            entry.login_delay_step.store(0, Ordering::Relaxed);
-            return Duration::ZERO;
-        }
         let step = entry
             .login_delay_step
             .try_update(Ordering::Relaxed, Ordering::Relaxed, |step| {
@@ -239,13 +290,62 @@ impl<C: Clock + Clone> RateLimiter<C> {
             .expect("delay update always supplies a value");
         LOGIN_DELAY_BASE * (1_u32 << step.min(LOGIN_DELAY_MAX_STEP))
     }
+
+    fn elapsed_nanos(&self) -> u64 {
+        self.clock.now().duration_since(self.start).as_u64()
+    }
+
+    fn is_known(&self, account: &str, source: &str) -> bool {
+        let now = self.elapsed_nanos();
+        let ttl = KNOWN_SOURCE_TTL.as_nanos() as u64;
+        let known = self.known.read().unwrap_or_else(|e| e.into_inner());
+        known.accounts.get(account).is_some_and(|sources| {
+            sources
+                .iter()
+                .any(|(seen_at, seen)| seen_at == source && now.saturating_sub(*seen) < ttl)
+        })
+    }
+
+    /// Records a successful sign-in of `account` from `source` (`ip_key`).
+    pub(crate) fn remember_source(&self, account: &str, source: &str) {
+        let now = self.elapsed_nanos();
+        let ttl = KNOWN_SOURCE_TTL.as_nanos() as u64;
+        let mut known = self.known.write().unwrap_or_else(|e| e.into_inner());
+        if !known.accounts.contains_key(account) && known.accounts.len() >= known.capacity {
+            known.accounts.retain(|_, sources| {
+                sources
+                    .iter()
+                    .any(|(_, seen)| now.saturating_sub(*seen) < ttl)
+            });
+        }
+        if !known.accounts.contains_key(account) && known.accounts.len() >= known.capacity {
+            let stalest = known
+                .accounts
+                .iter()
+                .min_by_key(|(_, sources)| sources.iter().map(|(_, seen)| *seen).max())
+                .map(|(account, _)| account.clone());
+            if let Some(stalest) = stalest {
+                known.accounts.remove(&stalest);
+            }
+        }
+        let sources = known.accounts.entry(account.to_owned()).or_default();
+        sources.retain(|(seen_at, _)| seen_at != source);
+        sources.insert(0, (source.to_owned(), now));
+        sources.truncate(KNOWN_SOURCES_PER_ACCOUNT);
+    }
+}
+
+/// Whole seconds for `Retry-After`, rounded up so a client never retries
+/// before its budget has refilled.
+pub fn retry_after_secs(wait: Duration) -> u64 {
+    wait.as_secs() + u64::from(wait.subsec_nanos() > 0)
 }
 
 pub(crate) fn limit(state: &AuthState, key: &str) -> Result<(), ApiError> {
     state
         .limiter
         .check(key)
-        .map_err(|wait| ApiError::rate_limited(wait.as_secs()))
+        .map_err(|wait| ApiError::rate_limited(retry_after_secs(wait)))
 }
 
 /// The budget of refreshes and PKCE redemptions (`session_limiter`).
@@ -253,7 +353,7 @@ pub(crate) fn limit_sessions(state: &AuthState, key: &str) -> Result<(), ApiErro
     state
         .session_limiter
         .check(key)
-        .map_err(|wait| ApiError::rate_limited(wait.as_secs()))
+        .map_err(|wait| ApiError::rate_limited(retry_after_secs(wait)))
 }
 
 #[cfg(test)]
@@ -420,20 +520,51 @@ mod tests {
     }
 
     #[test]
-    fn login_aggregate_delay_is_progressive_bounded_and_refills() {
+    fn login_gate_delays_known_sources_and_refuses_others_over_budget() {
         let (limiter, clock) = limiter(2);
-        assert_eq!(limiter.login_delay("account"), Duration::ZERO);
-        assert_eq!(limiter.login_delay("account"), Duration::ZERO);
+        limiter.remember_source("account", "home");
+        assert_eq!(limiter.login_gate("account", "attacker"), Ok(Duration::ZERO));
+        assert_eq!(limiter.login_gate("account", "attacker"), Ok(Duration::ZERO));
+        assert_eq!(
+            limiter.login_gate("account", "attacker"),
+            Err(Duration::from_secs(30)),
+            "an unknown source is refused over the account budget"
+        );
         for milliseconds in [125, 250, 500, 1_000, 2_000, 2_000, 2_000] {
             assert_eq!(
-                limiter.login_delay("account"),
-                Duration::from_millis(milliseconds)
+                limiter.login_gate("account", "home"),
+                Ok(Duration::from_millis(milliseconds)),
+                "the owner's usual source gets in after a bounded delay"
             );
         }
-        assert_eq!(limiter.login_delay("other"), Duration::ZERO);
+        assert_eq!(limiter.login_gate("other", "attacker"), Ok(Duration::ZERO));
         clock.advance(Duration::from_secs(30));
-        assert_eq!(limiter.login_delay("account"), Duration::ZERO);
-        assert_eq!(limiter.login_delay("account"), Duration::from_millis(125));
+        assert_eq!(limiter.login_gate("account", "attacker"), Ok(Duration::ZERO));
+        assert_eq!(
+            limiter.login_gate("account", "home"),
+            Ok(Duration::from_millis(125)),
+            "the delay restarts once the budget refilled"
+        );
+    }
+
+    #[test]
+    fn known_sources_expire_and_stay_bounded() {
+        let clock = FakeRelativeClock::default();
+        let limiter = RateLimiter::with_capacity(1, clock.clone(), 2);
+        for source in ["a", "b", "c", "d", "e"] {
+            limiter.remember_source("account", source);
+        }
+        assert!(!limiter.is_known("account", "a"), "only the latest four");
+        assert!(limiter.is_known("account", "e"));
+        clock.advance(Duration::from_secs(1));
+        limiter.remember_source("second", "x");
+        clock.advance(Duration::from_secs(1));
+        limiter.remember_source("third", "y");
+        assert!(limiter.is_known("third", "y"));
+        assert!(!limiter.is_known("account", "e"), "the stalest account left");
+        assert!(limiter.is_known("second", "x"));
+        clock.advance(KNOWN_SOURCE_TTL);
+        assert!(!limiter.is_known("third", "y"), "known sources expire");
     }
 
     #[test]
@@ -441,14 +572,20 @@ mod tests {
         let clock = FakeRelativeClock::default();
         let limiter = RateLimiter::with_capacity(1, clock.clone(), 2);
         for i in 0..100 {
-            assert!(limiter.check_account(&format!("login-source:{i}@x:ip")).is_ok());
-            assert_eq!(limiter.login_delay(&format!("login:{i}@x")), Duration::ZERO);
+            let pair = format!("login-source:{i}@x:ip");
+            assert!(limiter.check_account(&pair).is_ok());
+            let account = format!("{i}@x");
+            assert_eq!(limiter.login_gate(&account, "ip"), Ok(Duration::ZERO));
         }
         assert_eq!(len(&limiter.accounts), 2);
         assert_eq!(len(&limiter.network), 0);
         assert!(limiter.check("signup:1.2.3.4").is_ok(), "IPs keep working");
         assert!(limiter.check("token:1.2.3.4").is_ok());
         assert!(limiter.check("verify:1.2.3.4").is_err(), "network store full");
+        assert!(
+            limiter.check_lenient("api:1.2.3.4").is_ok(),
+            "lenient checks pass untracked while full"
+        );
     }
 
     #[test]
@@ -456,21 +593,31 @@ mod tests {
         let clock = FakeRelativeClock::default();
         let limiter = RateLimiter::with_capacity(1, clock.clone(), 2);
         assert!(limiter.check_account("pair").is_ok());
-        assert_eq!(limiter.login_delay("account"), Duration::ZERO);
+        assert_eq!(limiter.login_gate("account", "ip"), Ok(Duration::ZERO));
         assert_eq!(
             limiter.check_account("pair"),
             Err(Duration::from_secs(60)),
             "a tracked key keeps its budget"
         );
-        assert_eq!(limiter.login_delay("account"), Duration::from_millis(125));
+        assert_eq!(
+            limiter.login_gate("account", "ip"),
+            Err(Duration::from_secs(60))
+        );
         assert!(
             limiter.check_account("unknown").is_ok(),
             "a full store does not lock new users out"
         );
-        assert_eq!(limiter.login_delay("unknown"), Duration::ZERO);
+        assert_eq!(limiter.login_gate("new", "ip"), Ok(Duration::ZERO));
         assert_eq!(len(&limiter.accounts), 2);
         clock.advance(Duration::from_secs(60));
         assert!(limiter.check_account("unknown").is_ok());
         assert_eq!(len(&limiter.accounts), 1, "idle keys were cleaned up");
+    }
+
+    #[test]
+    fn retry_after_rounds_up() {
+        assert_eq!(retry_after_secs(Duration::from_millis(1_900)), 2);
+        assert_eq!(retry_after_secs(Duration::from_secs(30)), 30);
+        assert_eq!(retry_after_secs(Duration::from_nanos(1)), 1);
     }
 }
