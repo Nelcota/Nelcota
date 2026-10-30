@@ -137,9 +137,16 @@ async fn write(
                 &"application/octet-stream",
                 &"",
             ];
-            tx.execute(sql, &placeholder)
+            let checked = tx
+                .execute(sql, &placeholder)
                 .await
-                .map_err(|e| write_error(e, &claims))?;
+                .map_err(|e| write_error(e, &claims));
+            if let Err(error) = checked {
+                // Return the connection before the visibility check takes one.
+                drop(tx);
+                drop(client);
+                return Err(conceal_hidden(&state, &claims, bucket, &name, error).await);
+            }
             old_size
         };
 
@@ -200,7 +207,7 @@ async fn write(
         }
         Err(quota::PublicationError::Rejected(err)) => {
             state.store.delete_quietly(&key).await;
-            Err(err)
+            Err(conceal_hidden(&state, &claims, bucket, &name, err).await)
         }
         Err(quota::PublicationError::Uncertain(err)) => {
             // PostgreSQL may have committed before the connection failed.
@@ -213,6 +220,46 @@ async fn write(
             Err(err)
         }
     }
+}
+
+/// A unique violation proves that the name is taken, even when the caller's
+/// policies hide that file. Only a caller who can see it learns that it
+/// exists; anyone else gets the answer of a policy refusal.
+async fn conceal_hidden(
+    state: &StorageState,
+    claims: &Claims,
+    bucket: &str,
+    name: &str,
+    error: ApiError,
+) -> ApiError {
+    if error.code() != "object_exists" {
+        return error;
+    }
+    match visible(state, claims, bucket, name).await {
+        Ok(true) => error,
+        Ok(false) => ApiError::row_security_refused("objects", claims.role()),
+        Err(lookup) => lookup,
+    }
+}
+
+/// Whether the caller's policies let them see the file.
+async fn visible(
+    state: &StorageState,
+    claims: &Claims,
+    bucket: &str,
+    name: &str,
+) -> Result<bool, ApiError> {
+    let db_err = |e| ApiError::from_db(e, claims.role());
+    let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
+    let tx = begin_request(&mut client, claims).await.map_err(db_err)?;
+    let row = tx
+        .query_opt(
+            "SELECT 1 FROM storage.objects WHERE bucket_id = $1 AND name = $2",
+            &[&bucket, &name],
+        )
+        .await
+        .map_err(db_err)?;
+    Ok(row.is_some())
 }
 
 fn upload_timeout() -> ApiError {

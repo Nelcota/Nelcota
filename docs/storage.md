@@ -123,6 +123,12 @@ still go through the policies.
 | download, sign, list | `SELECT` |
 | delete | `SELECT`, `DELETE` |
 
+An upload to a name already taken by a file the caller cannot see answers
+like a policy refusal (403, or 401 for `anon`), not 409 `object_exists`.
+Names are still unique in a bucket: where policies let callers create files in
+a shared folder, a refused upload can hint that a name is in use. Give each
+user a folder of their own when names must stay private.
+
 `owner` is filled with `auth.uid()` on upload, so `owner = auth.uid()` is the
 simplest private-files policy. Helpers for paths:
 `storage.foldername('a/b/c.png')` → `{a,b}`, `storage.filename(...)` →

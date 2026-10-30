@@ -185,6 +185,57 @@ async fn replace_and_delete_drop_the_old_bytes() {
 }
 
 #[tokio::test]
+async fn uploads_do_not_reveal_names_taken_by_hidden_files() {
+    let app = TestApp::spawn().await;
+    // Anyone may drop files outside `closed/`; only owners see them.
+    app.admin_client
+        .batch_execute(
+            "INSERT INTO storage.buckets (id) VALUES ('inbox');
+             CREATE POLICY inbox_drop ON storage.objects FOR INSERT TO anon, authenticated
+                 WITH CHECK (bucket_id = 'inbox' AND name NOT LIKE 'closed/%');
+             CREATE POLICY inbox_read ON storage.objects FOR SELECT TO authenticated
+                 USING (bucket_id = 'inbox' AND owner = auth.uid());",
+        )
+        .await
+        .unwrap();
+    let (a, b) = (user_token(app.user_a), user_token(app.user_b));
+    let taken = "/storage/v1/object/inbox/report.txt";
+    let closed = "/storage/v1/object/inbox/closed/report.txt";
+    let (status, _) = app
+        .upload(Method::POST, taken, Some(&a), "text/plain", b"from A")
+        .await;
+    assert_eq!(status, StatusCode::CREATED);
+    // The owner sees the file, so learning that it exists reveals nothing.
+    let (status, body) = app
+        .upload(Method::POST, taken, Some(&a), "text/plain", b"again")
+        .await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    assert_eq!(body["code"], "object_exists");
+
+    // Others get exactly what a policy refusal answers, never `object_exists`.
+    for (token, status) in [
+        (Some(b.as_str()), StatusCode::FORBIDDEN),
+        (None, StatusCode::UNAUTHORIZED),
+    ] {
+        let refused = app
+            .upload(Method::POST, closed, token, "text/plain", b"x")
+            .await;
+        assert_eq!(refused.0, status, "{}", refused.1);
+        assert_eq!(refused.1["sqlstate"], "42501");
+        let hidden = app
+            .upload(Method::POST, taken, token, "text/plain", b"x")
+            .await;
+        assert_eq!(hidden, refused);
+    }
+
+    // The hidden file is untouched and no refused upload kept bytes.
+    let (status, _, bytes) = app.bytes(Method::GET, taken, Some(&a), &[], vec![]).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(bytes, b"from A");
+    assert_eq!(stored_files(&app.storage_dir), 1);
+}
+
+#[tokio::test]
 async fn missing_bytes_of_the_current_version_remain_a_not_found_response() {
     let app = TestApp::spawn().await;
     with_buckets(&app).await;
