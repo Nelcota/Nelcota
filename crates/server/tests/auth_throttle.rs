@@ -183,7 +183,9 @@ async fn many_addresses_inside_a_known_network_still_hit_a_ceiling() {
     let password = Uuid::new_v4().to_string();
     signup(&app, &email, &password).await;
     assert_eq!(
-        login_from(&app, &email, &password, "192.0.2.9").await.status,
+        login_from(&app, &email, &password, "192.0.2.9")
+            .await
+            .status,
         StatusCode::OK
     );
     // Every address below is in the known 192.0.2.0/24 with a fresh per-IP
