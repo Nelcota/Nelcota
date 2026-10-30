@@ -76,6 +76,8 @@ try {
       NELCOTA_AUTHENTICATOR_PASSWORD: randomBytes(24).toString("base64url"),
       NELCOTA_JWT_SECRET: randomBytes(32).toString("base64url"),
       NELCOTA_LISTEN: `127.0.0.1:${port}`,
+      // The soak drives sustained load from one process; Rust tests cover the budget.
+      NELCOTA_API_RATE_LIMIT_PER_MINUTE: "0",
       NELCOTA_STORAGE_BACKEND: "off",
       RUST_LOG: "error",
     },
