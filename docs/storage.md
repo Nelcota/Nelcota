@@ -170,6 +170,10 @@ Listing applies `limit` and `offset` independently to the sorted `folders` and
 `objects` arrays. Advance the offset by the requested limit while either array
 fills a page; a page containing only folders can still have a next page.
 
+A signed URL covers the version of the file that was signed. Once the file is
+replaced, or deleted and uploaded again under the same name, the URL answers
+404 `object_not_found`; sign the new version again.
+
 A file the caller may not see answers 404, as if it did not exist. Downloads
 take `?download` to force a "save as". Errors: 400 `invalid_path`, 404
 `bucket_not_found`/`object_not_found`, 409 `object_exists`, 413

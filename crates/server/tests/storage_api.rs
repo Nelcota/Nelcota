@@ -628,6 +628,79 @@ async fn signed_urls() {
 }
 
 #[tokio::test]
+async fn signed_urls_cover_only_the_signed_version() {
+    let app = TestApp::spawn().await;
+    with_buckets(&app).await;
+    let a = user_token(app.user_a);
+    let name = format!("{}/offer.txt", app.user_a);
+    let path = format!("/storage/v1/object/docs/{name}");
+    let sign = format!("/storage/v1/object/sign/docs/{name}");
+    let (status, _) = app
+        .upload(Method::POST, &path, Some(&a), "text/plain", b"first")
+        .await;
+    assert_eq!(status, StatusCode::CREATED);
+    let reply = app.post(&sign, Some(&a), json!({ "expires_in": 600 })).await;
+    assert_eq!(reply.status, StatusCode::OK);
+    let first = reply.body["signed_url"].as_str().unwrap().to_owned();
+    let (status, _, bytes) = app.bytes(Method::GET, &first, None, &[], vec![]).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(bytes, b"first");
+
+    // A replacement is another file: the old grant does not reach it.
+    let (status, _) = app
+        .upload(Method::PUT, &path, Some(&a), "text/plain", b"second")
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, _, bytes) = app.bytes(Method::GET, &first, None, &[], vec![]).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    assert_ne!(bytes, b"second");
+    let reply = app.post(&sign, Some(&a), json!({ "expires_in": 600 })).await;
+    let second = reply.body["signed_url"].as_str().unwrap().to_owned();
+    let (status, _, bytes) = app.bytes(Method::GET, &second, None, &[], vec![]).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(bytes, b"second");
+
+    // Neither does a file deleted and created again under the same name.
+    let (status, _, _) = app
+        .bytes(Method::DELETE, &path, Some(&a), &[], vec![])
+        .await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let (status, _) = app
+        .upload(Method::POST, &path, Some(&a), "text/plain", b"third")
+        .await;
+    assert_eq!(status, StatusCode::CREATED);
+    for url in [&first, &second] {
+        let (status, _, bytes) = app.bytes(Method::GET, url, None, &[], vec![]).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert_ne!(bytes, b"third");
+    }
+
+    // A grant that names no version (signed before versions were bound) is
+    // refused even while its deadline holds.
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let legacy = app
+        .keys
+        .sign(&json!({
+            "typ": "nelcota-storage-url", "bucket": "docs", "name": name, "exp": now + 600
+        }))
+        .unwrap();
+    let (status, _, bytes) = app
+        .bytes(
+            Method::GET,
+            &format!("{sign}?token={legacy}"),
+            None,
+            &[],
+            vec![],
+        )
+        .await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    assert_ne!(bytes, b"third");
+}
+
+#[tokio::test]
 async fn listing_shows_folders_and_only_visible_files() {
     let app = TestApp::spawn().await;
     with_buckets(&app).await;

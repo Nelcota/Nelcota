@@ -188,6 +188,11 @@ for the October 27 server scope and independent SDK publication checkpoint.
   stay).
 - A project's sign-in handoff only follows links to that project's own
   address.
+- Signed file URLs are bound to the version that was signed (D112). After a
+  file is replaced, or deleted and uploaded again under the same name, an
+  earlier URL answers 404 instead of serving the new bytes. URLs signed before
+  this upgrade name no version and stop working (403 `invalid_signature`);
+  sign them again.
 
 ## [0.5.6] — 2026-10-27
 
