@@ -188,14 +188,19 @@ pub(crate) async fn password_grant(
     // get through, after a growing delay: distributed guessing is capped, and
     // an attack slows the owner down without locking them out of the networks
     // they use. Those networks draw from a second budget of the same size, so
-    // many addresses inside one cannot guess without limit either. Signup
-    // already reveals whether an account exists (409).
+    // many addresses inside one cannot guess without limit either. Emails
+    // without an account spend a shared decoy budget and run the same
+    // known-network query (for no account), so a 429 or its timing does not
+    // tell which emails have accounts, also when signup is disabled.
     let over_budget = match &found {
         Some((user_id, _)) => state
             .limiter
             .login_budget(&email)
             .map(|wait| (*user_id, wait)),
-        None => None,
+        None => state
+            .limiter
+            .decoy_login_budget(&email)
+            .map(|wait| (Uuid::nil(), wait)),
     };
     let mut delay = std::time::Duration::ZERO;
     if let Some((user_id, wait)) = over_budget {

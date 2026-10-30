@@ -22,7 +22,8 @@ use crate::AuthState;
 use nelcota_core::ApiError;
 
 use std::{
-    collections::HashMap,
+    collections::{HashMap, hash_map::RandomState},
+    hash::BuildHasher,
     num::NonZeroU32,
     sync::{
         RwLock,
@@ -51,6 +52,9 @@ const LOGIN_DELAY_MAX_STEP: u64 = 4;
 /// The account-wide password budget is this many times the per-IP one.
 const ACCOUNT_BUDGET_FACTOR: u32 = 10;
 const ACCOUNT_FACTOR: NonZeroU32 = NonZeroU32::new(ACCOUNT_BUDGET_FACTOR).unwrap();
+/// Shared budgets that stand in for emails without an account, so the
+/// account-wide 429 does not tell which emails have accounts.
+const DECOY_BUDGETS: u64 = 4096;
 
 type Direct<C> =
     governor::RateLimiter<NotKeyed, InMemoryState, C, NoOpMiddleware<<C as Clock>::Instant>>;
@@ -103,6 +107,8 @@ enum Admission {
 pub struct RateLimiter<C: Clock + Clone = DefaultClock> {
     network: Store<C>,
     accounts: Store<C>,
+    /// Per-process hashing of unknown emails onto decoy budgets.
+    decoys: RandomState,
     clock: C,
     start: C::Instant,
 }
@@ -126,6 +132,7 @@ impl<C: Clock + Clone> RateLimiter<C> {
         RateLimiter {
             network: Store::new("network", network, capacity, start),
             accounts: Store::new("account", accounts, capacity, start),
+            decoys: RandomState::new(),
             clock,
             start,
         }
@@ -244,6 +251,18 @@ impl<C: Clock + Clone> RateLimiter<C> {
             }
             Admission::Limited(wait) => Some(wait),
             Admission::Full => None,
+        }
+    }
+
+    /// The account-wide budget for an email without an account: one of a few
+    /// thousand shared decoy budgets of the same size, chosen by a per-process
+    /// hash, so a spent budget answers alike whether or not the email has an
+    /// account, and made-up emails add at most that many keys.
+    pub(crate) fn decoy_login_budget(&self, email: &str) -> Option<Duration> {
+        let slot = self.decoys.hash_one(email) % DECOY_BUDGETS;
+        match self.admit(&self.accounts, &format!("login-decoy:{slot}")) {
+            Admission::Accepted | Admission::Full => None,
+            Admission::Limited(wait) => Some(wait),
         }
     }
 
@@ -527,6 +546,16 @@ mod tests {
         assert_eq!(limiter.known_network_budget("other"), None);
         clock.advance(Duration::from_secs(6));
         assert_eq!(limiter.known_network_budget("account"), None, "refilled");
+    }
+
+    #[test]
+    fn unknown_emails_spend_a_decoy_budget_of_the_same_size() {
+        let (limiter, _) = limiter(1);
+        for _ in 0..10 {
+            assert_eq!(limiter.decoy_login_budget("nobody@x"), None);
+        }
+        assert!(limiter.decoy_login_budget("nobody@x").is_some());
+        assert_eq!(len(&limiter.accounts), 1, "one shared decoy key");
     }
 
     #[test]

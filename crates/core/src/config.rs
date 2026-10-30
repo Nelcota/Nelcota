@@ -377,9 +377,9 @@ impl Config {
                 "NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE must be > 0 (requests per minute per IP)",
             ));
         }
-        if !(1..=MAX_PROXY_HOPS).contains(&self.trusted_proxy_hops) {
+        if self.trust_proxy && !(1..=MAX_PROXY_HOPS).contains(&self.trusted_proxy_hops) {
             return Err(ConfigError::Invalid(
-                "NELCOTA_TRUSTED_PROXY_HOPS must be between 1 and 8",
+                "NELCOTA_TRUSTED_PROXY_HOPS must be between 1 and 8 with NELCOTA_TRUST_PROXY",
             ));
         }
         if self.migration_backup_socket.is_some() != self.migration_backup_token.is_some()
@@ -698,10 +698,12 @@ mod tests {
                 ..valid()
             },
             Config {
+                trust_proxy: true,
                 trusted_proxy_hops: 0,
                 ..valid()
             },
             Config {
+                trust_proxy: true,
                 trusted_proxy_hops: MAX_PROXY_HOPS + 1,
                 ..valid()
             },
@@ -719,6 +721,11 @@ mod tests {
             ..valid()
         };
         assert!(no_api_limit.validate().is_ok(), "0 turns the API limit off");
+        let untrusted = Config {
+            trusted_proxy_hops: 0,
+            ..valid()
+        };
+        assert!(untrusted.validate().is_ok(), "hops only matter when trusted");
     }
 
     #[test]

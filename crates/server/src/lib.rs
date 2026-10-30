@@ -42,8 +42,9 @@ pub struct AppState {
 /// (`NELCOTA_API_RATE_LIMIT_PER_MINUTE`). Signed-in users count by account,
 /// so users behind one NAT or one server-side renderer do not share a budget;
 /// other callers count by IP (`nelcota_auth::ip_key`). `service_role` tokens,
-/// the project's own backend, are exempt. While the key store is full an
-/// untracked caller passes: this budget protects capacity, not a boundary.
+/// the project's own backend, and public or signed file downloads are exempt.
+/// While the key store is full an untracked caller passes: this budget
+/// protects capacity, not a boundary.
 pub struct ApiRateLimit {
     limiter: nelcota_auth::RateLimiter,
     proxy_hops: u8,
@@ -88,11 +89,23 @@ impl ApiRateLimit {
     }
 }
 
+/// Public and signed file downloads: already gated by the bucket or the
+/// grant, and pages fetch many at once (galleries, image optimizers).
+fn is_file_download(request: &Request) -> bool {
+    let path = request.uri().path();
+    matches!(*request.method(), Method::GET | Method::HEAD)
+        && (path.starts_with("/storage/v1/object/public/")
+            || path.starts_with("/storage/v1/object/sign/"))
+}
+
 async fn api_rate_limit(
     State((limit, verifier)): State<(Arc<ApiRateLimit>, SharedVerifier)>,
     request: Request,
     next: Next,
 ) -> Response {
+    if is_file_download(&request) {
+        return next.run(request).await;
+    }
     let caller = match limit.caller(&verifier, &request) {
         Some(caller) => caller,
         None => return next.run(request).await,

@@ -56,6 +56,18 @@ async fn api_budget_is_per_caller_and_exempts_service_role() {
         assert_ne!(reply.status, StatusCode::TOO_MANY_REQUESTS);
     }
 
+    // Public and signed downloads are gated by the bucket or the grant and
+    // are not counted, even for a caller already over the limit.
+    for path in [
+        "/storage/v1/object/public/missing/a.png",
+        "/storage/v1/object/sign/missing/a.png?token=invalid",
+    ] {
+        for _ in 0..5 {
+            let reply = app.request(Method::GET, path, None, None).await;
+            assert_ne!(reply.status, StatusCode::TOO_MANY_REQUESTS, "{path}");
+        }
+    }
+
     // Auth routes keep their own budgets.
     let reply = app
         .post("/auth/v1/token?grant_type=unknown", None, json!({}))
