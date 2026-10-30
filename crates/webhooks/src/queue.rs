@@ -5,7 +5,7 @@ use crate::{
 };
 use deadpool_postgres::{Pool, Transaction};
 use nelcota_core::config::Secret;
-use tokio_postgres::Row;
+use tokio_postgres::{Row, types::ToSql};
 use uuid::Uuid;
 
 /// Sends in flight per webhook, so one slow destination cannot hold every
@@ -20,8 +20,9 @@ const EXPIRED: &str = "SELECT d.id,d.event_id,e.url,d.payload,d.attempts,d.max_a
     ORDER BY d.locked_until,d.id LIMIT $1 FOR UPDATE OF d SKIP LOCKED";
 
 /// One round: the oldest due delivery of each enabled webhook below its
-/// in-flight limit, oldest first. The advisory lock makes the limit exact
-/// across concurrent workers; a webhook being claimed elsewhere is skipped.
+/// in-flight limit, oldest first. A webhook being claimed elsewhere is
+/// skipped (advisory lock); across server instances a claim that commits
+/// between another's snapshot and its lock can let one more send through.
 const DUE: &str = "WITH ready AS MATERIALIZED (
         SELECT e.id,e.url,e.signing_secret FROM nelcota.webhook_endpoints e
         WHERE e.enabled AND e.deleted_at IS NULL
@@ -82,9 +83,11 @@ async fn lease(tx: &Transaction<'_>, row: &Row, jobs: &mut Vec<Job>) -> Result<(
     }
     let lease = Uuid::new_v4();
     let attempt = previous_attempts + 1;
-    let url: String = row.get("url");
+    // The URL and key come from the webhook as of this statement, not from the
+    // claim's snapshot, so a retarget committed meanwhile is never undone.
     // History shows the destination of the latest send.
-    tx.execute("UPDATE nelcota.webhook_deliveries SET status='processing',attempts=$2,lease_token=$3,locked_until=clock_timestamp()+interval '120 seconds',finished_at=NULL,url=$4 WHERE id=$1", &[&id,&attempt,&lease,&url]).await?;
+    let current = tx.query_one("UPDATE nelcota.webhook_deliveries d SET status='processing',attempts=$2,lease_token=$3,locked_until=clock_timestamp()+interval '120 seconds',finished_at=NULL,url=e.url FROM nelcota.webhook_endpoints e WHERE d.id=$1 AND e.id=d.endpoint_id RETURNING e.url,e.signing_secret", &[&id,&attempt,&lease]).await?;
+    let url: String = current.get(0);
     tx.execute(
         "INSERT INTO nelcota.webhook_attempts (delivery_id,number) VALUES ($1,$2)",
         &[&id, &attempt],
@@ -97,7 +100,7 @@ async fn lease(tx: &Transaction<'_>, row: &Row, jobs: &mut Vec<Job>) -> Result<(
         lease,
         url,
         payload: row.get("payload"),
-        secret: Secret::new(row.get::<_, String>("signing_secret")),
+        secret: Secret::new(current.get::<_, String>(1)),
     });
     Ok(())
 }
@@ -147,41 +150,71 @@ fn retry_delay(attempt: i32, id: i64, retry_after: Option<u64>) -> u64 {
 /// Terminal deliveries kept by retention. History never blocks business
 /// writes; the oldest terminal rows beyond this cap are pruned instead.
 const HISTORY_LIMIT: i64 = 100_000;
-const PRUNE_BATCH: u64 = 500;
-/// Batches per cleanup run, so a burst of history is caught up within minutes.
+const PRUNE_BATCH: i64 = 500;
+/// Batches per cleanup run and kind, so a burst of history is caught up
+/// within minutes without holding the worker for long.
 const PRUNE_BATCHES: usize = 40;
 
 /// Retention runs in small batches so cascade cleanup does not monopolize the
-/// queue pool. It deletes terminal history older than 7 days or beyond the
-/// newest `HISTORY_LIMIT` terminal deliveries. Pending/processing work is kept.
+/// queue pool. It deletes terminal history older than 7 days, then terminal
+/// rows beyond the newest `HISTORY_LIMIT`. Age cleanup runs first and on its
+/// own, so a slow cap query never stops it; the cap's cutoff is computed once
+/// per run. Pending/processing work is kept.
 pub(crate) async fn prune(pool: &Pool) -> Result<(), Error> {
     for _ in 0..PRUNE_BATCHES {
-        if prune_batch(pool).await? < PRUNE_BATCH {
+        if prune_batch(pool, PRUNE_AGED, &[&PRUNE_BATCH]).await? < PRUNE_BATCH as u64 {
+            break;
+        }
+    }
+    let cutoff = match history_cutoff(pool).await? {
+        Some(cutoff) => cutoff,
+        None => return Ok(()),
+    };
+    let (finished_at, id) = cutoff;
+    for _ in 0..PRUNE_BATCHES {
+        let params: [&(dyn ToSql + Sync); 3] = [&finished_at, &id, &PRUNE_BATCH];
+        if prune_batch(pool, PRUNE_CAPPED, &params).await? < PRUNE_BATCH as u64 {
             break;
         }
     }
     Ok(())
 }
 
-async fn prune_batch(pool: &Pool) -> Result<u64, Error> {
+async fn prune_batch(pool: &Pool, sql: &str, params: &[&(dyn ToSql + Sync)]) -> Result<u64, Error> {
     let mut client = pool.get().await?;
     let tx = client.transaction().await?;
     tx.batch_execute("SET LOCAL ROLE nelcota_webhooks; SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='3s'").await?;
-    let deleted = tx
-        .execute(PRUNE, &[&HISTORY_LIMIT, &(PRUNE_BATCH as i64)])
-        .await?;
+    let deleted = tx.execute(sql, params).await?;
     tx.commit().await?;
     Ok(deleted)
 }
 
-const PRUNE: &str = "DELETE FROM nelcota.webhook_deliveries WHERE id IN (
+/// The newest terminal delivery beyond `HISTORY_LIMIT`, as (finished_at as
+/// text, id): it and everything older is pruned. `None` while within the cap.
+async fn history_cutoff(pool: &Pool) -> Result<Option<(String, i64)>, Error> {
+    let mut client = pool.get().await?;
+    let tx = client.transaction().await?;
+    tx.batch_execute("SET LOCAL ROLE nelcota_webhooks; SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='3s'").await?;
+    let row = tx.query_opt(CUTOFF, &[&HISTORY_LIMIT]).await?;
+    tx.commit().await?;
+    Ok(row.map(|row| (row.get(0), row.get(1))))
+}
+
+const PRUNE_AGED: &str = "DELETE FROM nelcota.webhook_deliveries WHERE id IN (
+    SELECT id FROM nelcota.webhook_deliveries
+    WHERE finished_at < statement_timestamp() - interval '7 days'
+    AND status IN ('succeeded','failed','cancelled')
+    ORDER BY finished_at, id LIMIT $1 FOR UPDATE SKIP LOCKED)";
+
+const CUTOFF: &str = "SELECT k.finished_at::text, k.id FROM nelcota.webhook_deliveries k
+    WHERE k.finished_at IS NOT NULL AND k.status IN ('succeeded','failed','cancelled')
+    ORDER BY k.finished_at DESC, k.id DESC OFFSET $1 LIMIT 1";
+
+const PRUNE_CAPPED: &str = "DELETE FROM nelcota.webhook_deliveries WHERE id IN (
     SELECT id FROM nelcota.webhook_deliveries
     WHERE finished_at IS NOT NULL AND status IN ('succeeded','failed','cancelled')
-    AND (finished_at < statement_timestamp() - interval '7 days'
-        OR (finished_at, id) <= (SELECT k.finished_at, k.id FROM nelcota.webhook_deliveries k
-            WHERE k.finished_at IS NOT NULL AND k.status IN ('succeeded','failed','cancelled')
-            ORDER BY k.finished_at DESC, k.id DESC OFFSET $1 LIMIT 1))
-    ORDER BY finished_at, id LIMIT $2 FOR UPDATE SKIP LOCKED)";
+    AND (finished_at, id) <= ($1::text::timestamptz, $2)
+    ORDER BY finished_at, id LIMIT $3 FOR UPDATE SKIP LOCKED)";
 
 #[cfg(test)]
 mod tests {
