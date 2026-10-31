@@ -1,7 +1,7 @@
 //! Acknowledgement is the response status. Receiver bodies and URLs never reach
 //! logs/history. Redirects are terminal; bounded retries handle transient errors.
 use crate::{
-    destination::Policy,
+    destination::{self, Policy},
     models::{Job, Outcome},
     signing,
 };
@@ -70,6 +70,11 @@ impl Transport {
                     started,
                 )
             }
+            Ok(Err(error)) if destination::dns_busy(&error) => Outcome {
+                // Local DNS capacity ran out before any request left this host.
+                deferred: true,
+                ..outcome(None, Some("dns_busy"), true, None, started)
+            },
             Ok(Err(error)) => {
                 // Sanitized categories only: reqwest errors can contain the URL.
                 let code = match error.is_timeout() {
@@ -99,11 +104,41 @@ fn outcome(
         retryable,
         retry_after,
         duration_ms: started.elapsed().as_millis().min(i64::MAX as u128) as i64,
+        deferred: false,
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::destination::SafeResolver;
+    use nelcota_core::config::Secret;
+
+    #[tokio::test]
+    async fn exhausted_local_dns_defers_without_using_an_attempt() {
+        let policy = Policy {
+            allow_loopback: true,
+        };
+        let resolver = SafeResolver::new(policy, 0);
+        let transport = Transport {
+            http: policy.client_with(resolver).unwrap(),
+            policy,
+        };
+        let job = Job {
+            id: 1,
+            event_id: uuid::Uuid::nil(),
+            attempt: 1,
+            lease: uuid::Uuid::nil(),
+            url: "http://localhost:9/hook".into(),
+            payload: "{}".into(),
+            secret: Secret::new("test-signing-key"),
+        };
+        let outcome = transport.send(&job).await;
+        assert!(outcome.deferred);
+        assert_eq!(outcome.error, Some("dns_busy"));
+        assert_eq!(outcome.status, None);
+    }
+
     #[test]
     fn only_transient_http_failures_retry() {
         for code in [408, 425, 429, 500, 502, 503, 504] {

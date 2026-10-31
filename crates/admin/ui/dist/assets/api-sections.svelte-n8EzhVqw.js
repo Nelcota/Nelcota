@@ -1,0 +1,1 @@
+import{Ar as e}from"./circle-alert-CXpRfTwJ.js";var t=e({current:`api-address`});export{t};

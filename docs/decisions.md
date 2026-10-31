@@ -1068,6 +1068,25 @@ under the same name, creates another version, which the old URL answers with
 404 as if the file were gone; a grant that names no version is refused.
 Sharing a file does not share whatever is stored under its name later.
 
+**D114. Webhook admission never aborts the business write.** V13 counted the
+queue in one `webhook_queue_usage` row and raised `53300` above 10,000
+outstanding or 100,000 retained deliveries. Every captured write locked that row
+until commit, and healthy history or one stalled destination froze writes on all
+watched tables. V19 counts outstanding work per webhook in sixteen shard rows: a
+transaction updates a shard no other transaction holds (`SKIP LOCKED`, its
+backend's shard first). When all sixteen are held, it inserts its own overflow
+row under a fresh key instead of waiting, so a writer never queues behind
+another on a counter and writers on two watched tables cannot deadlock there;
+the worker folds committed overflow rows back. Capture sums every row. Beyond
+10,000 outstanding deliveries for one webhook, the event is stored as a failed
+`queue_full` delivery with omitted contents, like an oversized payload, and the
+row commits; resends are refused at the same limit. Concurrent transactions
+cannot see each other's uncommitted work, so the limit is approximate by what
+they add together. History is bounded by retention instead: the worker deletes
+terminal deliveries older than seven days or beyond the newest 100,000,
+continuing while batches come back full. `nelcota.webhook_queue_usage` remains
+as a read-only view.
+
 **D115. One caller cannot hold the REST pool.** The request pool is small and
 RLS says which rows a query may see, not how much it may cost, so the server
 bounds who uses the pool: each REST request takes one of its caller's slots

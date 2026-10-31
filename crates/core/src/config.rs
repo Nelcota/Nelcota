@@ -382,6 +382,13 @@ impl Config {
                 "NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE must be > 0 (requests per minute per IP)",
             ));
         }
+        // Loopback webhooks allow plain HTTP to any local port: never in production.
+        if self.production && self.webhooks_allow_loopback {
+            return Err(ConfigError::Invalid(
+                "NELCOTA_WEBHOOKS_ALLOW_LOOPBACK=true is development-only; \
+                 unset it or set NELCOTA_PRODUCTION=false",
+            ));
+        }
         if self.trust_proxy && !(1..=MAX_PROXY_HOPS).contains(&self.trusted_proxy_hops) {
             return Err(ConfigError::Invalid(
                 "NELCOTA_TRUSTED_PROXY_HOPS must be between 1 and 8 with NELCOTA_TRUST_PROXY",
@@ -772,6 +779,28 @@ mod tests {
             ..config
         };
         assert_eq!(trusted.proxy_hops(), 2);
+    }
+
+    #[test]
+    fn production_rejects_loopback_webhooks() {
+        let development = Config {
+            webhooks_allow_loopback: true,
+            ..valid()
+        };
+        assert!(development.validate().is_ok());
+        let production = Config {
+            production: true,
+            ..development
+        };
+        let message = production.validate().unwrap_err().to_string();
+        assert!(message.contains("NELCOTA_WEBHOOKS_ALLOW_LOOPBACK"));
+        assert!(message.contains("NELCOTA_PRODUCTION"));
+        assert!(!message.contains("  "), "{message}");
+        let public_only = Config {
+            production: true,
+            ..valid()
+        };
+        assert!(public_only.validate().is_ok());
     }
 
     #[test]

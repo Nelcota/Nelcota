@@ -73,7 +73,7 @@ const ptBR = {
     "Histórico por até 7 dias. Eventos pendentes ficam na fila até serem concluídos ou cancelados.",
   attemptsOf: { one: "{done} de {count} tentativa", other: "{done} de {count} tentativas" },
   capacity:
-    "A fila está perto do limite. Confira os destinos com falhas ou pausados para manter as gravações funcionando.",
+    "Muitas entregas estão aguardando. Cada webhook enfileira até 10.000; acima disso, novos eventos são registrados como falha. Confira os destinos com falhas ou pausados.",
   clear: "Limpar histórico",
   clearTitle: "Limpar o histórico concluído?",
   clearHint:
@@ -112,7 +112,8 @@ const ptBR = {
     "Uma nova entrega usará a URL e a chave atuais do webhook. O ID do evento e os dados permanecem iguais. O serviço pode ignorar um evento já processado.",
   replayed: "Reenvio adicionado à fila.",
   replayOf: "Reenvio da entrega #{id}",
-  destinationHint: "Entregas já na fila mantêm a URL original. As novas usam a URL atual.",
+  destinationHint:
+    "Entregas na fila e novas tentativas usam a URL atual. Um envio em andamento termina na anterior.",
   failures: {
     http_error: "O destino recusou o envio.",
     network_error: "Não foi possível conectar ao destino. Confira a URL, o DNS e o certificado.",
@@ -122,6 +123,8 @@ const ptBR = {
     payload_too_large:
       "Os dados passaram de 256 KiB. O conteúdo foi omitido e não pode ser reenviado.",
     endpoint_deleted: "O webhook foi apagado.",
+    queue_full:
+      "Este webhook já tinha 10.000 entregas aguardando. O evento foi registrado sem o conteúdo e não pode ser reenviado.",
   },
 };
 

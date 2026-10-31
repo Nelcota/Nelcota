@@ -168,6 +168,10 @@ pub async fn update(
         ));
     }
     tx.execute("UPDATE nelcota.webhook_endpoints SET name=$2, url=$3, events=$4, enabled=$5, max_attempts=$6 WHERE id=$1", &[&id, &input.name, &input.url, &input.events, &input.enabled, &input.max_attempts]).await?;
+    // Queued work follows the new destination; the worker also resolves the
+    // current URL for every send, so sends in progress finish as they are and
+    // their retries use it too. This keeps the delivery history accurate.
+    tx.execute("UPDATE nelcota.webhook_deliveries SET url=$2 WHERE endpoint_id=$1 AND status='pending' AND url<>$2", &[&id, &input.url]).await?;
     let row = tx
         .query_one(&format!("{ENDPOINTS} WHERE e.id = $1"), &[&id])
         .await?;

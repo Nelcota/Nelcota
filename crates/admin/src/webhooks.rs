@@ -26,13 +26,6 @@ fn error(err: Error) -> ApiError {
         Error::NotFound => {
             ApiError::not_found("webhook_not_found", "Webhook or delivery not found")
         }
-        Error::Database(ref e) if e.code().is_some_and(|code| code.code() == "53300") => {
-            ApiError::new(
-                StatusCode::SERVICE_UNAVAILABLE,
-                "webhook_queue_full",
-                "Webhook queue capacity reached; resume processing or clear delivery history",
-            )
-        }
         Error::Pool(_) => ApiError::new(
             StatusCode::SERVICE_UNAVAILABLE,
             "unavailable",

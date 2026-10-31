@@ -35,10 +35,10 @@
     type WebhookSecret,
   } from "$lib/features/webhooks/model";
 
-  // The queue limits enforced by the capture trigger (migrations/V13__webhooks.sql),
-  // and the share of them that shows the capacity warning.
+  // The per-webhook queue limit enforced by the capture trigger
+  // (migrations/V19__webhook_queue_admission.sql), and the share of it that
+  // shows the warning. The total is shown, so the warning comes early.
   const OUTSTANDING_LIMIT = 10_000;
-  const RETAINED_LIMIT = 100_000;
   const CAPACITY_WARNING = 0.8;
   const count = (value: number) => numberFormat(intlLocale()).format(value);
   const inventory = new WebhookInventory();
@@ -243,7 +243,7 @@
       <span aria-hidden="true">·</span>
       <span>{t("webhooks.summary.retained", { count: config.data.retained })}</span>
     </p>
-    {#if config.data.outstanding >= OUTSTANDING_LIMIT * CAPACITY_WARNING || config.data.retained >= RETAINED_LIMIT * CAPACITY_WARNING}<Callout
+    {#if config.data.outstanding >= OUTSTANDING_LIMIT * CAPACITY_WARNING}<Callout
         variant="warning"
         title={t("webhooks.capacity")}
       />{/if}
