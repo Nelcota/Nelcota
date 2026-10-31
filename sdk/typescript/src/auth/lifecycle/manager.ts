@@ -227,8 +227,8 @@ export class SessionManager {
     const pending = await this.#store.reserve(current);
     if (pending != null) return fail(pending);
     // Accepted rotation owns publication independently of a cancelled waiter.
-    // The reservation is renewed while the request runs, however long it takes.
-    const stopRenewal = this.#store.holdReservation();
+    // The reservation is renewed while the request runs, up to a bounded hold.
+    const stopRenewal = this.#store.holdReservation(options.timeout ?? this.transport.timeout);
     let result: Result<Session>;
     try {
       result = await this.transport.rotate(

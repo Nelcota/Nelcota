@@ -54,6 +54,7 @@ export class AuthClient {
     this.#manager = new SessionManager(http.url, options, {
       rotate: (token, request) => this.#token("refresh_token", { refresh_token: token }, request),
       accessToken: http.accessToken,
+      timeout: http.timeout,
     });
   }
 

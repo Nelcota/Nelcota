@@ -1,7 +1,11 @@
 import { afterEach, expect, it, vi } from "vitest";
 
 import { BrowserRefreshPendingError } from "../../src/auth/browser/session.errors.js";
-import { BrowserSessionState, RESERVATION_LEASE_IN_MS } from "../../src/auth/browser/state.js";
+import {
+  BrowserSessionState,
+  MAX_RESERVATION_HOLD_IN_MS,
+  RESERVATION_LEASE_IN_MS,
+} from "../../src/auth/browser/state.js";
 import { createClient } from "../../src/index.js";
 import { KEY, browser } from "./browser-state-fixtures.js";
 import { gate } from "./gate.js";
@@ -89,6 +93,74 @@ it("stops renewing once the owner settles its reservation", async () => {
   // A closed tab's last renewal still expires with the lease.
   vi.advanceTimersByTime(RESERVATION_LEASE_IN_MS);
   await expect(other.reserve(original)).resolves.toBeUndefined();
+});
+
+it("lets a refresh without a request timeout hold its reservation for at most two minutes", async () => {
+  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
+  const { factory } = browser();
+  const original = session(5);
+  const { promise: started, open: start } = gate();
+  const { promise: response, open: respond } = gate();
+  const mock = mockFetch(async () => {
+    start();
+    await response;
+    return json(session(900, "replacement", "new-access"));
+  });
+  const client = createClient("https://api.example.com", {
+    fetch: mock.fetch,
+    timeout: 0,
+    auth: { autoRefresh: false },
+  });
+  const other = new BrowserSessionState(KEY, factory);
+  try {
+    const refresh = client.auth.refreshSession();
+    await started;
+    const steps = MAX_RESERVATION_HOLD_IN_MS / STEP_IN_MS;
+    for (let step = 0; step < steps; step++) {
+      vi.advanceTimersByTime(STEP_IN_MS);
+      // oxlint-disable-next-line no-await-in-loop -- Each check follows the renewal its clock step triggered.
+      await expect(other.reserve(original)).rejects.toBeInstanceOf(BrowserRefreshPendingError);
+    }
+    // Past the hold the next tick stops renewing; the last renewal still stands.
+    vi.advanceTimersByTime(2 * STEP_IN_MS);
+    await expect(other.reserve(original)).rejects.toBeInstanceOf(BrowserRefreshPendingError);
+    expect(vi.getTimerCount()).toBe(0);
+    // The request is still open, but the reservation lapses with its lease.
+    vi.advanceTimersByTime(RESERVATION_LEASE_IN_MS);
+    await expect(other.reserve(original)).resolves.toBeUndefined();
+    respond();
+    // The superseded owner's late answer cannot overwrite the newer state.
+    await refresh;
+  } finally {
+    respond();
+    client.dispose();
+  }
+});
+
+it("caps renewal at the request timeout when it is shorter than two minutes", async () => {
+  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
+  const { factory } = browser();
+  const owner = new BrowserSessionState(KEY, factory);
+  const other = new BrowserSessionState(KEY, factory);
+  const original = session(5);
+  await owner.read(() => JSON.stringify(original));
+  await owner.reserve(original);
+  const timeoutInMs = 2 * RESERVATION_LEASE_IN_MS;
+  const stop = owner.hold(timeoutInMs);
+  try {
+    for (let step = 0; step < timeoutInMs / STEP_IN_MS; step++) {
+      vi.advanceTimersByTime(STEP_IN_MS);
+      // oxlint-disable-next-line no-await-in-loop -- Each check follows the renewal its clock step triggered.
+      await expect(other.reserve(original)).rejects.toBeInstanceOf(BrowserRefreshPendingError);
+    }
+    vi.advanceTimersByTime(2 * STEP_IN_MS);
+    await expect(other.reserve(original)).rejects.toBeInstanceOf(BrowserRefreshPendingError);
+    expect(vi.getTimerCount()).toBe(0);
+    vi.advanceTimersByTime(RESERVATION_LEASE_IN_MS);
+    await expect(other.reserve(original)).resolves.toBeUndefined();
+  } finally {
+    await stop();
+  }
 });
 
 it("waits a full lease before taking over a reservation written without a time", async () => {

@@ -264,6 +264,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
   longer fails after the new session row and lineage head are durable.
   Retiring the rotated-away row now runs after the lease with its own budget
   and reports failures through `onBackgroundError`.
+- `@nelcota/client`: a browser refresh request that never settles (with
+  `timeout: 0`) no longer holds its refresh reservation while the tab stays
+  open; renewal stops after the request timeout or two minutes, whichever is
+  shorter, and other tabs take the reservation over once its lease lapses.
 
 ### Security
 

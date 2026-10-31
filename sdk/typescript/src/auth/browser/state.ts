@@ -20,6 +20,12 @@ export const RESERVATION_LEASE_IN_MS = 10_000;
 const RENEWALS_PER_LEASE = 3;
 const RENEWAL_INTERVAL_IN_MS = RESERVATION_LEASE_IN_MS / RENEWALS_PER_LEASE;
 /**
+ * Longest an owner renews its reservation. A request that never settles (no
+ * request timeout) must not block every other tab's refresh while this one
+ * stays open; after the last renewal the reservation lapses with its lease.
+ */
+export const MAX_RESERVATION_HOLD_IN_MS = 120_000;
+/**
  * A ready receipt whose localStorage mirror has been missing for longer than
  * this was cleared on purpose (site data, developer tools), not caught between
  * the journal commit and the mirror write.
@@ -245,13 +251,25 @@ export class BrowserSessionState {
   /**
    * Keeps this owner's reservation alive while its refresh request is in
    * flight, so a request slower than the lease is not taken over by a tab that
-   * would spend the same token. The returned function stops renewing and waits
-   * for a renewal in progress. A failed renewal only lets the lease run out.
+   * would spend the same token. Renewal stops after `timeoutInMs` (the
+   * request's timeout; `0` means none) or `MAX_RESERVATION_HOLD_IN_MS`,
+   * whichever is smaller, and the reservation then lapses with its lease. The
+   * returned function stops renewing and waits for a renewal in progress. A
+   * failed renewal only lets the lease run out.
    */
-  hold(): () => Promise<void> {
+  hold(timeoutInMs = 0): () => Promise<void> {
     const revision = this.revision;
+    const limit =
+      timeoutInMs > 0
+        ? Math.min(timeoutInMs, MAX_RESERVATION_HOLD_IN_MS)
+        : MAX_RESERVATION_HOLD_IN_MS;
+    const until = Date.now() + limit;
     let renewal = Promise.resolve();
     const timer = setInterval(() => {
+      if (Date.now() >= until) {
+        clearInterval(timer);
+        return;
+      }
       renewal = renewal.then(
         async () => await this.#renew(revision),
         () => undefined,

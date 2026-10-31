@@ -91,6 +91,10 @@ Dates identify release entries; registry availability requires a successful publ
 - Bucket settings are serialized field by field, and bucket methods take only
   `signal`/`timeout` from their options, so untyped options cannot replace
   headers, authentication or response validation.
+- A browser refresh request that never settles (with `timeout: 0`) no longer
+  holds its refresh reservation for as long as the tab stays open. The owner
+  renews it for at most the request timeout or two minutes, whichever is
+  shorter; other tabs then take it over once the 10-second lease lapses.
 
 ## 0.2.5 — 2026-10-27
 

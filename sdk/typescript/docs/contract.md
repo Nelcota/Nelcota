@@ -292,13 +292,15 @@ Another client can always read a reserved session and use its access token.
 For 10 seconds after the reservation (the server's retry window) it cannot
 rotate it: refreshing returns `refresh_pending`. The owner renews the
 reservation every few seconds while its refresh request is in flight, so a slow
-request keeps it. Once renewals stop for 10 seconds the reservation is
-abandoned (its tab closed or crashed) and the next refresh takes it over,
-retrying the stored token. The server then either rotates it, or answers
-`invalid_grant` when the lost rotation had committed, which signs out. A late
-response from a superseded owner cannot overwrite the newer state: its
-publication is refused and the authoritative state is adopted. A reservation
-from an SDK without receipt times is timed from when this client first sees it.
+request keeps it, for at most the request timeout or two minutes, whichever is
+shorter (two minutes with `timeout: 0`). Once renewals stop for 10 seconds the
+reservation is abandoned (its tab closed or crashed, or its request never
+settled) and the next refresh takes it over, retrying the stored token. The
+server then either rotates it, or answers `invalid_grant` when the lost
+rotation had committed, which signs out. A late response from a superseded
+owner cannot overwrite the newer state: its publication is refused and the
+authoritative state is adopted. A reservation from an SDK without receipt
+times is timed from when this client first sees it.
 
 ### Publication and events
 
