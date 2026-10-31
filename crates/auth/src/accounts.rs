@@ -259,6 +259,10 @@ const KNOWN_NETWORK_DAYS: i32 = 30;
 /// Revoked sessions do not count, so a network stops being known after a
 /// password change or sign-out there. Prune removes sessions whose refresh
 /// tokens expired, so the window is also bounded by the refresh lifetime.
+///
+/// Loopback, private and link-local addresses never count: they are what the
+/// server sees for a proxy or a server-side renderer (or a client that forced
+/// the fallback to the peer address), which many accounts share.
 async fn known_network(
     tx: &Transaction<'_>,
     user_id: Uuid,
@@ -266,6 +270,7 @@ async fn known_network(
 ) -> Result<bool, ApiError> {
     let networks = match ip.map(|ip| ip.to_canonical()) {
         None => return Ok(false),
+        Some(ip) if !public(ip) => return Ok(false),
         Some(IpAddr::V4(ip)) => {
             let [a, b, c, _] = ip.octets();
             vec![
@@ -289,6 +294,20 @@ async fn known_network(
         .await
         .map_err(db_error)?;
     Ok(row.get(0))
+}
+
+/// Whether `ip` (canonical) can identify a client's own network.
+fn public(ip: IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(ip) => {
+            !(ip.is_loopback() || ip.is_private() || ip.is_link_local() || ip.is_unspecified())
+        }
+        IpAddr::V6(ip) => {
+            let unique_local = ip.segments()[0] & 0xfe00 == 0xfc00;
+            let link_local = ip.segments()[0] & 0xffc0 == 0xfe80;
+            !(ip.is_loopback() || ip.is_unspecified() || unique_local || link_local)
+        }
+    }
 }
 
 /// `GET /auth/v1/user` (Bearer): data of the token's user.

@@ -1053,8 +1053,10 @@ password budget of ten times the per-IP one, in a store of their own; over it,
 only networks (IPv4 /24, IPv6 /64) where the account has an open recent
 session in `auth.sessions` get through, up to a second budget of the same
 size. This trades admission from new networks under a sustained distributed
-attack for a hard cap on distributed guessing, without letting one address
-lock anyone out. The REST and storage
+attack for a hard cap on distributed guessing: one address cannot lock anyone
+out, but about ten addresses (or IPv6 /64s) can keep an account closed to new
+networks. Loopback, private and link-local addresses, which a proxy or
+server-side renderer presents for many users, never count as known. The REST and storage
 APIs have a per-account or per-IP budget (`NELCOTA_API_RATE_LIMIT_PER_MINUTE`,
 `service_role` exempt). The client IP skips `NELCOTA_TRUSTED_PROXY_HOPS`
 trusted proxies from the right.
