@@ -260,6 +260,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - An upload whose body sends nothing for a minute is dropped with
   `upload_timeout`, so slow uploads can no longer hold every upload slot for
   the whole upload timeout.
+- `@nelcota/ssr`: a write whose rotation lease ran close to its timeout no
+  longer fails after the new session row and lineage head are durable.
+  Retiring the rotated-away row now runs after the lease with its own budget
+  and reports failures through `onBackgroundError`.
 
 ### Security
 
