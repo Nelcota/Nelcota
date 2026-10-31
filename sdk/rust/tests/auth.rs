@@ -795,9 +795,11 @@ async fn an_absurd_token_lifetime_does_not_panic() {
     issued["expires_in"] = json!(u64::MAX);
     let (url, _, task) = rest_server(replying(StatusCode::OK, issued), Duration::ZERO).await;
     let client = Client::builder(url).build().unwrap();
+    let mut password = [0u8; 32];
+    getrandom::fill(&mut password).unwrap();
     let signed_in = client
         .auth()
-        .sign_in_with_password("a@example.com", "fixture")
+        .sign_in_with_password("a@example.com", &URL_SAFE_NO_PAD.encode(password))
         .await
         .unwrap();
     assert_eq!(signed_in.expires_at, u64::MAX);
