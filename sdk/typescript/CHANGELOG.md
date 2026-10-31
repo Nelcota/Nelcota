@@ -47,6 +47,11 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Added
 
+- `signUp()` binds the confirmation link with PKCE: it keeps a verifier under
+  `<storageKey>.signup` and `verifyEmailLink()` sends it for a `signup` link,
+  so the password chosen at sign-up survives confirmation on servers that
+  check it. The verifier is removed after a successful confirmation and kept
+  after a failure. Size budgets rise by about 550 B gzip (root and auth).
 - Client error codes `session_unavailable`, `refresh_pending`,
   `response_body_error` and `oauth_error` (see Changed and Fixed).
 - The README documents that `upload`, `download` and `open` have no timeout by

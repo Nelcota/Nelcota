@@ -14,6 +14,9 @@ function browserStorage(): SessionStorage | undefined {
   }
 }
 
+/** `pkce`: the OAuth sign-in in progress; `signup`: the latest sign-up awaiting its email link. */
+export type VerifierSlot = "pkce" | "signup";
+
 export function storageKey(url: URL): string {
   const pathname = url.pathname;
   let end = pathname.length;
@@ -22,10 +25,10 @@ export function storageKey(url: URL): string {
 }
 
 export class SessionStore {
-  // Shared with the OAuth verifier, using a distinct key suffix.
+  // Shared with the PKCE verifiers, using distinct key suffixes.
   readonly storage: SessionStorage;
   readonly #native: BrowserSessionState | undefined;
-  readonly #pkce: BrowserSessionState | undefined;
+  readonly #verifiers: Partial<Record<VerifierSlot, BrowserSessionState>> = {};
   #session: Session | null | undefined;
   // The local copy is newer than storage until a persistence attempt succeeds.
   dirty = false;
@@ -45,7 +48,8 @@ export class SessionStore {
         /* Report unavailable storage on the first operation. */
       }
       this.#native = new BrowserSessionState(key, factory);
-      this.#pkce = new BrowserSessionState(`${key}.pkce`, factory);
+      for (const slot of ["pkce", "signup"] as const)
+        this.#verifiers[slot] = new BrowserSessionState(`${key}.${slot}`, factory);
     }
   }
 
@@ -168,22 +172,23 @@ export class SessionStore {
     await this.#native?.write(encodeJson(session), true);
   }
 
-  async setVerifier(value: string): Promise<void> {
-    const key = `${this.key}.pkce`;
-    await this.#pkce?.write(value);
-    await this.storage.setItem(key, value);
+  async setVerifier(value: string, slot: VerifierSlot = "pkce"): Promise<void> {
+    await this.#verifiers[slot]?.write(value);
+    await this.storage.setItem(`${this.key}.${slot}`, value);
   }
   /** The pending PKCE verifier, without consuming it. */
-  async peekVerifier(): Promise<string | null> {
-    const key = `${this.key}.pkce`;
-    if (this.#pkce == null) return await this.storage.getItem(key);
-    return (await this.#pkce.read(() => this.#nativeValue(key))).value;
+  async peekVerifier(slot: VerifierSlot = "pkce"): Promise<string | null> {
+    const key = `${this.key}.${slot}`,
+      journal = this.#verifiers[slot];
+    if (journal == null) return await this.storage.getItem(key);
+    return (await journal.read(() => this.#nativeValue(key))).value;
   }
-  async consumeVerifier(): Promise<string | null> {
-    const key = `${this.key}.pkce`;
+  async consumeVerifier(slot: VerifierSlot = "pkce"): Promise<string | null> {
+    const key = `${this.key}.${slot}`,
+      journal = this.#verifiers[slot];
     const value =
-      this.#pkce != null
-        ? await this.#pkce.consume(() => this.#nativeValue(key))
+      journal != null
+        ? await journal.consume(() => this.#nativeValue(key))
         : await this.storage.getItem(key);
     await this.storage.removeItem(key);
     return value;

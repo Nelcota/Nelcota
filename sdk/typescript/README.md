@@ -396,6 +396,14 @@ await nelcota.auth.requestPasswordReset(email);   // same answer whether or not 
 await nelcota.auth.resendConfirmation(email);
 ```
 
+A sign-up awaiting confirmation keeps a PKCE verifier under this storage key
+(`<storageKey>.signup`, separate from the OAuth one). `verifyEmailLink()` sends
+it with the signup link, which keeps the password chosen at sign-up, and
+clears it once the confirmation succeeds; after a failure it stays for a
+retry. A link opened in another browser, or a resent link, still confirms the
+email and signs in, but the server clears the sign-up password: the person
+sets one with `updateUser({ password })` or a recovery email.
+
 **On a server**, forward the caller's token instead of keeping a session:
 
 ```ts
