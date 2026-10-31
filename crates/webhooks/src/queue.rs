@@ -107,26 +107,31 @@ async fn lease(tx: &Transaction<'_>, row: &Row, jobs: &mut Vec<Job>) -> Result<(
     Ok(())
 }
 
+/// Consecutive DNS deferrals, two seconds apart, before the next one uses an
+/// attempt like any other network failure: about a minute.
+const MAX_DEFERRALS: i32 = 30;
+
 pub(crate) async fn finish(pool: &Pool, job: &Job, outcome: Outcome) -> Result<(), Error> {
     let mut client = pool.get().await?;
     let tx = client.transaction().await?;
     tx.batch_execute("SET LOCAL ROLE nelcota_webhooks; SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='3s'").await?;
     if outcome.deferred {
-        // Nothing left this host: give the attempt back and retry shortly.
-        let updated = tx.execute("UPDATE nelcota.webhook_deliveries SET status='pending',attempts=attempts-1,next_attempt_at=clock_timestamp()+interval '2 seconds',lease_token=NULL,locked_until=NULL WHERE id=$1 AND lease_token=$2 AND status='processing'", &[&job.id, &job.lease]).await?;
+        // Nothing left this host: give the attempt back and retry shortly,
+        // showing why in history. Past the limit it counts as an attempt.
+        let updated = tx.execute("UPDATE nelcota.webhook_deliveries SET status='pending',attempts=attempts-1,deferrals=deferrals+1,last_error='dns_busy',next_attempt_at=clock_timestamp()+interval '2 seconds',lease_token=NULL,locked_until=NULL WHERE id=$1 AND lease_token=$2 AND status='processing' AND deferrals<$3", &[&job.id, &job.lease, &MAX_DEFERRALS]).await?;
         if updated != 0 {
             tx.execute(
                 "DELETE FROM nelcota.webhook_attempts WHERE delivery_id=$1 AND number=$2",
                 &[&job.id, &job.attempt],
             )
             .await?;
+            tx.commit().await?;
+            return Ok(());
         }
-        tx.commit().await?;
-        return Ok(());
     }
     let delay = retry_delay(job.attempt, job.id, outcome.retry_after) as i64;
     // The lease token fences off a worker whose lease was recovered or cancelled.
-    let updated = tx.execute("UPDATE nelcota.webhook_deliveries SET status=CASE WHEN $3::text IS NULL THEN 'succeeded' WHEN $4 AND attempts<max_attempts THEN 'pending' ELSE 'failed' END, next_attempt_at=clock_timestamp()+$5::bigint*interval '1 second', finished_at=CASE WHEN $3::text IS NOT NULL AND $4 AND attempts<max_attempts THEN NULL ELSE clock_timestamp() END, last_status=$6,last_error=$3,lease_token=NULL,locked_until=NULL WHERE id=$1 AND lease_token=$2 AND status='processing'", &[&job.id,&job.lease,&outcome.error,&outcome.retryable,&delay,&outcome.status]).await?;
+    let updated = tx.execute("UPDATE nelcota.webhook_deliveries SET deferrals=0,status=CASE WHEN $3::text IS NULL THEN 'succeeded' WHEN $4 AND attempts<max_attempts THEN 'pending' ELSE 'failed' END, next_attempt_at=clock_timestamp()+$5::bigint*interval '1 second', finished_at=CASE WHEN $3::text IS NOT NULL AND $4 AND attempts<max_attempts THEN NULL ELSE clock_timestamp() END, last_status=$6,last_error=$3,lease_token=NULL,locked_until=NULL WHERE id=$1 AND lease_token=$2 AND status='processing'", &[&job.id,&job.lease,&outcome.error,&outcome.retryable,&delay,&outcome.status]).await?;
     if updated != 0 {
         tx.execute("UPDATE nelcota.webhook_attempts SET finished_at=clock_timestamp(),status_code=$3,duration_ms=$4,error=$5 WHERE delivery_id=$1 AND number=$2 AND finished_at IS NULL", &[&job.id,&job.attempt,&outcome.status,&outcome.duration_ms,&outcome.error]).await?;
     }

@@ -15,7 +15,10 @@ use tokio::sync::Semaphore;
 use url::{Host, Url};
 
 /// Blocking system DNS lookups running at once for webhook destinations.
-const DNS_SLOTS: usize = 4;
+/// Well above the worker's four sends: a lookup that outlives its request
+/// keeps its slot, so one destination whose nameserver never answers (at most
+/// two sends at a time) is unlikely to hold every slot the others need.
+const DNS_SLOTS: usize = 16;
 
 /// Local DNS capacity was exhausted, so no request left this host.
 #[derive(Debug)]
