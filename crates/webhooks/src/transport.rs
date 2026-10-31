@@ -7,6 +7,11 @@ use crate::{
 };
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+/// Response bytes read so a keep-alive connection can return to the pool.
+const DRAIN_BYTES: usize = 64 * 1024;
+/// Time allowed for that read; a slow receiver's connection is closed instead.
+const DRAIN_TIME: Duration = Duration::from_secs(1);
+
 #[derive(Clone)]
 pub(crate) struct Transport {
     http: reqwest::Client,
@@ -59,7 +64,7 @@ impl Transport {
                     .and_then(|v| v.to_str().ok())
                     .and_then(|v| v.parse::<u64>().ok());
                 let success = (200..300).contains(&status);
-                outcome(
+                let result = outcome(
                     Some(i32::from(status)),
                     match success {
                         true => None,
@@ -68,7 +73,9 @@ impl Transport {
                     retryable(status),
                     retry_after,
                     started,
-                )
+                );
+                drain(response).await;
+                result
             }
             Ok(Err(error)) if destination::dns_busy(&error) => Outcome {
                 // Local DNS capacity ran out before any request left this host.
@@ -86,6 +93,21 @@ impl Transport {
             Err(_) => outcome(None, Some("timeout"), true, None, started),
         }
     }
+}
+
+/// Reads a small body to its end and discards it: an unread body keeps its
+/// connection out of the pool, so every delivery would open a new one.
+async fn drain(mut response: reqwest::Response) {
+    let mut left = DRAIN_BYTES;
+    let read = async {
+        while let Ok(Some(chunk)) = response.chunk().await {
+            match left.checked_sub(chunk.len()) {
+                Some(rest) => left = rest,
+                None => return,
+            }
+        }
+    };
+    let _ = tokio::time::timeout(DRAIN_TIME, read).await;
 }
 
 fn retryable(status: u16) -> bool {
