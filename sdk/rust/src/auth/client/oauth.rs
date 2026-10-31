@@ -13,11 +13,7 @@ impl AuthClient {
     pub fn begin_oauth(&self, provider: OAuthProvider, redirect_to: &str) -> Result<PkceFlow> {
         let redirect = Url::parse(redirect_to)
             .map_err(|_| Error::Usage("redirect_to must be an absolute URL".into()))?;
-        let mut bytes = [0; 32];
-        getrandom::fill(&mut bytes)
-            .map_err(|_| Error::Usage("secure random generator unavailable".into()))?;
-        let verifier = URL_SAFE_NO_PAD.encode(bytes);
-        let challenge = URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes()));
+        let (verifier, challenge) = pkce_pair()?;
         let mut url = self.client.url("/auth/v1/authorize")?;
         url.query_pairs_mut().extend_pairs([
             ("provider", provider.as_str()),
@@ -31,13 +27,7 @@ impl AuthClient {
         if code.trim().is_empty() {
             return Err(Error::Usage("OAuth code is required".into()));
         }
-        if !(43..=128).contains(&verifier.len())
-            || !verifier
-                .bytes()
-                .all(|b| b.is_ascii_alphanumeric() || b"-._~".contains(&b))
-        {
-            return Err(Error::Usage("invalid PKCE verifier".into()));
-        }
+        check_verifier(verifier)?;
         let guard = self.manager().lock(self.options()).await?;
         let current = self
             .token("pkce", json!({"auth_code":code, "code_verifier":verifier}))
@@ -77,4 +67,26 @@ impl AuthClient {
             None => Ok(None),
         }
     }
+}
+
+/// A fresh PKCE verifier and its S256 challenge.
+pub(super) fn pkce_pair() -> Result<(String, String)> {
+    let mut bytes = [0; 32];
+    getrandom::fill(&mut bytes)
+        .map_err(|_| Error::Usage("secure random generator unavailable".into()))?;
+    let verifier = URL_SAFE_NO_PAD.encode(bytes);
+    let challenge = URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes()));
+    Ok((verifier, challenge))
+}
+
+/// RFC 7636 verifier syntax, checked before any request.
+pub(super) fn check_verifier(verifier: &str) -> Result<()> {
+    if !(43..=128).contains(&verifier.len())
+        || !verifier
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"-._~".contains(&b))
+    {
+        return Err(Error::Usage("invalid PKCE verifier".into()));
+    }
+    Ok(())
 }

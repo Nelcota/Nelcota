@@ -7,6 +7,11 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Added
 
+- `sign_up` sends an S256 challenge and a pending sign-up returns
+  `SignUp::verifier`; `AuthClient::verify_signup_link(&link, &verifier)`
+  confirms with it, keeping the password chosen at sign-up. `SignUp` gained
+  that public field (code building `SignUp` literals must add it) and its
+  `Debug` output omits the verifier.
 - `AuthClient::try_start_auto_refresh` returns an error outside a Tokio runtime
   instead of panicking; `start_auto_refresh` (documented to panic there) and the
   `AutoRefresh` handle are `#[must_use]`.
