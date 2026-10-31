@@ -45,11 +45,17 @@
     comment: "text-[var(--syntax-comment)] italic",
   };
 
+  // One feedback timer: a second copy restarts it instead of being cut short
+  // by the first one, and closing the block does not leave it running.
+  let feedback: ReturnType<typeof setTimeout> | undefined;
+  $effect(() => () => clearTimeout(feedback));
+
   async function copy() {
     const copyFeedbackInMs = 1500;
 
     copied = await copyText(code);
-    setTimeout(() => (copied = false), copyFeedbackInMs);
+    clearTimeout(feedback);
+    feedback = setTimeout(() => (copied = false), copyFeedbackInMs);
   }
 </script>
 

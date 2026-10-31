@@ -31,6 +31,11 @@
     debounce = setTimeout(() => load(query), query !== "" ? SEARCH_DEBOUNCE_IN_MS : 0);
     return () => clearTimeout(debounce);
   });
+  // Closing the picker (or leaving the page) drops a search still in flight.
+  $effect(() => {
+    if (open === false) return;
+    return () => resource.cancel();
+  });
 
   function pick(user: RunAsUser) {
     onpick(user);
