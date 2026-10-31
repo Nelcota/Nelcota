@@ -9,8 +9,9 @@ The App Router example stays on 0.2.4 until 0.2.5 passes its 14-day
 `@nelcota/ssr` is a regular dependency with a patch-only (`~`) range, not a
 peer: applications never import it. Publish the required core release (tag
 `ssr-sdk-v*`) first; the release workflow checks that the range resolves on npm.
-The `overrides` entry pointing it at `file:../ssr` only applies inside this
-checkout (npm ignores `overrides` of installed dependencies), and
+The `resolutions` entry pointing it at `file:../ssr` is read only by Bun inside
+this checkout (npm ignores `resolutions`, so packing and installing use the
+published range), and
 `scripts/package-smoke.mjs` verifies the range accepts the packed core.
 
 ## Verification

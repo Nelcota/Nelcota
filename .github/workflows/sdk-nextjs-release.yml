@@ -42,7 +42,7 @@ jobs:
           '
           npm view @nelcota/client@0.2.2 version
           # The adapter's runtime dependency: publish @nelcota/ssr (tag ssr-sdk-v*) first.
-          # The local `overrides` entry only applies inside this checkout.
+          # The Bun `resolutions` entry only applies inside this checkout.
           core=$(bun -p "require('./package.json').dependencies['@nelcota/ssr']")
           test -n "$(npm view "@nelcota/ssr@$core" version)"
       - name: Skip an already published version

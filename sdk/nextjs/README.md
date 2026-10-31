@@ -318,7 +318,7 @@ these cases.
 From the repository root, install/build the base SDK and then the SSR core
 (`bun install --cwd sdk/ssr --frozen-lockfile && bun run --cwd sdk/ssr build`),
 then `bun install --cwd sdk/nextjs --frozen-lockfile`. That install copies the
-built core (a local `overrides` entry points `@nelcota/ssr` at `../ssr`):
+built core (a Bun `resolutions` entry points `@nelcota/ssr` at `../ssr`):
 `check` type-checks against its `dist`, while Vitest runs the core's sources,
 so rebuild and reinstall after changing `sdk/ssr`. Run Rust, Vitest and audits sequentially:
 

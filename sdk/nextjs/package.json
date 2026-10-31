@@ -80,7 +80,7 @@
     "next": "^16.4.3",
     "react": "^19.3.1"
   },
-  "overrides": {
+  "resolutions": {
     "@nelcota/ssr": "file:../ssr"
   },
   "engines": {

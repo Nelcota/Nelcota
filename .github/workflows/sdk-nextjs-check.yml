@@ -49,7 +49,7 @@ jobs:
         if: matrix.runtime == 'bun' && matrix.browser == 'chromium'
         working-directory: sdk/ssr
         run: bun run test:edge
-      # Copies the SSR core built above (`overrides` → file:../ssr): `check` type-checks
+      # Copies the SSR core built above (Bun `resolutions` → file:../ssr): `check` type-checks
       # against its dist, while Vitest aliases its sources. Keep the build first.
       - run: bun install --frozen-lockfile
         working-directory: sdk/nextjs
