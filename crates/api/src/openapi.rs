@@ -1,5 +1,6 @@
 //! OpenAPI 3.0 document generated from the catalog, filtered by the request
-//! role's privileges (each role only sees what it can use).
+//! role's privileges (each role only sees what it can use): tables and
+//! columns it holds a table or column GRANT on, and the functions it may run.
 
 use nelcota_core::Role;
 use serde_json::{Map, Value, json};
@@ -45,14 +46,13 @@ fn column_schema(column: &Column) -> Value {
     schema
 }
 
-fn table_schema(table: &Table) -> Value {
-    let properties: Map<String, Value> = table
-        .columns
+/// The row of `table` as `columns` (those the role can use) describe it.
+fn table_schema(table: &Table, columns: &[&Column]) -> Value {
+    let properties: Map<String, Value> = columns
         .iter()
         .map(|c| (c.name.clone(), column_schema(c)))
         .collect();
-    let required: Vec<&str> = table
-        .columns
+    let required: Vec<&str> = columns
         .iter()
         .filter(|c| !c.nullable && !c.has_default)
         .map(|c| c.name.as_str())
@@ -88,15 +88,25 @@ pub fn document(catalog: &Catalog, role: Role) -> Value {
     let mut schemas = Map::new();
 
     for table in catalog.tables.values() {
-        let privileges = table.privileges_for(role);
-        if !(privileges.select || privileges.insert || privileges.update || privileges.delete) {
-            continue;
-        }
-        schemas.insert(table.name.clone(), table_schema(table));
-
-        let filters: Vec<Value> = table
+        // A column GRANT alone also makes the table usable (`select=col`).
+        let columns: Vec<&Column> = table
             .columns
             .iter()
+            .filter(|c| c.privileges_for(role).any())
+            .collect();
+        let mut privileges = table.privileges_for(role);
+        for column in &columns {
+            privileges = privileges.union(column.privileges_for(role));
+        }
+        if !privileges.any() {
+            continue;
+        }
+        schemas.insert(table.name.clone(), table_schema(table, &columns));
+
+        // Filtering on a column reads it.
+        let filters: Vec<Value> = columns
+            .iter()
+            .filter(|c| c.privileges_for(role).select)
             .map(|c| {
                 json!({
                     "name": c.name, "in": "query", "required": false,
@@ -280,6 +290,67 @@ mod tests {
             functions: Default::default(),
             named_types: Default::default(),
         }
+    }
+
+    #[test]
+    fn documents_list_only_the_columns_a_role_can_use() {
+        let read = Privileges {
+            select: true,
+            ..Privileges::default()
+        };
+        let none = Privileges::default();
+        let column = |name: &str, privileges| Column {
+            name: name.into(),
+            type_name: "text".into(),
+            full_type: "text".into(),
+            category: 'S',
+            element_type: None,
+            enum_values: vec![],
+            nullable: false,
+            has_default: false,
+            generated: false,
+            comment: Some(format!("about {name}")),
+            privileges,
+        };
+        let mut catalog = catalog();
+        catalog.tables.insert(
+            "staff".into(),
+            Table {
+                name: "staff".into(),
+                kind: TableKind::Table,
+                // Column GRANTs only: no table privilege for anyone.
+                columns: vec![
+                    column("name", [read; 3]),
+                    column("salary", [none, none, read]),
+                ],
+                primary_key: vec![],
+                foreign_keys: vec![],
+                rls_enabled: true,
+                rls_forced: false,
+                security_invoker: false,
+                comment: None,
+                privileges: [none; 3],
+            },
+        );
+        let doc = document(&catalog, Role::Anon);
+        let staff = &doc["components"]["schemas"]["staff"];
+        assert!(staff["properties"].get("name").is_some(), "{staff}");
+        assert!(staff["properties"].get("salary").is_none(), "{staff}");
+        assert_eq!(staff["required"], json!(["name"]));
+        assert!(!doc.to_string().contains("about salary"));
+        let path = &doc["paths"]["/staff"];
+        assert!(path.get("post").is_none() && path.get("delete").is_none());
+        let names: Vec<&str> = path["get"]["parameters"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|p| p["name"].as_str())
+            .collect();
+        assert!(names.contains(&"name"), "{names:?}");
+        assert!(!names.contains(&"salary"), "{names:?}");
+        let doc = document(&catalog, Role::ServiceRole);
+        let staff = &doc["components"]["schemas"]["staff"];
+        assert!(staff["properties"].get("salary").is_some(), "{staff}");
     }
 
     #[test]

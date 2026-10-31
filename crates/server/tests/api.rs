@@ -1533,3 +1533,122 @@ async fn exact_count_ignores_paging_but_respects_filters_and_row_policies() {
         assert_eq!(reply.headers[header::CONTENT_RANGE], expected);
     }
 }
+
+#[tokio::test]
+async fn reads_are_read_only_even_through_a_view_that_writes() {
+    let app = TestApp::spawn().await;
+    app.admin_client
+        .batch_execute(
+            "CREATE TABLE public.read_log (id serial PRIMARY KEY);
+             CREATE FUNCTION public.log_read() RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER
+             AS $$ BEGIN INSERT INTO public.read_log DEFAULT VALUES; RETURN true; END $$;
+             CREATE VIEW public.logged_products AS
+             SELECT id, name FROM public.products WHERE public.log_read();
+             GRANT SELECT ON public.logged_products TO anon;",
+        )
+        .await
+        .unwrap();
+    app.catalog.reload(&app.pool).await.unwrap();
+    async fn logged(app: &TestApp) -> i64 {
+        app.admin_client
+            .query_one("SELECT count(*) FROM public.read_log", &[])
+            .await
+            .unwrap()
+            .get(0)
+    }
+    let reply = app
+        .request(Method::GET, "/rest/v1/logged_products", None, None)
+        .await;
+    assert_eq!(reply.status, StatusCode::BAD_REQUEST, "{}", reply.body);
+    assert_eq!(reply.body["sqlstate"], "25006");
+    assert_eq!(logged(&app).await, 0, "a GET must not write");
+    // Function calls (POST /rpc) keep a read-write transaction.
+    let reply = app.post("/rest/v1/rpc/log_read", None, json!({})).await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
+    assert_eq!(logged(&app).await, 1);
+}
+
+#[tokio::test]
+async fn partitions_and_inheritance_children_are_not_exposed() {
+    let app = TestApp::spawn().await;
+    app.admin_client
+        .batch_execute(
+            "CREATE TABLE public.events (id int, at date NOT NULL) PARTITION BY RANGE (at);
+             CREATE TABLE public.events_2026 PARTITION OF public.events
+                 FOR VALUES FROM ('2026-01-01') TO ('2027-01-01');
+             ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+             CREATE POLICY nobody ON public.events FOR SELECT TO anon USING (false);
+             INSERT INTO public.events VALUES (1, '2026-05-01');
+             CREATE TABLE public.base_notes (id int);
+             ALTER TABLE public.base_notes ENABLE ROW LEVEL SECURITY;
+             CREATE TABLE public.child_notes (extra text) INHERITS (public.base_notes);
+             INSERT INTO public.child_notes VALUES (1, 'x');
+             CREATE TABLE public.own_notes (extra text) INHERITS (public.base_notes);
+             ALTER TABLE public.own_notes ENABLE ROW LEVEL SECURITY;
+             GRANT SELECT ON public.events, public.events_2026,
+                 public.base_notes, public.child_notes, public.own_notes TO anon;",
+        )
+        .await
+        .unwrap();
+    app.catalog.reload(&app.pool).await.unwrap();
+    let catalog = app.catalog.get();
+    assert!(catalog.table("events").is_some());
+    assert!(catalog.table("base_notes").is_some());
+    let (_, document) = app.get("/rest/v1/", None).await;
+    for child in ["events_2026", "child_notes"] {
+        // Read directly, a child would skip its parent's row policies.
+        assert!(catalog.table(child).is_none(), "{child}");
+        let (status, body) = app.get(&format!("/rest/v1/{child}"), None).await;
+        assert_eq!(status, StatusCode::NOT_FOUND, "{body}");
+        assert!(document["paths"].get(format!("/{child}")).is_none());
+    }
+    // A child with row-level security of its own was exposed on purpose.
+    assert!(catalog.table("own_notes").is_some());
+    let (status, body) = app.get("/rest/v1/own_notes", None).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body, json!([]));
+    // Through the parent, its policies apply to every child's rows.
+    for parent in ["events", "base_notes"] {
+        let (status, body) = app.get(&format!("/rest/v1/{parent}"), None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body, json!([]), "{parent}");
+    }
+}
+
+#[tokio::test]
+async fn openapi_lists_only_the_columns_a_role_can_use() {
+    let app = TestApp::spawn().await;
+    app.admin_client
+        .batch_execute(
+            "CREATE TABLE public.staff (id int PRIMARY KEY, name text, salary numeric);
+             COMMENT ON COLUMN public.staff.salary IS 'confidential pay';
+             INSERT INTO public.staff VALUES (1, 'Ana', 100);
+             GRANT SELECT (id, name) ON public.staff TO anon;
+             GRANT SELECT ON public.staff TO service_role;",
+        )
+        .await
+        .unwrap();
+    app.catalog.reload(&app.pool).await.unwrap();
+    let (_, anon) = app.get("/rest/v1/", None).await;
+    let staff = &anon["components"]["schemas"]["staff"]["properties"];
+    assert!(staff.get("name").is_some(), "{staff}");
+    assert!(staff.get("salary").is_none(), "{staff}");
+    assert!(!anon.to_string().contains("confidential pay"));
+    let names: Vec<&str> = anon["paths"]["/staff"]["get"]["parameters"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|p| p["name"].as_str())
+        .collect();
+    assert!(names.contains(&"id"), "{names:?}");
+    assert!(!names.contains(&"salary"), "{names:?}");
+    // What the document shows is what the API serves to this role.
+    let (status, body) = app.get("/rest/v1/staff?select=id,name", None).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body, json!([{ "id": 1, "name": "Ana" }]));
+    let (status, _) = app.get("/rest/v1/staff?select=salary", None).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    let (_, service) = app.get("/rest/v1/", Some(&service_token())).await;
+    let staff = &service["components"]["schemas"]["staff"]["properties"];
+    assert!(staff.get("salary").is_some(), "{staff}");
+}

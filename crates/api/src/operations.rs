@@ -87,18 +87,33 @@ async fn execute(tx: &Transaction<'_>, sql: &Sql) -> Result<u64, tokio_postgres:
     tx.execute(&statement, &sql.param_refs()).await
 }
 
-/// Runs the body in a transaction with the request role/claims.
+/// Runs the body in a transaction with the request role/claims, opened by
+/// `db::begin_request` unless another opener is given. If the
+/// request is dropped before every statement answered, the connection guard
+/// cancels the statement still running in Postgres.
 macro_rules! in_request_tx {
-    ($pool:expr, $claims:expr, |$tx:ident| $body:block) => {{
+    ($pool:expr, $claims:expr, |$tx:ident| $body:block) => {
+        in_request_tx!(
+            $pool,
+            $claims,
+            db::begin_request,
+            ApiError::from_db,
+            |$tx| $body
+        )
+    };
+    ($pool:expr, $claims:expr, $begin:path, $error:path, |$tx:ident| $body:block) => {{
         let role = $claims.role();
-        let db_err = |e| ApiError::from_db(e, role);
-        let mut client = $pool.get().await.map_err(ApiError::from_pool)?;
-        let $tx = db::begin_request(&mut client, &$claims)
-            .await
-            .map_err(db_err)?;
-        let result = async { $body }.await.map_err(db_err)?;
-        $tx.commit().await.map_err(db_err)?;
-        result
+        let mut connection =
+            db::RequestConnection::new($pool.get().await.map_err(ApiError::from_pool)?);
+        let outcome = async {
+            let $tx = $begin(connection.client(), &$claims).await?;
+            let result = async { $body }.await?;
+            $tx.commit().await?;
+            Ok::<_, tokio_postgres::Error>(result)
+        }
+        .await;
+        connection.finish();
+        outcome.map_err(|e| $error(e, role))?
     }};
 }
 
@@ -160,7 +175,11 @@ pub(crate) async fn read(
     } else {
         query::select(&catalog.schema, table, &request, max_rows)
     };
-    let (body, rows, total) = in_request_tx!(pool, claims, |tx| {
+    // Reads never write, also not through a view or a policy calling a
+    // volatile function (as PostgREST does for GET).
+    // Reads run READ ONLY; a view or policy writing during one is a 400.
+    let error = ApiError::from_read_db;
+    let (body, rows, total) = in_request_tx!(pool, claims, db::begin_read_request, error, |tx| {
         let statement = tx.prepare(&sql.text).await?;
         let row = tx.query_one(&statement, &sql.param_refs()).await?;
         Ok::<_, tokio_postgres::Error>((

@@ -1087,6 +1087,17 @@ terminal deliveries older than seven days or beyond the newest 100,000,
 continuing while batches come back full. `nelcota.webhook_queue_usage` remains
 as a read-only view.
 
+**D115. One caller cannot hold the REST pool.** The request pool is small and
+RLS says which rows a query may see, not how much it may cost, so the server
+bounds who uses the pool: each REST request takes one of its caller's slots
+(the signed-in user, otherwise the client address with IPv6 grouped per /64;
+`service_role` is exempt), `NELCOTA_API_CONCURRENCY_PER_CALLER` at a time and
+half of the pool by default. Extras wait one second, then get 429. A request
+that is dropped cancels its PostgreSQL statement, and its connection is closed
+instead of returning to the pool, so a late cancel cannot reach another
+request. This limits
+concurrency, not request rate; a per-minute rate limit is a separate control.
+
 ### Known pending items
 
 - Filtering parent rows by their embeds (`!inner`) and self-referencing embeds.
