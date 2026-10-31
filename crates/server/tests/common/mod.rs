@@ -182,6 +182,8 @@ impl Default for Options {
                 min_free_bytes: 0,
                 public_url: None,
                 upload_timeout: Duration::from_secs(30),
+                uploads_per_caller: nelcota_core::config::DEFAULT_STORAGE_UPLOADS_PER_CALLER,
+                proxy_hops: 0,
             },
             store: None,
         }

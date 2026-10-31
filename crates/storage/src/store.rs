@@ -157,7 +157,7 @@ impl Store {
                     inner: s3.clone(),
                     backend: Backend::S3 { s3 },
                     multipart_slots: Arc::new(tokio::sync::Semaphore::new(
-                        crate::CONCURRENT_UPLOADS,
+                        nelcota_core::config::STORAGE_CONCURRENT_UPLOADS,
                     )),
                     gc_owner: OnceLock::new(),
                     ownership_ready: tokio::sync::OnceCell::new(),
@@ -175,7 +175,9 @@ impl Store {
         Ok(Store {
             inner: Arc::new(fs),
             backend: Backend::Disk { root },
-            multipart_slots: Arc::new(tokio::sync::Semaphore::new(crate::CONCURRENT_UPLOADS)),
+            multipart_slots: Arc::new(tokio::sync::Semaphore::new(
+                nelcota_core::config::STORAGE_CONCURRENT_UPLOADS,
+            )),
             gc_owner: OnceLock::new(),
             ownership_ready: tokio::sync::OnceCell::new(),
             shared: AtomicBool::new(false),

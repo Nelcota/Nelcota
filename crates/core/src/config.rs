@@ -73,6 +73,12 @@ pub const MAX_PROXY_HOPS: u8 = 8;
 /// Upper bound for the statement and upload timeouts: one day. Larger values
 /// overflow PostgreSQL's millisecond statement_timeout or a deadline instant.
 pub const MAX_TIMEOUT_SECS: u64 = 86_400;
+/// Uploads one process streams at once (storage). Bounds the memory held in
+/// upload parts and caps `NELCOTA_STORAGE_UPLOADS_PER_CALLER`.
+pub const STORAGE_CONCURRENT_UPLOADS: usize = 32;
+/// Default uploads per caller: a quarter of the process slots, so at least
+/// four callers can upload at once whatever one of them does.
+pub const DEFAULT_STORAGE_UPLOADS_PER_CALLER: usize = STORAGE_CONCURRENT_UPLOADS / 4;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Config {
@@ -200,6 +206,10 @@ pub struct Config {
     pub storage_public_url: Option<String>,
     /// Longest an upload may take, in seconds.
     pub storage_upload_timeout_secs: u64,
+    /// Uploads one caller (a signed-in user, or one client network) may
+    /// stream at once; 0 disables the limit. At most
+    /// [`STORAGE_CONCURRENT_UPLOADS`].
+    pub storage_uploads_per_caller: usize,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -275,6 +285,7 @@ impl Default for Config {
             storage_min_free_bytes: 1024 * 1024 * 1024,
             storage_public_url: None,
             storage_upload_timeout_secs: 3600,
+            storage_uploads_per_caller: DEFAULT_STORAGE_UPLOADS_PER_CALLER,
         }
     }
 }
@@ -445,6 +456,11 @@ impl Config {
         if self.storage_upload_timeout_secs > MAX_TIMEOUT_SECS {
             return Err(ConfigError::Invalid(
                 "NELCOTA_STORAGE_UPLOAD_TIMEOUT_SECS must be at most 86400 (one day)",
+            ));
+        }
+        if self.storage_uploads_per_caller > STORAGE_CONCURRENT_UPLOADS {
+            return Err(ConfigError::Invalid(
+                "NELCOTA_STORAGE_UPLOADS_PER_CALLER must be at most 32 (the upload slots of a process)",
             ));
         }
         if let Some(url) = self.storage_public_url.as_deref().map(str::trim)
@@ -981,6 +997,24 @@ mod tests {
         // An unbounded value panics when the upload deadline instant is computed.
         assert!(disk(MAX_TIMEOUT_SECS + 1).validate_storage().is_err());
         assert!(disk(u64::MAX).validate_storage().is_err());
+    }
+
+    #[test]
+    fn uploads_per_caller_default_to_a_quarter_and_are_bounded() {
+        let disk = |storage_uploads_per_caller| Config {
+            storage_backend: StorageBackend::Disk,
+            storage_dir: Some("/storage".into()),
+            storage_uploads_per_caller,
+            ..valid()
+        };
+        assert_eq!(Config::default().storage_uploads_per_caller, 8);
+        assert!(disk(0).validate_storage().is_ok(), "0 turns the limit off");
+        assert!(disk(STORAGE_CONCURRENT_UPLOADS).validate_storage().is_ok());
+        assert!(
+            disk(STORAGE_CONCURRENT_UPLOADS + 1)
+                .validate_storage()
+                .is_err()
+        );
     }
 
     #[test]

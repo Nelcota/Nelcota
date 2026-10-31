@@ -28,9 +28,9 @@ use axum::{
     routing::{get, post},
 };
 pub use catalog::{Catalog, CatalogHandle, ReloadListener, spawn_reload_listener};
-pub use concurrency::{CallerLimit, CallerSlot};
 use deadpool_postgres::Pool;
 use nelcota_auth::SharedVerifier;
+pub use nelcota_auth::{CallerLimit, CallerSlot};
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]

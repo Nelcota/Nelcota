@@ -417,6 +417,14 @@ for the October 27 server scope and independent SDK publication checkpoint.
   caller that has not presented the project capability within 1 second, so
   local users who can reach its socket can no longer stall a migration's
   backup. The capability is compared in constant time.
+- One caller can no longer hold every upload slot. Each signed-in user, or
+  client network for requests without a user, streams at most
+  `NELCOTA_STORAGE_UPLOADS_PER_CALLER` uploads at once (8 by default, a quarter
+  of the 32 process slots; `service_role` is exempt; 0 turns it off); extras
+  wait up to one second, then get `429 rate_limited` with `Retry-After: 1`,
+  like the REST per-caller limit. A body that trickles a byte often enough to
+  dodge the 60-second idle timeout now also ends with `408 upload_timeout`:
+  after its first minute, each minute must bring at least 16 KiB.
 
 ## [0.5.6] — 2026-10-27
 

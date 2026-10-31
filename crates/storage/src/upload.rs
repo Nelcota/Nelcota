@@ -13,7 +13,8 @@ use nelcota_core::{ApiError, Claims, db::begin_request};
 use object_store::path::Path as Key;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use std::{pin::Pin, time::Duration};
+use std::{net::IpAddr, pin::Pin, time::Duration};
+use tokio::time::Instant;
 use uuid::Uuid;
 
 pub type UploadStream = Pin<Box<dyn Stream<Item = Result<Bytes, std::io::Error>> + Send>>;
@@ -22,11 +23,23 @@ pub type UploadStream = Pin<Box<dyn Stream<Item = Result<Bytes, std::io::Error>>
 /// caller; without this a trickling body holds one until the whole upload
 /// timeout (an hour by default) runs out.
 const BODY_IDLE: Duration = Duration::from_secs(60);
+/// The transfer-rate floor: after [`RATE_GRACE`], every consecutive
+/// [`RATE_WINDOW`] must bring at least [`RATE_MIN_BYTES`]. A body that sends a
+/// byte just often enough to dodge [`BODY_IDLE`] still loses its slot within
+/// two minutes. The floor (16 KiB a minute, about 273 bytes/s) is far below
+/// any usable link: a 64 KiB/s upload brings 3.75 MiB per window.
+const RATE_GRACE: Duration = Duration::from_secs(60);
+const RATE_WINDOW: Duration = Duration::from_secs(60);
+const RATE_MIN_BYTES: u64 = 16 * 1024;
 #[derive(Default)]
 pub struct UploadOptions {
     pub content_length: Option<u64>,
     pub content_type: Option<String>,
     pub replace: bool,
+    /// The client's address, which keys the per-caller upload limit for
+    /// requests without a signed-in user. `None` (an embedded caller) is not
+    /// limited per caller.
+    pub client: Option<IpAddr>,
 }
 #[derive(Serialize)]
 pub struct UploadedObject {
@@ -82,7 +95,8 @@ async fn write(
     options: UploadOptions,
     body: UploadStream,
 ) -> Result<UploadOutcome, ApiError> {
-    let deadline = tokio::time::Instant::now() + state.settings.upload_timeout;
+    let deadline = Instant::now() + state.settings.upload_timeout;
+    let caller = nelcota_auth::caller_key(&claims, options.client);
     let mode = match options.replace {
         true => Mode::Upsert,
         false => Mode::Create,
@@ -91,7 +105,10 @@ async fn write(
     let name = path::object(name)?;
     // One deadline covers pool waits, the policy check, admission and bytes.
     // Active uploads are bounded; overload never builds an unbounded queue.
+    // A caller first takes one of its own slots (429 when it keeps them all
+    // busy), so no single caller can hold every process-wide slot.
     let (settings, limit, mut reservation, _slot) = tokio::time::timeout_at(deadline, async {
+        let caller_slot = state.callers.clone().admit(caller).await?;
         let slot = state.uploads.clone().try_acquire_owned().map_err(|_| {
             ApiError::new(
                 StatusCode::SERVICE_UNAVAILABLE,
@@ -161,7 +178,7 @@ async fn write(
             .await
             .map_err(store_failed)?;
         let reservation = quota::reserve(&state, old_size, declared, limit).await?;
-        Ok::<_, ApiError>((settings, limit, reservation, slot))
+        Ok::<_, ApiError>((settings, limit, reservation, (caller_slot, slot)))
     })
     .await
     .map_err(|_| upload_timeout())??;
@@ -276,19 +293,73 @@ async fn visible(
     Ok(row.is_some())
 }
 
-/// The next body chunk, or an error when the body fails or stalls.
-async fn next_chunk(stream: &mut UploadStream) -> Result<Option<Bytes>, ApiError> {
-    match tokio::time::timeout(BODY_IDLE, stream.next()).await {
-        Err(_) => Err(upload_timeout()),
-        Ok(None) => Ok(None),
-        Ok(Some(chunk)) => chunk.map(Some).map_err(|_| {
+/// Bytes received per consecutive window, checked against the rate floor.
+/// Fed with instants rather than reading the clock, so the rule is tested
+/// apart from any I/O.
+#[derive(Debug)]
+struct RateFloor {
+    /// Start of the window being counted; the first one opens after the grace.
+    window_start: Instant,
+    /// Bytes received in that window.
+    received: u64,
+}
+
+impl RateFloor {
+    fn new(start: Instant) -> Self {
+        RateFloor {
+            window_start: start + RATE_GRACE,
+            received: 0,
+        }
+    }
+
+    /// Records `bytes` received at `now`; `Err` when a window that closed
+    /// by `now` brought too little.
+    fn record(&mut self, now: Instant, bytes: u64) -> Result<(), ()> {
+        while now >= self.window_start + RATE_WINDOW {
+            if self.received < RATE_MIN_BYTES {
+                return Err(());
+            }
+            self.window_start += RATE_WINDOW;
+            self.received = 0;
+        }
+        if now >= self.window_start {
+            self.received = self.received.saturating_add(bytes);
+        }
+        Ok(())
+    }
+
+    /// When the floor fails if nothing more arrives: the end of the current
+    /// window when it is still short, else the end of the next (empty) one.
+    fn deadline(&self) -> Instant {
+        match self.received < RATE_MIN_BYTES {
+            true => self.window_start + RATE_WINDOW,
+            false => self.window_start + RATE_WINDOW * 2,
+        }
+    }
+}
+
+/// The next body chunk, or an error when the body fails, stalls or stays
+/// below the transfer-rate floor.
+async fn next_chunk(
+    stream: &mut UploadStream,
+    floor: &mut RateFloor,
+) -> Result<Option<Bytes>, ApiError> {
+    let wait_until = floor.deadline().min(Instant::now() + BODY_IDLE);
+    let chunk = match tokio::time::timeout_at(wait_until, stream.next()).await {
+        Err(_) => return Err(upload_timeout()),
+        Ok(None) => return Ok(None),
+        Ok(Some(chunk)) => chunk.map_err(|_| {
             ApiError::new(
                 StatusCode::BAD_REQUEST,
                 "upload_interrupted",
                 "the upload was interrupted",
             )
-        }),
-    }
+        })?,
+    };
+    floor
+        .record(Instant::now(), chunk.len() as u64)
+        .map_err(|()| upload_timeout())?;
+    Ok(Some(chunk))
 }
 
 fn upload_timeout() -> ApiError {
@@ -375,6 +446,7 @@ async fn receive(
     allowed: Option<&[String]>,
 ) -> Result<Received, ApiError> {
     let mut stream = body;
+    let mut floor = RateFloor::new(Instant::now());
     let mut hasher = Sha256::new();
     let mut size = 0u64;
     let store = &state.store;
@@ -390,7 +462,7 @@ async fn receive(
     // The first bytes decide the type before anything is written.
     let mut head = Vec::new();
     let mut ended = true;
-    while let Some(chunk) = next_chunk(&mut stream).await? {
+    while let Some(chunk) = next_chunk(&mut stream, &mut floor).await? {
         take(&chunk).await?;
         head.extend_from_slice(&chunk);
         if head.len() >= SNIFF_BYTES {
@@ -419,7 +491,7 @@ async fn receive(
             writer.write(&head);
             let mut result = Ok(());
             loop {
-                let chunk = match next_chunk(&mut stream).await {
+                let chunk = match next_chunk(&mut stream, &mut floor).await {
                     Ok(Some(chunk)) => chunk,
                     Ok(None) => break,
                     Err(err) => {
@@ -460,6 +532,59 @@ mod tests {
     use nelcota_core::Role;
 
     use super::*;
+
+    const KIB: u64 = 1024;
+
+    #[test]
+    fn the_rate_floor_spares_the_first_minute_and_slow_links() {
+        let start = Instant::now();
+        let at = |secs: u64| start + Duration::from_secs(secs);
+        // Nothing counts during the grace: a slow start is fine.
+        let mut floor = RateFloor::new(start);
+        floor.record(at(59), 1).unwrap();
+        assert!(floor.deadline() == at(120));
+        // 64 KiB/s, one chunk a second, for ten minutes.
+        let mut slow_link = RateFloor::new(start);
+        for second in 1..=600 {
+            slow_link.record(at(second), 64 * KIB).unwrap();
+        }
+        // Exactly the floor in each window passes too.
+        let mut minimal = RateFloor::new(start);
+        for window in 1..=5 {
+            minimal
+                .record(at(60 * window + 30), RATE_MIN_BYTES)
+                .unwrap();
+        }
+        minimal.record(at(60 * 6 + 1), 1).unwrap();
+    }
+
+    #[test]
+    fn a_trickle_that_dodges_the_idle_timeout_fails_the_floor() {
+        let start = Instant::now();
+        let at = |secs: u64| start + Duration::from_secs(secs);
+        // One byte every 50 s: never idle for 60 s, but far below the floor.
+        let mut floor = RateFloor::new(start);
+        let failed_at = (1..=72)
+            .map(|n| 50 * n)
+            .find(|&secs| floor.record(at(secs), 1).is_err());
+        assert_eq!(failed_at, Some(150), "the window [60 s, 120 s) was short");
+        // Waiting for the next chunk ends when the short window closes.
+        let mut floor = RateFloor::new(start);
+        floor.record(at(70), RATE_MIN_BYTES - 1).unwrap();
+        assert!(floor.deadline() == at(120));
+        assert!(floor.record(at(120), 1).is_err());
+    }
+
+    #[test]
+    fn a_window_skipped_after_a_good_one_still_fails() {
+        let start = Instant::now();
+        let at = |secs: u64| start + Duration::from_secs(secs);
+        let mut floor = RateFloor::new(start);
+        floor.record(at(61), RATE_MIN_BYTES).unwrap();
+        assert!(floor.deadline() == at(180));
+        // [120 s, 180 s) brought nothing.
+        assert!(floor.record(at(181), 64 * KIB).is_err());
+    }
 
     #[test]
     fn only_name_dependent_refusals_are_concealed() {
