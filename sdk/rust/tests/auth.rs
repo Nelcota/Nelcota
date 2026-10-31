@@ -486,10 +486,7 @@ async fn file_storage_round_trips_atomically() {
     store.save(None).await.unwrap();
     assert!(store.load().await.unwrap().is_none());
     std::fs::write(store.path(), "not json").unwrap();
-    assert_eq!(
-        store.load().await.unwrap_err().code(),
-        "session_storage_error"
-    );
+    assert_eq!(store.load().await.unwrap_err().code(), "session_invalid");
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
@@ -536,7 +533,7 @@ async fn sign_out_clears_a_session_the_store_cannot_load() {
     struct Broken(std::sync::Mutex<Vec<bool>>);
     impl SessionStorage for Broken {
         fn load(&self) -> StorageFuture<'_, Option<Session>> {
-            Box::pin(async { Err(nelcota_client::Error::SessionStorage("corrupt".into())) })
+            Box::pin(async { Err(nelcota_client::Error::SessionInvalid("corrupt".into())) })
         }
         fn save<'a>(&'a self, session: Option<&'a Session>) -> StorageFuture<'a, ()> {
             self.0.lock().unwrap().push(session.is_some());
@@ -552,6 +549,45 @@ async fn sign_out_clears_a_session_the_store_cannot_load() {
     assert!(client.auth().get_session().await.unwrap().is_none());
     // Removed when found unreadable, then again by sign-out; never written.
     assert_eq!(*store.0.lock().unwrap(), [false, false]);
+}
+
+#[tokio::test]
+async fn a_transient_load_failure_keeps_the_stored_session() {
+    use nelcota_client::auth::{SessionStorage, StorageFuture};
+    #[derive(Default)]
+    struct Flaky {
+        loads: AtomicUsize,
+        saves: std::sync::Mutex<Vec<bool>>,
+    }
+    impl SessionStorage for Flaky {
+        fn load(&self) -> StorageFuture<'_, Option<Session>> {
+            let first = self.loads.fetch_add(1, Ordering::SeqCst) == 0;
+            Box::pin(async move {
+                match first {
+                    // A sharing violation or EMFILE, not a corrupt session.
+                    true => Err(nelcota_client::Error::SessionStorage("busy".into())),
+                    false => Ok(Some(session("a0", "r0"))),
+                }
+            })
+        }
+        fn save<'a>(&'a self, session: Option<&'a Session>) -> StorageFuture<'a, ()> {
+            self.saves.lock().unwrap().push(session.is_some());
+            Box::pin(async { Ok(()) })
+        }
+    }
+    let store = Arc::new(Flaky::default());
+    let client = Client::builder("http://127.0.0.1:1")
+        .session_storage(store.clone())
+        .build()
+        .unwrap();
+    let mut events = client.auth().subscribe();
+    let error = client.auth().get_session().await.unwrap_err();
+    assert_eq!(error.code(), "session_storage_error");
+    assert!(store.saves.lock().unwrap().is_empty(), "nothing is removed");
+    assert!(kinds(&mut events).is_empty(), "no SignedOut is announced");
+    let restored = client.auth().get_session().await.unwrap().unwrap();
+    assert_eq!(restored.refresh_token, "r0");
+    assert_eq!(store.loads.load(Ordering::SeqCst), 2);
 }
 
 type TokenReply = Arc<dyn Fn() -> (StatusCode, Value) + Send + Sync>;

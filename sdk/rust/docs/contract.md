@@ -76,8 +76,10 @@ structured error.
   received from the server get `expires_at` rewritten to local time plus
   `expires_in`, so a persisted copy is also skew-free; `set_session` and stored
   sessions use `expires_at` against the local wall clock.
-- A store `load` error or invalid stored session counts as signed out: a
-  `SignedOut` event is emitted and the store is asked to remove it.
+- A stored session the store reports as `Error::SessionInvalid`, or one that
+  fails validation, counts as signed out: a `SignedOut` event is emitted and the
+  store is asked to remove it. Any other `load` error is returned and the store
+  is left untouched; the next call loads again.
 - Sign-out renews only an expired token (5 s skew) for revocation, never
   publishes that renewal, and always clears locally.
 - `try_start_auto_refresh` returns an error outside a Tokio runtime;

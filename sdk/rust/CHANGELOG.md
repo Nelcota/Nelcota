@@ -45,9 +45,11 @@ Dates identify release entries; registry availability requires a successful publ
 - An expired token is no longer sent after a transient refresh failure: the
   request returns the refresh error (retryable, with Retry-After) instead of a
   401 from the stale token.
-- An unreadable or invalid stored session no longer makes every call fail: it
+- A corrupt or invalid stored session no longer makes every call fail: it
   counts as signed out, emits `SignedOut` and is removed on a best-effort basis;
-  `sign_out` always clears storage.
+  `sign_out` always clears storage. Stores report corrupt content with the new
+  `Error::SessionInvalid` (`FileStorage` does); any other `load` error, such as
+  a sharing violation, is returned and the stored session is kept.
 - Background refresh backs off (up to 60 s) instead of waking every second when
   a refreshed session is immediately due again.
 - Concurrent refresh callers on a multi-threaded runtime share one rotation;

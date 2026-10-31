@@ -131,20 +131,26 @@ impl Manager {
             return Ok(snapshot);
         }
         let guard = self.lock(options).await?;
-        self.load(&guard).await;
+        self.load(&guard).await?;
         Ok(self.snapshot())
     }
 
-    /// An unreadable or invalid stored session counts as signed out: it is
-    /// announced, removed on a best-effort basis, and never retried.
-    pub(super) async fn load(&self, _guard: &Guard<'_>) {
+    /// An invalid stored session counts as signed out: it is announced,
+    /// removed on a best-effort basis, and never retried. Any other storage
+    /// error is returned and leaves the store untouched; the next caller
+    /// loads again.
+    pub(super) async fn load(&self, _guard: &Guard<'_>) -> Result<()> {
         if self.state.borrow().loaded {
-            return;
+            return Ok(());
         }
-        let loaded = self.storage.load().await.and_then(|session| match session {
-            Some(session) => session.validate().map(|()| Some(session)),
-            None => Ok(None),
-        });
+        let loaded = match self.storage.load().await {
+            Ok(Some(session)) => session.validate().map(|()| Some(session)),
+            Ok(None) => Ok(None),
+            Err(error @ Error::SessionInvalid(_)) => Err(error),
+            // A sharing violation or permission error says nothing about the
+            // stored session: keep it for the next attempt.
+            Err(error) => return Err(error),
+        };
         let current = match loaded {
             Ok(session) => session.map(Current::restored),
             Err(_) => {
@@ -161,6 +167,7 @@ impl Manager {
             state.loaded = true;
             state.current = current;
         });
+        Ok(())
     }
 
     /// Publish then persist. A rotated token is kept even when external

@@ -136,7 +136,10 @@ impl AuthClient {
     async fn rotate_from(&self, from: u64) -> Result<Session> {
         let manager = self.manager();
         let guard = manager.lock_detached().await;
-        manager.load(&guard).await;
+        if let Err(error) = manager.load(&guard).await {
+            manager.finish_rotation(&guard);
+            return Err(error);
+        }
         let snapshot = manager.snapshot();
         let Some(current) = snapshot.current else {
             manager.finish_rotation(&guard);
@@ -334,11 +337,12 @@ impl AuthClient {
     }
 
     /// Serialize against refresh and clear locally even when server revocation
-    /// fails or the stored session is unreadable.
+    /// fails or the stored session cannot be loaded. A session that could not
+    /// be loaded is not revoked: the load error is returned after clearing.
     pub async fn sign_out(&self) -> Result<()> {
         let manager = self.manager();
         let guard = manager.lock_detached().await;
-        manager.load(&guard).await;
+        let loaded = manager.load(&guard).await;
         let current = manager.snapshot().current;
         let result = async {
             let Some(current) = current else {
@@ -370,7 +374,7 @@ impl AuthClient {
         let cleared = manager
             .publish(&guard, None, AuthEventKind::SignedOut)
             .await;
-        result.and(cleared)
+        loaded.and(result).and(cleared)
     }
 
     pub async fn request_password_reset(&self, email: &str) -> Result<()> {

@@ -35,6 +35,10 @@ pub enum Error {
     SessionMissing,
     #[error("session storage failed: {0}")]
     SessionStorage(String),
+    /// The store holds content that is not a session (corrupt, truncated).
+    /// Unlike [`Error::SessionStorage`], it counts as signed out.
+    #[error("stored session is invalid: {0}")]
+    SessionInvalid(String),
 }
 
 /// The optional Postgres fields of an error response (`db_error`). Older
@@ -89,6 +93,7 @@ impl Error {
             Self::Cardinality { .. } => "not_single",
             Self::SessionMissing => "session_missing",
             Self::SessionStorage(_) => "session_storage_error",
+            Self::SessionInvalid(_) => "session_invalid",
         }
     }
 

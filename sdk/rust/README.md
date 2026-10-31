@@ -127,8 +127,9 @@ Session storage defaults to memory. For a CLI or desktop app,
 `auth::FileStorage::new(path)` keeps the session in a JSON file, written
 atomically and readable by its owner only on Unix (0600 file, 0700 for the
 directories it creates). On Windows the file inherits its directory's ACL, so
-keep it under the user's profile. An unreadable stored session counts as
-signed out: the client emits `SignedOut` and removes it. Implement
+keep it under the user's profile. A corrupt stored session counts as signed
+out: the client emits `SignedOut` and removes it. A failure to read the file
+(permissions, a sharing violation) is returned and the file is kept. Implement
 `auth::SessionStorage` for a keychain, encrypted file or per-request cookie
 store.
 

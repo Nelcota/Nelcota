@@ -16,8 +16,10 @@ pub type StorageFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T>> + Send + 
 /// Persist a session in a cookie, keychain or another caller-owned store.
 /// Share a Client by cloning it. Independent clients/processes using the same store
 /// must coordinate rotation externally; the storage interface alone is not a lock.
-/// A `load` error or an invalid stored session counts as signed out: the
-/// client emits `SignedOut` and asks the store to remove it.
+/// A `load` that returns [`Error::SessionInvalid`], or a session that fails
+/// validation, counts as signed out: the client emits `SignedOut` and asks the
+/// store to remove it. Any other `load` error is returned to the caller and the
+/// stored session is kept, so a transient failure can be retried.
 pub trait SessionStorage: Send + Sync {
     fn load(&self) -> StorageFuture<'_, Option<Session>>;
     fn save<'a>(&'a self, session: Option<&'a Session>) -> StorageFuture<'a, ()>;
@@ -107,7 +109,7 @@ impl SessionStorage for FileStorage {
             match tokio::fs::read(&self.path).await {
                 Ok(bytes) => serde_json::from_slice(&bytes)
                     .map(Some)
-                    .map_err(|e| Error::SessionStorage(format!("unreadable session file: {e}"))),
+                    .map_err(|e| Error::SessionInvalid(format!("unreadable session file: {e}"))),
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
                 Err(e) => Err(failed(e)),
             }
