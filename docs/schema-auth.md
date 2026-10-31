@@ -167,7 +167,7 @@ keys): past that share, that /48's new /64s are refused as if the store were
 full (REST and storage let them through untracked), and everyone else keeps
 working, so one /48 cannot fill the store.
 Account budgets live in a separate store and only existing accounts get one,
-so made-up emails cannot fill either; while the account store is full, an
+so made-up emails cannot fill either (they get decoys, below); while the account store is full, an
 account it does not track is bounded only by its caller's per-IP budget, and a
 warning is logged. Cleanup runs at most once per second under capacity
 pressure and removes only keys idle since their last accepted request for a
@@ -266,9 +266,13 @@ an unrecognized legitimate network while attackers keep spending it. One
 address cannot spend it alone (it is ten times the per-IP budget); attackers
 with enough addresses can keep the owner out of new networks, and only many
 addresses inside the owner's own networks can spend the second budget too.
-Distributed guessing is capped at twice the account budget. Emails without an account spend shared decoy budgets of the
-same size, so a spent budget does not reveal which emails have accounts; it
-does show whether the caller's network is known to an existing one. Keep trusted proxy configuration and upstream abuse controls; limits
+Distributed guessing is capped at twice the account budget. Each email without
+an account spends a decoy budget of its own, of the same size, so a spent budget
+does not reveal which emails have accounts, and spending one says nothing about
+other emails; it does show whether the caller's network is known to an existing
+one. Decoys live in a third store of 50,000 keys that drops its oldest decoy
+when full, so made-up emails crowd out neither real accounts nor networks; only
+someone keeping 50,000 made-up emails busy can reset a decoy early. Keep trusted proxy configuration and upstream abuse controls; limits
 are per process and shared NAT users still share their IP budget.
 
 Refreshes and PKCE redemptions (`grant_type=refresh_token` / `pkce`) draw from

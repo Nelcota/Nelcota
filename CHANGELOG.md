@@ -263,6 +263,11 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Security
 
+- Password sign-in to an email without an account now spends a decoy budget
+  of that email's own, the same size as an account's, in a separate bounded
+  store. Before, made-up emails shared 4,096 decoy budgets, so spending one
+  email's budget and probing others for a `429` on the shared slot showed that
+  the first email had no account.
 - One IPv6 /48 can no longer fill the in-memory rate-limit store and so make
   every new client's auth request fail with 429: the /64s of one /48 may hold
   at most 1/64 of the per-IP keys (781 of 50,000), past which only that /48's

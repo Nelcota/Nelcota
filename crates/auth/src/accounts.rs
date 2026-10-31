@@ -264,9 +264,10 @@ pub(crate) async fn password_grant(
     // an attack slows the owner down without locking them out of the networks
     // they use. Those networks draw from a second budget of the same size, so
     // many addresses inside one cannot guess without limit either. Emails
-    // without an account spend a shared decoy budget and run the same
-    // known-network query (for no account), so a 429 or its timing does not
-    // tell which emails have accounts, also when signup is disabled.
+    // without an account spend a decoy budget of their own, the same size,
+    // and run the same known-network query (for no account), so a 429 or its
+    // timing does not tell which emails have accounts, also when signup is
+    // disabled.
     let over_budget = match &found {
         Some((user_id, _)) => state
             .limiter

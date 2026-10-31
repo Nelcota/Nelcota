@@ -5,10 +5,12 @@
 //! which let a client spend almost twice the limit across the boundary.
 //! Still in memory: a single binary per install needs no Redis (D26).
 //!
-//! Keys live in two bounded stores. Network keys (an IP or an IPv6 /64) cost
-//! an attacker one address each. Account keys contain an email the client
-//! picks freely, so they are kept apart: a flood of made-up emails can fill
-//! only the account store, never the one the per-IP budgets rely on.
+//! Keys live in bounded stores. Network keys (an IP or an IPv6 /64) cost an
+//! attacker one address each. Account keys contain an email, so they are kept
+//! apart, and only existing accounts get one. Emails without an account get a
+//! decoy budget in a store of their own, which drops its oldest key when
+//! full: a flood of made-up emails can fill neither the network store nor the
+//! account store.
 //!
 //! A single IPv6 /48 holds 65,536 /64s, enough to fill the network store on
 //! its own. So the network keys of one /48 may take at most
@@ -27,8 +29,7 @@ use crate::AuthState;
 use nelcota_core::ApiError;
 
 use std::{
-    collections::{HashMap, hash_map::RandomState},
-    hash::BuildHasher,
+    collections::{HashMap, VecDeque},
     num::NonZeroU32,
     sync::{
         RwLock,
@@ -60,9 +61,6 @@ const LOGIN_DELAY_MAX_STEP: u64 = 4;
 /// The account-wide password budget is this many times the per-IP one.
 const ACCOUNT_BUDGET_FACTOR: u32 = 10;
 const ACCOUNT_FACTOR: NonZeroU32 = NonZeroU32::new(ACCOUNT_BUDGET_FACTOR).unwrap();
-/// Shared budgets that stand in for emails without an account, so the
-/// account-wide 429 does not tell which emails have accounts.
-const DECOY_BUDGETS: u64 = 4096;
 
 type Direct<C> =
     governor::RateLimiter<NotKeyed, InMemoryState, C, NoOpMiddleware<<C as Clock>::Instant>>;
@@ -77,6 +75,8 @@ struct State<C: Clock> {
     entries: HashMap<String, Entry<C>>,
     /// Keys per IPv6 /48, in a store whose blocks are capped.
     blocks: HashMap<String, usize>,
+    /// Keys from oldest to newest, in a store that evicts.
+    order: VecDeque<String>,
     last_cleanup: C::Instant,
     #[cfg(test)]
     cleanups: usize,
@@ -89,6 +89,8 @@ struct Store<C: Clock> {
     capacity: usize,
     /// How many keys one IPv6 /48 may hold, when its keys are network keys.
     block_capacity: Option<usize>,
+    /// When full, drop the oldest key instead of refusing new ones.
+    evicting: bool,
     name: &'static str,
 }
 
@@ -98,6 +100,7 @@ impl<C: Clock> Store<C> {
             state: RwLock::new(State {
                 entries: HashMap::new(),
                 blocks: HashMap::new(),
+                order: VecDeque::new(),
                 last_cleanup: start,
                 #[cfg(test)]
                 cleanups: 0,
@@ -105,8 +108,16 @@ impl<C: Clock> Store<C> {
             quota,
             capacity,
             block_capacity: None,
+            evicting: false,
             name,
         }
+    }
+
+    /// Makes room for a new key by dropping the oldest one. Only for budgets
+    /// that guard no account (decoys), where a reset lets nobody guess more.
+    fn evicting_oldest(mut self) -> Self {
+        self.evicting = true;
+        self
     }
 
     /// Caps the keys of each IPv6 /48 (see `ipv6_block`).
@@ -146,8 +157,9 @@ pub struct RateLimiter<C: Clock + Clone = DefaultClock> {
     accounts: Store<C>,
     /// One signup notice per existing account and minute.
     notices: Store<C>,
-    /// Per-process hashing of unknown emails onto decoy budgets.
-    decoys: RandomState,
+    /// Account-sized budgets for emails without an account, one per email,
+    /// evicting the oldest when full.
+    decoys: Store<C>,
     clock: C,
     start: C::Instant,
 }
@@ -177,7 +189,7 @@ impl<C: Clock + Clone> RateLimiter<C> {
                 capacity,
                 start,
             ),
-            decoys: RandomState::new(),
+            decoys: Store::new("decoy", accounts, capacity, start).evicting_oldest(),
             clock,
             start,
         }
@@ -217,6 +229,17 @@ impl<C: Clock + Clone> RateLimiter<C> {
             return self.outcome(entry);
         }
         let now = self.clock.now();
+        if store.evicting {
+            while state.entries.len() >= store.capacity {
+                match state.order.pop_front() {
+                    Some(oldest) => {
+                        state.entries.remove(&oldest);
+                    }
+                    None => break,
+                }
+            }
+            state.order.push_back(key.to_owned());
+        }
         let block = store.block_capacity.and(ipv6_block(key));
         let block_full = |state: &State<C>| match (block, store.block_capacity) {
             (Some(block), Some(cap)) => state.blocks.get(block).is_some_and(|n| *n >= cap),
@@ -324,13 +347,14 @@ impl<C: Clock + Clone> RateLimiter<C> {
         }
     }
 
-    /// The account-wide budget for an email without an account: one of a few
-    /// thousand shared decoy budgets of the same size, chosen by a per-process
-    /// hash, so a spent budget answers alike whether or not the email has an
-    /// account, and made-up emails add at most that many keys.
+    /// The account-wide budget for an email without an account: a budget of
+    /// its own, the same size, so it runs out and refills exactly as an
+    /// account's would and spending it says nothing about other emails. These
+    /// live in a separate store, so made-up emails never crowd out real
+    /// accounts; when it is full the oldest decoy is dropped, which an
+    /// attacker can force only by keeping 50,000 made-up emails busy.
     pub(crate) fn decoy_login_budget(&self, email: &str) -> Option<Duration> {
-        let slot = self.decoys.hash_one(email) % DECOY_BUDGETS;
-        match self.admit(&self.accounts, &format!("login-decoy:{slot}")) {
+        match self.admit(&self.decoys, email) {
             Admission::Accepted | Admission::Full => None,
             Admission::Limited(wait) => Some(wait),
         }
@@ -626,13 +650,46 @@ mod tests {
     }
 
     #[test]
-    fn unknown_emails_spend_a_decoy_budget_of_the_same_size() {
-        let (limiter, _) = limiter(1);
+    fn unknown_emails_spend_a_decoy_budget_of_their_own() {
+        let (limiter, clock) = limiter(1);
         for _ in 0..10 {
             assert_eq!(limiter.decoy_login_budget("nobody@x"), None);
+            assert_eq!(limiter.login_budget("someone@x"), None);
         }
-        assert!(limiter.decoy_login_budget("nobody@x").is_some());
-        assert_eq!(len(&limiter.accounts), 1, "one shared decoy key");
+        let decoy = limiter.decoy_login_budget("nobody@x");
+        assert_eq!(decoy, limiter.login_budget("someone@x"), "same size");
+        assert!(decoy.is_some());
+        for i in 0..10_000 {
+            assert_eq!(
+                limiter.decoy_login_budget(&format!("probe-{i}@x")),
+                None,
+                "a spent decoy says nothing about other emails"
+            );
+        }
+        assert_eq!(
+            len(&limiter.accounts),
+            1,
+            "decoys stay out of the account store"
+        );
+        clock.advance(Duration::from_secs(6));
+        assert_eq!(limiter.decoy_login_budget("nobody@x"), None, "refilled");
+    }
+
+    #[test]
+    fn a_full_decoy_store_drops_its_oldest_decoy() {
+        let clock = FakeRelativeClock::default();
+        let limiter = RateLimiter::with_capacity(1, clock.clone(), 2);
+        for _ in 0..10 {
+            limiter.decoy_login_budget("a@x");
+        }
+        assert!(limiter.decoy_login_budget("a@x").is_some());
+        assert_eq!(limiter.decoy_login_budget("b@x"), None);
+        assert!(limiter.decoy_login_budget("a@x").is_some(), "still tracked");
+        assert_eq!(limiter.decoy_login_budget("c@x"), None, "a@x dropped");
+        assert_eq!(len(&limiter.decoys), 2);
+        assert_eq!(limiter.decoy_login_budget("a@x"), None, "a fresh decoy");
+        assert_eq!(len(&limiter.decoys), 2);
+        assert_eq!(len(&limiter.accounts), 0);
     }
 
     #[test]
