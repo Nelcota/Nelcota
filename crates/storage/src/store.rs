@@ -280,7 +280,7 @@ impl Store {
         &self,
         name: &str,
     ) -> Result<Option<bytes::Bytes>, StoreError> {
-        self.check_control_path(name)?;
+        self.check_control_path(name).await?;
         let result = match self.inner.get(&Key::from(name)).await {
             Ok(result) => result,
             Err(object_store::Error::NotFound { .. }) => return Ok(None),
@@ -301,13 +301,11 @@ impl Store {
         name: &str,
         bytes: bytes::Bytes,
     ) -> Result<(), StoreError> {
-        self.check_control_path(name)?;
+        self.check_control_path(name).await?;
         let options = object_store::PutOptions {
             mode: object_store::PutMode::Create,
             ..Default::default()
         };
-        // Only Unix narrows the new marker's permissions.
-        #[cfg_attr(not(unix), allow(unused_variables))]
         let created = match self
             .inner
             .put_opts(&Key::from(name), bytes.into(), options)
@@ -318,61 +316,21 @@ impl Store {
             Err(error) => return Err(error.into()),
         };
         if let Backend::Disk { root } = &self.backend {
-            let marker = root.join(name);
-            #[cfg(unix)]
-            if created {
-                use std::os::unix::fs::PermissionsExt;
-                std::fs::set_permissions(&marker, std::fs::Permissions::from_mode(0o600))
-                    .map_err(|error| StoreError::Directory(marker.clone(), error))?;
-            }
-            self.check_control_path(name)?;
-            std::fs::File::open(&marker)
-                .and_then(|file| file.sync_all())
-                .map_err(|error| StoreError::Directory(marker, error))?;
-            #[cfg(unix)]
-            std::fs::File::open(root)
-                .and_then(|directory| directory.sync_all())
-                .map_err(|error| StoreError::Directory(root.clone(), error))?;
+            let (root, name) = (root.clone(), name.to_owned());
+            off_runtime(root.clone(), move || sync_marker(&root, &name, created)).await?;
         }
         Ok(())
     }
 
-    fn check_control_path(&self, name: &str) -> Result<(), StoreError> {
+    /// Disk only: the marker metadata checks block, so they run off the async
+    /// workers (the collector repeats them before every deletion).
+    async fn check_control_path(&self, name: &str) -> Result<(), StoreError> {
         let root = match &self.backend {
-            Backend::Disk { root } => root,
+            Backend::Disk { root } => root.clone(),
             _ => return Ok(()),
         };
-        let valid = |metadata: &std::fs::Metadata, directory: bool| {
-            if metadata.file_type().is_symlink()
-                || metadata.is_dir() != directory
-                || (!directory && !metadata.is_file())
-            {
-                return false;
-            }
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::MetadataExt;
-                let owner = match std::fs::metadata(root) {
-                    Ok(owner) => owner,
-                    Err(_) => return false,
-                };
-                if metadata.uid() != owner.uid() || metadata.mode() & 0o022 != 0 {
-                    return false;
-                }
-            }
-            true
-        };
-        let metadata = std::fs::symlink_metadata(root)
-            .map_err(|error| StoreError::Directory(root.clone(), error))?;
-        if !valid(&metadata, true) {
-            return Err(StoreError::Ownership("unsafe ownership marker directory"));
-        }
-        match std::fs::symlink_metadata(root.join(name)) {
-            Ok(metadata) if valid(&metadata, false) => Ok(()),
-            Ok(_) => Err(StoreError::Ownership("unsafe ownership marker")),
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-            Err(error) => Err(StoreError::Directory(root.join(name), error)),
-        }
+        let name = name.to_owned();
+        off_runtime(root.clone(), move || check_control_path(&root, &name)).await
     }
 
     /// S3 only: a presigned GET that also fixes the response's type and
@@ -400,5 +358,73 @@ impl Store {
             .signed_url_opts(Method::GET, key, expires_in, &options)
             .await?;
         Ok(Some(url))
+    }
+}
+
+/// Runs blocking filesystem work for the disk backend on the blocking pool.
+async fn off_runtime<T: Send + 'static>(
+    root: PathBuf,
+    work: impl FnOnce() -> Result<T, StoreError> + Send + 'static,
+) -> Result<T, StoreError> {
+    tokio::task::spawn_blocking(work)
+        .await
+        .map_err(|error| StoreError::Directory(root, std::io::Error::other(error)))?
+}
+
+/// Narrows a newly created marker (Unix only) and makes it durable.
+fn sync_marker(
+    root: &Path,
+    name: &str,
+    #[cfg_attr(not(unix), allow(unused_variables))] created: bool,
+) -> Result<(), StoreError> {
+    let marker = root.join(name);
+    #[cfg(unix)]
+    if created {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&marker, std::fs::Permissions::from_mode(0o600))
+            .map_err(|error| StoreError::Directory(marker.clone(), error))?;
+    }
+    check_control_path(root, name)?;
+    std::fs::File::open(&marker)
+        .and_then(|file| file.sync_all())
+        .map_err(|error| StoreError::Directory(marker, error))?;
+    #[cfg(unix)]
+    std::fs::File::open(root)
+        .and_then(|directory| directory.sync_all())
+        .map_err(|error| StoreError::Directory(root.to_owned(), error))?;
+    Ok(())
+}
+
+fn check_control_path(root: &Path, name: &str) -> Result<(), StoreError> {
+    let valid = |metadata: &std::fs::Metadata, directory: bool| {
+        if metadata.file_type().is_symlink()
+            || metadata.is_dir() != directory
+            || (!directory && !metadata.is_file())
+        {
+            return false;
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::MetadataExt;
+            let owner = match std::fs::metadata(root) {
+                Ok(owner) => owner,
+                Err(_) => return false,
+            };
+            if metadata.uid() != owner.uid() || metadata.mode() & 0o022 != 0 {
+                return false;
+            }
+        }
+        true
+    };
+    let metadata = std::fs::symlink_metadata(root)
+        .map_err(|error| StoreError::Directory(root.to_owned(), error))?;
+    if !valid(&metadata, true) {
+        return Err(StoreError::Ownership("unsafe ownership marker directory"));
+    }
+    match std::fs::symlink_metadata(root.join(name)) {
+        Ok(metadata) if valid(&metadata, false) => Ok(()),
+        Ok(_) => Err(StoreError::Ownership("unsafe ownership marker")),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(StoreError::Directory(root.join(name), error)),
     }
 }

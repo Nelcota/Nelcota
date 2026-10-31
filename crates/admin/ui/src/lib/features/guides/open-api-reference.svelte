@@ -14,19 +14,27 @@
 
   const resource = new RemoteResource<OpenApiDocument>();
   let frame = $state<HTMLIFrameElement>();
+  // The theme last sent: other class changes on <html> must not make the
+  // reference clone, translate and re-render the whole document again.
+  let sentDark: boolean | undefined;
+  const isDark = () => document.documentElement.classList.contains("dark");
   function sendDocument() {
     if (resource.data === null) return;
     // Clone the raw resource value so schema/property keys such as __proto__ survive.
     const source = structuredClone(resource.data);
+    sentDark = isDark();
     frame?.contentWindow?.postMessage(
       {
         type: "nelcota:openapi",
         document: translateOpenApi(source, i18n.locale),
-        dark: document.documentElement.classList.contains("dark"),
+        dark: sentDark,
         locale: i18n.locale,
       },
       location.origin,
     );
+  }
+  function themeChanged() {
+    if (isDark() !== sentDark) sendDocument();
   }
   $effect(() => {
     if (resource.data != null) sendDocument();
@@ -48,7 +56,7 @@
   }
   onMount(() => {
     void load();
-    const observer = new MutationObserver(sendDocument);
+    const observer = new MutationObserver(themeChanged);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     return () => {
       observer.disconnect();

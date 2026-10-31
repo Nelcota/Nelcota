@@ -18,6 +18,7 @@ fn client() -> anyhow::Result<reqwest::Client> {
         .user_agent("Nelcota deployment/1")
         .timeout(Duration::from_secs(60))
         .connect_timeout(Duration::from_secs(10))
+        .read_timeout(Duration::from_secs(30))
         .redirect(reqwest::redirect::Policy::custom(|attempt| {
             let host = attempt.url().host_str().unwrap_or("");
             if attempt.previous().len() < 4
@@ -36,8 +37,20 @@ fn client() -> anyhow::Result<reqwest::Client> {
         }))
         .build()?)
 }
+/// Slowest sustained transfer a download is given time for. The client's 60s
+/// total suits metadata; a full server binary needs a budget that grows with
+/// its declared size (stalls are still cut by the client's read timeout).
+const MIN_DOWNLOAD_BYTES_PER_SECOND: u64 = 64 * 1024;
+fn download_budget(maximum: u64) -> Duration {
+    Duration::from_secs(60).max(Duration::from_secs(maximum / MIN_DOWNLOAD_BYTES_PER_SECOND))
+}
 async fn download(url: &str, path: &Path, maximum: u64) -> anyhow::Result<()> {
-    let mut response = client()?.get(url).send().await?.error_for_status()?;
+    let mut response = client()?
+        .get(url)
+        .timeout(download_budget(maximum))
+        .send()
+        .await?
+        .error_for_status()?;
     if response.content_length().is_some_and(|len| len > maximum) {
         bail!("release download too large");
     }
@@ -254,5 +267,16 @@ pub fn verify(
             bail!("provenance verification timed out");
         }
         std::thread::sleep(Duration::from_millis(100));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn download_budget_grows_with_the_declared_size() {
+        assert_eq!(download_budget(65536), Duration::from_secs(60));
+        assert_eq!(download_budget(8 * 1024 * 1024), Duration::from_secs(128));
+        assert_eq!(download_budget(64 * 1024 * 1024), Duration::from_secs(1024));
     }
 }

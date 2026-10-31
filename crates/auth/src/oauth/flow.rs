@@ -12,6 +12,8 @@ use crate::{db::db_error, pkce, sessions::new_opaque_token};
 const SIGN_IN_MINUTES: i32 = 10;
 /// Time for the app to redeem the code it received.
 const CODE_MINUTES: i32 = 5;
+/// Stale rows one `/authorize` removes; the pruner takes any backlog.
+const STALE_SWEEP: i64 = 100;
 
 /// A sign-in waiting for the provider's answer.
 pub(super) struct Pending {
@@ -26,7 +28,9 @@ fn hash(token: &str) -> Vec<u8> {
 }
 
 /// Records a new sign-in and returns the `state` to send to the provider.
-/// Stale rows go at the same time: the table only holds live sign-ins.
+/// A few stale rows go at the same time, so the table stays near its live
+/// sign-ins between prune passes. The sweep is bounded and skips rows another
+/// transaction holds: concurrent sign-ins never wait on each other's cleanup.
 pub(super) async fn start(
     tx: &Transaction<'_>,
     provider: ProviderKind,
@@ -34,9 +38,14 @@ pub(super) async fn start(
     code_challenge: &str,
     redirect_to: &str,
 ) -> Result<String, ApiError> {
-    tx.execute("DELETE FROM auth.flow_states WHERE expires_at < now()", &[])
-        .await
-        .map_err(db_error)?;
+    tx.execute(
+        "DELETE FROM auth.flow_states WHERE id IN (
+             SELECT id FROM auth.flow_states WHERE expires_at < now()
+              LIMIT $1 FOR UPDATE SKIP LOCKED)",
+        &[&STALE_SWEEP],
+    )
+    .await
+    .map_err(db_error)?;
     let (state, state_hash) = new_opaque_token();
     tx.execute(
         "INSERT INTO auth.flow_states

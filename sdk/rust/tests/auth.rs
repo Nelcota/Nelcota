@@ -790,6 +790,61 @@ async fn requests_keep_a_valid_token_without_rotating_during_the_backoff() {
 }
 
 #[tokio::test]
+async fn an_absurd_token_lifetime_does_not_panic() {
+    let mut issued = serde_json::to_value(session("a1", "r1")).unwrap();
+    issued["expires_in"] = json!(u64::MAX);
+    let (url, _, task) = rest_server(replying(StatusCode::OK, issued), Duration::ZERO).await;
+    let client = Client::builder(url).build().unwrap();
+    let mut password = [0u8; 32];
+    getrandom::fill(&mut password).unwrap();
+    let signed_in = client
+        .auth()
+        .sign_in_with_password("a@example.com", &URL_SAFE_NO_PAD.encode(password))
+        .await
+        .unwrap();
+    assert_eq!(signed_in.expires_at, u64::MAX);
+    assert_eq!(sent_token(&client).await.unwrap(), "Bearer a1");
+    let mut restored = session("a2", "r2");
+    restored.expires_at = u64::MAX;
+    client.auth().set_session(restored).await.unwrap();
+    assert_eq!(sent_token(&client).await.unwrap(), "Bearer a2");
+    task.abort();
+}
+
+#[tokio::test]
+async fn an_absurd_retry_after_does_not_kill_the_rotation() {
+    let count = Arc::new(AtomicUsize::new(0));
+    let router = Router::new().route(
+        "/auth/v1/token",
+        post({
+            let count = count.clone();
+            move || {
+                count.fetch_add(1, Ordering::SeqCst);
+                async {
+                    (
+                        StatusCode::TOO_MANY_REQUESTS,
+                        [("retry-after", u64::MAX.to_string())],
+                        Json(json!({"code":"rate_limited","message":"slow down"})),
+                    )
+                }
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let client = Client::builder(format!("http://{}", listener.local_addr().unwrap()))
+        .build()
+        .unwrap();
+    let task = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    // Inside the 60 s refresh margin, but still valid.
+    client.auth().set_session(expiring_in(30)).await.unwrap();
+    let error = client.auth().refresh_session().await.unwrap_err();
+    // The server's answer, not a rotation task that died computing its backoff.
+    assert_eq!(error.code(), "rate_limited");
+    assert_eq!(count.load(Ordering::SeqCst), 1);
+    task.abort();
+}
+
+#[tokio::test]
 async fn get_session_keeps_a_valid_session_without_rotating_during_the_backoff() {
     let failure = json!({"code":"unavailable","message":"try later"});
     let (url, count, task) = rest_server(
@@ -904,6 +959,47 @@ async fn auto_refresh_backs_off_while_the_session_stays_due() {
     // Once a second would be five or six refreshes.
     let refreshes = count.load(Ordering::SeqCst);
     assert!((1..=3).contains(&refreshes), "refreshed {refreshes} times");
+}
+
+#[tokio::test]
+async fn background_refresh_retries_when_the_retry_after_ends() {
+    let attempts = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let router = Router::new().route(
+        "/auth/v1/token",
+        post({
+            let attempts = attempts.clone();
+            move || {
+                attempts.lock().unwrap().push(std::time::Instant::now());
+                async {
+                    (
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        [("retry-after", "5")],
+                        Json(json!({"code":"unavailable","message":"try later"})),
+                    )
+                }
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let client = Client::builder(format!("http://{}", listener.local_addr().unwrap()))
+        .build()
+        .unwrap();
+    let task = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    // Inside the 60 s refresh margin, but still valid: the backoff applies.
+    client.auth().set_session(expiring_in(40)).await.unwrap();
+    let background = client.auth().start_auto_refresh();
+    tokio::time::sleep(Duration::from_millis(8500)).await;
+    drop(background);
+    task.abort();
+    let attempts = attempts.lock().unwrap().clone();
+    assert!(attempts.len() >= 2, "attempted {} times", attempts.len());
+    // Not before the Retry-After, and not left to the growing due backoff
+    // (which would retry only about 8 s after the first attempt).
+    let gap = attempts[1] - attempts[0];
+    assert!(
+        (Duration::from_millis(4500)..Duration::from_millis(6500)).contains(&gap),
+        "retried after {gap:?}"
+    );
 }
 
 #[tokio::test]
