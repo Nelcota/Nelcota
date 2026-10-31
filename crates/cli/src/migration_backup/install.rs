@@ -1,5 +1,6 @@
 //! Explicit host installation; project credentials never install or configure services.
 use super::*;
+#[cfg(any(target_os = "linux", test))]
 use crate::host::Runtime;
 use sha2::{Digest, Sha256};
 
@@ -9,12 +10,14 @@ pub(crate) fn socket_dir(project: &Project) -> PathBuf {
         base16ct::lower::encode_string(&Sha256::digest(identity.as_os_str().as_encoded_bytes()));
     PathBuf::from(format!("/run/nelcota-migration-backup-{}", &digest[..24]))
 }
+#[cfg(any(target_os = "linux", test))]
 pub(crate) fn mount(project: &Project) -> String {
     format!(
         "      - {}:/run/nelcota-migration-backup:ro\n",
         socket_dir(project).display()
     )
 }
+#[cfg(any(target_os = "linux", test))]
 fn argument(value: &Path) -> anyhow::Result<String> {
     let value = value.to_str().context("service paths must be UTF-8")?;
     if value.contains(['\n', '\r', '\0']) {
@@ -38,6 +41,7 @@ fn service(project: &Project) -> String {
             .to_string_lossy()
     )
 }
+#[cfg(any(target_os = "linux", test))]
 fn unit(host: &Host, project: &Project, binary: &Path) -> anyhow::Result<String> {
     let directory = socket_dir(project);
     Ok(format!(

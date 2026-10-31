@@ -1,7 +1,9 @@
 //! Bounded private evidence for a successful external readback, not a restore certificate.
 use super::*;
 use crate::host::Host;
-use nelcota_deployment::{atomic_write, digest_file, private_dir, read_private};
+#[cfg(any(target_os = "linux", test))]
+use nelcota_deployment::read_private;
+use nelcota_deployment::{atomic_write, digest_file, private_dir};
 use std::time::{SystemTime, UNIX_EPOCH};
 #[derive(Serialize, Deserialize)]
 struct Receipt {
@@ -54,6 +56,7 @@ pub(crate) fn record(host: &Host, project: &Project, dump: &Path) -> anyhow::Res
         &serde_json::to_vec(&receipt)?,
     )
 }
+#[cfg(any(target_os = "linux", test))]
 pub(crate) fn latest_verified(host: &Host, project: &Project) -> Option<u64> {
     if !nelcota_deployment::valid_project(&project.name) {
         return None;

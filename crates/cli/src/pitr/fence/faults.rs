@@ -6,6 +6,8 @@ struct State {
     labels: Vec<String>,
 }
 thread_local! { static STATE: RefCell<State> = RefCell::default(); }
+// Only the Unix transaction tests drive injected failures.
+#[cfg(unix)]
 pub(super) fn reset(fail_at: Option<usize>) {
     STATE.with(|state| {
         *state.borrow_mut() = State {
@@ -14,6 +16,7 @@ pub(super) fn reset(fail_at: Option<usize>) {
         }
     });
 }
+#[cfg(unix)]
 pub(super) fn labels() -> Vec<String> {
     STATE.with(|state| state.borrow().labels.clone())
 }

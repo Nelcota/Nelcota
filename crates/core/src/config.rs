@@ -938,8 +938,9 @@ mod tests {
     }
     #[test]
     fn migration_backup_configuration_rejects_partial_or_invalid_capabilities() {
+        // An absolute path on every platform; "/run/..." is relative on Windows.
         let mut config = Config {
-            migration_backup_socket: Some("/run/backup/agent.sock".into()),
+            migration_backup_socket: Some(std::env::temp_dir().join("agent.sock")),
             ..valid()
         };
         assert!(config.validate().is_err());

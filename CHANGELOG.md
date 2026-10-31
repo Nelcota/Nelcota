@@ -210,6 +210,8 @@ for the October 27 server scope and independent SDK publication checkpoint.
   `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox`:
   S3 downloads redirect to presigned URLs that cannot set them. It now asks S3
   deployments to add both on the provider or a CDN in front of the bucket.
+- `nelcota-server` builds on Windows again: the host update controller's
+  worker call is Unix-only and now reports that it is unavailable elsewhere.
 
 ### Security
 

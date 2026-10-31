@@ -1,15 +1,26 @@
 //! Host-owned, project-scoped backups. IPC can only request this project's backup.
-use crate::{backup, host::Host, project::Project};
-use anyhow::{Context, bail};
+use crate::{host::Host, project::Project};
+#[cfg(any(unix, test))]
+use anyhow::Context;
+use anyhow::bail;
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+// The agent and its installation exist only on Unix hosts.
+#[cfg(unix)]
+use crate::backup;
+#[cfg(unix)]
 use nelcota_core::migration_backup::{LOCK, Reply, valid_token};
+#[cfg(unix)]
 use nelcota_deployment::{
     HostLock, MIGRATION_BACKUP_FENCE as FENCE, atomic_write, digest_file, read_private,
 };
+#[cfg(unix)]
 use serde::{Deserialize, Serialize};
+#[cfg(unix)]
 use std::{
-    fs,
     io::{Read, Write},
-    path::{Path, PathBuf},
     process::Stdio,
     time::Duration,
 };
@@ -41,18 +52,21 @@ pub fn run(host: &Host, selection: Option<&str>, action: Action) -> anyhow::Resu
         Action::Serve { socket } => serve(host, &project, &socket),
     }
 }
+#[cfg(unix)]
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Fence {
     project: String,
     environment: String,
 }
+#[cfg(unix)]
 fn identity(project: &Project) -> anyhow::Result<Fence> {
     Ok(Fence {
         project: project.name.clone(),
         environment: digest_file(&project.path(".env"), 65536)?,
     })
 }
+#[cfg(unix)]
 fn wait_for_sql(project: &Project) -> anyhow::Result<()> {
     // On HTTP cancellation the physical DB connection closes. Waiting for its
     // session lock keeps host updates/restores excluded until SQL has stopped.
@@ -76,11 +90,13 @@ fn wait_for_sql(project: &Project) -> anyhow::Result<()> {
     }
     Ok(())
 }
+#[cfg(unix)]
 fn clear_fence(host: &Host) -> anyhow::Result<()> {
     fs::remove_file(host.root().join(FENCE))?;
     fs::File::open(host.root())?.sync_all()?;
     Ok(())
 }
+#[cfg(unix)]
 fn recover(host: &Host, project: &Project) -> anyhow::Result<()> {
     let path = host.root().join(FENCE);
     if !path.try_exists()? {
@@ -99,6 +115,7 @@ fn recover(host: &Host, project: &Project) -> anyhow::Result<()> {
     wait_for_sql(project)?;
     clear_fence(host)
 }
+#[cfg(unix)]
 fn capture(host: &Host, project: &Project) -> anyhow::Result<String> {
     crate::pitr::fence::require_clear(project)?;
     // Existing capture retains one exported database/file snapshot. External

@@ -151,6 +151,7 @@ pub(crate) fn s3_configured(host: &Host) -> bool {
 
 /// A complete syntactically valid destination, distinct from the fail-loud
 /// any-key detection used by the legacy CLI upload switch.
+#[cfg(target_os = "linux")]
 pub(crate) fn valid_destination(host: &Host) -> bool {
     BackupS3::from_host(host).is_ok()
 }
@@ -305,6 +306,7 @@ pub(crate) fn verify_remote(
 }
 
 /// Publish one already-validated immutable pair; safe to retry the same bytes.
+#[cfg(target_os = "linux")]
 pub(crate) fn publish_remote(host: &Host, project: &Project, dump: &Path) -> anyhow::Result<()> {
     crate::backup::validate(dump)?;
     sync_files_up(host, project, dump)?;
@@ -319,6 +321,7 @@ pub(crate) fn publish_remote(host: &Host, project: &Project, dump: &Path) -> any
 }
 
 /// A unique, encrypted write/read/delete probe never changes an existing backup.
+#[cfg(target_os = "linux")]
 pub(crate) fn test_remote(host: &Host, scratch: &Path, id: &str) -> anyhow::Result<()> {
     if !nelcota_deployment::valid_digest(id) {
         bail!("invalid backup probe");
