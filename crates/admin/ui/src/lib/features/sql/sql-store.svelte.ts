@@ -113,10 +113,7 @@ class SqlStore {
     // Another tab of the panel saved or renamed a query: take its list, or
     // the next write from this tab would put back the old one and lose it.
     if (typeof window !== "undefined") {
-      window.addEventListener("storage", (event) => {
-        if (event.key === SAVED_KEY) this.saved = readJson(SAVED_KEY, parseSaved, []);
-        if (event.key === HISTORY_KEY) this.history = readJson(HISTORY_KEY, parseHistory, []);
-      });
+      window.addEventListener("storage", (event) => this.syncStorage(event.key, event.newValue));
     }
   }
 
@@ -134,6 +131,21 @@ class SqlStore {
     remove(HISTORY_KEY);
     remove(WORKSPACE_KEY);
     remove(DRAFT_KEY);
+    this.#forgetWork();
+  }
+
+  /**
+   * Follows another tab's change to the stored work (`key` null: storage
+   * cleared). A sign-out there removes the workspace; keeping this tab's
+   * copy would write it back on the next keystroke.
+   */
+  syncStorage(key: string | null, value: string | null) {
+    if (key === SAVED_KEY) this.saved = readJson(SAVED_KEY, parseSaved, []);
+    if (key === HISTORY_KEY) this.history = readJson(HISTORY_KEY, parseHistory, []);
+    if ((key === WORKSPACE_KEY && value === null) || key === null) this.#forgetWork();
+  }
+
+  #forgetWork() {
     this.history = [];
     this.drafts = [{ id: "scratch", queryId: null, sql: DEFAULT_DRAFT }];
     this.activeDraftId = "scratch";

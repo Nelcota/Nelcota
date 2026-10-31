@@ -107,6 +107,17 @@ describe("signing out", () => {
     expect([...storage.values.keys()].toSorted()).toEqual(["nelcota:sql-saved"]);
   });
 
+  it("drops drafts another tab's sign-out removed instead of writing them back", () => {
+    const storage = fakeStorage();
+    vi.stubGlobal("localStorage", storage);
+    sqlStore.setDraft("alter role app password 'secret'");
+    storage.removeItem("nelcota:sql-workspace");
+    sqlStore.syncStorage("nelcota:sql-workspace", null);
+    expect(sqlStore.draft).not.toContain("secret");
+    sqlStore.setDraft("select 1");
+    expect(storage.values.get("nelcota:sql-workspace")).not.toContain("secret");
+  });
+
   it("stores a typed draft once, in the workspace", () => {
     const storage = fakeStorage();
     vi.stubGlobal("localStorage", storage);
