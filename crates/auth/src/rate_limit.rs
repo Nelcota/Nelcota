@@ -4,12 +4,26 @@
 //! `60 / limit` seconds) instead of resetting at the turn of a fixed minute,
 //! which let a client spend almost twice the limit across the boundary.
 //! Still in memory: a single binary per install needs no Redis (D26).
+//!
+//! Keys live in two bounded stores. Network keys (an IP or an IPv6 /64) cost
+//! an attacker one address each. Account keys contain an email the client
+//! picks freely, so they are kept apart: a flood of made-up emails can fill
+//! only the account store, never the one the per-IP budgets rely on.
+//!
+//! Password attempts also have an account-wide budget, `ACCOUNT_BUDGET_FACTOR`
+//! times the per-IP one, so many addresses cannot guess one account's password
+//! much faster than one address could, while one address alone cannot use it
+//! up. Over that budget the caller decides (see `password_grant`): networks
+//! where the account has open sessions get through after a growing delay,
+//! drawing from a second budget of the same size, so many addresses inside a
+//! known network cannot guess without limit either.
 
 use crate::AuthState;
 use nelcota_core::ApiError;
 
 use std::{
-    collections::HashMap,
+    collections::{HashMap, hash_map::RandomState},
+    hash::BuildHasher,
     num::NonZeroU32,
     sync::{
         RwLock,
@@ -29,12 +43,18 @@ use governor::{
 /// password sign-in (`NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE`).
 pub const SESSION_RATE_LIMIT_FACTOR: u32 = 10;
 
-/// Capacity is enforced without evicting a key's active rate limit.
+/// Capacity of each store, enforced without evicting a key's active limit.
 const MAX_KEYS: usize = 50_000;
 const CLEANUP_INTERVAL: Duration = Duration::from_secs(1);
 const FULL_REFILL: Duration = Duration::from_secs(60);
 const LOGIN_DELAY_BASE: Duration = Duration::from_millis(125);
 const LOGIN_DELAY_MAX_STEP: u64 = 4;
+/// The account-wide password budget is this many times the per-IP one.
+const ACCOUNT_BUDGET_FACTOR: u32 = 10;
+const ACCOUNT_FACTOR: NonZeroU32 = NonZeroU32::new(ACCOUNT_BUDGET_FACTOR).unwrap();
+/// Shared budgets that stand in for emails without an account, so the
+/// account-wide 429 does not tell which emails have accounts.
+const DECOY_BUDGETS: u64 = 4096;
 
 type Direct<C> =
     governor::RateLimiter<NotKeyed, InMemoryState, C, NoOpMiddleware<<C as Clock>::Instant>>;
@@ -52,13 +72,45 @@ struct State<C: Clock> {
     cleanups: usize,
 }
 
-/// Generic over the clock only so tests can drive time by hand.
-pub struct RateLimiter<C: Clock + Clone = DefaultClock> {
+/// One bounded key store, whose keys share one quota.
+struct Store<C: Clock> {
     state: RwLock<State<C>>,
     quota: Quota,
+    capacity: usize,
+    name: &'static str,
+}
+
+impl<C: Clock> Store<C> {
+    fn new(name: &'static str, quota: Quota, capacity: usize, start: C::Instant) -> Self {
+        Store {
+            state: RwLock::new(State {
+                entries: HashMap::new(),
+                last_cleanup: start,
+                #[cfg(test)]
+                cleanups: 0,
+            }),
+            quota,
+            capacity,
+            name,
+        }
+    }
+}
+
+enum Admission {
+    Accepted,
+    Limited(Duration),
+    /// The store is full and the key is not tracked yet.
+    Full,
+}
+
+/// Generic over the clock only so tests can drive time by hand.
+pub struct RateLimiter<C: Clock + Clone = DefaultClock> {
+    network: Store<C>,
+    accounts: Store<C>,
+    /// Per-process hashing of unknown emails onto decoy budgets.
+    decoys: RandomState,
     clock: C,
     start: C::Instant,
-    capacity: usize,
 }
 
 impl RateLimiter {
@@ -74,18 +126,15 @@ impl<C: Clock + Clone> RateLimiter<C> {
 
     fn with_capacity(limit_per_minute: u32, clock: C, capacity: usize) -> Self {
         let limit = NonZeroU32::new(limit_per_minute).unwrap_or(NonZeroU32::MIN);
+        let network = Quota::per_minute(limit);
+        let accounts = Quota::per_minute(limit.saturating_mul(ACCOUNT_FACTOR));
         let start = clock.now();
         RateLimiter {
-            state: RwLock::new(State {
-                entries: HashMap::new(),
-                last_cleanup: start,
-                #[cfg(test)]
-                cleanups: 0,
-            }),
-            quota: Quota::per_minute(limit),
+            network: Store::new("network", network, capacity, start),
+            accounts: Store::new("account", accounts, capacity, start),
+            decoys: RandomState::new(),
             clock,
             start,
-            capacity,
         }
     }
 
@@ -101,43 +150,29 @@ impl<C: Clock + Clone> RateLimiter<C> {
         Ok(())
     }
 
-    /// An account aggregate supplies backpressure, never a renewable lockout.
-    /// A full key store still fails closed; do not bypass bounded admission.
-    pub(crate) fn login_delay(&self, key: &str) -> Result<Duration, Duration> {
-        let result = self.check(key);
-        let state = self.state.read().unwrap_or_else(|e| e.into_inner());
-        let entry = state.entries.get(key).ok_or(CLEANUP_INTERVAL)?;
-        if result.is_ok() {
-            entry.login_delay_step.store(0, Ordering::Relaxed);
-            return Ok(Duration::ZERO);
+    fn outcome(&self, entry: &Entry<C>) -> Admission {
+        match self.check_entry(entry) {
+            Ok(()) => Admission::Accepted,
+            Err(wait) => Admission::Limited(wait),
         }
-        let step = entry
-            .login_delay_step
-            .try_update(Ordering::Relaxed, Ordering::Relaxed, |step| {
-                Some(step.saturating_add(1).min(LOGIN_DELAY_MAX_STEP))
-            })
-            .expect("delay update always supplies a value");
-        Ok(LOGIN_DELAY_BASE * (1_u32 << step.min(LOGIN_DELAY_MAX_STEP)))
     }
 
-    /// `Ok` while the key has budget; `Err(wait)` until its budget refills.
-    /// Unknown keys are also refused while capacity is full, with a retry hint.
-    pub fn check(&self, key: &str) -> Result<(), Duration> {
+    fn admit(&self, store: &Store<C>, key: &str) -> Admission {
         {
-            let state = self.state.read().unwrap_or_else(|e| e.into_inner());
+            let state = store.state.read().unwrap_or_else(|e| e.into_inner());
             if let Some(entry) = state.entries.get(key) {
-                return self.check_entry(entry);
+                return self.outcome(entry);
             }
         }
 
         // Serialize new-key admission only. Existing keys share a read lock
         // and governor still atomically enforces each independent GCRA budget.
-        let mut state = self.state.write().unwrap_or_else(|e| e.into_inner());
+        let mut state = store.state.write().unwrap_or_else(|e| e.into_inner());
         if let Some(entry) = state.entries.get(key) {
-            return self.check_entry(entry);
+            return self.outcome(entry);
         }
         let now = self.clock.now();
-        if state.entries.len() >= self.capacity
+        if state.entries.len() >= store.capacity
             && now.duration_since(state.last_cleanup) >= CLEANUP_INTERVAL.into()
         {
             let elapsed = now.duration_since(self.start).as_u64();
@@ -150,29 +185,148 @@ impl<C: Clock + Clone> RateLimiter<C> {
             {
                 state.cleanups += 1;
             }
+            if state.entries.len() >= store.capacity {
+                // At most once per second per store, so it cannot flood logs.
+                tracing::warn!(
+                    store = store.name,
+                    capacity = store.capacity,
+                    "rate limit key store is full"
+                );
+            }
         }
-        // Fail closed for unknown keys while full. Dropping a recent entry
-        // would let its next attempt obtain a fresh burst and bypass the quota.
-        if state.entries.len() >= self.capacity {
-            return Err(CLEANUP_INTERVAL);
+        // Never drop a recent entry to make room: its next attempt would
+        // obtain a fresh burst and bypass the quota.
+        if state.entries.len() >= store.capacity {
+            return Admission::Full;
         }
         let entry = state
             .entries
             .entry(key.to_owned())
             .or_insert_with(|| Entry {
-                limiter: governor::RateLimiter::direct_with_clock(self.quota, self.clock.clone()),
+                limiter: governor::RateLimiter::direct_with_clock(store.quota, self.clock.clone()),
                 last_accepted: AtomicU64::new(now.duration_since(self.start).as_u64()),
                 login_delay_step: AtomicU64::new(0),
             });
-        self.check_entry(entry)
+        self.outcome(entry)
     }
+
+    /// `Ok` while the key has budget; `Err(wait)` until its budget refills.
+    /// For network keys (an IP from `ip_key`, optionally with a prefix).
+    /// Unknown keys are refused while the store is full, with a retry hint.
+    /// Each network holds a handful of keys (one per endpoint), so filling
+    /// the store takes thousands of distinct networks (IPv4 addresses or IPv6
+    /// /64s) kept busy every minute: costly, but within reach of an attacker
+    /// with a large IPv6 allocation.
+    pub fn check(&self, key: &str) -> Result<(), Duration> {
+        match self.admit(&self.network, key) {
+            Admission::Accepted => Ok(()),
+            Admission::Limited(wait) => Err(wait),
+            Admission::Full => Err(CLEANUP_INTERVAL),
+        }
+    }
+
+    /// Like `check`, but an unknown key passes untracked while the store is
+    /// full. For abuse budgets whose refusal would hurt more than an
+    /// occasional untracked request, such as the REST and storage APIs.
+    pub fn check_lenient(&self, key: &str) -> Result<(), Duration> {
+        match self.admit(&self.network, key) {
+            Admission::Accepted | Admission::Full => Ok(()),
+            Admission::Limited(wait) => Err(wait),
+        }
+    }
+
+    /// The account-wide budget of password attempts: `None` while it lasts,
+    /// `Some(wait)` once it is spent. Only existing accounts are charged, so
+    /// filling the store takes that many real accounts; while it is full an
+    /// account it does not track passes untracked (a warning is logged), still
+    /// bounded by its caller's per-IP budget, rather than refusing every new
+    /// network for everyone. The caller admits a spent budget only for
+    /// networks the account knows, after `login_delay`.
+    pub(crate) fn login_budget(&self, account: &str) -> Option<Duration> {
+        let key = format!("login:{account}");
+        match self.admit(&self.accounts, &key) {
+            Admission::Accepted => {
+                self.reset_login_delay(&key);
+                None
+            }
+            Admission::Limited(wait) => Some(wait),
+            Admission::Full => None,
+        }
+    }
+
+    /// The account-wide budget for an email without an account: one of a few
+    /// thousand shared decoy budgets of the same size, chosen by a per-process
+    /// hash, so a spent budget answers alike whether or not the email has an
+    /// account, and made-up emails add at most that many keys.
+    pub(crate) fn decoy_login_budget(&self, email: &str) -> Option<Duration> {
+        let slot = self.decoys.hash_one(email) % DECOY_BUDGETS;
+        match self.admit(&self.accounts, &format!("login-decoy:{slot}")) {
+            Admission::Accepted | Admission::Full => None,
+            Admission::Limited(wait) => Some(wait),
+        }
+    }
+
+    /// The account's second budget, the same size, for attempts from known
+    /// networks once `login_budget` is spent: `None` while it lasts. The
+    /// owner never comes close to both, while attackers with many addresses
+    /// inside a known network (a shared /24, a hosting range) still hit a
+    /// ceiling. Untracked while the store is full, like `login_budget`.
+    pub(crate) fn known_network_budget(&self, account: &str) -> Option<Duration> {
+        match self.admit(&self.accounts, &format!("login-known:{account}")) {
+            Admission::Accepted | Admission::Full => None,
+            Admission::Limited(wait) => Some(wait),
+        }
+    }
+
+    /// The growing delay (up to two seconds) of an attempt admitted over the
+    /// account budget.
+    pub(crate) fn login_delay(&self, account: &str) -> Duration {
+        self.next_login_delay(&format!("login:{account}"))
+    }
+
+    fn reset_login_delay(&self, key: &str) {
+        let state = self
+            .accounts
+            .state
+            .read()
+            .unwrap_or_else(|e| e.into_inner());
+        if let Some(entry) = state.entries.get(key) {
+            entry.login_delay_step.store(0, Ordering::Relaxed);
+        }
+    }
+
+    fn next_login_delay(&self, key: &str) -> Duration {
+        let state = self
+            .accounts
+            .state
+            .read()
+            .unwrap_or_else(|e| e.into_inner());
+        // A cleanup may have dropped an idle entry in between: nothing to delay.
+        let entry = match state.entries.get(key) {
+            Some(entry) => entry,
+            None => return Duration::ZERO,
+        };
+        let step = entry
+            .login_delay_step
+            .try_update(Ordering::Relaxed, Ordering::Relaxed, |step| {
+                Some(step.saturating_add(1).min(LOGIN_DELAY_MAX_STEP))
+            })
+            .expect("delay update always supplies a value");
+        LOGIN_DELAY_BASE * (1_u32 << step.min(LOGIN_DELAY_MAX_STEP))
+    }
+}
+
+/// Whole seconds for `Retry-After`, rounded up so a client never retries
+/// before its budget has refilled.
+pub fn retry_after_secs(wait: Duration) -> u64 {
+    wait.as_secs() + u64::from(wait.subsec_nanos() > 0)
 }
 
 pub(crate) fn limit(state: &AuthState, key: &str) -> Result<(), ApiError> {
     state
         .limiter
         .check(key)
-        .map_err(|wait| ApiError::rate_limited(wait.as_secs()))
+        .map_err(|wait| ApiError::rate_limited(retry_after_secs(wait)))
 }
 
 /// The budget of refreshes and PKCE redemptions (`session_limiter`).
@@ -180,7 +334,7 @@ pub(crate) fn limit_sessions(state: &AuthState, key: &str) -> Result<(), ApiErro
     state
         .session_limiter
         .check(key)
-        .map_err(|wait| ApiError::rate_limited(wait.as_secs()))
+        .map_err(|wait| ApiError::rate_limited(retry_after_secs(wait)))
 }
 
 #[cfg(test)]
@@ -192,6 +346,14 @@ mod tests {
     fn limiter(limit: u32) -> (RateLimiter<FakeRelativeClock>, FakeRelativeClock) {
         let clock = FakeRelativeClock::default();
         (RateLimiter::with_clock(limit, clock.clone()), clock)
+    }
+
+    fn len(store: &Store<FakeRelativeClock>) -> usize {
+        store.state.read().unwrap().entries.len()
+    }
+
+    fn cleanups(store: &Store<FakeRelativeClock>) -> usize {
+        store.state.read().unwrap().cleanups
     }
 
     #[test]
@@ -254,10 +416,10 @@ mod tests {
             );
         }
         assert_eq!(limiter.check("key:0"), Err(Duration::from_secs(60)));
-        let state = limiter.state.read().unwrap();
-        assert_eq!(state.entries.len(), MAX_KEYS);
+        assert_eq!(len(&limiter.network), MAX_KEYS);
         assert_eq!(
-            state.cleanups, 0,
+            cleanups(&limiter.network),
+            0,
             "a frozen clock must not trigger repeated scans"
         );
     }
@@ -272,12 +434,12 @@ mod tests {
         for i in 0..100 {
             assert!(limiter.check(&format!("new:{i}")).is_err());
         }
-        assert_eq!(limiter.state.read().unwrap().cleanups, 1);
+        assert_eq!(cleanups(&limiter.network), 1);
         assert_eq!(limiter.check("a"), Err(Duration::from_secs(59)));
         clock.advance(Duration::from_secs(59));
         assert!(limiter.check("new").is_ok());
-        assert_eq!(limiter.state.read().unwrap().entries.len(), 1);
-        assert_eq!(limiter.state.read().unwrap().cleanups, 2);
+        assert_eq!(len(&limiter.network), 1);
+        assert_eq!(cleanups(&limiter.network), 2);
         // The evicted key had fully recovered, so its normal budget is valid.
         assert!(limiter.check("a").is_ok());
         assert_eq!(limiter.check("a"), Err(Duration::from_secs(60)));
@@ -335,42 +497,113 @@ mod tests {
                 .count(),
             8
         );
-        assert_eq!(limiter.state.read().unwrap().entries.len(), 8);
+        assert_eq!(len(&limiter.network), 8);
     }
+
     #[test]
-    fn login_aggregate_delay_is_progressive_bounded_and_refills() {
+    fn account_budget_is_ten_times_the_ip_budget_and_its_delay_grows() {
         let (limiter, clock) = limiter(2);
-        assert_eq!(limiter.login_delay("account"), Ok(Duration::ZERO));
-        assert_eq!(limiter.login_delay("account"), Ok(Duration::ZERO));
-        for milliseconds in [125, 250, 500, 1_000, 2_000, 2_000, 2_000] {
+        for _ in 0..20 {
+            assert_eq!(limiter.login_budget("account"), None);
+        }
+        assert_eq!(
+            limiter.login_budget("account"),
+            Some(Duration::from_secs(3)),
+            "20 per minute: one more attempt 3 s later"
+        );
+        for milliseconds in [125, 250, 500, 1_000, 2_000, 2_000] {
             assert_eq!(
                 limiter.login_delay("account"),
-                Ok(Duration::from_millis(milliseconds))
+                Duration::from_millis(milliseconds)
             );
         }
-        assert_eq!(limiter.login_delay("other"), Ok(Duration::ZERO));
-        clock.advance(Duration::from_secs(30));
-        assert_eq!(limiter.login_delay("account"), Ok(Duration::ZERO));
+        assert_eq!(limiter.login_budget("other"), None);
+        clock.advance(Duration::from_secs(3));
+        assert_eq!(limiter.login_budget("account"), None, "refilled");
+        assert!(limiter.login_budget("account").is_some());
         assert_eq!(
             limiter.login_delay("account"),
-            Ok(Duration::from_millis(125))
+            Duration::from_millis(125),
+            "the delay restarts once the budget refilled"
         );
     }
 
     #[test]
-    fn login_delay_does_not_bypass_key_capacity_or_pair_limits() {
+    fn known_networks_have_a_budget_of_their_own() {
+        let (limiter, clock) = limiter(1);
+        for _ in 0..10 {
+            assert_eq!(limiter.login_budget("account"), None);
+        }
+        assert!(limiter.login_budget("account").is_some(), "spent");
+        for _ in 0..10 {
+            assert_eq!(limiter.known_network_budget("account"), None);
+        }
+        assert_eq!(
+            limiter.known_network_budget("account"),
+            Some(Duration::from_secs(6)),
+            "known networks hit a ceiling too"
+        );
+        assert_eq!(limiter.known_network_budget("other"), None);
+        clock.advance(Duration::from_secs(6));
+        assert_eq!(limiter.known_network_budget("account"), None, "refilled");
+    }
+
+    #[test]
+    fn unknown_emails_spend_a_decoy_budget_of_the_same_size() {
+        let (limiter, _) = limiter(1);
+        for _ in 0..10 {
+            assert_eq!(limiter.decoy_login_budget("nobody@x"), None);
+        }
+        assert!(limiter.decoy_login_budget("nobody@x").is_some());
+        assert_eq!(len(&limiter.accounts), 1, "one shared decoy key");
+    }
+
+    #[test]
+    fn account_keys_cannot_fill_the_network_store() {
         let clock = FakeRelativeClock::default();
         let limiter = RateLimiter::with_capacity(1, clock.clone(), 2);
-        assert!(limiter.check("pair").is_ok());
-        assert_eq!(limiter.login_delay("account"), Ok(Duration::ZERO));
-        assert!(limiter.check("pair").is_err());
-        assert_eq!(
-            limiter.login_delay("account"),
-            Ok(Duration::from_millis(125))
+        for i in 0..100 {
+            limiter.login_budget(&format!("{i}@x"));
+        }
+        assert_eq!(len(&limiter.accounts), 2);
+        assert_eq!(len(&limiter.network), 0);
+        assert!(limiter.check("signup:1.2.3.4").is_ok(), "IPs keep working");
+        assert!(limiter.check("token:1.2.3.4").is_ok());
+        assert!(
+            limiter.check("verify:1.2.3.4").is_err(),
+            "network store full"
         );
-        assert_eq!(limiter.login_delay("unknown"), Err(CLEANUP_INTERVAL));
-        assert_eq!(limiter.state.read().unwrap().entries.len(), 2);
+        assert!(
+            limiter.check_lenient("api:1.2.3.4").is_ok(),
+            "lenient checks pass untracked while full"
+        );
+    }
+
+    #[test]
+    fn a_full_account_store_keeps_tracked_budgets_and_passes_new_accounts() {
+        let clock = FakeRelativeClock::default();
+        let limiter = RateLimiter::with_capacity(1, clock.clone(), 2);
+        for _ in 0..10 {
+            assert_eq!(limiter.login_budget("a"), None);
+        }
+        assert!(limiter.login_budget("a").is_some(), "a is spent");
+        assert_eq!(limiter.login_budget("b"), None);
+        assert_eq!(
+            limiter.login_budget("new"),
+            None,
+            "a full store does not refuse every new network"
+        );
+        assert!(limiter.login_budget("a").is_some(), "a stays spent");
+        assert_eq!(len(&limiter.accounts), 2);
         clock.advance(Duration::from_secs(60));
-        assert_eq!(limiter.login_delay("unknown"), Ok(Duration::ZERO));
+        assert_eq!(limiter.login_budget("new"), None);
+        assert_eq!(len(&limiter.accounts), 1, "idle keys were cleaned up");
+    }
+
+    #[test]
+    fn retry_after_rounds_up() {
+        assert_eq!(retry_after_secs(Duration::from_millis(1_900)), 2);
+        assert_eq!(retry_after_secs(Duration::from_secs(30)), 30);
+        assert_eq!(retry_after_secs(Duration::from_nanos(1)), 1);
     }
 }

@@ -54,7 +54,7 @@ async fn signup(
     headers: HeaderMap,
     Json(body): Json<accounts::Signup>,
 ) -> Result<(StatusCode, Json<Value>), ApiError> {
-    let ip = client_ip(state.settings.trust_proxy, &headers, peer);
+    let ip = client_ip(state.settings.proxy_hops, &headers, peer);
     if state.settings.signup_enabled {
         limit(&state, &format!("signup:{}", ip_key(ip)))?;
     }
@@ -100,7 +100,7 @@ async fn token(
     Query(query): Query<GrantQuery>,
     Json(body): Json<TokenBody>,
 ) -> Result<Json<Value>, ApiError> {
-    let ip = client_ip(state.settings.trust_proxy, &headers, peer);
+    let ip = client_ip(state.settings.proxy_hops, &headers, peer);
     // Password guessing gets the tight per-IP budget. Refreshes and code
     // redemptions only work with a secret already in hand, and every open tab
     // refreshes on its own, so they draw from a separate, larger budget.
@@ -161,7 +161,7 @@ async fn send_link(
     email: &str,
 ) -> Result<Json<Value>, ApiError> {
     links::ensure_enabled(state, kind)?;
-    let ip = client_ip(state.settings.trust_proxy, headers, peer.0);
+    let ip = client_ip(state.settings.proxy_hops, headers, peer.0);
     limit(state, &format!("{}:{}", kind.as_str(), ip_key(ip)))?;
     links::send(state, kind, email).await?;
     Ok(Json(serde_json::json!({})))
@@ -211,7 +211,7 @@ async fn verify(
     headers: HeaderMap,
     Json(body): Json<VerifyBody>,
 ) -> Result<Json<Value>, ApiError> {
-    let ip = client_ip(state.settings.trust_proxy, &headers, peer);
+    let ip = client_ip(state.settings.proxy_hops, &headers, peer);
     limit(&state, &format!("verify:{}", ip_key(ip)))?;
     Ok(Json(
         verify::verify(&state, body, ip, user_agent(&headers)).await?,
@@ -233,7 +233,7 @@ async fn authorize(
     headers: HeaderMap,
     Query(query): Query<AuthorizeQuery>,
 ) -> Result<Redirect, ApiError> {
-    let ip = client_ip(state.settings.trust_proxy, &headers, peer);
+    let ip = client_ip(state.settings.proxy_hops, &headers, peer);
     limit(&state, &format!("authorize:{}", ip_key(ip)))?;
     let url = oauth::authorize(
         &state,
@@ -261,7 +261,7 @@ async fn callback(
     headers: HeaderMap,
     Query(query): Query<CallbackQuery>,
 ) -> Result<Redirect, ApiError> {
-    let ip = client_ip(state.settings.trust_proxy, &headers, peer);
+    let ip = client_ip(state.settings.proxy_hops, &headers, peer);
     limit(&state, &format!("callback:{}", ip_key(ip)))?;
     let url = oauth::callback(
         &state,

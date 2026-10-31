@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             access_ttl_secs: 900,
             refresh_ttl_days: 30,
             signup_enabled: true,
-            trust_proxy: false,
+            proxy_hops: 0,
             links: EmailLinks::default(),
         },
         60,

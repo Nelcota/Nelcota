@@ -359,7 +359,7 @@ mod refresh_http_tests {
                 access_ttl_secs: 900,
                 refresh_ttl_days: 7,
                 signup_enabled: false,
-                trust_proxy: false,
+                proxy_hops: 0,
                 links: EmailLinks::default(),
             },
             60,
