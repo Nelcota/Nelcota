@@ -5,7 +5,7 @@ use crate::{
     db::{USER_JSON, begin_auth, db_error},
     error::{invalid_email, invalid_grant, validation, weak_password},
     links::{self, LinkKind},
-    rate_limit::limit,
+    rate_limit::{limit, retry_after_secs},
     sessions::{session_of, start_session},
 };
 use axum::http::StatusCode;
@@ -171,36 +171,53 @@ pub(crate) async fn password_grant(
     if password_exceeds_limit(&password) {
         return Err(invalid_grant("invalid email or password"));
     }
-    // A fresh source must not inherit a renewable account-wide rejection.
-    // Keep the hard pair/IP budgets and delay before pool/hash admission.
-    limit(
-        state,
-        &format!("login-source:{email}:{}", crate::request::ip_key(ip)),
-    )?;
-    let delay = state
-        .limiter
-        .login_delay(&format!("login:{email}"))
-        .map_err(|wait| ApiError::rate_limited(wait.as_secs()))?;
+    let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
+    let tx = begin_auth(&mut client).await?;
+    let found: Option<(Uuid, Option<String>)> = tx
+        .query_opt(
+            "SELECT id, encrypted_password
+             FROM auth.users WHERE email = $1",
+            &[&email],
+        )
+        .await
+        .map_err(db_error)?
+        .map(|r| (r.get(0), r.get(1)));
+    // The handler already charged the per-IP `token:` budget. Existing
+    // accounts also have an account-wide budget (made-up emails cannot fill
+    // its store). Over it, only networks where the account has an open session
+    // get through, after a growing delay: distributed guessing is capped, and
+    // an attack slows the owner down without locking them out of the networks
+    // they use. Those networks draw from a second budget of the same size, so
+    // many addresses inside one cannot guess without limit either. Emails
+    // without an account spend a shared decoy budget and run the same
+    // known-network query (for no account), so a 429 or its timing does not
+    // tell which emails have accounts, also when signup is disabled.
+    let over_budget = match &found {
+        Some((user_id, _)) => state
+            .limiter
+            .login_budget(&email)
+            .map(|wait| (*user_id, wait)),
+        None => state
+            .limiter
+            .decoy_login_budget(&email)
+            .map(|wait| (Uuid::nil(), wait)),
+    };
+    let mut delay = std::time::Duration::ZERO;
+    if let Some((user_id, wait)) = over_budget {
+        if !known_network(&tx, user_id, ip).await? {
+            return Err(ApiError::rate_limited(retry_after_secs(wait)));
+        }
+        if let Some(wait) = state.limiter.known_network_budget(&email) {
+            return Err(ApiError::rate_limited(retry_after_secs(wait)));
+        }
+        delay = state.limiter.login_delay(&email);
+    }
+    tx.commit().await.map_err(db_error)?;
+    // Neither the throttle delay nor argon2 holds the connection.
+    drop(client);
     if !delay.is_zero() {
         tokio::time::sleep(delay).await;
     }
-
-    let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
-    let found: Option<(Uuid, Option<String>)> = {
-        let tx = begin_auth(&mut client).await?;
-        let row = tx
-            .query_opt(
-                "SELECT id, encrypted_password
-                 FROM auth.users WHERE email = $1",
-                &[&email],
-            )
-            .await
-            .map_err(db_error)?;
-        tx.commit().await.map_err(db_error)?;
-        row.map(|r| (r.get(0), r.get(1)))
-    };
-    // The connection is released while argon2 runs.
-    drop(client);
 
     let (user_id, phc) = match found {
         Some((id, phc)) => (Some(id), phc),
@@ -230,6 +247,67 @@ pub(crate) async fn password_grant(
     let session = start_session(state, &tx, user_id, ip, user_agent).await?;
     tx.commit().await.map_err(db_error)?;
     Ok(session)
+}
+
+/// How long a session keeps its network known for the account budget.
+const KNOWN_NETWORK_DAYS: i32 = 30;
+
+/// Whether the account has an open session, used (created or refreshed) in
+/// the last 30 days, that was opened from the network of `ip`: the same IPv4
+/// /24 (also when stored IPv4-mapped by a dual-stack listener), so rotating
+/// carrier and residential addresses still match, or the same IPv6 /64.
+/// Revoked sessions do not count, so a network stops being known after a
+/// password change or sign-out there. Prune removes sessions whose refresh
+/// tokens expired, so the window is also bounded by the refresh lifetime.
+///
+/// Loopback, private and link-local addresses never count: they are what the
+/// server sees for a proxy or a server-side renderer (or a client that forced
+/// the fallback to the peer address), which many accounts share.
+async fn known_network(
+    tx: &Transaction<'_>,
+    user_id: Uuid,
+    ip: Option<IpAddr>,
+) -> Result<bool, ApiError> {
+    let networks = match ip.map(|ip| ip.to_canonical()) {
+        None => return Ok(false),
+        Some(ip) if !public(ip) => return Ok(false),
+        Some(IpAddr::V4(ip)) => {
+            let [a, b, c, _] = ip.octets();
+            vec![
+                format!("{a}.{b}.{c}.0/24"),
+                format!("::ffff:{a}.{b}.{c}.0/120"),
+            ]
+        }
+        Some(ip) => vec![crate::request::ip_key(Some(ip))],
+    };
+    let row = tx
+        .query_one(
+            "SELECT EXISTS (
+                 SELECT 1 FROM auth.sessions s
+                 WHERE s.user_id = $1 AND s.revoked_at IS NULL
+                   AND s.ip <<= ANY ($2::text[]::inet[])
+                   AND coalesce(s.refreshed_at, s.created_at)
+                       > now() - make_interval(days => $3)
+             )",
+            &[&user_id, &networks, &KNOWN_NETWORK_DAYS],
+        )
+        .await
+        .map_err(db_error)?;
+    Ok(row.get(0))
+}
+
+/// Whether `ip` (canonical) can identify a client's own network.
+fn public(ip: IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(ip) => {
+            !(ip.is_loopback() || ip.is_private() || ip.is_link_local() || ip.is_unspecified())
+        }
+        IpAddr::V6(ip) => {
+            let unique_local = ip.segments()[0] & 0xfe00 == 0xfc00;
+            let link_local = ip.segments()[0] & 0xffc0 == 0xfe80;
+            !(ip.is_loopback() || ip.is_unspecified() || unique_local || link_local)
+        }
+    }
 }
 
 /// `GET /auth/v1/user` (Bearer): data of the token's user.

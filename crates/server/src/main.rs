@@ -68,9 +68,22 @@ async fn serve(config: Config) -> anyhow::Result<()> {
             max_rows: config.max_rows,
             max_body_bytes: config.max_body_bytes,
             callers: Arc::new(CallerLimit::new(config.api_concurrency_limit())),
-            trust_proxy: config.trust_proxy,
+            proxy_hops: config.proxy_hops(),
         }),
+        api_limit: nelcota_server::ApiRateLimit::new(
+            config.api_rate_limit_per_minute,
+            config.proxy_hops(),
+        ),
     };
+    if config.api_rate_limit_per_minute > 0 {
+        // Behind a proxy without NELCOTA_TRUST_PROXY every anonymous caller
+        // shares the proxy's budget; say which address the limit counts.
+        tracing::info!(
+            per_minute = config.api_rate_limit_per_minute,
+            trust_proxy = config.trust_proxy,
+            "REST and storage rate limit on, per account or client IP"
+        );
+    }
     // Auth email (single-use links). Without SMTP those endpoints answer
     // `*_disabled`; a half-done configuration already failed in `validate`.
     let mail = config.mail()?;
@@ -141,7 +154,7 @@ async fn serve(config: Config) -> anyhow::Result<()> {
             access_ttl_secs: config.jwt_expiry_secs,
             refresh_ttl_days: config.refresh_token_ttl_days,
             signup_enabled: config.signup_enabled,
-            trust_proxy: config.trust_proxy,
+            proxy_hops: config.proxy_hops(),
             links: mail
                 .map(|m| nelcota_auth::EmailLinks {
                     recovery: Some(m.recovery_url.to_owned()),
@@ -207,7 +220,7 @@ async fn serve(config: Config) -> anyhow::Result<()> {
                 sessions: Arc::default(),
                 limiter: Arc::new(RateLimiter::new(10)),
                 passwords: passwords.clone(),
-                trust_proxy: config.trust_proxy,
+                proxy_hops: config.proxy_hops(),
                 secure_cookies: config.trust_proxy,
                 host: Arc::new(host_link(&config)),
                 tokens: Arc::new(nelcota_admin::TokenIssuer {

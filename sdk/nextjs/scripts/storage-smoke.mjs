@@ -104,8 +104,9 @@ try {
       NELCOTA_AUTHENTICATOR_PASSWORD: randomBytes(24).toString("base64url"),
       NELCOTA_JWT_SECRET: randomBytes(32).toString("base64url"),
       NELCOTA_LISTEN: `127.0.0.1:${port}`,
-      // Load from one process; Rust tests cover the per-caller limit.
+      // Load from one process; Rust tests cover the per-caller limit and the API budget.
       NELCOTA_API_CONCURRENCY_PER_CALLER: "0",
+      NELCOTA_API_RATE_LIMIT_PER_MINUTE: "0",
       RUST_LOG: "error",
       NELCOTA_STORAGE_BACKEND: "s3",
       NELCOTA_STORAGE_S3_ENDPOINT: s3.endpoint.origin,

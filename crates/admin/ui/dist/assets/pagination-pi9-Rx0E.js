@@ -1,1 +1,0 @@
-function e(e){if(e===null||/^\d+$/.test(e)===!1)return 0;let t=Number(e);return Number.isSafeInteger(t)===!1?0:t}function t({page:e,size:t,total:n,exact:r}){if(e<=0)return null;if(r&&n!==null&&t>0){let r=Math.max(0,Math.ceil(n/t)-1);return Math.min(e-1,r)}return e-1}export{e as n,t};

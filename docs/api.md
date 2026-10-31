@@ -330,7 +330,7 @@ methods, body limits and timeouts) is JSON with the same shape:
 | 413 | `response_too_large` | the JSON response would exceed the 8 MiB budget |
 | 415 | `unsupported_media_type` | an auth or storage JSON endpoint without `Content-Type: application/json` |
 | 422 | `invalid_body` | an auth or storage JSON body with a missing field or a field of the wrong type |
-| 429 | `rate_limited` | too many attempts, or too many concurrent requests from one caller (`Retry-After`) |
+| 429 | `rate_limited` | too many attempts or API requests, or too many concurrent requests from one caller (`Retry-After`) |
 | 500 | `internal` | unexpected error; details only in the server log |
 | 503 | `unavailable` | database unreachable or pool exhausted (no `Retry-After`, no `sqlstate`), or a transient failure reported by Postgres: serialization failure (`40001`), deadlock (`40P01`), lock not available (`55P03`), too many connections (`53300`), server shutting down or starting (`57P01`, `57P02`, `57P03`); these come with `Retry-After: 1` and `sqlstate`. Retry the request |
 | 504 | `db_error` | `statement_timeout` (`NELCOTA_STATEMENT_TIMEOUT_SECS`, default 10 s; `sqlstate` `57014`) |

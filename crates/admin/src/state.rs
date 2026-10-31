@@ -24,7 +24,9 @@ pub struct AdminState {
     pub limiter: Arc<RateLimiter>,
     /// Shared process-wide Argon2 budget, also used by public authentication.
     pub passwords: Arc<Passwords>,
-    pub trust_proxy: bool,
+    /// Trusted proxies that append to `X-Forwarded-For` (see
+    /// `nelcota_auth::client_ip`); 0 uses the TCP peer.
+    pub proxy_hops: u8,
     /// Cookie with `Secure` (behind Caddy/HTTPS).
     pub secure_cookies: bool,
     /// Current project, the host's project list and single sign-on.

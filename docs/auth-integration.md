@@ -56,8 +56,9 @@ The startup order is explicit in `main.rs`: connect as the administrator for
 `Keys`, one shared `Passwords` worker pool and `AuthState::new`; own a pruner
 handle; mount `router` with a request deadline; serve with Ctrl-C shutdown.
 Serve the router with `into_make_service_with_connect_info::<SocketAddr>()` (or
-enable `trust_proxy` behind a proxy that sets `X-Forwarded-For`); without a
-client address every caller shares one per-IP rate-limit bucket.
+set `proxy_hops` to the number of trusted proxies that append to
+`X-Forwarded-For`); without a client address every caller shares one per-IP
+rate-limit bucket.
 The example closes the pool after aborting and awaiting its pruner.
 
 Example budgets are four DB connections, two password threads, a five-second

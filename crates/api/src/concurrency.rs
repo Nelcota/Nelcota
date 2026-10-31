@@ -157,7 +157,7 @@ where
             .extensions
             .get::<ConnectInfo<SocketAddr>>()
             .map(|info| info.0);
-        let ip = nelcota_auth::client_ip(settings.trust_proxy, &parts.headers, peer);
+        let ip = nelcota_auth::client_ip(settings.proxy_hops, &parts.headers, peer);
         let key = caller_key(&claims, ip);
         let slot = settings.callers.clone().admit(key).await?;
         Ok(Admitted {
@@ -168,28 +168,15 @@ where
 }
 
 /// Who a request counts against: the user for a signed-in token, else the
-/// client's network. `service_role` (a trusted backend) is not limited, and
+/// client's network (IPv6 grouped per /64, like the rate limits). `service_role` (a trusted backend) is not limited, and
 /// neither is a request without a client address (no `ConnectInfo`, as in
 /// embedded routers), which would otherwise share one key with every other.
 pub(crate) fn caller_key(claims: &Claims, ip: Option<IpAddr>) -> Option<String> {
     match (claims.role(), claims.sub(), ip) {
         (Role::ServiceRole, _, _) => None,
         (Role::Authenticated, Some(user), _) => Some(format!("user:{user}")),
-        (_, _, Some(ip)) => Some(format!("ip:{}", network(Some(ip)))),
+        (_, _, Some(ip)) => Some(format!("ip:{}", nelcota_auth::ip_key(Some(ip)))),
         (_, _, None) => None,
-    }
-}
-
-/// An IPv4 address, or the /64 network of an IPv6 one: a single subscriber
-/// usually holds a whole /64. IPv4-mapped IPv6 addresses count as IPv4.
-fn network(ip: Option<IpAddr>) -> String {
-    match ip.map(|ip| ip.to_canonical()) {
-        Some(IpAddr::V4(ip)) => ip.to_string(),
-        Some(IpAddr::V6(ip)) => {
-            let [a, b, c, d, ..] = ip.segments();
-            format!("{a:x}:{b:x}:{c:x}:{d:x}::/64")
-        }
-        None => String::new(),
     }
 }
 

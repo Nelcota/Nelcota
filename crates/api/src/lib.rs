@@ -43,8 +43,10 @@ pub struct ApiSettings {
     pub max_body_bytes: usize,
     /// Concurrent requests per caller (`NELCOTA_API_CONCURRENCY_PER_CALLER`).
     pub callers: Arc<CallerLimit>,
-    /// Take the caller's address from `X-Forwarded-For` (`NELCOTA_TRUST_PROXY`).
-    pub trust_proxy: bool,
+    /// Trusted proxies whose `X-Forwarded-For` entries name the caller's
+    /// address (`NELCOTA_TRUST_PROXY`, `NELCOTA_TRUSTED_PROXY_HOPS`); 0 reads
+    /// the TCP peer.
+    pub proxy_hops: u8,
 }
 
 impl Default for ApiSettings {
@@ -53,7 +55,7 @@ impl Default for ApiSettings {
             max_rows: None,
             max_body_bytes: nelcota_core::config::DEFAULT_MAX_BODY_BYTES,
             callers: Arc::default(),
-            trust_proxy: false,
+            proxy_hops: 0,
         }
     }
 }

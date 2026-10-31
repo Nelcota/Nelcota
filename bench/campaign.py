@@ -203,6 +203,7 @@ def campaign(arguments):
                 "NELCOTA_DB_POOL_SIZE": "8",
                 "NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE": "100000",
                 "NELCOTA_API_CONCURRENCY_PER_CALLER": "0",
+                "NELCOTA_API_RATE_LIMIT_PER_MINUTE": "0",
                 "NELCOTA_REQUEST_TIMEOUT_SECS": "5",
                 "NELCOTA_STATEMENT_TIMEOUT_SECS": "3",
                 "NELCOTA_STORAGE_BACKEND": "disk",

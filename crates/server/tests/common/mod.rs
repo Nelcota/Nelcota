@@ -140,6 +140,8 @@ pub struct Options {
     pub migrations_dir: Option<std::path::PathBuf>,
     pub rate_limit_per_minute: u32,
     pub panel_rate_limit_per_minute: u32,
+    /// REST/storage budget per caller; 0 (the default here) turns it off.
+    pub api_rate_limit_per_minute: u32,
     pub access_ttl_secs: u64,
     pub max_rows: Option<i64>,
     /// REST body limit (`NELCOTA_MAX_BODY_BYTES`).
@@ -169,6 +171,7 @@ impl Default for Options {
             migrations_dir: None,
             rate_limit_per_minute: 10_000,
             panel_rate_limit_per_minute: 1000,
+            api_rate_limit_per_minute: 0,
             access_ttl_secs: 900,
             max_rows: None,
             max_body_bytes: nelcota_core::config::DEFAULT_MAX_BODY_BYTES,
@@ -300,8 +303,9 @@ impl TestApp {
                 max_rows: options.max_rows,
                 max_body_bytes: options.max_body_bytes,
                 callers: Arc::new(CallerLimit::new(options.api_concurrency_per_caller)),
-                trust_proxy: false,
+                proxy_hops: 0,
             }),
+            api_limit: nelcota_server::ApiRateLimit::new(options.api_rate_limit_per_minute, 0),
         };
         let passwords = Arc::new(Passwords::new(2));
         let admin_pool = db::admin_pool(&admin, options.admin_pool_size);
@@ -321,7 +325,7 @@ impl TestApp {
             sessions: Arc::default(),
             limiter: Arc::new(RateLimiter::new(options.panel_rate_limit_per_minute)),
             passwords: passwords.clone(),
-            trust_proxy: false,
+            proxy_hops: 0,
             secure_cookies: false,
             host: Arc::new(nelcota_admin::HostLink {
                 project: "shop".into(),
@@ -377,7 +381,7 @@ impl TestApp {
                 access_ttl_secs: options.access_ttl_secs,
                 refresh_ttl_days: 30,
                 signup_enabled: options.signup_enabled,
-                trust_proxy: false,
+                proxy_hops: 0,
                 links: nelcota_auth::EmailLinks {
                     recovery: options.mail.then(|| RECOVERY_URL.to_owned()),
                     signup_confirmation: (options.mail && options.confirm_email)
