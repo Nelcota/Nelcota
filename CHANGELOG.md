@@ -274,6 +274,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - `@nelcota/client`: a browser tab no longer signs the user out when it reads
   a session an older SDK tab has committed to IndexedDB but not yet copied to
   `localStorage`; untimed receipts settle five seconds after first sight.
+- `@nelcota/ssr`: re-saving the same upstream session during sign-in no longer
+  revokes it. Replaced sessions are compared by the access token's `session_id`
+  claim instead of their stored JSON.
 
 ### Security
 

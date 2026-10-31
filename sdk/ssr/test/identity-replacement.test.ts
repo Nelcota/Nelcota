@@ -41,6 +41,50 @@ it("revokes the upstream session a new sign-in replaced, after publishing the ne
   });
 });
 
+/** An unsigned access token carrying `session_id`; the SDK only reads its payload. */
+function accessToken(sessionId: string, issued: number): string {
+  const part = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");
+  return `${part({ alg: "none" })}.${part({ session_id: sessionId, n: issued })}.signature`;
+}
+
+it.each([
+  ["keeps", ["upstream-1", "upstream-1"], 0],
+  ["revokes", ["upstream-1", "upstream-2"], 1],
+] as const)(
+  "%s the previous upstream session by its session_id claim, not its stored JSON",
+  async (_outcome, sessionIds, revoked) => {
+    let issued = 0;
+    const tokens: string[] = [];
+    const logouts: string[] = [];
+    const fetch = vi.fn((url: string | URL | Request, init: RequestInit = {}) => {
+      return promiseResult(() => {
+        const path = new URL(url instanceof Request ? url.url : url).pathname;
+        if (path === "/auth/v1/token") {
+          const token = accessToken(requiredValue(sessionIds[issued], "session id"), issued);
+          issued++;
+          tokens.push(token);
+          return Response.json(session(token, `refresh-${issued}`));
+        }
+        if (path === "/auth/v1/logout") {
+          logouts.push(new Headers(init.headers).get("authorization") ?? "");
+          return new Response(null, { status: 204 });
+        }
+        return Response.json(path === "/auth/v1/user" ? user : []);
+      });
+    });
+    const { integration, jar } = await setup({ fetch });
+    await integration.write(jar, post(), (context) => context.auth.signInWithPassword(credentials));
+    // The second answer differs in every token, but may continue the same upstream session.
+    await integration.write(jar, post(), (context) => context.auth.signInWithPassword(credentials));
+    expect(tokens[0]).not.toBe(tokens[1]);
+    expect(logouts).toEqual(revoked === 0 ? [] : [`Bearer ${tokens[0] ?? ""}`]);
+    await integration.read(jar, async ({ hasSession }) => {
+      await Promise.resolve();
+      expect(hasSession).toBe(true);
+    });
+  },
+);
+
 it("keeps a sign-in when revoking the replaced session fails and reports it without tokens", async () => {
   const { fetch, logouts } = upstream({ logoutStatus: 503 });
   const reported: SessionError[] = [];

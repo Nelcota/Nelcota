@@ -88,6 +88,11 @@ successful publication; a source version or Git tag alone is insufficient.
   its own budget of one statement timeout per row, and a failure or timeout
   reaches `onRetireError` (`onBackgroundError` in `Integration`) instead of
   failing the write. The connection is then discarded rather than pooled.
+- Saving a session during sign-in no longer revokes the live upstream session
+  when only its stored JSON changed (refreshed tokens, re-saved user data).
+  Replaced sessions are compared by the access token's `session_id` claim,
+  read without verification; the stored value decides only when either token
+  carries none.
 
 ## 0.1.0 — 2026-10-27
 
