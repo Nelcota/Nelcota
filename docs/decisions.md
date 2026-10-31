@@ -1126,8 +1126,10 @@ most one notice a minute once confirmed. Without confirmation the answer is a
 session, which cannot be faked, so `409 user_already_exists` remains there and
 reveals accounts. The /64s of one IPv6 /48 may hold at most 1/64 of the per-IP
 limiter store, and signup also has a per-/48 budget. Each email without an
-account gets an account-sized decoy budget of its own, in a separate store that
-drops its oldest key when full, instead of D112's 4,096 shared decoys.
+account gets an account-sized decoy budget of its own, in a separate store
+that, like the account store, never drops a recent key (an untracked email
+falls back to the per-IP budget while it is full), instead of D112's 4,096
+shared decoys.
 
 ### Known pending items
 

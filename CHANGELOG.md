@@ -425,6 +425,12 @@ for the October 27 server scope and independent SDK publication checkpoint.
   like the REST per-caller limit. A body that trickles a byte often enough to
   dodge the 60-second idle timeout now also ends with `408 upload_timeout`:
   after its first minute, each minute must bring at least 16 KiB.
+- The decoy budgets of password sign-in to emails without an account no longer
+  drop their oldest key when their store is full. Churning 50,000 made-up
+  emails could reset a decoy budget early, which real accounts never allow, and
+  so tell made-up emails from real ones. The decoy store now fills exactly like
+  the account store: a tracked email keeps its budget, and an untracked one is
+  bounded by its caller's per-IP budget.
 
 ## [0.5.6] — 2026-10-27
 

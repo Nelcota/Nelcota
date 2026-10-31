@@ -8,9 +8,11 @@
 //! Keys live in bounded stores. Network keys (an IP or an IPv6 /64) cost an
 //! attacker one address each. Account keys contain an email, so they are kept
 //! apart, and only existing accounts get one. Emails without an account get a
-//! decoy budget in a store of their own, which drops its oldest key when
-//! full: a flood of made-up emails can fill neither the network store nor the
-//! account store.
+//! decoy budget in a store of their own, so a flood of made-up emails can fill
+//! neither the network store nor the account store. No store ever drops a
+//! recent key: a decoy store that evicted when full would let a flood reset a
+//! made-up email's budget early, which a real account never allows, and so
+//! tell the two apart.
 //!
 //! A single IPv6 /48 holds 65,536 /64s, enough to fill the network store on
 //! its own. So the network keys of one /48 may take at most
@@ -29,7 +31,7 @@ use crate::AuthState;
 use nelcota_core::ApiError;
 
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::HashMap,
     num::NonZeroU32,
     sync::{
         RwLock,
@@ -75,8 +77,6 @@ struct State<C: Clock> {
     entries: HashMap<String, Entry<C>>,
     /// Keys per IPv6 /48, in a store whose blocks are capped.
     blocks: HashMap<String, usize>,
-    /// Keys from oldest to newest, in a store that evicts.
-    order: VecDeque<String>,
     last_cleanup: C::Instant,
     #[cfg(test)]
     cleanups: usize,
@@ -89,8 +89,6 @@ struct Store<C: Clock> {
     capacity: usize,
     /// How many keys one IPv6 /48 may hold, when its keys are network keys.
     block_capacity: Option<usize>,
-    /// When full, drop the oldest key instead of refusing new ones.
-    evicting: bool,
     name: &'static str,
 }
 
@@ -100,7 +98,6 @@ impl<C: Clock> Store<C> {
             state: RwLock::new(State {
                 entries: HashMap::new(),
                 blocks: HashMap::new(),
-                order: VecDeque::new(),
                 last_cleanup: start,
                 #[cfg(test)]
                 cleanups: 0,
@@ -108,16 +105,8 @@ impl<C: Clock> Store<C> {
             quota,
             capacity,
             block_capacity: None,
-            evicting: false,
             name,
         }
-    }
-
-    /// Makes room for a new key by dropping the oldest one. Only for budgets
-    /// that guard no account (decoys), where a reset lets nobody guess more.
-    fn evicting_oldest(mut self) -> Self {
-        self.evicting = true;
-        self
     }
 
     /// Caps the keys of each IPv6 /48 (see `ipv6_block`).
@@ -157,8 +146,8 @@ pub struct RateLimiter<C: Clock + Clone = DefaultClock> {
     accounts: Store<C>,
     /// One signup notice per existing account and minute.
     notices: Store<C>,
-    /// Account-sized budgets for emails without an account, one per email,
-    /// evicting the oldest when full.
+    /// Account-sized budgets for emails without an account, one per email.
+    /// Full like `accounts`: an untracked email passes on its per-IP budget.
     decoys: Store<C>,
     clock: C,
     start: C::Instant,
@@ -189,7 +178,7 @@ impl<C: Clock + Clone> RateLimiter<C> {
                 capacity,
                 start,
             ),
-            decoys: Store::new("decoy", accounts, capacity, start).evicting_oldest(),
+            decoys: Store::new("decoy", accounts, capacity, start),
             clock,
             start,
         }
@@ -229,17 +218,6 @@ impl<C: Clock + Clone> RateLimiter<C> {
             return self.outcome(entry);
         }
         let now = self.clock.now();
-        if store.evicting {
-            while state.entries.len() >= store.capacity {
-                match state.order.pop_front() {
-                    Some(oldest) => {
-                        state.entries.remove(&oldest);
-                    }
-                    None => break,
-                }
-            }
-            state.order.push_back(key.to_owned());
-        }
         let block = store.block_capacity.and(ipv6_block(key));
         let block_full = |state: &State<C>| match (block, store.block_capacity) {
             (Some(block), Some(cap)) => state.blocks.get(block).is_some_and(|n| *n >= cap),
@@ -351,8 +329,12 @@ impl<C: Clock + Clone> RateLimiter<C> {
     /// its own, the same size, so it runs out and refills exactly as an
     /// account's would and spending it says nothing about other emails. These
     /// live in a separate store, so made-up emails never crowd out real
-    /// accounts; when it is full the oldest decoy is dropped, which an
-    /// attacker can force only by keeping 50,000 made-up emails busy.
+    /// accounts. That store fills exactly like the account store: a tracked
+    /// decoy keeps its budget until it has fully refilled, and while the store
+    /// is full an untracked email passes untracked, bounded by its caller's
+    /// per-IP budget, the same path an untracked account takes. A flood of
+    /// made-up emails therefore never resets a decoy early, which would tell
+    /// made-up emails from real ones.
     pub(crate) fn decoy_login_budget(&self, email: &str) -> Option<Duration> {
         match self.admit(&self.decoys, email) {
             Admission::Accepted | Admission::Full => None,
@@ -676,20 +658,39 @@ mod tests {
     }
 
     #[test]
-    fn a_full_decoy_store_drops_its_oldest_decoy() {
-        let clock = FakeRelativeClock::default();
-        let limiter = RateLimiter::with_capacity(1, clock.clone(), 2);
-        for _ in 0..10 {
-            limiter.decoy_login_budget("a@x");
-        }
-        assert!(limiter.decoy_login_budget("a@x").is_some());
-        assert_eq!(limiter.decoy_login_budget("b@x"), None);
-        assert!(limiter.decoy_login_budget("a@x").is_some(), "still tracked");
-        assert_eq!(limiter.decoy_login_budget("c@x"), None, "a@x dropped");
-        assert_eq!(len(&limiter.decoys), 2);
-        assert_eq!(limiter.decoy_login_budget("a@x"), None, "a fresh decoy");
-        assert_eq!(len(&limiter.decoys), 2);
-        assert_eq!(len(&limiter.accounts), 0);
+    fn a_full_decoy_store_behaves_exactly_like_the_account_store() {
+        // The same flood against made-up emails and real accounts: every
+        // answer matches, so the budget cannot tell them apart. A tracked
+        // email keeps its spent budget however many others arrive, and new
+        // ones pass untracked (on the per-IP budget) until cleanup.
+        let run = |budget: &dyn Fn(&RateLimiter<FakeRelativeClock>, &str) -> Option<Duration>| {
+            let clock = FakeRelativeClock::default();
+            let limiter = RateLimiter::with_capacity(1, clock.clone(), 2);
+            let mut answers = Vec::new();
+            for _ in 0..10 {
+                answers.push(budget(&limiter, "a@x"));
+            }
+            answers.push(budget(&limiter, "a@x"));
+            answers.push(budget(&limiter, "b@x"));
+            for i in 0..1000 {
+                answers.push(budget(&limiter, &format!("flood-{i}@x")));
+            }
+            answers.push(budget(&limiter, "a@x"));
+            clock.advance(Duration::from_secs(5));
+            answers.push(budget(&limiter, "a@x"));
+            clock.advance(Duration::from_secs(60));
+            answers.push(budget(&limiter, "new@x"));
+            answers.push(budget(&limiter, "a@x"));
+            (answers, limiter)
+        };
+        let (decoy, decoys) = run(&|limiter, email| limiter.decoy_login_budget(email));
+        let (real, accounts) = run(&|limiter, email| limiter.login_budget(email));
+        assert_eq!(decoy, real);
+        assert!(decoy[10].is_some(), "a@x is spent");
+        assert!(decoy[12..1012].iter().all(Option::is_none), "untracked");
+        assert!(decoy[1012].is_some(), "the flood did not reset a@x");
+        assert_eq!(len(&decoys.decoys), len(&accounts.accounts));
+        assert_eq!(len(&decoys.accounts), 0, "decoys stay out of accounts");
     }
 
     #[test]
