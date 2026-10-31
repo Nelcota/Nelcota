@@ -2,14 +2,19 @@
 use oauth2::{PkceCodeChallenge, PkceCodeVerifier};
 
 /// The S256 challenge of a verifier: base64url(SHA-256(verifier)).
-pub(super) fn challenge(verifier: &str) -> String {
+pub(crate) fn challenge(verifier: &str) -> String {
     PkceCodeChallenge::from_code_verifier_sha256(&PkceCodeVerifier::new(verifier.into()))
         .as_str()
         .into()
 }
 
+/// Whether `verifier` is a valid verifier whose S256 challenge is `challenge`.
+pub(crate) fn proves(verifier: &str, challenge: &str) -> bool {
+    valid_verifier(verifier) && self::challenge(verifier) == challenge
+}
+
 /// A verifier as RFC 7636 defines it: 43 to 128 unreserved characters.
-pub(super) fn valid_verifier(verifier: &str) -> bool {
+pub(crate) fn valid_verifier(verifier: &str) -> bool {
     (43..=128).contains(&verifier.len())
         && verifier
             .bytes()
@@ -17,7 +22,7 @@ pub(super) fn valid_verifier(verifier: &str) -> bool {
 }
 
 /// An S256 challenge: the 43-character base64url form of 32 bytes.
-pub(super) fn valid_challenge(challenge: &str) -> bool {
+pub(crate) fn valid_challenge(challenge: &str) -> bool {
     challenge.len() == 43
         && challenge
             .bytes()
@@ -38,6 +43,14 @@ mod tests {
             "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
         );
         assert!(valid_challenge(&challenge(verifier)));
+        assert!(proves(
+            verifier,
+            "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+        ));
+        assert!(!proves(
+            verifier,
+            "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cN"
+        ));
     }
 
     #[test]

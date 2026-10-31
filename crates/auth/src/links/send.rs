@@ -98,7 +98,7 @@ async fn send_pending(
         .map_err(db_error)?
         .map(|row| row.get(0));
     let token = match user {
-        Some(user_id) => issue(&tx, user_id, kind).await?,
+        Some(user_id) => issue(&tx, user_id, kind, None).await?,
         None => None,
     };
     tx.commit().await.map_err(db_error)?;

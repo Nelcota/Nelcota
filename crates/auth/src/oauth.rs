@@ -15,7 +15,6 @@ mod flow;
 mod github;
 mod google;
 mod identities;
-mod pkce;
 mod provider;
 mod redirects;
 
@@ -33,7 +32,8 @@ use redirects::RedirectAllowlist;
 use crate::{
     AuthState,
     db::{begin_auth, db_error},
-    error::invalid_grant,
+    error::{invalid_code_challenge, invalid_grant},
+    pkce,
     sessions::{new_opaque_token, start_session},
 };
 
@@ -106,10 +106,7 @@ pub(crate) async fn authorize(
         )
     })?;
     if method.is_some_and(|method| method != "S256") || !pkce::valid_challenge(code_challenge) {
-        return Err(bad_request(
-            "invalid_code_challenge",
-            "code_challenge must be an S256 PKCE challenge (code_challenge_method=S256)",
-        ));
+        return Err(invalid_code_challenge());
     }
 
     let (provider_verifier, _) = new_opaque_token();

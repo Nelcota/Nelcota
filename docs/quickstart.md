@@ -177,8 +177,8 @@ curl -fsS 'http://127.0.0.1:8000/rest/v1/notes?order=id.desc' \
 Use this password only for the local example. If the account exists, sign in
 with `POST /auth/v1/token?grant_type=password` and the same JSON body instead
 of signing up again. Another user's token returns none of Ana's notes.
-On a project with confirmation enabled, confirm the email and sign in before
-extracting an access token.
+On a project with confirmation enabled, confirm the email first and use the
+access token from the confirmation's session.
 
 For a runnable JavaScript client, install the documented SDK version. Confirm
 its registry availability first; a source checkout can also use a reviewed local

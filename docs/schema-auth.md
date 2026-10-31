@@ -115,6 +115,7 @@ Links sent by email: password recovery, signup confirmation and magic link.
 | `token_hash` | `bytea` unique | **SHA-256** of the token; the token itself is never stored |
 | `created_at`, `expires_at` | `timestamptz` | validity: recovery 1 hour, signup 24 hours, magic link 15 minutes |
 | `used_at` | `timestamptz` | set on use; the link does not work again |
+| `code_challenge` | `text` | signup links only: the S256 challenge sent with the signup; the confirmation keeps the signup password only with its verifier (V22) |
 
 ## `auth.identities`
 
@@ -170,7 +171,7 @@ full minute, enough to recover the complete GCRA burst.
 
 | Method and route | Body | Response |
 |---|---|---|
-| `POST /auth/v1/signup` | `{email, password, data?}` | 201 + session (201 `{user}` with email confirmation on) |
+| `POST /auth/v1/signup` | `{email, password, data?, code_challenge?, code_challenge_method?}` | 201 + session (201 `{user}` with email confirmation on) |
 | `POST /auth/v1/token?grant_type=password` | `{email, password}` | 200 + session |
 | `POST /auth/v1/token?grant_type=refresh_token` | `{refresh_token}` | 200 + session |
 | `POST /auth/v1/token?grant_type=pkce` | `{auth_code, code_verifier}` | 200 + session |
@@ -183,7 +184,7 @@ full minute, enough to recover the complete GCRA burst.
 | `POST /auth/v1/recover` | `{email}` | 200 `{}` (whether or not the account exists; `422 invalid_email` for a malformed address) |
 | `POST /auth/v1/magiclink` | `{email}` | 200 `{}` (whether or not the account exists; `422 invalid_email` for a malformed address) |
 | `POST /auth/v1/resend` | `{type: "signup", email}` | 200 `{}` (whether or not the account exists; `422 invalid_email` for a malformed address) |
-| `POST /auth/v1/verify` | `{type: "recovery", token, password}` or `{type: "signup" \| "magiclink", token}` | 200 + session |
+| `POST /auth/v1/verify` | `{type: "recovery", token, password}`, `{type: "signup", token, code_verifier?}` or `{type: "magiclink", token}` | 200 + session |
 
 Auth handlers send `Cache-Control: no-store` and `Pragma: no-cache` on session,
 account, email-link and OAuth responses, including handler errors and redirects.
@@ -220,7 +221,9 @@ email_not_confirmed` (correct password, email confirmation pending).
 
 Links: `403 recovery_disabled`, `confirmation_disabled` or `magiclink_disabled`
 (the project has not configured that flow), `400 invalid_grant` (invalid,
-expired, already used or other-kind link), `400 unsupported_type`.
+expired, already used or other-kind link), `400 unsupported_type`. Signup
+answers `400 invalid_code_challenge` for a `code_challenge` that is not a
+43-character S256 challenge or a `code_challenge_method` other than `S256`.
 
 Email flows share **16 delivery slots** per process and a **30-second** total
 send deadline, including custom mailers. Overload returns `503 mail_busy`
@@ -360,11 +363,28 @@ NELCOTA_EMAIL_CONFIRMATION_URL=https://app.shop.com/welcome
 1. `POST /auth/v1/signup` creates the account and answers `201 {"user": {...}}`
    **without** a session; an email ("Confirm your email") carries
    `https://app.shop.com/welcome#type=signup&token=...`, valid for 24 hours.
+   To keep the signup password, the client sends a PKCE pair, as for
+   provider sign-in: it keeps a random `code_verifier` and sends
+   `code_challenge = base64url(SHA-256(code_verifier))` with
+   `code_challenge_method: "S256"`.
 2. The page reads the token from the fragment and calls `POST /auth/v1/verify
-   {type: "signup", token}`: the email is confirmed and the answer is a session.
+   {type: "signup", token, code_verifier}`: the email is confirmed and the
+   answer is a session.
 3. Until then, password sign-in answers `400 email_not_confirmed`, only after a
    correct password. `POST /auth/v1/resend {type: "signup", email}` sends a new
    link to an unconfirmed account (same cooldown and `200 {}` as recovery).
+
+Opening the link proves only that someone reads the inbox; whoever signed up
+may have registered someone else's address with a password of their own. So
+the password chosen at signup survives confirmation only when `code_verifier`
+matches the signup's challenge, which proves that the client confirming is the
+one that signed up. Without it (no challenge at signup, another browser or
+device, a resent link, or a wrong verifier) the confirmation works like a
+first magic link: the email is confirmed, the signup password is cleared, and
+earlier sessions, provider identities and pending codes are revoked. The
+answer is still a session; the person sets a password with `PUT
+/auth/v1/user` (no current password is needed) or through recovery. A resent
+link is never bound to a client.
 
 Opening a magic or recovery link also confirms the email. Accounts that were
 already unconfirmed when the flow was turned on are held as well; mark them
@@ -398,7 +418,8 @@ the unconfirmed signup and revokes its earlier sessions, provider identities,
 pending OAuth codes and email links. Someone else may have registered that
 address. The inbox owner can set
 a new password through recovery. Already confirmed accounts keep their
-password and sessions; signup confirmation still approves its signup password.
+password and sessions. A signup confirmation keeps the signup password only
+with the signup's PKCE verifier (see [Signup confirmation](#signup-confirmation)).
 Revoked sessions cannot refresh, while previously issued access JWTs retain
 their normal expiry (as for logout and password recovery).
 

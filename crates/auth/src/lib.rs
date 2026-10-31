@@ -17,6 +17,7 @@ mod links;
 mod mail;
 mod oauth;
 mod password;
+mod pkce;
 mod prune;
 mod rate_limit;
 mod recovery;

@@ -34,7 +34,7 @@ mod embedded {
 
 pub const MIGRATIONS_TABLE: &str = "nelcota.schema_migrations";
 /// Canonical auth/shared migration selection, also used to recognize promotion.
-pub const AUTH_MIGRATION_VERSIONS: &[i32] = &[1, 2, 5, 9, 10, 14];
+pub const AUTH_MIGRATION_VERSIONS: &[i32] = &[1, 2, 5, 9, 10, 14, 22];
 
 #[derive(Debug, thiserror::Error)]
 pub enum BootstrapError {

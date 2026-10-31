@@ -3,8 +3,9 @@ use crate::{
     AuthState, confirmation,
     credentials::{normalize_email, password_exceeds_limit, validate_password},
     db::{USER_JSON, begin_auth, db_error},
-    error::{invalid_email, invalid_grant, validation, weak_password},
+    error::{invalid_code_challenge, invalid_email, invalid_grant, validation, weak_password},
     links::{self, LinkKind},
+    pkce,
     rate_limit::{limit, retry_after_secs},
     sessions::{session_of, start_session},
 };
@@ -78,10 +79,17 @@ pub(crate) struct Signup {
     password: String,
     #[serde(default)]
     data: Option<Value>,
+    /// S256 PKCE challenge binding the confirmation link to this client: the
+    /// password survives confirmation only with its verifier.
+    #[serde(default)]
+    code_challenge: Option<String>,
+    #[serde(default)]
+    code_challenge_method: Option<String>,
 }
 
-/// `POST /auth/v1/signup` `{email, password, data?}` → 201 + session, or 201 +
-/// `{user}` when the email must be confirmed first.
+/// `POST /auth/v1/signup` `{email, password, data?, code_challenge?,
+/// code_challenge_method?}` → 201 + session, or 201 + `{user}` when the email
+/// must be confirmed first.
 pub(crate) async fn signup(
     state: &AuthState,
     body: Signup,
@@ -103,6 +111,15 @@ pub(crate) async fn signup(
         Some(data @ Value::Object(_)) => data,
         Some(_) => return Err(validation("data must be a JSON object")),
     };
+    let code_challenge = body.code_challenge.as_deref();
+    if body
+        .code_challenge_method
+        .as_deref()
+        .is_some_and(|m| m != "S256")
+        || code_challenge.is_some_and(|c| !pkce::valid_challenge(c))
+    {
+        return Err(invalid_code_challenge());
+    }
     let mail_slot = confirmation::required(state)
         .then(|| state.mail_delivery.reserve())
         .transpose()?;
@@ -141,7 +158,7 @@ pub(crate) async fn signup(
             return Ok(session);
         }
     };
-    let (pending, token) = confirmation::pending_signup(&tx, user_id).await?;
+    let (pending, token) = confirmation::pending_signup(&tx, user_id, code_challenge).await?;
     tx.commit().await.map_err(db_error)?;
     if let Some(token) = token {
         links::deliver(state, LinkKind::Signup, &email, &token, mail_slot);

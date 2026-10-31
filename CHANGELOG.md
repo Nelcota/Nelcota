@@ -263,6 +263,14 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Security
 
+- Opening a signup confirmation link no longer approves the password chosen
+  at signup unless the client that signed up proves itself: signup accepts an
+  S256 `code_challenge` and `POST /auth/v1/verify {type: "signup"}` its
+  `code_verifier`. Without that proof the confirmation clears the signup
+  password, as a first magic link does, and the person sets one while signed
+  in. Before, anyone could register someone else's address with their own
+  password, have the link resent, and sign in once the owner confirmed.
+  Internal migration V22 stores the challenge with the link (D117).
 - Signing out in one tab signs out the panel's other tabs, and signing out
   forgets the SQL history and open queries kept in the browser (saved queries
   stay).
