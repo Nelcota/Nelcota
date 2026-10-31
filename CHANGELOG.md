@@ -126,6 +126,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- When the statement of a dropped request cannot be cancelled in time, the
+  server logs `database.cancel_failed` or `database.cancel_timed_out`. It may
+  keep running until `statement_timeout` while the pool opens a replacement.
 - Storage uploads keep the real message of a refusal that is not a row-level
   security decision, such as `permission denied for table objects` from a
   missing grant. Only an existing name and policy refusals of names the

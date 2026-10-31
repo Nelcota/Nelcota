@@ -162,6 +162,8 @@ Database failures use stable `event` categories and SQLSTATE `code`; pool failur
 
 For `database.pool_acquire_failed`, distinguish `wait_timeout` (pool pressure), `create_timeout` or `recycle_timeout` (connection lifecycle), `backend` (inspect SQLSTATE), and `closed` (shutdown). For `database.transient_failure`, inspect contention, connection limits and recovery state before a controlled retry. A log is diagnostic evidence, not authorization to retry a mutation or clear a restore fence.
 
+`database.cancel_failed` and `database.cancel_timed_out` mean that the statement of a dropped request (a disconnected client or a request timeout) could not be cancelled. It may keep running in Postgres until `statement_timeout` while the pool opens a replacement connection; repeated events point to an unreachable or overloaded database.
+
 Logs, panel incident state and external alerts have different purposes. Host jobs already have operation/job IDs and explicit approval. Keep that durable state as the source of truth; a browser tab or a successful log write does not establish that a backup, restore or update completed.
 
 Restrict log access to operators. Server output goes to its existing stdout/stderr sink; systemd and Docker control storage and rotation. Inspect `journalctl --disk-usage` and the container logging driver before choosing a retention policy. Configure and test size, age and disk reserves in the deployment owner; this guide does not assert automatic rotation or change the host daemon. Do not give the panel a privileged raw-log endpoint.
