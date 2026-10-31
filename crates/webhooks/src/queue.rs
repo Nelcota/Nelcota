@@ -22,9 +22,12 @@ const EXPIRED: &str = "SELECT d.id,d.event_id,e.url,d.payload,d.attempts,d.max_a
     ORDER BY d.locked_until,d.id LIMIT $1 FOR UPDATE OF d SKIP LOCKED";
 
 /// One round: the oldest due delivery of each enabled webhook below its
-/// in-flight limit, oldest first. A webhook being claimed elsewhere is
-/// skipped (advisory lock); across server instances a claim that commits
-/// between another's snapshot and its lock can let one more send through.
+/// in-flight limit, oldest first. The materialized scan tries the advisory
+/// lock of every enabled webhook it reads, before checking its in-flight
+/// count or whether anything is due, and keeps each lock it gets until the
+/// claim commits; a webhook whose lock another claim holds is skipped. Across
+/// server instances a claim that commits between another's snapshot and its
+/// lock can let one more send through.
 const DUE: &str = "WITH ready AS MATERIALIZED (
         SELECT e.id,e.url,e.signing_secret FROM nelcota.webhook_endpoints e
         WHERE e.enabled AND e.deleted_at IS NULL
