@@ -211,7 +211,10 @@ it("drains accepted auth operations in FIFO order and rejects late callers", asy
     await first;
     await second;
   });
-  expect(requests).toHaveLength(2);
+  // The second sign-in replaces the first; revoking the replaced session runs
+  // in the background and may or may not have been sent yet.
+  const signIns = () => requests.filter(({ url }) => url.pathname.endsWith("/token"));
+  expect(signIns()).toHaveLength(2);
   await expect(late?.()).rejects.toMatchObject({ code: "closed_context" });
-  expect(requests).toHaveLength(2);
+  expect(signIns()).toHaveLength(2);
 });
