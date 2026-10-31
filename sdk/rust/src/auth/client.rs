@@ -38,6 +38,8 @@ impl AuthClient {
 
     /// Current session, refreshed when it is within the refresh margin. Reading
     /// a fresh session never waits for sign-in, rotation or persistence.
+    /// After a transient refresh failure a still-valid session is returned
+    /// without another rotation until Retry-After (or two seconds) has passed.
     /// Explicit tokens do not change this session.
     pub async fn get_session(&self) -> Result<Option<Session>> {
         crate::http::cancel(self.options(), async {
@@ -46,6 +48,9 @@ impl AuthClient {
             match &snapshot.current {
                 None => Ok(None),
                 Some(current) if manager.is_fresh(current) => Ok(Some(current.session.clone())),
+                Some(current) if snapshot.backing_off() && !current.remaining().is_zero() => {
+                    Ok(Some(current.session.clone()))
+                }
                 Some(_) => self.refresh_since(snapshot.revision).await.map(Some),
             }
         })

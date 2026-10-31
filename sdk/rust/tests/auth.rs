@@ -705,6 +705,32 @@ async fn requests_keep_a_valid_token_without_rotating_during_the_backoff() {
 }
 
 #[tokio::test]
+async fn get_session_keeps_a_valid_session_without_rotating_during_the_backoff() {
+    let failure = json!({"code":"unavailable","message":"try later"});
+    let (url, count, task) = rest_server(
+        replying(StatusCode::SERVICE_UNAVAILABLE, failure),
+        Duration::ZERO,
+    )
+    .await;
+    let client = Client::builder(url).build().unwrap();
+    // Inside the 60 s refresh margin, but still valid.
+    client.auth().set_session(expiring_in(30)).await.unwrap();
+    let error = client.auth().get_session().await.unwrap_err();
+    assert_eq!(error.code(), "unavailable");
+    // A caller polling in a loop does not start a rotation per call.
+    for _ in 0..3 {
+        let session = client.auth().get_session().await.unwrap().unwrap();
+        assert_eq!(session.access_token, "a0");
+    }
+    task.abort();
+    assert_eq!(
+        count.load(Ordering::SeqCst),
+        1,
+        "no rotation during the backoff"
+    );
+}
+
+#[tokio::test]
 async fn a_rotation_that_panics_does_not_block_later_refreshes() {
     use nelcota_client::auth::{SessionStorage, StorageFuture};
     #[derive(Default)]

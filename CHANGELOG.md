@@ -277,6 +277,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - `@nelcota/ssr`: re-saving the same upstream session during sign-in no longer
   revokes it. Replaced sessions are compared by the access token's `session_id`
   claim instead of their stored JSON.
+- `nelcota-client` (Rust): `get_session` honors the refresh backoff after a
+  transient failure, returning the still-valid session instead of starting a
+  rotation on every call until Retry-After (or 2 s) has elapsed.
 
 ### Security
 
