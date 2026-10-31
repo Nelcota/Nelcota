@@ -91,6 +91,18 @@ Dates identify release entries; registry availability requires a successful publ
 - Bucket settings are serialized field by field, and bucket methods take only
   `signal`/`timeout` from their options, so untyped options cannot replace
   headers, authentication or response validation.
+- A browser refresh request that never settles (with `timeout: 0`) no longer
+  holds its refresh reservation for as long as the tab stays open. The owner
+  renews it for at most the request timeout or two minutes, whichever is
+  shorter; other tabs then take it over once the 10-second lease lapses.
+- Tabs running SDK 0.2.1 or older hear sign-outs and refreshes from newer tabs
+  again: each change is broadcast as the structured message followed by the
+  legacy `"changed"` signal those tabs understand. Current tabs skip the
+  duplicate instead of handling the change twice.
+- A tab no longer signs the user out when it reads a session that a tab
+  running an older SDK has committed to IndexedDB but not yet copied to
+  `localStorage`. Such untimed receipts settle five seconds after this tab
+  first sees them, like untimed refresh reservations.
 
 ## 0.2.5 — 2026-10-27
 

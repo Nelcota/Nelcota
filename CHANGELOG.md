@@ -266,6 +266,26 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - An upload whose body sends nothing for a minute is dropped with
   `upload_timeout`, so slow uploads can no longer hold every upload slot for
   the whole upload timeout.
+- `@nelcota/ssr`: a write whose rotation lease ran close to its timeout no
+  longer fails after the new session row and lineage head are durable.
+  Retiring the rotated-away row now runs after the lease with its own budget
+  and reports failures through `onBackgroundError`.
+- `@nelcota/client`: a browser refresh request that never settles (with
+  `timeout: 0`) no longer holds its refresh reservation while the tab stays
+  open; renewal stops after the request timeout or two minutes, whichever is
+  shorter, and other tabs take the reservation over once its lease lapses.
+- `@nelcota/client`: browser tabs running SDK 0.2.1 or older hear sign-outs and
+  refreshes from newer tabs again; each change also sends the legacy
+  `"changed"` broadcast, which current tabs skip as a duplicate.
+- `@nelcota/client`: a browser tab no longer signs the user out when it reads
+  a session an older SDK tab has committed to IndexedDB but not yet copied to
+  `localStorage`; untimed receipts settle five seconds after first sight.
+- `@nelcota/ssr`: re-saving the same upstream session during sign-in no longer
+  revokes it. Replaced sessions are compared by the access token's `session_id`
+  claim instead of their stored JSON.
+- `nelcota-client` (Rust): `get_session` honors the refresh backoff after a
+  transient failure, returning the still-valid session instead of starting a
+  rotation on every call until Retry-After (or 2 s) has elapsed.
 
 ### Security
 

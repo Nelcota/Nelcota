@@ -64,6 +64,10 @@ Dates identify release entries; registry availability requires a successful publ
   grammar rejects.
 - `with_access_token` validates its token like `ClientBuilder::access_token`;
   an invalid one fails each request with the same `Error::Usage`.
+- `get_session` honors the refresh backoff: after a transient refresh failure
+  it returns the still-valid session without starting another rotation until
+  Retry-After (or 2 s) has elapsed, so a caller polling it no longer sends a
+  refresh on every call.
 
 ## 0.1.7 — 2026-10-26
 

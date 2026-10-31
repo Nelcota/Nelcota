@@ -249,8 +249,9 @@ when upgrading so they use the same coordination protocol.
 A ready session whose `localStorage` mirror has been removed is signed out
 once its receipt is more than five seconds old (younger receipts may be
 between the journal commit and the mirror write); the journal is cleared in
-the same transaction. Other `localStorage` edits do not change the session.
-`sessionStorage` and custom adapters keep their own semantics.
+the same transaction. A receipt from an SDK without receipt times is timed
+from when this client first sees it. Other `localStorage` edits do not change
+the session. `sessionStorage` and custom adapters keep their own semantics.
 
 ### Refresh
 
@@ -292,13 +293,15 @@ Another client can always read a reserved session and use its access token.
 For 10 seconds after the reservation (the server's retry window) it cannot
 rotate it: refreshing returns `refresh_pending`. The owner renews the
 reservation every few seconds while its refresh request is in flight, so a slow
-request keeps it. Once renewals stop for 10 seconds the reservation is
-abandoned (its tab closed or crashed) and the next refresh takes it over,
-retrying the stored token. The server then either rotates it, or answers
-`invalid_grant` when the lost rotation had committed, which signs out. A late
-response from a superseded owner cannot overwrite the newer state: its
-publication is refused and the authoritative state is adopted. A reservation
-from an SDK without receipt times is timed from when this client first sees it.
+request keeps it, for at most the request timeout or two minutes, whichever is
+shorter (two minutes with `timeout: 0`). Once renewals stop for 10 seconds the
+reservation is abandoned (its tab closed or crashed, or its request never
+settled) and the next refresh takes it over, retrying the stored token. The
+server then either rotates it, or answers `invalid_grant` when the lost
+rotation had committed, which signs out. A late response from a superseded
+owner cannot overwrite the newer state: its publication is refused and the
+authoritative state is adopted. A reservation from an SDK without receipt
+times is timed from when this client first sees it.
 
 ### Publication and events
 
@@ -309,11 +312,12 @@ while that exact prior receipt remains current, even with a foreign owner. A
 committed logout supersedes dirty state in other clients.
 
 Each change is broadcast as one message carrying its event and revision,
-never tokens; a change without a committed revision sends the legacy
-`"changed"` signal, which receivers still accept from older SDKs. Receivers
-reload under the lifecycle lock; unchanged reloads emit nothing, and a
-revision that no longer matches the journal is not trusted for its event
-kind. Explicit `sessionStorage` does not broadcast.
+never tokens, followed by the legacy `"changed"` signal for tabs running SDK
+0.2.1 or older; current receivers skip that copy. A change without a
+committed revision sends only the legacy signal, which receivers still accept
+from older SDKs. Receivers reload under the lifecycle lock; unchanged reloads
+emit nothing, and a revision that no longer matches the journal is not
+trusted for its event kind. Explicit `sessionStorage` does not broadcast.
 
 Auth listeners run in registration order and may return promises. Each
 subscription first receives one asynchronous `initial_session`, ordered before

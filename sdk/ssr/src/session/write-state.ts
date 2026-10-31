@@ -2,6 +2,7 @@ import type { SessionStorage } from "@nelcota/client";
 
 import { SessionError } from "../errors.js";
 import { promiseResult } from "../lifecycle/promise-result.js";
+import { fromBase64url } from "../sealing/crypto.js";
 import { lineageOf, type Loaded, type SessionRecords } from "../sealing/records.js";
 import { newSessionId, sessionKey, type SessionState } from "../sealing/seal.js";
 import type { SessionLease } from "../store.js";
@@ -17,6 +18,40 @@ interface WriteInput {
   retired: Set<string>;
   /** Stored sessions (JSON) an identity change replaced; revoked upstream after success. */
   replaced: string[];
+}
+
+/**
+ * The upstream `session_id` claim of a stored session's access token, read
+ * without verification (the token only identifies which session to compare),
+ * or `null` when the value carries none.
+ */
+function upstreamSessionId(stored: string): string | null {
+  try {
+    const parsed: unknown = JSON.parse(stored);
+    if (typeof parsed !== "object" || parsed === null) return null;
+    const token = (parsed as { access_token?: unknown }).access_token;
+    if (typeof token !== "string") return null;
+    const payload = token.split(".")[1];
+    if (payload === undefined) return null;
+    const claims: unknown = JSON.parse(new TextDecoder().decode(fromBase64url(payload)));
+    if (typeof claims !== "object" || claims === null) return null;
+    const id = (claims as { session_id?: unknown }).session_id;
+    return typeof id === "string" && id !== "" ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether two stored sessions belong to the same upstream session. Refreshed
+ * tokens and re-saved user data change the stored JSON but not the session, so
+ * the access tokens' `session_id` claims decide; only when either lacks one
+ * does the stored value itself.
+ */
+function sameUpstreamSession(previous: string, next: string): boolean {
+  const before = upstreamSessionId(previous),
+    after = upstreamSessionId(next);
+  return before !== null && after !== null ? before === after : previous === next;
 }
 
 /** Mutable state belongs to one store lease and is never shared across requests. */
@@ -233,8 +268,9 @@ export class WriteState {
         generation,
       });
     });
-    // A different identity replaced a live upstream session: end it after success.
-    if (previous !== null && previous !== value) this.input.replaced.push(previous);
+    // A different upstream session replaced a live one: end it after success.
+    if (previous !== null && sameUpstreamSession(previous, value) === false)
+      this.input.replaced.push(previous);
   }
 
   async #removeItem(name: string): Promise<void> {

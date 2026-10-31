@@ -114,3 +114,56 @@ it("locks the same advisory key as 0.1.x so mixed versions exclude each other", 
     ["SELECT pg_advisory_unlock(hashtextextended($1, 0))", key],
   ]);
 });
+
+it("retires the rotated-away row after the lease budget instead of failing the write", async () => {
+  const { pool, query, release } = fixture();
+  const retireDelayInMs = 80,
+    workDelayInMs = 150;
+  query.mockImplementation(async (sql) => {
+    if (sql.startsWith("DELETE"))
+      await new Promise((resolve) => setTimeout(resolve, retireDelayInMs));
+    return { rows: queryRows(sql) };
+  });
+  const reported: Error[] = [];
+  // The callback ends within the 200ms lease; the retire step ends after it.
+  await expect(
+    new PostgresSessionStore(pool, { timeout: 100, leaseTimeout: 200 }).exclusive(
+      key,
+      async (lease) => {
+        await lease.rotate("c".repeat(64));
+        await new Promise((resolve) => setTimeout(resolve, workDelayInMs));
+        await lease.save(value());
+        return "published";
+      },
+      { onRetireError: (error) => reported.push(error) },
+    ),
+  ).resolves.toBe("published");
+  expect(reported).toEqual([]);
+  expect(query.mock.calls.some(([sql]) => sql.startsWith("DELETE"))).toBe(true);
+  expect(release).toHaveBeenCalledExactlyOnceWith(false);
+});
+
+it("reports a retire step that exceeds its own budget without failing the write", async () => {
+  const { pool, query, release } = fixture();
+  query.mockImplementation(async (sql) => {
+    if (sql.startsWith("DELETE")) return await new Promise<never>(() => undefined);
+    return { rows: queryRows(sql) };
+  });
+  const reported: Error[] = [];
+  await expect(
+    new PostgresSessionStore(pool, { timeout: 100, leaseTimeout: 1000 }).exclusive(
+      key,
+      async (lease) => {
+        await lease.rotate("c".repeat(64));
+        await lease.save(value());
+        return "published";
+      },
+      { onRetireError: (error) => reported.push(error) },
+    ),
+  ).resolves.toBe("published");
+  expect(reported).toHaveLength(1);
+  expect(reported[0]).toMatchObject({ code: "session_store" });
+  // The hung statement may still hold the connection: it is destroyed, not pooled.
+  expect(release).toHaveBeenCalledExactlyOnceWith(true);
+  expect(query.mock.calls.filter(([sql]) => sql.includes("pg_advisory_unlock"))).toEqual([]);
+});

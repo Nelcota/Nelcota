@@ -156,11 +156,12 @@ export class SessionStore {
     }
   }
   /**
-   * Renews a committed reservation while its refresh request is in flight;
-   * call the returned function once the request settles.
+   * Renews a committed reservation while its refresh request is in flight,
+   * for at most the request's timeout (`0`: no limit) and two minutes; call
+   * the returned function once the request settles.
    */
-  holdReservation(): (() => Promise<void>) | undefined {
-    return this.#native?.hold();
+  holdReservation(timeoutInMs: number): (() => Promise<void>) | undefined {
+    return this.#native?.hold(timeoutInMs);
   }
   /** Gives back a reservation whose rotation definitely did not commit. */
   async release(session: Session): Promise<void> {
