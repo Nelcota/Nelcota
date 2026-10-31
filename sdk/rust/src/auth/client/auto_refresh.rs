@@ -42,9 +42,12 @@ impl AuthClient {
                 let auth = Client::shared_session(inner).auth();
                 let manager = auth.manager();
                 let delay = match manager.loaded(&RequestOptions::default()).await {
+                    // After a transient failure, wait out its Retry-After (or the
+                    // short backoff) instead of rotating again as soon as it is due.
                     Ok(snapshot) => snapshot
                         .current
-                        .map(|current| manager.due_in(&current))
+                        .as_ref()
+                        .map(|current| manager.due_in(current).max(snapshot.retry_in()))
                         .unwrap_or(Duration::from_secs(30)),
                     Err(_) => Duration::from_secs(10),
                 };

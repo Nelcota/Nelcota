@@ -16,6 +16,16 @@ pub(super) type Guard<'a> = MutexGuard<'a, ()>;
 /// The outcome of one shared rotation, `None` while it runs.
 pub(super) type RefreshResult = watch::Receiver<Option<Result<Session>>>;
 
+/// Long enough never to arrive, short enough that `Instant` arithmetic cannot
+/// overflow on any platform (Tokio uses the same horizon for "never").
+const FAR_FUTURE: Duration = Duration::from_secs(30 * 365 * 24 * 60 * 60);
+
+/// `Instant::now() + after`, saturating: an absurd `expires_in`, `expires_at`
+/// or `Retry-After` from a server, a store or a caller must not panic.
+fn deadline_after(after: Duration) -> Instant {
+    Instant::now() + after.min(FAR_FUTURE)
+}
+
 /// A session with its expiry on the local monotonic clock.
 #[derive(Clone)]
 pub(super) struct Current {
@@ -30,14 +40,14 @@ impl Current {
         // reading rather than the server's clock.
         session.expires_at = super::models::now().saturating_add(session.expires_in);
         Self {
-            deadline: Instant::now() + Duration::from_secs(session.expires_in),
+            deadline: deadline_after(Duration::from_secs(session.expires_in)),
             session,
         }
     }
     /// A stored or caller-provided session: only its absolute expiry is known.
     pub(super) fn restored(session: Session) -> Self {
         Self {
-            deadline: Instant::now() + session.expires_in_now(),
+            deadline: deadline_after(session.expires_in_now()),
             session,
         }
     }
@@ -73,7 +83,13 @@ pub(super) struct Snapshot {
 impl Snapshot {
     /// A failed rotation's backoff has not elapsed yet.
     pub(super) fn backing_off(&self) -> bool {
-        self.retry_at.is_some_and(|at| Instant::now() < at)
+        !self.retry_in().is_zero()
+    }
+    /// What is left of a failed rotation's backoff (zero when none is running).
+    pub(super) fn retry_in(&self) -> Duration {
+        self.retry_at.map_or(Duration::ZERO, |at| {
+            at.saturating_duration_since(Instant::now())
+        })
     }
 }
 
@@ -213,7 +229,7 @@ impl Manager {
     pub(super) fn postpone_rotation(&self, _guard: &Guard<'_>, backoff: Duration) {
         self.state.send_modify(|state| {
             state.revision += 1;
-            state.retry_at = Some(Instant::now() + backoff);
+            state.retry_at = Some(deadline_after(backoff));
         });
     }
 
