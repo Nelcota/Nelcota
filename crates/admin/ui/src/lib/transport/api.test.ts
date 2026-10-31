@@ -127,7 +127,9 @@ it("mutation reconciliation: ignores an old session rejection after a new login 
 });
 
 it("mutation reconciliation: does not send a write whose session ended before it was sent", async () => {
-  const fetch = vi.fn(() => Promise.resolve(new Response(JSON.stringify({ ok: true }))));
+  const fetch = vi.fn((_input: RequestInfo | URL) =>
+    Promise.resolve(new Response(JSON.stringify({ ok: true }))),
+  );
   vi.stubGlobal("fetch", fetch);
   const old = api.put("/anything", {}).catch((error: unknown) => error);
   await api.post("/login");
