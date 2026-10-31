@@ -67,11 +67,14 @@ const BUDGETS: Record<string, number> = {
   // write-modifier guards, a rejecting builder then(), explicit bucket JSON,
   // response_body_error and shared core time/environment/id modules) measure
   // root 23,495 B, REST 11,920 B, auth 16,113 B and storage 9,341 B gzip.
-  "index.js": 23_550,
+  // Renewing a reservation while its refresh is in flight, and timing
+  // reservations from older SDKs from first sight, measure root 23,820 B and
+  // auth 16,432 B gzip.
+  "index.js": 23_870,
   // Standalone factories include HTTP and keep the other feature modules out.
   "rest/index.js": 11_980,
   // Failed persistence must retain rotated tokens; background failures are observed.
-  "auth/index.js": 16_180,
+  "auth/index.js": 16_480,
   "storage/index.js": 9_400,
 };
 
