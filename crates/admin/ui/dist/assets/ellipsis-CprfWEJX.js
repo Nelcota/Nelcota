@@ -1,0 +1,1 @@
+import{gn as e,hn as t,y as n}from"./circle-alert-DDyCNAfq.js";var r={name:`ellipsis`,size:24,node:[[`circle`,{cx:`12`,cy:`12`,r:`1`}],[`circle`,{cx:`19`,cy:`12`,r:`1`}],[`circle`,{cx:`5`,cy:`12`,r:`1`}]],aliases:[`more-horizontal`]};r.node;var i=new Set([`$$slots`,`$$events`,`$$legacy`]);function a(a,o){let s=t(o,i);n(a,e(()=>s,{get icon(){return r}}))}export{a as t};

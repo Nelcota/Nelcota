@@ -1,0 +1,1 @@
+var e=e=>e.normalize(`NFD`).replaceAll(/\p{Diacritic}/gu,``).toLowerCase(),t=e=>e.replaceAll(/[.*+?^${}()|[\]\\]/g,`\\$&`);function n(t,n,i=[]){return r(e([t,...i].join(` `)),n)}function r(n,r){let i=e(r).split(/\s+/).filter(Boolean);return i.length===0?1:i.every(e=>n.includes(e))===!1?0:i.every(e=>RegExp(`(^|[\\s_./-])${t(e)}`).test(n))?1:.5}export{e as n,r,n as t};

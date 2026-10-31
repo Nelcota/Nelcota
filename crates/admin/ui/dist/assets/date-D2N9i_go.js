@@ -1,0 +1,1 @@
+import{cn as e}from"./circle-alert-DDyCNAfq.js";function t(e,t){if(e==null||e===``)return`—`;let n=new Date(e);return Number.isFinite(n.getTime())===!1?typeof e==`string`?e:`—`:t(n)}var n={year:`numeric`,month:`numeric`,day:`numeric`,hour:`numeric`,minute:`numeric`,second:`numeric`};function r(r,i){return t(r,t=>e(i,n).format(t))}export{r as n,t};
