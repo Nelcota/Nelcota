@@ -150,6 +150,12 @@ a quoted tab prefix, including formulas hidden behind whitespace or control
 characters. Negative numeric literals keep their digits and numeric form.
 Use JSON export when you need the original text without this neutralization.
 
+In json and jsonb columns, CSV export writes each value's JSON text, as the grid
+shows it: a JSON `null` is the text `null` and SQL NULL is an empty field. JSON
+export keeps each row as the REST API returns it, with documents nested, so a
+JSON `null` and SQL NULL both appear as `null` there. Use CSV export when that
+difference matters.
+
 | Page | What it has |
 |---|---|
 | **Overview** | what needs action (unprotected or locked tables), next steps ticked by the project's state (first table, data protected, a user, a first sign-in through the app), a one-line summary and the table list with who can read and write. Pages that show access rules read in plain language; "Technical details" shows RLS, roles, grants and SQL |

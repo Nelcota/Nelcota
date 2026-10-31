@@ -1,10 +1,15 @@
 //! Table export as CSV or JSON, streamed from Postgres: one record at a time
 //! goes straight into the response, without building the whole file in
 //! memory. Follows the grid's sort and filters.
+//!
+//! json/jsonb columns: CSV writes their JSON text, so a JSON `null` is the
+//! text `null` and SQL NULL an empty field, as in the grid. JSON export keeps
+//! each record as the REST API returns it (`row_to_json`, documents nested),
+//! where both read as `null`.
 mod connection;
 pub use connection::ExportExecutor;
 
-use std::{collections::HashSet, error::Error, future::ready};
+use std::{error::Error, future::ready};
 
 use axum::{
     body::Body,
@@ -21,7 +26,7 @@ use crate::{
     error::user_query_error,
     tables::{
         catalog::table_or_404,
-        rows::{Row, RowsQuery, build_request, is_json, raw_text},
+        rows::{Row, RowsQuery, build_request, invalid_query, is_json, json_text, raw_text},
     },
 };
 
@@ -63,8 +68,10 @@ pub struct ExportQuery {
 struct Encoder {
     format: Format,
     columns: Vec<String>,
-    /// json/jsonb columns, written as their JSON text.
-    json_columns: HashSet<String>,
+    /// json/jsonb columns in table order, written as their JSON text. A CSV
+    /// record then comes with their `IS NULL` flags, in this order
+    /// ([`Encoder::flags_sql_nulls`]).
+    json_columns: Vec<String>,
 }
 
 impl Encoder {
@@ -79,14 +86,29 @@ impl Encoder {
         }
     }
 
+    /// Whether the records carry SQL NULL flags: CSV tells a JSON `null`
+    /// apart from SQL NULL; JSON export keeps the REST API's records.
+    fn flags_sql_nulls(&self) -> bool {
+        self.format == Format::Csv && !self.json_columns.is_empty()
+    }
+
     fn row(&self, index: usize, json: &str) -> Result<String, BoxError> {
         match self.format {
             Format::Csv => {
-                let row: Row = serde_json::from_str(json)?;
+                let (row, sql_nulls): (Row, Vec<bool>) = match self.flags_sql_nulls() {
+                    true => serde_json::from_str(json)?,
+                    false => (serde_json::from_str(json)?, Vec::new()),
+                };
                 let values: Vec<Option<String>> = self
                     .columns
                     .iter()
-                    .map(|c| raw_text(row.get(c).map(AsRef::as_ref), self.json_columns.contains(c)))
+                    .map(|c| {
+                        let value = row.get(c).map(AsRef::as_ref);
+                        match self.json_columns.iter().position(|j| j == c) {
+                            Some(n) => json_text(value, sql_nulls.get(n).copied().unwrap_or(true)),
+                            None => raw_text(value, false),
+                        }
+                    })
                     .collect();
                 Ok(csv_line(values.iter().map(Option::as_deref)))
             }
@@ -180,7 +202,24 @@ pub async fn export(
         filters: params.filters,
     };
     let request = build_request(&table, &rows_query, None)?;
-    let sql = query::select_rows(&schema, &table, &request);
+    let encoder = Encoder {
+        format: params.format,
+        columns: table.columns.iter().map(|c| c.name.clone()).collect(),
+        json_columns: table
+            .columns
+            .iter()
+            .filter(|c| is_json(c))
+            .map(|c| c.name.clone())
+            .collect(),
+    };
+    let options = query::ReadOptions {
+        null_flags: match encoder.flags_sql_nulls() {
+            true => encoder.json_columns.clone(),
+            false => Vec::new(),
+        },
+    };
+    let sql =
+        query::select_rows_with(&schema, &table, &request, &options).map_err(invalid_query)?;
 
     // Filter errors show up here, before the first byte: they become a 400.
     let (client, connection) = state.exports.connect(&state.db_config).await?;
@@ -192,16 +231,6 @@ pub async fn export(
     // request handle must not keep it alive after cancellation or expiry.
     drop(client);
 
-    let encoder = Encoder {
-        format: params.format,
-        columns: table.columns.iter().map(|c| c.name.clone()).collect(),
-        json_columns: table
-            .columns
-            .iter()
-            .filter(|c| is_json(c))
-            .map(|c| c.name.clone())
-            .collect(),
-    };
     let header = encoder.header();
     let footer = encoder.footer();
     let table_name = table.name.clone();
@@ -295,7 +324,7 @@ mod tests {
         let encoder = Encoder {
             format: Format::Csv,
             columns: vec!["=header".into()],
-            json_columns: HashSet::new(),
+            json_columns: Vec::new(),
         };
         assert_eq!(encoder.header(), "\u{feff}\"\t=header\"\r\n");
         assert_eq!(
@@ -305,7 +334,7 @@ mod tests {
         let encoder = Encoder {
             format: Format::Json,
             columns: vec![],
-            json_columns: HashSet::new(),
+            json_columns: Vec::new(),
         };
         assert_eq!(
             encoder.row(0, r#"{"value":"=1+1"}"#).unwrap(),
@@ -318,7 +347,7 @@ mod tests {
         let encoder = Encoder {
             format: Format::Csv,
             columns: vec!["id".into(), "name".into(), "extra".into()],
-            json_columns: HashSet::new(),
+            json_columns: Vec::new(),
         };
         let line = encoder
             .row(0, r#"{"name":"Ana, the first","id":1,"extra":null}"#)
@@ -331,10 +360,43 @@ mod tests {
         let encoder = Encoder {
             format: Format::Csv,
             columns: vec!["label".into(), "extra".into()],
-            json_columns: HashSet::from(["extra".to_owned()]),
+            json_columns: vec!["extra".to_owned()],
         };
-        let line = encoder.row(0, r#"{"label":"42","extra":"42"}"#).unwrap();
+        let line = encoder
+            .row(0, r#"[{"label":"42","extra":"42"},[false]]"#)
+            .unwrap();
         assert_eq!(line, "42,\"\"\"42\"\"\"\r\n");
+    }
+
+    #[test]
+    fn csv_tells_a_json_null_apart_from_sql_null() {
+        let encoder = Encoder {
+            format: Format::Csv,
+            columns: vec!["id".into(), "body".into(), "raw".into(), "note".into()],
+            json_columns: vec!["body".into(), "raw".into()],
+        };
+        assert!(encoder.flags_sql_nulls());
+        let line = encoder
+            .row(
+                0,
+                r#"[{"id":1,"body":null,"raw":null,"note":null},[false,true]]"#,
+            )
+            .unwrap();
+        assert_eq!(line, "1,null,,\r\n");
+    }
+
+    #[test]
+    fn json_export_keeps_the_rest_records() {
+        let encoder = Encoder {
+            format: Format::Json,
+            columns: vec!["id".into(), "body".into()],
+            json_columns: vec!["body".into()],
+        };
+        assert!(!encoder.flags_sql_nulls());
+        assert_eq!(
+            encoder.row(0, r#"{"id":1,"body":{"a":null}}"#).unwrap(),
+            "\n  {\"id\":1,\"body\":{\"a\":null}}"
+        );
     }
 
     #[test]
@@ -342,7 +404,7 @@ mod tests {
         let encoder = Encoder {
             format: Format::Json,
             columns: vec![],
-            json_columns: HashSet::new(),
+            json_columns: Vec::new(),
         };
         let body = [
             encoder.header(),

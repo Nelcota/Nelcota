@@ -41,7 +41,7 @@ pub(crate) fn raw_text(value: Option<&RawValue>, json: bool) -> Option<String> {
 
 /// Text of a json/jsonb value: a JSON `null` reads as `null`, SQL NULL
 /// (`sql_null`) as `None`.
-fn json_text(value: Option<&RawValue>, sql_null: bool) -> Option<String> {
+pub(crate) fn json_text(value: Option<&RawValue>, sql_null: bool) -> Option<String> {
     if sql_null {
         return None;
     }

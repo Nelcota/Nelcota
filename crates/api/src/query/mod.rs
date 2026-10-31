@@ -350,7 +350,7 @@ pub use parse::{parse_request, parse_request_with_relations};
 use sql::*;
 pub use sql::{
     count, delete, insert, insert_values, resolve_function, rpc, select, select_counted,
-    select_rows, select_with, update, update_values,
+    select_rows, select_rows_with, select_with, update, update_values,
 };
 
 /// A structured transport's literal catalog column, not a URL modifier.
@@ -1155,6 +1155,26 @@ mod tests {
         assert!(select_with("public", &t, &req, None, &unknown).is_err());
         let narrow = parse_request(&pairs(&[("select", "id")]), &t).unwrap();
         assert!(select_with("public", &t, &narrow, None, &options).is_err());
+    }
+
+    #[test]
+    fn streamed_records_carry_null_flags_only_when_asked() {
+        let t = docs();
+        let req = parse_request(&pairs(&[("order", "id")]), &t).unwrap();
+        let plain = select_rows("public", &t, &req);
+        let same = select_rows_with("public", &t, &req, &ReadOptions::default()).unwrap();
+        assert_eq!(same.text, plain.text);
+        let options = ReadOptions {
+            null_flags: vec!["raw".into()],
+        };
+        let flagged = select_rows_with("public", &t, &req, &options).unwrap();
+        assert!(
+            flagged.text.starts_with(
+                "SELECT json_build_array(row_to_json(_r), json_build_array(_r.\"raw\" IS NULL))::text FROM ("
+            ),
+            "{}",
+            flagged.text
+        );
     }
 
     #[test]

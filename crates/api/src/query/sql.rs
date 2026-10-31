@@ -238,7 +238,18 @@ pub fn select_with(
     max_rows: Option<i64>,
     options: &ReadOptions,
 ) -> Result<Sql, QueryError> {
-    let flags = options
+    let flags = null_flags(table, request, options)?;
+    Ok(select_flagged(schema, table, request, max_rows, &flags))
+}
+
+/// `_r.column IS NULL` for each of `options.null_flags`, which must name
+/// selected columns of `table`.
+fn null_flags(
+    table: &Table,
+    request: &Request,
+    options: &ReadOptions,
+) -> Result<Vec<String>, QueryError> {
+    options
         .null_flags
         .iter()
         .map(|name| {
@@ -248,8 +259,7 @@ pub fn select_with(
             }
             Ok(format!("_r.{} IS NULL", ident(name)))
         })
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(select_flagged(schema, table, request, max_rows, &flags))
+        .collect()
 }
 
 /// Each row is `to_json(_r)`, or `[to_json(_r), [flags...]]` with `flags`.
@@ -297,13 +307,38 @@ pub fn select_counted(
 /// One record per result row, as JSON text: for streaming reads (export)
 /// without building the whole response in memory.
 pub fn select_rows(schema: &str, table: &Table, request: &Request) -> Sql {
+    select_rows_flagged(schema, table, request, &[])
+}
+
+/// [`select_rows`] with [`ReadOptions`]: with null flags, each record is
+/// `[row, [column IS NULL, ...]]`. With no option set, the statement is
+/// exactly [`select_rows`]'s.
+pub fn select_rows_with(
+    schema: &str,
+    table: &Table,
+    request: &Request,
+    options: &ReadOptions,
+) -> Result<Sql, QueryError> {
+    let flags = null_flags(table, request, options)?;
+    Ok(select_rows_flagged(schema, table, request, &flags))
+}
+
+/// Each record is `row_to_json(_r)`, or `[row_to_json(_r), [flags...]]`.
+fn select_rows_flagged(schema: &str, table: &Table, request: &Request, flags: &[String]) -> Sql {
     let mut sql = Sql {
         checked_json: false,
         embed_limit: None,
         ..Sql::default()
     };
     let rows = rows_subquery(&mut sql, schema, table, request, None);
-    sql.text = format!("SELECT row_to_json(_r)::text FROM ({rows}) _r");
+    let record = match flags.is_empty() {
+        true => "row_to_json(_r)".to_owned(),
+        false => format!(
+            "json_build_array(row_to_json(_r), json_build_array({}))",
+            flags.join(", ")
+        ),
+    };
+    sql.text = format!("SELECT {record}::text FROM ({rows}) _r");
     sql
 }
 
