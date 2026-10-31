@@ -21,6 +21,9 @@
   const BYTES_PER_KIB = 1024;
   const MAX_MIGRATION_BYTES = 2 * BYTES_PER_KIB * BYTES_PER_KIB;
   let request: AbortController | null = null;
+  // The texts the preview checked. Apply sends exactly these: reading the
+  // files again could pick up an edit made on disk after the preview.
+  let previewed: { filename: string; sql: string }[] | null = null;
   new CloseGuard({ dirty: () => false, busy: () => busy, active: () => busy, close: () => {} });
   const canApply = $derived(
     result?.report.dry_run === true &&
@@ -31,6 +34,7 @@
   );
   const changed = () => {
     result = null;
+    previewed = null;
     failure = "";
     backupHelp = false;
   };
@@ -58,6 +62,7 @@
       failure = t("migrations.result.fileBudget");
       return;
     }
+    const checked = previewed;
     busy = true;
     applying = dryRun === false;
     changed();
@@ -65,9 +70,12 @@
     request = abort;
     let submitted = false;
     try {
-      const files = await Promise.all(
-        selected.map(async (file) => ({ filename: file.name, sql: await file.text() })),
-      );
+      const files =
+        dryRun === false && checked !== null
+          ? checked
+          : await Promise.all(
+              selected.map(async (file) => ({ filename: file.name, sql: await file.text() })),
+            );
       if (isAlive() === false) return;
       if (
         new TextEncoder().encode(JSON.stringify({ files, dry_run: dryRun })).length >
@@ -78,6 +86,7 @@
       const reply = await resource.apply(files, dryRun, abort.signal);
       if (isAlive() === false) return;
       result = reply;
+      if (dryRun) previewed = files;
       await onapplied();
     } catch (cause) {
       failed(cause, dryRun, submitted);
