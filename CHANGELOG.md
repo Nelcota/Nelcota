@@ -126,6 +126,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- An upload of unknown length that grows into scarce quota or disk space no
+  longer takes the storage admission lock and queries the database on every
+  chunk. It reserves half of the remaining room beyond its size, so checks
+  stay logarithmic while concurrent uploads still share the room.
 - REST `like`/`ilike` filters can match a literal `*`: an unescaped `*` is still
   the `%` wildcard, while `\*` now means `*`. Other backslash escapes (`\%`,
   `\_`, `\\`) keep their SQL LIKE meaning. Previously every `*` became `%`.

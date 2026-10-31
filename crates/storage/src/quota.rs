@@ -71,6 +71,11 @@ fn quota_room(max: Option<u64>, others: u128, old_size: u64) -> u128 {
 /// reserve under the quota and on disk. It reaches up to [`GROWTH_STEP`]
 /// past the current reservation, within the file limit and never beyond half
 /// of the room left, so concurrent small uploads still share scarce capacity.
+///
+/// Once `size` already exceeds half of the room, the upload reserves half of
+/// the room beyond `size` rather than exactly `size`. The leftover then halves
+/// with each check, so a slowly growing upload consults the database a
+/// logarithmic number of times instead of on every chunk.
 fn grown(size: u64, held: u64, limit: u64, quota: u128, disk: u128) -> Result<u64, Shortage> {
     if u128::from(size) > quota {
         return Err(Shortage::Quota);
@@ -78,8 +83,14 @@ fn grown(size: u64, held: u64, limit: u64, quota: u128, disk: u128) -> Result<u6
     if u128::from(size) > disk {
         return Err(Shortage::Disk);
     }
+    let room = quota.min(disk);
+    let share = match u128::from(size) * 2 > room {
+        // `size <= room`, so the sum cannot overflow here.
+        true => (room + u128::from(size)) / 2,
+        false => room / 2,
+    };
     let ahead = held.saturating_add(GROWTH_STEP).min(limit);
-    let ahead = u128::from(ahead).min(quota.min(disk) / 2);
+    let ahead = u128::from(ahead).min(share);
     // `ahead` is at most `limit`, so it fits in a u64.
     Ok(size.max(ahead as u64))
 }
@@ -266,6 +277,26 @@ mod tests {
         assert_eq!(grown(4, 0, 50 * MIB, 5, ANY), Ok(4));
         assert_eq!(grown(4, 0, 50 * MIB, ANY, 9), Ok(4));
         assert_eq!(grown(10, 0, 50 * MIB, 10, ANY), Ok(10));
+    }
+
+    #[test]
+    fn slow_growth_into_scarce_room_checks_logarithmically() {
+        // One-byte chunks fill a fixed room smaller than a growth step.
+        let room: u64 = 1 << 19;
+        let mut held = 0;
+        let mut checks = 0;
+        for size in 1..=room {
+            if size <= held {
+                continue;
+            }
+            checks += 1;
+            held = grown(size, held, 50 * MIB, u128::from(room), ANY).expect("fits");
+            // Never more than half of what the others could still use.
+            assert!(held <= (room + size).div_ceil(2));
+        }
+        assert_eq!(held, room);
+        // One check per halving of the leftover room, plus the final byte.
+        assert!(checks <= 2 + room.ilog2(), "{checks} checks");
     }
 
     #[test]
