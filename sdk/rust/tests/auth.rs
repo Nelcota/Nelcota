@@ -962,6 +962,47 @@ async fn auto_refresh_backs_off_while_the_session_stays_due() {
 }
 
 #[tokio::test]
+async fn background_refresh_retries_when_the_retry_after_ends() {
+    let attempts = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let router = Router::new().route(
+        "/auth/v1/token",
+        post({
+            let attempts = attempts.clone();
+            move || {
+                attempts.lock().unwrap().push(std::time::Instant::now());
+                async {
+                    (
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        [("retry-after", "5")],
+                        Json(json!({"code":"unavailable","message":"try later"})),
+                    )
+                }
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let client = Client::builder(format!("http://{}", listener.local_addr().unwrap()))
+        .build()
+        .unwrap();
+    let task = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    // Inside the 60 s refresh margin, but still valid: the backoff applies.
+    client.auth().set_session(expiring_in(40)).await.unwrap();
+    let background = client.auth().start_auto_refresh();
+    tokio::time::sleep(Duration::from_millis(8500)).await;
+    drop(background);
+    task.abort();
+    let attempts = attempts.lock().unwrap().clone();
+    assert!(attempts.len() >= 2, "attempted {} times", attempts.len());
+    // Not before the Retry-After, and not left to the growing due backoff
+    // (which would retry only about 8 s after the first attempt).
+    let gap = attempts[1] - attempts[0];
+    assert!(
+        (Duration::from_millis(4500)..Duration::from_millis(6500)).contains(&gap),
+        "retried after {gap:?}"
+    );
+}
+
+#[tokio::test]
 async fn expired_logout_renews_before_revoking_and_always_clears_local_state() {
     let count = Arc::new(AtomicUsize::new(0));
     let router = Router::new()
