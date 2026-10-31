@@ -1,0 +1,1 @@
+import{v as e,y as t}from"./read-body-CVzoW9ju.js";import{y as n}from"./circle-alert-Dqv1yvkB.js";var r={name:`user-round`,size:24,node:[[`circle`,{cx:`12`,cy:`8`,r:`5`}],[`path`,{d:`M20 21a8 8 0 0 0-16 0`}]],aliases:[`user-2`]};r.node;var i=new Set([`$$slots`,`$$events`,`$$legacy`]);function a(a,o){let s=e(o,i);n(a,t(()=>s,{get icon(){return r}}))}export{a as t};

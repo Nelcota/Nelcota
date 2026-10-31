@@ -1,0 +1,1 @@
+function e(e,t){if(e==null)throw TypeError(`Missing ${t}`);return e}export{e as t};
