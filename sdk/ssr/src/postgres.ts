@@ -8,7 +8,7 @@ import {
 import { ownLease } from "./persistence/postgres/lease.js";
 import { keyCheck, stored } from "./persistence/postgres/rows.js";
 import type { SessionPool } from "./persistence/postgres/types.js";
-import type { SessionLease, SessionStore, StoredSession } from "./store.js";
+import type { ExclusiveOptions, SessionLease, SessionStore, StoredSession } from "./store.js";
 export type { SessionPool, SessionConnection } from "./persistence/postgres/types.js";
 export type { PostgresSessionStoreOptions } from "./persistence/postgres/deadlines.js";
 const MAX_QUEUED_OWNERS = 256;
@@ -66,7 +66,11 @@ export class PostgresSessionStore implements SessionStore {
     }
   }
 
-  async exclusive<T>(key: string, work: (lease: SessionLease) => Promise<T>): Promise<T> {
+  async exclusive<T>(
+    key: string,
+    work: (lease: SessionLease) => Promise<T>,
+    options: ExclusiveOptions = {},
+  ): Promise<T> {
     keyCheck(key);
     // One local caller per key borrows a connection; later callers wait here, not in the pool.
     if (this.#queued >= MAX_QUEUED_OWNERS)
@@ -89,7 +93,12 @@ export class PostgresSessionStore implements SessionStore {
       await boundedOperation(previous, this.#lockTimeout, "Session lock acquisition timed out");
       const release = await this.#connections.leaseSlot(deadline);
       try {
-        return await ownLease(this.#connections, { key, deadline }, work);
+        const { onRetireError } = options;
+        return await ownLease(
+          this.#connections,
+          { key, deadline, ...(onRetireError === undefined ? {} : { onRetireError }) },
+          work,
+        );
       } finally {
         release();
       }

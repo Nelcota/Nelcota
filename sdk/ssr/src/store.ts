@@ -38,6 +38,15 @@ export interface SessionLease {
   rotate(key: string, retain?: StoredSession): Promise<void>;
 }
 
+/** Per-owner options of `SessionStore.exclusive`. */
+export interface ExclusiveOptions {
+  /** Receives a failure to replace or remove a rotated-away row after the
+   * callback succeeded. When it is given, that failure no longer fails
+   * `exclusive`: the new row is durable and the old one is already superseded.
+   */
+  onRetireError?: (error: Error) => void;
+}
+
 export interface SessionStore {
   /** Memory stores cannot be selected accidentally in production. */
   readonly durability: "shared" | "development";
@@ -47,5 +56,9 @@ export interface SessionStore {
    * Keep writes durable individually, including PKCE consumption before HTTP.
    * Close the lease before releasing ownership, even when the callback throws.
    */
-  exclusive<T>(key: string, work: (lease: SessionLease) => Promise<T>): Promise<T>;
+  exclusive<T>(
+    key: string,
+    work: (lease: SessionLease) => Promise<T>,
+    options?: ExclusiveOptions,
+  ): Promise<T>;
 }

@@ -188,11 +188,16 @@ export class Integration<Database = unknown> {
     const identity = await this.#initialIdentity(cookies);
     const retired = new Set<string>(),
       replaced: string[] = [];
-    const result = await this.#config.options.store.exclusive(identity.initialKey, (lease) =>
-      writeSession(this.#records, lease, {
-        setup: { ...identity, callbackRequest, cookies, request, retired, replaced },
-        work,
-      }),
+    // Once the new row and lineage head are durable, a failure to retire the old
+    // row must not withhold the new cookie or skip the revocations below.
+    const result = await this.#config.options.store.exclusive(
+      identity.initialKey,
+      (lease) =>
+        writeSession(this.#records, lease, {
+          setup: { ...identity, callbackRequest, cookies, request, retired, replaced },
+          work,
+        }),
+      { onRetireError: () => this.#report("retire") },
     );
     // Only a published identity retires what it replaced. Retired rows are already
     // dead (the lineage head no longer names them); this removes their credentials.
@@ -203,31 +208,32 @@ export class Integration<Database = unknown> {
    * (bounded by the request's auth queue). Failures never fail the request; they
    * reach `onBackgroundError` without tokens or causes. */
   async #retire(retired: ReadonlySet<string>, replaced: readonly string[]): Promise<void> {
-    const report = (operation: "retire" | "revoke") => (): void => {
-      try {
-        this.#config.options.onBackgroundError?.(
-          new SessionError(
-            "session_store",
-            operation === "retire"
-              ? "A replaced session row could not be retired"
-              : "A replaced upstream session could not be revoked",
-          ),
-        );
-      } catch {
-        // A failing hook must not turn a published sign-in into an error.
-      }
-    };
     const revoke = (session: string): Promise<void> =>
-      revokeSession(this.#config, session).catch(report("revoke"));
+      revokeSession(this.#config, session).catch(() => this.#report("revoke"));
     await Promise.all([
       ...[...retired].map(async (key) => {
         const orphan = await this.#records.retire(key).catch(() => {
-          report("retire")();
+          this.#report("retire");
           return null;
         });
         if (orphan !== null) await revoke(orphan);
       }),
       ...replaced.map(revoke),
     ]);
+  }
+  /** Reports failed best-effort work to `onBackgroundError`, without tokens or causes. */
+  #report(operation: "retire" | "revoke"): void {
+    try {
+      this.#config.options.onBackgroundError?.(
+        new SessionError(
+          "session_store",
+          operation === "retire"
+            ? "A replaced session row could not be retired"
+            : "A replaced upstream session could not be revoked",
+        ),
+      );
+    } catch {
+      // A failing hook must not turn a published sign-in into an error.
+    }
   }
 }

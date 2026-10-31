@@ -50,7 +50,9 @@ successful publication; a source version or Git tag alone is insufficient.
 - Sign-in publication is ordered: the new row is written first, then the lineage
   head moves, and the replaced row is tombstoned only when the whole write
   succeeds (both stores). Replaced lineage heads are retired only after success,
-  concurrently, with failures reported to `onBackgroundError`.
+  concurrently, with failures reported to `onBackgroundError`. A failure to
+  tombstone the replaced row is reported the same way instead of failing the
+  write (custom stores receive it through the new `ExclusiveOptions`).
 - A sign-in that replaces a signed-in session revokes the replaced upstream
   session (auth logout), best effort and without failing the sign-in.
 - SvelteKit `server()` loads set `Cache-Control: private, no-store` and

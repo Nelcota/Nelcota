@@ -22,5 +22,5 @@ export {
   type GuardDecision,
   type GuardAdapterOptions,
 } from "./guard.js";
-export type { SessionStore, SessionLease, StoredSession } from "./store.js";
+export type { ExclusiveOptions, SessionStore, SessionLease, StoredSession } from "./store.js";
 export { privateResponse } from "./http/private.js";

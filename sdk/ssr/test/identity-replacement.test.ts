@@ -85,6 +85,42 @@ it("writes the new row, then the lineage head, and replaces the old row last", a
   expect(database.leakedLocks).toEqual([]);
 });
 
+it("publishes a sign-in and revokes the replaced session when retiring the old row fails", async () => {
+  const { fetch, logouts } = upstream();
+  const database = new FakePostgres();
+  const reported: SessionError[] = [];
+  const { integration, jar } = await setup({
+    fetch,
+    store: new PostgresSessionStore(database.pool()),
+    onBackgroundError: (error) => reported.push(error),
+  });
+  await integration.write(jar, post(), (context) => context.auth.signInWithPassword(credentials));
+  const published = jar.writes.length;
+  const keys = new Set(database.rows.keys());
+  let existing = 0;
+  const set = database.rows.set.bind(database.rows);
+  vi.spyOn(database.rows, "set").mockImplementation((key, row) => {
+    // The new row, the lineage head, then the tombstone over the old row.
+    if (keys.has(key) && ++existing === 2) throw new Error("tombstone write failed");
+    return set(key, row);
+  });
+  const result = await integration.write(jar, post(), (context) =>
+    context.auth.signInWithPassword(credentials),
+  );
+  expect(result.error).toBeNull();
+  expect(jar.writes.length).toBeGreaterThan(published);
+  expect(logouts).toEqual(["Bearer access-1"]);
+  expect(reported.map((error) => error.message)).toEqual([
+    "A replaced session row could not be retired",
+  ]);
+  expect(reported[0]?.cause).toBeUndefined();
+  expect(database.leakedLocks).toEqual([]);
+  await integration.read(jar, async ({ hasSession }) => {
+    await Promise.resolve();
+    expect(hasSession).toBe(true);
+  });
+});
+
 it("leaves the previous row and upstream session alone when the write fails", async () => {
   const { fetch, logouts } = upstream();
   const database = new FakePostgres();

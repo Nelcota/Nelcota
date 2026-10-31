@@ -36,6 +36,8 @@ class ConnectionOwner {
   #locked = false;
   #failed = false;
   #workFailed = false;
+  /** Retiring a rotated-away row failed after the callback's rows were durable. */
+  #retireFailed = false;
   #current: string;
   #authDeadline = Number.POSITIVE_INFINITY;
   readonly #lost = (): void => {
@@ -118,14 +120,36 @@ class ConnectionOwner {
   }
 
   /** Publication order: the new row and lineage head are written by the callback;
-   * only after it succeeded is the previous row replaced (tombstone) or removed. */
+   * only after it succeeded is the previous row replaced (tombstone) or removed.
+   * With `onRetireError` a failure here is reported instead of failing the owner:
+   * the published rows stand, and the discarded connection releases its locks. */
   async #retireRotated(): Promise<void> {
+    try {
+      await this.#replaceRotated();
+    } catch (cause) {
+      const report = this.#request.onRetireError;
+      if (report === undefined) throw cause;
+      this.#retireFailed = true;
+      report(
+        cause instanceof Error
+          ? cause
+          : new SessionError("session_store", "Session row retirement failed"),
+      );
+    }
+  }
+
+  async #replaceRotated(): Promise<void> {
     for (const { key, retain } of this.#rotated) {
       // oxlint-disable-next-line no-await-in-loop -- Replace rotated rows in rotation order on the owning connection.
       if (retain != null) await this.#upsert(key, retain);
       // oxlint-disable-next-line no-await-in-loop -- Replace rotated rows in rotation order on the owning connection.
       else await this.#query("DELETE FROM nelcota_next.sessions WHERE key = $1", [key]);
     }
+  }
+
+  /** The owner's failure already reached its caller (a thrown or reported error). */
+  get #surfaced(): boolean {
+    return this.#workFailed || this.#retireFailed;
   }
 
   get #lease(): SessionLease {
@@ -176,9 +200,9 @@ class ConnectionOwner {
     }
     // Never return a connection with uncertain lock ownership to its pool.
     if (this.#request.borrowed === undefined) this.#client.release(this.#failed);
-    if (this.#failed && this.#workFailed === false && Boolean(cleanupError) === false)
+    if (this.#failed && this.#surfaced === false && Boolean(cleanupError) === false)
       throw new SessionError("session_store", "Session owner lost persistence");
-    if (Boolean(cleanupError) && this.#workFailed === false)
+    if (Boolean(cleanupError) && this.#surfaced === false)
       throw new SessionError("session_store", "Session lock release failed", cleanupError);
   }
 

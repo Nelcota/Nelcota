@@ -18,5 +18,7 @@ export interface SessionPool {
 export interface OwnershipRequest {
   key: string;
   deadline: number;
+  /** Makes retiring rotated-away rows best-effort; see `ExclusiveOptions`. */
+  onRetireError?: (error: Error) => void;
   borrowed?: OwnedConnection;
 }
