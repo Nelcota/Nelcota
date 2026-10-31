@@ -161,6 +161,91 @@ mod tests {
         assert_eq!(outcome.status, None);
     }
 
+    /// Accepts connections and answers every request on them with a short
+    /// 16 KiB keep-alive body; returns its URL and the number of connections taken.
+    async fn keep_alive_receiver() -> (String, std::sync::Arc<std::sync::atomic::AtomicUsize>) {
+        use std::sync::{
+            Arc,
+            atomic::{AtomicUsize, Ordering},
+        };
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = format!(
+            "http://localhost:{}/hook",
+            listener.local_addr().unwrap().port()
+        );
+        let connections = Arc::new(AtomicUsize::new(0));
+        let counted = connections.clone();
+        tokio::spawn(async move {
+            while let Ok((mut stream, _)) = listener.accept().await {
+                counted.fetch_add(1, Ordering::SeqCst);
+                tokio::spawn(async move {
+                    let mut buffer = Vec::new();
+                    let mut chunk = [0u8; 4096];
+                    loop {
+                        let Some(end) = buffer.windows(4).position(|w| w == b"\r\n\r\n") else {
+                            match stream.read(&mut chunk).await {
+                                Ok(0) | Err(_) => return,
+                                Ok(read) => buffer.extend_from_slice(&chunk[..read]),
+                            }
+                            continue;
+                        };
+                        let head = String::from_utf8_lossy(&buffer[..end]).to_ascii_lowercase();
+                        let length = head
+                            .lines()
+                            .find_map(|line| line.strip_prefix("content-length:"))
+                            .and_then(|value| value.trim().parse::<usize>().ok())
+                            .unwrap_or(0);
+                        while buffer.len() < end + 4 + length {
+                            match stream.read(&mut chunk).await {
+                                Ok(0) | Err(_) => return,
+                                Ok(read) => buffer.extend_from_slice(&chunk[..read]),
+                            }
+                        }
+                        buffer.drain(..end + 4 + length);
+                        let body = vec![b'x'; 16 * 1024];
+                        let head =
+                            format!("HTTP/1.1 200 OK\r\ncontent-length: {}\r\n\r\n", body.len());
+                        if stream.write_all(head.as_bytes()).await.is_err() {
+                            return;
+                        }
+                        // The body arrives after the headers: a client that never
+                        // reads it cannot hand the connection back to its pool.
+                        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                        if stream.write_all(&body).await.is_err() {
+                            return;
+                        }
+                    }
+                });
+            }
+        });
+        (url, connections)
+    }
+
+    #[tokio::test]
+    async fn deliveries_reuse_the_receivers_connection() {
+        let policy = Policy {
+            allow_loopback: true,
+        };
+        let transport = Transport::new(policy).unwrap();
+        let (url, connections) = keep_alive_receiver().await;
+        for id in 1..=3 {
+            let job = Job {
+                id,
+                event_id: uuid::Uuid::nil(),
+                attempt: 1,
+                lease: uuid::Uuid::nil(),
+                url: url.clone(),
+                payload: "{}".into(),
+                secret: Secret::new("test-signing-key"),
+            };
+            let outcome = transport.send(&job).await;
+            assert_eq!(outcome.status, Some(200), "{:?}", outcome.error);
+        }
+        // An unread body would keep each connection out of the pool.
+        assert_eq!(connections.load(std::sync::atomic::Ordering::SeqCst), 1);
+    }
+
     #[test]
     fn only_transient_http_failures_retry() {
         for code in [408, 425, 429, 500, 502, 503, 504] {
