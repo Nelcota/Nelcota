@@ -16,6 +16,13 @@ level security of their own, are not exposed either (nor listed in the panel):
 use their parent, whose GRANTs and row policies apply to every child's rows.
 Read directly, such a child would skip the parent's policies.
 
+Partitions stay hidden even when they enable row level security. An
+inheritance child that enables row level security is treated as deliberately
+exposed: it gets its own endpoint (and panel entry), where only the child's
+own GRANTs and policies apply, not the parent's. Reading the parent still
+returns the child's rows under the parent's policies, so give such a child
+policies at least as strict as its parent's, or revoke its GRANTs.
+
 ## Prerequisites
 
 You need an initialized server, tables/functions in its exposed schema and
