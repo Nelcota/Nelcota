@@ -220,6 +220,8 @@ for the October 27 server scope and independent SDK publication checkpoint.
   update starts: the update waits up to 30 seconds for the lock, and a job that
   ends before changing the host is recorded as failed before change instead of
   blocking host changes until `updates recover`.
+- The host update worker logs and keeps serving after a failed connection
+  accept or caller lookup instead of exiting.
 
 ### Security
 

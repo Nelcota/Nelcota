@@ -98,9 +98,23 @@ pub async fn run(path: PathBuf) -> anyhow::Result<()> {
     let _alerts = super::alerts::spawn(path);
     let admission = Arc::new(Semaphore::new(8));
     loop {
-        let (stream, _) = listener.accept().await?;
-        if stream.peer_cred()?.uid() != state.policy.controller_uid {
-            continue;
+        // A failed accept (descriptor exhaustion, an aborted connection) or
+        // peer lookup affects one caller; the worker must keep serving.
+        let stream = match listener.accept().await {
+            Ok((stream, _)) => stream,
+            Err(error) => {
+                eprintln!("nelcota update worker could not accept a connection: {error}");
+                tokio::time::sleep(Duration::from_millis(100)).await;
+                continue;
+            }
+        };
+        match stream.peer_cred() {
+            Ok(peer) if peer.uid() == state.policy.controller_uid => {}
+            Ok(_) => continue,
+            Err(error) => {
+                eprintln!("nelcota update worker could not identify a caller: {error}");
+                continue;
+            }
         }
         let permit = match admission.clone().try_acquire_owned() {
             Ok(permit) => permit,
