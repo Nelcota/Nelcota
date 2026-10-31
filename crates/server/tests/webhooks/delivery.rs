@@ -2,6 +2,7 @@ use crate::{
     common::{
         TestApp,
         panel::{get, login, send},
+        user_token,
     },
     support::{self, Receiver},
 };
@@ -266,14 +267,21 @@ async fn leases_recover_without_holding_connections_and_fence_old_workers() {
 async fn parallel_workers_do_not_claim_the_same_live_deliveries() {
     let app = TestApp::spawn().await;
     let receiver = Receiver::new([]).await;
-    support::hook(&app, &receiver.url, 3).await;
-    for n in 0..8 {
+    // Four webhooks, so the per-webhook in-flight limit leaves work for both.
+    for _ in 0..4 {
+        support::hook(&app, &receiver.url, 3).await;
+    }
+    for n in 0..2 {
         support::insert(&app, &format!("parallel {n}")).await;
     }
     let a = support::worker(&app);
     let b = support::worker(&app);
-    let (a, b) = tokio::join!(a.run_once(), b.run_once());
-    assert_eq!(a.unwrap() + b.unwrap(), 8);
+    let mut claimed = 0;
+    for _ in 0..4 {
+        let (first, second) = tokio::join!(a.run_once(), b.run_once());
+        claimed += first.unwrap() + second.unwrap();
+    }
+    assert_eq!(claimed, 8);
     let requests = receiver.requests();
     assert_eq!(requests.len(), 8);
     let ids: std::collections::BTreeSet<_> = requests
@@ -285,56 +293,98 @@ async fn parallel_workers_do_not_claim_the_same_live_deliveries() {
 }
 
 #[tokio::test]
-async fn paused_queue_current_key_and_new_replay_destination_are_respected() {
+async fn a_slow_backlog_cannot_take_every_worker_slot_from_other_webhooks() {
     let app = TestApp::spawn().await;
-    let original = Receiver::new([204]).await;
-    let replacement = Receiver::new([204]).await;
+    let busy = Receiver::new([]).await;
+    let other = Receiver::new([]).await;
+    support::hook(&app, &busy.url, 3).await;
+    for n in 0..6 {
+        support::insert(&app, &format!("backlog {n}")).await;
+    }
+    // Created later: its only delivery is newer than the whole backlog.
+    support::hook(&app, &other.url, 3).await;
+    support::insert(&app, "newer event").await;
+    // One claim of four slots: at most two for the backlog, one for the other.
+    assert_eq!(support::worker(&app).run_once().await.unwrap(), 3);
+    assert_eq!(busy.requests().len(), 2);
+    assert_eq!(other.requests().len(), 1);
+    let waiting: i64 = app
+        .admin_client
+        .query_one(
+            "SELECT count(*) FROM nelcota.webhook_deliveries WHERE status='pending'",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(waiting, 5);
+    // A lease held elsewhere counts against the limit until it ends.
+    app.admin_client.batch_execute("UPDATE nelcota.webhook_deliveries SET status='processing',attempts=1,lease_token=gen_random_uuid(),locked_until=clock_timestamp()+interval '1 minute' WHERE id=(SELECT min(id) FROM nelcota.webhook_deliveries WHERE status='pending')").await.unwrap();
+    assert_eq!(support::worker(&app).run_once().await.unwrap(), 1);
+    assert_eq!(busy.requests().len(), 3);
+}
+
+#[tokio::test]
+async fn queued_sends_and_retries_follow_the_current_url_and_key() {
+    let app = TestApp::spawn().await;
+    let release = Arc::new(Notify::new());
+    let original = Receiver::with_options([503], Some(release.clone()), None).await;
+    let replacement = Receiver::new([]).await;
     let hook = support::hook(&app, &original.url, 3).await;
-    support::insert(&app, "stable payload").await;
-    let id = support::latest(&app).await;
     let pool = db::admin_pool(&app.admin, 2);
+    let loopback = Policy {
+        allow_loopback: true,
+    };
+    support::insert(&app, "in flight").await;
+    let in_flight = support::latest(&app).await;
+    let first = support::worker(&app);
+    let running = tokio::spawn(async move { first.run_once().await.unwrap() });
+    original.wait_for(1).await;
+    support::insert(&app, "queued").await;
+    let queued = support::latest(&app).await;
+    // Pause, move the destination and rotate the key while a send is running.
     let mut input = support::input(&replacement.url);
     input.enabled = false;
-    management::update(
-        &pool,
-        &hook.endpoint.id,
-        input,
-        Policy {
-            allow_loopback: true,
-        },
-    )
-    .await
-    .unwrap();
-    assert_eq!(support::worker(&app).run_once().await.unwrap(), 0);
-    assert!(original.requests().is_empty());
-    let rotated = management::rotate(&pool, &hook.endpoint.id).await.unwrap();
-    management::update(
-        &pool,
-        &hook.endpoint.id,
-        support::input(&replacement.url),
-        Policy {
-            allow_loopback: true,
-        },
-    )
-    .await
-    .unwrap();
-    assert_eq!(support::worker(&app).run_once().await.unwrap(), 1);
-    assert_eq!(original.requests().len(), 1);
-    assert!(replacement.requests().is_empty());
-    let first = original.requests().pop().unwrap();
-    let event_id = first.headers["x-nelcota-event-id"].to_str().unwrap();
-    let ts = first.headers["x-nelcota-timestamp"]
-        .to_str()
-        .unwrap()
-        .parse()
+    management::update(&pool, &hook.endpoint.id, input, loopback)
+        .await
         .unwrap();
-    assert_eq!(
-        first.headers["x-nelcota-signature"],
-        signing::signature(rotated.secret.expose(), event_id, ts, first.body.as_bytes())
-    );
-    let replay = management::replay(&pool, &id).await.unwrap();
+    assert_eq!(support::worker(&app).run_once().await.unwrap(), 0);
+    let rotated = management::rotate(&pool, &hook.endpoint.id).await.unwrap();
+    let resumed = support::input(&replacement.url);
+    management::update(&pool, &hook.endpoint.id, resumed, loopback)
+        .await
+        .unwrap();
+    let detail = management::detail(&pool, &queued).await.unwrap();
+    assert_eq!(detail.delivery.url, replacement.url);
+    // The running send finishes where it started; its retry moves on.
+    release.notify_one();
+    assert_eq!(running.await.unwrap(), 1);
+    support::make_due(&app).await;
+    assert_eq!(support::worker(&app).run_once().await.unwrap(), 2);
+    assert_eq!(original.requests().len(), 1, "old host");
+    let requests = replacement.requests();
+    assert_eq!(requests.len(), 2);
+    for request in &requests {
+        let event_id = request.headers["x-nelcota-event-id"].to_str().unwrap();
+        let ts = request.headers["x-nelcota-timestamp"]
+            .to_str()
+            .unwrap()
+            .parse()
+            .unwrap();
+        let body = request.body.as_bytes();
+        assert_eq!(
+            request.headers["x-nelcota-signature"],
+            signing::signature(rotated.secret.expose(), event_id, ts, body)
+        );
+    }
+    for id in [&in_flight, &queued] {
+        let detail = management::detail(&pool, id).await.unwrap();
+        assert_eq!(detail.delivery.status, "succeeded");
+        assert_eq!(detail.delivery.url, replacement.url);
+    }
+    let replay = management::replay(&pool, &queued).await.unwrap();
     support::worker(&app).run_once().await.unwrap();
-    assert_eq!(replacement.requests().len(), 1);
+    assert_eq!(replacement.requests().len(), 3);
     assert_eq!(
         management::detail(&pool, &replay)
             .await
@@ -429,5 +479,52 @@ async fn interrupted_paused_and_exhausted_leases_recover_and_retention_keeps_pen
         detail.attempts[1].error.as_deref(),
         Some("worker_interrupted")
     );
+    assert_eq!(receiver.requests().len(), 1);
+}
+
+#[tokio::test]
+async fn history_beyond_the_old_cap_never_blocks_writes_and_is_pruned_to_its_limit() {
+    let app = TestApp::spawn().await;
+    let receiver = Receiver::new([]).await;
+    let hook = support::hook(&app, &receiver.url, 3).await;
+    let pool = db::admin_pool(&app.admin, 2);
+    // A busy week: more terminal history than the old 100,000-row admission cap.
+    app.admin_client.execute("INSERT INTO nelcota.webhook_deliveries (endpoint_id,event_id,schema_name,table_name,event,url,payload,max_attempts,status,attempts,finished_at) SELECT $1::text::uuid,gen_random_uuid(),'public','todos','INSERT','https://example.com/old','{}',3,'succeeded',1,clock_timestamp()-interval '1 hour' FROM generate_series(1,100005)", &[&hook.endpoint.id]).await.unwrap();
+    let oldest: i64 = app
+        .admin_client
+        .query_one("SELECT min(id) FROM nelcota.webhook_deliveries", &[])
+        .await
+        .unwrap()
+        .get(0);
+    let inserted = app
+        .request(
+            Method::POST,
+            "/rest/v1/todos",
+            Some(&user_token(app.user_a)),
+            Some(json!({"title":"after a busy week"})),
+        )
+        .await;
+    assert_eq!(inserted.status, StatusCode::CREATED, "{}", inserted.text);
+    assert_eq!(support::worker(&app).run_once().await.unwrap(), 1);
+    let newest = support::latest(&app).await;
+    let handle = support::worker(&app).spawn();
+    let pruned = tokio::time::timeout(Duration::from_secs(10), async {
+        while support::count(&app).await != 100_000 {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+    })
+    .await;
+    handle.shutdown().await;
+    let remaining = support::count(&app).await;
+    assert!(pruned.is_ok(), "{remaining} deliveries kept");
+    let detail = management::detail(&pool, &newest).await.unwrap();
+    assert_eq!(detail.delivery.status, "succeeded");
+    let kept: i64 = app
+        .admin_client
+        .query_one("SELECT min(id) FROM nelcota.webhook_deliveries", &[])
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(kept, oldest + 6, "the oldest terminal rows go first");
     assert_eq!(receiver.requests().len(), 1);
 }

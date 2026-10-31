@@ -126,6 +126,16 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- Webhook queue limits no longer abort writes to watched tables. Beyond 10,000
+  outstanding deliveries for one webhook, a change is recorded as a failed
+  `queue_full` delivery with omitted contents and the row still commits.
+  Terminal history is pruned to the newest 100,000 deliveries instead of
+  blocking writes, and concurrent writers and the delivery worker no longer
+  wait on one shared counter row. Internal migration V19 replaces the counter.
+- One slow webhook destination no longer starves the others. Each webhook has
+  at most two sends in flight, claims take the oldest due delivery of every
+  webhook in turn, and a send blocked by saturated local DNS lookups is retried
+  shortly without using an attempt. Internal migration V20 adds the indexes.
 - REST embed keys starting with `_` (`select=id,_r:customers(name)`) are
   refused with `400 invalid_query`; they shadowed the generated SQL's own
   subquery names and changed the response shape.
@@ -255,6 +265,13 @@ for the October 27 server scope and independent SDK publication checkpoint.
   stay).
 - A project's sign-in handoff only follows links to that project's own
   address.
+- The server refuses to start with both `NELCOTA_WEBHOOKS_ALLOW_LOOPBACK=true`
+  and `NELCOTA_PRODUCTION=true`, so a production project cannot send plain-HTTP
+  webhooks to local ports.
+- Changing a webhook's URL now also moves its queued deliveries and retries to
+  the new destination. Previously a paused backlog was still released to the
+  old, possibly no longer trusted, host after resuming, signed with the
+  current key. A send already in progress finishes against the previous URL.
 - A REST request dropped mid-statement (client disconnect or request timeout)
   cancels its PostgreSQL statement and closes that connection, so the pool
   opens a fresh one instead of waiting for `statement_timeout`.

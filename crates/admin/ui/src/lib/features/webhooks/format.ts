@@ -23,7 +23,8 @@ export const dateLabel = (value: string | null) =>
 export const canReplay = (delivery: WebhookDelivery) =>
   delivery.endpoint_enabled &&
   ["failed", "succeeded"].includes(delivery.status) &&
-  delivery.last_error !== "payload_too_large";
+  delivery.last_error !== "payload_too_large" &&
+  delivery.last_error !== "queue_full";
 export function statusVariant(value: string): "success" | "destructive" | "warning" | "muted" {
   if (value === "succeeded") return "success";
   if (value === "failed") return "destructive";
