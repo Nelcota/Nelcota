@@ -14,7 +14,7 @@
   } from "@lucide/svelte";
 
   import { copyText } from "$lib/browser/clipboard";
-  import { sqlStore } from "$lib/features/sql/sql-store.svelte";
+  import { sqlStore } from "$lib/features/sql/store/sql-store.svelte";
   import { quoteIfNeeded } from "$lib/shared/schema/ident";
   import { href, navigate } from "$lib/navigation/router.svelte";
   import { enc } from "$lib/transport/api";

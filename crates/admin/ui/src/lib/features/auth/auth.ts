@@ -1,5 +1,5 @@
 import { profile } from "$lib/features/profile/profile.svelte";
-import { sqlStore } from "$lib/features/sql/sql-store.svelte";
+import { sqlStore } from "$lib/features/sql/store/sql-store.svelte";
 import { querySession } from "$lib/resources/query-client";
 import { endSession, onSessionEnded, session } from "$lib/resources/session.svelte";
 // Session actions used in more than one place (sidebar, command palette).

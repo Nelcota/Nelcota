@@ -1,5 +1,5 @@
 import { preloadResponseContracts } from "$lib/contracts/responses";
-import { forgetSessionWork, hasSessionWork } from "$lib/features/sql/session-work";
+import { forgetSessionWork, hasSessionWork } from "$lib/features/sql/store/session-work";
 import { clearQuerySession } from "$lib/resources/query-client";
 import { endSession, session } from "$lib/resources/session.svelte";
 import { api, ApiError } from "$lib/transport/api";

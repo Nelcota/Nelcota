@@ -5,7 +5,7 @@
 import { newId } from "$lib/browser/id";
 import { readJson, readText, write } from "$lib/browser/local-storage";
 
-import { requiredValue } from "../../contracts/required-value.js";
+import { requiredValue } from "../../../contracts/required-value.js";
 import { DRAFT_KEY, HISTORY_KEY, WORKSPACE_KEY, forgetSessionWork } from "./session-work";
 
 const SAVED_KEY = "nelcota:sql-saved";
