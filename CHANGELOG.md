@@ -225,6 +225,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - Native (systemd) installs and upgrades flush the new and previous binaries
   and their directory, so a power loss during `init` or `upgrade` cannot leave
   a truncated or non-executable server binary.
+- Each backup first removes what an interrupted backup left in `backups/`: a
+  `.dump.partial` file, a `.dump.files` snapshot without its dump, and
+  verification scratch directories that held a copy of the project's `.env`.
 
 ### Security
 
