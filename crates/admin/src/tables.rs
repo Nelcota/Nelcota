@@ -2,6 +2,7 @@
 pub(crate) mod catalog;
 mod ddl;
 mod export;
+mod json_null;
 mod rows;
 pub(crate) mod structure;
 pub(crate) use ddl::{alter, create, drop, types};
