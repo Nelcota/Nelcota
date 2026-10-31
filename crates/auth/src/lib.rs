@@ -7,6 +7,7 @@
 
 mod accounts;
 mod bootstrap;
+mod caller_limit;
 mod confirmation;
 mod credentials;
 mod db;
@@ -36,6 +37,7 @@ use axum::{
 pub use nelcota_core::{ApiError, Claims, InvalidClaims, Role};
 
 pub use bootstrap::{AUTH_MIGRATION_VERSIONS, BootstrapError, bootstrap};
+pub use caller_limit::{CallerLimit, CallerSlot, caller_key};
 pub use credentials::{InvalidCredential, normalize_email, validate_password};
 pub use handlers::router;
 pub use keys::{KeyError, Keys, generate_ed25519_private_key};

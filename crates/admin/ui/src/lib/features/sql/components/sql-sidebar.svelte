@@ -12,7 +12,11 @@
   } from "@lucide/svelte";
 
   import { SQL_SNIPPETS } from "$lib/features/sql/sql-snippets";
-  import { sqlStore, type SavedQuery, type SqlDraft } from "$lib/features/sql/sql-store.svelte";
+  import {
+    sqlStore,
+    type SavedQuery,
+    type SqlDraft,
+  } from "$lib/features/sql/store/sql-store.svelte";
   import { draftName } from "$lib/features/sql/query-name";
   import { cn } from "$lib/components/component-props";
   import { t } from "$lib/i18n/index.svelte";

@@ -129,6 +129,15 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- The table editor's JSON `null` handling no longer rewrites the SQL text the
+  REST query compiler generates, which failed with a 500 if that text ever
+  changed shape. The compiler now offers it as explicit options that only the
+  panel uses: per-column `IS NULL` flags on reads and a typed JSON `null`
+  write value. REST API statements and responses are unchanged.
+- The panel's CSV table export tells a JSON `null` in a json/jsonb column
+  apart from SQL NULL, as the grid does: it writes the text `null` for a JSON
+  `null` and an empty field for SQL NULL. JSON export still writes each row as
+  the REST API returns it, where both are `null`; the panel guide documents it.
 - A refresh retry inside the ten-second grace window no longer signs out a
   holder that did receive the rotated answer. The retry now returns the same
   successor refresh token (with a new access token) instead of minting a new
@@ -318,6 +327,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Security
 
+- The panel forgets SQL history and drafts left by a session that ended while
+  no tab was open. When the startup session check gets a 401 in a browser that
+  was signed in and still holds them, it runs the same session-ended cleanup
+  as a sign-out or expiry. Saved queries stay.
 - The OpenAPI document no longer shows a role the names and comments of
   columns it may only insert or update in its row and response schemas. Rows
   list readable columns; `POST` and `PATCH` bodies list the insertable and
@@ -417,6 +430,23 @@ for the October 27 server scope and independent SDK publication checkpoint.
   caller that has not presented the project capability within 1 second, so
   local users who can reach its socket can no longer stall a migration's
   backup. The capability is compared in constant time.
+- One caller can no longer hold every upload slot. Each signed-in user, or
+  client network for requests without a user, streams at most
+  `NELCOTA_STORAGE_UPLOADS_PER_CALLER` uploads at once (8 by default, a quarter
+  of the 32 process slots; `service_role` is exempt; 0 turns it off); extras
+  wait up to one second, then get `429 rate_limited` with `Retry-After: 1`,
+  like the REST per-caller limit. A body that trickles a byte often enough to
+  dodge the 60-second idle timeout now also ends with `408 upload_timeout`:
+  after its first minute, each minute must bring at least 16 KiB.
+- The decoy budgets of password sign-in to emails without an account no longer
+  drop their oldest key when their store is full. Churning 50,000 made-up
+  emails could reset a decoy budget early, which real accounts never allow, and
+  so tell made-up emails from real ones. The decoy store now fills exactly like
+  the account store: a tracked email keeps its budget, and an untracked one is
+  bounded by its caller's per-IP budget. While the account store is full, new
+  made-up emails go untracked too, and the decoy store holds 200,000 keys, so
+  telling a new made-up email from a new account by filling it takes thousands
+  of addresses kept busy every minute.
 
 ## [0.5.6] — 2026-10-27
 

@@ -1,5 +1,5 @@
 import { profile } from "$lib/features/profile/profile.svelte";
-import { sqlStore } from "$lib/features/sql/sql-store.svelte";
+import { sqlStore } from "$lib/features/sql/store/sql-store.svelte";
 import { clearQuerySession } from "$lib/resources/query-client";
 import { session } from "$lib/resources/session.svelte";
 import { api, expireSession } from "$lib/transport/api";

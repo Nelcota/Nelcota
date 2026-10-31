@@ -283,10 +283,15 @@ Distributed guessing is capped at twice the account budget. Each email without
 an account spends a decoy budget of its own, of the same size, so a spent budget
 does not reveal which emails have accounts, and spending one says nothing about
 other emails; it does show whether the caller's network is known to an existing
-one. Decoys live in a third store of 50,000 keys that drops its oldest decoy
-when full, so made-up emails crowd out neither real accounts nor networks; only
-someone keeping 50,000 made-up emails busy can reset a decoy early. Keep trusted proxy configuration and upstream abuse controls; limits
-are per process and shared NAT users still share their IP budget.
+one. Decoys live in a third store of 200,000 keys, so made-up emails crowd out
+neither real accounts nor networks. It fills exactly like the account store: a
+tracked decoy keeps its budget however many other emails arrive, and while the
+store is full an untracked email is bounded only by its caller's per-IP budget,
+as an untracked account is, so a flood of made-up emails cannot reset a decoy
+early and tell made-up emails from real ones. While the account store is full,
+new made-up emails go untracked too. Keep trusted proxy configuration
+and upstream abuse controls; limits are per process and shared NAT users still
+share their IP budget.
 
 Refreshes and PKCE redemptions (`grant_type=refresh_token` / `pkce`) draw from
 a separate per-IP budget of 10 times that (300 by default), so open tabs

@@ -75,6 +75,21 @@ deadline, including pool and quota waits (`408 upload_timeout`); metadata
 publication then settles with database timeouts so cancellation cannot delete
 bytes after an ambiguous commit.
 
+Each caller may stream at most `NELCOTA_STORAGE_UPLOADS_PER_CALLER` uploads at
+once (8 by default, a quarter of the process slots), so one caller cannot take
+them all. The caller is the user of a signed-in token, and otherwise the client
+address (the forwarded one with `NELCOTA_TRUST_PROXY`), with IPv6 addresses
+grouped by /64 network, as for the REST limit. `service_role` is not limited.
+An upload beyond the limit waits up to one second for one of its caller's
+slots, then gets `429 rate_limited` with `Retry-After: 1`; `0` turns the limit
+off.
+
+A body that sends nothing for 60 seconds ends with `408 upload_timeout`. So
+does one that trickles: after its first minute, every following minute must
+bring at least 16 KiB. That floor is far below any usable link (a 64 KiB/s
+upload sends 3.75 MiB a minute), but a body sending a byte now and then no
+longer holds an upload slot until the upload deadline.
+
 Canceled or timed-out multipart uploads abort their uploaded parts in a bounded
 cleanup task. Creation and cleanup share the 32-upload capacity; creation may
 settle for up to 30 seconds and abort for up to 10 seconds after cancellation.

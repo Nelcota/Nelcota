@@ -96,8 +96,9 @@ provider IDs or generated values require your own credentials.
 | `NELCOTA_STORAGE_MIN_FREE_BYTES` | `u64` | `1073741824` | `1073741824` | Disk backend free-space reserve, in bytes. Default is 1 GiB. |
 | `NELCOTA_STORAGE_PUBLIC_URL` | `Option<String>` | `unset` | `https://files.example.com` | Public-file URL origin; absent uses relative API URLs. Configure an HTTPS proxy to public object routes. |
 | `NELCOTA_STORAGE_UPLOAD_TIMEOUT_SECS` | `u64` | `3600` | `3600` | Positive admission/policy/byte-reception deadline in seconds when enabled, at most 86400 (one day). Metadata publication and multipart cleanup have separate bounded settlement. |
+| `NELCOTA_STORAGE_UPLOADS_PER_CALLER` | `usize` | `8` | `8` | Concurrent uploads per caller (signed-in user, else client address; IPv6 per /64; `service_role` exempt), at most 32 (the process's upload slots). Extras wait up to 1 s, then get 429 with Retry-After. 0 disables. |
 
-All 52 fields are listed above. `Secret` affects log formatting, not encryption
+All 53 fields are listed above. `Secret` affects log formatting, not encryption
 of the environment file. API signatures are not a substitute for private key
 storage. Backend and backup S3 credentials/settings are separate.
 

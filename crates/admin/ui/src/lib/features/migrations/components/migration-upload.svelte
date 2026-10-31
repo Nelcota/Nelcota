@@ -21,9 +21,10 @@
   const BYTES_PER_KIB = 1024;
   const MAX_MIGRATION_BYTES = 2 * BYTES_PER_KIB * BYTES_PER_KIB;
   let request: AbortController | null = null;
+  type MigrationFile = { filename: string; sql: string };
   // The texts the preview checked. Apply sends exactly these: reading the
   // files again could pick up an edit made on disk after the preview.
-  let previewed: { filename: string; sql: string }[] | null = null;
+  let previewed: MigrationFile[] | null = null;
   new CloseGuard({ dirty: () => false, busy: () => busy, active: () => busy, close: () => {} });
   const canApply = $derived(
     result?.report.dry_run === true &&
@@ -54,6 +55,21 @@
       ["migration_backup_required", "migration_backup_failed"].includes(cause.code ?? "");
   }
   const allowed = (dryRun: boolean): boolean => canPreview && (dryRun || canApply);
+  /** What to send: Apply reuses the previewed texts; a preview reads the files. */
+  async function migrationFiles(
+    dryRun: boolean,
+    checked: MigrationFile[] | null,
+    selected: readonly File[],
+  ): Promise<MigrationFile[]> {
+    if (dryRun === false && checked !== null) return checked;
+    return await Promise.all(
+      selected.map(async (file) => ({ filename: file.name, sql: await file.text() })),
+    );
+  }
+  function requireBudget(files: MigrationFile[], dryRun: boolean): void {
+    const bytes = new TextEncoder().encode(JSON.stringify({ files, dry_run: dryRun })).length;
+    if (bytes > MAX_MIGRATION_BYTES) throw new Error(t("migrations.result.fileBudget"));
+  }
   async function applyFiles(dryRun: boolean) {
     if (allowed(dryRun) === false) return;
     const selected = Array.from(uploaded ?? []);
@@ -70,18 +86,9 @@
     request = abort;
     let submitted = false;
     try {
-      const files =
-        dryRun === false && checked !== null
-          ? checked
-          : await Promise.all(
-              selected.map(async (file) => ({ filename: file.name, sql: await file.text() })),
-            );
+      const files = await migrationFiles(dryRun, checked, selected);
       if (isAlive() === false) return;
-      if (
-        new TextEncoder().encode(JSON.stringify({ files, dry_run: dryRun })).length >
-        MAX_MIGRATION_BYTES
-      )
-        throw new Error(t("migrations.result.fileBudget"));
+      requireBudget(files, dryRun);
       submitted = true;
       const reply = await resource.apply(files, dryRun, abort.signal);
       if (isAlive() === false) return;

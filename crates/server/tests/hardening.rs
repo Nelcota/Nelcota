@@ -7,7 +7,7 @@ use axum::{
     http::{Method, Request, StatusCode},
 };
 use bytes::Bytes;
-use common::{ADMIN_EMAIL, ADMIN_PASSWORD, Options, TestApp, service_token};
+use common::{ADMIN_EMAIL, ADMIN_PASSWORD, Options, TestApp, service_token, user_token};
 use futures_util::stream;
 use http_body_util::BodyExt;
 use nelcota_core::{Claims, db::begin_request};
@@ -377,6 +377,90 @@ async fn upload_overload_is_immediate_and_cancelled_slots_are_reusable() {
         )
         .await
         .unwrap();
+}
+
+#[tokio::test]
+async fn one_caller_cannot_take_every_upload_slot() {
+    let mut options = Options::default();
+    options.storage.uploads_per_caller = 2;
+    let app = TestApp::spawn_with(options).await;
+    app.admin_client
+        .batch_execute(
+            "INSERT INTO storage.buckets(id) VALUES ('drop');
+             CREATE POLICY drop_in ON storage.objects FOR INSERT TO anon, authenticated
+                 WITH CHECK (bucket_id = 'drop');",
+        )
+        .await
+        .unwrap();
+    let (started, mut receiver) = tokio::sync::mpsc::unbounded_channel();
+    // An upload from `peer` whose body reports when the server starts reading
+    // it (admission passed) and then never ends.
+    let held = |peer: &str, token: Option<String>, name: &str| {
+        let started = started.clone();
+        let body = stream::once(async move {
+            started.send(()).unwrap();
+            futures_util::future::pending::<Result<Bytes, std::io::Error>>().await
+        });
+        let mut request = Request::builder()
+            .method(Method::POST)
+            .uri(format!("/storage/v1/object/drop/{name}"))
+            .extension(ConnectInfo(peer.parse::<std::net::SocketAddr>().unwrap()));
+        if let Some(token) = token {
+            request = request.header("authorization", format!("Bearer {token}"));
+        }
+        let request = request.body(Body::from_stream(body)).unwrap();
+        tokio::spawn(app.router.clone().oneshot(request))
+    };
+    let mut active = Vec::new();
+    let mut admit = async |upload| {
+        active.push(upload);
+        tokio::time::timeout(Duration::from_secs(10), receiver.recv())
+            .await
+            .expect("the upload was not admitted")
+            .unwrap();
+    };
+    admit(held("192.0.2.1:1000", None, "a1")).await;
+    admit(held("192.0.2.1:1001", None, "a2")).await;
+
+    // The same network over its two slots waits a second, then gets a 429.
+    let start = Instant::now();
+    let excess = held("192.0.2.1:1002", None, "a3").await.unwrap().unwrap();
+    assert_eq!(excess.status(), StatusCode::TOO_MANY_REQUESTS);
+    assert_eq!(excess.headers()["retry-after"], "1");
+    let body = excess.into_body().collect().await.unwrap().to_bytes();
+    let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(body["code"], "rate_limited");
+    assert!(start.elapsed() >= Duration::from_millis(900));
+
+    // Other networks, signed-in users on that network and `service_role`
+    // have slots of their own.
+    admit(held("192.0.2.2:1000", None, "b1")).await;
+    admit(held("192.0.2.1:1003", Some(user_token(app.user_a)), "u1")).await;
+    for n in 0..3 {
+        let name = format!("s{n}");
+        admit(held("192.0.2.1:1004", Some(service_token()), &name)).await;
+    }
+
+    // A finished upload frees its caller's slot.
+    for upload in active.drain(..2) {
+        upload.abort();
+        let _ = upload.await;
+    }
+    let request = Request::builder()
+        .method(Method::POST)
+        .uri("/storage/v1/object/drop/later")
+        .header("content-type", "text/plain")
+        .extension(ConnectInfo(
+            "192.0.2.1:1005".parse::<std::net::SocketAddr>().unwrap(),
+        ))
+        .body(Body::from("ok"))
+        .unwrap();
+    let response = app.router.clone().oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+    for upload in active {
+        upload.abort();
+        let _ = upload.await;
+    }
 }
 
 #[tokio::test]

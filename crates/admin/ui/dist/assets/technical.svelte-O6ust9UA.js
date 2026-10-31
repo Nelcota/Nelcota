@@ -1,0 +1,1 @@
+import{Ft as e,g as t,m as n}from"./read-body-CVzoW9ju.js";var r=`nelcota.technical`,i=e({on:n(r,`off`)===`on`});function a(){i.on=i.on===!1,t(r,i.on?`on`:`off`)}export{a as n,i as t};
