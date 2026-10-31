@@ -2,7 +2,10 @@
 //! bucket settings, files reached by a public or signed URL, and the rows
 //! the collector checks. Everything a caller asks for runs as the caller.
 
-use std::time::{Duration, SystemTime};
+use std::{
+    collections::HashSet,
+    time::{Duration, SystemTime},
+};
 
 use deadpool_postgres::{Pool, Transaction};
 use nelcota_core::{ApiError, Role};
@@ -97,7 +100,7 @@ pub async fn used_bytes(pool: &Pool) -> Result<u64, ApiError> {
 }
 
 /// Which of `versions` some row still points to.
-pub async fn known_versions(pool: &Pool, versions: &[Uuid]) -> Result<Vec<Uuid>, ApiError> {
+pub async fn known_versions(pool: &Pool, versions: &[Uuid]) -> Result<HashSet<Uuid>, ApiError> {
     let rows = internal(pool, async |tx| {
         tx.query(
             "SELECT version FROM storage.objects WHERE version = ANY($1)",
