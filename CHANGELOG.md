@@ -132,6 +132,21 @@ for the October 27 server scope and independent SDK publication checkpoint.
   pair and revoking that successor, so two tabs or instances racing with one
   token keep the session. Internal migration V21 adds the encrypted successor
   column to `auth.refresh_tokens` and is part of the standalone auth selection.
+- A webhook delivery claim only takes the claim lock of webhooks with a due
+  delivery and room in flight. While one server instance's claim was open,
+  it held the lock of every enabled webhook, so other instances sharing the
+  database claimed nothing.
+- When the statement of a dropped request cannot be cancelled in time, the
+  server logs `database.cancel_failed` or `database.cancel_timed_out`. It may
+  keep running until `statement_timeout` while the pool opens a replacement.
+- Storage uploads keep the real message of a refusal that is not a row-level
+  security decision, such as `permission denied for table objects` from a
+  missing grant. Only an existing name and policy refusals of names the
+  caller cannot see are still answered as a plain policy refusal.
+- An upload of unknown length that grows into scarce quota or disk space no
+  longer takes the storage admission lock and queries the database on every
+  chunk. It reserves half of the remaining room beyond its size, so checks
+  stay logarithmic while concurrent uploads still share the room.
 - REST `like`/`ilike` filters can match a literal `*`: an unescaped `*` is still
   the `%` wildcard, while `\*` now means `*`. Other backslash escapes (`\%`,
   `\_`, `\\`) keep their SQL LIKE meaning. Previously every `*` became `%`.
@@ -289,6 +304,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Security
 
+- The OpenAPI document no longer shows a role the names and comments of
+  columns it may only insert or update in its row and response schemas. Rows
+  list readable columns; `POST` and `PATCH` bodies list the insertable and
+  updatable ones, and keep referencing the row schema when they match it.
 - Signing out in one tab signs out the panel's other tabs, and signing out
   forgets the SQL history and open queries kept in the browser (saved queries
   stay).

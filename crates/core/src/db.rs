@@ -123,7 +123,22 @@ impl Drop for RequestConnection {
         };
         let cancel = self.cancel.clone();
         runtime.spawn(async move {
-            let _ = tokio::time::timeout(CANCEL_TIMEOUT, cancel.cancel_query(NoTls)).await;
+            // Unless the cancel arrives, the backend keeps running the
+            // statement until `statement_timeout` while the pool opens a
+            // replacement, so operators need to see that it did not.
+            match tokio::time::timeout(CANCEL_TIMEOUT, cancel.cancel_query(NoTls)).await {
+                Ok(Ok(())) => {}
+                Ok(Err(error)) => tracing::warn!(
+                    event = "database.cancel_failed",
+                    %error,
+                    "could not cancel the statement of a dropped request; it may run until statement_timeout"
+                ),
+                Err(_) => tracing::warn!(
+                    event = "database.cancel_timed_out",
+                    timeout_ms = CANCEL_TIMEOUT.as_millis() as u64,
+                    "cancelling the statement of a dropped request timed out; it may run until statement_timeout"
+                ),
+            }
             // Closing it also ends the session; the pool opens a fresh one.
             let _ = Object::take(client);
         });
