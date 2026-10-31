@@ -227,10 +227,17 @@ export class SessionManager {
     const pending = await this.#store.reserve(current);
     if (pending != null) return fail(pending);
     // Accepted rotation owns publication independently of a cancelled waiter.
-    const result = await this.transport.rotate(
-      current.refresh_token,
-      options.timeout === undefined ? {} : { timeout: options.timeout },
-    );
+    // The reservation is renewed while the request runs, however long it takes.
+    const stopRenewal = this.#store.holdReservation();
+    let result: Result<Session>;
+    try {
+      result = await this.transport.rotate(
+        current.refresh_token,
+        options.timeout === undefined ? {} : { timeout: options.timeout },
+      );
+    } finally {
+      await stopRenewal?.();
+    }
     if (result.error != null) {
       await this.#rejected(current, result.error, publish);
       return result;

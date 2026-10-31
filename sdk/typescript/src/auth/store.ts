@@ -155,6 +155,13 @@ export class SessionStore {
       );
     }
   }
+  /**
+   * Renews a committed reservation while its refresh request is in flight;
+   * call the returned function once the request settles.
+   */
+  holdReservation(): (() => Promise<void>) | undefined {
+    return this.#native?.hold();
+  }
   /** Gives back a reservation whose rotation definitely did not commit. */
   async release(session: Session): Promise<void> {
     await this.#native?.write(encodeJson(session), true);

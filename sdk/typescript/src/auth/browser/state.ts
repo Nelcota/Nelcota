@@ -16,6 +16,9 @@ const MAX_OWNER_CHARS = 128;
  * An older reservation is abandoned (its tab closed or crashed) and taken over.
  */
 export const RESERVATION_LEASE_IN_MS = 10_000;
+/** Renewals per lease while the owner's rotation is in flight. */
+const RENEWALS_PER_LEASE = 3;
+const RENEWAL_INTERVAL_IN_MS = RESERVATION_LEASE_IN_MS / RENEWALS_PER_LEASE;
 /**
  * A ready receipt whose localStorage mirror has been missing for longer than
  * this was cleared on purpose (site data, developer tools), not caught between
@@ -67,6 +70,8 @@ function validReceiptFields(fields: Record<string, unknown>): boolean {
 
 export class BrowserSessionState {
   readonly #owner = randomId();
+  /** When this tab first saw a foreign reservation written without a time. */
+  #untimed: { identity: string; seenAt: number } | undefined;
   revision: string | undefined;
   pending = false;
   constructor(
@@ -191,6 +196,7 @@ export class BrowserSessionState {
         state.revision = randomId();
         store.put(state, this.key);
       }
+      this.#observe(state);
       const owned = state.owner === this.#owner;
       const retainDirty = dirty !== undefined && (owned || state.revision === this.revision);
       if (retainDirty === false && mirrorCleared(state, mirror)) {
@@ -215,8 +221,9 @@ export class BrowserSessionState {
   /**
    * Reserves the session's refresh token for this owner before it is sent. A
    * foreign reservation younger than the lease refuses with
-   * `BrowserRefreshPendingError`; an older one, or one written by an SDK
-   * without receipt times, is abandoned and taken over.
+   * `BrowserRefreshPendingError`; an older one is abandoned and taken over.
+   * One written by an SDK without receipt times is timed from when this tab
+   * first saw it.
    */
   async reserve(session: Session): Promise<void> {
     const next = this.#record("refreshing", encodeJson(session));
@@ -225,7 +232,7 @@ export class BrowserSessionState {
       if (
         state.kind === "refreshing" &&
         state.owner !== this.#owner &&
-        abandoned(state, next.at) === false
+        this.#abandoned(state, next.at) === false
       )
         throw new BrowserRefreshPendingError();
       if (parseSession(state.value)?.refresh_token !== session.refresh_token)
@@ -233,6 +240,55 @@ export class BrowserSessionState {
       store.put(next, this.key);
     });
     this.revision = next.revision;
+  }
+
+  /**
+   * Keeps this owner's reservation alive while its refresh request is in
+   * flight, so a request slower than the lease is not taken over by a tab that
+   * would spend the same token. The returned function stops renewing and waits
+   * for a renewal in progress. A failed renewal only lets the lease run out.
+   */
+  hold(): () => Promise<void> {
+    const revision = this.revision;
+    let renewal = Promise.resolve();
+    const timer = setInterval(() => {
+      renewal = renewal.then(
+        async () => await this.#renew(revision),
+        () => undefined,
+      );
+    }, RENEWAL_INTERVAL_IN_MS);
+    return async () => {
+      clearInterval(timer);
+      await renewal.catch(() => undefined);
+    };
+  }
+
+  async #renew(revision: string | undefined): Promise<void> {
+    await this.#transaction((store, previous) => {
+      const state = receipt(previous);
+      // Never extend a reservation that completed, was released or taken over.
+      if (state.kind !== "refreshing" || state.owner !== this.#owner) return;
+      if (state.revision !== revision) return;
+      store.put({ ...state, at: Date.now() }, this.key);
+    });
+  }
+
+  /** Starts timing an untimed foreign reservation as soon as it is seen. */
+  #observe(state: Receipt): void {
+    if (state.kind === "refreshing" && state.owner !== this.#owner)
+      this.#abandoned(state, Date.now());
+  }
+
+  /**
+   * A foreign reservation older than the lease is abandoned. One without a
+   * time (an older SDK) is measured from when this tab first saw it, keyed by
+   * its owner and value: a newer reservation restarts the clock.
+   */
+  #abandoned(state: Receipt, now: number): boolean {
+    if (state.at !== undefined) return Math.abs(now - state.at) >= RESERVATION_LEASE_IN_MS;
+    const identity = `${state.owner}:${state.value ?? ""}`;
+    if (this.#untimed?.identity !== identity) this.#untimed = { identity, seenAt: now };
+    return now - this.#untimed.seenAt >= RESERVATION_LEASE_IN_MS;
   }
 
   async write(value: string | null, completingRefresh = false): Promise<void> {
@@ -259,10 +315,6 @@ export class BrowserSessionState {
     this.revision = next.revision;
     return value;
   }
-}
-
-function abandoned(state: Receipt, now: number): boolean {
-  return state.at === undefined || Math.abs(now - state.at) >= RESERVATION_LEASE_IN_MS;
 }
 
 function mirrorCleared(state: Receipt, mirror: () => string | null): boolean {

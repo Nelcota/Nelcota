@@ -75,8 +75,10 @@ Dates identify release entries; registry availability requires a successful publ
   out with "Browser session refresh was interrupted; sign in again". Refresh
   reservations carry their time: other tabs keep reading the session, get
   `refresh_pending` from a refresh within 10 seconds (the server's retry
-  window), and then take the reservation over and retry the stored token.
-  Reservations written by older SDKs count as abandoned.
+  window), and then take the reservation over and retry the stored token. The
+  owner renews its reservation while a slow refresh request is in flight.
+  Reservations written by older SDKs are taken over 10 seconds after a tab
+  first sees them.
 - Removing the `localStorage` copy of a native browser session (clearing site
   data or the key) signs it out and clears the IndexedDB journal, once the
   stored receipt is older than five seconds.
