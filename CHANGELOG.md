@@ -212,6 +212,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
   deployments to add both on the provider or a CDN in front of the bucket.
 - `nelcota-server` builds on Windows again: the host update controller's
   worker call is Unix-only and now reports that it is unavailable elsewhere.
+- The panel grid and CSV export show json/jsonb values as their JSON text.
+  A stored JSON string such as `"42"` no longer appears as `42`, so editing
+  it keeps it a string instead of saving a number.
 
 ### Security
 

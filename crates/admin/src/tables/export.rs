@@ -4,7 +4,7 @@
 mod connection;
 pub use connection::ExportExecutor;
 
-use std::{error::Error, future::ready};
+use std::{collections::HashSet, error::Error, future::ready};
 
 use axum::{
     body::Body,
@@ -21,7 +21,7 @@ use crate::{
     error::user_query_error,
     tables::{
         catalog::table_or_404,
-        rows::{Row, RowsQuery, build_request, raw_text},
+        rows::{Row, RowsQuery, build_request, is_json, raw_text},
     },
 };
 
@@ -63,6 +63,8 @@ pub struct ExportQuery {
 struct Encoder {
     format: Format,
     columns: Vec<String>,
+    /// json/jsonb columns, written as their JSON text.
+    json_columns: HashSet<String>,
 }
 
 impl Encoder {
@@ -84,7 +86,7 @@ impl Encoder {
                 let values: Vec<Option<String>> = self
                     .columns
                     .iter()
-                    .map(|c| raw_text(row.get(c).map(AsRef::as_ref)))
+                    .map(|c| raw_text(row.get(c).map(AsRef::as_ref), self.json_columns.contains(c)))
                     .collect();
                 Ok(csv_line(values.iter().map(Option::as_deref)))
             }
@@ -193,6 +195,12 @@ pub async fn export(
     let encoder = Encoder {
         format: params.format,
         columns: table.columns.iter().map(|c| c.name.clone()).collect(),
+        json_columns: table
+            .columns
+            .iter()
+            .filter(|c| is_json(c))
+            .map(|c| c.name.clone())
+            .collect(),
     };
     let header = encoder.header();
     let footer = encoder.footer();
@@ -287,6 +295,7 @@ mod tests {
         let encoder = Encoder {
             format: Format::Csv,
             columns: vec!["=header".into()],
+            json_columns: HashSet::new(),
         };
         assert_eq!(encoder.header(), "\u{feff}\"\t=header\"\r\n");
         assert_eq!(
@@ -296,6 +305,7 @@ mod tests {
         let encoder = Encoder {
             format: Format::Json,
             columns: vec![],
+            json_columns: HashSet::new(),
         };
         assert_eq!(
             encoder.row(0, r#"{"value":"=1+1"}"#).unwrap(),
@@ -308,6 +318,7 @@ mod tests {
         let encoder = Encoder {
             format: Format::Csv,
             columns: vec!["id".into(), "name".into(), "extra".into()],
+            json_columns: HashSet::new(),
         };
         let line = encoder
             .row(0, r#"{"name":"Ana, the first","id":1,"extra":null}"#)
@@ -316,10 +327,22 @@ mod tests {
     }
 
     #[test]
+    fn csv_keeps_json_column_text() {
+        let encoder = Encoder {
+            format: Format::Csv,
+            columns: vec!["label".into(), "extra".into()],
+            json_columns: HashSet::from(["extra".to_owned()]),
+        };
+        let line = encoder.row(0, r#"{"label":"42","extra":"42"}"#).unwrap();
+        assert_eq!(line, "42,\"\"\"42\"\"\"\r\n");
+    }
+
+    #[test]
     fn json_separates_records_with_commas() {
         let encoder = Encoder {
             format: Format::Json,
             columns: vec![],
+            json_columns: HashSet::new(),
         };
         let body = [
             encoder.header(),
