@@ -1,4 +1,5 @@
 import { profile } from "$lib/features/profile/profile.svelte";
+import { sqlStore } from "$lib/features/sql/sql-store.svelte";
 import { clearQuerySession } from "$lib/resources/query-client";
 import { session } from "$lib/resources/session.svelte";
 import { api } from "$lib/transport/api";
@@ -32,6 +33,20 @@ it("does not clear a new session when a previous logout finishes late", async ()
   expect(session.expired).toBe(false);
   expect(profile.avatar).toBe(42);
   expect(profile.loaded).toBe(true);
+});
+
+it("signs out and forgets SQL history through the real request path", async () => {
+  // api.post clears the query session itself; logout must compare against
+  // the session that clear started, not the one before it.
+  session.email = "old@example.com";
+  const forget = vi.spyOn(sqlStore, "forgetSession");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(() => Promise.resolve(new Response(JSON.stringify({ ok: true })))),
+  );
+  await logout();
+  expect(session.email).toBeNull();
+  expect(forget).toHaveBeenCalledOnce();
 });
 
 it("returns to the login screen when logout fails in the current session", async () => {

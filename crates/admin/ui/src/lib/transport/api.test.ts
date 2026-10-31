@@ -94,6 +94,7 @@ it("mutation reconciliation: does not deliver a previous session write result to
     }),
   );
   const old = api.put("/anything", {}).catch((error: unknown) => error);
+  await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
   const me = await api.post<{ email: string }>("/login");
   session.email = me.email;
   finish(new Response(JSON.stringify({ saved: true })));
@@ -116,12 +117,23 @@ it("mutation reconciliation: ignores an old session rejection after a new login 
     }),
   );
   const old = api.put("/anything", {}).catch((error: unknown) => error);
+  await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
   const me = await api.post<{ email: string }>("/login");
   session.email = me.email;
   finish(new Response(JSON.stringify({ error: "expired" }), { status: 401 }));
   await old;
   expect(session.email).toBe("new@example.com");
   expect(session.expired).toBe(false);
+});
+
+it("mutation reconciliation: does not send a write whose session ended before it was sent", async () => {
+  const fetch = vi.fn(() => Promise.resolve(new Response(JSON.stringify({ ok: true }))));
+  vi.stubGlobal("fetch", fetch);
+  const old = api.put("/anything", {}).catch((error: unknown) => error);
+  await api.post("/login");
+  expect(await old).toMatchObject({ name: "AbortError" });
+  expect(fetch).toHaveBeenCalledOnce();
+  expect(fetch.mock.calls[0]?.[0]).toBe("/admin/api/login");
 });
 
 it("mutation reconciliation: invalidates old reads even when a committed write has an invalid response contract", async () => {
