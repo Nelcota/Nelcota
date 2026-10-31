@@ -13,7 +13,10 @@ pub struct AuthSettings {
     pub access_ttl_secs: u64,
     pub refresh_ttl_days: u32,
     pub signup_enabled: bool,
-    pub trust_proxy: bool,
+    /// Trusted proxies in front of the server that append the address they
+    /// saw to `X-Forwarded-For`: 0 ignores the header (the server is reached
+    /// directly), 1 is Caddy alone, 2 is a CDN in front of Caddy.
+    pub proxy_hops: u8,
     pub links: EmailLinks,
 }
 
@@ -149,7 +152,7 @@ mod tests {
             access_ttl_secs: 900,
             refresh_ttl_days: 30,
             signup_enabled: true,
-            trust_proxy: false,
+            proxy_hops: 0,
             links: EmailLinks::default(),
         }
     }

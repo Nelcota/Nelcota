@@ -185,6 +185,66 @@ async fn replace_and_delete_drop_the_old_bytes() {
 }
 
 #[tokio::test]
+async fn uploads_do_not_reveal_names_taken_by_hidden_files() {
+    let app = TestApp::spawn().await;
+    // Anyone may drop files outside `closed/`; only owners see them.
+    app.admin_client
+        .batch_execute(
+            "INSERT INTO storage.buckets (id) VALUES ('inbox');
+             CREATE POLICY inbox_drop ON storage.objects FOR INSERT TO anon, authenticated
+                 WITH CHECK (bucket_id = 'inbox' AND name NOT LIKE 'closed/%');
+             CREATE POLICY inbox_read ON storage.objects FOR SELECT TO authenticated
+                 USING (bucket_id = 'inbox' AND owner = auth.uid());",
+        )
+        .await
+        .unwrap();
+    let (a, b) = (user_token(app.user_a), user_token(app.user_b));
+    let taken = "/storage/v1/object/inbox/report.txt";
+    let closed = "/storage/v1/object/inbox/closed/report.txt";
+    let (status, _) = app
+        .upload(Method::POST, taken, Some(&a), "text/plain", b"from A")
+        .await;
+    assert_eq!(status, StatusCode::CREATED);
+    // The owner sees the file, so learning that it exists reveals nothing.
+    let (status, body) = app
+        .upload(Method::POST, taken, Some(&a), "text/plain", b"again")
+        .await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    assert_eq!(body["code"], "object_exists");
+
+    // Others get exactly what a policy refusal answers, never `object_exists`.
+    for (token, status) in [
+        (Some(b.as_str()), StatusCode::FORBIDDEN),
+        (None, StatusCode::UNAUTHORIZED),
+    ] {
+        let refused = app
+            .upload(Method::POST, closed, token, "text/plain", b"x")
+            .await;
+        assert_eq!(refused.0, status, "{}", refused.1);
+        assert_eq!(refused.1["sqlstate"], "42501");
+        let hidden = app
+            .upload(Method::POST, taken, token, "text/plain", b"x")
+            .await;
+        assert_eq!(hidden, refused);
+        // A replacement of the hidden file answers like one of a free name.
+        let refused = app
+            .upload(Method::PUT, closed, token, "text/plain", b"x")
+            .await;
+        assert_eq!(refused.0, status, "{}", refused.1);
+        let hidden = app
+            .upload(Method::PUT, taken, token, "text/plain", b"x")
+            .await;
+        assert_eq!(hidden, refused, "PUT must not tell a hidden name either");
+    }
+
+    // The hidden file is untouched and no refused upload kept bytes.
+    let (status, _, bytes) = app.bytes(Method::GET, taken, Some(&a), &[], vec![]).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(bytes, b"from A");
+    assert_eq!(stored_files(&app.storage_dir), 1);
+}
+
+#[tokio::test]
 async fn missing_bytes_of_the_current_version_remain_a_not_found_response() {
     let app = TestApp::spawn().await;
     with_buckets(&app).await;
@@ -588,11 +648,22 @@ async fn signed_urls() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs();
+    // Carry the signed file's real version, so only the deadline is tested.
+    let version: uuid::Uuid = app
+        .admin_client
+        .query_one(
+            "SELECT version FROM storage.objects WHERE bucket_id = 'docs' AND name = $1",
+            &[&name],
+        )
+        .await
+        .unwrap()
+        .get(0);
     for exp in [1, now, now - 1, now - 10, now - 29, now - 31] {
         let expired = app
             .keys
             .sign(&json!({
-                "typ": "nelcota-storage-url", "bucket": "docs", "name": name, "exp": exp
+                "typ": "nelcota-storage-url", "bucket": "docs", "name": name, "exp": exp,
+                "version": version.to_string()
             }))
             .unwrap();
         let (status, _, bytes) = app
@@ -625,6 +696,83 @@ async fn signed_urls() {
         StatusCode::FORBIDDEN,
         "a real one-second grant expired"
     );
+}
+
+#[tokio::test]
+async fn signed_urls_cover_only_the_signed_version() {
+    let app = TestApp::spawn().await;
+    with_buckets(&app).await;
+    let a = user_token(app.user_a);
+    let name = format!("{}/offer.txt", app.user_a);
+    let path = format!("/storage/v1/object/docs/{name}");
+    let sign = format!("/storage/v1/object/sign/docs/{name}");
+    let (status, _) = app
+        .upload(Method::POST, &path, Some(&a), "text/plain", b"first")
+        .await;
+    assert_eq!(status, StatusCode::CREATED);
+    let reply = app
+        .post(&sign, Some(&a), json!({ "expires_in": 600 }))
+        .await;
+    assert_eq!(reply.status, StatusCode::OK);
+    let first = reply.body["signed_url"].as_str().unwrap().to_owned();
+    let (status, _, bytes) = app.bytes(Method::GET, &first, None, &[], vec![]).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(bytes, b"first");
+
+    // A replacement is another file: the old grant does not reach it.
+    let (status, _) = app
+        .upload(Method::PUT, &path, Some(&a), "text/plain", b"second")
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, _, bytes) = app.bytes(Method::GET, &first, None, &[], vec![]).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    assert_ne!(bytes, b"second");
+    let reply = app
+        .post(&sign, Some(&a), json!({ "expires_in": 600 }))
+        .await;
+    let second = reply.body["signed_url"].as_str().unwrap().to_owned();
+    let (status, _, bytes) = app.bytes(Method::GET, &second, None, &[], vec![]).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(bytes, b"second");
+
+    // Neither does a file deleted and created again under the same name.
+    let (status, _, _) = app
+        .bytes(Method::DELETE, &path, Some(&a), &[], vec![])
+        .await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let (status, _) = app
+        .upload(Method::POST, &path, Some(&a), "text/plain", b"third")
+        .await;
+    assert_eq!(status, StatusCode::CREATED);
+    for url in [&first, &second] {
+        let (status, _, bytes) = app.bytes(Method::GET, url, None, &[], vec![]).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert_ne!(bytes, b"third");
+    }
+
+    // A grant that names no version (signed before versions were bound) is
+    // refused even while its deadline holds.
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let legacy = app
+        .keys
+        .sign(&json!({
+            "typ": "nelcota-storage-url", "bucket": "docs", "name": name, "exp": now + 600
+        }))
+        .unwrap();
+    let (status, _, bytes) = app
+        .bytes(
+            Method::GET,
+            &format!("{sign}?token={legacy}"),
+            None,
+            &[],
+            vec![],
+        )
+        .await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    assert_ne!(bytes, b"third");
 }
 
 #[tokio::test]

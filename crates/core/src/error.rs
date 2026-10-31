@@ -54,6 +54,9 @@ struct Body<'a> {
     db: Option<&'a DbFields>,
 }
 
+/// Postgres' message when no policy admits a new row (without the table name).
+const ROW_SECURITY_REFUSED: &str = "new row violates row-level security policy for table";
+
 /// How a SQLSTATE is answered.
 #[derive(Debug, PartialEq, Eq)]
 enum Class {
@@ -230,6 +233,27 @@ impl ApiError {
         error
     }
 
+    /// What [`ApiError::from_db`] answers when row-level security refuses a
+    /// new row of `table`, for a write refused outside Postgres: a conflict
+    /// with a row the caller's policies hide must not reveal that row.
+    pub fn row_security_refused(table: &str, role: Role) -> Self {
+        let state = SqlState::INSUFFICIENT_PRIVILEGE;
+        let status = match classify(&state, role) {
+            Class::Client(status) => status,
+            _ => StatusCode::FORBIDDEN,
+        };
+        let code = state.code();
+        let message = format!("{ROW_SECURITY_REFUSED} \"{table}\" ({code})");
+        let mut error = Self::new(status, "db_error", message);
+        error.db = Some(Box::new(DbFields {
+            sqlstate: Some(code.to_owned()),
+            details: None,
+            hint: None,
+            constraint: None,
+        }));
+        error
+    }
+
     pub fn from_pool(err: deadpool_postgres::PoolError) -> Self {
         use deadpool_postgres::{PoolError, TimeoutType};
         let (kind, sqlstate) = match &err {
@@ -335,6 +359,22 @@ mod tests {
         );
         let anon = ApiError::new(StatusCode::UNAUTHORIZED, "db_error", "permission denied");
         let (response, _) = body(anon).await;
+        assert_eq!(response.headers()[header::WWW_AUTHENTICATE], "Bearer");
+    }
+
+    #[tokio::test]
+    async fn row_security_refusals_have_the_database_shape() {
+        let refused = ApiError::row_security_refused("objects", Role::Authenticated);
+        assert_eq!(refused.status(), StatusCode::FORBIDDEN);
+        let (_, json) = body(refused).await;
+        let message = "new row violates row-level security policy for table \"objects\" (42501)";
+        assert_eq!(
+            json,
+            serde_json::json!({ "code": "db_error", "message": message, "sqlstate": "42501" })
+        );
+        let anon = ApiError::row_security_refused("objects", Role::Anon);
+        let (response, _) = body(anon).await;
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         assert_eq!(response.headers()[header::WWW_AUTHENTICATE], "Bearer");
     }
 
