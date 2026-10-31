@@ -6,13 +6,18 @@
 //! - sessions revoked more than [`REVOKED_SESSION_RETENTION`] ago, kept that
 //!   long for whoever inspects recent logouts and revocations;
 //! - sessions left without any token (all expired): nothing can refresh them.
+//!
+//! It also clears sealed retry successors once their retry window has passed.
 
 use std::time::Duration;
 
 use deadpool_postgres::Pool;
 use nelcota_core::ApiError;
 
-use crate::db::{begin_auth, db_error};
+use crate::{
+    db::{begin_auth, db_error},
+    sessions::RETRY_SUCCESSOR_RETENTION_SECS,
+};
 
 /// How long a revoked session row is kept.
 pub const REVOKED_SESSION_RETENTION: Duration = Duration::from_secs(7 * 86_400);
@@ -64,6 +69,22 @@ pub async fn prune(pool: &Pool) -> Result<Pruned, ApiError> {
         "DELETE FROM auth.refresh_tokens WHERE id IN (
              SELECT id FROM auth.refresh_tokens WHERE expires_at < now() LIMIT $1)",
         None,
+    )
+    .await?;
+    // A rotation's sealed successor only answers retries inside the window;
+    // the next rotation clears it, and this clears it in idle sessions. Rows
+    // a refresh holds are skipped: that refresh may be the retry it serves.
+    batched(
+        pool,
+        "UPDATE auth.refresh_tokens SET retry_successor = NULL WHERE id IN (
+             SELECT rt.id FROM auth.refresh_tokens rt
+             JOIN auth.sessions s ON s.id = rt.session_id
+             WHERE rt.retry_successor IS NOT NULL
+               AND (s.revoked_at IS NOT NULL
+                    OR s.refreshed_at IS NULL
+                    OR s.refreshed_at < now() - make_interval(secs => $2))
+             LIMIT $1 FOR UPDATE OF rt SKIP LOCKED)",
+        Some(RETRY_SUCCESSOR_RETENTION_SECS),
     )
     .await?;
     // A session gets its first token in the transaction that creates it, so

@@ -125,7 +125,9 @@ one. `service_role` tokens and public or signed file downloads are exempt.
 Server-side rendering with the anonymous key shares the server's IP budget;
 raise the value or send user tokens.
 
-IPv6 addresses count by their /64. Quotas are per process, not distributed
+IPv6 addresses count by their /64; signup also counts per /48, and the /64s
+of one /48 can be tracked for at most 781 keys at a time, past which its new
+/64s get 429 on auth endpoints. Quotas are per process, not distributed
 across server instances. Clients behind a NAT can share an IP budget. The
 response carries `Retry-After`, rounded up to whole seconds; SDKs expose it as
 `error.retryAfter` (seconds) / `Error::retry_after()`.
@@ -161,6 +163,8 @@ Correlate the response `x-request-id` with the request span. Ordinary non-secret
 Database failures use stable `event` categories and SQLSTATE `code`; pool failures include `error_kind` and a `sqlstate` when available. Opaque database/provider text is not required to classify these database events. Authorized client error responses retain their existing fields; never paste those bodies into public reports without review.
 
 For `database.pool_acquire_failed`, distinguish `wait_timeout` (pool pressure), `create_timeout` or `recycle_timeout` (connection lifecycle), `backend` (inspect SQLSTATE), and `closed` (shutdown). For `database.transient_failure`, inspect contention, connection limits and recovery state before a controlled retry. A log is diagnostic evidence, not authorization to retry a mutation or clear a restore fence.
+
+`database.cancel_failed` and `database.cancel_timed_out` mean that the statement of a dropped request (a disconnected client or a request timeout) could not be cancelled. It may keep running in Postgres until `statement_timeout` while the pool opens a replacement connection; repeated events point to an unreachable or overloaded database.
 
 Logs, panel incident state and external alerts have different purposes. Host jobs already have operation/job IDs and explicit approval. Keep that durable state as the source of truth; a browser tab or a successful log write does not establish that a backup, restore or update completed.
 

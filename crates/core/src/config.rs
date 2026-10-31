@@ -467,6 +467,19 @@ impl Config {
         }
     }
 
+    /// Whether panel session cookies carry `Secure`: behind a trusted proxy,
+    /// or when the public origin (`api_url`) is HTTPS. A TLS-terminating proxy
+    /// that is not trusted for client IPs still serves the panel over HTTPS.
+    pub fn secure_cookies(&self) -> bool {
+        if self.trust_proxy {
+            return true;
+        }
+        trimmed(&self.api_url).is_some_and(|url| {
+            url.get(..8)
+                .is_some_and(|scheme| scheme.eq_ignore_ascii_case("https://"))
+        })
+    }
+
     /// Configured EdDSA key (an empty variable counts as absent).
     pub fn jwt_private_key(&self) -> Option<&str> {
         non_empty(&self.jwt_private_key)
@@ -805,6 +818,28 @@ mod tests {
             ..config
         };
         assert_eq!(trusted.proxy_hops(), 2);
+    }
+
+    #[test]
+    fn secure_cookies_follow_a_trusted_proxy_or_an_https_public_origin() {
+        assert!(!valid().secure_cookies(), "plain local HTTP");
+        let trusted = Config {
+            trust_proxy: true,
+            ..valid()
+        };
+        assert!(trusted.secure_cookies());
+        for (url, secure) in [
+            ("https://api.shop.com", true),
+            (" HTTPS://api.shop.com ", true),
+            ("http://localhost:8000", false),
+            ("", false),
+        ] {
+            let config = Config {
+                api_url: Some(url.into()),
+                ..valid()
+            };
+            assert_eq!(config.secure_cookies(), secure, "{url:?}");
+        }
     }
 
     #[test]

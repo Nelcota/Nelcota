@@ -5,8 +5,8 @@ use nelcota_core::ApiError;
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use super::{ProviderKind, pkce};
-use crate::{db::db_error, sessions::new_opaque_token};
+use super::ProviderKind;
+use crate::{db::db_error, pkce, sessions::new_opaque_token};
 
 /// Time to choose an account at the provider and come back.
 const SIGN_IN_MINUTES: i32 = 10;

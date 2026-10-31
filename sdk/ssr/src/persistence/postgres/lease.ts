@@ -121,12 +121,22 @@ class ConnectionOwner {
 
   /** Publication order: the new row and lineage head are written by the callback;
    * only after it succeeded is the previous row replaced (tombstone) or removed.
-   * With `onRetireError` a failure here is reported instead of failing the owner:
-   * the published rows stand, and the discarded connection releases its locks. */
+   * This runs after the callback's lease budget, with its own budget of one
+   * statement timeout per rotated row, so a lease that ran close to its timeout
+   * cannot fail a write whose rows are already durable. With `onRetireError` a
+   * failure here is reported instead of failing the owner: the published rows
+   * stand, and the discarded connection releases its locks. */
   async #retireRotated(): Promise<void> {
+    if (this.#rotated.length === 0) return;
     try {
-      await this.#replaceRotated();
+      await boundedOperation(
+        this.#replaceRotated(),
+        this.#connections.timeout * this.#rotated.length,
+        "Session row retirement timed out",
+      );
     } catch (cause) {
+      // A statement may still be running; never reuse or unlock through it.
+      this.#lost();
       const report = this.#request.onRetireError;
       if (report === undefined) throw cause;
       this.#retireFailed = true;
@@ -252,15 +262,13 @@ class ConnectionOwner {
   async run<T>(work: (lease: SessionLease) => Promise<T>): Promise<T> {
     try {
       await this.#acquire();
-      return await boundedOperation(
-        Promise.resolve()
-          .then(() => work(this.#lease))
-          .then(async (result) => {
-            await this.#retireRotated();
-            return result;
-          }),
+      const result = await boundedOperation(
+        Promise.resolve().then(() => work(this.#lease)),
         this.#connections.leaseTimeout,
       );
+      // The publication is final here; retirement has its own budget.
+      await this.#retireRotated();
+      return result;
     } catch (cause) {
       this.#workFailed = true;
       if (this.#locked && cause instanceof SessionError && cause.code === "session_store")

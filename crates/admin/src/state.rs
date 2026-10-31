@@ -27,7 +27,7 @@ pub struct AdminState {
     /// Trusted proxies that append to `X-Forwarded-For` (see
     /// `nelcota_auth::client_ip`); 0 uses the TCP peer.
     pub proxy_hops: u8,
-    /// Cookie with `Secure` (behind Caddy/HTTPS).
+    /// Cookie with `Secure` (trusted proxy or an HTTPS public origin).
     pub secure_cookies: bool,
     /// Current project, the host's project list and single sign-on.
     pub host: Arc<HostLink>,

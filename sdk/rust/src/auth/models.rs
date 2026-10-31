@@ -95,8 +95,20 @@ impl std::fmt::Debug for UserUpdate {
     }
 }
 
-#[derive(Debug)]
 pub struct SignUp {
     pub user: User,
     pub session: Option<Session>,
+    /// The PKCE verifier bound to the confirmation email, present while the
+    /// email awaits confirmation. Pass it to
+    /// [`AuthClient::verify_signup_link`](super::AuthClient::verify_signup_link)
+    /// to keep the sign-up password; keep it private, like a `PkceFlow`.
+    pub verifier: Option<String>,
+}
+impl std::fmt::Debug for SignUp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SignUp")
+            .field("user", &self.user)
+            .field("session", &self.session)
+            .finish_non_exhaustive()
+    }
 }

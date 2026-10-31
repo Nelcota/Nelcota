@@ -20,6 +20,12 @@ export const RESERVATION_LEASE_IN_MS = 10_000;
 const RENEWALS_PER_LEASE = 3;
 const RENEWAL_INTERVAL_IN_MS = RESERVATION_LEASE_IN_MS / RENEWALS_PER_LEASE;
 /**
+ * Longest an owner renews its reservation. A request that never settles (no
+ * request timeout) must not block every other tab's refresh while this one
+ * stays open; after the last renewal the reservation lapses with its lease.
+ */
+export const MAX_RESERVATION_HOLD_IN_MS = 120_000;
+/**
  * A ready receipt whose localStorage mirror has been missing for longer than
  * this was cleared on purpose (site data, developer tools), not caught between
  * the journal commit and the mirror write.
@@ -70,7 +76,7 @@ function validReceiptFields(fields: Record<string, unknown>): boolean {
 
 export class BrowserSessionState {
   readonly #owner = randomId();
-  /** When this tab first saw a foreign reservation written without a time. */
+  /** When this tab first saw the current receipt, if it was written without a time. */
   #untimed: { identity: string; seenAt: number } | undefined;
   revision: string | undefined;
   pending = false;
@@ -199,7 +205,7 @@ export class BrowserSessionState {
       this.#observe(state);
       const owned = state.owner === this.#owner;
       const retainDirty = dirty !== undefined && (owned || state.revision === this.revision);
-      if (retainDirty === false && mirrorCleared(state, mirror)) {
+      if (retainDirty === false && this.#mirrorCleared(state, mirror)) {
         const cleared = this.#record("ready", null);
         store.put(cleared, this.key);
         return { value: null, retainDirty: false, revision: cleared.revision, pending: false };
@@ -245,13 +251,25 @@ export class BrowserSessionState {
   /**
    * Keeps this owner's reservation alive while its refresh request is in
    * flight, so a request slower than the lease is not taken over by a tab that
-   * would spend the same token. The returned function stops renewing and waits
-   * for a renewal in progress. A failed renewal only lets the lease run out.
+   * would spend the same token. Renewal stops after `timeoutInMs` (the
+   * request's timeout; `0` means none) or `MAX_RESERVATION_HOLD_IN_MS`,
+   * whichever is smaller, and the reservation then lapses with its lease. The
+   * returned function stops renewing and waits for a renewal in progress. A
+   * failed renewal only lets the lease run out.
    */
-  hold(): () => Promise<void> {
+  hold(timeoutInMs = 0): () => Promise<void> {
     const revision = this.revision;
+    const limit =
+      timeoutInMs > 0
+        ? Math.min(timeoutInMs, MAX_RESERVATION_HOLD_IN_MS)
+        : MAX_RESERVATION_HOLD_IN_MS;
+    const until = Date.now() + limit;
     let renewal = Promise.resolve();
     const timer = setInterval(() => {
+      if (Date.now() >= until) {
+        clearInterval(timer);
+        return;
+      }
       renewal = renewal.then(
         async () => await this.#renew(revision),
         () => undefined,
@@ -279,16 +297,35 @@ export class BrowserSessionState {
       this.#abandoned(state, Date.now());
   }
 
-  /**
-   * A foreign reservation older than the lease is abandoned. One without a
-   * time (an older SDK) is measured from when this tab first saw it, keyed by
-   * its owner and value: a newer reservation restarts the clock.
-   */
+  /** A foreign reservation older than the lease is abandoned. */
   #abandoned(state: Receipt, now: number): boolean {
-    if (state.at !== undefined) return Math.abs(now - state.at) >= RESERVATION_LEASE_IN_MS;
-    const identity = `${state.owner}:${state.value ?? ""}`;
+    return this.#age(state, now) >= RESERVATION_LEASE_IN_MS;
+  }
+
+  /**
+   * A receipt's age. One without a time (an older SDK) is measured from when
+   * this tab first saw it, keyed by its kind, owner and value: a newer receipt
+   * restarts the clock.
+   */
+  #age(state: Receipt, now: number): number {
+    if (state.at !== undefined) return Math.abs(now - state.at);
+    const identity = `${state.kind}:${state.owner}:${state.value ?? ""}`;
     if (this.#untimed?.identity !== identity) this.#untimed = { identity, seenAt: now };
-    return now - this.#untimed.seenAt >= RESERVATION_LEASE_IN_MS;
+    return now - this.#untimed.seenAt;
+  }
+
+  /**
+   * A settled ready session whose mirror is missing was cleared on purpose.
+   * An untimed receipt may be an older SDK's write whose mirror is still on its
+   * way, so it settles only `MIRROR_SETTLE_IN_MS` after this tab first saw it.
+   */
+  #mirrorCleared(state: Receipt, mirror: () => string | null): boolean {
+    return (
+      state.kind === "ready" &&
+      state.value !== null &&
+      this.#age(state, Date.now()) >= MIRROR_SETTLE_IN_MS &&
+      mirror() === null
+    );
   }
 
   async write(value: string | null, completingRefresh = false): Promise<void> {
@@ -315,15 +352,6 @@ export class BrowserSessionState {
     this.revision = next.revision;
     return value;
   }
-}
-
-function mirrorCleared(state: Receipt, mirror: () => string | null): boolean {
-  return (
-    state.kind === "ready" &&
-    state.value !== null &&
-    (state.at === undefined || Math.abs(Date.now() - state.at) >= MIRROR_SETTLE_IN_MS) &&
-    mirror() === null
-  );
 }
 
 function beginTransaction(

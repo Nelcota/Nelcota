@@ -43,7 +43,9 @@ async fn review_signup_confirmation_retires_preverification_provider_access() {
             json!({"email":"confirmation-victim@example.com", "password":"owner-password-123"}),
         )
         .await;
-    assert_eq!(duplicate.body["code"], "user_already_exists");
+    // A confirming signup does not reveal the account; its inbox gets a link.
+    assert_eq!(duplicate.status, StatusCode::CREATED, "{}", duplicate.text);
+    assert!(duplicate.body["user"]["email_confirmed_at"].is_null());
     let resend = h
         .app
         .post(

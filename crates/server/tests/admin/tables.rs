@@ -147,6 +147,81 @@ async fn edit_tables_from_the_panel_with_exact_values() {
     assert_eq!(reply.body["params"], json!({ "table": "missing" }));
 }
 
+#[tokio::test]
+async fn json_null_and_sql_null_stay_apart_in_the_table_editor() {
+    let app = TestApp::spawn().await;
+    app.admin_client
+        .batch_execute(
+            "CREATE TABLE public.docs (id int PRIMARY KEY, body jsonb, raw json);
+             INSERT INTO public.docs VALUES
+                 (1, 'null', 'null'), (2, NULL, NULL), (3, '\"42\"', '{\"a\": 1}');",
+        )
+        .await
+        .unwrap();
+    app.catalog.reload(&app.pool).await.unwrap();
+    let cookie = login(&app).await;
+
+    let data = get(&app, "/admin/api/tables/docs", &cookie).await.body;
+    let rows = data["rows"].as_array().unwrap();
+    assert_eq!(rows[0], json!({ "id": "1", "body": "null", "raw": "null" }));
+    assert_eq!(rows[1], json!({ "id": "2", "body": null, "raw": null }));
+    assert_eq!(
+        rows[2],
+        json!({ "id": "3", "body": "\"42\"", "raw": "{\"a\": 1}" })
+    );
+
+    // Saving the text `null` writes a JSON null; a null value writes SQL NULL.
+    let reply = send(
+        &app,
+        Method::PATCH,
+        "/admin/api/tables/docs/rows",
+        &cookie,
+        json!({ "pk": { "id": "1" }, "values": { "body": null, "raw": "null" } }),
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.text);
+    let reply = send(
+        &app,
+        Method::PATCH,
+        "/admin/api/tables/docs/rows",
+        &cookie,
+        json!({ "pk": { "id": "2" }, "values": { "body": "null" } }),
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.text);
+    let reply = send(
+        &app,
+        Method::POST,
+        "/admin/api/tables/docs/rows",
+        &cookie,
+        json!({ "values": { "id": "4", "body": "null", "raw": null } }),
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.text);
+
+    let stored: Vec<(i32, Option<String>, Option<String>)> = app
+        .admin_client
+        .query(
+            "SELECT id, body::text, raw::text FROM public.docs ORDER BY id",
+            &[],
+        )
+        .await
+        .unwrap()
+        .iter()
+        .map(|r| (r.get(0), r.get(1), r.get(2)))
+        .collect();
+    let null = || Some("null".to_owned());
+    assert_eq!(
+        stored,
+        [
+            (1, None, null()),
+            (2, null(), None),
+            (3, Some("\"42\"".into()), Some("{\"a\": 1}".into())),
+            (4, null(), None),
+        ]
+    );
+}
+
 /// Percent-encoding to put JSON in the query string.
 fn enc(value: &str) -> String {
     value

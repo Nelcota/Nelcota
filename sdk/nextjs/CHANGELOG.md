@@ -10,6 +10,9 @@ dependency and the integration gains new properties.
 
 ### Added
 
+- Sign-up confirmation from the browser that signed up keeps the chosen
+  password: the sign-up's PKCE verifier lives in the sealed session (through
+  `@nelcota/ssr`).
 - `NextIntegration` exposes its validated `origin` and `basePath` (read-only),
   for absolute redirects that never depend on raw environment values or headers.
 

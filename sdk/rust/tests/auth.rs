@@ -431,6 +431,91 @@ fn oauth_and_email_links_keep_secrets_out_of_debug_and_clean_callback_urls() {
 }
 
 #[tokio::test]
+async fn signup_binds_its_confirmation_link_to_the_returned_verifier() {
+    use nelcota_client::auth::{EmailLink, EmailLinkType};
+    use sha2::{Digest, Sha256};
+    use std::sync::Mutex;
+    let bodies = Arc::new(Mutex::new(Vec::<Value>::new()));
+    let record = |bodies: Arc<Mutex<Vec<Value>>>, reply: Value| {
+        post(move |Json(body): Json<Value>| async move {
+            bodies.lock().unwrap().push(body);
+            (StatusCode::CREATED, Json(reply))
+        })
+    };
+    let user = serde_json::to_value(session("a0", "r0").user).unwrap();
+    let router = Router::new()
+        .route(
+            "/auth/v1/signup",
+            record(bodies.clone(), json!({ "user": user })),
+        )
+        .route(
+            "/auth/v1/verify",
+            record(
+                bodies.clone(),
+                serde_json::to_value(session("a1", "r1")).unwrap(),
+            ),
+        );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let client = Client::builder(format!("http://{}", listener.local_addr().unwrap()))
+        .build()
+        .unwrap();
+    let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    let auth = client.auth();
+
+    let signed = auth
+        .sign_up("a@example.com", "pw-123456789", None)
+        .await
+        .unwrap();
+    assert!(signed.session.is_none());
+    let verifier = signed
+        .verifier
+        .clone()
+        .expect("a pending sign-up returns its verifier");
+    assert!(!format!("{signed:?}").contains(&verifier));
+    let sent = bodies.lock().unwrap()[0].clone();
+    assert_eq!(sent["code_challenge_method"], "S256");
+    assert_eq!(
+        sent["code_challenge"],
+        URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes()))
+    );
+
+    let link = EmailLink {
+        kind: EmailLinkType::Signup,
+        token: "t1".into(),
+    };
+    for bad in ["short", &"v".repeat(129), &"!".repeat(43)] {
+        assert!(matches!(
+            auth.verify_signup_link(&link, bad).await,
+            Err(nelcota_client::Error::Usage(_))
+        ));
+    }
+    let magic = EmailLink {
+        kind: EmailLinkType::MagicLink,
+        token: "t1".into(),
+    };
+    assert!(matches!(
+        auth.verify_signup_link(&magic, &verifier).await,
+        Err(nelcota_client::Error::Usage(_))
+    ));
+    assert_eq!(
+        bodies.lock().unwrap().len(),
+        1,
+        "refused before any request"
+    );
+
+    auth.verify_signup_link(&link, &verifier).await.unwrap();
+    assert_eq!(
+        bodies.lock().unwrap()[1],
+        json!({"type": "signup", "token": "t1", "code_verifier": verifier})
+    );
+    assert_eq!(
+        auth.get_session().await.unwrap().unwrap().access_token,
+        "a1"
+    );
+    server.abort();
+}
+
+#[tokio::test]
 async fn custom_storage_restores_sessions_and_background_refresh_stops_on_drop() {
     use nelcota_client::auth::{MemoryStorage, SessionStorage};
     let (url, count, server_task) = server(false).await;
@@ -755,6 +840,32 @@ async fn an_absurd_retry_after_does_not_kill_the_rotation() {
     assert_eq!(error.code(), "rate_limited");
     assert_eq!(count.load(Ordering::SeqCst), 1);
     task.abort();
+}
+
+#[tokio::test]
+async fn get_session_keeps_a_valid_session_without_rotating_during_the_backoff() {
+    let failure = json!({"code":"unavailable","message":"try later"});
+    let (url, count, task) = rest_server(
+        replying(StatusCode::SERVICE_UNAVAILABLE, failure),
+        Duration::ZERO,
+    )
+    .await;
+    let client = Client::builder(url).build().unwrap();
+    // Inside the 60 s refresh margin, but still valid.
+    client.auth().set_session(expiring_in(30)).await.unwrap();
+    let error = client.auth().get_session().await.unwrap_err();
+    assert_eq!(error.code(), "unavailable");
+    // A caller polling in a loop does not start a rotation per call.
+    for _ in 0..3 {
+        let session = client.auth().get_session().await.unwrap().unwrap();
+        assert_eq!(session.access_token, "a0");
+    }
+    task.abort();
+    assert_eq!(
+        count.load(Ordering::SeqCst),
+        1,
+        "no rotation during the backoff"
+    );
 }
 
 #[tokio::test]

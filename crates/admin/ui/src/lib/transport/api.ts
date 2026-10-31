@@ -7,7 +7,7 @@ import {
   querySession,
 } from "$lib/resources/query-client";
 // Panel API client (/admin/api). The session lives in an HttpOnly cookie.
-import { session } from "$lib/resources/session.svelte";
+import { endSession, session } from "$lib/resources/session.svelte";
 
 import { ApiError, httpError, errorFromBody } from "./api-error";
 import { HTTP_STATUS } from "./http-status";
@@ -148,8 +148,8 @@ export function expireSession(status: number, path = "", started = querySession(
   if (started !== querySession() || status !== HTTP_STATUS.unauthorized || path === "/login")
     return;
   clearQuerySession();
-  if (session.email != null && session.email !== "") session.expired = true;
-  session.email = null;
+  const signedIn = session.email != null && session.email !== "";
+  endSession(signedIn || session.expired);
 }
 
 function requireSession(started: number) {

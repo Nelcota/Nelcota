@@ -13,11 +13,13 @@ const COOLDOWN_SECONDS: f64 = 60.0;
 
 /// Stores a new link for the account and returns its token, or `None` while
 /// the previous link of that kind is in its cooldown. Asking again voids the
-/// earlier links of the kind: only the latest one works.
+/// earlier links of the kind: only the latest one works. `code_challenge`
+/// (signup links only) binds the link to the client that signed up.
 pub(crate) async fn issue(
     tx: &Transaction<'_>,
     user_id: Uuid,
     kind: LinkKind,
+    code_challenge: Option<&str>,
 ) -> Result<Option<String>, ApiError> {
     // Serializes the empty-token case too. There is no token row to lock on
     // the first request; every issuer instead locks the owning account.
@@ -55,9 +57,15 @@ pub(crate) async fn issue(
     .map_err(db_error)?;
     let (token, hash) = new_opaque_token();
     tx.execute(
-        "INSERT INTO auth.one_time_tokens (user_id, kind, token_hash, expires_at)
-         VALUES ($1, $2, $3, now() + make_interval(mins => $4))",
-        &[&user_id, &kind.as_str(), &hash, &kind.ttl_minutes()],
+        "INSERT INTO auth.one_time_tokens (user_id, kind, token_hash, expires_at, code_challenge)
+         VALUES ($1, $2, $3, now() + make_interval(mins => $4), $5)",
+        &[
+            &user_id,
+            &kind.as_str(),
+            &hash,
+            &kind.ttl_minutes(),
+            &code_challenge,
+        ],
     )
     .await
     .map_err(db_error)?;
@@ -121,6 +129,22 @@ pub(crate) async fn consume(
         .await
         .map_err(db_error)?
         .map(|row| row.get(0)))
+}
+
+/// The PKCE challenge a link was bound to when issued. Read it in the
+/// transaction that consumed the link, before anything deletes its row.
+pub(crate) async fn code_challenge(
+    tx: &Transaction<'_>,
+    hash: &[u8],
+) -> Result<Option<String>, ApiError> {
+    Ok(tx
+        .query_opt(
+            "SELECT code_challenge FROM auth.one_time_tokens WHERE token_hash = $1",
+            &[&hash],
+        )
+        .await
+        .map_err(db_error)?
+        .and_then(|row| row.get(0)))
 }
 
 #[cfg(test)]

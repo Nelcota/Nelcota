@@ -38,6 +38,7 @@ export type {
   SignUpInput,
   UserUpdate,
 } from "./types.js";
+import { bindSignup, forgetSignup, verifyLink } from "./email-links.js";
 import { challengeFor, createVerifier } from "./pkce.js";
 function email(value: unknown): string {
   if (typeof value !== "string" || value.trim() === "")
@@ -54,6 +55,7 @@ export class AuthClient {
     this.#manager = new SessionManager(http.url, options, {
       rotate: (token, request) => this.#token("refresh_token", { refresh_token: token }, request),
       accessToken: http.accessToken,
+      timeout: http.timeout,
     });
   }
 
@@ -95,7 +97,13 @@ export class AuthClient {
     return isSession(result.data) ? ok(result.data) : fail(invalidResponse());
   }
 
-  /** Creates an account. `session` is `null` while the email awaits confirmation. */
+  /**
+   * Creates an account. `session` is `null` while the email awaits
+   * confirmation; the sign-up's PKCE verifier then stays in this client's
+   * storage so that `verifyEmailLink` keeps the chosen password. A link
+   * opened elsewhere (or a resent one) still confirms the email and signs in,
+   * but clears that password, as a first magic link does.
+   */
   async signUp(
     input: SignUpInput,
     options: AuthRequestOptions = {},
@@ -103,15 +111,21 @@ export class AuthClient {
     const body: Record<string, unknown> = { email: email(input.email), password: input.password };
     if (input.data !== undefined) body["data"] = input.data;
     return await this.#manager.authenticate<{ user: User; session: Session | null }>(async () => {
+      const challenge = await bindSignup(this.#manager);
       const result = await this.#http.json<unknown>({
         method: "POST",
         path: "/auth/v1/signup",
-        json: body,
+        json:
+          challenge == null
+            ? body
+            : { ...body, code_challenge: challenge, code_challenge_method: "S256" },
         auth: false,
         signal: options.signal,
         timeout: options.timeout,
       });
       if (result.error != null) return fail(result.error);
+      // Signed in at once: no confirmation link will need the verifier.
+      if (challenge != null && isSession(result.data)) await forgetSignup(this.#manager);
       if (isSession(result.data)) return ok({ user: result.data.user, session: result.data });
       const user = (result.data as { user?: unknown } | null)?.user;
       return isUser(user) ? ok({ user, session: null }) : fail(invalidResponse());
@@ -221,7 +235,12 @@ export class AuthClient {
     return parseEmailLink(href);
   }
 
-  /** Confirms a sign-up or signs in with a magic link. */
+  /**
+   * Confirms a sign-up or signs in with a magic link. A sign-up confirmation
+   * sends the verifier `signUp` stored, which keeps the password chosen at
+   * sign-up; the verifier is cleared once the confirmation succeeds and kept
+   * after a failure, so the same link can be retried.
+   */
   async verifyEmailLink(
     link: { type: "signup" | "magiclink"; token: string },
     options: AuthRequestOptions = {},
@@ -241,18 +260,7 @@ export class AuthClient {
   }
 
   #verify(body: Record<string, string>, options: AuthRequestOptions): Promise<Result<Session>> {
-    return this.#manager.authenticate(async () => {
-      const result = await this.#http.json<unknown>({
-        method: "POST",
-        path: "/auth/v1/verify",
-        json: body,
-        auth: false,
-        signal: options.signal,
-        timeout: options.timeout,
-      });
-      if (result.error != null) return fail(result.error);
-      return isSession(result.data) ? ok(result.data) : fail(invalidResponse());
-    }, options.signal);
+    return verifyLink({ http: this.#http, manager: this.#manager }, body, options);
   }
 
   async #emailOnly(

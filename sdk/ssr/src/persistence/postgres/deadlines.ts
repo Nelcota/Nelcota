@@ -13,7 +13,8 @@ export interface PostgresSessionStoreOptions {
   /** Deadline for each statement and connection borrow, in ms. Default 5000. */
   timeout?: number;
   /** Longest one write may own its session, in ms (it holds a pooled connection
-   * and the session's advisory lock meanwhile). Default 60000. */
+   * and the session's advisory lock meanwhile). Default 60000. Retiring a
+   * rotated-away row afterwards has its own budget of `timeout` per row. */
   leaseTimeout?: number;
   /** How long a write waits for the current owner of the same session, in ms.
    * Default `leaseTimeout`, so a waiter never gives up on an owner that is still

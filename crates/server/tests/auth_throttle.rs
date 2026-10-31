@@ -286,3 +286,54 @@ async fn ipv6_addresses_in_one_64_share_a_budget() {
         "another /64 keeps its own budget"
     );
 }
+
+async fn signup_from(app: &TestApp, email: &str, source: &str) -> StatusCode {
+    app.router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/auth/v1/signup")
+                .header(header::CONTENT_TYPE, "application/json")
+                .extension(ConnectInfo(source.parse::<std::net::SocketAddr>().unwrap()))
+                .body(Body::from(
+                    json!({"email": email, "password": Uuid::new_v4().to_string()}).to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap()
+        .status()
+}
+
+#[tokio::test]
+async fn one_ipv6_48_shares_a_signup_budget_across_its_64s() {
+    let app = TestApp::spawn_with(Options {
+        rate_limit_per_minute: 2,
+        ..Options::default()
+    })
+    .await;
+    let email = || format!("{}@example.test", Uuid::new_v4().simple());
+    assert_eq!(
+        signup_from(&app, &email(), "[2001:db8:1:1::1]:1234").await,
+        StatusCode::CREATED
+    );
+    assert_eq!(
+        signup_from(&app, &email(), "[2001:db8:1:2::1]:1234").await,
+        StatusCode::CREATED
+    );
+    assert_eq!(
+        signup_from(&app, &email(), "[2001:db8:1:3::1]:1234").await,
+        StatusCode::TOO_MANY_REQUESTS,
+        "a fresh /64 of the same /48 gets no fresh budget"
+    );
+    assert_eq!(
+        signup_from(&app, &email(), "[2001:db8:2:1::1]:1234").await,
+        StatusCode::CREATED,
+        "another /48 is unaffected"
+    );
+    assert_eq!(
+        signup_from(&app, &email(), "203.0.113.7:1234").await,
+        StatusCode::CREATED
+    );
+}

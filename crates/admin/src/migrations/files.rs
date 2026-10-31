@@ -67,7 +67,12 @@ pub fn render(generated_at: &str, changes: &[(String, String, Vec<String>)]) -> 
             sql.push_str("\n;\n");
         }
     }
-    sql
+    // Deploys (`nelcota migrate`, uploaded files) checksum and run the file
+    // with CRLF read as LF. Render that same text so the checksum recorded
+    // here matches. Literals escape CR (`ddl::literal`), so comments keep
+    // their content; only raw CRLF in identifiers or older recorded
+    // statements is affected, exactly as a deploy would read it.
+    sql.replace("\r\n", "\n")
 }
 
 /// The project's migrations folder: the configured one or, inside the
@@ -162,5 +167,30 @@ mod tests {
                 ["SELECT 2", ";"]
             );
         }
+    }
+
+    #[test]
+    fn rendered_file_matches_what_a_deploy_checksums() {
+        let comment = crate::ddl::literal("first\r\nsecond");
+        let sql = render(
+            "now",
+            &[(
+                "then".into(),
+                "comment changed".into(),
+                vec![
+                    format!("COMMENT ON TABLE t IS {comment}"),
+                    "ALTER TABLE t\r\n  ADD COLUMN \"a\r\nb\" int".into(),
+                ],
+            )],
+        );
+        assert!(!sql.contains("\r\n"), "{sql:?}");
+        assert!(sql.contains("COMMENT ON TABLE t IS E'first\\r\nsecond'\n;\n"));
+        let deployed = sql.replace("\r\n", "\n");
+        let checksum = |text: &str| {
+            refinery::Migration::unapplied("V1__x", text)
+                .unwrap()
+                .checksum()
+        };
+        assert_eq!(checksum(&sql), checksum(&deployed));
     }
 }

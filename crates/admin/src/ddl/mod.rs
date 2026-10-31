@@ -15,7 +15,6 @@
 pub mod policy;
 pub mod table;
 
-use nelcota_api::query::ident;
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -90,14 +89,39 @@ pub fn validate_name(kind: &str, name: &str) -> Result<()> {
     Ok(())
 }
 
+/// Quoted identifier. A carriage return is written as a Unicode escape
+/// (`U&"a\000Db"`), never as a raw byte, for the same reason as in
+/// [`literal`]: deploys read CRLF as LF, which would rename the object.
+pub fn ident(name: &str) -> String {
+    if !name.contains('\r') {
+        return nelcota_api::query::ident(name);
+    }
+    let escaped = name
+        .replace('\\', r"\\")
+        .replace('"', "\"\"")
+        .replace('\r', r"\000D");
+    format!("U&\"{escaped}\"")
+}
+
 /// `"schema"."name"`
 pub fn qualified(schema: &str, name: &str) -> String {
     format!("{}.{}", ident(schema), ident(name))
 }
 
 /// Text literal (`standard_conforming_strings` is the default since 9.1).
+///
+/// A carriage return is written as an `E'\r'` escape, never as a raw byte:
+/// migration files have CRLF normalized to LF before they are checksummed
+/// and run, which would otherwise change a comment such as `"a\r\nb"`.
 pub fn literal(text: &str) -> String {
-    format!("'{}'", text.replace('\'', "''"))
+    if !text.contains('\r') {
+        return format!("'{}'", text.replace('\'', "''"));
+    }
+    let escaped = text
+        .replace('\\', r"\\")
+        .replace('\'', "''")
+        .replace('\r', r"\r");
+    format!("E'{escaped}'")
 }
 
 /// Required (non-empty) SQL expression, in parentheses.
@@ -363,7 +387,10 @@ mod tests {
     #[test]
     fn literal_and_escaped_identifiers() {
         assert_eq!(literal("O'Reilly"), "'O''Reilly'");
+        assert_eq!(literal("a\\b\nc"), "'a\\b\nc'");
+        assert_eq!(literal("it's\r\na\\b"), "E'it''s\\r\na\\\\b'");
         assert_eq!(qualified("public", "a\"b"), "\"public\".\"a\"\"b\"");
+        assert_eq!(ident("a\r\n\"b\\"), "U&\"a\\000D\n\"\"b\\\\\"");
     }
 
     #[test]
