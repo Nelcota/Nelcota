@@ -391,11 +391,25 @@ fn alter_refuses_what_makes_no_sense() {
 #[test]
 fn drop_with_and_without_cascade() {
     assert_eq!(
-        drop("public", "notes", false),
+        drop("public", "notes", TableKind::Table, false),
         ["DROP TABLE \"public\".\"notes\""]
     );
     assert_eq!(
-        drop("public", "notes", true),
+        drop("public", "notes", TableKind::Table, true),
         ["DROP TABLE \"public\".\"notes\" CASCADE"]
     );
+}
+
+#[test]
+fn drop_matches_the_relation_kind() {
+    for (kind, statement) in [
+        (TableKind::View, "DROP VIEW"),
+        (TableKind::MaterializedView, "DROP MATERIALIZED VIEW"),
+        (TableKind::ForeignTable, "DROP FOREIGN TABLE"),
+    ] {
+        assert_eq!(
+            drop("public", "report", kind, true),
+            [format!("{statement} \"public\".\"report\" CASCADE")]
+        );
+    }
 }

@@ -231,6 +231,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - `NELCOTA_STATEMENT_TIMEOUT_SECS` and `NELCOTA_STORAGE_UPLOAD_TIMEOUT_SECS`
   are capped at 86400 (one day) at startup. Larger values made startup fail
   while configuring PostgreSQL, or panicked on the first upload.
+- Dropping a view, materialized view or foreign table from the panel emits
+  the matching `DROP VIEW`, `DROP MATERIALIZED VIEW` or `DROP FOREIGN TABLE`
+  instead of a `DROP TABLE` that PostgreSQL rejects.
 
 ### Security
 

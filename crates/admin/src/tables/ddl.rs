@@ -141,7 +141,7 @@ pub async fn drop(
 ) -> ApiResult<crate::contracts::DdlResult> {
     let table = table_or_404(&state, &name)?;
     let schema = state.catalog.get().schema.clone();
-    let statements = table::drop(&schema, &table.name, params.cascade);
+    let statements = table::drop(&schema, &table.name, table.kind, params.cascade);
     apply(
         &state,
         statements,
