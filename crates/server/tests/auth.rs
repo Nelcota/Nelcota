@@ -230,8 +230,12 @@ async fn refresh_retry_within_the_grace_window_keeps_the_session() {
     let r2 = str_field(&lost.body, "refresh_token").to_owned();
     let retried = refresh(&app, &r1).await;
     assert_eq!(retried.status, StatusCode::OK, "{}", retried.body);
-    let r3 = str_field(&retried.body, "refresh_token").to_owned();
-    assert_ne!(r3, r2);
+    // The retry is idempotent: it answers with the same R2, not a new pair.
+    assert_eq!(str_field(&retried.body, "refresh_token"), r2);
+    assert!(retried.body["access_token"].is_string());
+    let again = refresh(&app, &r1).await;
+    assert_eq!(again.status, StatusCode::OK, "{}", again.body);
+    assert_eq!(str_field(&again.body, "refresh_token"), r2);
     assert_eq!(
         retried.body["user"]["email"], "retry@example.com",
         "{}",
@@ -249,6 +253,85 @@ async fn refresh_retry_within_the_grace_window_keeps_the_session() {
         claims(&lost.body)["session_id"],
         "the retry stays in the same session"
     );
+
+    let live: i64 = app
+        .admin_client
+        .query_one(
+            "SELECT count(*) FROM auth.refresh_tokens WHERE NOT revoked",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(live, 1, "retries mint no tokens");
+
+    // R2 rotates on, and that rotation clears R1's sealed successor.
+    let next = refresh(&app, &r2).await;
+    assert_eq!(next.status, StatusCode::OK, "{}", next.body);
+    let r3 = str_field(&next.body, "refresh_token").to_owned();
+    let sealed: i64 = app
+        .admin_client
+        .query_one(
+            "SELECT count(*) FROM auth.refresh_tokens WHERE retry_successor IS NOT NULL",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(sealed, 1, "only the latest rotation keeps its successor");
+    // Once R2 has rotated, presenting R1 again is reuse, not a retry.
+    let reuse = refresh(&app, &r1).await;
+    assert_eq!(reuse.status, StatusCode::BAD_REQUEST);
+    assert_eq!(refresh(&app, &r3).await.status, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn racing_holders_of_one_refresh_token_both_keep_the_session() {
+    let app = TestApp::spawn().await;
+    let session = signup(&app, "race@example.com", "strong-pass-123")
+        .await
+        .body;
+    let r1 = str_field(&session, "refresh_token").to_owned();
+
+    // Two holders (tabs that do not coordinate) rotate R1 at once.
+    let (left, right) = tokio::join!(refresh(&app, &r1), refresh(&app, &r1));
+    assert_eq!(left.status, StatusCode::OK, "{}", left.body);
+    assert_eq!(right.status, StatusCode::OK, "{}", right.body);
+    let r2 = str_field(&left.body, "refresh_token").to_owned();
+    assert_eq!(str_field(&right.body, "refresh_token"), r2);
+
+    // Each later uses the token it got: one rotates, the other retries R2
+    // within the window and receives the same successor.
+    let (left, right) = tokio::join!(refresh(&app, &r2), refresh(&app, &r2));
+    assert_eq!(left.status, StatusCode::OK, "{}", left.body);
+    assert_eq!(right.status, StatusCode::OK, "{}", right.body);
+    let r3 = str_field(&left.body, "refresh_token").to_owned();
+    assert_eq!(str_field(&right.body, "refresh_token"), r3);
+    let next = refresh(&app, &r3).await;
+    assert_eq!(next.status, StatusCode::OK, "{}", next.body);
+    assert!(next.body["access_token"].is_string());
+}
+
+#[tokio::test]
+async fn refresh_retry_without_a_sealed_successor_issues_a_new_pair() {
+    let app = TestApp::spawn().await;
+    let session = signup(&app, "legacy@example.com", "strong-pass-123")
+        .await
+        .body;
+    let r1 = str_field(&session, "refresh_token").to_owned();
+    let lost = refresh(&app, &r1).await;
+    assert_eq!(lost.status, StatusCode::OK);
+    let r2 = str_field(&lost.body, "refresh_token").to_owned();
+
+    // A rotation from before the upgrade stored no successor.
+    app.admin_client
+        .batch_execute("UPDATE auth.refresh_tokens SET retry_successor = NULL")
+        .await
+        .unwrap();
+    let retried = refresh(&app, &r1).await;
+    assert_eq!(retried.status, StatusCode::OK, "{}", retried.body);
+    let r3 = str_field(&retried.body, "refresh_token").to_owned();
+    assert_ne!(r3, r2);
 
     // Only the newest token works: R3 rotates on; the lost R2 is gone.
     let next = refresh(&app, &r3).await;
@@ -374,6 +457,28 @@ async fn pruning_removes_expired_tokens_and_dead_sessions() {
         nelcota_auth::prune(&app.pool).await.unwrap(),
         nelcota_auth::Pruned::default()
     );
+    // A sealed retry successor survives pruning only shortly past its window.
+    let sealed = || async {
+        app.admin_client
+            .query_one(
+                "SELECT count(*) FROM auth.refresh_tokens
+                 WHERE session_id = $1 AND retry_successor IS NOT NULL",
+                &[&live_id],
+            )
+            .await
+            .unwrap()
+            .get::<_, i64>(0)
+    };
+    assert_eq!(sealed().await, 1);
+    app.admin_client
+        .execute(
+            "UPDATE auth.sessions SET refreshed_at = now() - interval '2 minutes' WHERE id = $1",
+            &[&live_id],
+        )
+        .await
+        .unwrap();
+    nelcota_auth::prune(&app.pool).await.unwrap();
+    assert_eq!(sealed().await, 0);
 }
 
 async fn update_user(app: &TestApp, access_token: &str, body: Value) -> Reply {

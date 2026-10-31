@@ -531,6 +531,26 @@ class UpgradeScenario:
             after["tables"]["storage.objects"] = self.query(
                 "SELECT coalesce(jsonb_agg((to_jsonb(t)-'directory_key'-'directory_scope')::text ORDER BY (to_jsonb(t)-'directory_key'-'directory_scope')::text),'[]'::jsonb) FROM storage.objects t;"
             )
+        if 21 in self.expected_migrations:
+            tokens_oid = table_oids["auth.refresh_tokens"]
+            originals = [c for c in baseline.schema["columns"] if c["attrelid"] == tokens_oid]
+            expected_successor = {
+                "attrelid": tokens_oid, "attnum": max(c["attnum"] for c in originals) + 1,
+                "attname": "retry_successor", "type": "bytea", "attnotnull": False,
+                "attidentity": "", "attgenerated": "", "default_value": None,
+            }
+            added = [c for c in after["columns"] if c not in baseline.schema["columns"] and c["attrelid"] == tokens_oid]
+            assert added == [expected_successor], "Unexpected refresh token retry column"
+            after["columns"].remove(expected_successor)
+            expected_indexes.append({
+                "indrelid": tokens_oid,
+                "definition": "CREATE INDEX refresh_tokens_retry_successor_idx ON auth.refresh_tokens USING btree (session_id) WHERE (retry_successor IS NOT NULL)",
+            })
+            for row in after["tables"]["auth.refresh_tokens"]:
+                assert json.loads(row)["retry_successor"] is None, "Existing refresh tokens acquired a retry successor"
+            after["tables"]["auth.refresh_tokens"] = self.query(
+                "SELECT coalesce(jsonb_agg((to_jsonb(t)-'retry_successor')::text ORDER BY (to_jsonb(t)-'retry_successor')::text),'[]'::jsonb) FROM auth.refresh_tokens t;"
+            )
         if 18 in self.expected_migrations:
             avatar_oid = table_oids["nelcota.admin_avatar"]
             fields = {
