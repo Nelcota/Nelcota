@@ -1,0 +1,1 @@
+import{Ft as e}from"./read-body-CVzoW9ju.js";var t=e({current:`api-address`});export{t};

@@ -28,8 +28,8 @@ use axum::{
     routing::{get, post},
 };
 use deadpool_postgres::Pool;
-use nelcota_auth::{Keys, SharedVerifier};
-use nelcota_core::Config;
+use nelcota_auth::{CallerLimit, Keys, SharedVerifier};
+use nelcota_core::{Config, config::STORAGE_CONCURRENT_UPLOADS};
 use tokio::sync::Semaphore;
 
 pub use buckets::{Bucket, BucketError, BucketSettings, mime_entry_ok};
@@ -39,10 +39,6 @@ pub use operations::{ListedObject, ObjectListing};
 pub use store::{Store, StoreError};
 pub use upload::{UploadOptions, UploadOutcome, UploadStream, UploadedObject};
 
-/// Uploads streaming at once; more wait for a slot. Bounds the memory held
-/// in upload parts.
-const CONCURRENT_UPLOADS: usize = 32;
-
 #[derive(Clone)]
 pub struct StorageState {
     pub pool: Pool,
@@ -50,6 +46,8 @@ pub struct StorageState {
     pub store: Arc<Store>,
     pub settings: Arc<StorageSettings>,
     uploads: Arc<Semaphore>,
+    /// Upload slots per caller, so one caller cannot take all of `uploads`.
+    callers: Arc<CallerLimit>,
     quota: Arc<quota::Quota>,
 }
 
@@ -69,8 +67,9 @@ impl StorageState {
             pool,
             keys,
             store,
+            callers: Arc::new(CallerLimit::new(settings.uploads_per_caller)),
             settings: Arc::new(settings),
-            uploads: Arc::new(Semaphore::new(CONCURRENT_UPLOADS)),
+            uploads: Arc::new(Semaphore::new(STORAGE_CONCURRENT_UPLOADS)),
             quota: Arc::default(),
         }
     }
@@ -105,6 +104,13 @@ pub struct StorageSettings {
     pub min_free_bytes: u64,
     pub public_url: Option<String>,
     pub upload_timeout: Duration,
+    /// Uploads one caller may stream at once
+    /// (`NELCOTA_STORAGE_UPLOADS_PER_CALLER`); 0 disables the limit.
+    pub uploads_per_caller: usize,
+    /// Trusted proxies whose `X-Forwarded-For` entries name the caller's
+    /// address (`NELCOTA_TRUST_PROXY`, `NELCOTA_TRUSTED_PROXY_HOPS`); 0 reads
+    /// the TCP peer.
+    pub proxy_hops: u8,
 }
 
 impl StorageSettings {
@@ -119,6 +125,8 @@ impl StorageSettings {
                 .map(|u| u.trim().trim_end_matches('/').to_owned())
                 .filter(|u| !u.is_empty()),
             upload_timeout: Duration::from_secs(config.storage_upload_timeout_secs),
+            uploads_per_caller: config.storage_uploads_per_caller,
+            proxy_hops: config.proxy_hops(),
         }
     }
 }

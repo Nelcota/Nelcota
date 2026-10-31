@@ -226,16 +226,64 @@ pub(super) fn order_clause(alias: &str, order: &[OrderTerm]) -> String {
 
 /// `SELECT` returning `(json_text, rows)`; Postgres builds the JSON.
 pub fn select(schema: &str, table: &Table, request: &Request, max_rows: Option<i64>) -> Sql {
+    select_flagged(schema, table, request, max_rows, &[])
+}
+
+/// [`select`] with [`ReadOptions`]. With no option set, the statement is
+/// exactly [`select`]'s.
+pub fn select_with(
+    schema: &str,
+    table: &Table,
+    request: &Request,
+    max_rows: Option<i64>,
+    options: &ReadOptions,
+) -> Result<Sql, QueryError> {
+    let flags = null_flags(table, request, options)?;
+    Ok(select_flagged(schema, table, request, max_rows, &flags))
+}
+
+/// `_r.column IS NULL` for each of `options.null_flags`, which must name
+/// selected columns of `table`.
+fn null_flags(
+    table: &Table,
+    request: &Request,
+    options: &ReadOptions,
+) -> Result<Vec<String>, QueryError> {
+    options
+        .null_flags
+        .iter()
+        .map(|name| {
+            let name = &column(table, name)?.name;
+            if !request.select.star && !request.select.columns.contains(name) {
+                return Err(invalid(format!("null flag for unselected column '{name}'")));
+            }
+            Ok(format!("_r.{} IS NULL", ident(name)))
+        })
+        .collect()
+}
+
+/// Each row is `to_json(_r)`, or `[to_json(_r), [flags...]]` with `flags`.
+fn select_flagged(
+    schema: &str,
+    table: &Table,
+    request: &Request,
+    max_rows: Option<i64>,
+    flags: &[String],
+) -> Sql {
     let max_rows = Some(max_rows.unwrap_or(DEFAULT_MAX_ROWS));
     let mut sql = Sql {
         embed_limit: max_rows,
         ..Sql::default()
     };
     let rows = rows_subquery(&mut sql, schema, table, request, max_rows);
-    sql.text = format!(
-        "SELECT coalesce(json_agg({}), '[]')::text, count(*) FROM ({rows}) _r",
-        sql.json("_r")
-    );
+    let row = match flags.is_empty() {
+        true => sql.json("_r"),
+        false => sql.checked(&format!(
+            "json_build_array(to_json(_r), json_build_array({}))",
+            flags.join(", ")
+        )),
+    };
+    sql.text = format!("SELECT coalesce(json_agg({row}), '[]')::text, count(*) FROM ({rows}) _r");
     sql
 }
 
@@ -259,13 +307,38 @@ pub fn select_counted(
 /// One record per result row, as JSON text: for streaming reads (export)
 /// without building the whole response in memory.
 pub fn select_rows(schema: &str, table: &Table, request: &Request) -> Sql {
+    select_rows_flagged(schema, table, request, &[])
+}
+
+/// [`select_rows`] with [`ReadOptions`]: with null flags, each record is
+/// `[row, [column IS NULL, ...]]`. With no option set, the statement is
+/// exactly [`select_rows`]'s.
+pub fn select_rows_with(
+    schema: &str,
+    table: &Table,
+    request: &Request,
+    options: &ReadOptions,
+) -> Result<Sql, QueryError> {
+    let flags = null_flags(table, request, options)?;
+    Ok(select_rows_flagged(schema, table, request, &flags))
+}
+
+/// Each record is `row_to_json(_r)`, or `[row_to_json(_r), [flags...]]`.
+fn select_rows_flagged(schema: &str, table: &Table, request: &Request, flags: &[String]) -> Sql {
     let mut sql = Sql {
         checked_json: false,
         embed_limit: None,
         ..Sql::default()
     };
     let rows = rows_subquery(&mut sql, schema, table, request, None);
-    sql.text = format!("SELECT row_to_json(_r)::text FROM ({rows}) _r");
+    let record = match flags.is_empty() {
+        true => "row_to_json(_r)".to_owned(),
+        false => format!(
+            "json_build_array(row_to_json(_r), json_build_array({}))",
+            flags.join(", ")
+        ),
+    };
+    sql.text = format!("SELECT {record}::text FROM ({rows}) _r");
     sql
 }
 
@@ -341,6 +414,79 @@ pub(super) fn body_columns(
         .collect()
 }
 
+/// Server-built values split into a JSON body and SQL literals: each
+/// [`WriteValue::JsonNull`] column keeps a placeholder in the body (so it is
+/// listed) and is written from its literal instead.
+struct Values {
+    body: Map<String, Value>,
+    literals: Vec<(String, &'static str)>,
+}
+
+impl Values {
+    fn new(table: &Table, values: Vec<(String, WriteValue)>) -> Result<Self, QueryError> {
+        let mut body = Map::new();
+        let mut literals = Vec::new();
+        for (name, value) in values {
+            let column = column(table, &name)?;
+            if body.contains_key(&column.name) {
+                return Err(invalid(format!("column '{name}' is set twice")));
+            }
+            let value = match value {
+                WriteValue::Json(value) => value,
+                WriteValue::JsonNull => {
+                    literals.push((column.name.clone(), json_null(column)?));
+                    Value::Null
+                }
+            };
+            body.insert(column.name.clone(), value);
+        }
+        Ok(Values { body, literals })
+    }
+}
+
+/// The JSON `null` literal of a json or jsonb column.
+fn json_null(column: &Column) -> Result<&'static str, QueryError> {
+    match column.type_name.as_str() {
+        "json" => Ok("'null'::json"),
+        "jsonb" => Ok("'null'::jsonb"),
+        _ => Err(invalid(format!(
+            "column '{}' is not json or jsonb: it cannot hold a JSON null",
+            column.name
+        ))),
+    }
+}
+
+/// What a write assigns to `column`: its literal, or `fallback`.
+fn written(column: &str, fallback: String, literals: &[(String, &'static str)]) -> String {
+    match literals.iter().find(|(name, _)| name == column) {
+        Some((_, literal)) => (*literal).to_owned(),
+        None => fallback,
+    }
+}
+
+/// Single-row `INSERT` of server-built values (see [`WriteValue`]). Without
+/// a [`WriteValue::JsonNull`], the statement is exactly [`insert`]'s.
+pub fn insert_values(
+    schema: &str,
+    table: &Table,
+    values: Vec<(String, WriteValue)>,
+) -> Result<Sql, QueryError> {
+    let Values { body, literals } = Values::new(table, values)?;
+    insert_with(schema, table, Value::Object(body), None, None, &literals)
+}
+
+/// Single-row `UPDATE` of server-built values (see [`WriteValue`]). Without
+/// a [`WriteValue::JsonNull`], the statement is exactly [`update`]'s.
+pub fn update_values(
+    schema: &str,
+    table: &Table,
+    values: Vec<(String, WriteValue)>,
+    filters: &[Condition],
+) -> Result<Sql, QueryError> {
+    let Values { body, literals } = Values::new(table, values)?;
+    update_with(schema, table, Value::Object(body), filters, None, &literals)
+}
+
 /// `INSERT` from JSON: Postgres converts each field to the column type
 /// (`json_populate_recordset`).
 ///
@@ -353,6 +499,19 @@ pub fn insert(
     body: Value,
     representation: Option<&Select>,
     upsert: Option<&Upsert>,
+) -> Result<Sql, QueryError> {
+    insert_with(schema, table, body, representation, upsert, &[])
+}
+
+/// [`insert`], writing `literals` instead of the body's fields of those
+/// columns (in every row: callers pass them for a single row only).
+fn insert_with(
+    schema: &str,
+    table: &Table,
+    body: Value,
+    representation: Option<&Select>,
+    upsert: Option<&Upsert>,
+    literals: &[(String, &'static str)],
 ) -> Result<Sql, QueryError> {
     let rows = match body {
         Value::Array(rows) => rows,
@@ -438,10 +597,15 @@ pub fn insert(
             .map(|c| ident(c))
             .collect::<Vec<_>>()
             .join(", ");
+        let source = columns
+            .iter()
+            .map(|c| written(c, ident(c), literals))
+            .collect::<Vec<_>>()
+            .join(", ");
         let p = sql.param(Param::Json(Value::Array(rows)));
         let conflict = upsert.map(|u| u.clause(&columns)).unwrap_or_default();
         statements.push(format!(
-            "INSERT INTO {target} AS _t ({list}) SELECT {list} FROM json_populate_recordset(NULL::{target}, {p}::json){conflict}"
+            "INSERT INTO {target} AS _t ({list}) SELECT {source} FROM json_populate_recordset(NULL::{target}, {p}::json){conflict}"
         ));
     }
 
@@ -485,6 +649,18 @@ pub fn update(
     filters: &[Condition],
     representation: Option<&Select>,
 ) -> Result<Sql, QueryError> {
+    update_with(schema, table, body, filters, representation, &[])
+}
+
+/// [`update`], assigning `literals` instead of the body's fields of those columns.
+fn update_with(
+    schema: &str,
+    table: &Table,
+    body: Value,
+    filters: &[Condition],
+    representation: Option<&Select>,
+    literals: &[(String, &'static str)],
+) -> Result<Sql, QueryError> {
     let map = match body {
         Value::Object(map) => map,
         _ => {
@@ -500,7 +676,13 @@ pub fn update(
     let p = sql.param(Param::Json(Value::Object(map)));
     let assignments = columns
         .iter()
-        .map(|c| format!("{0} = _b.{0}", ident(c)))
+        .map(|c| {
+            format!(
+                "{} = {}",
+                ident(c),
+                written(c, format!("_b.{}", ident(c)), literals)
+            )
+        })
         .collect::<Vec<_>>()
         .join(", ");
     let filters = where_clause(&mut sql, filters);

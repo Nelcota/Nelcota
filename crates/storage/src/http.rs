@@ -11,7 +11,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use futures_util::StreamExt;
-use nelcota_auth::Auth;
+use nelcota_auth::{Auth, PeerAddr};
 use nelcota_core::{
     ApiError, Claims,
     extract::{Json, Query},
@@ -74,6 +74,7 @@ pub fn upload_options(headers: &HeaderMap, replace: bool) -> UploadOptions {
             .and_then(|v| v.to_str().ok())
             .map(str::to_owned),
         replace,
+        client: None,
     }
 }
 pub fn upload_stream(body: Body) -> UploadStream {
@@ -100,43 +101,53 @@ pub fn upload_response(state: &StorageState, outcome: UploadOutcome) -> Response
     }
     (status, Json(body)).into_response()
 }
+/// The public routes' upload options: transport metadata plus the client
+/// address that keys the per-caller upload limit.
+fn route_options(
+    state: &StorageState,
+    headers: &HeaderMap,
+    peer: PeerAddr,
+    replace: bool,
+) -> UploadOptions {
+    UploadOptions {
+        client: nelcota_auth::client_ip(state.settings.proxy_hops, headers, peer.0),
+        ..upload_options(headers, replace)
+    }
+}
 async fn upload(
     state: StorageState,
     claims: Claims,
     bucket: &str,
     name: &str,
-    headers: &HeaderMap,
+    options: UploadOptions,
     body: Body,
-    replace: bool,
 ) -> Result<Response, ApiError> {
     let outcome = state
-        .upload(
-            claims,
-            bucket,
-            name,
-            upload_options(headers, replace),
-            upload_stream(body),
-        )
+        .upload(claims, bucket, name, options, upload_stream(body))
         .await?;
     Ok(upload_response(&state, outcome))
 }
 pub(crate) async fn create(
     State(state): State<StorageState>,
     Auth(claims): Auth,
+    peer: PeerAddr,
     Path((bucket, name)): Path<(String, String)>,
     headers: HeaderMap,
     body: Body,
 ) -> Result<Response, ApiError> {
-    upload(state, claims, &bucket, &name, &headers, body, false).await
+    let options = route_options(&state, &headers, peer, false);
+    upload(state, claims, &bucket, &name, options, body).await
 }
 pub(crate) async fn upsert(
     State(state): State<StorageState>,
     Auth(claims): Auth,
+    peer: PeerAddr,
     Path((bucket, name)): Path<(String, String)>,
     headers: HeaderMap,
     body: Body,
 ) -> Result<Response, ApiError> {
-    upload(state, claims, &bucket, &name, &headers, body, true).await
+    let options = route_options(&state, &headers, peer, true);
+    upload(state, claims, &bucket, &name, options, body).await
 }
 /// Adapts an authorized file read to conditional/ranged HTTP serving.
 pub async fn download(

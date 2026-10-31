@@ -44,6 +44,7 @@ async fn typed_operations_preserve_rls_and_reject_before_polling_bytes() {
                 content_length: Some(5),
                 content_type: Some("text/plain".into()),
                 replace: false,
+                client: None,
             },
             Box::pin(stream::iter([Ok(Bytes::from_static(b"hello"))])),
         )

@@ -1,1 +1,0 @@
-import{gn as e,hn as t,y as n}from"./circle-alert-ScwL7omF.js";var r={name:`rows-3`,size:24,node:[[`rect`,{width:`18`,height:`18`,x:`3`,y:`3`,rx:`2`}],[`path`,{d:`M21 9H3`}],[`path`,{d:`M21 15H3`}]],aliases:[`panels-top-bottom`]};r.node;var i=new Set([`$$slots`,`$$events`,`$$legacy`]);function a(a,o){let s=t(o,i);n(a,e(()=>s,{get icon(){return r}}))}export{a as t};

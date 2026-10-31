@@ -222,6 +222,59 @@ async fn json_null_and_sql_null_stay_apart_in_the_table_editor() {
     );
 }
 
+#[tokio::test]
+async fn exports_tell_json_null_apart_from_sql_null_in_csv() {
+    let app = TestApp::spawn().await;
+    app.admin_client
+        .batch_execute(
+            "CREATE TABLE public.docs (id int PRIMARY KEY, body jsonb, raw json, note text);
+             INSERT INTO public.docs VALUES
+                 (1, 'null', NULL, 'null'), (2, NULL, 'null', NULL),
+                 (3, '{\"a\": null}', '\"42\"', '');",
+        )
+        .await
+        .unwrap();
+    app.catalog.reload(&app.pool).await.unwrap();
+    let cookie = login(&app).await;
+
+    // CSV: the grid's text, so a JSON null is `null` and SQL NULL is empty.
+    let csv = get(
+        &app,
+        "/admin/api/tables/docs/export?format=csv&sort=id",
+        &cookie,
+    )
+    .await;
+    assert_eq!(csv.status, StatusCode::OK, "{}", csv.text);
+    let lines: Vec<&str> = csv.text.split("\r\n").collect();
+    assert_eq!(
+        lines[..4],
+        [
+            "\u{feff}id,body,raw,note",
+            "1,null,,null",
+            "2,,null,",
+            "3,\"{\"\"a\"\": null}\",\"\"\"42\"\"\",",
+        ]
+    );
+
+    // JSON: the REST API's records, documents nested; both nulls read `null`.
+    let exported = get(
+        &app,
+        "/admin/api/tables/docs/export?format=json&sort=id",
+        &cookie,
+    )
+    .await;
+    assert_eq!(exported.status, StatusCode::OK, "{}", exported.text);
+    let rows: Value = serde_json::from_str(&exported.text).unwrap();
+    assert_eq!(
+        rows,
+        json!([
+            { "id": 1, "body": null, "raw": null, "note": "null" },
+            { "id": 2, "body": null, "raw": null, "note": null },
+            { "id": 3, "body": { "a": null }, "raw": "42", "note": "" },
+        ])
+    );
+}
+
 /// Percent-encoding to put JSON in the query string.
 fn enc(value: &str) -> String {
     value

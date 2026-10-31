@@ -90,12 +90,15 @@ impl Default for Sql {
 
 impl Sql {
     fn json(&self, expression: &str) -> String {
+        self.checked(&format!("to_json({expression})"))
+    }
+    /// `json` (already a JSON expression), size-checked when the statement
+    /// checks its output.
+    fn checked(&self, json: &str) -> String {
         if self.checked_json {
-            return format!(
-                "extensions.nelcota_check_json(to_json({expression}), {MAX_JSON_BYTES})"
-            );
+            return format!("extensions.nelcota_check_json({json}, {MAX_JSON_BYTES})");
         }
-        format!("to_json({expression})")
+        json.to_owned()
     }
     fn param(&mut self, param: Param) -> String {
         self.params.push(param);
@@ -316,6 +319,28 @@ impl Upsert {
     }
 }
 
+/// Options of [`select_with`] that the REST API never sets: they serve
+/// server-side callers (the admin table editor) and change the row shape.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ReadOptions {
+    /// Columns reported as `IS NULL` flags: each row becomes
+    /// `[row, [column IS NULL, ...]]`, in this order. `to_json` renders SQL
+    /// NULL and a json/jsonb `null` alike; the flag tells them apart.
+    pub null_flags: Vec<String>,
+}
+
+/// A column value of a write built by the server rather than parsed from a
+/// REST body.
+#[derive(Clone, Debug, PartialEq)]
+pub enum WriteValue {
+    /// Converted by Postgres from JSON, like a REST body field: a JSON
+    /// `null` becomes SQL NULL.
+    Json(Value),
+    /// The JSON value `null` stored in a json/jsonb column, which is not SQL
+    /// NULL and which a REST body cannot express.
+    JsonNull,
+}
+
 mod parse;
 mod sql;
 #[cfg(test)]
@@ -324,7 +349,8 @@ pub use parse::{parse_request, parse_request_with_relations};
 #[cfg(test)]
 use sql::*;
 pub use sql::{
-    count, delete, insert, resolve_function, rpc, select, select_counted, select_rows, update,
+    count, delete, insert, insert_values, resolve_function, rpc, select, select_counted,
+    select_rows, select_rows_with, select_with, update, update_values,
 };
 
 /// A structured transport's literal catalog column, not a URL modifier.
@@ -345,6 +371,7 @@ pub fn column_order(table: &Table, name: &str, desc: bool) -> Result<OrderTerm, 
 mod tests {
     use super::*;
     use crate::catalog::{Privileges, TableKind};
+    use serde_json::json;
 
     fn col(name: &str, type_name: &str) -> Column {
         Column {
@@ -1080,5 +1107,142 @@ mod tests {
         let catalog = shop();
         let t = catalog.table("orders").unwrap();
         assert!(parse_request(&pairs(&[("select", "customers(name)")]), t).is_err());
+    }
+
+    fn docs() -> Table {
+        Table {
+            name: "docs".into(),
+            columns: vec![
+                col("id", "integer"),
+                col("body", "jsonb"),
+                col("raw", "json"),
+                col("note", "text"),
+            ],
+            ..table()
+        }
+    }
+
+    #[test]
+    fn default_read_options_keep_the_rest_statement() {
+        let t = docs();
+        let req = parse_request(&pairs(&[("id", "gt.1")]), &t).unwrap();
+        let plain = select("public", &t, &req, None);
+        let with = select_with("public", &t, &req, None, &ReadOptions::default()).unwrap();
+        assert_eq!(with.text, plain.text);
+        assert_eq!(with.params.len(), plain.params.len());
+    }
+
+    #[test]
+    fn null_flags_pair_each_row_with_its_sql_nulls() {
+        let t = docs();
+        let req = parse_request(&[], &t).unwrap();
+        let options = ReadOptions {
+            null_flags: vec!["body".into(), "raw".into()],
+        };
+        let sql = select_with("public", &t, &req, None, &options).unwrap();
+        assert!(
+            sql.text.starts_with(
+                "SELECT coalesce(json_agg(extensions.nelcota_check_json(json_build_array(to_json(_r), \
+                 json_build_array(_r.\"body\" IS NULL, _r.\"raw\" IS NULL)), 8388608)), '[]')::text, count(*) FROM ("
+            ),
+            "{}",
+            sql.text
+        );
+
+        let unknown = ReadOptions {
+            null_flags: vec!["nope".into()],
+        };
+        assert!(select_with("public", &t, &req, None, &unknown).is_err());
+        let narrow = parse_request(&pairs(&[("select", "id")]), &t).unwrap();
+        assert!(select_with("public", &t, &narrow, None, &options).is_err());
+    }
+
+    #[test]
+    fn streamed_records_carry_null_flags_only_when_asked() {
+        let t = docs();
+        let req = parse_request(&pairs(&[("order", "id")]), &t).unwrap();
+        let plain = select_rows("public", &t, &req);
+        let same = select_rows_with("public", &t, &req, &ReadOptions::default()).unwrap();
+        assert_eq!(same.text, plain.text);
+        let options = ReadOptions {
+            null_flags: vec!["raw".into()],
+        };
+        let flagged = select_rows_with("public", &t, &req, &options).unwrap();
+        assert!(
+            flagged.text.starts_with(
+                "SELECT json_build_array(row_to_json(_r), json_build_array(_r.\"raw\" IS NULL))::text FROM ("
+            ),
+            "{}",
+            flagged.text
+        );
+    }
+
+    #[test]
+    fn json_values_without_json_null_keep_the_rest_statements() {
+        let t = docs();
+        let body = json!({ "id": "1", "body": { "a": 1 }, "raw": null });
+        let values = || {
+            body.as_object()
+                .unwrap()
+                .iter()
+                .map(|(k, v)| (k.clone(), WriteValue::Json(v.clone())))
+                .collect::<Vec<_>>()
+        };
+        let filters = vec![column_filter(&t, "id", "eq.1").unwrap()];
+        assert_eq!(
+            insert_values("public", &t, values()).unwrap().text,
+            insert("public", &t, body.clone(), None, None).unwrap().text
+        );
+        assert_eq!(
+            update_values("public", &t, values(), &filters)
+                .unwrap()
+                .text,
+            update("public", &t, body.clone(), &filters, None)
+                .unwrap()
+                .text
+        );
+    }
+
+    #[test]
+    fn json_null_writes_a_typed_literal_only_to_its_column() {
+        let t = docs();
+        let filters = vec![column_filter(&t, "id", "eq.1").unwrap()];
+        let values = |null: &str| {
+            vec![
+                ("id".to_owned(), WriteValue::Json(json!("1"))),
+                ("body".to_owned(), WriteValue::Json(Value::Null)),
+                ("raw".to_owned(), WriteValue::Json(Value::Null)),
+            ]
+            .into_iter()
+            .map(|(k, v)| match k == null {
+                true => (k, WriteValue::JsonNull),
+                false => (k, v),
+            })
+            .collect::<Vec<_>>()
+        };
+        let update = update_values("public", &t, values("body"), &filters).unwrap();
+        assert!(
+            update.text.contains(
+                "SET \"body\" = 'null'::jsonb, \"id\" = _b.\"id\", \"raw\" = _b.\"raw\" FROM"
+            ),
+            "{}",
+            update.text
+        );
+        let insert = insert_values("public", &t, values("raw")).unwrap();
+        assert!(
+            insert.text.contains(
+                "(\"id\", \"body\", \"raw\") SELECT \"id\", \"body\", 'null'::json FROM json_populate_recordset("
+            ),
+            "{}",
+            insert.text
+        );
+
+        let text = vec![("note".to_owned(), WriteValue::JsonNull)];
+        assert!(insert_values("public", &t, text).is_err());
+        let twice = vec![
+            ("body".to_owned(), WriteValue::JsonNull),
+            ("body".to_owned(), WriteValue::Json(Value::Null)),
+        ];
+        assert!(update_values("public", &t, twice, &filters).is_err());
     }
 }
