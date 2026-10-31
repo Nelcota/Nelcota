@@ -249,8 +249,9 @@ when upgrading so they use the same coordination protocol.
 A ready session whose `localStorage` mirror has been removed is signed out
 once its receipt is more than five seconds old (younger receipts may be
 between the journal commit and the mirror write); the journal is cleared in
-the same transaction. Other `localStorage` edits do not change the session.
-`sessionStorage` and custom adapters keep their own semantics.
+the same transaction. A receipt from an SDK without receipt times is timed
+from when this client first sees it. Other `localStorage` edits do not change
+the session. `sessionStorage` and custom adapters keep their own semantics.
 
 ### Refresh
 

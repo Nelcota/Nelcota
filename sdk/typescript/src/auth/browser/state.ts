@@ -76,7 +76,7 @@ function validReceiptFields(fields: Record<string, unknown>): boolean {
 
 export class BrowserSessionState {
   readonly #owner = randomId();
-  /** When this tab first saw a foreign reservation written without a time. */
+  /** When this tab first saw the current receipt, if it was written without a time. */
   #untimed: { identity: string; seenAt: number } | undefined;
   revision: string | undefined;
   pending = false;
@@ -205,7 +205,7 @@ export class BrowserSessionState {
       this.#observe(state);
       const owned = state.owner === this.#owner;
       const retainDirty = dirty !== undefined && (owned || state.revision === this.revision);
-      if (retainDirty === false && mirrorCleared(state, mirror)) {
+      if (retainDirty === false && this.#mirrorCleared(state, mirror)) {
         const cleared = this.#record("ready", null);
         store.put(cleared, this.key);
         return { value: null, retainDirty: false, revision: cleared.revision, pending: false };
@@ -297,16 +297,35 @@ export class BrowserSessionState {
       this.#abandoned(state, Date.now());
   }
 
-  /**
-   * A foreign reservation older than the lease is abandoned. One without a
-   * time (an older SDK) is measured from when this tab first saw it, keyed by
-   * its owner and value: a newer reservation restarts the clock.
-   */
+  /** A foreign reservation older than the lease is abandoned. */
   #abandoned(state: Receipt, now: number): boolean {
-    if (state.at !== undefined) return Math.abs(now - state.at) >= RESERVATION_LEASE_IN_MS;
-    const identity = `${state.owner}:${state.value ?? ""}`;
+    return this.#age(state, now) >= RESERVATION_LEASE_IN_MS;
+  }
+
+  /**
+   * A receipt's age. One without a time (an older SDK) is measured from when
+   * this tab first saw it, keyed by its kind, owner and value: a newer receipt
+   * restarts the clock.
+   */
+  #age(state: Receipt, now: number): number {
+    if (state.at !== undefined) return Math.abs(now - state.at);
+    const identity = `${state.kind}:${state.owner}:${state.value ?? ""}`;
     if (this.#untimed?.identity !== identity) this.#untimed = { identity, seenAt: now };
-    return now - this.#untimed.seenAt >= RESERVATION_LEASE_IN_MS;
+    return now - this.#untimed.seenAt;
+  }
+
+  /**
+   * A settled ready session whose mirror is missing was cleared on purpose.
+   * An untimed receipt may be an older SDK's write whose mirror is still on its
+   * way, so it settles only `MIRROR_SETTLE_IN_MS` after this tab first saw it.
+   */
+  #mirrorCleared(state: Receipt, mirror: () => string | null): boolean {
+    return (
+      state.kind === "ready" &&
+      state.value !== null &&
+      this.#age(state, Date.now()) >= MIRROR_SETTLE_IN_MS &&
+      mirror() === null
+    );
   }
 
   async write(value: string | null, completingRefresh = false): Promise<void> {
@@ -333,15 +352,6 @@ export class BrowserSessionState {
     this.revision = next.revision;
     return value;
   }
-}
-
-function mirrorCleared(state: Receipt, mirror: () => string | null): boolean {
-  return (
-    state.kind === "ready" &&
-    state.value !== null &&
-    (state.at === undefined || Math.abs(Date.now() - state.at) >= MIRROR_SETTLE_IN_MS) &&
-    mirror() === null
-  );
 }
 
 function beginTransaction(

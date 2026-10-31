@@ -99,6 +99,10 @@ Dates identify release entries; registry availability requires a successful publ
   again: each change is broadcast as the structured message followed by the
   legacy `"changed"` signal those tabs understand. Current tabs skip the
   duplicate instead of handling the change twice.
+- A tab no longer signs the user out when it reads a session that a tab
+  running an older SDK has committed to IndexedDB but not yet copied to
+  `localStorage`. Such untimed receipts settle five seconds after this tab
+  first sees them, like untimed refresh reservations.
 
 ## 0.2.5 — 2026-10-27
 

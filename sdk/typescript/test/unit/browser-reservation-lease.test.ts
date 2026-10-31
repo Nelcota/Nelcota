@@ -4,6 +4,7 @@ import { BrowserRefreshPendingError } from "../../src/auth/browser/session.error
 import {
   BrowserSessionState,
   MAX_RESERVATION_HOLD_IN_MS,
+  MIRROR_SETTLE_IN_MS,
   RESERVATION_LEASE_IN_MS,
 } from "../../src/auth/browser/state.js";
 import { createClient } from "../../src/index.js";
@@ -188,4 +189,25 @@ it("waits a full lease before taking over a reservation written without a time",
   await expect(state.reserve(original)).rejects.toBeInstanceOf(BrowserRefreshPendingError);
   clock.mockReturnValue(now + 2 * RESERVATION_LEASE_IN_MS);
   await expect(state.reserve(original)).resolves.toBeUndefined();
+});
+
+it("waits the settle window from first sight before an untimed ready receipt's missing mirror signs out", async () => {
+  const { factory } = browser();
+  const value = JSON.stringify(session(900));
+  await new BrowserSessionState(KEY, factory).read(() => null);
+  // An older SDK committed the journal; its localStorage write has not landed yet.
+  await putReceipt(factory, { kind: "ready", owner: "older-sdk-tab", value });
+  const now = Date.now();
+  const clock = vi.spyOn(Date, "now").mockReturnValue(now);
+  const state = new BrowserSessionState(KEY, factory);
+  expect((await state.read(() => null)).value).toBe(value);
+  clock.mockReturnValue(now + MIRROR_SETTLE_IN_MS - 1);
+  expect((await state.read(() => null)).value).toBe(value);
+  // A tab that first sees it later starts its own clock.
+  const later = new BrowserSessionState(KEY, factory);
+  expect((await later.read(() => null)).value).toBe(value);
+  // Once settled, a mirror that is still missing was cleared on purpose.
+  clock.mockReturnValue(now + MIRROR_SETTLE_IN_MS);
+  expect((await state.read(() => null)).value).toBeNull();
+  expect((await later.read(() => null)).value).toBeNull();
 });

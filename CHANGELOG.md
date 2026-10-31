@@ -271,6 +271,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - `@nelcota/client`: browser tabs running SDK 0.2.1 or older hear sign-outs and
   refreshes from newer tabs again; each change also sends the legacy
   `"changed"` broadcast, which current tabs skip as a duplicate.
+- `@nelcota/client`: a browser tab no longer signs the user out when it reads
+  a session an older SDK tab has committed to IndexedDB but not yet copied to
+  `localStorage`; untimed receipts settle five seconds after first sight.
 
 ### Security
 
