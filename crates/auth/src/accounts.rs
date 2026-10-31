@@ -15,7 +15,6 @@ use nelcota_core::ApiError;
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::net::IpAddr;
-use tokio_postgres::error::SqlState;
 use uuid::Uuid;
 
 /// Claim an unconfirmed account through independently verified inbox ownership.
@@ -90,6 +89,14 @@ pub(crate) struct Signup {
 /// `POST /auth/v1/signup` `{email, password, data?, code_challenge?,
 /// code_challenge_method?}` → 201 + session, or 201 + `{user}` when the email
 /// must be confirmed first.
+///
+/// With confirmation on, an email that already has an account gets the same
+/// answer as a new one, built from what the caller sent, so signup does not
+/// reveal which emails have accounts; the account does not change. Its inbox
+/// gets a new confirmation link while it is unconfirmed (never bound to this
+/// caller, so a second signup cannot set the password), otherwise a notice.
+/// Without confirmation the answer is a session, which cannot be faked, so an
+/// existing email still gets `409 user_already_exists`.
 pub(crate) async fn signup(
     state: &AuthState,
     body: Signup,
@@ -132,30 +139,32 @@ pub(crate) async fn signup(
 
     let mut client = state.pool.get().await.map_err(ApiError::from_pool)?;
     let tx = begin_auth(&mut client).await?;
+    // The password is hashed before the lookup, so an existing email costs
+    // the same argon2 time as a new one.
     let inserted = tx
-        .query_one(
+        .query_opt(
             "INSERT INTO auth.users (email, encrypted_password, raw_user_meta_data)
-             VALUES ($1, $2, $3) RETURNING id",
+             VALUES ($1, $2, $3) ON CONFLICT (email) DO NOTHING RETURNING id",
             &[&email, &hash, &metadata],
         )
-        .await;
-    let user_id: Uuid = match inserted {
-        Ok(row) => row.get(0),
-        Err(err) if err.code() == Some(&SqlState::UNIQUE_VIOLATION) => {
+        .await
+        .map_err(db_error)?;
+    let (user_id, mail_slot) = match (inserted, mail_slot) {
+        (Some(row), Some(mail_slot)) => (row.get::<_, Uuid>(0), mail_slot),
+        (Some(row), None) => {
+            let session = start_session(state, &tx, row.get(0), ip, user_agent).await?;
+            tx.commit().await.map_err(db_error)?;
+            return Ok(session);
+        }
+        (None, Some(mail_slot)) => {
+            return existing_signup(state, tx, &email, &metadata, mail_slot).await;
+        }
+        (None, None) => {
             return Err(ApiError::new(
                 StatusCode::CONFLICT,
                 "user_already_exists",
                 "a user with this email already exists",
             ));
-        }
-        Err(err) => return Err(db_error(err)),
-    };
-    let mail_slot = match mail_slot {
-        Some(mail_slot) => mail_slot,
-        _ => {
-            let session = start_session(state, &tx, user_id, ip, user_agent).await?;
-            tx.commit().await.map_err(db_error)?;
-            return Ok(session);
         }
     };
     let (pending, token) = confirmation::pending_signup(&tx, user_id, code_challenge).await?;
@@ -164,6 +173,55 @@ pub(crate) async fn signup(
         links::deliver(state, LinkKind::Signup, &email, &token, mail_slot);
     }
     Ok(pending)
+}
+
+/// A confirming signup for an email that already has an account: answers
+/// like a new pending signup and leaves the account as it is. The inbox gets
+/// a fresh, unbound confirmation link while the account is unconfirmed
+/// (subject to the link cooldown), or a notice once it is confirmed.
+async fn existing_signup(
+    state: &AuthState,
+    tx: Transaction<'_>,
+    email: &str,
+    metadata: &Value,
+    mail_slot: crate::mail::MailSlot,
+) -> Result<Value, ApiError> {
+    let account = tx
+        .query_opt(
+            "SELECT id, email_confirmed_at IS NOT NULL FROM auth.users
+             WHERE email = $1 FOR UPDATE",
+            &[&email],
+        )
+        .await
+        .map_err(db_error)?
+        .map(|row| (row.get::<_, Uuid>(0), row.get::<_, bool>(1)));
+    let token = match account {
+        Some((user_id, false)) => links::issue(&tx, user_id, LinkKind::Signup, None).await?,
+        _ => None,
+    };
+    // Same shape as `USER_JSON` for a row inserted just now; nothing in it
+    // comes from the existing account.
+    let user: Value = tx
+        .query_one(
+            "SELECT json_build_object(
+                 'id', gen_random_uuid(),
+                 'email', $1::text,
+                 'email_confirmed_at', NULL::timestamptz,
+                 'user_metadata', $2::jsonb,
+                 'created_at', now(),
+                 'last_sign_in_at', NULL::timestamptz)",
+            &[&email, &metadata],
+        )
+        .await
+        .map_err(db_error)?
+        .get(0);
+    tx.commit().await.map_err(db_error)?;
+    match (account, token) {
+        (_, Some(token)) => links::deliver(state, LinkKind::Signup, email, &token, mail_slot),
+        (Some((_, true)), None) => links::notify_existing_signup(state, email, mail_slot),
+        _ => {}
+    }
+    Ok(json!({ "user": user }))
 }
 
 pub(crate) async fn password_grant(

@@ -1161,6 +1161,99 @@ async fn confirmation_can_be_resent_only_to_unconfirmed_accounts() {
     assert_eq!(reply.body["code"], "unsupported_type");
 }
 
+/// The keys of a signup answer and of its `user`, to compare their shape.
+fn shape(body: &Value) -> (Vec<String>, Vec<String>) {
+    let keys = |value: &Value| {
+        let mut keys: Vec<String> = value.as_object().unwrap().keys().cloned().collect();
+        keys.sort();
+        keys
+    };
+    (keys(body), keys(&body["user"]))
+}
+
+#[tokio::test]
+async fn confirming_signup_answers_an_existing_email_like_a_new_one() {
+    let app = spawn_confirming().await;
+    let new = signup_bound(&app, "first@example.com", "first-pass-123").await;
+    assert_eq!(new.status, StatusCode::CREATED, "{}", new.body);
+    app.outbox.wait_for(1).await;
+    let hash = stored_password(&app, "first@example.com").await;
+
+    // Unconfirmed: same answer, the stored password stays, and inside the
+    // link cooldown nothing more is sent.
+    let again = app
+        .post(
+            "/auth/v1/signup",
+            None,
+            json!({
+                "email": "First@Example.com",
+                "password": "second-pass-456",
+                "data": {"name": "Other"},
+                "code_challenge": challenge(SIGNUP_VERIFIER),
+            }),
+        )
+        .await;
+    assert_eq!(again.status, StatusCode::CREATED, "{}", again.body);
+    assert_eq!(shape(&again.body), shape(&new.body));
+    assert_eq!(again.body["user"]["email"], "first@example.com");
+    assert_eq!(
+        again.body["user"]["user_metadata"],
+        json!({"name": "Other"})
+    );
+    assert!(again.body["user"]["email_confirmed_at"].is_null());
+    assert_ne!(again.body["user"]["id"], new.body["user"]["id"]);
+    assert_eq!(stored_password(&app, "first@example.com").await, hash);
+    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    assert_eq!(app.outbox.sent().len(), 1);
+
+    // After the cooldown the inbox gets a fresh link, not bound to whoever
+    // signed up again: it cannot set or keep a password.
+    age_links(&app).await;
+    signup_bound(&app, "first@example.com", "second-pass-456").await;
+    let sent = app.outbox.wait_for(2).await;
+    assert_eq!(sent[1].to, "first@example.com");
+    assert_eq!(sent[1].subject, "Confirm your email");
+    let token = link_token(&sent[1], CONFIRMATION_URL, "signup");
+    let reply = verify_signup_with(&app, &token, SIGNUP_VERIFIER).await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
+    assert_eq!(reply.body["user"]["id"], new.body["user"]["id"]);
+    assert!(stored_password(&app, "first@example.com").await.is_none());
+    for password in ["first-pass-123", "second-pass-456"] {
+        assert_eq!(
+            login(&app, "first@example.com", password).await.body["code"],
+            "invalid_grant"
+        );
+    }
+
+    // Confirmed: same answer again, and the owner gets one notice a minute.
+    signup_bound(&app, "owner@example.com", "owner-pass-123").await;
+    let token = link_token(&app.outbox.wait_for(3).await[2], CONFIRMATION_URL, "signup");
+    verify_signup_with(&app, &token, SIGNUP_VERIFIER).await;
+    for _ in 0..2 {
+        let reply = signup(&app, "owner@example.com", "intruder-pass-1").await;
+        assert_eq!(reply.status, StatusCode::CREATED, "{}", reply.body);
+        assert_eq!(shape(&reply.body), shape(&new.body));
+        assert!(reply.body.get("access_token").is_none());
+    }
+    let sent = app.outbox.wait_for(4).await;
+    assert_eq!(sent[3].to, "owner@example.com");
+    assert_eq!(sent[3].subject, "Your account already exists");
+    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    assert_eq!(app.outbox.sent().len(), 4, "one notice per minute");
+    assert_eq!(
+        login(&app, "owner@example.com", "owner-pass-123")
+            .await
+            .status,
+        StatusCode::OK
+    );
+    assert_eq!(
+        login(&app, "owner@example.com", "intruder-pass-1")
+            .await
+            .body["code"],
+        "invalid_grant"
+    );
+}
+
 #[tokio::test]
 async fn without_a_confirmation_page_signup_signs_in_and_resend_is_off() {
     let app = TestApp::spawn().await;

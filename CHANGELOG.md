@@ -263,6 +263,13 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Security
 
+- With email confirmation on, signup no longer tells whether an email has an
+  account: an existing email gets the same `201 {user}` as a new signup (with a
+  random `id`) and the account stays as it is. Its inbox gets a new
+  confirmation link while unconfirmed, never bound to the second caller, or at
+  most one "Your account already exists" notice a minute once confirmed. With
+  confirmation off, signup still answers `409 user_already_exists`, now
+  documented as revealing existing accounts (D117).
 - Opening a signup confirmation link no longer approves the password chosen
   at signup unless the client that signed up proves itself: signup accepts an
   S256 `code_challenge` and `POST /auth/v1/verify {type: "signup"}` its

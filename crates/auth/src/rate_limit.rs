@@ -107,6 +107,8 @@ enum Admission {
 pub struct RateLimiter<C: Clock + Clone = DefaultClock> {
     network: Store<C>,
     accounts: Store<C>,
+    /// One signup notice per existing account and minute.
+    notices: Store<C>,
     /// Per-process hashing of unknown emails onto decoy budgets.
     decoys: RandomState,
     clock: C,
@@ -132,6 +134,12 @@ impl<C: Clock + Clone> RateLimiter<C> {
         RateLimiter {
             network: Store::new("network", network, capacity, start),
             accounts: Store::new("account", accounts, capacity, start),
+            notices: Store::new(
+                "notice",
+                Quota::with_period(FULL_REFILL).expect("non-zero period"),
+                capacity,
+                start,
+            ),
             decoys: RandomState::new(),
             clock,
             start,
@@ -264,6 +272,13 @@ impl<C: Clock + Clone> RateLimiter<C> {
             Admission::Accepted | Admission::Full => None,
             Admission::Limited(wait) => Some(wait),
         }
+    }
+
+    /// Whether the owner of `email`, an existing account, may get a signup
+    /// notice now: one per minute, like the email links. While the store is
+    /// full, no notice goes out.
+    pub(crate) fn signup_notice(&self, email: &str) -> bool {
+        matches!(self.admit(&self.notices, email), Admission::Accepted)
     }
 
     /// The account's second budget, the same size, for attempts from known
@@ -598,6 +613,16 @@ mod tests {
         clock.advance(Duration::from_secs(60));
         assert_eq!(limiter.login_budget("new"), None);
         assert_eq!(len(&limiter.accounts), 1, "idle keys were cleaned up");
+    }
+
+    #[test]
+    fn signup_notices_go_out_once_a_minute_per_account() {
+        let (limiter, clock) = limiter(30);
+        assert!(limiter.signup_notice("ana@x"));
+        assert!(!limiter.signup_notice("ana@x"));
+        assert!(limiter.signup_notice("bia@x"), "accounts are independent");
+        clock.advance(Duration::from_secs(60));
+        assert!(limiter.signup_notice("ana@x"));
     }
 
     #[test]

@@ -5,7 +5,11 @@ use axum::http::StatusCode;
 use nelcota_core::ApiError;
 use uuid::Uuid;
 
-use super::{LinkKind, emails::compose, tokens::issue};
+use super::{
+    LinkKind,
+    emails::{compose, signup_notice},
+    tokens::issue,
+};
 use crate::{
     AuthState, Mailer,
     credentials::normalize_email,
@@ -107,6 +111,20 @@ async fn send_pending(
         deliver(state, kind, email, &token, slot);
     }
     Ok(())
+}
+
+/// Tells the owner of an existing account, in the background, that someone
+/// tried to sign up with its address. At most one notice per account and
+/// minute, like the links, so signup cannot flood an inbox.
+pub(crate) fn notify_existing_signup(state: &AuthState, to: &str, slot: MailSlot) {
+    let mailer = match &state.mailer {
+        Some(mailer) => mailer,
+        None => return,
+    };
+    if !state.limiter.signup_notice(to) {
+        return;
+    }
+    slot.send(mailer.clone(), signup_notice(to), "signup_notice");
 }
 
 /// Sends a committed link in the background: the response time does not

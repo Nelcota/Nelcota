@@ -214,7 +214,8 @@ not JSON), `415 unsupported_media_type` (no `Content-Type: application/json`),
 `400 unsupported_grant_type` (a `grant_type` other than `password`,
 `refresh_token` or `pkce`; a missing one is `400 invalid_query`), `404
 user_not_found` (`GET /auth/v1/user` after the account was deleted), `409
-user_already_exists`, `400 invalid_grant` (invalid credentials or refresh, with
+user_already_exists` (signup with email confirmation off; see [Signup
+confirmation](#signup-confirmation)), `400 invalid_grant` (invalid credentials or refresh, with
 the same message for an unknown email and a wrong password), `429
 rate_limited` with `Retry-After`, `403 signup_disabled`, `400
 email_not_confirmed` (correct password, email confirmation pending).
@@ -385,6 +386,24 @@ earlier sessions, provider identities and pending codes are revoked. The
 answer is still a session; the person sets a password with `PUT
 /auth/v1/user` (no current password is needed) or through recovery. A resent
 link is never bound to a client.
+
+With confirmation on, signup does not reveal which emails have accounts. An
+email that already has one gets the same `201 {"user": {...}}` as a new
+signup, built from the submitted email and `data` with a random `id` that
+belongs to no account, after the same password hashing. The existing account
+does not change: its password, metadata and sessions stay. While it is
+unconfirmed, its inbox gets a new confirmation link (same cooldown as
+`resend`, never bound to the caller's `code_challenge`, so a second signup can
+neither set nor keep a password). Once confirmed, the owner gets one email
+("Your account already exists") per minute at most. One signal remains:
+whoever signed up knows the password they sent, and password sign-in answers
+`400 email_not_confirmed` for their own pending signup but `400 invalid_grant`
+for someone else's account; the per-IP and account budgets bound that probe.
+
+With confirmation off, signup answers with a session, which cannot be faked
+for an account that already exists: an existing email gets `409
+user_already_exists`, and signup does reveal which emails have accounts.
+Turn confirmation on where that matters.
 
 Opening a magic or recovery link also confirms the email. Accounts that were
 already unconfirmed when the flow was turned on are held as well; mark them
