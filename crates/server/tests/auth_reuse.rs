@@ -387,7 +387,7 @@ async fn promotion_preserves_users_tokens_and_checksums_across_auth_instances() 
     nelcota_auth::bootstrap(&database.admin, authenticator_password(), 10)
         .await
         .unwrap();
-    assert_eq!(database.versions().await, (1..=20).collect::<Vec<_>>());
+    assert_eq!(database.versions().await, (1..=22).collect::<Vec<_>>());
     for (version, checksum) in history {
         let current: String = database
             .client
@@ -453,7 +453,7 @@ async fn failed_promotion_rolls_back_lower_gaps_and_can_be_retried() {
     .await
     .unwrap()
     .unwrap();
-    assert_eq!(database.versions().await, (1..=20).collect::<Vec<_>>());
+    assert_eq!(database.versions().await, (1..=22).collect::<Vec<_>>());
 }
 
 #[tokio::test]
@@ -554,10 +554,11 @@ async fn separate_auth_instances_rotate_and_revoke_without_resurrecting_sessions
             refresh
         )
     );
-    // The documented retry grace allows both responses; only the newest
-    // successor remains usable, with database locks shared across instances.
+    // The documented retry grace answers both with the same successor, the
+    // only live token, with database locks shared across instances.
     assert_eq!(left.0, 200);
     assert_eq!(right.0, 200);
+    assert_eq!(left.1["refresh_token"], right.1["refresh_token"]);
     let live: i64 = database
         .client
         .query_one(

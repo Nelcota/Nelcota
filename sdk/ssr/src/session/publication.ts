@@ -37,7 +37,11 @@ async function publishTombstone(state: WriteState): Promise<void> {
   }
 }
 function keepCookie(state: WriteState): boolean {
-  return state.state !== null && (state.state.session !== null || state.state.pkce !== null);
+  const current = state.state;
+  return (
+    current !== null &&
+    (current.session !== null || current.pkce !== null || current.signupPkce != null)
+  );
 }
 
 /** Recheck the lineage head after draining work, including redirect exceptions. */

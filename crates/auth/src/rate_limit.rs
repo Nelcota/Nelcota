@@ -5,10 +5,17 @@
 //! which let a client spend almost twice the limit across the boundary.
 //! Still in memory: a single binary per install needs no Redis (D26).
 //!
-//! Keys live in two bounded stores. Network keys (an IP or an IPv6 /64) cost
-//! an attacker one address each. Account keys contain an email the client
-//! picks freely, so they are kept apart: a flood of made-up emails can fill
-//! only the account store, never the one the per-IP budgets rely on.
+//! Keys live in bounded stores. Network keys (an IP or an IPv6 /64) cost an
+//! attacker one address each. Account keys contain an email, so they are kept
+//! apart, and only existing accounts get one. Emails without an account get a
+//! decoy budget in a store of their own, which drops its oldest key when
+//! full: a flood of made-up emails can fill neither the network store nor the
+//! account store.
+//!
+//! A single IPv6 /48 holds 65,536 /64s, enough to fill the network store on
+//! its own. So the network keys of one /48 may take at most
+//! `1 / BLOCK_SHARE` of the store: past that, new /64s of that /48 are treated
+//! as if the store were full, while every other network keeps working.
 //!
 //! Password attempts also have an account-wide budget, `ACCOUNT_BUDGET_FACTOR`
 //! times the per-IP one, so many addresses cannot guess one account's password
@@ -22,8 +29,7 @@ use crate::AuthState;
 use nelcota_core::ApiError;
 
 use std::{
-    collections::{HashMap, hash_map::RandomState},
-    hash::BuildHasher,
+    collections::{HashMap, VecDeque},
     num::NonZeroU32,
     sync::{
         RwLock,
@@ -45,6 +51,9 @@ pub const SESSION_RATE_LIMIT_FACTOR: u32 = 10;
 
 /// Capacity of each store, enforced without evicting a key's active limit.
 const MAX_KEYS: usize = 50_000;
+/// One IPv6 /48 may hold at most this fraction of the network store's keys
+/// (781 of 50,000).
+const BLOCK_SHARE: usize = 64;
 const CLEANUP_INTERVAL: Duration = Duration::from_secs(1);
 const FULL_REFILL: Duration = Duration::from_secs(60);
 const LOGIN_DELAY_BASE: Duration = Duration::from_millis(125);
@@ -52,9 +61,6 @@ const LOGIN_DELAY_MAX_STEP: u64 = 4;
 /// The account-wide password budget is this many times the per-IP one.
 const ACCOUNT_BUDGET_FACTOR: u32 = 10;
 const ACCOUNT_FACTOR: NonZeroU32 = NonZeroU32::new(ACCOUNT_BUDGET_FACTOR).unwrap();
-/// Shared budgets that stand in for emails without an account, so the
-/// account-wide 429 does not tell which emails have accounts.
-const DECOY_BUDGETS: u64 = 4096;
 
 type Direct<C> =
     governor::RateLimiter<NotKeyed, InMemoryState, C, NoOpMiddleware<<C as Clock>::Instant>>;
@@ -67,6 +73,10 @@ struct Entry<C: Clock> {
 
 struct State<C: Clock> {
     entries: HashMap<String, Entry<C>>,
+    /// Keys per IPv6 /48, in a store whose blocks are capped.
+    blocks: HashMap<String, usize>,
+    /// Keys from oldest to newest, in a store that evicts.
+    order: VecDeque<String>,
     last_cleanup: C::Instant,
     #[cfg(test)]
     cleanups: usize,
@@ -77,6 +87,10 @@ struct Store<C: Clock> {
     state: RwLock<State<C>>,
     quota: Quota,
     capacity: usize,
+    /// How many keys one IPv6 /48 may hold, when its keys are network keys.
+    block_capacity: Option<usize>,
+    /// When full, drop the oldest key instead of refusing new ones.
+    evicting: bool,
     name: &'static str,
 }
 
@@ -85,15 +99,49 @@ impl<C: Clock> Store<C> {
         Store {
             state: RwLock::new(State {
                 entries: HashMap::new(),
+                blocks: HashMap::new(),
+                order: VecDeque::new(),
                 last_cleanup: start,
                 #[cfg(test)]
                 cleanups: 0,
             }),
             quota,
             capacity,
+            block_capacity: None,
+            evicting: false,
             name,
         }
     }
+
+    /// Makes room for a new key by dropping the oldest one. Only for budgets
+    /// that guard no account (decoys), where a reset lets nobody guess more.
+    fn evicting_oldest(mut self) -> Self {
+        self.evicting = true;
+        self
+    }
+
+    /// Caps the keys of each IPv6 /48 (see `ipv6_block`).
+    fn with_block_cap(mut self) -> Self {
+        self.block_capacity = Some((self.capacity / BLOCK_SHARE).max(1));
+        self
+    }
+}
+
+/// The IPv6 /48 (`a:b:c`) of a network key that ends in an `ip_key` /64
+/// (`<endpoint>:a:b:c:d::/64`); `None` for IPv4 and non-network keys.
+fn ipv6_block(key: &str) -> Option<&str> {
+    let body = key.strip_suffix("::/64")?;
+    let mut segments = body.rsplitn(5, ':');
+    let d = segments.next()?;
+    let c = segments.next()?;
+    let b = segments.next()?;
+    let a = segments.next()?;
+    let hex = |s: &str| (1..=4).contains(&s.len()) && s.bytes().all(|c| c.is_ascii_hexdigit());
+    if ![a, b, c, d].into_iter().all(hex) {
+        return None;
+    }
+    let start = body.len() - d.len() - 1 - c.len() - 1 - b.len() - 1 - a.len();
+    Some(&body[start..body.len() - d.len() - 1])
 }
 
 enum Admission {
@@ -107,8 +155,11 @@ enum Admission {
 pub struct RateLimiter<C: Clock + Clone = DefaultClock> {
     network: Store<C>,
     accounts: Store<C>,
-    /// Per-process hashing of unknown emails onto decoy budgets.
-    decoys: RandomState,
+    /// One signup notice per existing account and minute.
+    notices: Store<C>,
+    /// Account-sized budgets for emails without an account, one per email,
+    /// evicting the oldest when full.
+    decoys: Store<C>,
     clock: C,
     start: C::Instant,
 }
@@ -130,9 +181,15 @@ impl<C: Clock + Clone> RateLimiter<C> {
         let accounts = Quota::per_minute(limit.saturating_mul(ACCOUNT_FACTOR));
         let start = clock.now();
         RateLimiter {
-            network: Store::new("network", network, capacity, start),
+            network: Store::new("network", network, capacity, start).with_block_cap(),
             accounts: Store::new("account", accounts, capacity, start),
-            decoys: RandomState::new(),
+            notices: Store::new(
+                "notice",
+                Quota::with_period(FULL_REFILL).expect("non-zero period"),
+                capacity,
+                start,
+            ),
+            decoys: Store::new("decoy", accounts, capacity, start).evicting_oldest(),
             clock,
             start,
         }
@@ -172,7 +229,23 @@ impl<C: Clock + Clone> RateLimiter<C> {
             return self.outcome(entry);
         }
         let now = self.clock.now();
-        if state.entries.len() >= store.capacity
+        if store.evicting {
+            while state.entries.len() >= store.capacity {
+                match state.order.pop_front() {
+                    Some(oldest) => {
+                        state.entries.remove(&oldest);
+                    }
+                    None => break,
+                }
+            }
+            state.order.push_back(key.to_owned());
+        }
+        let block = store.block_capacity.and(ipv6_block(key));
+        let block_full = |state: &State<C>| match (block, store.block_capacity) {
+            (Some(block), Some(cap)) => state.blocks.get(block).is_some_and(|n| *n >= cap),
+            _ => false,
+        };
+        if (state.entries.len() >= store.capacity || block_full(&state))
             && now.duration_since(state.last_cleanup) >= CLEANUP_INTERVAL.into()
         {
             let elapsed = now.duration_since(self.start).as_u64();
@@ -180,24 +253,44 @@ impl<C: Clock + Clone> RateLimiter<C> {
                 elapsed.saturating_sub(entry.last_accepted.load(Ordering::Relaxed))
                     < FULL_REFILL.as_nanos() as u64
             });
+            if store.block_capacity.is_some() {
+                let mut blocks = HashMap::new();
+                for key in state.entries.keys() {
+                    if let Some(block) = ipv6_block(key) {
+                        *blocks.entry(block.to_owned()).or_insert(0) += 1;
+                    }
+                }
+                state.blocks = blocks;
+            }
             state.last_cleanup = now;
             #[cfg(test)]
             {
                 state.cleanups += 1;
             }
+            // At most once per second per store, so these cannot flood logs.
             if state.entries.len() >= store.capacity {
-                // At most once per second per store, so it cannot flood logs.
                 tracing::warn!(
                     store = store.name,
                     capacity = store.capacity,
                     "rate limit key store is full"
                 );
             }
+            if block_full(&state) {
+                tracing::warn!(
+                    store = store.name,
+                    block_capacity = store.block_capacity,
+                    "one IPv6 /48 holds its whole share of the rate limit key store"
+                );
+            }
         }
         // Never drop a recent entry to make room: its next attempt would
-        // obtain a fresh burst and bypass the quota.
-        if state.entries.len() >= store.capacity {
+        // obtain a fresh burst and bypass the quota. A /48 at its share is
+        // treated like a full store, for its own new keys only.
+        if state.entries.len() >= store.capacity || block_full(&state) {
             return Admission::Full;
+        }
+        if let Some(block) = block {
+            *state.blocks.entry(block.to_owned()).or_insert(0) += 1;
         }
         let entry = state
             .entries
@@ -215,8 +308,8 @@ impl<C: Clock + Clone> RateLimiter<C> {
     /// Unknown keys are refused while the store is full, with a retry hint.
     /// Each network holds a handful of keys (one per endpoint), so filling
     /// the store takes thousands of distinct networks (IPv4 addresses or IPv6
-    /// /64s) kept busy every minute: costly, but within reach of an attacker
-    /// with a large IPv6 allocation.
+    /// /64s) kept busy every minute. One IPv6 /48 can take only its share of
+    /// the store: past it, its own new /64s are refused, nobody else's.
     pub fn check(&self, key: &str) -> Result<(), Duration> {
         match self.admit(&self.network, key) {
             Admission::Accepted => Ok(()),
@@ -254,16 +347,24 @@ impl<C: Clock + Clone> RateLimiter<C> {
         }
     }
 
-    /// The account-wide budget for an email without an account: one of a few
-    /// thousand shared decoy budgets of the same size, chosen by a per-process
-    /// hash, so a spent budget answers alike whether or not the email has an
-    /// account, and made-up emails add at most that many keys.
+    /// The account-wide budget for an email without an account: a budget of
+    /// its own, the same size, so it runs out and refills exactly as an
+    /// account's would and spending it says nothing about other emails. These
+    /// live in a separate store, so made-up emails never crowd out real
+    /// accounts; when it is full the oldest decoy is dropped, which an
+    /// attacker can force only by keeping 50,000 made-up emails busy.
     pub(crate) fn decoy_login_budget(&self, email: &str) -> Option<Duration> {
-        let slot = self.decoys.hash_one(email) % DECOY_BUDGETS;
-        match self.admit(&self.accounts, &format!("login-decoy:{slot}")) {
+        match self.admit(&self.decoys, email) {
             Admission::Accepted | Admission::Full => None,
             Admission::Limited(wait) => Some(wait),
         }
+    }
+
+    /// Whether the owner of `email`, an existing account, may get a signup
+    /// notice now: one per minute, like the email links. While the store is
+    /// full, no notice goes out.
+    pub(crate) fn signup_notice(&self, email: &str) -> bool {
+        matches!(self.admit(&self.notices, email), Admission::Accepted)
     }
 
     /// The account's second budget, the same size, for attempts from known
@@ -549,13 +650,46 @@ mod tests {
     }
 
     #[test]
-    fn unknown_emails_spend_a_decoy_budget_of_the_same_size() {
-        let (limiter, _) = limiter(1);
+    fn unknown_emails_spend_a_decoy_budget_of_their_own() {
+        let (limiter, clock) = limiter(1);
         for _ in 0..10 {
             assert_eq!(limiter.decoy_login_budget("nobody@x"), None);
+            assert_eq!(limiter.login_budget("someone@x"), None);
         }
-        assert!(limiter.decoy_login_budget("nobody@x").is_some());
-        assert_eq!(len(&limiter.accounts), 1, "one shared decoy key");
+        let decoy = limiter.decoy_login_budget("nobody@x");
+        assert_eq!(decoy, limiter.login_budget("someone@x"), "same size");
+        assert!(decoy.is_some());
+        for i in 0..10_000 {
+            assert_eq!(
+                limiter.decoy_login_budget(&format!("probe-{i}@x")),
+                None,
+                "a spent decoy says nothing about other emails"
+            );
+        }
+        assert_eq!(
+            len(&limiter.accounts),
+            1,
+            "decoys stay out of the account store"
+        );
+        clock.advance(Duration::from_secs(6));
+        assert_eq!(limiter.decoy_login_budget("nobody@x"), None, "refilled");
+    }
+
+    #[test]
+    fn a_full_decoy_store_drops_its_oldest_decoy() {
+        let clock = FakeRelativeClock::default();
+        let limiter = RateLimiter::with_capacity(1, clock.clone(), 2);
+        for _ in 0..10 {
+            limiter.decoy_login_budget("a@x");
+        }
+        assert!(limiter.decoy_login_budget("a@x").is_some());
+        assert_eq!(limiter.decoy_login_budget("b@x"), None);
+        assert!(limiter.decoy_login_budget("a@x").is_some(), "still tracked");
+        assert_eq!(limiter.decoy_login_budget("c@x"), None, "a@x dropped");
+        assert_eq!(len(&limiter.decoys), 2);
+        assert_eq!(limiter.decoy_login_budget("a@x"), None, "a fresh decoy");
+        assert_eq!(len(&limiter.decoys), 2);
+        assert_eq!(len(&limiter.accounts), 0);
     }
 
     #[test]
@@ -598,6 +732,61 @@ mod tests {
         clock.advance(Duration::from_secs(60));
         assert_eq!(limiter.login_budget("new"), None);
         assert_eq!(len(&limiter.accounts), 1, "idle keys were cleaned up");
+    }
+
+    #[test]
+    fn signup_notices_go_out_once_a_minute_per_account() {
+        let (limiter, clock) = limiter(30);
+        assert!(limiter.signup_notice("ana@x"));
+        assert!(!limiter.signup_notice("ana@x"));
+        assert!(limiter.signup_notice("bia@x"), "accounts are independent");
+        clock.advance(Duration::from_secs(60));
+        assert!(limiter.signup_notice("ana@x"));
+    }
+
+    #[test]
+    fn ipv6_blocks_come_from_network_keys_only() {
+        assert_eq!(ipv6_block("signup:2001:db8:1:2::/64"), Some("2001:db8:1"));
+        assert_eq!(ipv6_block("ip:2001:db8:ffff:0::/64"), Some("2001:db8:ffff"));
+        assert_eq!(ipv6_block("a:b:c:2001:db8:1:2::/64"), Some("2001:db8:1"));
+        assert_eq!(ipv6_block("token:203.0.113.7"), None);
+        assert_eq!(ipv6_block("signup:2001:db8:1::/48"), None);
+        assert_eq!(ipv6_block("user:5f3c::/64"), None);
+        assert_eq!(ipv6_block("x:12345:1:2:3::/64"), None);
+    }
+
+    #[test]
+    fn one_ipv6_48_cannot_fill_the_network_store() {
+        let clock = FakeRelativeClock::default();
+        let limiter = RateLimiter::with_capacity(1, clock.clone(), 640);
+        let key = |block: u16, net: u16| format!("token:2001:db8:{block:x}:{net:x}::/64");
+        // 640 / 64 = 10 keys per /48.
+        for net in 0..10 {
+            assert!(limiter.check(&key(1, net)).is_ok());
+        }
+        for net in 10..2_000 {
+            assert!(
+                limiter.check(&key(1, net)).is_err(),
+                "the /48 used its share"
+            );
+            assert!(
+                limiter
+                    .check_lenient(&format!("ip:2001:db8:1:{net:x}::/64"))
+                    .is_ok(),
+                "lenient checks pass untracked, as with a full store"
+            );
+        }
+        assert_eq!(len(&limiter.network), 10);
+        assert!(limiter.check(&key(2, 0)).is_ok(), "other /48s still get in");
+        assert!(limiter.check("token:203.0.113.7").is_ok(), "IPv4 too");
+        assert!(
+            limiter.check(&key(1, 0)).is_err(),
+            "tracked keys keep their budget"
+        );
+        // Once its keys go idle for a full refill, the /48 gets its share back.
+        clock.advance(Duration::from_secs(60));
+        assert!(limiter.check(&key(1, 500)).is_ok());
+        assert_eq!(len(&limiter.network), 1);
     }
 
     #[test]

@@ -22,19 +22,26 @@ const EXPIRED: &str = "SELECT d.id,d.event_id,e.url,d.payload,d.attempts,d.max_a
     ORDER BY d.locked_until,d.id LIMIT $1 FOR UPDATE OF d SKIP LOCKED";
 
 /// One round: the oldest due delivery of each enabled webhook below its
-/// in-flight limit, oldest first. The materialized scan tries the advisory
-/// lock of every enabled webhook it reads, before checking its in-flight
-/// count or whether anything is due, and keeps each lock it gets until the
-/// claim commits; a webhook whose lock another claim holds is skipped. Across
-/// server instances a claim that commits between another's snapshot and its
-/// lock can let one more send through.
-const DUE: &str = "WITH ready AS MATERIALIZED (
+/// in-flight limit, oldest first. The first materialized scan keeps only the
+/// webhooks with a due pending delivery and room in flight; only those then
+/// try the webhook's advisory lock, kept until the claim commits, so an open
+/// claim does not hold the locks of idle or saturated webhooks that another
+/// server instance could otherwise claim from. A webhook whose lock another
+/// claim holds is skipped. Both checks read the statement's snapshot, as the
+/// lock does not refresh it: across server instances a claim that commits
+/// between another's snapshot and its lock can let one more send through.
+const DUE: &str = "WITH candidates AS MATERIALIZED (
         SELECT e.id,e.url,e.signing_secret FROM nelcota.webhook_endpoints e
         WHERE e.enabled AND e.deleted_at IS NULL
-        AND pg_try_advisory_xact_lock(173471, hashtext(e.id::text))
+        AND EXISTS (SELECT 1 FROM nelcota.webhook_deliveries due
+            WHERE due.endpoint_id=e.id AND due.status='pending'
+            AND due.next_attempt_at<=statement_timestamp())
         AND (SELECT count(*) FROM nelcota.webhook_deliveries busy
             WHERE busy.endpoint_id=e.id AND busy.status='processing'
-            AND busy.locked_until>statement_timestamp()) < $2)
+            AND busy.locked_until>statement_timestamp()) < $2),
+    ready AS MATERIALIZED (
+        SELECT c.id,c.url,c.signing_secret FROM candidates c
+        WHERE pg_try_advisory_xact_lock(173471, hashtext(c.id::text)))
     SELECT d.id,d.event_id,ready.url,d.payload,d.attempts,d.max_attempts,d.status,true AS enabled,ready.signing_secret
     FROM ready CROSS JOIN LATERAL (
         SELECT pick.id,pick.event_id,pick.payload,pick.attempts,pick.max_attempts,pick.status,pick.next_attempt_at

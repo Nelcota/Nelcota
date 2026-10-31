@@ -81,38 +81,43 @@ export function withLock<T>(name: string | symbol, task: () => Promise<T>): Prom
 
 export class Broadcast {
   #channel: BroadcastChannel | undefined;
+  /** Legacy signals announced by structured messages and not yet received. */
+  #duplicates = 0;
 
   constructor(name: string, onMessage: (event?: AuthEvent, revision?: string) => void) {
     if (typeof BroadcastChannel === "undefined") return;
     this.#channel = new BroadcastChannel(name);
     this.#channel.onmessage = (event: MessageEvent<unknown>) => {
-      if (event.data === "changed") {
-        onMessage();
+      if (event.data !== "changed") {
+        const data = event.data as { event?: unknown; revision?: unknown; legacy?: unknown } | null;
+        if (typeof data !== "object" || data === null) return;
+        if (data.legacy === true) this.#duplicates++;
+        if (
+          ["signed_in", "signed_out", "refreshed", "user_updated"].includes(data.event as string) &&
+          typeof data.revision === "string" &&
+          data.revision.length === RANDOM_ID_CHARS
+        )
+          onMessage(data.event as AuthEvent, data.revision);
         return;
       }
-      const data = event.data as { event?: unknown; revision?: unknown } | null;
-      if (
-        data != null &&
-        typeof data === "object" &&
-        ["signed_in", "signed_out", "refreshed", "user_updated"].includes(data.event as string) &&
-        typeof data.revision === "string" &&
-        data.revision.length === RANDOM_ID_CHARS
-      )
-        onMessage(data.event as AuthEvent, data.revision);
+      // One sender's messages arrive in order: this copy follows its structured message.
+      if (this.#duplicates > 0) this.#duplicates--;
+      else onMessage();
     };
     // Node keeps the process alive while a channel is open.
     (this.#channel as { unref?: () => void }).unref?.();
   }
 
   /**
-   * One message per change: the structured form when the change has an event
-   * and a committed revision, otherwise the legacy `"changed"` signal, which
-   * receivers still accept from tabs running older SDKs.
+   * The structured form when the change has an event and a committed revision,
+   * followed by the legacy `"changed"` signal for tabs running SDK 0.2.1 or
+   * older; `legacy` tells current receivers to skip that copy. A change without
+   * a revision sends only the legacy signal.
    */
   notify(event?: AuthEvent, revision?: string): void {
-    this.#channel?.postMessage(
-      event != null && revision != null && revision !== "" ? { event, revision } : "changed",
-    );
+    if (event != null && revision != null && revision !== "")
+      this.#channel?.postMessage({ event, revision, legacy: true });
+    this.#channel?.postMessage("changed");
   }
 
   close(): void {

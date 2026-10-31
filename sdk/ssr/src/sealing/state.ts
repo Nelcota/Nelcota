@@ -11,6 +11,7 @@ function requireBaseState(row: Record<string, unknown>): void {
     row["schema"] !== 1 ||
     nullableText(row["session"]) === false ||
     nullableText(row["pkce"]) === false ||
+    (row["signupPkce"] !== undefined && nullableText(row["signupPkce"]) === false) ||
     oauthNonce(row["oauthState"]) === false ||
     typeof row["returnTo"] !== "string" ||
     Number.isSafeInteger(row["expiresAt"]) === false ||

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Verify project isolation and local confirmation with owned Docker fixtures."""
 import argparse
+import base64
 import hashlib
 import json
 import pathlib
 import socket
 import os
+import secrets
 import shlex
 import subprocess
 import tempfile
@@ -107,7 +109,11 @@ def run(binary, testing_helpers=False, remote_migrations=False, browser=False):
                 assert conflict.returncode != 0
                 assert str(first) in conflict.stderr and '--db-port' in conflict.stderr
                 account = {'email': 'dev-test@localhost.test', 'password': 'local-confirmation-test-123'}
-                status, signup = request(base + '/auth/v1/signup', account)
+                # The verifier proves the confirming client signed up, so the
+                # signup password survives confirmation.
+                verifier = secrets.token_urlsafe(48)
+                challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b'=').decode()
+                status, signup = request(base + '/auth/v1/signup', {**account, 'code_challenge': challenge, 'code_challenge_method': 'S256'})
                 assert status == 201 and 'access_token' not in signup, (status, signup)
                 status, rejected = request(base + '/auth/v1/token?grant_type=password', account)
                 assert status == 400 and rejected['code'] == 'email_not_confirmed'
@@ -118,7 +124,7 @@ def run(binary, testing_helpers=False, remote_migrations=False, browser=False):
                 text = message['Text']
                 link = next(word for word in text.split() if '#type=signup&token=' in word)
                 fragment = urllib.parse.parse_qs(urllib.parse.urlsplit(link).fragment)
-                status, verified = request(base + '/auth/v1/verify', {key: value[0] for key, value in fragment.items()})
+                status, verified = request(base + '/auth/v1/verify', {**{key: value[0] for key, value in fragment.items()}, 'code_verifier': verifier})
                 assert status == 200 and verified['access_token']
                 assert request(base + '/auth/v1/token?grant_type=password', account)[0] == 200
                 processes[-1].terminate()

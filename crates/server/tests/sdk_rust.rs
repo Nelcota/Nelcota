@@ -511,6 +511,50 @@ async fn signup_confirmation_and_resend() {
             .id,
         signed.user.id
     );
+    // A resent link is never bound to the signup: confirming it cleared the
+    // signup password, as a first magic link does.
+    assert_eq!(
+        live.client
+            .auth()
+            .sign_in_with_password("confirm-sdk@example.com", "strong-pass-123")
+            .await
+            .unwrap_err()
+            .code(),
+        "invalid_grant"
+    );
+}
+
+#[tokio::test]
+async fn signup_confirmation_keeps_the_password_with_the_sdk_verifier() {
+    let live = Live::spawn(Options {
+        confirm_email: true,
+        ..Default::default()
+    })
+    .await;
+    let auth = live.client.auth();
+    let signed = auth
+        .sign_up("keep-sdk@example.com", "strong-pass-123", None)
+        .await
+        .unwrap();
+    assert!(signed.session.is_none());
+    let verifier = signed
+        .verifier
+        .expect("pending signups return their verifier");
+    let mail = live.app.outbox.wait_for(1).await;
+    let link = nelcota_client::auth::EmailLink {
+        kind: nelcota_client::auth::EmailLinkType::Signup,
+        token: link_token(&mail[0], CONFIRMATION_URL, "signup"),
+    };
+    let session = auth.verify_signup_link(&link, &verifier).await.unwrap();
+    assert_eq!(session.user.id, signed.user.id);
+    assert!(session.user.email_confirmed_at.is_some());
+    // The password chosen at signup survived the confirmation.
+    auth.sign_out().await.unwrap();
+    let again = auth
+        .sign_in_with_password("keep-sdk@example.com", "strong-pass-123")
+        .await
+        .unwrap();
+    assert_eq!(again.user.id, signed.user.id);
 }
 
 #[tokio::test]

@@ -49,6 +49,11 @@ export class HttpClient {
     this.#base = options.url.href.slice(0, end);
   }
 
+  /** The default per-attempt timeout in ms; 0 means no limit. */
+  get timeout(): number {
+    return this.#options.timeout;
+  }
+
   /** Absolute URL for a path (and query) under the base URL. */
   href(path: string, query?: URLSearchParams): string {
     // Not `size`: Safari < 17 lacks it.

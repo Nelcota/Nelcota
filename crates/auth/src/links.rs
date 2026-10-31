@@ -10,7 +10,7 @@ mod send;
 mod sign_in;
 mod tokens;
 
-pub(crate) use send::{deliver, ensure_enabled, send};
+pub(crate) use send::{deliver, ensure_enabled, notify_existing_signup, send};
 pub(crate) use sign_in::sign_in;
 pub(crate) use tokens::{consume, hash, is_valid, issue};
 

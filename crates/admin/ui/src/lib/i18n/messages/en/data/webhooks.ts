@@ -124,6 +124,8 @@ const en: Messages<typeof ptBR> = {
     payload_too_large:
       "The payload exceeded 256 KiB. Its contents were omitted and cannot be resent.",
     endpoint_deleted: "The webhook was deleted.",
+    dns_busy:
+      "Local DNS lookups were saturated. The send is retried shortly without using an attempt.",
     queue_full:
       "This webhook already had 10,000 deliveries waiting. The event was recorded without its contents and cannot be resent.",
   },

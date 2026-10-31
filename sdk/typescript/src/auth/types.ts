@@ -68,4 +68,6 @@ export interface EmailLink {
 export interface SessionTransport {
   rotate: (token: string, options: AuthRequestOptions) => Promise<Result<Session>>;
   accessToken: TokenSource | undefined;
+  /** The transport's default request timeout in ms; 0 means no limit. */
+  timeout: number;
 }

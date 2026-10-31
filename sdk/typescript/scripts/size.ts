@@ -70,12 +70,22 @@ const BUDGETS: Record<string, number> = {
   // Renewing a reservation while its refresh is in flight, and timing
   // reservations from older SDKs from first sight, measure root 23,820 B and
   // auth 16,432 B gzip.
-  "index.js": 23_870,
+  // Capping reservation renewal at the request timeout (or two minutes) reads
+  // the transport's default timeout: root 23,915 B, REST 11,986 B, auth
+  // 16,524 B and storage 9,410 B gzip.
+  // Sending the legacy "changed" broadcast for SDK 0.2.1 tabs, and skipping it
+  // as a duplicate, measures root 23,974 B and auth 16,585 B gzip.
+  // Binding sign-up confirmation links with PKCE (a second verifier slot, its
+  // use in signUp/verifyEmailLink, the fallback for adapters that refuse the
+  // slot, and moving link verification to email-links.ts to keep client.ts
+  // under max-lines) adds 477 B gzip to root and 549 B to auth: root 24,458 B
+  // and auth 17,139 B gzip.
+  "index.js": 24_530,
   // Standalone factories include HTTP and keep the other feature modules out.
-  "rest/index.js": 11_980,
+  "rest/index.js": 11_995,
   // Failed persistence must retain rotated tokens; background failures are observed.
-  "auth/index.js": 16_480,
-  "storage/index.js": 9_400,
+  "auth/index.js": 17_210,
+  "storage/index.js": 9_420,
 };
 
 function closure(entry: string, seen = new Set<string>()): Set<string> {

@@ -2,7 +2,7 @@ import { profile } from "$lib/features/profile/profile.svelte";
 import { sqlStore } from "$lib/features/sql/sql-store.svelte";
 import { clearQuerySession } from "$lib/resources/query-client";
 import { session } from "$lib/resources/session.svelte";
-import { api } from "$lib/transport/api";
+import { api, expireSession } from "$lib/transport/api";
 import { afterEach, expect, it, vi } from "vitest";
 
 import { logout } from "./auth";
@@ -80,4 +80,23 @@ it("does not say the session expired when a read gets 401 during logout", async 
   await pending;
   expect(session.email).toBeNull();
   expect(session.expired).toBe(false);
+});
+
+it("forgets SQL history and drafts when the session expires", () => {
+  session.email = "old@example.com";
+  session.expired = false;
+  const forget = vi.spyOn(sqlStore, "forgetSession");
+  expireSession(401, "/tables");
+  expect(session.email).toBeNull();
+  expect(session.expired).toBe(true);
+  expect(forget).toHaveBeenCalledOnce();
+});
+
+it("keeps SQL history when a request is refused for another reason", () => {
+  session.email = "old@example.com";
+  const forget = vi.spyOn(sqlStore, "forgetSession");
+  expireSession(403, "/tables");
+  expireSession(401, "/login");
+  expect(session.email).toBe("old@example.com");
+  expect(forget).not.toHaveBeenCalled();
 });

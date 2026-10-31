@@ -44,6 +44,8 @@ export function oauthOperations(
         expiresAt: state.state?.expiresAt ?? Date.now() + config.ttl * SECOND_IN_MS,
       };
       if (state.state?.generation !== undefined) next.generation = state.state.generation;
+      // A sign-up awaiting its email link keeps its verifier.
+      if (state.state?.signupPkce != null) next.signupPkce = state.state.signupPkce;
       await state.save(next);
       return await auth.signInWithOAuth({
         provider: input.provider,

@@ -1,12 +1,14 @@
 import { IDBFactory } from "fake-indexeddb";
 import { afterEach, expect, it, vi } from "vitest";
 
+import { Broadcast } from "../../src/auth/browser/coordination.js";
 import {
   BrowserSessionState,
   MIRROR_SETTLE_IN_MS,
   RESERVATION_LEASE_IN_MS,
 } from "../../src/auth/browser/state.js";
 import { requiredValue } from "../../src/core/required-value.js";
+import { RANDOM_ID_CHARS } from "../../src/core/runtime.js";
 import {
   createClient,
   memoryStorage,
@@ -149,7 +151,7 @@ it("treats a removed localStorage mirror as sign-out once the receipt has settle
   ).toBeNull();
   expect((await first.auth.getSession()).data).toBeNull();
 });
-it("broadcasts one message per change and still accepts the legacy signal", async () => {
+it("broadcasts each change for current and older SDKs and still accepts the legacy signal", async () => {
   const environment = browser();
   const first = client(),
     second = client();
@@ -158,8 +160,10 @@ it("broadcasts one message per change and still accepts the legacy signal", asyn
   await vi.waitFor(() => expect(events).toEqual(["initial_session"]));
   environment.messages.length = 0;
   await first.auth.setSession(session());
+  // Tabs on SDK 0.2.1 or older only understand "changed": it follows each change.
   expect(environment.messages).toEqual([
-    { event: "signed_in", revision: expect.any(String) as unknown },
+    { event: "signed_in", revision: expect.any(String) as unknown, legacy: true },
+    "changed",
   ]);
   await vi.waitFor(() => expect(events).toEqual(["initial_session", "signed_in"]));
   // A tab running an older SDK commits without a structured message and only
@@ -256,7 +260,40 @@ it.each(["rotated", "invalid_grant"] as const)(
     environment.messages.length = 0;
     await first.auth.signOut();
     expect(environment.messages.filter((value) => typeof value === "object")).toEqual([
-      { event: "signed_out", revision: expect.any(String) as unknown },
+      { event: "signed_out", revision: expect.any(String) as unknown, legacy: true },
     ]);
   },
 );
+
+it("handles a structured change once and still hears older tabs' legacy signals", async () => {
+  browser();
+  const name = `${KEY}.channel`;
+  const received: [AuthEvent | undefined, string | undefined][] = [];
+  const sender = new Broadcast(name, () => undefined),
+    receiver = new Broadcast(name, (event, revision) => received.push([event, revision]));
+  // Raw posts stand in for tabs running other SDK versions.
+  const other = new BroadcastChannel(name);
+  const revision = "r".repeat(RANDOM_ID_CHARS);
+  try {
+    sender.notify("refreshed", revision);
+    await vi.waitFor(() => expect(received).toEqual([["refreshed", revision]]));
+    // SDK 0.2.1 or older sends only the legacy signal.
+    other.postMessage("changed");
+    await vi.waitFor(() => expect(received).toHaveLength(2));
+    // SDK 0.2.2 to 0.2.5 sends a structured message without a legacy copy, so
+    // an older tab's later signal is not mistaken for one.
+    other.postMessage({ event: "signed_out", revision });
+    other.postMessage("changed");
+    await vi.waitFor(() => expect(received).toHaveLength(4));
+    expect(received).toEqual([
+      ["refreshed", revision],
+      [undefined, undefined],
+      ["signed_out", revision],
+      [undefined, undefined],
+    ]);
+  } finally {
+    sender.close();
+    receiver.close();
+    other.close();
+  }
+});

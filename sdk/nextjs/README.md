@@ -189,6 +189,9 @@ Next redirect exceptions as ordinary authentication failures.
 Writable auth offers password login, sign-up, verified-user read, logout,
 refresh, user update, password reset requests, magic links, confirmation resend,
 email-link verification/reset and OAuth. Results contain users, not session JWTs.
+A pending sign-up keeps its PKCE verifier in the sealed session, and verifying
+its `signup` link from the same browser sends it, keeping the chosen password;
+from another browser (or with a resent link) the password is cleared.
 Auth operations are serialized per request and per shared browser session.
 Their bounded accepted publication completes before releasing the owner;
 cancelling a waiter must not discard accepted credentials. Data calls retain

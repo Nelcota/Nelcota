@@ -34,12 +34,14 @@ pub(crate) fn ensure_confirmed(state: &AuthState, confirmed: bool) -> Result<(),
 
 /// A signup waiting for confirmation: stores the link in `tx` and answers with
 /// the account and no session. The returned token goes out with
-/// [`links::deliver`] once `tx` commits.
+/// [`links::deliver`] once `tx` commits. `code_challenge` binds the link to
+/// the client that signed up (see [`links::sign_in`]).
 pub(crate) async fn pending_signup(
     tx: &Transaction<'_>,
     user_id: Uuid,
+    code_challenge: Option<&str>,
 ) -> Result<(Value, Option<String>), ApiError> {
-    let token = links::issue(tx, user_id, LinkKind::Signup).await?;
+    let token = links::issue(tx, user_id, LinkKind::Signup, code_challenge).await?;
     let user: Value = tx
         .query_one(
             &format!("SELECT {USER_JSON} FROM auth.users u WHERE u.id = $1"),

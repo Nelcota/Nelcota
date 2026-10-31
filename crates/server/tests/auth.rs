@@ -5,10 +5,12 @@
 mod common;
 
 use axum::http::{StatusCode, header};
+use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use common::*;
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, jwk::JwkSet};
 use nelcota_core::{Claims, db};
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 async fn signup(app: &TestApp, email: &str, password: &str) -> Reply {
@@ -230,8 +232,12 @@ async fn refresh_retry_within_the_grace_window_keeps_the_session() {
     let r2 = str_field(&lost.body, "refresh_token").to_owned();
     let retried = refresh(&app, &r1).await;
     assert_eq!(retried.status, StatusCode::OK, "{}", retried.body);
-    let r3 = str_field(&retried.body, "refresh_token").to_owned();
-    assert_ne!(r3, r2);
+    // The retry is idempotent: it answers with the same R2, not a new pair.
+    assert_eq!(str_field(&retried.body, "refresh_token"), r2);
+    assert!(retried.body["access_token"].is_string());
+    let again = refresh(&app, &r1).await;
+    assert_eq!(again.status, StatusCode::OK, "{}", again.body);
+    assert_eq!(str_field(&again.body, "refresh_token"), r2);
     assert_eq!(
         retried.body["user"]["email"], "retry@example.com",
         "{}",
@@ -249,6 +255,85 @@ async fn refresh_retry_within_the_grace_window_keeps_the_session() {
         claims(&lost.body)["session_id"],
         "the retry stays in the same session"
     );
+
+    let live: i64 = app
+        .admin_client
+        .query_one(
+            "SELECT count(*) FROM auth.refresh_tokens WHERE NOT revoked",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(live, 1, "retries mint no tokens");
+
+    // R2 rotates on, and that rotation clears R1's sealed successor.
+    let next = refresh(&app, &r2).await;
+    assert_eq!(next.status, StatusCode::OK, "{}", next.body);
+    let r3 = str_field(&next.body, "refresh_token").to_owned();
+    let sealed: i64 = app
+        .admin_client
+        .query_one(
+            "SELECT count(*) FROM auth.refresh_tokens WHERE retry_successor IS NOT NULL",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(sealed, 1, "only the latest rotation keeps its successor");
+    // Once R2 has rotated, presenting R1 again is reuse, not a retry.
+    let reuse = refresh(&app, &r1).await;
+    assert_eq!(reuse.status, StatusCode::BAD_REQUEST);
+    assert_eq!(refresh(&app, &r3).await.status, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn racing_holders_of_one_refresh_token_both_keep_the_session() {
+    let app = TestApp::spawn().await;
+    let session = signup(&app, "race@example.com", "strong-pass-123")
+        .await
+        .body;
+    let r1 = str_field(&session, "refresh_token").to_owned();
+
+    // Two holders (tabs that do not coordinate) rotate R1 at once.
+    let (left, right) = tokio::join!(refresh(&app, &r1), refresh(&app, &r1));
+    assert_eq!(left.status, StatusCode::OK, "{}", left.body);
+    assert_eq!(right.status, StatusCode::OK, "{}", right.body);
+    let r2 = str_field(&left.body, "refresh_token").to_owned();
+    assert_eq!(str_field(&right.body, "refresh_token"), r2);
+
+    // Each later uses the token it got: one rotates, the other retries R2
+    // within the window and receives the same successor.
+    let (left, right) = tokio::join!(refresh(&app, &r2), refresh(&app, &r2));
+    assert_eq!(left.status, StatusCode::OK, "{}", left.body);
+    assert_eq!(right.status, StatusCode::OK, "{}", right.body);
+    let r3 = str_field(&left.body, "refresh_token").to_owned();
+    assert_eq!(str_field(&right.body, "refresh_token"), r3);
+    let next = refresh(&app, &r3).await;
+    assert_eq!(next.status, StatusCode::OK, "{}", next.body);
+    assert!(next.body["access_token"].is_string());
+}
+
+#[tokio::test]
+async fn refresh_retry_without_a_sealed_successor_issues_a_new_pair() {
+    let app = TestApp::spawn().await;
+    let session = signup(&app, "legacy@example.com", "strong-pass-123")
+        .await
+        .body;
+    let r1 = str_field(&session, "refresh_token").to_owned();
+    let lost = refresh(&app, &r1).await;
+    assert_eq!(lost.status, StatusCode::OK);
+    let r2 = str_field(&lost.body, "refresh_token").to_owned();
+
+    // A rotation from before the upgrade stored no successor.
+    app.admin_client
+        .batch_execute("UPDATE auth.refresh_tokens SET retry_successor = NULL")
+        .await
+        .unwrap();
+    let retried = refresh(&app, &r1).await;
+    assert_eq!(retried.status, StatusCode::OK, "{}", retried.body);
+    let r3 = str_field(&retried.body, "refresh_token").to_owned();
+    assert_ne!(r3, r2);
 
     // Only the newest token works: R3 rotates on; the lost R2 is gone.
     let next = refresh(&app, &r3).await;
@@ -374,6 +459,28 @@ async fn pruning_removes_expired_tokens_and_dead_sessions() {
         nelcota_auth::prune(&app.pool).await.unwrap(),
         nelcota_auth::Pruned::default()
     );
+    // A sealed retry successor survives pruning only shortly past its window.
+    let sealed = || async {
+        app.admin_client
+            .query_one(
+                "SELECT count(*) FROM auth.refresh_tokens
+                 WHERE session_id = $1 AND retry_successor IS NOT NULL",
+                &[&live_id],
+            )
+            .await
+            .unwrap()
+            .get::<_, i64>(0)
+    };
+    assert_eq!(sealed().await, 1);
+    app.admin_client
+        .execute(
+            "UPDATE auth.sessions SET refreshed_at = now() - interval '2 minutes' WHERE id = $1",
+            &[&live_id],
+        )
+        .await
+        .unwrap();
+    nelcota_auth::prune(&app.pool).await.unwrap();
+    assert_eq!(sealed().await, 0);
 }
 
 async fn update_user(app: &TestApp, access_token: &str, body: Value) -> Reply {
@@ -889,6 +996,48 @@ async fn verify_link(app: &TestApp, kind: &str, token: &str) -> Reply {
     .await
 }
 
+/// The PKCE verifier a signing-up client keeps to confirm its own signup.
+const SIGNUP_VERIFIER: &str = "signup-verifier-0123456789-abcdefghijklmnopqrstuvwxyz";
+
+fn challenge(verifier: &str) -> String {
+    URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes()))
+}
+
+/// Signup bound to the client that keeps `SIGNUP_VERIFIER`.
+async fn signup_bound(app: &TestApp, email: &str, password: &str) -> Reply {
+    app.post(
+        "/auth/v1/signup",
+        None,
+        json!({
+            "email": email,
+            "password": password,
+            "code_challenge": challenge(SIGNUP_VERIFIER),
+            "code_challenge_method": "S256",
+        }),
+    )
+    .await
+}
+
+async fn verify_signup_with(app: &TestApp, token: &str, verifier: &str) -> Reply {
+    app.post(
+        "/auth/v1/verify",
+        None,
+        json!({ "type": "signup", "token": token, "code_verifier": verifier }),
+    )
+    .await
+}
+
+async fn stored_password(app: &TestApp, email: &str) -> Option<String> {
+    app.admin_client
+        .query_one(
+            "SELECT encrypted_password FROM auth.users WHERE email = $1",
+            &[&email],
+        )
+        .await
+        .unwrap()
+        .get(0)
+}
+
 async fn resend(app: &TestApp, email: &str) -> Reply {
     app.post(
         "/auth/v1/resend",
@@ -940,7 +1089,7 @@ async fn review_link_requests_do_not_wait_for_account_lookup_or_issuance() {
 #[tokio::test]
 async fn signup_with_confirmation_waits_for_the_link_before_password_login() {
     let app = spawn_confirming().await;
-    let reply = signup(&app, "fabi@example.com", "strong-pass-123").await;
+    let reply = signup_bound(&app, "fabi@example.com", "strong-pass-123").await;
     assert_eq!(reply.status, StatusCode::CREATED, "{}", reply.body);
     assert!(reply.body.get("access_token").is_none(), "no session yet");
     assert_eq!(reply.body["user"]["email"], "fabi@example.com");
@@ -958,7 +1107,9 @@ async fn signup_with_confirmation_waits_for_the_link_before_password_login() {
     let reply = login(&app, "fabi@example.com", "wrong-pass-123").await;
     assert_eq!(reply.body["code"], "invalid_grant");
 
-    let reply = verify_link(&app, "signup", &token).await;
+    // The client that signed up proves itself with its PKCE verifier, so the
+    // password chosen at signup keeps working.
+    let reply = verify_signup_with(&app, &token, SIGNUP_VERIFIER).await;
     assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
     assert!(reply.body["access_token"].is_string());
     assert!(reply.body["user"]["email_confirmed_at"].is_string());
@@ -969,8 +1120,105 @@ async fn signup_with_confirmation_waits_for_the_link_before_password_login() {
         StatusCode::OK
     );
     // The link works only once.
-    let reply = verify_link(&app, "signup", &token).await;
+    let reply = verify_signup_with(&app, &token, SIGNUP_VERIFIER).await;
     assert_eq!(reply.body["code"], "invalid_grant");
+}
+
+#[tokio::test]
+async fn signup_confirmation_without_the_signup_verifier_drops_the_signup_password() {
+    // Pre-hijack: someone registers the victim's address with a password of
+    // their own and has the confirmation link sent again. The victim opens it.
+    let app = spawn_confirming().await;
+    let attacker = signup_bound(&app, "victim@example.com", "attacker-pass-123").await;
+    assert_eq!(attacker.status, StatusCode::CREATED, "{}", attacker.body);
+    let first = link_token(&app.outbox.wait_for(1).await[0], CONFIRMATION_URL, "signup");
+    age_links(&app).await;
+    assert_eq!(
+        resend(&app, "victim@example.com").await.status,
+        StatusCode::OK
+    );
+    let token = link_token(&app.outbox.wait_for(2).await[1], CONFIRMATION_URL, "signup");
+
+    let victim = verify_link(&app, "signup", &token).await;
+    assert_eq!(victim.status, StatusCode::OK, "{}", victim.body);
+    assert_eq!(victim.body["user"]["id"], attacker.body["user"]["id"]);
+    assert!(victim.body["user"]["email_confirmed_at"].is_string());
+    assert_eq!(
+        login(&app, "victim@example.com", "attacker-pass-123")
+            .await
+            .body["code"],
+        "invalid_grant",
+        "the signup password does not survive a confirmation it did not prove"
+    );
+    assert!(stored_password(&app, "victim@example.com").await.is_none());
+    assert_eq!(
+        verify_signup_with(&app, &first, SIGNUP_VERIFIER).await.body["code"],
+        "invalid_grant"
+    );
+    // The inbox owner, signed in by the link, chooses a password.
+    let access = victim.body["access_token"].as_str().unwrap();
+    let set = app
+        .request(
+            axum::http::Method::PUT,
+            "/auth/v1/user",
+            Some(access),
+            Some(json!({ "password": "owner-pass-456" })),
+        )
+        .await;
+    assert_eq!(set.status, StatusCode::OK, "{}", set.body);
+    assert_eq!(
+        login(&app, "victim@example.com", "owner-pass-456")
+            .await
+            .status,
+        StatusCode::OK
+    );
+
+    // A verifier other than the signup's proves nothing either.
+    signup_bound(&app, "other@example.com", "strong-pass-123").await;
+    let token = link_token(&app.outbox.wait_for(3).await[2], CONFIRMATION_URL, "signup");
+    let reply = verify_signup_with(
+        &app,
+        &token,
+        "another-verifier-0123456789-abcdefghijklmnopqrstuvwxyz",
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
+    assert!(stored_password(&app, "other@example.com").await.is_none());
+
+    // Without a challenge at signup, confirmation never keeps the password.
+    signup(&app, "plain@example.com", "strong-pass-123").await;
+    let token = link_token(&app.outbox.wait_for(4).await[3], CONFIRMATION_URL, "signup");
+    let reply = verify_signup_with(&app, &token, SIGNUP_VERIFIER).await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
+    assert!(stored_password(&app, "plain@example.com").await.is_none());
+}
+
+#[tokio::test]
+async fn signup_rejects_a_challenge_other_than_s256() {
+    let app = spawn_confirming().await;
+    for body in [
+        json!({"email": "pkce@example.com", "password": "strong-pass-123", "code_challenge": "short"}),
+        json!({
+            "email": "pkce@example.com",
+            "password": "strong-pass-123",
+            "code_challenge": challenge(SIGNUP_VERIFIER),
+            "code_challenge_method": "plain",
+        }),
+    ] {
+        let reply = app.post("/auth/v1/signup", None, body).await;
+        assert_eq!(reply.status, StatusCode::BAD_REQUEST, "{}", reply.body);
+        assert_eq!(reply.body["code"], "invalid_code_challenge");
+    }
+    let created: i64 = app
+        .admin_client
+        .query_one(
+            "SELECT count(*) FROM auth.users WHERE email = 'pkce@example.com'",
+            &[],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(created, 0);
 }
 
 #[tokio::test]
@@ -1016,6 +1264,99 @@ async fn confirmation_can_be_resent_only_to_unconfirmed_accounts() {
         )
         .await;
     assert_eq!(reply.body["code"], "unsupported_type");
+}
+
+/// The keys of a signup answer and of its `user`, to compare their shape.
+fn shape(body: &Value) -> (Vec<String>, Vec<String>) {
+    let keys = |value: &Value| {
+        let mut keys: Vec<String> = value.as_object().unwrap().keys().cloned().collect();
+        keys.sort();
+        keys
+    };
+    (keys(body), keys(&body["user"]))
+}
+
+#[tokio::test]
+async fn confirming_signup_answers_an_existing_email_like_a_new_one() {
+    let app = spawn_confirming().await;
+    let new = signup_bound(&app, "first@example.com", "first-pass-123").await;
+    assert_eq!(new.status, StatusCode::CREATED, "{}", new.body);
+    app.outbox.wait_for(1).await;
+    let hash = stored_password(&app, "first@example.com").await;
+
+    // Unconfirmed: same answer, the stored password stays, and inside the
+    // link cooldown nothing more is sent.
+    let again = app
+        .post(
+            "/auth/v1/signup",
+            None,
+            json!({
+                "email": "First@Example.com",
+                "password": "second-pass-456",
+                "data": {"name": "Other"},
+                "code_challenge": challenge(SIGNUP_VERIFIER),
+            }),
+        )
+        .await;
+    assert_eq!(again.status, StatusCode::CREATED, "{}", again.body);
+    assert_eq!(shape(&again.body), shape(&new.body));
+    assert_eq!(again.body["user"]["email"], "first@example.com");
+    assert_eq!(
+        again.body["user"]["user_metadata"],
+        json!({"name": "Other"})
+    );
+    assert!(again.body["user"]["email_confirmed_at"].is_null());
+    assert_ne!(again.body["user"]["id"], new.body["user"]["id"]);
+    assert_eq!(stored_password(&app, "first@example.com").await, hash);
+    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    assert_eq!(app.outbox.sent().len(), 1);
+
+    // After the cooldown the inbox gets a fresh link, not bound to whoever
+    // signed up again: it cannot set or keep a password.
+    age_links(&app).await;
+    signup_bound(&app, "first@example.com", "second-pass-456").await;
+    let sent = app.outbox.wait_for(2).await;
+    assert_eq!(sent[1].to, "first@example.com");
+    assert_eq!(sent[1].subject, "Confirm your email");
+    let token = link_token(&sent[1], CONFIRMATION_URL, "signup");
+    let reply = verify_signup_with(&app, &token, SIGNUP_VERIFIER).await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
+    assert_eq!(reply.body["user"]["id"], new.body["user"]["id"]);
+    assert!(stored_password(&app, "first@example.com").await.is_none());
+    for password in ["first-pass-123", "second-pass-456"] {
+        assert_eq!(
+            login(&app, "first@example.com", password).await.body["code"],
+            "invalid_grant"
+        );
+    }
+
+    // Confirmed: same answer again, and the owner gets one notice a minute.
+    signup_bound(&app, "owner@example.com", "owner-pass-123").await;
+    let token = link_token(&app.outbox.wait_for(3).await[2], CONFIRMATION_URL, "signup");
+    verify_signup_with(&app, &token, SIGNUP_VERIFIER).await;
+    for _ in 0..2 {
+        let reply = signup(&app, "owner@example.com", "intruder-pass-1").await;
+        assert_eq!(reply.status, StatusCode::CREATED, "{}", reply.body);
+        assert_eq!(shape(&reply.body), shape(&new.body));
+        assert!(reply.body.get("access_token").is_none());
+    }
+    let sent = app.outbox.wait_for(4).await;
+    assert_eq!(sent[3].to, "owner@example.com");
+    assert_eq!(sent[3].subject, "Your account already exists");
+    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    assert_eq!(app.outbox.sent().len(), 4, "one notice per minute");
+    assert_eq!(
+        login(&app, "owner@example.com", "owner-pass-123")
+            .await
+            .status,
+        StatusCode::OK
+    );
+    assert_eq!(
+        login(&app, "owner@example.com", "intruder-pass-1")
+            .await
+            .body["code"],
+        "invalid_grant"
+    );
 }
 
 #[tokio::test]
@@ -1110,9 +1451,9 @@ async fn magic_link_signs_in_existing_accounts_and_confirms_the_email() {
 #[tokio::test]
 async fn magic_link_of_a_confirmed_account_preserves_password_and_existing_session() {
     let app = spawn_confirming().await;
-    signup(&app, "confirmed@example.com", "strong-pass-123").await;
+    signup_bound(&app, "confirmed@example.com", "strong-pass-123").await;
     let signup_token = link_token(&app.outbox.wait_for(1).await[0], CONFIRMATION_URL, "signup");
-    let original = verify_link(&app, "signup", &signup_token).await;
+    let original = verify_signup_with(&app, &signup_token, SIGNUP_VERIFIER).await;
     assert_eq!(original.status, StatusCode::OK);
     magic_link(&app, "confirmed@example.com").await;
     let token = link_token(

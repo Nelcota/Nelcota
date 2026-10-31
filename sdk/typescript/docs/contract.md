@@ -98,7 +98,7 @@ update HTTP mocks to return the documented response representation.
 | REST | `from().select()`, filters, order, limit, range, single, maybeSingle | `GET/HEAD /rest/v1/{table}`; encoded query; optional `Prefer: count=exact`; `Content-Range` |
 | REST writes | insert, update, delete, upsert, optional select | `POST/PATCH/DELETE /rest/v1/{table}`; JSON body; `Prefer: return=minimal/representation`; upsert resolution and `on_conflict` |
 | RPC | `rpc(name, args)` | `POST /rest/v1/rpc/{name}`; named JSON arguments; caller's role |
-| Auth | signUp | `POST /auth/v1/signup`; session or `{user}` awaiting confirmation |
+| Auth | signUp | `POST /auth/v1/signup` with an S256 `code_challenge`; session or `{user}` awaiting confirmation |
 | Auth | password login, refresh, exchangeCode | `POST /auth/v1/token?grant_type=password/refresh_token/pkce` |
 | Auth | getUser, updateUser, signOut | `GET`/`PUT /auth/v1/user`, `POST /auth/v1/logout` |
 | Auth links | recover, magic link, resend, verify/reset | `POST /auth/v1/recover`, `/magiclink`, `/resend`, `/verify` |
@@ -249,8 +249,9 @@ when upgrading so they use the same coordination protocol.
 A ready session whose `localStorage` mirror has been removed is signed out
 once its receipt is more than five seconds old (younger receipts may be
 between the journal commit and the mirror write); the journal is cleared in
-the same transaction. Other `localStorage` edits do not change the session.
-`sessionStorage` and custom adapters keep their own semantics.
+the same transaction. A receipt from an SDK without receipt times is timed
+from when this client first sees it. Other `localStorage` edits do not change
+the session. `sessionStorage` and custom adapters keep their own semantics.
 
 ### Refresh
 
@@ -292,13 +293,15 @@ Another client can always read a reserved session and use its access token.
 For 10 seconds after the reservation (the server's retry window) it cannot
 rotate it: refreshing returns `refresh_pending`. The owner renews the
 reservation every few seconds while its refresh request is in flight, so a slow
-request keeps it. Once renewals stop for 10 seconds the reservation is
-abandoned (its tab closed or crashed) and the next refresh takes it over,
-retrying the stored token. The server then either rotates it, or answers
-`invalid_grant` when the lost rotation had committed, which signs out. A late
-response from a superseded owner cannot overwrite the newer state: its
-publication is refused and the authoritative state is adopted. A reservation
-from an SDK without receipt times is timed from when this client first sees it.
+request keeps it, for at most the request timeout or two minutes, whichever is
+shorter (two minutes with `timeout: 0`). Once renewals stop for 10 seconds the
+reservation is abandoned (its tab closed or crashed, or its request never
+settled) and the next refresh takes it over, retrying the stored token. The
+server then either rotates it, or answers `invalid_grant` when the lost
+rotation had committed, which signs out. A late response from a superseded
+owner cannot overwrite the newer state: its publication is refused and the
+authoritative state is adopted. A reservation from an SDK without receipt
+times is timed from when this client first sees it.
 
 ### Publication and events
 
@@ -309,11 +312,12 @@ while that exact prior receipt remains current, even with a foreign owner. A
 committed logout supersedes dirty state in other clients.
 
 Each change is broadcast as one message carrying its event and revision,
-never tokens; a change without a committed revision sends the legacy
-`"changed"` signal, which receivers still accept from older SDKs. Receivers
-reload under the lifecycle lock; unchanged reloads emit nothing, and a
-revision that no longer matches the journal is not trusted for its event
-kind. Explicit `sessionStorage` does not broadcast.
+never tokens, followed by the legacy `"changed"` signal for tabs running SDK
+0.2.1 or older; current receivers skip that copy. A change without a
+committed revision sends only the legacy signal, which receivers still accept
+from older SDKs. Receivers reload under the lifecycle lock; unchanged reloads
+emit nothing, and a revision that no longer matches the journal is not
+trusted for its event kind. Explicit `sessionStorage` does not broadcast.
 
 Auth listeners run in registration order and may return promises. Each
 subscription first receives one asynchronous `initial_session`, ordered before
@@ -359,6 +363,19 @@ address bar. Known server error codes (`access_denied`, `provider_error`,
 `invalid_state`) are kept as the error code; any other value becomes
 `oauth_error` with at most 64 sanitized characters in `details`. An error
 redirect consumes the verifier.
+
+### Sign-up confirmation
+
+`signUp()` stores a second verifier under `<storageKey>.signup` before its
+request and sends its S256 challenge. A sign-up that returns a session
+removes it. `verifyEmailLink()` for a `signup` link sends it as
+`code_verifier` under the verifier lock and removes it only after the server
+returns a session; any failure keeps it for a retry. Magic links and recovery
+never read it, and `handleRedirect()` ignores it. Without the verifier (another
+browser, a resent link) the server still confirms the email and signs in but
+clears the password chosen at sign-up. A storage adapter that cannot
+hold the verifier (one that refuses the key) signs up and confirms without it,
+and a failed removal never discards the confirmed session.
 
 ## Bucket settings
 

@@ -32,6 +32,8 @@ const en: Messages<typeof ptBR> = {
   webhook_paused: "Enable the webhook before resending.",
   webhook_delivery_active: "This delivery or a resend is already queued. Wait for it to finish.",
   webhook_payload_omitted: "This event was recorded without its contents, so it cannot be resent.",
+  webhook_queue_full:
+    "This webhook already has 10,000 deliveries waiting. Resend once its queue drains.",
   route_not_found: "Route not found.",
   session_expired: "Session expired: sign in again.",
   origin_not_allowed: "Origin not allowed.",

@@ -12,7 +12,7 @@ import { isBrowser } from "../../core/runtime.js";
 import { withLock, sessionLock } from "../browser/coordination.js";
 import { retryDelayInMs } from "../scheduler.js";
 import { isSession, secondsLeft, type Session, type User } from "../session.js";
-import { SessionStore, storageKey } from "../store.js";
+import { SessionStore, storageKey, type VerifierSlot } from "../store.js";
 import type { AuthListener, AuthOptions, AuthRequestOptions, SessionTransport } from "../types.js";
 import { SessionBackground } from "./background.js";
 import { SessionPublication } from "./publication.js";
@@ -94,14 +94,14 @@ export class SessionManager {
   withVerifier<T>(task: () => Promise<T>): Promise<T> {
     return withLock(this.#pkceLockName, task);
   }
-  setVerifier(value: string): Promise<void> {
-    return this.#store.setVerifier(value);
+  setVerifier(value: string, slot?: VerifierSlot): Promise<void> {
+    return this.#store.setVerifier(value, slot);
   }
-  peekVerifier(): Promise<string | null> {
-    return this.#store.peekVerifier();
+  peekVerifier(slot?: VerifierSlot): Promise<string | null> {
+    return this.#store.peekVerifier(slot);
   }
-  consumeVerifier(): Promise<string | null> {
-    return this.#store.consumeVerifier();
+  consumeVerifier(slot?: VerifierSlot): Promise<string | null> {
+    return this.#store.consumeVerifier(slot);
   }
 
   onChange(listener: AuthListener): () => void {
@@ -227,8 +227,8 @@ export class SessionManager {
     const pending = await this.#store.reserve(current);
     if (pending != null) return fail(pending);
     // Accepted rotation owns publication independently of a cancelled waiter.
-    // The reservation is renewed while the request runs, however long it takes.
-    const stopRenewal = this.#store.holdReservation();
+    // The reservation is renewed while the request runs, up to a bounded hold.
+    const stopRenewal = this.#store.holdReservation(options.timeout ?? this.transport.timeout);
     let result: Result<Session>;
     try {
       result = await this.transport.rotate(

@@ -239,8 +239,7 @@ async fn conceal_hidden(
     name: &str,
     error: ApiError,
 ) -> ApiError {
-    let telling = error.code() == "object_exists" || error.sqlstate() == Some("42501");
-    if !telling {
+    if !depends_on_name(&error) {
         return error;
     }
     match visible(state, claims, bucket, name).await {
@@ -248,6 +247,13 @@ async fn conceal_hidden(
         Ok(false) => ApiError::row_security_refused("objects", claims.role()),
         Err(lookup) => lookup,
     }
+}
+
+/// Whether the error can differ with the name's existence. Other refusals,
+/// such as a missing table privilege, answer every name alike and keep their
+/// own message so operators can see the real cause.
+fn depends_on_name(error: &ApiError) -> bool {
+    error.code() == "object_exists" || error.is_row_security_refusal()
 }
 
 /// Whether the caller's policies let them see the file.
@@ -447,4 +453,21 @@ async fn receive(
         mime_type,
         etag: base16ct::lower::encode_string(&hasher.finalize()),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use nelcota_core::Role;
+
+    use super::*;
+
+    #[test]
+    fn only_name_dependent_refusals_are_concealed() {
+        let taken = ApiError::new(StatusCode::CONFLICT, "object_exists", "taken");
+        assert!(depends_on_name(&taken));
+        let refused = ApiError::row_security_refused("objects", Role::Authenticated);
+        assert!(depends_on_name(&refused));
+        let denied = ApiError::new(StatusCode::FORBIDDEN, "db_error", "permission denied");
+        assert!(!depends_on_name(&denied));
+    }
 }

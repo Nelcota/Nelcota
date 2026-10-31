@@ -1,5 +1,6 @@
 //! Table listing, row reads and writes through the validated query compiler.
 use super::catalog::{estimates, kind, policy_counts, rls_json, row_count, table_or_404};
+use super::json_null;
 use crate::{AdminState, ApiError, error::user_query_error, sql::RunAs};
 use axum::{
     Json,
@@ -25,7 +26,8 @@ const MAX_PAGE_SIZE: i64 = 500;
 ///
 /// json/jsonb values are already JSON, so their text is kept as is: a stored
 /// string `"42"` must not read back (and save) as the number 42. Postgres
-/// renders SQL NULL and a JSON `null` alike; both read as NULL.
+/// renders SQL NULL and a JSON `null` alike; both read as NULL here (the
+/// table editor tells them apart with [`json_text`]).
 pub(crate) fn raw_text(value: Option<&RawValue>, json: bool) -> Option<String> {
     let raw = value?.get();
     if raw == "null" {
@@ -35,6 +37,15 @@ pub(crate) fn raw_text(value: Option<&RawValue>, json: bool) -> Option<String> {
         return serde_json::from_str::<String>(raw).ok();
     }
     Some(raw.to_owned())
+}
+
+/// Text of a json/jsonb value: a JSON `null` reads as `null`, SQL NULL
+/// (`sql_null`) as `None`.
+fn json_text(value: Option<&RawValue>, sql_null: bool) -> Option<String> {
+    if sql_null {
+        return None;
+    }
+    value.map(|raw| raw.get().to_owned())
 }
 
 /// Columns whose values the panel edits as JSON text.
@@ -316,7 +327,9 @@ pub async fn table(
     let request = build_request(&table, &rows_query, Some((page, size)))?;
     let viewer = run_as.claims(&state.db).await?;
     let filtered = !request.filters.is_empty();
-    let sql = query::select(&catalog.schema, &table, &request, None);
+    let mut sql = query::select(&catalog.schema, &table, &request, None);
+    let json_columns: Vec<&Column> = table.columns.iter().filter(|c| is_json(c)).collect();
+    json_null::flag_sql_nulls(&mut sql, &json_columns)?;
 
     let mut client = state.db.get().await?;
     let (json_rows, (estimates, policies), viewed_total) = match &viewer {
@@ -349,17 +362,22 @@ pub async fn table(
         }
     };
 
-    let raw_rows: Vec<Row> = serde_json::from_str(&json_rows)?;
+    let raw_rows = parse_rows(&json_rows, json_columns.is_empty())?;
     let has_next = raw_rows.len() as i64 > size;
     let rows: Vec<Value> = raw_rows
         .iter()
         .take(size as usize)
-        .map(|r| {
+        .map(|(r, sql_nulls)| {
+            let mut flags = sql_nulls.iter();
             let map: Map<String, Value> = table
                 .columns
                 .iter()
                 .map(|c| {
-                    let text = raw_text(r.get(&c.name).map(AsRef::as_ref), is_json(c));
+                    let value = r.get(&c.name).map(AsRef::as_ref);
+                    let text = match is_json(c) {
+                        true => json_text(value, flags.next().copied().unwrap_or(true)),
+                        false => raw_text(value, false),
+                    };
                     (c.name.clone(), text.map_or(Value::Null, Value::String))
                 })
                 .collect();
@@ -421,10 +439,28 @@ pub async fn table(
     }))
 }
 
+/// Page rows, each with the `IS NULL` flags of its json columns
+/// ([`json_null::flag_sql_nulls`]) when the table has any.
+fn parse_rows(json_rows: &str, plain: bool) -> Result<Vec<(Row, Vec<bool>)>, ApiError> {
+    if plain {
+        let rows: Vec<Row> = serde_json::from_str(json_rows)?;
+        return Ok(rows.into_iter().map(|row| (row, Vec::new())).collect());
+    }
+    Ok(serde_json::from_str(json_rows)?)
+}
+
+/// Form values converted for a write, and the json/jsonb columns set to a
+/// JSON `null` (the text `null`), which are not SQL NULL.
+struct Values {
+    values: Map<String, Value>,
+    json_nulls: Vec<String>,
+}
+
 /// Converts form values (text or null) to JSON: json/jsonb are parsed as
 /// JSON; everything else goes as text and Postgres casts it to the column type.
-fn to_values(table: &Table, values: Map<String, Value>) -> Result<Map<String, Value>, ApiError> {
+fn to_values(table: &Table, values: Map<String, Value>) -> Result<Values, ApiError> {
     let mut out = Map::new();
+    let mut json_nulls = Vec::new();
     for (key, value) in values {
         let col = match table.column(&key).filter(|c| !c.generated) {
             Some(col) => col,
@@ -436,6 +472,7 @@ fn to_values(table: &Table, values: Map<String, Value>) -> Result<Map<String, Va
                 .params(json!({ "column": key })));
             }
         };
+        let text_null = value.is_null();
         let json = match value {
             Value::Null => Value::Null,
             Value::String(s) if is_json(col) => serde_json::from_str(&s).map_err(|e| {
@@ -448,9 +485,15 @@ fn to_values(table: &Table, values: Map<String, Value>) -> Result<Map<String, Va
             Value::String(s) => Value::String(s),
             other => Value::String(other.to_string()),
         };
+        if is_json(col) && json.is_null() && !text_null {
+            json_nulls.push(col.name.clone());
+        }
         out.insert(col.name.clone(), json);
     }
-    Ok(out)
+    Ok(Values {
+        values: out,
+        json_nulls,
+    })
 }
 
 /// `column=eq.value` pairs of the primary key.
@@ -503,9 +546,10 @@ pub async fn insert_row(
 ) -> ApiResult {
     let table = table_or_404(&state, &name)?;
     let schema = state.catalog.get().schema.clone();
-    let values = to_values(&table, body.values)?;
-    let sql =
-        query::insert(&schema, &table, Value::Object(values), None, None).map_err(invalid_query)?;
+    let Values { values, json_nulls } = to_values(&table, body.values)?;
+    let mut sql = query::insert(&schema, &table, Value::Object(values.clone()), None, None)
+        .map_err(invalid_query)?;
+    json_null::insert_json_nulls(&mut sql, &table, &values, &json_nulls)?;
     execute(&state, &sql).await?;
     Ok(Json(json!({ "message": "row inserted" })))
 }
@@ -524,9 +568,16 @@ pub async fn update_row(
     let table = table_or_404(&state, &name)?;
     let schema = state.catalog.get().schema.clone();
     let filters = pk_filters(&table, &body.pk)?;
-    let values = to_values(&table, body.values)?;
-    let sql = query::update(&schema, &table, Value::Object(values), &filters, None)
-        .map_err(invalid_query)?;
+    let Values { values, json_nulls } = to_values(&table, body.values)?;
+    let mut sql = query::update(
+        &schema,
+        &table,
+        Value::Object(values.clone()),
+        &filters,
+        None,
+    )
+    .map_err(invalid_query)?;
+    json_null::update_json_nulls(&mut sql, &table, &values, &json_nulls)?;
     let n = execute(&state, &sql).await?;
     Ok(Json(
         json!({ "message": format!("{n} row(s) updated"), "count": n }),
@@ -616,5 +667,32 @@ mod tests {
         assert_eq!(raw_text(Some(&raw("42")), true).as_deref(), Some("42"));
         assert_eq!(raw_text(Some(&raw("null")), true), None);
         assert_eq!(raw_text(None, true), None);
+    }
+
+    #[test]
+    fn json_null_reads_apart_from_sql_null() {
+        let raw = |s: &str| serde_json::from_str::<Box<RawValue>>(s).unwrap();
+        assert_eq!(
+            json_text(Some(&raw("null")), false).as_deref(),
+            Some("null")
+        );
+        assert_eq!(json_text(Some(&raw("null")), true), None);
+        assert_eq!(
+            json_text(Some(&raw("\"42\"")), false).as_deref(),
+            Some("\"42\"")
+        );
+    }
+
+    #[test]
+    fn the_text_null_is_a_json_null_for_json_columns_only() {
+        let mut table = crate::tables::json_null::tests::table();
+        table
+            .columns
+            .push(crate::tables::json_null::tests::column("note", "text"));
+        let values = serde_json::json!({ "body": "null", "raw": null, "note": "null" });
+        let Values { values, json_nulls } =
+            to_values(&table, values.as_object().cloned().unwrap()).unwrap();
+        assert_eq!(json_nulls, ["body"]);
+        assert_eq!(values["note"], "null");
     }
 }

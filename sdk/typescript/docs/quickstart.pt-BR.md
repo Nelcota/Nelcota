@@ -77,6 +77,10 @@ if (error) throw error;
 Para criar uma conta, use `auth.signUp({ email, password })`. Se a confirmação
 de email estiver ativada, o cadastro retorna `data.session === null`: confirme
 o email e depois entre. O cadastro não garante uma sessão imediata.
+O SDK guarda um verificador PKCE do cadastro neste navegador; ao abrir o link,
+`auth.verifyEmailLink(link)` o envia e a senha escolhida é mantida. Um link
+aberto em outro navegador, ou reenviado, confirma o email e entra, mas apaga
+essa senha: defina outra com `auth.updateUser({ password })`.
 
 ## 4. Grave e consulte
 

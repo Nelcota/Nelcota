@@ -7,6 +7,11 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Added
 
+- `sign_up` sends an S256 challenge and a pending sign-up returns
+  `SignUp::verifier`; `AuthClient::verify_signup_link(&link, &verifier)`
+  confirms with it, keeping the password chosen at sign-up. `SignUp` gained
+  that public field (code building `SignUp` literals must add it) and its
+  `Debug` output omits the verifier.
 - `AuthClient::try_start_auto_refresh` returns an error outside a Tokio runtime
   instead of panicking; `start_auto_refresh` (documented to panic there) and the
   `AutoRefresh` handle are `#[must_use]`.
@@ -64,6 +69,10 @@ Dates identify release entries; registry availability requires a successful publ
   grammar rejects.
 - `with_access_token` validates its token like `ClientBuilder::access_token`;
   an invalid one fails each request with the same `Error::Usage`.
+- `get_session` honors the refresh backoff: after a transient refresh failure
+  it returns the still-valid session without starting another rotation until
+  Retry-After (or 2 s) has elapsed, so a caller polling it no longer sends a
+  refresh on every call.
 
 ## 0.1.7 — 2026-10-26
 
