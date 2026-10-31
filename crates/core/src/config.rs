@@ -70,6 +70,9 @@ pub enum StorageBackend {
 pub const DEFAULT_MAX_BODY_BYTES: usize = 2 * 1024 * 1024;
 /// Upper bound of `NELCOTA_TRUSTED_PROXY_HOPS`; real chains are 1 or 2 deep.
 pub const MAX_PROXY_HOPS: u8 = 8;
+/// Upper bound for the statement and upload timeouts: one day. Larger values
+/// overflow PostgreSQL's millisecond statement_timeout or a deadline instant.
+pub const MAX_TIMEOUT_SECS: u64 = 86_400;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Config {
@@ -370,6 +373,11 @@ impl Config {
         // The statement must time out first, so a slow query answers its own
         // 504 and its transaction ends, instead of the request being dropped
         // while Postgres keeps working (0 turns the statement timeout off).
+        if self.statement_timeout_secs > MAX_TIMEOUT_SECS {
+            return Err(ConfigError::Invalid(
+                "NELCOTA_STATEMENT_TIMEOUT_SECS must be at most 86400 (one day)",
+            ));
+        }
         if self.statement_timeout_secs > 0
             && self.request_timeout_secs <= self.statement_timeout_secs
         {
@@ -425,6 +433,11 @@ impl Config {
         if self.storage_max_file_size == 0 || self.storage_upload_timeout_secs == 0 {
             return Err(ConfigError::Invalid(
                 "NELCOTA_STORAGE_MAX_FILE_SIZE and NELCOTA_STORAGE_UPLOAD_TIMEOUT_SECS must be > 0",
+            ));
+        }
+        if self.storage_upload_timeout_secs > MAX_TIMEOUT_SECS {
+            return Err(ConfigError::Invalid(
+                "NELCOTA_STORAGE_UPLOAD_TIMEOUT_SECS must be at most 86400 (one day)",
             ));
         }
         if let Some(url) = self.storage_public_url.as_deref().map(str::trim)
@@ -745,6 +758,19 @@ mod tests {
             ..valid()
         };
         assert!(no_statement_timeout.validate().is_ok());
+        // Beyond a day the statement timeout overflows PostgreSQL's integer milliseconds.
+        let day = Config {
+            request_timeout_secs: MAX_TIMEOUT_SECS + 1,
+            statement_timeout_secs: MAX_TIMEOUT_SECS,
+            ..valid()
+        };
+        assert!(day.validate().is_ok());
+        let too_long = Config {
+            request_timeout_secs: u64::MAX,
+            statement_timeout_secs: 2_147_484,
+            ..valid()
+        };
+        assert!(too_long.validate().is_err());
         let no_api_limit = Config {
             api_rate_limit_per_minute: 0,
             ..valid()
@@ -877,6 +903,20 @@ mod tests {
             ..complete
         };
         assert!(half.oauth().is_err());
+    }
+
+    #[test]
+    fn upload_timeout_is_bounded() {
+        let disk = |storage_upload_timeout_secs| Config {
+            storage_backend: StorageBackend::Disk,
+            storage_dir: Some("/storage".into()),
+            storage_upload_timeout_secs,
+            ..valid()
+        };
+        assert!(disk(MAX_TIMEOUT_SECS).validate_storage().is_ok());
+        // An unbounded value panics when the upload deadline instant is computed.
+        assert!(disk(MAX_TIMEOUT_SECS + 1).validate_storage().is_err());
+        assert!(disk(u64::MAX).validate_storage().is_err());
     }
 
     #[test]

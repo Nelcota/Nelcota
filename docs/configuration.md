@@ -77,7 +77,7 @@ provider IDs or generated values require your own credentials.
 | `NELCOTA_DB_POOL_SIZE` | `usize` | `10` | `10` | Positive request-pool capacity; does not set separate panel/webhook/export budgets. |
 | `NELCOTA_API_CONCURRENCY_PER_CALLER` | `Option<usize>` | `unset` (half the pool, at least 1) | `5` | Concurrent REST requests per caller (signed-in user, else client address; IPv6 per /64; `service_role` exempt). Extras wait up to 1 s, then get 429 with Retry-After. 0 disables. |
 | `NELCOTA_REQUEST_TIMEOUT_SECS` | `u64` | `15` | `15` | Positive ordinary HTTP request deadline in seconds. Must exceed nonzero statement timeout; streamed uploads/exports have separate budgets. |
-| `NELCOTA_STATEMENT_TIMEOUT_SECS` | `u64` | `10` | `10` | Request-pool PostgreSQL statement timeout in seconds. 0 disables that timeout; use deliberately. Panel SQL has separate fixed budgets. |
+| `NELCOTA_STATEMENT_TIMEOUT_SECS` | `u64` | `10` | `10` | Request-pool PostgreSQL statement timeout in seconds, at most 86400 (one day). 0 disables that timeout; use deliberately. Panel SQL has separate fixed budgets. |
 | `NELCOTA_LOG_FORMAT` | `LogFormat` | `text` | `json` | text or json tracing output; verbosity comes from RUST_LOG. |
 | `NELCOTA_WEBHOOKS_ALLOW_LOOPBACK` | `bool` | `false` | `false` | Development-only HTTP(S) to localhost/127.0.0.1/::1. Does not permit LAN/metadata addresses or arbitrary public HTTP. |
 | `NELCOTA_DEPLOYMENT_VALIDATION` | `bool` | `false` | `controller-managed` | Linux controller-owned candidate gate; requires gate path and identity. Never configure manually to enable an update. |
@@ -95,7 +95,7 @@ provider IDs or generated values require your own credentials.
 | `NELCOTA_STORAGE_MAX_TOTAL_SIZE` | `Option<u64>` | `unset` | `10737418240` | Optional committed total-byte cap across all buckets. Unset has no cap; 0 leaves no capacity for nonempty files. |
 | `NELCOTA_STORAGE_MIN_FREE_BYTES` | `u64` | `1073741824` | `1073741824` | Disk backend free-space reserve, in bytes. Default is 1 GiB. |
 | `NELCOTA_STORAGE_PUBLIC_URL` | `Option<String>` | `unset` | `https://files.example.com` | Public-file URL origin; absent uses relative API URLs. Configure an HTTPS proxy to public object routes. |
-| `NELCOTA_STORAGE_UPLOAD_TIMEOUT_SECS` | `u64` | `3600` | `3600` | Positive admission/policy/byte-reception deadline in seconds when enabled. Metadata publication and multipart cleanup have separate bounded settlement. |
+| `NELCOTA_STORAGE_UPLOAD_TIMEOUT_SECS` | `u64` | `3600` | `3600` | Positive admission/policy/byte-reception deadline in seconds when enabled, at most 86400 (one day). Metadata publication and multipart cleanup have separate bounded settlement. |
 
 All 52 fields are listed above. `Secret` affects log formatting, not encryption
 of the environment file. API signatures are not a substitute for private key

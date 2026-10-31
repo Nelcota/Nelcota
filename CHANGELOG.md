@@ -228,6 +228,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - Each backup first removes what an interrupted backup left in `backups/`: a
   `.dump.partial` file, a `.dump.files` snapshot without its dump, and
   verification scratch directories that held a copy of the project's `.env`.
+- `NELCOTA_STATEMENT_TIMEOUT_SECS` and `NELCOTA_STORAGE_UPLOAD_TIMEOUT_SECS`
+  are capped at 86400 (one day) at startup. Larger values made startup fail
+  while configuring PostgreSQL, or panicked on the first upload.
 
 ### Security
 
