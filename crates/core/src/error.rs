@@ -57,6 +57,10 @@ struct Body<'a> {
 /// Postgres' message when no policy admits a new row (without the table name).
 const ROW_SECURITY_REFUSED: &str = "new row violates row-level security policy for table";
 
+/// What every Postgres row-level security refusal says, including those that
+/// name the `USING` expression of an update.
+const ROW_SECURITY_VIOLATION: &str = "violates row-level security policy";
+
 /// How a SQLSTATE is answered.
 #[derive(Debug, PartialEq, Eq)]
 enum Class {
@@ -176,6 +180,13 @@ impl ApiError {
     /// The SQLSTATE of a database error, when the error came from Postgres.
     pub fn sqlstate(&self) -> Option<&str> {
         self.db.as_ref().and_then(|db| db.sqlstate.as_deref())
+    }
+
+    /// Whether a row-level security policy refused the write, as opposed to
+    /// another `42501` such as a missing table or column privilege.
+    pub fn is_row_security_refusal(&self) -> bool {
+        self.sqlstate() == Some(SqlState::INSUFFICIENT_PRIVILEGE.code())
+            && self.message.contains(ROW_SECURITY_VIOLATION)
     }
 
     /// Maps a Postgres error: client errors keep the database's message,
@@ -393,6 +404,29 @@ mod tests {
         let (response, _) = body(anon).await;
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         assert_eq!(response.headers()[header::WWW_AUTHENTICATE], "Bearer");
+    }
+
+    #[test]
+    fn row_security_refusals_are_told_apart_from_missing_grants() {
+        let refused = ApiError::row_security_refused("objects", Role::Authenticated);
+        assert!(refused.is_row_security_refusal());
+        let with_message = |message: &str| {
+            let mut error = ApiError::new(StatusCode::FORBIDDEN, "db_error", message);
+            error.db = Some(Box::new(DbFields {
+                sqlstate: Some("42501".to_owned()),
+                details: None,
+                hint: None,
+                constraint: None,
+            }));
+            error
+        };
+        let using = "new row violates row-level security policy (USING expression) for table \"objects\" (42501)";
+        assert!(with_message(using).is_row_security_refusal());
+        let grant = "permission denied for table objects (42501)";
+        assert!(!with_message(grant).is_row_security_refusal());
+        // Without a SQLSTATE the message alone proves nothing.
+        let plain = ApiError::new(StatusCode::FORBIDDEN, "db_error", using);
+        assert!(!plain.is_row_security_refusal());
     }
 
     #[test]

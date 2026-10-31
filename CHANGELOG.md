@@ -126,6 +126,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- Storage uploads keep the real message of a refusal that is not a row-level
+  security decision, such as `permission denied for table objects` from a
+  missing grant. Only an existing name and policy refusals of names the
+  caller cannot see are still answered as a plain policy refusal.
 - An upload of unknown length that grows into scarce quota or disk space no
   longer takes the storage admission lock and queries the database on every
   chunk. It reserves half of the remaining room beyond its size, so checks
