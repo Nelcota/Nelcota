@@ -5,7 +5,7 @@ use crate::{
     links::{self, LinkKind},
     oauth,
     rate_limit::{limit, limit_sessions},
-    request::{PeerAddr, client_ip, ip_key, user_agent},
+    request::{PeerAddr, client_ip, ip_block_key, ip_key, user_agent},
     sessions,
     verify::{self, VerifyBody},
 };
@@ -57,6 +57,12 @@ async fn signup(
     let ip = client_ip(state.settings.proxy_hops, &headers, peer);
     if state.settings.signup_enabled {
         limit(&state, &format!("signup:{}", ip_key(ip)))?;
+        // A whole IPv6 /48 shares one more budget of the same size, so its
+        // 65,536 /64s cannot create accounts (and their account-budget keys)
+        // 65,536 times as fast.
+        if let Some(block) = ip_block_key(ip) {
+            limit(&state, &format!("signup:{block}"))?;
+        }
     }
     let session = accounts::signup(&state, body, ip, user_agent(&headers)).await?;
     Ok((StatusCode::CREATED, Json(session)))

@@ -263,6 +263,12 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Security
 
+- One IPv6 /48 can no longer fill the in-memory rate-limit store and so make
+  every new client's auth request fail with 429: the /64s of one /48 may hold
+  at most 1/64 of the per-IP keys (781 of 50,000), past which only that /48's
+  new /64s are refused. Signup also has a budget per /48, so a /48 cannot
+  create accounts (and their account-budget keys) at 65,536 times the per-IP
+  rate.
 - With email confirmation on, signup no longer tells whether an email has an
   account: an existing email gets the same `201 {user}` as a new signup (with a
   random `id`) and the account stays as it is. Its inbox gets a new

@@ -155,11 +155,17 @@ requests have a separate per-IP budget from `/authorize`.
 
 Per-IP budgets group IPv6 addresses by their /64, the block a single
 subscriber usually gets; IPv4-mapped addresses count as their IPv4 address.
+Signup also has a budget of the same size per IPv6 /48, shared by its 65,536
+/64s, so one site cannot create accounts 65,536 times as fast.
 
 In-memory limiters keep two stores of at most 50,000 keys each. At capacity
 the per-IP store rejects new keys with `429` and a one-second retry hint,
 while existing keys keep their independent quotas. Each network holds one key
 per endpoint, so filling it takes thousands of networks kept busy every minute.
+The /64s of one IPv6 /48 may hold at most 1/64 of the per-IP store (781
+keys): past that share, that /48's new /64s are refused as if the store were
+full (REST and storage let them through untracked), and everyone else keeps
+working, so one /48 cannot fill the store.
 Account budgets live in a separate store and only existing accounts get one,
 so made-up emails cannot fill either; while the account store is full, an
 account it does not track is bounded only by its caller's per-IP budget, and a

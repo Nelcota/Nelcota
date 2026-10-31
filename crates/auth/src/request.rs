@@ -71,6 +71,20 @@ pub fn ip_key(ip: Option<IpAddr>) -> String {
     }
 }
 
+/// Rate-limit key of the IPv6 /48 around a client address (`a:b:c::/48`),
+/// the allocation a site usually gets; `None` for IPv4 and unknown clients.
+/// A budget on this key stops one site from multiplying a per-/64 budget by
+/// its 65,536 /64s.
+pub(crate) fn ip_block_key(ip: Option<IpAddr>) -> Option<String> {
+    match ip.map(|ip| ip.to_canonical()) {
+        Some(IpAddr::V6(ip)) => {
+            let [a, b, c, ..] = ip.segments();
+            Some(format!("{a:x}:{b:x}:{c:x}::/48"))
+        }
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -169,5 +183,16 @@ mod tests {
         assert_ne!(key("203.0.113.7"), key("203.0.113.8"));
         assert_eq!(key("::ffff:203.0.113.7"), "203.0.113.7");
         assert_eq!(ip_key(None), "");
+    }
+
+    #[test]
+    fn ip_block_key_groups_ipv6_by_48_only() {
+        let key = |ip: &str| ip_block_key(Some(ip.parse().unwrap()));
+        assert_eq!(key("2001:db8:1:2::1").as_deref(), Some("2001:db8:1::/48"));
+        assert_eq!(key("2001:db8:1:ffff::9"), key("2001:db8:1:2::1"));
+        assert_ne!(key("2001:db8:2:2::1"), key("2001:db8:1:2::1"));
+        assert_eq!(key("203.0.113.7"), None);
+        assert_eq!(key("::ffff:203.0.113.7"), None);
+        assert_eq!(ip_block_key(None), None);
     }
 }

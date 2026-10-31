@@ -10,6 +10,11 @@
 //! picks freely, so they are kept apart: a flood of made-up emails can fill
 //! only the account store, never the one the per-IP budgets rely on.
 //!
+//! A single IPv6 /48 holds 65,536 /64s, enough to fill the network store on
+//! its own. So the network keys of one /48 may take at most
+//! `1 / BLOCK_SHARE` of the store: past that, new /64s of that /48 are treated
+//! as if the store were full, while every other network keeps working.
+//!
 //! Password attempts also have an account-wide budget, `ACCOUNT_BUDGET_FACTOR`
 //! times the per-IP one, so many addresses cannot guess one account's password
 //! much faster than one address could, while one address alone cannot use it
@@ -45,6 +50,9 @@ pub const SESSION_RATE_LIMIT_FACTOR: u32 = 10;
 
 /// Capacity of each store, enforced without evicting a key's active limit.
 const MAX_KEYS: usize = 50_000;
+/// One IPv6 /48 may hold at most this fraction of the network store's keys
+/// (781 of 50,000).
+const BLOCK_SHARE: usize = 64;
 const CLEANUP_INTERVAL: Duration = Duration::from_secs(1);
 const FULL_REFILL: Duration = Duration::from_secs(60);
 const LOGIN_DELAY_BASE: Duration = Duration::from_millis(125);
@@ -67,6 +75,8 @@ struct Entry<C: Clock> {
 
 struct State<C: Clock> {
     entries: HashMap<String, Entry<C>>,
+    /// Keys per IPv6 /48, in a store whose blocks are capped.
+    blocks: HashMap<String, usize>,
     last_cleanup: C::Instant,
     #[cfg(test)]
     cleanups: usize,
@@ -77,6 +87,8 @@ struct Store<C: Clock> {
     state: RwLock<State<C>>,
     quota: Quota,
     capacity: usize,
+    /// How many keys one IPv6 /48 may hold, when its keys are network keys.
+    block_capacity: Option<usize>,
     name: &'static str,
 }
 
@@ -85,15 +97,40 @@ impl<C: Clock> Store<C> {
         Store {
             state: RwLock::new(State {
                 entries: HashMap::new(),
+                blocks: HashMap::new(),
                 last_cleanup: start,
                 #[cfg(test)]
                 cleanups: 0,
             }),
             quota,
             capacity,
+            block_capacity: None,
             name,
         }
     }
+
+    /// Caps the keys of each IPv6 /48 (see `ipv6_block`).
+    fn with_block_cap(mut self) -> Self {
+        self.block_capacity = Some((self.capacity / BLOCK_SHARE).max(1));
+        self
+    }
+}
+
+/// The IPv6 /48 (`a:b:c`) of a network key that ends in an `ip_key` /64
+/// (`<endpoint>:a:b:c:d::/64`); `None` for IPv4 and non-network keys.
+fn ipv6_block(key: &str) -> Option<&str> {
+    let body = key.strip_suffix("::/64")?;
+    let mut segments = body.rsplitn(5, ':');
+    let d = segments.next()?;
+    let c = segments.next()?;
+    let b = segments.next()?;
+    let a = segments.next()?;
+    let hex = |s: &str| (1..=4).contains(&s.len()) && s.bytes().all(|c| c.is_ascii_hexdigit());
+    if ![a, b, c, d].into_iter().all(hex) {
+        return None;
+    }
+    let start = body.len() - d.len() - 1 - c.len() - 1 - b.len() - 1 - a.len();
+    Some(&body[start..body.len() - d.len() - 1])
 }
 
 enum Admission {
@@ -132,7 +169,7 @@ impl<C: Clock + Clone> RateLimiter<C> {
         let accounts = Quota::per_minute(limit.saturating_mul(ACCOUNT_FACTOR));
         let start = clock.now();
         RateLimiter {
-            network: Store::new("network", network, capacity, start),
+            network: Store::new("network", network, capacity, start).with_block_cap(),
             accounts: Store::new("account", accounts, capacity, start),
             notices: Store::new(
                 "notice",
@@ -180,7 +217,12 @@ impl<C: Clock + Clone> RateLimiter<C> {
             return self.outcome(entry);
         }
         let now = self.clock.now();
-        if state.entries.len() >= store.capacity
+        let block = store.block_capacity.and(ipv6_block(key));
+        let block_full = |state: &State<C>| match (block, store.block_capacity) {
+            (Some(block), Some(cap)) => state.blocks.get(block).is_some_and(|n| *n >= cap),
+            _ => false,
+        };
+        if (state.entries.len() >= store.capacity || block_full(&state))
             && now.duration_since(state.last_cleanup) >= CLEANUP_INTERVAL.into()
         {
             let elapsed = now.duration_since(self.start).as_u64();
@@ -188,24 +230,44 @@ impl<C: Clock + Clone> RateLimiter<C> {
                 elapsed.saturating_sub(entry.last_accepted.load(Ordering::Relaxed))
                     < FULL_REFILL.as_nanos() as u64
             });
+            if store.block_capacity.is_some() {
+                let mut blocks = HashMap::new();
+                for key in state.entries.keys() {
+                    if let Some(block) = ipv6_block(key) {
+                        *blocks.entry(block.to_owned()).or_insert(0) += 1;
+                    }
+                }
+                state.blocks = blocks;
+            }
             state.last_cleanup = now;
             #[cfg(test)]
             {
                 state.cleanups += 1;
             }
+            // At most once per second per store, so these cannot flood logs.
             if state.entries.len() >= store.capacity {
-                // At most once per second per store, so it cannot flood logs.
                 tracing::warn!(
                     store = store.name,
                     capacity = store.capacity,
                     "rate limit key store is full"
                 );
             }
+            if block_full(&state) {
+                tracing::warn!(
+                    store = store.name,
+                    block_capacity = store.block_capacity,
+                    "one IPv6 /48 holds its whole share of the rate limit key store"
+                );
+            }
         }
         // Never drop a recent entry to make room: its next attempt would
-        // obtain a fresh burst and bypass the quota.
-        if state.entries.len() >= store.capacity {
+        // obtain a fresh burst and bypass the quota. A /48 at its share is
+        // treated like a full store, for its own new keys only.
+        if state.entries.len() >= store.capacity || block_full(&state) {
             return Admission::Full;
+        }
+        if let Some(block) = block {
+            *state.blocks.entry(block.to_owned()).or_insert(0) += 1;
         }
         let entry = state
             .entries
@@ -223,8 +285,8 @@ impl<C: Clock + Clone> RateLimiter<C> {
     /// Unknown keys are refused while the store is full, with a retry hint.
     /// Each network holds a handful of keys (one per endpoint), so filling
     /// the store takes thousands of distinct networks (IPv4 addresses or IPv6
-    /// /64s) kept busy every minute: costly, but within reach of an attacker
-    /// with a large IPv6 allocation.
+    /// /64s) kept busy every minute. One IPv6 /48 can take only its share of
+    /// the store: past it, its own new /64s are refused, nobody else's.
     pub fn check(&self, key: &str) -> Result<(), Duration> {
         match self.admit(&self.network, key) {
             Admission::Accepted => Ok(()),
@@ -623,6 +685,51 @@ mod tests {
         assert!(limiter.signup_notice("bia@x"), "accounts are independent");
         clock.advance(Duration::from_secs(60));
         assert!(limiter.signup_notice("ana@x"));
+    }
+
+    #[test]
+    fn ipv6_blocks_come_from_network_keys_only() {
+        assert_eq!(ipv6_block("signup:2001:db8:1:2::/64"), Some("2001:db8:1"));
+        assert_eq!(ipv6_block("ip:2001:db8:ffff:0::/64"), Some("2001:db8:ffff"));
+        assert_eq!(ipv6_block("a:b:c:2001:db8:1:2::/64"), Some("2001:db8:1"));
+        assert_eq!(ipv6_block("token:203.0.113.7"), None);
+        assert_eq!(ipv6_block("signup:2001:db8:1::/48"), None);
+        assert_eq!(ipv6_block("user:5f3c::/64"), None);
+        assert_eq!(ipv6_block("x:12345:1:2:3::/64"), None);
+    }
+
+    #[test]
+    fn one_ipv6_48_cannot_fill_the_network_store() {
+        let clock = FakeRelativeClock::default();
+        let limiter = RateLimiter::with_capacity(1, clock.clone(), 640);
+        let key = |block: u16, net: u16| format!("token:2001:db8:{block:x}:{net:x}::/64");
+        // 640 / 64 = 10 keys per /48.
+        for net in 0..10 {
+            assert!(limiter.check(&key(1, net)).is_ok());
+        }
+        for net in 10..2_000 {
+            assert!(
+                limiter.check(&key(1, net)).is_err(),
+                "the /48 used its share"
+            );
+            assert!(
+                limiter
+                    .check_lenient(&format!("ip:2001:db8:1:{net:x}::/64"))
+                    .is_ok(),
+                "lenient checks pass untracked, as with a full store"
+            );
+        }
+        assert_eq!(len(&limiter.network), 10);
+        assert!(limiter.check(&key(2, 0)).is_ok(), "other /48s still get in");
+        assert!(limiter.check("token:203.0.113.7").is_ok(), "IPv4 too");
+        assert!(
+            limiter.check(&key(1, 0)).is_err(),
+            "tracked keys keep their budget"
+        );
+        // Once its keys go idle for a full refill, the /48 gets its share back.
+        clock.advance(Duration::from_secs(60));
+        assert!(limiter.check(&key(1, 500)).is_ok());
+        assert_eq!(len(&limiter.network), 1);
     }
 
     #[test]
