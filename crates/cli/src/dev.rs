@@ -1,11 +1,7 @@
 //! `nelcota dev`: Postgres 17 in a local container + the server in the
 //! foreground, with development secrets generated and kept in `.nelcota/dev.env`.
 
-use std::{
-    fs,
-    process::Command,
-    time::{Duration, Instant},
-};
+use std::{fs, process::Command, time::Duration};
 
 use anyhow::{Context, bail};
 use nelcota_core::{
@@ -325,15 +321,18 @@ fn wait_for_postgres(config: &Config) -> anyhow::Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
-    let deadline = Instant::now() + Duration::from_secs(60);
     runtime.block_on(async {
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(60);
         loop {
-            match db.connect(NoTls).await {
-                Ok(_) => return Ok(()),
-                Err(_) if Instant::now() < deadline => {
+            // A port that accepts but never answers (a starting proxy, another
+            // service) must not hold an attempt past the overall deadline.
+            match tokio::time::timeout_at(deadline, db.connect(NoTls)).await {
+                Ok(Ok(_)) => return Ok(()),
+                Ok(Err(_)) if tokio::time::Instant::now() < deadline => {
                     tokio::time::sleep(Duration::from_millis(500)).await;
                 }
-                Err(err) => bail!("the development Postgres did not answer: {err}"),
+                Ok(Err(err)) => bail!("the development Postgres did not answer: {err}"),
+                Err(_) => bail!("the development Postgres did not answer within 60s"),
             }
         }
     })
@@ -345,7 +344,8 @@ pub async fn apply_migrations(config: &Config) -> anyhow::Result<()> {
         Some(directory) if directory.is_dir() => directory,
         _ => return Ok(()),
     };
-    let files = crate::db::migration_files(directory)?;
+    let scan = directory.clone();
+    let files = tokio::task::spawn_blocking(move || crate::db::migration_files(&scan)).await??;
     let (mut client, connection) = config.database_config()?.connect(NoTls).await?;
     let driver = tokio::spawn(connection);
     let result = nelcota_core::user_migrations::apply(
@@ -379,17 +379,28 @@ pub fn watch_migrations(config: &Config) -> Option<MigrationWatcher> {
             let mut previous = Vec::new();
             let mut previous_error: Option<String> = None;
             let mut interval = tokio::time::interval(Duration::from_secs(1));
+            // A slow apply must not be followed by a burst of catch-up scans.
+            interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
             loop {
                 interval.tick().await;
-                if !directory.is_dir() {
-                    continue;
-                }
-                let current = match crate::db::migration_files(&directory) {
-                    Ok(files) => files
+                // Reading every file each second is blocking work; keep it off
+                // the runtime threads that serve the development API.
+                let scan = directory.clone();
+                let files = tokio::task::spawn_blocking(move || {
+                    scan.is_dir()
+                        .then(|| crate::db::migration_files(&scan))
+                        .transpose()
+                })
+                .await;
+                let current = match files {
+                    Ok(Ok(None)) => continue,
+                    Ok(Ok(Some(files))) => files
                         .into_iter()
                         .map(|file| (file.filename, file.sql))
                         .collect::<Vec<_>>(),
-                    Err(error) => {
+                    // The scan panicked; try again on the next tick.
+                    Err(_) => continue,
+                    Ok(Err(error)) => {
                         let message = error.to_string();
                         if previous_error.as_ref() != Some(&message) {
                             eprintln!("Development migration files are invalid: {message}");
