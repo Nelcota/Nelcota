@@ -200,7 +200,16 @@ pub(super) async fn launch(state: &Arc<State>, id: &str, recover: bool) -> anyho
             && !job.public.phase.terminal()
             && job.public.phase != Phase::NeedsOperator
         {
-            let _ = journal.advance(&mut job, Phase::NeedsOperator, Some("worker_interrupted"));
+            // A job still Preparing never changed the host (for example the
+            // runtime could not take the host lock); recovery and restart
+            // reconciliation classify it the same way. Only later phases
+            // need an operator.
+            let (phase, reason) =
+                match job.public.phase == Phase::Preparing && !job.public.committed {
+                    true => (Phase::FailedBeforeChange, "preparation_interrupted"),
+                    false => (Phase::NeedsOperator, "worker_interrupted"),
+                };
+            let _ = journal.advance(&mut job, phase, Some(reason));
         }
     });
     Ok(())

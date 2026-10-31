@@ -11,6 +11,8 @@ use nelcota_deployment::Job;
 use nelcota_deployment::Journal;
 use nelcota_deployment::Phase;
 use recovery::recovery;
+use std::path::Path;
+use std::time::{Duration, Instant};
 
 fn project(policy: &Policy, name: &str) -> anyhow::Result<(Host, Project)> {
     let host = Host::new(&policy.root);
@@ -35,7 +37,7 @@ fn execute_inner(
     recover: bool,
     restore_snapshot: bool,
 ) -> anyhow::Result<()> {
-    let _lease = HostLock::acquire(&policy.root)?;
+    let _lease = acquire_host_lock(&policy.root, Duration::from_secs(30))?;
     nelcota_deployment::management::ensure_idle(&policy.root)?;
     let journal = Journal::open(&policy.root)?;
     let mut job = journal
@@ -98,6 +100,21 @@ fn execute_inner(
         }
     }
     result
+}
+/// The worker releases the host lock just before launching this process, so a
+/// brief holder (an alert check, the start of a scheduled backup) can win the
+/// race. Wait for it instead of failing the job; other lock errors are final.
+fn acquire_host_lock(root: &Path, patience: Duration) -> anyhow::Result<HostLock> {
+    let deadline = Instant::now() + patience;
+    loop {
+        match HostLock::acquire(root) {
+            Ok(lease) => return Ok(lease),
+            Err(error) if error.to_string() != "deployment_busy" || Instant::now() >= deadline => {
+                return Err(error);
+            }
+            Err(_) => std::thread::sleep(Duration::from_millis(100)),
+        }
+    }
 }
 fn record_recovery_failure(journal: &Journal, job: &mut Job) -> anyhow::Result<()> {
     *job = journal

@@ -1,4 +1,5 @@
 //! Recovery receipts and native executable identity regressions.
+use super::acquire_host_lock;
 use super::record_recovery_failure;
 use super::validation::validate_running_binary;
 use nelcota_deployment::Journal;
@@ -6,6 +7,7 @@ use nelcota_deployment::Phase;
 use nelcota_deployment::digest_file;
 use std::fs;
 use std::process::Command;
+use std::time::Duration;
 
 #[test]
 fn recovery_errors_preserve_the_authoritative_resume_decision() {
@@ -117,4 +119,18 @@ fn running_native_identity_rejects_replacement_even_with_the_same_hash() {
     assert_eq!(digest_file(&installed, 256 * 1024 * 1024).unwrap(), digest);
     let failure = validate_running_binary(&installed, &running, &digest).unwrap_err();
     assert!(failure.to_string().contains("different executable"));
+}
+
+#[test]
+fn execution_waits_for_a_brief_host_lock_holder() {
+    let temporary = tempfile::tempdir().unwrap();
+    let root = temporary.path().to_path_buf();
+    let holder = nelcota_deployment::HostLock::acquire(&root).unwrap();
+    assert!(acquire_host_lock(&root, Duration::ZERO).is_err());
+    let release = std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(300));
+        drop(holder);
+    });
+    acquire_host_lock(&root, Duration::from_secs(10)).unwrap();
+    release.join().unwrap();
 }

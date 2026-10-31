@@ -215,6 +215,11 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - The panel grid and CSV export show json/jsonb values as their JSON text.
   A stored JSON string such as `"42"` no longer appears as `42`, so editing
   it keeps it a string instead of saving a number.
+- A host update no longer stops for an operator when a brief host-lock
+  holder (an alert check, a scheduled backup starting) wins the race as the
+  update starts: the update waits up to 30 seconds for the lock, and a job that
+  ends before changing the host is recorded as failed before change instead of
+  blocking host changes until `updates recover`.
 
 ### Security
 
