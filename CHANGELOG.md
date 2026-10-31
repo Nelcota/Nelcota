@@ -234,6 +234,19 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - Dropping a view, materialized view or foreign table from the panel emits
   the matching `DROP VIEW`, `DROP MATERIALIZED VIEW` or `DROP FOREIGN TABLE`
   instead of a `DROP TABLE` that PostgreSQL rejects.
+- Signing out of the panel works again: the panel returns to the sign-in
+  screen, other tabs sign out, and executed SQL and open drafts are removed
+  from the browser. The request's own session change had made the
+  sign-out stop early, leaving the panel open until a later request got 401.
+- A panel tab no longer writes back SQL drafts that a sign-out in another tab
+  removed.
+- Stopping a running SQL query no longer underlines the previous query's error
+  position in the new text.
+- Applying migrations sends exactly the SQL the preview checked, even if a
+  selected file changes on disk in between.
+- An upload whose body sends nothing for a minute is dropped with
+  `upload_timeout`, so slow uploads can no longer hold every upload slot for
+  the whole upload timeout.
 
 ### Security
 
