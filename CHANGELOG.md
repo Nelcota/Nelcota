@@ -126,6 +126,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- A webhook delivery claim only takes the claim lock of webhooks with a due
+  delivery and room in flight. While one server instance's claim was open,
+  it held the lock of every enabled webhook, so other instances sharing the
+  database claimed nothing.
 - When the statement of a dropped request cannot be cancelled in time, the
   server logs `database.cancel_failed` or `database.cancel_timed_out`. It may
   keep running until `statement_timeout` while the pool opens a replacement.
