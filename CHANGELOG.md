@@ -12,6 +12,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Added
 
+- The TypeScript, Rust, SSR and Next.js SDKs send the signup `code_challenge`
+  and confirm signup links with its `code_verifier`, so SDK users who confirm
+  by email keep the password they chose (D117).
 - The profile photo editor supports drag-to-frame, touch pinch and keyboard
   positioning, zoom, quarter-turn rotation and live avatar previews. A bounded,
   metadata-free source and its framing are saved privately for later editing
