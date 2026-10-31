@@ -1,6 +1,6 @@
 import { type NelcotaError, clientError } from "../core/client.errors.js";
-import { isBrowser } from "../core/runtime.js";
 import { encodeJson } from "../core/json.js";
+import { isBrowser } from "../core/runtime.js";
 import { BrowserRefreshPendingError } from "./browser/session.errors.js";
 import { BrowserSessionState } from "./browser/state.js";
 /** Where the session lives: the adapter, its native journal and the local copy. No timers, locks or events. */

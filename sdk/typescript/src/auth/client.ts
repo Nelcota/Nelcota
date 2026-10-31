@@ -6,12 +6,12 @@ import {
   ok,
   type Result,
 } from "../core/client.errors.js";
-import { isBrowser } from "../core/runtime.js";
 /**
  * Sign-up, sign-in (password, OAuth with PKCE, email links) and the session's
  * life: stored, refreshed before it expires, shared across tabs.
  */
 import type { HttpClient } from "../core/http/client.js";
+import { isBrowser } from "../core/runtime.js";
 import { SessionManager } from "./lifecycle/manager.js";
 import { absoluteUrl, clearOAuthRedirect, parseEmailLink, readOAuthRedirect } from "./redirects.js";
 import { isSession, isUser, type Session, type User } from "./session.js";
