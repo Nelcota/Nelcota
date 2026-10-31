@@ -25,6 +25,11 @@ successful publication; a source version or Git tag alone is insufficient.
 
 ### Added
 
+- `auth.signUp` keeps the sign-up's PKCE verifier in the sealed session
+  (`signupPkce`, absent in older records) and `auth.verifyEmailLink` sends it,
+  so the chosen password survives confirmation from the same browser. Requires
+  the matching `@nelcota/client`; before, its sign-up verifier key was refused
+  as an unexpected storage key.
 - `PostgresSessionStore(pool, { timeout, leaseTimeout, lockTimeout, maxLeases })`;
   the positional `(pool, timeout, leaseTimeout)` form still works.
 - `sql/session-cleanup.sql`: a bounded statement to schedule for expired rows,

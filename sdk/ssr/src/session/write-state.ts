@@ -218,14 +218,17 @@ export class WriteState {
     this.ensure();
     if (name === this.storageKey) return this.state?.session ?? null;
     if (name === `${this.storageKey}.pkce`) return this.state?.pkce ?? null;
+    if (name === `${this.storageKey}.signup`) return this.state?.signupPkce ?? null;
     throw new SessionError("session_store", "Unexpected session storage key");
   }
 
   #nextState(): SessionState {
     if (this.state !== null) {
-      const { schema, session, pkce, oauthState, returnTo, expiresAt, generation } = this.state;
+      const { schema, session, pkce, signupPkce, oauthState, returnTo, expiresAt, generation } =
+        this.state;
       const next: SessionState = { schema, session, pkce, oauthState, returnTo, expiresAt };
       if (generation !== undefined) next.generation = generation;
+      if (signupPkce != null) next.signupPkce = signupPkce;
       return next;
     }
     const state: SessionState = {
@@ -248,6 +251,7 @@ export class WriteState {
     }
     if (name === this.storageKey) await this.#acceptSession(next, value);
     else if (name === `${this.storageKey}.pkce`) await this.save({ ...next, pkce: value });
+    else if (name === `${this.storageKey}.signup`) await this.save({ ...next, signupPkce: value });
     else throw new SessionError("session_store", "Unexpected session storage key");
   }
 
@@ -276,6 +280,10 @@ export class WriteState {
   async #removeItem(name: string): Promise<void> {
     this.ensure();
     if (this.state === null) return;
+    if (name === `${this.storageKey}.signup`) {
+      if (this.state.signupPkce != null) await this.save({ ...this.state, signupPkce: null });
+      return;
+    }
     if (name !== this.storageKey && name !== `${this.storageKey}.pkce`)
       throw new SessionError("session_store", "Unexpected session storage key");
     await this.save({

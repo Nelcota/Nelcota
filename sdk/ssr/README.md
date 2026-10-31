@@ -33,6 +33,11 @@ decision](docs/edge.md); the PostgreSQL adapter remains a separate Node entry.
 - PKCE OAuth with a state check, an optional storage-redirect allow-list,
   `safeReturnTo` for local redirects, and `createGuard` for authentication
   routing of protected paths.
+- Sign-up confirmation bound to the browser that signed up: `auth.signUp`
+  keeps the sign-up's PKCE verifier in the sealed server-side session and
+  `auth.verifyEmailLink` sends it, so the chosen password survives the email
+  link. The link opened in another browser still confirms and signs in, but
+  the server clears that password.
 
 ## Install
 
