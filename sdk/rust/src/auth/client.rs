@@ -225,13 +225,24 @@ impl AuthClient {
         Ok(session)
     }
 
+    /// Create an account. While the email awaits confirmation the result has
+    /// no session and carries [`SignUp::verifier`]: keep it with the person's
+    /// pending sign-up and pass it to [`verify_signup_link`](Self::verify_signup_link)
+    /// to keep the password chosen here. Confirming without it (or with a
+    /// resent link) still signs in, but clears that password.
     pub async fn sign_up(
         &self,
         email: &str,
         password: &str,
         metadata: Option<Value>,
     ) -> Result<SignUp> {
-        let mut body = json!({"email": address(email)?, "password": password});
+        let (verifier, challenge) = oauth::pkce_pair()?;
+        let mut body = json!({
+            "email": address(email)?,
+            "password": password,
+            "code_challenge": challenge,
+            "code_challenge_method": "S256",
+        });
         if let Some(data) = metadata {
             if !data.is_object() {
                 return Err(Error::Usage("signup metadata must be an object".into()));
@@ -254,11 +265,13 @@ impl AuthClient {
             return Ok(SignUp {
                 user: session.user.clone(),
                 session: Some(session),
+                verifier: None,
             });
         }
         Ok(SignUp {
             user: decode(response.data["user"].clone(), response.status)?,
             session: None,
+            verifier: Some(verifier),
         })
     }
 
@@ -422,6 +435,17 @@ impl AuthClient {
             return Err(Error::Usage("recovery links require reset_password".into()));
         }
         self.verify(json!({"type": link.kind.as_str(), "token": link.token}))
+            .await
+    }
+    /// Confirm a sign-up with the [`SignUp::verifier`] its `sign_up` returned,
+    /// keeping the password chosen at sign-up. Keep the verifier until this
+    /// succeeds: a failed attempt (network, timeout) can be retried with it.
+    pub async fn verify_signup_link(&self, link: &EmailLink, verifier: &str) -> Result<Session> {
+        if link.kind != EmailLinkType::Signup {
+            return Err(Error::Usage("verify_signup_link takes signup links".into()));
+        }
+        oauth::check_verifier(verifier)?;
+        self.verify(json!({"type": "signup", "token": link.token, "code_verifier": verifier}))
             .await
     }
     pub async fn reset_password(&self, token: &str, password: &str) -> Result<Session> {

@@ -32,6 +32,8 @@ export interface SessionState {
   schema: 1;
   session: string | null;
   pkce: string | null;
+  /** PKCE verifier of a sign-up awaiting its email link; absent in older records. */
+  signupPkce?: string | null;
   oauthState: string | null;
   returnTo: string;
   expiresAt: number;

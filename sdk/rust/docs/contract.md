@@ -15,8 +15,8 @@ blocking and WASM interfaces are not part of 0.1. Minimum Rust: 1.88.
 | REST read | GET/HEAD `/rest/v1/{table}`; select/filter/order/paging, Prefer count, Content-Range |
 | REST write | POST/PATCH/DELETE `/rest/v1/{table}`; minimal/representation, upsert resolution/on_conflict |
 | RPC | POST `/rest/v1/rpc/{name}` with named JSON arguments |
-| Auth | POST signup; token grants password/refresh_token/pkce; GET/PUT user; POST logout |
-| Email | POST recover/magiclink/resend/verify |
+| Auth | POST signup with an S256 challenge; token grants password/refresh_token/pkce; GET/PUT user; POST logout |
+| Email | POST recover/magiclink/resend/verify; signup verification with its `code_verifier` |
 | OAuth | Authorization URL with S256 PKCE; one-use code exchange |
 | Objects | POST/PUT/GET/DELETE `/storage/v1/object/{bucket}/{path}`, raw bytes |
 | Sharing/listing | POST object/list and object/sign; local object/public URL construction |

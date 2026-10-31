@@ -98,7 +98,7 @@ update HTTP mocks to return the documented response representation.
 | REST | `from().select()`, filters, order, limit, range, single, maybeSingle | `GET/HEAD /rest/v1/{table}`; encoded query; optional `Prefer: count=exact`; `Content-Range` |
 | REST writes | insert, update, delete, upsert, optional select | `POST/PATCH/DELETE /rest/v1/{table}`; JSON body; `Prefer: return=minimal/representation`; upsert resolution and `on_conflict` |
 | RPC | `rpc(name, args)` | `POST /rest/v1/rpc/{name}`; named JSON arguments; caller's role |
-| Auth | signUp | `POST /auth/v1/signup`; session or `{user}` awaiting confirmation |
+| Auth | signUp | `POST /auth/v1/signup` with an S256 `code_challenge`; session or `{user}` awaiting confirmation |
 | Auth | password login, refresh, exchangeCode | `POST /auth/v1/token?grant_type=password/refresh_token/pkce` |
 | Auth | getUser, updateUser, signOut | `GET`/`PUT /auth/v1/user`, `POST /auth/v1/logout` |
 | Auth links | recover, magic link, resend, verify/reset | `POST /auth/v1/recover`, `/magiclink`, `/resend`, `/verify` |
@@ -363,6 +363,19 @@ address bar. Known server error codes (`access_denied`, `provider_error`,
 `invalid_state`) are kept as the error code; any other value becomes
 `oauth_error` with at most 64 sanitized characters in `details`. An error
 redirect consumes the verifier.
+
+### Sign-up confirmation
+
+`signUp()` stores a second verifier under `<storageKey>.signup` before its
+request and sends its S256 challenge. A sign-up that returns a session
+removes it. `verifyEmailLink()` for a `signup` link sends it as
+`code_verifier` under the verifier lock and removes it only after the server
+returns a session; any failure keeps it for a retry. Magic links and recovery
+never read it, and `handleRedirect()` ignores it. Without the verifier (another
+browser, a resent link) the server still confirms the email and signs in but
+clears the password chosen at sign-up. A storage adapter that cannot
+hold the verifier (one that refuses the key) signs up and confirms without it,
+and a failed removal never discards the confirmed session.
 
 ## Bucket settings
 

@@ -185,7 +185,15 @@ server. `redirect_to` must be in `NELCOTA_OAUTH_REDIRECT_URLS`.
 Email links carry `#type=...&token=...`. `EmailLink::parse(&mut url)` extracts
 the token and clears the fragment. Pass signup/magic links to
 `verify_email_link`; use `reset_password(token, password)` for recovery.
-Session, flow and link Debug implementations omit secret tokens.
+Session, flow, sign-up and link Debug implementations omit secret tokens.
+
+A sign-up awaiting confirmation returns `SignUp { verifier: Some(..) }`, the
+PKCE verifier bound to its email link. Keep it private with the pending
+sign-up (the SDK does not store it) and confirm with
+`verify_signup_link(&link, &verifier)` to keep the password chosen at sign-up;
+keep it until that succeeds, so a failed attempt can be retried. Confirming
+with `verify_email_link`, from another device or with a resent link still
+signs in, but the server clears that password; set one with `update_user`.
 
 ## Storage
 
