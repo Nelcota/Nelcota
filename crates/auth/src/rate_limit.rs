@@ -12,7 +12,13 @@
 //! neither the network store nor the account store. No store ever drops a
 //! recent key: a decoy store that evicted when full would let a flood reset a
 //! made-up email's budget early, which a real account never allows, and so
-//! tell the two apart.
+//! tell the two apart. The decoy store is `DECOY_STORE_FACTOR` times larger,
+//! so filling it (the one state where a new made-up email goes untracked while
+//! a new account is still tracked) takes thousands of addresses kept busy
+//! every minute. The other way round, while the account store is full no new
+//! email of either kind is tracked. Pairing both ways would let a flood of
+//! made-up emails switch off the account budgets that stop distributed
+//! password guessing, which matters more than hiding which emails exist.
 //!
 //! A single IPv6 /48 holds 65,536 /64s, enough to fill the network store on
 //! its own. So the network keys of one /48 may take at most
@@ -53,6 +59,8 @@ pub const SESSION_RATE_LIMIT_FACTOR: u32 = 10;
 
 /// Capacity of each store, enforced without evicting a key's active limit.
 const MAX_KEYS: usize = 50_000;
+/// The decoy store holds this many times `MAX_KEYS`.
+const DECOY_STORE_FACTOR: usize = 4;
 /// One IPv6 /48 may hold at most this fraction of the network store's keys
 /// (781 of 50,000).
 const BLOCK_SHARE: usize = 64;
@@ -148,7 +156,7 @@ pub struct RateLimiter<C: Clock + Clone = DefaultClock> {
     notices: Store<C>,
     /// Account-sized budgets for emails without an account, one per email.
     /// Full like `accounts`: an untracked email passes on its per-IP budget.
-    /// The two are paired: neither tracks a new key while the other is full.
+    /// No new decoy is tracked while `accounts` is full (see the module docs).
     decoys: Store<C>,
     clock: C,
     start: C::Instant,
@@ -179,7 +187,7 @@ impl<C: Clock + Clone> RateLimiter<C> {
                 capacity,
                 start,
             ),
-            decoys: Store::new("decoy", accounts, capacity, start),
+            decoys: Store::new("decoy", accounts, capacity * DECOY_STORE_FACTOR, start),
             clock,
             start,
         }
@@ -209,9 +217,8 @@ impl<C: Clock + Clone> RateLimiter<C> {
     }
 
     /// Like [`admit`](Self::admit), but a new key is also left untracked while
-    /// `peer` is full. Accounts and decoys are paired this way: whichever store
-    /// a flood fills, a new real email and a new made-up one get the same
-    /// answer, so the fill cannot tell them apart.
+    /// `peer` is full: while the account store is full, a new made-up email
+    /// gets the same answer as a new real one.
     fn admit_paired(&self, store: &Store<C>, key: &str, peer: Option<&Store<C>>) -> Admission {
         {
             let state = store.state.read().unwrap_or_else(|e| e.into_inner());
@@ -351,7 +358,7 @@ impl<C: Clock + Clone> RateLimiter<C> {
     /// networks the account knows, after `login_delay`.
     pub(crate) fn login_budget(&self, account: &str) -> Option<Duration> {
         let key = format!("login:{account}");
-        match self.admit_paired(&self.accounts, &key, Some(&self.decoys)) {
+        match self.admit(&self.accounts, &key) {
             Admission::Accepted => {
                 self.reset_login_delay(&key);
                 None
@@ -730,27 +737,36 @@ mod tests {
     }
 
     #[test]
-    fn filling_either_email_store_leaves_new_real_and_made_up_emails_alike() {
+    fn a_full_account_store_leaves_new_real_and_made_up_emails_alike() {
         let clock = FakeRelativeClock::default();
         let limiter = RateLimiter::with_capacity(1, clock.clone(), 2);
-        // A flood of made-up emails fills the decoy store.
         for i in 0..2 {
-            assert_eq!(limiter.decoy_login_budget(&format!("flood-{i}@x")), None);
+            assert_eq!(limiter.login_budget(&format!("account-{i}@x")), None);
         }
-        // A new real account is then as untracked as a new made-up email: both
-        // pass on the per-IP budget only, however often they are tried.
+        // Both pass on the per-IP budget only, however often they are tried.
         for _ in 0..20 {
             assert_eq!(limiter.login_budget("real@x"), None);
             assert_eq!(limiter.decoy_login_budget("made-up@x"), None);
         }
-        assert_eq!(len(&limiter.accounts), 0, "real@x stayed untracked");
-        // Once the flood has refilled, both are tracked again.
+        assert_eq!(len(&limiter.decoys), 0, "made-up@x stayed untracked");
+        // Once the accounts have refilled, both are tracked again.
         clock.advance(Duration::from_secs(60));
         let real: Vec<_> = (0..11).map(|_| limiter.login_budget("real@x")).collect();
         let made_up: Vec<_> = (0..11)
             .map(|_| limiter.decoy_login_budget("made-up@x"))
             .collect();
         assert!(real[10].is_some() && made_up[10].is_some());
+    }
+
+    #[test]
+    fn made_up_emails_never_switch_off_account_budgets() {
+        let clock = FakeRelativeClock::default();
+        let limiter = RateLimiter::with_capacity(1, clock, 2);
+        for i in 0..1000 {
+            limiter.decoy_login_budget(&format!("flood-{i}@x"));
+        }
+        let real: Vec<_> = (0..11).map(|_| limiter.login_budget("real@x")).collect();
+        assert!(real[10].is_some(), "the account budget still applies");
     }
 
     #[test]
