@@ -51,14 +51,24 @@
 
   $effect(() => {
     if (open === false) return;
+    // Only this opening's reply fills the list: one from an earlier opening
+    // may arrive later and would replace it with an older schema.
+    let current = true;
     untrack(() => {
       column = original != null ? toColumnDef(original) : blankColumn();
       initialValue = JSON.stringify(column);
       void loadTypes();
       loadSchemaColumns()
-        .then((t) => (tables = t))
-        .catch(() => (tables = {}));
+        .then((schema) => {
+          if (current) tables = schema;
+        })
+        .catch(() => {
+          if (current) tables = {};
+        });
     });
+    return () => {
+      current = false;
+    };
   });
 
   const actions = $derived.by((): AlterAction[] => {
