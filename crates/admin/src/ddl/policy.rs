@@ -4,7 +4,7 @@
 //! neither the command (`FOR SELECT` → `FOR UPDATE`) nor the kind
 //! (permissive/restrictive).
 
-use nelcota_api::query::ident;
+use crate::ddl::ident;
 use serde::Deserialize;
 use serde_json::{Value, json};
 

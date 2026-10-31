@@ -15,7 +15,6 @@
 pub mod policy;
 pub mod table;
 
-use nelcota_api::query::ident;
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -88,6 +87,20 @@ pub fn validate_name(kind: &str, name: &str) -> Result<()> {
         );
     }
     Ok(())
+}
+
+/// Quoted identifier. A carriage return is written as a Unicode escape
+/// (`U&"a\000Db"`), never as a raw byte, for the same reason as in
+/// [`literal`]: deploys read CRLF as LF, which would rename the object.
+pub fn ident(name: &str) -> String {
+    if !name.contains('\r') {
+        return nelcota_api::query::ident(name);
+    }
+    let escaped = name
+        .replace('\\', r"\\")
+        .replace('"', "\"\"")
+        .replace('\r', r"\000D");
+    format!("U&\"{escaped}\"")
 }
 
 /// `"schema"."name"`
@@ -377,6 +390,7 @@ mod tests {
         assert_eq!(literal("a\\b\nc"), "'a\\b\nc'");
         assert_eq!(literal("it's\r\na\\b"), "E'it''s\\r\na\\\\b'");
         assert_eq!(qualified("public", "a\"b"), "\"public\".\"a\"\"b\"");
+        assert_eq!(ident("a\r\n\"b\\"), "U&\"a\\000D\n\"\"b\\\\\"");
     }
 
     #[test]

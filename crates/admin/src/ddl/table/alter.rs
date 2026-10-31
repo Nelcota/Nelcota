@@ -7,7 +7,7 @@ use crate::ddl::{
     DataType, Result, error, expression, grant, invalid, literal, qualified, validate_name,
 };
 use crate::tables::structure::{ColumnInfo, Structure};
-use nelcota_api::query::ident;
+use crate::ddl::ident;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 

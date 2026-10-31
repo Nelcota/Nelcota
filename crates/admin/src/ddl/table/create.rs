@@ -4,7 +4,7 @@ use super::{
     column::{column_sql, comment_on_column},
 };
 use crate::ddl::{Result, grant, invalid, literal, qualified, validate_name};
-use nelcota_api::query::ident;
+use crate::ddl::ident;
 use serde_json::{Value, json};
 
 pub fn create(ctx: &Context, spec: &CreateTable) -> Result<Vec<String>> {
