@@ -53,16 +53,20 @@ export class StartupSession {
       session.email = me.email;
     } catch (e) {
       if (e instanceof ApiError && e.status === HTTP_UNAUTHORIZED) {
-        this.offline = null;
-        // Read before the signed-out state clears the hint.
-        if (wasSignedIn() && hasSessionWork()) await endStaleSession();
-        session.email = null;
+        await this.signedOut();
         return;
       }
       this.offline = e;
     } finally {
       this.checking = false;
     }
+  }
+
+  private async signedOut(): Promise<void> {
+    this.offline = null;
+    // Read before the signed-out state clears the hint.
+    if (wasSignedIn() && hasSessionWork()) await endStaleSession();
+    session.email = null;
   }
 
   watch(): () => void {
