@@ -1,1 +1,0 @@
-import{gn as e,hn as t,y as n}from"./circle-alert-CXpRfTwJ.js";var r={name:`log-out`,size:24,node:[[`path`,{d:`m16 17 5-5-5-5`}],[`path`,{d:`M21 12H9`}],[`path`,{d:`M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4`}]]};r.node;var i=new Set([`$$slots`,`$$events`,`$$legacy`]);function a(a,o){let s=t(o,i);n(a,e(()=>s,{get icon(){return r}}))}export{a as t};
