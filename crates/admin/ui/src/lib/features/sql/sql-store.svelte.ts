@@ -3,15 +3,12 @@
 // Persisted in the browser (per project, since each panel has its own origin).
 
 import { newId } from "$lib/browser/id";
-import { readJson, readText, remove, write } from "$lib/browser/local-storage";
+import { readJson, readText, write } from "$lib/browser/local-storage";
 
 import { requiredValue } from "../../contracts/required-value.js";
+import { DRAFT_KEY, HISTORY_KEY, WORKSPACE_KEY, forgetSessionWork } from "./session-work";
 
-// Read once to migrate drafts from before the workspace; never written.
-const DRAFT_KEY = "nelcota:sql-draft";
-const HISTORY_KEY = "nelcota:sql-history";
 const SAVED_KEY = "nelcota:sql-saved";
-const WORKSPACE_KEY = "nelcota:sql-workspace";
 const HISTORY_LIMIT = 20;
 const DEFAULT_DRAFT = "select now();";
 
@@ -128,9 +125,7 @@ class SqlStore {
    * machine. Queries saved on purpose stay.
    */
   forgetSession() {
-    remove(HISTORY_KEY);
-    remove(WORKSPACE_KEY);
-    remove(DRAFT_KEY);
+    forgetSessionWork();
     this.#forgetWork();
   }
 
