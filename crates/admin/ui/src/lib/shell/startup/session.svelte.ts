@@ -1,10 +1,27 @@
 import { preloadResponseContracts } from "$lib/contracts/responses";
+import { forgetSessionWork, hasSessionWork } from "$lib/features/sql/session-work";
 import { clearQuerySession } from "$lib/resources/query-client";
 import { endSession, session } from "$lib/resources/session.svelte";
 import { api, ApiError } from "$lib/transport/api";
 
-import { rememberSignedIn, watchSignOutElsewhere } from "../prefetch.js";
+import { rememberSignedIn, wasSignedIn, watchSignOutElsewhere } from "../prefetch.js";
 const HTTP_UNAUTHORIZED = 401;
+
+/**
+ * The session ended while no tab was open (it expired or was revoked): the
+ * browser was signed in, yet still holds SQL history or drafts. Runs the same
+ * session-ended path as a sign-out, whose cleanups the auth module registers.
+ */
+async function endStaleSession(): Promise<void> {
+  try {
+    await import("$lib/features/auth/auth");
+    endSession(false);
+  } catch (error) {
+    // Without the module, still forget what the cleanup would have removed.
+    console.warn("Could not load the sign-out cleanups; clearing the SQL history directly", error);
+    forgetSessionWork();
+  }
+}
 
 /** Owns startup session requests and cross-tab sign-out without rendering pages early. */
 export class StartupSession {
@@ -37,6 +54,8 @@ export class StartupSession {
     } catch (e) {
       if (e instanceof ApiError && e.status === HTTP_UNAUTHORIZED) {
         this.offline = null;
+        // Read before the signed-out state clears the hint.
+        if (wasSignedIn() && hasSessionWork()) await endStaleSession();
         session.email = null;
         return;
       }

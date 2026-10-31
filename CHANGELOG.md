@@ -327,6 +327,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Security
 
+- The panel forgets SQL history and drafts left by a session that ended while
+  no tab was open. When the startup session check gets a 401 in a browser that
+  was signed in and still holds them, it runs the same session-ended cleanup
+  as a sign-out or expiry. Saved queries stay.
 - The OpenAPI document no longer shows a role the names and comments of
   columns it may only insert or update in its row and response schemas. Rows
   list readable columns; `POST` and `PATCH` bodies list the insertable and
