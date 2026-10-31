@@ -271,6 +271,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Security
 
+- The OpenAPI document no longer shows a role the names and comments of
+  columns it may only insert or update in its row and response schemas. Rows
+  list readable columns; `POST` and `PATCH` bodies list the insertable and
+  updatable ones, and keep referencing the row schema when they match it.
 - Signing out in one tab signs out the panel's other tabs, and signing out
   forgets the SQL history and open queries kept in the browser (saved queries
   stay).

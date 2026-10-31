@@ -269,8 +269,10 @@ to `service_role` even inside an `anon` request. See
 
 An OpenAPI 3.0 document generated from the catalog and **filtered by the
 request's role**: `anon` only sees what `anon` may use. A table appears when
-the role holds a table or column GRANT on it, with only the columns (and their
-comments) the role may read or write; filters list only the readable ones.
+the role holds a table or column GRANT on it. Its row schema, used by the
+responses and filters, lists only the columns (and their comments) the role may
+read; the `POST` and `PATCH` bodies list only the columns it may insert or
+update, respectively.
 
 Schema models: `nelcota types -o database.ts` (TypeScript, default), or
 `nelcota types --lang rust -o database.rs` for the
