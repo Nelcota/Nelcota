@@ -508,3 +508,45 @@ async fn a_writer_never_waits_when_every_shard_is_held() {
     let usage = app.admin_client.query_one(outstanding, &[]).await.unwrap();
     assert_eq!(usage.get::<_, i64>(0), 2);
 }
+
+#[tokio::test]
+async fn resends_obey_the_per_webhook_limit() {
+    let app = TestApp::spawn().await;
+    let hook = support::hook(&app, "https://example.com/hook", 6).await;
+    let pool = db::admin_pool(&app.admin, 2);
+    support::insert(&app, "delivered once").await;
+    let id = support::latest(&app).await;
+    app.admin_client
+        .execute(
+            "UPDATE nelcota.webhook_deliveries SET status='failed',last_error='http_error',finished_at=clock_timestamp() WHERE id=$1::text::bigint",
+            &[&id],
+        )
+        .await
+        .unwrap();
+    app.admin_client
+        .execute(
+            "UPDATE nelcota.webhook_queue_shards SET outstanding=10000 WHERE endpoint_id=$1::text::uuid AND shard=0",
+            &[&hook.endpoint.id],
+        )
+        .await
+        .unwrap();
+    let refused = management::replay(&pool, &id).await;
+    assert!(
+        matches!(
+            refused,
+            Err(nelcota_webhooks::Error::Conflict {
+                code: "webhook_queue_full",
+                ..
+            })
+        ),
+        "{refused:?}"
+    );
+    app.admin_client
+        .execute(
+            "UPDATE nelcota.webhook_queue_shards SET outstanding=0 WHERE endpoint_id=$1::text::uuid",
+            &[&hook.endpoint.id],
+        )
+        .await
+        .unwrap();
+    assert!(management::replay(&pool, &id).await.is_ok());
+}

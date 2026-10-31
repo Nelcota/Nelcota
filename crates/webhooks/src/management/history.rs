@@ -6,6 +6,8 @@ use crate::{
 use deadpool_postgres::Pool;
 
 const PAGE_SIZE: i64 = 25;
+/// Outstanding deliveries per webhook, the same limit capture applies.
+const QUEUE_LIMIT: i64 = 10_000;
 
 pub async fn history(pool: &Pool, query: HistoryQuery) -> Result<DeliveryPage, Error> {
     let endpoint = query.endpoint.as_deref().map(uuid).transpose()?;
@@ -100,6 +102,14 @@ pub async fn replay(pool: &Pool, id: &str) -> Result<String, Error> {
     let event_id: uuid::Uuid = old.get("event_id");
     // Serializes duplicate clicks, even across panel sessions or instances.
     if tx.query_one("SELECT EXISTS (SELECT FROM nelcota.webhook_deliveries WHERE (replay_of=$1 OR (endpoint_id=$2 AND event_id=$3)) AND status IN ('pending','processing'))", &[&id, &endpoint_id, &event_id]).await?.get::<_, bool>(0) { return Err(Error::Conflict { code: "webhook_delivery_active", message: "A resend is already queued" }); }
+    // Resends obey the same per-webhook limit as captured changes (V19).
+    let outstanding: i64 = tx.query_one("SELECT coalesce(sum(outstanding),0)::bigint FROM nelcota.webhook_queue_shards WHERE endpoint_id=$1", &[&endpoint_id]).await?.get(0);
+    if outstanding >= QUEUE_LIMIT {
+        return Err(Error::Conflict {
+            code: "webhook_queue_full",
+            message: "This webhook already has 10,000 deliveries waiting. Resend once its queue drains",
+        });
+    }
     let new_id: String = tx.query_one("INSERT INTO nelcota.webhook_deliveries (endpoint_id,event_id,replay_of,schema_name,table_name,event,url,payload,max_attempts) SELECT d.endpoint_id,d.event_id,d.id,d.schema_name,d.table_name,d.event,e.url,d.payload,e.max_attempts FROM nelcota.webhook_deliveries d JOIN nelcota.webhook_endpoints e ON e.id=d.endpoint_id WHERE d.id=$1 RETURNING id::text", &[&id]).await?.get(0);
     tx.commit().await?;
     Ok(new_id)
