@@ -51,10 +51,16 @@ pub fn client_ip(proxy_hops: u8, headers: &HeaderMap, peer: Option<SocketAddr>) 
     peer_ip
 }
 
+/// Longest `User-Agent` stored with a session. The value is informative, and
+/// a client controls it: without a bound, every sign-in could store a header
+/// as large as the HTTP server accepts.
+const MAX_USER_AGENT_BYTES: usize = 512;
+
 pub(crate) fn user_agent(headers: &HeaderMap) -> Option<&str> {
     headers
         .get(header::USER_AGENT)
         .and_then(|v| v.to_str().ok())
+        .map(|agent| &agent[..agent.floor_char_boundary(MAX_USER_AGENT_BYTES)])
 }
 
 /// Rate-limit key of a client address. IPv6 is grouped by its /64, the block
@@ -153,6 +159,16 @@ mod tests {
             client_ip(0, &headers, peer),
             Some("9.9.9.9".parse().unwrap())
         );
+    }
+
+    #[test]
+    fn stored_user_agents_are_bounded() {
+        let mut headers = HeaderMap::new();
+        assert_eq!(user_agent(&headers), None);
+        headers.insert(header::USER_AGENT, "Mozilla/5.0".parse().unwrap());
+        assert_eq!(user_agent(&headers), Some("Mozilla/5.0"));
+        headers.insert(header::USER_AGENT, "a".repeat(10_000).parse().unwrap());
+        assert_eq!(user_agent(&headers).unwrap().len(), MAX_USER_AGENT_BYTES);
     }
 
     #[test]
