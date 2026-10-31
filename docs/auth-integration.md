@@ -126,9 +126,10 @@ expired, and an expired, rotated token follows the existing reuse handling.
 
 ## Database lifecycle and authorization
 
-`nelcota_auth::bootstrap` installs canonical versions 1, 2, 5, 9, 10, 14 and 21.
-These are the auth tables, shared roles/context functions, single-use links,
-OAuth identities, the user-listing index and the refresh retry successor. Shared infrastructure includes
+`nelcota_auth::bootstrap` installs canonical versions 1, 2, 5, 9, 10, 14, 21 and
+22. These are the auth tables, shared roles/context functions, single-use links,
+OAuth identities, the user-listing index, the refresh retry successor and the
+signup-link binding. Shared infrastructure includes
 `nelcota.schema_migrations`, `extensions`, pgcrypto and pg_stat_statements.
 Panel tables, catalog triggers, storage and webhook objects are absent.
 Bootstrap needs an administrator able to create roles and the extensions.

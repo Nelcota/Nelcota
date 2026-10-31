@@ -10,6 +10,7 @@ use crate::{
     accounts::{confirm_inbox_owner, retire_unconfirmed_access},
     db::{begin_auth, db_error},
     error::invalid_grant,
+    pkce,
     sessions::start_session,
 };
 
@@ -18,10 +19,18 @@ fn expired_link() -> ApiError {
 }
 
 /// Consumes the link, marks the email as confirmed and starts a session.
+///
+/// Opening a link proves only that someone reads the inbox. A signup
+/// confirmation keeps the password chosen at signup only when `code_verifier`
+/// proves that the client confirming is the one that signed up (the PKCE
+/// challenge sent with the signup); otherwise anyone could have registered the
+/// address with a password of their own, and the inbox owner claims the account
+/// without it, as with a magic link.
 pub(crate) async fn sign_in(
     state: &AuthState,
     kind: LinkKind,
     token: &str,
+    code_verifier: Option<&str>,
     ip: Option<IpAddr>,
     user_agent: Option<&str>,
 ) -> Result<Value, ApiError> {
@@ -33,18 +42,19 @@ pub(crate) async fn sign_in(
     let user_id = tokens::consume(&tx, kind, &hash)
         .await?
         .ok_or_else(expired_link)?;
-    match kind == LinkKind::MagicLink {
+    let challenge = tokens::code_challenge(&tx, &hash).await?;
+    let signed_up_here = kind == LinkKind::Signup
+        && matches!(
+            (code_verifier, challenge.as_deref()),
+            (Some(verifier), Some(challenge)) if pkce::proves(verifier, challenge)
+        );
+    match signed_up_here {
         true => {
-            // A magic link is independent of the pending signup: the inbox owner
-            // must not inherit a password chosen by whoever registered the address.
-            confirm_inbox_owner(&tx, user_id).await?;
-        }
-        false => {
-            // A signup confirmation approves the password from that signup.
+            // The client that chose the password opened its own link.
             let confirmed = tx
                 .execute(
-                    "UPDATE auth.users SET email_confirmed_at = coalesce(email_confirmed_at, now())
-             WHERE id = $1 AND email_confirmed_at IS NULL",
+                    "UPDATE auth.users SET email_confirmed_at = now(), updated_at = now()
+                     WHERE id = $1 AND email_confirmed_at IS NULL",
                     &[&user_id],
                 )
                 .await
@@ -53,9 +63,19 @@ pub(crate) async fn sign_in(
                 retire_unconfirmed_access(&tx, user_id).await?;
             }
         }
+        false => {
+            // The inbox owner must not inherit a password chosen by whoever
+            // registered the address.
+            confirm_inbox_owner(&tx, user_id).await?;
+        }
     }
     let session = start_session(state, &tx, user_id, ip, user_agent).await?;
     tx.commit().await.map_err(db_error)?;
-    tracing::info!(user_id = %user_id, kind = kind.as_str(), "signed in through an email link");
+    tracing::info!(
+        user_id = %user_id,
+        kind = kind.as_str(),
+        password_kept = signed_up_here,
+        "signed in through an email link"
+    );
     Ok(session)
 }

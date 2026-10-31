@@ -325,6 +325,32 @@ for the October 27 server scope and independent SDK publication checkpoint.
 - Panel session cookies are marked `Secure` whenever `NELCOTA_API_URL` is an
   `https://` origin, not only with `NELCOTA_TRUST_PROXY`, so an HTTPS proxy
   that is not trusted for client IPs no longer gets cookies without `Secure`.
+- Password sign-in to an email without an account now spends a decoy budget
+  of that email's own, the same size as an account's, in a separate bounded
+  store. Before, made-up emails shared 4,096 decoy budgets, so spending one
+  email's budget and probing others for a `429` on the shared slot showed that
+  the first email had no account.
+- One IPv6 /48 can no longer fill the in-memory rate-limit store and so make
+  every new client's auth request fail with 429: the /64s of one /48 may hold
+  at most 1/64 of the per-IP keys (781 of 50,000), past which only that /48's
+  new /64s are refused. Signup also has a budget per /48, so a /48 cannot
+  create accounts (and their account-budget keys) at 65,536 times the per-IP
+  rate.
+- With email confirmation on, signup no longer tells whether an email has an
+  account: an existing email gets the same `201 {user}` as a new signup (with a
+  random `id`) and the account stays as it is. Its inbox gets a new
+  confirmation link while unconfirmed, never bound to the second caller, or at
+  most one "Your account already exists" notice a minute once confirmed. With
+  confirmation off, signup still answers `409 user_already_exists`, now
+  documented as revealing existing accounts (D117).
+- Opening a signup confirmation link no longer approves the password chosen
+  at signup unless the client that signed up proves itself: signup accepts an
+  S256 `code_challenge` and `POST /auth/v1/verify {type: "signup"}` its
+  `code_verifier`. Without that proof the confirmation clears the signup
+  password, as a first magic link does, and the person sets one while signed
+  in. Before, anyone could register someone else's address with their own
+  password, have the link resent, and sign in once the owner confirmed.
+  Internal migration V22 stores the challenge with the link (D117).
 - Signing out in one tab signs out the panel's other tabs, and signing out
   forgets the SQL history and open queries kept in the browser (saved queries
   stay).

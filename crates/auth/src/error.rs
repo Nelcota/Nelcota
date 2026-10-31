@@ -27,3 +27,13 @@ pub(crate) fn invalid_email(err: InvalidCredential) -> ApiError {
 pub(crate) fn weak_password(err: InvalidCredential) -> ApiError {
     ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "weak_password", err.0)
 }
+
+/// A PKCE challenge other than S256's 43-character form: 400
+/// `invalid_code_challenge`.
+pub(crate) fn invalid_code_challenge() -> ApiError {
+    ApiError::new(
+        StatusCode::BAD_REQUEST,
+        "invalid_code_challenge",
+        "code_challenge must be an S256 PKCE challenge (code_challenge_method=S256)",
+    )
+}

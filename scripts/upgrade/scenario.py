@@ -551,6 +551,25 @@ class UpgradeScenario:
             after["tables"]["auth.refresh_tokens"] = self.query(
                 "SELECT coalesce(jsonb_agg((to_jsonb(t)-'retry_successor')::text ORDER BY (to_jsonb(t)-'retry_successor')::text),'[]'::jsonb) FROM auth.refresh_tokens t;"
             )
+        if 22 in self.expected_migrations:
+            tokens_oid = table_oids["auth.one_time_tokens"]
+            originals = [c for c in baseline.schema["columns"] if c["attrelid"] == tokens_oid]
+            expected = {
+                "attrelid": tokens_oid, "attnum": max(c["attnum"] for c in originals) + 1,
+                "attname": "code_challenge", "type": "text", "attnotnull": False,
+                "attidentity": "", "attgenerated": "", "default_value": None,
+            }
+            added = [c for c in after["columns"] if c not in baseline.schema["columns"] and c["attrelid"] == tokens_oid]
+            assert added == [expected], "Unexpected signup-link binding column"
+            after["columns"].remove(expected)
+            constraints = [c for c in after["constraints"] if c not in baseline.schema["constraints"] and c["conrelid"] == tokens_oid]
+            assert len(constraints) == 1 and constraints[0]["conname"] == "one_time_tokens_code_challenge_check"
+            after["constraints"].remove(constraints[0])
+            for row in after["tables"]["auth.one_time_tokens"]:
+                assert json.loads(row)["code_challenge"] is None, "Existing links acquired a binding"
+            after["tables"]["auth.one_time_tokens"] = self.query(
+                "SELECT coalesce(jsonb_agg((to_jsonb(t)-'code_challenge')::text ORDER BY (to_jsonb(t)-'code_challenge')::text),'[]'::jsonb) FROM auth.one_time_tokens t;"
+            )
         if 18 in self.expected_migrations:
             avatar_oid = table_oids["nelcota.admin_avatar"]
             fields = {

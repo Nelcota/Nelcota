@@ -19,6 +19,10 @@ pub(crate) struct VerifyBody {
     /// The new password; only `recovery` takes one.
     #[serde(default)]
     password: Option<String>,
+    /// The PKCE verifier of the signup's `code_challenge`; only `signup`
+    /// reads it, to keep the password chosen at signup.
+    #[serde(default)]
+    code_verifier: Option<String>,
 }
 
 pub(crate) async fn verify(
@@ -31,7 +35,17 @@ pub(crate) async fn verify(
         Some(LinkKind::Recovery) => {
             recovery::complete(state, &body.token, body.password, ip, user_agent).await
         }
-        Some(kind) => links::sign_in(state, kind, &body.token, ip, user_agent).await,
+        Some(kind) => {
+            links::sign_in(
+                state,
+                kind,
+                &body.token,
+                body.code_verifier.as_deref(),
+                ip,
+                user_agent,
+            )
+            .await
+        }
         None => Err(unsupported_type(
             "type must be recovery, signup or magiclink",
         )),

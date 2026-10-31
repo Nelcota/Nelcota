@@ -125,7 +125,9 @@ one. `service_role` tokens and public or signed file downloads are exempt.
 Server-side rendering with the anonymous key shares the server's IP budget;
 raise the value or send user tokens.
 
-IPv6 addresses count by their /64. Quotas are per process, not distributed
+IPv6 addresses count by their /64; signup also counts per /48, and the /64s
+of one /48 can be tracked for at most 781 keys at a time, past which its new
+/64s get 429 on auth endpoints. Quotas are per process, not distributed
 across server instances. Clients behind a NAT can share an IP budget. The
 response carries `Retry-After`, rounded up to whole seconds; SDKs expose it as
 `error.retryAfter` (seconds) / `Error::retry_after()`.

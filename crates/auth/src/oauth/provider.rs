@@ -324,7 +324,7 @@ mod tests {
         assert!(url.contains("state=st"));
         assert!(url.contains(&format!(
             "code_challenge={}&code_challenge_method=S256",
-            super::super::pkce::challenge(&verifier)
+            crate::pkce::challenge(&verifier)
         )));
         assert!(!url.contains("secret"));
     }
