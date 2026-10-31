@@ -123,6 +123,8 @@ const ptBR = {
     payload_too_large:
       "Os dados passaram de 256 KiB. O conteúdo foi omitido e não pode ser reenviado.",
     endpoint_deleted: "O webhook foi apagado.",
+    dns_busy:
+      "As consultas DNS locais estavam saturadas. O envio é tentado de novo em instantes, sem gastar uma tentativa.",
     queue_full:
       "Este webhook já tinha 10.000 entregas aguardando. O evento foi registrado sem o conteúdo e não pode ser reenviado.",
   },

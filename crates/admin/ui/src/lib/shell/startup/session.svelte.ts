@@ -1,6 +1,6 @@
 import { preloadResponseContracts } from "$lib/contracts/responses";
 import { clearQuerySession } from "$lib/resources/query-client";
-import { session } from "$lib/resources/session.svelte";
+import { endSession, session } from "$lib/resources/session.svelte";
 import { api, ApiError } from "$lib/transport/api";
 
 import { rememberSignedIn, watchSignOutElsewhere } from "../prefetch.js";
@@ -50,8 +50,7 @@ export class StartupSession {
     return watchSignOutElsewhere(() => {
       if (Boolean(session.email) === false) return;
       clearQuerySession();
-      session.expired = false;
-      session.email = null;
+      endSession(false);
     });
   }
   syncHint(): void {

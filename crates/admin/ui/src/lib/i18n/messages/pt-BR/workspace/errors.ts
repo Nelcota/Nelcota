@@ -34,6 +34,8 @@ const ptBR = {
   webhook_delivery_active: "A entrega ou um reenvio já está na fila. Aguarde terminar.",
   webhook_payload_omitted:
     "Este evento foi registrado sem o conteúdo, por isso não pode ser reenviado.",
+  webhook_queue_full:
+    "Este webhook já tem 10.000 entregas aguardando. Reenvie quando a fila esvaziar.",
 
   // Session and access
   route_not_found: "Rota não encontrada.",

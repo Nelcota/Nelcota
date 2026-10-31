@@ -221,7 +221,7 @@ async fn serve(config: Config) -> anyhow::Result<()> {
                 limiter: Arc::new(RateLimiter::new(10)),
                 passwords: passwords.clone(),
                 proxy_hops: config.proxy_hops(),
-                secure_cookies: config.trust_proxy,
+                secure_cookies: config.secure_cookies(),
                 host: Arc::new(host_link(&config)),
                 tokens: Arc::new(nelcota_admin::TokenIssuer {
                     keys: keys.clone(),
