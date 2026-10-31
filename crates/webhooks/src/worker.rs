@@ -64,7 +64,12 @@ impl Worker {
                         }
                     },
                     _ = prune.tick() => {
-                        if queue::prune(&worker.pool).await.is_err() { tracing::warn!("webhook retention cleanup unavailable"); }
+                        match queue::prune(&worker.pool).await {
+                            // Behind: run again soon, leaving the worker free meanwhile.
+                            Ok(false) => prune.reset_after(Duration::from_secs(1)),
+                            Ok(true) => {}
+                            Err(_) => tracing::warn!("webhook retention cleanup unavailable"),
+                        }
                     },
                 }
             }

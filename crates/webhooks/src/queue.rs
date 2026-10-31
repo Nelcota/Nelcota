@@ -5,6 +5,8 @@ use crate::{
 };
 use deadpool_postgres::{Pool, Transaction};
 use nelcota_core::config::Secret;
+use std::time::Duration;
+use tokio::time::Instant;
 use tokio_postgres::{Row, types::ToSql};
 use uuid::Uuid;
 
@@ -151,42 +153,58 @@ fn retry_delay(attempt: i32, id: i64, retry_after: Option<u64>) -> u64 {
 /// writes; the oldest terminal rows beyond this cap are pruned instead.
 const HISTORY_LIMIT: i64 = 100_000;
 const PRUNE_BATCH: i64 = 500;
-/// Batches per cleanup run and kind, so a burst of history is caught up
-/// within minutes without holding the worker for long.
-const PRUNE_BATCHES: usize = 40;
+const FOLD_BATCH: i32 = 500;
+/// Time one cleanup run may spend on each kind. Full batches continue until
+/// it runs out, and a run that did not catch up is repeated shortly, so
+/// cleanup keeps pace with a sustained overflow while claims run in between.
+const PRUNE_BUDGET: Duration = Duration::from_secs(1);
 
 /// Retention runs in small batches so cascade cleanup does not monopolize the
-/// queue pool. It deletes terminal history older than 7 days, then terminal
-/// rows beyond the newest `HISTORY_LIMIT`. Age cleanup runs first and on its
-/// own, so a slow cap query never stops it; the cap's cutoff is computed once
-/// per run. Pending/processing work is kept.
-pub(crate) async fn prune(pool: &Pool) -> Result<(), Error> {
-    for _ in 0..PRUNE_BATCHES {
-        if prune_batch(pool, PRUNE_AGED, &[&PRUNE_BATCH]).await? < PRUNE_BATCH as u64 {
-            break;
-        }
-    }
+/// queue pool. It folds committed counter overflow rows, deletes terminal
+/// history older than 7 days, then terminal rows beyond the newest
+/// `HISTORY_LIMIT`. Age cleanup runs on its own, so a slow cap query never
+/// stops it; the cap's cutoff is computed once per run. Pending/processing
+/// work is kept. Returns whether every kind caught up.
+pub(crate) async fn prune(pool: &Pool) -> Result<bool, Error> {
+    let folded = drain(pool, FOLD_OVERFLOW, &[&FOLD_BATCH], i64::from(FOLD_BATCH)).await?;
+    let aged = drain(pool, PRUNE_AGED, &[&PRUNE_BATCH], PRUNE_BATCH).await?;
     let cutoff = match history_cutoff(pool).await? {
         Some(cutoff) => cutoff,
-        None => return Ok(()),
+        None => return Ok(folded && aged),
     };
     let (finished_at, id) = cutoff;
-    for _ in 0..PRUNE_BATCHES {
-        let params: [&(dyn ToSql + Sync); 3] = [&finished_at, &id, &PRUNE_BATCH];
-        if prune_batch(pool, PRUNE_CAPPED, &params).await? < PRUNE_BATCH as u64 {
-            break;
-        }
-    }
-    Ok(())
+    let params: [&(dyn ToSql + Sync); 3] = [&finished_at, &id, &PRUNE_BATCH];
+    let capped = drain(pool, PRUNE_CAPPED, &params, PRUNE_BATCH).await?;
+    Ok(folded && aged && capped)
 }
 
-async fn prune_batch(pool: &Pool, sql: &str, params: &[&(dyn ToSql + Sync)]) -> Result<u64, Error> {
+/// Runs batches while they come back full, within `PRUNE_BUDGET`. Returns
+/// whether a partial batch showed that nothing is left for now.
+async fn drain(
+    pool: &Pool,
+    sql: &str,
+    params: &[&(dyn ToSql + Sync)],
+    full: i64,
+) -> Result<bool, Error> {
+    let deadline = Instant::now() + PRUNE_BUDGET;
+    loop {
+        if prune_batch(pool, sql, params).await? < full {
+            return Ok(true);
+        }
+        if Instant::now() >= deadline {
+            return Ok(false);
+        }
+    }
+}
+
+/// Each cleanup statement returns how many rows it handled.
+async fn prune_batch(pool: &Pool, sql: &str, params: &[&(dyn ToSql + Sync)]) -> Result<i64, Error> {
     let mut client = pool.get().await?;
     let tx = client.transaction().await?;
     tx.batch_execute("SET LOCAL ROLE nelcota_webhooks; SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='3s'").await?;
-    let deleted = tx.execute(sql, params).await?;
+    let handled: i64 = tx.query_one(sql, params).await?.get(0);
     tx.commit().await?;
-    Ok(deleted)
+    Ok(handled)
 }
 
 /// The newest terminal delivery beyond `HISTORY_LIMIT`, as (finished_at as
@@ -200,21 +218,25 @@ async fn history_cutoff(pool: &Pool) -> Result<Option<(String, i64)>, Error> {
     Ok(row.map(|row| (row.get(0), row.get(1))))
 }
 
-const PRUNE_AGED: &str = "DELETE FROM nelcota.webhook_deliveries WHERE id IN (
+const FOLD_OVERFLOW: &str = "SELECT nelcota.fold_webhook_queue_overflow($1)::bigint";
+
+const PRUNE_AGED: &str = "WITH gone AS (DELETE FROM nelcota.webhook_deliveries WHERE id IN (
     SELECT id FROM nelcota.webhook_deliveries
     WHERE finished_at < statement_timestamp() - interval '7 days'
     AND status IN ('succeeded','failed','cancelled')
-    ORDER BY finished_at, id LIMIT $1 FOR UPDATE SKIP LOCKED)";
+    ORDER BY finished_at, id LIMIT $1 FOR UPDATE SKIP LOCKED) RETURNING 1)
+    SELECT count(*) FROM gone";
 
 const CUTOFF: &str = "SELECT k.finished_at::text, k.id FROM nelcota.webhook_deliveries k
     WHERE k.finished_at IS NOT NULL AND k.status IN ('succeeded','failed','cancelled')
     ORDER BY k.finished_at DESC, k.id DESC OFFSET $1 LIMIT 1";
 
-const PRUNE_CAPPED: &str = "DELETE FROM nelcota.webhook_deliveries WHERE id IN (
+const PRUNE_CAPPED: &str = "WITH gone AS (DELETE FROM nelcota.webhook_deliveries WHERE id IN (
     SELECT id FROM nelcota.webhook_deliveries
     WHERE finished_at IS NOT NULL AND status IN ('succeeded','failed','cancelled')
     AND (finished_at, id) <= ($1::text::timestamptz, $2)
-    ORDER BY finished_at, id LIMIT $3 FOR UPDATE SKIP LOCKED)";
+    ORDER BY finished_at, id LIMIT $3 FOR UPDATE SKIP LOCKED) RETURNING 1)
+    SELECT count(*) FROM gone";
 
 #[cfg(test)]
 mod tests {

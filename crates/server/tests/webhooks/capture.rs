@@ -449,3 +449,62 @@ async fn deletion_does_not_deadlock_a_writer_and_truncation_resets_capacity() {
     assert_eq!(usage.get::<_, i64>(0), 0);
     assert_eq!(usage.get::<_, i64>(1), 0);
 }
+
+#[tokio::test]
+async fn a_writer_never_waits_when_every_shard_is_held() {
+    let app = TestApp::spawn().await;
+    let hook = support::hook(&app, "https://example.com/hook", 6).await;
+    let (mut first, connection) = app.admin.connect(tokio_postgres::NoTls).await.unwrap();
+    tokio::spawn(connection);
+    let holding = first.transaction().await.unwrap();
+    let held = holding
+        .execute(
+            "SELECT 1 FROM nelcota.webhook_queue_shards WHERE endpoint_id=$1::text::uuid FOR UPDATE",
+            &[&hook.endpoint.id],
+        )
+        .await
+        .unwrap();
+    assert_eq!(held, 16);
+    // Every shard is taken: the writer adds its own overflow row instead of
+    // queueing behind the holder, and reuses it for its next capture.
+    let (mut second, connection) = app.admin.connect(tokio_postgres::NoTls).await.unwrap();
+    tokio::spawn(connection);
+    let writer = second.transaction().await.unwrap();
+    writer
+        .batch_execute("SET LOCAL lock_timeout = '1s'")
+        .await
+        .unwrap();
+    for title in ["first overflow", "second overflow"] {
+        writer
+            .execute(
+                "INSERT INTO public.todos (user_id,title) VALUES ($1,$2)",
+                &[&app.user_a, &title],
+            )
+            .await
+            .unwrap();
+    }
+    writer.commit().await.unwrap();
+    let shards = "SELECT count(*), count(*) FILTER (WHERE shard >= 16) FROM nelcota.webhook_queue_shards WHERE endpoint_id=$1::text::uuid";
+    let rows = app
+        .admin_client
+        .query_one(shards, &[&hook.endpoint.id])
+        .await
+        .unwrap();
+    assert_eq!((rows.get::<_, i64>(0), rows.get::<_, i64>(1)), (17, 1));
+    let outstanding = "SELECT outstanding FROM nelcota.webhook_queue_usage";
+    let usage = app.admin_client.query_one(outstanding, &[]).await.unwrap();
+    assert_eq!(usage.get::<_, i64>(0), 2);
+    // Once nothing holds it, the overflow row is folded back into a shard.
+    let fold = "SELECT nelcota.fold_webhook_queue_overflow(500)";
+    holding.commit().await.unwrap();
+    let folded = app.admin_client.query_one(fold, &[]).await.unwrap();
+    assert_eq!(folded.get::<_, i32>(0), 1);
+    let rows = app
+        .admin_client
+        .query_one(shards, &[&hook.endpoint.id])
+        .await
+        .unwrap();
+    assert_eq!((rows.get::<_, i64>(0), rows.get::<_, i64>(1)), (16, 0));
+    let usage = app.admin_client.query_one(outstanding, &[]).await.unwrap();
+    assert_eq!(usage.get::<_, i64>(0), 2);
+}
