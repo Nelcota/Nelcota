@@ -430,7 +430,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
   emails could reset a decoy budget early, which real accounts never allow, and
   so tell made-up emails from real ones. The decoy store now fills exactly like
   the account store: a tracked email keeps its budget, and an untracked one is
-  bounded by its caller's per-IP budget.
+  bounded by its caller's per-IP budget. The two stores are paired: while
+  either is full, neither tracks a new email, so filling one cannot tell a new
+  real email from a new made-up one either.
 
 ## [0.5.6] — 2026-10-27
 
