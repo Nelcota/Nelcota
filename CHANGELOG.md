@@ -271,6 +271,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Security
 
+- The panel also forgets the SQL history and open queries kept in the browser
+  when the session expires or another tab signs out, not only on an explicit
+  sign-out (saved queries stay).
 - Panel session cookies are marked `Secure` whenever `NELCOTA_API_URL` is an
   `https://` origin, not only with `NELCOTA_TRUST_PROXY`, so an HTTPS proxy
   that is not trusted for client IPs no longer gets cookies without `Secure`.
