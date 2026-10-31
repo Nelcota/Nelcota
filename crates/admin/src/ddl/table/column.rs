@@ -1,7 +1,7 @@
 //! Column SQL rendering shared by create and alter planning.
 use super::{ColumnDef, Context, OnDelete, ReferenceDef};
-use crate::ddl::{DataType, Result, expression, invalid, literal, qualified, validate_name};
 use crate::ddl::ident;
+use crate::ddl::{DataType, Result, expression, invalid, literal, qualified, validate_name};
 use serde_json::json;
 
 impl OnDelete {

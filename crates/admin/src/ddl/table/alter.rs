@@ -3,11 +3,11 @@ use super::{
     AlterAction, ColumnDef, Context,
     column::{column_sql, comment_on_column, references_sql},
 };
+use crate::ddl::ident;
 use crate::ddl::{
     DataType, Result, error, expression, grant, invalid, literal, qualified, validate_name,
 };
 use crate::tables::structure::{ColumnInfo, Structure};
-use crate::ddl::ident;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 

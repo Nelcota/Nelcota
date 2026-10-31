@@ -3,8 +3,8 @@ use super::{
     ColumnDef, Context, CreateTable,
     column::{column_sql, comment_on_column},
 };
-use crate::ddl::{Result, grant, invalid, literal, qualified, validate_name};
 use crate::ddl::ident;
+use crate::ddl::{Result, grant, invalid, literal, qualified, validate_name};
 use serde_json::{Value, json};
 
 pub fn create(ctx: &Context, spec: &CreateTable) -> Result<Vec<String>> {
