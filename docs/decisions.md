@@ -1098,6 +1098,25 @@ instead of returning to the pool, so a late cancel cannot reach another
 request. This limits
 concurrency, not request rate; a per-minute rate limit is a separate control.
 
+**D117. A signup confirmation proves the inbox, not the signup password.**
+Amends D27, D89 and D112. Opening a signup link shows only that someone reads
+the inbox; whoever signed up may have registered someone else's address with a
+password of their own. The link keeps the signup password only when the client
+confirming presents the PKCE verifier of the S256 `code_challenge` it sent with
+the signup (V22 stores the challenge with the link and joins the auth-only
+migration set). Otherwise the confirmation claims the account like a first
+magic link: the password is cleared, earlier access is revoked, and the person,
+signed in by the link, sets a password. Resent links are never bound. With
+confirmation on, signup no longer reveals accounts: an existing email gets the
+same `201 {user}` as a new one, with a random `id`, and the account does not
+change; its inbox gets an unbound confirmation link while unconfirmed, or at
+most one notice a minute once confirmed. Without confirmation the answer is a
+session, which cannot be faked, so `409 user_already_exists` remains there and
+reveals accounts. The /64s of one IPv6 /48 may hold at most 1/64 of the per-IP
+limiter store, and signup also has a per-/48 budget. Each email without an
+account gets an account-sized decoy budget of its own, in a separate store that
+drops its oldest key when full, instead of D112's 4,096 shared decoys.
+
 ### Known pending items
 
 - Filtering parent rows by their embeds (`!inner`) and self-referencing embeds.
