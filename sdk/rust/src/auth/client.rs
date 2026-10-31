@@ -11,10 +11,13 @@ use crate::{BoxFuture, Client, Error, RequestOptions, Result, TokenMode, http::S
 use reqwest::Method;
 use serde_json::{Value, json};
 use std::time::Duration;
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, watch};
 
 /// Sign-out renews only an expired token, allowing this much clock skew.
 const SIGN_OUT_SKEW: Duration = Duration::from_secs(5);
+/// Requests wait this long after a transient refresh failure without
+/// Retry-After before starting another rotation (matching the TypeScript SDK).
+const QUICK_RETRY: Duration = Duration::from_secs(2);
 
 #[derive(Clone, Debug)]
 pub struct AuthClient {
@@ -63,7 +66,10 @@ impl AuthClient {
             }
             if !current.remaining().is_zero() {
                 // The rotation is detached and shared; this request need not wait.
-                drop(self.rotation(snapshot.revision));
+                // After a transient failure it waits for Retry-After or a short backoff.
+                if !snapshot.backing_off() {
+                    drop(self.rotation(snapshot.revision));
+                }
                 return Ok(Some(current.session.access_token.clone()));
             }
             match self.refresh_since(snapshot.revision).await {
@@ -97,9 +103,15 @@ impl AuthClient {
                 let mut auth = self.clone();
                 // Shared by every waiter: the client's timeout applies, not the first caller's.
                 auth.client.options = RequestOptions::default();
+                let mut task = RotationTask {
+                    auth,
+                    sender: Some(sender),
+                };
                 tokio::spawn(async move {
-                    let outcome = auth.rotate_from(observed).await;
-                    sender.send_replace(Some(outcome));
+                    let outcome = task.auth.rotate_from(observed).await;
+                    if let Some(sender) = task.sender.take() {
+                        sender.send_replace(Some(outcome));
+                    }
                 });
                 Some(result)
             }
@@ -166,7 +178,8 @@ impl AuthClient {
                         .publish(&guard, None, AuthEventKind::SignedOut)
                         .await;
                 } else {
-                    manager.finish_rotation(&guard);
+                    let backoff = error.retry_after().unwrap_or(QUICK_RETRY);
+                    manager.postpone_rotation(&guard, backoff);
                 }
                 Err(error)
             }
@@ -423,6 +436,22 @@ impl AuthClient {
             .data;
         session.validate()?;
         self.signed_in(&guard, Current::received(session)).await
+    }
+}
+
+/// A spawned rotation. If it ends without reporting (a panic, a runtime
+/// shutting down), dropping it fails its waiters and lets the next caller
+/// start over instead of joining a rotation that will never finish.
+struct RotationTask {
+    auth: AuthClient,
+    sender: Option<watch::Sender<Option<Result<Session>>>>,
+}
+impl Drop for RotationTask {
+    fn drop(&mut self) {
+        if let Some(sender) = self.sender.take() {
+            self.auth.manager().abandon_rotation();
+            sender.send_replace(Some(Err(Error::Network("refresh task failed".into()))));
+        }
     }
 }
 

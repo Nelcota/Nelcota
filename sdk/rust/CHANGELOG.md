@@ -19,7 +19,9 @@ Dates identify release entries; registry availability requires a successful publ
   session no longer wait behind sign-in, refresh, sign-out or session
   persistence. While a token inside the refresh margin is still valid, requests
   keep sending it and the shared rotation runs in the background; only an
-  expired token waits for it. Mutations still serialize on one lifecycle lock.
+  expired token waits for it. After a transient refresh failure they start
+  another rotation only once Retry-After (or 2 s) has elapsed. Mutations still
+  serialize on one lifecycle lock.
 - Session expiry is tracked on the local monotonic clock from `expires_in`.
   Sessions received from the server have `expires_at` rewritten to the local
   clock plus `expires_in`, so stored copies are not affected by server clock
@@ -54,6 +56,7 @@ Dates identify release entries; registry availability requires a successful publ
   a refreshed session is immediately due again.
 - Concurrent refresh callers on a multi-threaded runtime share one rotation;
   the decision to join or start one is atomic.
+  A rotation task that panics no longer leaves later callers waiting on it.
 - Serializing a bare `Field::Omit` (a hand-written struct without
   `skip_serializing_if = "Field::is_omitted"`) fails with an explanation
   instead of silently writing `null`.

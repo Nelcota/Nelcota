@@ -66,6 +66,15 @@ pub(super) struct Snapshot {
     /// Moves on every publication and every finished rotation.
     pub(super) revision: u64,
     pub(super) refresh: Option<Refresh>,
+    /// After a transient rotation failure, a still-valid token is used
+    /// without starting another rotation until this instant.
+    retry_at: Option<Instant>,
+}
+impl Snapshot {
+    /// A failed rotation's backoff has not elapsed yet.
+    pub(super) fn backing_off(&self) -> bool {
+        self.retry_at.is_some_and(|at| Instant::now() < at)
+    }
 }
 
 /// What a caller asking for a rotation should do.
@@ -183,6 +192,7 @@ impl Manager {
             state.loaded = true;
             state.current = current;
             state.revision += 1;
+            state.retry_at = None;
         });
         let result = self.storage.save(session.as_ref()).await;
         let _ = self.events.send(AuthEvent {
@@ -195,6 +205,22 @@ impl Manager {
     /// Mark a rotation finished without publishing a session (failure, or
     /// nothing to rotate), so later callers start their own.
     pub(super) fn finish_rotation(&self, _guard: &Guard<'_>) {
+        self.state.send_modify(|state| state.revision += 1);
+    }
+
+    /// Finish a rotation that failed transiently: requests keep a still-valid
+    /// token and do not start another rotation for `backoff`.
+    pub(super) fn postpone_rotation(&self, _guard: &Guard<'_>, backoff: Duration) {
+        self.state.send_modify(|state| {
+            state.revision += 1;
+            state.retry_at = Some(Instant::now() + backoff);
+        });
+    }
+
+    /// Finish a rotation whose task ended without reporting (a panic, a runtime
+    /// shutting down). It cannot wait for the lock; moving the revision only
+    /// makes later callers start their own rotation.
+    pub(super) fn abandon_rotation(&self) {
         self.state.send_modify(|state| state.revision += 1);
     }
 

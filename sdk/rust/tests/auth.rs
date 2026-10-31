@@ -679,6 +679,67 @@ async fn an_expired_token_is_not_sent_when_its_refresh_fails() {
 }
 
 #[tokio::test]
+async fn requests_keep_a_valid_token_without_rotating_during_the_backoff() {
+    let failure = json!({"code":"unavailable","message":"try later"});
+    let (url, count, task) = rest_server(
+        replying(StatusCode::SERVICE_UNAVAILABLE, failure),
+        Duration::ZERO,
+    )
+    .await;
+    let client = Client::builder(url).build().unwrap();
+    // Inside the 60 s refresh margin, but still valid.
+    client.auth().set_session(expiring_in(30)).await.unwrap();
+    let error = client.auth().refresh_session().await.unwrap_err();
+    assert_eq!(error.code(), "unavailable");
+    for _ in 0..3 {
+        assert_eq!(sent_token(&client).await.unwrap(), "Bearer a0");
+    }
+    // A request that started a rotation would have reached the server by now.
+    tokio::time::sleep(Duration::from_millis(200)).await;
+    task.abort();
+    assert_eq!(
+        count.load(Ordering::SeqCst),
+        1,
+        "no rotation during the backoff"
+    );
+}
+
+#[tokio::test]
+async fn a_rotation_that_panics_does_not_block_later_refreshes() {
+    use nelcota_client::auth::{SessionStorage, StorageFuture};
+    #[derive(Default)]
+    struct PanicsOnce(std::sync::atomic::AtomicBool);
+    impl SessionStorage for PanicsOnce {
+        fn load(&self) -> StorageFuture<'_, Option<Session>> {
+            let first = !self.0.swap(true, Ordering::SeqCst);
+            Box::pin(async move {
+                assert!(!first, "first load panics inside the rotation task");
+                Ok(Some(expiring_in(-60)))
+            })
+        }
+        fn save<'a>(&'a self, _: Option<&'a Session>) -> StorageFuture<'a, ()> {
+            Box::pin(async { Ok(()) })
+        }
+    }
+    let fresh = serde_json::to_value(session("a1", "r1")).unwrap();
+    let (url, count, task) = rest_server(replying(StatusCode::OK, fresh), Duration::ZERO).await;
+    let client = Client::builder(url)
+        .session_storage(Arc::new(PanicsOnce::default()))
+        .build()
+        .unwrap();
+    // The first rotation loads the session and panics before reporting.
+    let error = client.auth().refresh_session().await.unwrap_err();
+    assert_eq!(error.code(), "network_error");
+    let refreshed = tokio::time::timeout(Duration::from_secs(5), client.auth().refresh_session())
+        .await
+        .expect("a later refresh joined the dead rotation")
+        .unwrap();
+    task.abort();
+    assert_eq!(refreshed.refresh_token, "r1");
+    assert_eq!(count.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
 async fn session_lifetime_follows_expires_in_not_the_servers_clock() {
     // A server clock far behind this machine's: its expires_at is in the past.
     let mut issued = session("a1", "r1");

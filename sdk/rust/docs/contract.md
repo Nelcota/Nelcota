@@ -69,6 +69,8 @@ structured error.
 - A token inside the refresh margin (capped at half its lifetime) is still sent
   while one shared, detached rotation runs; only an expired token waits for it.
   Cancelling waiters neither stops an accepted rotation nor leaves a task each.
+  After a transient failure, requests with a still-valid token start the next
+  rotation only once Retry-After (or 2 s) has elapsed.
   The rotation uses the client's timeout, not a caller's.
 - If refresh fails transiently and the token has expired, the request returns
   that error (retryable, with Retry-After). `invalid_grant` clears the session.
