@@ -95,6 +95,10 @@ Dates identify release entries; registry availability requires a successful publ
   holds its refresh reservation for as long as the tab stays open. The owner
   renews it for at most the request timeout or two minutes, whichever is
   shorter; other tabs then take it over once the 10-second lease lapses.
+- Tabs running SDK 0.2.1 or older hear sign-outs and refreshes from newer tabs
+  again: each change is broadcast as the structured message followed by the
+  legacy `"changed"` signal those tabs understand. Current tabs skip the
+  duplicate instead of handling the change twice.
 
 ## 0.2.5 — 2026-10-27
 

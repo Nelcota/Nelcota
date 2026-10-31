@@ -268,6 +268,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
   `timeout: 0`) no longer holds its refresh reservation while the tab stays
   open; renewal stops after the request timeout or two minutes, whichever is
   shorter, and other tabs take the reservation over once its lease lapses.
+- `@nelcota/client`: browser tabs running SDK 0.2.1 or older hear sign-outs and
+  refreshes from newer tabs again; each change also sends the legacy
+  `"changed"` broadcast, which current tabs skip as a duplicate.
 
 ### Security
 

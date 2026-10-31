@@ -73,11 +73,13 @@ const BUDGETS: Record<string, number> = {
   // Capping reservation renewal at the request timeout (or two minutes) reads
   // the transport's default timeout: root 23,915 B, REST 11,986 B, auth
   // 16,524 B and storage 9,410 B gzip.
-  "index.js": 23_960,
+  // Sending the legacy "changed" broadcast for SDK 0.2.1 tabs, and skipping it
+  // as a duplicate, measures root 23,974 B and auth 16,585 B gzip.
+  "index.js": 24_020,
   // Standalone factories include HTTP and keep the other feature modules out.
   "rest/index.js": 11_995,
   // Failed persistence must retain rotated tokens; background failures are observed.
-  "auth/index.js": 16_570,
+  "auth/index.js": 16_630,
   "storage/index.js": 9_420,
 };
 

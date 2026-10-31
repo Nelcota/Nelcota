@@ -311,11 +311,12 @@ while that exact prior receipt remains current, even with a foreign owner. A
 committed logout supersedes dirty state in other clients.
 
 Each change is broadcast as one message carrying its event and revision,
-never tokens; a change without a committed revision sends the legacy
-`"changed"` signal, which receivers still accept from older SDKs. Receivers
-reload under the lifecycle lock; unchanged reloads emit nothing, and a
-revision that no longer matches the journal is not trusted for its event
-kind. Explicit `sessionStorage` does not broadcast.
+never tokens, followed by the legacy `"changed"` signal for tabs running SDK
+0.2.1 or older; current receivers skip that copy. A change without a
+committed revision sends only the legacy signal, which receivers still accept
+from older SDKs. Receivers reload under the lifecycle lock; unchanged reloads
+emit nothing, and a revision that no longer matches the journal is not
+trusted for its event kind. Explicit `sessionStorage` does not broadcast.
 
 Auth listeners run in registration order and may return promises. Each
 subscription first receives one asynchronous `initial_session`, ordered before
