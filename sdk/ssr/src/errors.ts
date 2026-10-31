@@ -8,8 +8,8 @@ export type SessionErrorCode =
   | "closed_context";
 
 /** Safe public classification; diagnostics never serialize credentials or causes. */
-class NelcotaNextSessionError extends Error {
-  override readonly name = "NelcotaNextSessionError";
+class NelcotaSessionError extends Error {
+  override readonly name = "NelcotaSessionError";
   constructor(
     readonly code: SessionErrorCode,
     message: string,
@@ -22,4 +22,6 @@ class NelcotaNextSessionError extends Error {
   }
 }
 
-export { NelcotaNextSessionError as SessionError };
+// Before 0.2 the class (and `error.name`) was "NelcotaNextSessionError"; the
+// public export has always been `SessionError`.
+export { NelcotaSessionError as SessionError };

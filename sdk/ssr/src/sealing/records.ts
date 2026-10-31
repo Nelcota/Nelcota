@@ -10,6 +10,10 @@ import type { SessionLease, StoredSession } from "../store.js";
 import { sha256 } from "./crypto.js";
 import { sessionKey, SessionSealer, type SessionState } from "./seal.js";
 const SECOND_IN_MS = 1_000;
+// Frozen wire constants: the `nelcota-next/...` strings below are hashed or bound
+// into every stored row and lineage key (shared with @nelcota/nextjs 0.1.x).
+// Renaming them would make existing sessions unreadable.
+
 /** Rows that share one browser cookie history share a lineage record. */
 export function lineageOf(key: string): Promise<string> {
   return sha256(`nelcota-next/lineage\0${key}`);
@@ -22,6 +26,9 @@ export interface Loaded {
   /** Retired by a later identity of the same lineage (tombstone or dead session row). */
   superseded: boolean;
   tombstone: boolean;
+  /** Stored session of a row a later identity superseded; never used for requests,
+   * only to revoke it upstream when the row is retired. */
+  orphanSession?: string | undefined;
 }
 export interface LineageHead {
   current: string;
@@ -47,7 +54,9 @@ export class SessionRecords {
     const namespace = `${trustedUrl(options.appOrigin, development, true).origin}\0${trustedUrl(options.url, development).href}`;
     const scope = (await sha256(namespace)).slice(0, SESSION_LIMITS.scopeDigestChars);
     const copied = { ...options };
-    const sealer = await SessionSealer.create(options.keys);
+    const sealer = await SessionSealer.create(options.keys, {
+      legacyEnvelopes: options.legacyEnvelopes !== false,
+    });
     return new SessionRecords(sessionConfiguration(copied, scope), sealer);
   }
   readonly config: SessionConfiguration;
@@ -97,7 +106,14 @@ export class SessionRecords {
     if (state.session !== null && lineage !== null && state.generation !== undefined) {
       const head = await this.head(lineage, undefined, lease);
       if (head?.current !== key || head.generation !== state.generation)
-        return { state: null, row: true, lineage, superseded: true, tombstone: false };
+        return {
+          state: null,
+          row: true,
+          lineage,
+          superseded: true,
+          tombstone: false,
+          orphanSession: state.session,
+        };
     }
     return { state, row: true, lineage, superseded: false, tombstone: false };
   }
@@ -173,12 +189,14 @@ export class SessionRecords {
       expiresAt,
     };
   }
-  /** Replaces a superseded session row (an orphan) with a tombstone under its own lock. */
-  async retire(key: string): Promise<void> {
-    await this.config.options.store.exclusive(key, async (lease) => {
+  /** Replaces a superseded session row (an orphan) with a tombstone under its own lock.
+   * Returns the stored session it held, for upstream revocation, or null. */
+  async retire(key: string): Promise<string | null> {
+    return await this.config.options.store.exclusive(key, async (lease) => {
       const loaded = await this.load(key, lease);
-      if (loaded.superseded === false || loaded.tombstone || loaded.lineage === null) return;
+      if (loaded.superseded === false || loaded.tombstone || loaded.lineage === null) return null;
       await lease.save(await this.tombstone(key, loaded.lineage));
+      return loaded.orphanSession ?? null;
     });
   }
 }

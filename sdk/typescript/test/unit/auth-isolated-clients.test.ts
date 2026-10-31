@@ -1,9 +1,9 @@
 import { afterEach, expect, it, vi } from "vitest";
 
-import { promiseResult } from "../../src/core/promise-result.js";
 import { createClient } from "../../src/index.js";
 import { installWebLocks } from "./browser-environment.js";
 import { json, session } from "./http-fixtures.js";
+import { promiseResult } from "./promise-result.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();

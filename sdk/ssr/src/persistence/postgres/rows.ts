@@ -1,7 +1,11 @@
 import { SessionError } from "../../errors.js";
+import { MAX_SEALED_CHARS } from "../../sealing/seal.js";
 import type { StoredSession } from "../../store.js";
 
-const MAX_SEALED_SESSION_CHARS = 131_072;
+// Writes use the tightest bound `seal` can produce. The deployed schema keeps its
+// CHECK (octet_length(sealed) <= 131072) as an outer bound, and reads accept rows up
+// to it so that an oversize row opens as "no session" rather than a store failure.
+const MAX_STORED_ROW_CHARS = 131_072;
 export function keyCheck(key: string): void {
   if (/^[a-f0-9]{64}$/.test(key) === false)
     throw new SessionError("invalid_session", "Invalid session key");
@@ -17,7 +21,7 @@ export function stored(row: Record<string, unknown> | undefined): StoredSession 
   const expiresAt = Number(raw);
   if (
     typeof row["sealed"] !== "string" ||
-    row["sealed"].length > MAX_SEALED_SESSION_CHARS ||
+    row["sealed"].length > MAX_STORED_ROW_CHARS ||
     Number.isSafeInteger(expiresAt) === false
   )
     throw new SessionError("session_store", "Invalid session store response");
@@ -28,7 +32,7 @@ export function requireBoundedState(value: StoredSession): void {
   if (
     Number.isSafeInteger(value.expiresAt) === false ||
     value.expiresAt <= Date.now() ||
-    value.sealed.length > MAX_SEALED_SESSION_CHARS
+    value.sealed.length > MAX_SEALED_CHARS
   )
     throw new SessionError("invalid_session", "Invalid bounded session state");
 }

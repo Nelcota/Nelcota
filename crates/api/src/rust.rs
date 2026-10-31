@@ -387,7 +387,7 @@ mod tests {
         };
         let code = generate(&catalog);
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../sdk/rust/test/generated.rs");
+            .join("../../sdk/rust/tests/fixtures/generated.rs");
         if std::env::var_os("NELCOTA_UPDATE_RUST_FIXTURE").is_some() {
             std::fs::write(&path, &code).unwrap();
         }

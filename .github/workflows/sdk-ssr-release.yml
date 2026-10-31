@@ -12,8 +12,12 @@ jobs:
   verify:
     uses: ./.github/workflows/sdk-nextjs-check.yml
 
+  # Unit, PostgreSQL and real-backend checks of the core itself.
+  verify-core:
+    uses: ./.github/workflows/sdk-ssr-check.yml
+
   publish:
-    needs: verify
+    needs: [verify, verify-core]
     runs-on: ubuntu-latest
     environment: npm
     permissions:

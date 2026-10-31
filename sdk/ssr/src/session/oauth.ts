@@ -1,10 +1,10 @@
 import type { NelcotaClient } from "@nelcota/client";
 
 import { SessionError } from "../errors.js";
-import { safeReturnTo } from "../http/policy.js";
+import { OAUTH_CALLBACK_PATH, safeReturnTo } from "../http/policy.js";
 import { equalState } from "../sealing/crypto.js";
 import { newSessionId, type SessionState } from "../sealing/seal.js";
-import { identityOperation, mutationOptions } from "./mutation-options.js";
+import { mutationOptions } from "./mutation-options.js";
 import type { AuthOperations } from "./types.js";
 import type { WriteState } from "./write-state.js";
 
@@ -48,15 +48,13 @@ export function oauthOperations(
       return await auth.signInWithOAuth({
         provider: input.provider,
         redirect: false,
-        redirectTo: `${config.origin}${config.basePath}/auth/callback?state=${next.oauthState}`,
+        redirectTo: `${config.origin}${config.basePath}${OAUTH_CALLBACK_PATH}?state=${next.oauthState}`,
       });
     },
     exchangeCode: async (code, options) => {
       const current = callbackState(state, request);
       await state.save({ ...current, oauthState: null });
-      const result = await identityOperation(state, () =>
-        auth.exchangeCode(code, mutationOptions(options)),
-      );
+      const result = await state.identity(() => auth.exchangeCode(code, mutationOptions(options)));
       return result.error != null
         ? result
         : {

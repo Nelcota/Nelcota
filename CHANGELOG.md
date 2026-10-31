@@ -126,6 +126,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- REST `like`/`ilike` filters can match a literal `*`: an unescaped `*` is still
+  the `%` wildcard, while `\*` now means `*`. Other backslash escapes (`\%`,
+  `\_`, `\\`) keep their SQL LIKE meaning. Previously every `*` became `%`.
 - Webhook queue limits no longer abort writes to watched tables. Beyond 10,000
   outstanding deliveries for one webhook, a change is recorded as a failed
   `queue_full` delivery with omitted contents and the row still commits.

@@ -4,17 +4,9 @@ import { expect } from "vitest";
 import { type CookieWriter, Integration } from "../src/context.js";
 import { promiseResult } from "../src/lifecycle/promise-result.js";
 import { PostgresSessionStore } from "../src/postgres.js";
-import { requiredValue } from "../src/required-value.js";
 import { SessionSealer } from "../src/sealing/seal.js";
 import { requestUser } from "./request-values.js";
-
-const databaseUrl = process.env["NELCOTA_NEXT_TEST_DATABASE_URL"];
-
-if (databaseUrl === undefined || databaseUrl.trim() === "") {
-  throw new Error(
-    "The integration suite requires NELCOTA_NEXT_TEST_DATABASE_URL for its disposable PostgreSQL fixture",
-  );
-}
+import { requiredValue } from "./required-value.js";
 
 async function countCredentials(
   rows: { key: string; sealed: string }[],

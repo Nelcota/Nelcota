@@ -1,6 +1,6 @@
 //! Native OAuth/PKCE adapters; session publication stays with AuthClient.
 use super::AuthClient;
-use crate::auth::{AuthEventKind, OAuthProvider, PkceFlow, Session};
+use crate::auth::{OAuthProvider, PkceFlow, Session};
 use crate::{Error, Result};
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use serde_json::json;
@@ -38,15 +38,11 @@ impl AuthClient {
         {
             return Err(Error::Usage("invalid PKCE verifier".into()));
         }
-        let manager = &self.client.inner.auth;
-        let mut state = self.lock_state().await?;
-        let session = self
+        let guard = self.manager().lock(self.options()).await?;
+        let current = self
             .token("pkce", json!({"auth_code":code, "code_verifier":verifier}))
             .await?;
-        manager
-            .save(&mut state, Some(session.clone()), AuthEventKind::SignedIn)
-            .await?;
-        Ok(session)
+        self.signed_in(&guard, current).await
     }
     /// Remove OAuth callback credentials from a URL before handing it to application logs/history.
     pub async fn handle_redirect(&self, url: &mut Url, flow: PkceFlow) -> Result<Option<Session>> {

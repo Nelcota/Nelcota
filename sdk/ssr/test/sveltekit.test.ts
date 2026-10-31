@@ -5,8 +5,8 @@ import { expect, it, vi } from "vitest";
 import type { SessionOptions } from "../src/context.js";
 import { promiseResult } from "../src/lifecycle/promise-result.js";
 import { DevelopmentSessionStore } from "../src/memory-store.js";
-import { requiredValue } from "../src/required-value.js";
 import { createNelcotaSvelteKit, type SvelteKitEvent } from "../src/sveltekit.js";
+import { requiredValue } from "./required-value.js";
 
 const user = {
   id: "user-one",
@@ -128,6 +128,7 @@ it("SvelteKit adapter: routes protected paths by session and leaves public paths
   expect(anonymous.status).toBe(303);
   expect(anonymous.headers.get("location")).toBe(`${origin}/login?next=%2Fdashboard%3Ftab%3Da`);
   expect(anonymous.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+  expect(anonymous.headers.get("referrer-policy")).toBe("same-origin");
   expect(resolve).not.toHaveBeenCalled();
   expect(
     (await handle({ event: event(cookies, "/_app/immutable/start.js"), resolve })).status,
@@ -141,17 +142,17 @@ it("SvelteKit adapter: routes protected paths by session and leaves public paths
   expect(allowed.headers.get("referrer-policy")).toBe("same-origin");
 });
 
-it("SvelteKit adapter: applies routing policies without the app base path", async () => {
+it("SvelteKit adapter: applies routing policies without the base path and returns to a base-qualified next", async () => {
   const { nelcota, cookies } = await setup({ basePath: "/app" });
   const handle = nelcota.handle({ protectedPaths: ["/dashboard"] });
   const resolve = vi.fn(() => promiseResult(() => new Response("page")));
   const response = await handle({ event: event(cookies, "/app/dashboard"), resolve });
-  expect(response.headers.get("location")).toBe(`${origin}/app/login?next=%2Fdashboard`);
+  expect(response.headers.get("location")).toBe(`${origin}/app/login?next=%2Fapp%2Fdashboard`);
   expect((await handle({ event: event(cookies, "/app/about"), resolve })).status).toBe(200);
   // Kit routes on the decoded path: an encoded base must not slip past the guard.
   expect(
     (await handle({ event: event(cookies, "/%61pp/dashboard"), resolve })).headers.get("location"),
-  ).toBe(`${origin}/app/login?next=%2Fdashboard`);
+  ).toBe(`${origin}/app/login?next=%2Fapp%2Fdashboard`);
   expect(resolve).toHaveBeenCalledTimes(1);
 });
 
@@ -195,4 +196,42 @@ it("SvelteKit adapter: answers invalid encodings of a protected path with 400", 
   });
   expect(response.status).toBe(400);
   expect(await response.json()).toEqual({ error: "invalid_path" });
+});
+
+it("SvelteKit adapter: marks load functions private once per request", async () => {
+  const { nelcota, cookies } = await setup();
+  await signIn(nelcota, cookies);
+  const headers = new Map<string, string>();
+  const request = new Request(new URL("/dashboard", origin));
+  // Like Kit, refuse to set the same header twice for one request.
+  const setHeaders = vi.fn((values: Record<string, string>) => {
+    for (const [name, value] of Object.entries(values)) {
+      if (headers.has(name)) throw new Error(`"${name}" header is already set`);
+      headers.set(name, value);
+    }
+  });
+  const load = (): SvelteKitEvent => ({
+    cookies,
+    url: new URL("/dashboard", origin),
+    request,
+    setHeaders,
+  });
+  await nelcota.server(load(), ({ hasSession }) => promiseResult(() => hasSession));
+  await nelcota.server(load(), ({ hasSession }) => promiseResult(() => hasSession));
+  expect(setHeaders).toHaveBeenCalledOnce();
+  expect(headers.get("cache-control")).toBe("private, no-store");
+  expect(headers.get("vary")).toBe("Cookie");
+});
+
+it("SvelteKit adapter: leaves a configured appDir unguarded and validates it", async () => {
+  const { nelcota, cookies } = await setup();
+  const handle = nelcota.handle({ protectedPaths: ["/"], appDir: "assets/kit" });
+  const resolve = vi.fn(() => promiseResult(() => new Response("asset")));
+  expect((await handle({ event: event(cookies, "/assets/kit/start.js"), resolve })).status).toBe(
+    200,
+  );
+  expect((await handle({ event: event(cookies, "/_app/start.js"), resolve })).status).toBe(303);
+  expect(() => nelcota.handle({ protectedPaths: ["/"], appDir: "/_app" })).toThrow(
+    expect.objectContaining({ code: "configuration" }),
+  );
 });

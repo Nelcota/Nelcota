@@ -20,7 +20,9 @@ it("sign-out and user: never reuses a spent refresh token after persistence fail
     json(session(900, "refresh-3", "access-3")),
   );
   try {
-    await expect(nelcota.auth.refreshSession()).rejects.toBe(failed);
+    const refreshed = await nelcota.auth.refreshSession();
+    expect(refreshed.error?.code).toBe("session_unavailable");
+    expect(refreshed.error?.cause).toBe(failed);
     expect((await nelcota.auth.getSession()).data?.refresh_token).toBe("refresh-2");
     await nelcota.auth.refreshSession();
     expect(

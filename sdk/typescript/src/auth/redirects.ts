@@ -1,5 +1,5 @@
 import { NelcotaError, NelcotaUsageError, clientError } from "../core/client.errors.js";
-import { isBrowser } from "../core/jwt.js";
+import { isBrowser } from "../core/runtime.js";
 import type { EmailLink, EmailLinkType } from "./types.js";
 
 const MAX_EMAIL_TOKEN_LENGTH = 128;
@@ -9,27 +9,55 @@ type OAuthRedirect =
   | { kind: "error"; error: NelcotaError }
   | { kind: "code"; code: string };
 
+/** Codes the server's OAuth callback redirects with; anything else becomes `oauth_error`. */
+const OAUTH_ERROR_CODES = new Set<string>([
+  "access_denied",
+  "provider_error",
+  "provider_disabled",
+  "email_required",
+  "email_conflict",
+  "signup_disabled",
+  "invalid_state",
+]);
+const MAX_RAW_OAUTH_ERROR_CHARS = 64;
+
+/** Reads `?code=` or `?error=` without changing the address bar (see `clearOAuthRedirect`). */
 export function readOAuthRedirect(href: string): OAuthRedirect {
   if (href === "") return { kind: "none" };
   const url = absoluteUrl(href, "URL");
   const code = url.searchParams.get("code"),
     error = url.searchParams.get("error");
   if (code === null && error === null) return { kind: "none" };
-  url.searchParams.delete("code");
-  url.searchParams.delete("error");
-  replaceUrl(href, url);
-  if (error !== null)
-    return {
-      kind: "error",
-      error: new NelcotaError({
-        status: 0,
-        code: error.trim() === "" ? "provider_error" : error.trim(),
-        message: "Sign-in failed",
-      }),
-    };
+  if (error !== null) return { kind: "error", error: oauthError(error.trim()) };
   if (code === null || code.trim() === "")
     return { kind: "error", error: clientError("invalid_response", "Missing OAuth code") };
   return { kind: "code", code };
+}
+
+/** Removes `code` and `error` from the address bar and history once the redirect is handled. */
+export function clearOAuthRedirect(href: string): void {
+  const url = absoluteUrl(href, "URL");
+  url.searchParams.delete("code");
+  url.searchParams.delete("error");
+  replaceUrl(href, url);
+}
+
+/**
+ * A URL parameter is attacker-controlled: only a known code becomes
+ * `NelcotaError.code`. Any other value is `oauth_error`, with a truncated,
+ * character-restricted copy in `details`.
+ */
+function oauthError(raw: string): NelcotaError {
+  if (raw === "")
+    return new NelcotaError({ status: 0, code: "provider_error", message: "Sign-in failed" });
+  if (OAUTH_ERROR_CODES.has(raw))
+    return new NelcotaError({ status: 0, code: raw, message: "Sign-in failed" });
+  return new NelcotaError({
+    status: 0,
+    code: "oauth_error",
+    message: "Sign-in failed",
+    details: raw.replaceAll(/[^\w.-]/g, "_").slice(0, MAX_RAW_OAUTH_ERROR_CHARS),
+  });
 }
 
 export function parseEmailLink(href: string): EmailLink | null {

@@ -59,9 +59,8 @@ it("REST against the server: round-trips exact bigint and numeric values through
       .update({ amount: row.amount })
       .eq("id", inserted.id)
       .select()
-      .single()
       .execute(),
-  ).toMatchObject({ error: null, data: inserted });
+  ).toMatchObject({ error: null, data: [inserted] });
   expect(
     (await client.from("measurements").delete().eq("id", inserted.id).execute()).error,
   ).toBeNull();
@@ -205,9 +204,8 @@ it("REST against the server: writes under RLS: each user sees only their own row
     .update({ status: "paid" })
     .eq("id", id)
     .select("status")
-    .single()
     .execute();
-  expect(updated.data).toEqual({ status: "paid" });
+  expect(updated.data).toEqual([{ status: "paid" }]);
   const removed = await ana.client.from("orders").delete().eq("id", id).select("id").execute();
   expect(removed.data).toEqual([{ id }]);
 });

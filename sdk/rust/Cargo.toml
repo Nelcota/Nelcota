@@ -9,7 +9,7 @@ repository = "https://github.com/Nelcota/Nelcota"
 readme = "README.md"
 keywords = ["nelcota", "postgres", "baas", "sdk", "async"]
 categories = ["api-bindings", "web-programming::http-client"]
-include = ["src/**", "examples/**", "tests/**", "test/**", "README.md", "CHANGELOG.md", "LICENSE", "docs/**", "Cargo.toml"]
+include = ["src/**", "examples/**", "README.md", "CHANGELOG.md", "LICENSE", "Cargo.toml"]
 
 [dependencies]
 base64.workspace = true

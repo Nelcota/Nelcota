@@ -159,7 +159,7 @@ it("upgrades the original receipt shape without losing its session", async () =>
   }
 });
 
-it("retains a received replacement and blocks another owner after its commit fails", async () => {
+it("retains a received replacement and makes another owner wait for the lease after its commit fails", async () => {
   const { factory } = browser();
   const failed = new Error("IndexedDB write failed");
   const replacement = session(900, "replacement", "access-new");
@@ -178,9 +178,14 @@ it("retains a received replacement and blocks another owner after its commit fai
     auth: { autoRefresh: false },
   });
   try {
-    await expect(first.auth.getSession()).rejects.toBe(failed);
+    const failure = (await first.auth.getSession()).error;
+    expect(failure?.code).toBe("session_unavailable");
+    expect(failure?.cause).toBe(failed);
     expect((await first.auth.getSession()).data?.refresh_token).toBe("replacement");
-    await expect(other.auth.getSession()).rejects.toThrow("interrupted");
+    // The other tab cannot rotate the reserved token within the lease; it keeps
+    // the reserved, still-valid access token and reports explicit refreshes.
+    expect((await other.auth.getSession()).data?.refresh_token).toBe("refresh-1");
+    expect((await other.auth.refreshSession()).error?.code).toBe("refresh_pending");
     expect(mock.calls).toHaveLength(1);
     await first.auth.setSession(replacement);
     expect((await other.auth.getSession()).data?.refresh_token).toBe("replacement");
@@ -203,9 +208,9 @@ it("lets another tab sign out an interrupted refresh and supersedes the dirty ow
     createClient("https://api.example.com", { fetch: mock.fetch, auth: { autoRefresh: false } }),
   );
   try {
-    await expect(requiredValue(clients[0], "recorded test item").auth.getSession()).rejects.toThrow(
-      "commit failed",
-    );
+    const failure = (await requiredValue(clients[0], "recorded test item").auth.getSession()).error;
+    expect(failure?.code).toBe("session_unavailable");
+    expect(failure?.cause).toEqual(new Error("commit failed"));
     await requiredValue(clients[1], "recorded test item").auth.signOut();
     expect(
       (await requiredValue(clients[0], "recorded test item").auth.getSession()).data,

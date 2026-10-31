@@ -1,7 +1,7 @@
 /** `@nelcota/client/storage`: bucket administration and standalone composition. */
 import { fail, ok, type Result } from "../core/client.errors.js";
 import { bucketId } from "../core/encoding.js";
-import type { HttpClient } from "../core/http/client.js";
+import type { HttpClient, RequestSpec } from "../core/http/client.js";
 import { encodeJson } from "../core/json.js";
 import { createHttpClient, type TransportOptions } from "../core/options.js";
 import { BucketFiles } from "./files.js";
@@ -36,13 +36,31 @@ export function createStorageClient(
   return new StorageClient(createHttpClient(url, options));
 }
 
-/** Unquote only a canonical integer at the first key; the server retains int64 validation. */
+const CANONICAL_INT64 = /^[1-9]\d{0,18}$/;
+
+/**
+ * The settings object, written field by field. A canonical decimal string
+ * limit is sent as a JSON integer, so limits beyond Number.MAX_SAFE_INTEGER
+ * stay exact; the server keeps its int64 range check.
+ */
 function bucketJson(settings: BucketSettings & { id?: string }): string {
-  const { file_size_limit: limit, ...rest } = settings;
-  return encodeJson({ file_size_limit: limit, ...rest }).replace(
-    /^(\{"file_size_limit":)"([1-9]\d{0,18})"/,
-    "$1$2",
-  );
+  const fields: string[] = [];
+  const field = (name: string, value: unknown): void => {
+    if (value !== undefined) fields.push(`${encodeJson(name)}:${encodeJson(value)}`);
+  };
+  field("id", settings.id);
+  field("public", settings.public);
+  const limit = settings.file_size_limit;
+  if (typeof limit === "string" && CANONICAL_INT64.test(limit))
+    fields.push(`"file_size_limit":${limit}`);
+  else field("file_size_limit", limit);
+  field("allowed_mime_types", settings.allowed_mime_types);
+  return `{${fields.join(",")}}`;
+}
+
+/** Only the transport options a caller may set; never headers, auth or validation. */
+function transport(options: RequestOptions): Pick<RequestSpec, "signal" | "timeout"> {
+  return { signal: options.signal, timeout: options.timeout };
 }
 
 export class StorageClient {
@@ -60,7 +78,7 @@ export class StorageClient {
     const result = await this.#http.json<Bucket[]>({
       method: "GET",
       path: "/storage/v1/bucket",
-      ...options,
+      ...transport(options),
       validate: items,
     });
     return result.error != null ? fail(result.error) : ok(result.data);
@@ -70,7 +88,7 @@ export class StorageClient {
     const result = await this.#http.json<Bucket>({
       method: "GET",
       path: `/storage/v1/bucket/${bucketId(id)}`,
-      ...options,
+      ...transport(options),
       validate: item,
     });
     return result.error != null ? fail(result.error) : ok(result.data);
@@ -86,7 +104,7 @@ export class StorageClient {
       path: "/storage/v1/bucket",
       body: bucketJson({ ...settings, id: bucketId(id) }),
       headers: { "content-type": "application/json" },
-      ...options,
+      ...transport(options),
       validate: item,
     });
     return result.error != null ? fail(result.error) : ok(result.data);
@@ -104,7 +122,7 @@ export class StorageClient {
       path: `/storage/v1/bucket/${bucketId(id)}`,
       body: bucketJson(settings),
       headers: { "content-type": "application/json" },
-      ...options,
+      ...transport(options),
       validate: item,
     });
     return result.error != null ? fail(result.error) : ok(result.data);
@@ -115,7 +133,7 @@ export class StorageClient {
     const { error } = await this.#http.send({
       method: "DELETE",
       path: `/storage/v1/bucket/${bucketId(id)}`,
-      ...options,
+      ...transport(options),
     });
     return error != null ? fail(error) : ok(null);
   }

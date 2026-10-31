@@ -1,10 +1,11 @@
 "use client";
 
-import { hasPathControls } from "./http/path.js";
+import { DEFAULT_REFRESH_ENDPOINT, hasPathControls } from "./http/policy.js";
 const DEFAULT_REFRESH_TIMEOUT_IN_MS = 10000;
 const MAX_REFRESH_TIMEOUT_IN_MS = 30000;
 
 export interface BrowserSessionOptions {
+  /** Same-origin POST route, including any basePath. Default `/auth/session/refresh`. */
   endpoint?: string;
   timeout?: number;
   signal?: AbortSignal;
@@ -15,7 +16,7 @@ export interface BrowserSessionOptions {
  * authority when locks are unavailable or requests reach different instances.
  */
 export async function refreshSession(options: BrowserSessionOptions = {}): Promise<Response> {
-  const endpoint = options.endpoint ?? "/auth/session/refresh";
+  const endpoint = options.endpoint ?? DEFAULT_REFRESH_ENDPOINT;
   const url = refreshUrl(endpoint);
   const timeoutInMs = options.timeout ?? DEFAULT_REFRESH_TIMEOUT_IN_MS;
   if (
@@ -34,11 +35,11 @@ export async function refreshSession(options: BrowserSessionOptions = {}): Promi
       credentials: "same-origin",
       cache: "no-store",
       redirect: "error",
-      headers: { "X-Nelcota-Next": "1" },
       signal,
     });
   const locks = browserLocks();
   if (locks !== undefined)
+    // Frozen: tabs running an older bundle share this Web Lock name.
     return await locks.request(`nelcota-next-refresh:${url.pathname}`, { signal }, send);
   return await send();
 }

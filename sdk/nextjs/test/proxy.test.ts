@@ -6,8 +6,8 @@ import { NextRequest } from "next/server.js";
 import { expect, it, vi } from "vitest";
 
 import { createNelcotaProxy } from "../src/proxy.js";
-import { requiredValue } from "../src/required-value.js";
 import { promiseResult } from "./promise-result.js";
+import { requiredValue } from "./required-value.js";
 
 async function setup(basePath?: string) {
   const fetch = vi.fn(() =>

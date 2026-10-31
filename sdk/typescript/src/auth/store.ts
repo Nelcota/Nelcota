@@ -1,5 +1,7 @@
+import { type NelcotaError, clientError } from "../core/client.errors.js";
 import { encodeJson } from "../core/json.js";
-import { isBrowser } from "../core/jwt.js";
+import { isBrowser } from "../core/runtime.js";
+import { BrowserRefreshPendingError } from "./browser/session.errors.js";
 import { BrowserSessionState } from "./browser/state.js";
 /** Where the session lives: the adapter, its native journal and the local copy. No timers, locks or events. */
 import { memoryStorage, parseSession, type Session, type SessionStorage } from "./session.js";
@@ -66,11 +68,11 @@ export class SessionStore {
     return `${this.#revision}/${this.#native?.revision}`;
   }
 
-  async read(force = false, allowPending = false): Promise<Session | null> {
+  async read(force = false): Promise<Session | null> {
     // Storage may still contain a spent token or a session already signed out.
     // Keep the newer local state until a later persistence attempt succeeds.
     if (this.#keepLocal(force)) return this.#session ?? null;
-    const stored = await this.#stored(allowPending);
+    const stored = await this.#stored();
     this.#session = parseSession(stored);
     if (stored !== null && this.#session === null) {
       await this.#native?.write(null);
@@ -81,12 +83,11 @@ export class SessionStore {
   #keepLocal(force: boolean): boolean {
     return this.#native == null && (this.dirty || (force === false && this.#session !== undefined));
   }
-  async #stored(allowPending: boolean): Promise<string | null> {
+  async #stored(): Promise<string | null> {
     if (this.#native == null) return await this.storage.getItem(this.key);
     const snapshot = await this.#native.read(
       () => this.#nativeValue(this.key),
       this.#pendingSnapshot(),
-      allowPending,
     );
     this.dirty = snapshot.retainDirty;
     return snapshot.value;
@@ -137,9 +138,29 @@ export class SessionStore {
       return this.#session ?? null;
     }
   }
-  /** Commits a reservation before HTTP so no other client spends the same token. */
-  async reserve(session: Session): Promise<void> {
-    await this.#native?.reserve(session);
+  /**
+   * Commits a reservation before HTTP so no other client spends the same
+   * token. Returns `refresh_pending` while another live client holds it.
+   */
+  async reserve(session: Session): Promise<NelcotaError | null> {
+    try {
+      await this.#native?.reserve(session);
+      return null;
+    } catch (error) {
+      if (error instanceof BrowserRefreshPendingError === false) throw error;
+      return clientError(
+        "refresh_pending",
+        "Another tab is refreshing this session; retry shortly",
+        error,
+      );
+    }
+  }
+  /**
+   * Renews a committed reservation while its refresh request is in flight;
+   * call the returned function once the request settles.
+   */
+  holdReservation(): (() => Promise<void>) | undefined {
+    return this.#native?.hold();
   }
   /** Gives back a reservation whose rotation definitely did not commit. */
   async release(session: Session): Promise<void> {
@@ -150,6 +171,12 @@ export class SessionStore {
     const key = `${this.key}.pkce`;
     await this.#pkce?.write(value);
     await this.storage.setItem(key, value);
+  }
+  /** The pending PKCE verifier, without consuming it. */
+  async peekVerifier(): Promise<string | null> {
+    const key = `${this.key}.pkce`;
+    if (this.#pkce == null) return await this.storage.getItem(key);
+    return (await this.#pkce.read(() => this.#nativeValue(key))).value;
   }
   async consumeVerifier(): Promise<string | null> {
     const key = `${this.key}.pkce`;

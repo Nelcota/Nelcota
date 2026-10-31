@@ -6,7 +6,8 @@ const HTTP_SEE_OTHER = 303;
 /** @satisfies {import("@sveltejs/kit").Actions} */
 export const actions = {
   default: async (event) => {
-    await (await nelcota()).action(event, ({ auth }) => auth.signOut());
-    redirect(HTTP_SEE_OTHER, "/login");
+    const sessions = await nelcota();
+    await sessions.action(event, ({ auth }) => auth.signOut());
+    redirect(HTTP_SEE_OTHER, `${sessions.basePath}/login`);
   },
 };

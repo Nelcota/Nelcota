@@ -4,6 +4,7 @@ import { requiredValue } from "../../src/core/required-value.js";
 import { memoryStorage } from "../../src/index.js";
 import { KEY, setup, stored } from "./auth-fixtures.js";
 import { json, session } from "./http-fixtures.js";
+import { WorkerScopeFixture } from "./worker-scope.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -42,11 +43,15 @@ it("refresh: sends one refresh for many concurrent requests", async () => {
 });
 
 it("refresh: serializes refreshes across tabs: the second tab takes the first one's result", async () => {
-  // A Web Lock shared by two clients with the same storage (two tabs).
+  // A Web Lock shared by two clients with the same storage (two workers):
+  // caller-supplied storage in a worker scope coordinates through Web Locks.
+  vi.stubGlobal("WorkerGlobalScope", WorkerScopeFixture);
   let queue = Promise.resolve();
+  const requested: string[] = [];
   vi.stubGlobal("navigator", {
     locks: {
-      request: <T>(_name: string, task: () => Promise<T>) => {
+      request: <T>(name: string, task: () => Promise<T>) => {
+        requested.push(name);
         const run = queue.then(task);
         queue = run.then(
           () => undefined,
@@ -75,6 +80,29 @@ it("refresh: serializes refreshes across tabs: the second tab takes the first on
   expect(refreshes).toBe(1);
   expect(a.data?.access_token).toBe("access-2");
   expect(b.data?.access_token).toBe("access-2");
+  // The stub was the coordination, not the module-local queue.
+  expect(requested).toContain(`${KEY}.refresh`);
+});
+
+it("refresh: keeps a still-valid token when a refresh within the margin fails transiently", async () => {
+  const { nelcota, calls } = setup(stored(session(30)), (request) =>
+    request.url.pathname === "/auth/v1/token"
+      ? json({ code: "unavailable", message: "Busy" }, 503, { "retry-after": "5" })
+      : json([]),
+  );
+  const first = await nelcota.from("notes").select().execute();
+  expect(first.error).toBeNull();
+  const second = await nelcota.from("notes").select().execute();
+  expect(second.error).toBeNull();
+  const tokens = calls.filter((call) => call.url.pathname === "/auth/v1/token");
+  // Within Retry-After, a request does not try to rotate again.
+  expect(tokens).toHaveLength(1);
+  const reads = calls.filter((call) => call.url.pathname === "/rest/v1/notes");
+  expect(reads.map((call) => call.headers.get("authorization"))).toEqual([
+    "Bearer access-1",
+    "Bearer access-1",
+  ]);
+  expect((await nelcota.auth.getSession()).data?.access_token).toBe("access-1");
 });
 
 it("refresh: a rejected refresh token signs out", async () => {
@@ -105,4 +133,15 @@ it("refresh: drops a corrupted stored session", async () => {
   const { nelcota } = setup(storage, json([]));
   expect((await nelcota.auth.getSession()).data).toBeNull();
   expect(await storage.getItem(KEY)).toBeNull();
+});
+
+it("refresh: a storage failure reaches data requests as a session_unavailable result", async () => {
+  const storage = memoryStorage();
+  const failed = new Error("storage unavailable");
+  vi.spyOn(storage, "getItem").mockRejectedValue(failed);
+  const { nelcota, calls } = setup(storage, json([]));
+  const { error } = await nelcota.from("notes").select().execute();
+  expect(error?.code).toBe("session_unavailable");
+  expect(error?.cause).toBe(failed);
+  expect(calls).toHaveLength(0);
 });

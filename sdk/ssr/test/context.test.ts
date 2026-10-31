@@ -4,8 +4,8 @@ import { expect, it, vi } from "vitest";
 
 import { Integration } from "../src/context.js";
 import { DevelopmentSessionStore } from "../src/memory-store.js";
-import { requiredValue } from "../src/required-value.js";
 import { user, post, setup, credentials } from "./context-fixtures.js";
+import { requiredValue } from "./required-value.js";
 
 it("request-owned sessions: keeps credentials in encrypted storage and only an opaque HttpOnly cookie in the browser", async () => {
   const { integration, jar, store } = await setup();
@@ -30,7 +30,7 @@ it("request-owned sessions: keeps credentials in encrypted storage and only an o
   expect(jar.writes).toHaveLength(1);
 });
 
-it("request-owned sessions: preserves accepted login when a Next redirect throws", async () => {
+it("request-owned sessions: preserves accepted login when a framework redirect throws", async () => {
   const { integration, jar } = await setup();
   const redirect = new Error("NEXT_REDIRECT");
   await expect(
@@ -148,11 +148,9 @@ it("binds OAuth callbacks to the initiating browser and consumes state exactly o
     ).rejects.toMatchObject({ code: "csrf" });
   }
   expect(requests).toHaveLength(0);
-  const exchanged = await integration.write(
-    jar,
-    callback(state),
-    (context) => context.auth.exchangeCode("fixture"),
-    true,
+  // `oauthCallback` is the explicit form of the deprecated `write(..., true)`.
+  const exchanged = await integration.oauthCallback(jar, callback(state), (context) =>
+    context.auth.exchangeCode("fixture"),
   );
   expect(exchanged.data?.returnTo).toBe("/profile");
   expect(exchanged.data?.user.id).toBe(user.id);
@@ -213,7 +211,10 @@ it("drains accepted auth operations in FIFO order and rejects late callers", asy
     await first;
     await second;
   });
-  expect(requests).toHaveLength(2);
+  // The second sign-in replaces the first; revoking the replaced session runs
+  // in the background and may or may not have been sent yet.
+  const signIns = () => requests.filter(({ url }) => url.pathname.endsWith("/token"));
+  expect(signIns()).toHaveLength(2);
   await expect(late?.()).rejects.toMatchObject({ code: "closed_context" });
-  expect(requests).toHaveLength(2);
+  expect(signIns()).toHaveLength(2);
 });

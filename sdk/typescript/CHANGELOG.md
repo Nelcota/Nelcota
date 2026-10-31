@@ -7,13 +7,51 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Changed
 
-- Breaking: REST query builders require `.execute()` and no longer implement
-  `then` or `PromiseLike`. Add `.execute()` when awaiting a query or passing it
-  to `Promise.all`. Authentication, storage and RPC methods remain promises.
+- Breaking: REST query builders require `.execute()` and are not `PromiseLike`.
+  Awaiting a builder, returning it from an async function or passing it to
+  `Promise.all` rejects with `NelcotaUsageError` (instead of silently resolving
+  to the builder), and its awaited type is `never`. Add `.execute()`.
+  Authentication, storage and RPC methods remain promises.
 - Breaking: clients without generated database types expose dynamic row fields
   as `unknown`. Validate a field before using it, or supply the generated type.
+- Breaking: `single()`/`maybeSingle()` throw `NelcotaUsageError` on
+  `update`/`delete`: the server has no singular write and changed every
+  matching row before the count was checked. Filter on a unique key and check
+  the returned rows. `insert`/`upsert` and reads keep them.
+- Breaking: `order`, `limit`, `offset` and `range` throw on `update`/`delete`,
+  and filters and those modifiers throw on `insert`/`upsert`, before HTTP (the
+  server rejected them). Modifiers aimed at an embed of `.select()` remain.
+- `not_single` is a client error with `status: 0`; the query result keeps the
+  real HTTP status instead of a fabricated 406.
+- `pages(size)` keeps an existing `limit`/`range` as the total number of rows
+  instead of replacing it with the page size.
+- `getSession()`, `refreshSession()` and requests return session storage or
+  coordination failures as the new `session_unavailable` code (original error
+  in `cause`) instead of rejecting. `accessToken()`, `setSession()`, sign-in and
+  sign-out keep throwing/rejecting; the README documents the split.
+- A transient refresh failure (network, 429, 5xx, `refresh_pending`) while the
+  access token is still valid keeps the session: reads and requests succeed,
+  and further foreground attempts wait for `Retry-After` or 2 seconds.
+- `escapeLike` sends a typed `*` as `\*` (a literal `*`) instead of `_` (any
+  single character). This needs a server whose `like`/`ilike` parser reads `\*`
+  as a literal `*`; older servers read it as a literal `%`.
+- A failure while reading the body of a success response is the new
+  `response_body_error` code ("The response could not be read") instead of
+  `network_error`: the request reached the server and a write may have committed.
+- Cross-tab broadcasts send one message per change (the structured event, or
+  the legacy `"changed"` signal when there is no committed revision). Receivers
+  still accept `"changed"` from older tabs.
+- `handleRedirect()` only acts while a sign-in started here is pending (a stored
+  PKCE verifier); otherwise it returns `null` data and leaves `?code=`/`?error=`
+  in the URL. An error redirect consumes the verifier.
 
 ### Added
+
+- Client error codes `session_unavailable`, `refresh_pending`,
+  `response_body_error` and `oauth_error` (see Changed and Fixed).
+- The README documents that `upload`, `download` and `open` have no timeout by
+  default, unlike every other call (30 seconds), and which calls throw instead
+  of returning a result.
 
 - The standalone `@nelcota/client/testing` export supplies rollback scenarios,
   API-role impersonation, fixture identities and SQLSTATE assertions for pg/Bun SQL.
@@ -33,6 +71,26 @@ Dates identify release entries; registry availability requires a successful publ
   `bad_verification_code`, which the server never sends. A wrong email or
   password is `invalid_grant`, now documented on `signInWithPassword`. Code
   comparing against those strings still compiles.
+- A browser tab that closed or crashed mid-refresh no longer locks every tab
+  out with "Browser session refresh was interrupted; sign in again". Refresh
+  reservations carry their time: other tabs keep reading the session, get
+  `refresh_pending` from a refresh within 10 seconds (the server's retry
+  window), and then take the reservation over and retry the stored token. The
+  owner renews its reservation while a slow refresh request is in flight.
+  Reservations written by older SDKs are taken over 10 seconds after a tab
+  first sees them.
+- Removing the `localStorage` copy of a native browser session (clearing site
+  data or the key) signs it out and clears the IndexedDB journal, once the
+  stored receipt is older than five seconds.
+- `exchangeCode()` consumes the PKCE verifier only after a definite server
+  answer (a session or a 4xx), so a network failure, timeout or 5xx can be
+  retried with the same callback.
+- OAuth redirect errors outside the server's known codes become `oauth_error`,
+  with a truncated, sanitized copy of the raw value in `details`, instead of
+  copying any URL value into `NelcotaError.code`.
+- Bucket settings are serialized field by field, and bucket methods take only
+  `signal`/`timeout` from their options, so untyped options cannot replace
+  headers, authentication or response validation.
 
 ## 0.2.5 — 2026-10-27
 

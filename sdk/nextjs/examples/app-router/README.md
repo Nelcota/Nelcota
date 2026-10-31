@@ -27,18 +27,24 @@ bun run start
 Open `http://localhost:3000/login` and sign in. Keep the same origin for every
 request; changing between `localhost` and `127.0.0.1` changes the origin/cookies.
 The example includes a sign-in Action, read-only profile/account pages, auth
-POST handlers, a callback route and browser refresh. Credentials must remain in
+POST handlers, a callback route and browser refresh. Sign-in and session renewal
+return to the page named by the proxy's `?next=` (validated with
+`safeReturnTo`), falling back to `/profile`. A wrong password shows one generic
+message; refused (`csrf`) and unavailable (`session_store`/`session_capacity`)
+session errors are mapped on the server to generic messages
+(`lib/session-errors.ts`), and `app/error.tsx` covers anything else. Credentials must remain in
 server environment variables or submitted form/POST bodies.
 
 The default `DevelopmentSessionStore` is loopback-only, volatile and limited
 to one process. For disposable multi-process testing, provision the dedicated
-session schema from `sql/session-store.sql` in the installed `@nelcota/ssr` package
-(`@nelcota/nextjs` 0.1.x ships it itself), set
+session schema from `sql/session-store.sql`. `@nelcota/nextjs` 0.1.x ships it
+itself; from 0.2.0 it is in the `@nelcota/ssr` package installed with it. Set
 `NELCOTA_NEXT_SESSION_DATABASE_URL` privately, and give the application role
 only the privileges described in the [SDK guide](https://github.com/Nelcota/Nelcota/blob/main/sdk/nextjs/README.md).
 
-This fixture enables `allowInsecureDevelopment` and keeps a bounded global pool
-for local testing. For deployment, follow the guide's production configuration:
+This fixture enables `allowInsecureDevelopment` only for a plain-HTTP (loopback)
+`APP_ORIGIN`, loads the development store only when no session database is
+configured, and keeps a bounded global pool for local testing. For deployment, follow the guide's production configuration:
 HTTPS, an explicit origin, verified database TLS, application-owned pool
 shutdown and scheduled expired-row cleanup. Configure a shared PostgreSQL store;
 do not deploy the in-memory fallback. The backend API's RLS is the data boundary.

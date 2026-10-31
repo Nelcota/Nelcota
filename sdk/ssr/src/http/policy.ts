@@ -1,7 +1,23 @@
 import { SessionError } from "../errors.js";
-import { hasPathControls } from "./path.js";
+const ASCII_CONTROL_END = 31;
+const ASCII_DELETE = 127;
 const MAX_RETURN_PATH_CHARS = 2048;
 const MAX_PATH_DECODINGS = 3;
+
+/** ASCII path controls must be rejected before any URL normalization. */
+export function hasPathControls(value: string): boolean {
+  return Array.from(value).some(
+    (char) => char.charCodeAt(0) <= ASCII_CONTROL_END || char.charCodeAt(0) === ASCII_DELETE,
+  );
+}
+
+/** Default guard target for an expired access token: a page that POSTs a refresh
+ * (`auth.refresh()`) and returns to `next`. */
+export const DEFAULT_REFRESH_PAGE = "/auth/refresh";
+/** Default POST endpoint that `refreshSession()` from `@nelcota/ssr/browser` calls. */
+export const DEFAULT_REFRESH_ENDPOINT = "/auth/session/refresh";
+/** OAuth callback path, relative to the configured basePath. */
+export const OAUTH_CALLBACK_PATH = "/auth/callback";
 
 export function trustedUrl(value: string, development: boolean, originOnly = false): URL {
   let url: URL;

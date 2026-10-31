@@ -119,13 +119,16 @@ tests or bounded concurrency instead.
 Tests requiring an external facility have explicit commands. The UI memory test
 runs with `bun run test:memory` under Node with exposed GC. SSR's PostgreSQL
 suite runs with `bun run test:integration` or `bun run test:integration:node` and
-requires `NELCOTA_NEXT_TEST_DATABASE_URL`. Selecting a contract without its
-prerequisites fails immediately. The deferred live OAuth/provider acceptance
+requires `NELCOTA_SSR_TEST_DATABASE_URL` (the older
+`NELCOTA_NEXT_TEST_DATABASE_URL` is still accepted); without it the suite is
+skipped locally with a message and fails in CI. Selecting any other contract
+without its prerequisites fails immediately. The deferred live OAuth/provider acceptance
 work in issue #151 remains pending; local fixtures do not satisfy it.
 
 ## Query execution
 
-REST query builders no longer implement `then` or `PromiseLike`. Explicitly call
+REST query builders are not `PromiseLike`: their deprecated `then` member only
+rejects with a usage error, so an accidental `await` fails loudly. Explicitly call
 `.execute()` before awaiting, returning a request promise or including a query
 in `Promise.all`. Authentication, storage and RPC methods already return
 promises; their calls keep their existing execution behavior.

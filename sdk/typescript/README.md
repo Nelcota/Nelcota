@@ -47,7 +47,7 @@ const nelcota = createClient('https://api.example.com');
 
 This guide targets 0.2.5. Installation commands pin the published 0.2.5 baseline;
 its REST builders already support `.execute()`, so the examples work there too.
-The current checkout makes `.execute()` mandatory and removes `then`/`PromiseLike`;
+The current checkout makes `.execute()` mandatory (awaiting a builder rejects);
 it also exposes untyped row fields as `unknown`. Those breaking changes are
 unreleased and require the next package release, not a reinstall of 0.2.5.
 Version 0.2.4 is the previous published baseline.
@@ -83,8 +83,12 @@ network failures. `error` is a `NelcotaError`:
 - `status`: the HTTP status, or `0` when no response arrived.
 - `code`: the server's code untouched (`user_already_exists`,
   `invalid_grant`, `db_error`, `rate_limited`...), or a client code:
-  `network_error`, `timeout`, `aborted`, `invalid_response`, `not_single`,
-  `session_missing`, `pkce_missing`. A response without a JSON body (a HEAD
+  `network_error` (no answer), `response_body_error` (an answer whose body
+  could not be read: a write may have committed), `timeout`, `aborted`,
+  `invalid_response`, `not_single`, `session_missing`, `session_unavailable`
+  (session storage failed; `cause` holds the original error), `refresh_pending`
+  (another tab is rotating the session), `pkce_missing`, `oauth_error` (an
+  unknown OAuth redirect error, kept in `details`). A response without a JSON body (a HEAD
   count, a proxy page) gets `unauthorized`, `forbidden`, `not_found`,
   `rate_limited`, `unavailable` or `http_<status>`. The `NelcotaErrorCode`
   type lists the known codes and still accepts any string.
@@ -97,12 +101,22 @@ A programming mistake (an invalid column name, a `..` in a file path, a
 `service_role` token in a browser) throws a `NelcotaUsageError` before
 anything is sent.
 
-Custom token/storage adapters may throw their own errors. A response returned
-by `storage.from(bucket).open()` is caller-owned: handle errors while reading its stream.
+A few calls throw instead of returning a result, by design:
 
-REST builders send a request only when `.execute()` is called. Add it before
-awaiting a query or passing it to `Promise.all`. Auth, storage and RPC methods
-already return promises.
+- `auth.accessToken()` returns the token or throws the `NelcotaError`; it is
+  a token source (`{ accessToken: () => auth.accessToken() }`).
+- `auth.setSession(session)` and the sign-in and sign-out methods reject when
+  the session storage itself fails. `getSession()`, `refreshSession()` and
+  requests return such a failure as `session_unavailable` instead.
+- A caller-supplied `accessToken` function or `fetch` may throw its own errors.
+
+A response returned by `storage.from(bucket).open()` is caller-owned: handle
+errors while reading its stream.
+
+REST builders send a request only when `.execute()` is called. Builders are
+not promises: awaiting one, returning it from an async function or passing it
+to `Promise.all` rejects with a `NelcotaUsageError`, and TypeScript types the
+awaited value as `never`. Auth, storage and RPC methods already return promises.
 
 ```ts
 const { data, error } = await nelcota.from('notes').select('id,body').execute();
@@ -179,7 +193,9 @@ Filters: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`,
 be reused.
 
 `like`/`ilike` read `*` (or `%`) as "any text". Wrap text a person typed in
-`escapeLike` so `%` and `_` match literally:
+`escapeLike` so `%`, `_`, `*` and `\` match literally. A typed `*` is sent as
+`\*`, which needs a server that reads it as a literal `*`; older servers read
+it as a literal `%`:
 
 ```ts
 import { escapeLike } from '@nelcota/client';
@@ -187,11 +203,18 @@ nelcota.from('products').select().ilike('name', `*${escapeLike(search)}*`);
 ```
 
 `update` and `delete` need at least one filter; the server refuses them
-otherwise. `count: 'exact'` scans every matching row, so ask for it only
-when you show it.
+otherwise. They change every matching row, so `order`, `limit`, `offset` and
+`range` throw a `NelcotaUsageError` on them, as filters do on `insert` and
+`upsert`. Modifiers aimed at an embed of `.select()`, such as
+`limit(5, { referencedTable: 'comments' })`, remain allowed. `count: 'exact'`
+scans every matching row, so ask for it only when you show it.
 
 HEAD queries return `data: null`. `single()` and `maybeSingle()` require
-rows: use `.select()` on writes first, and omit `head: true`.
+rows: use `.select()` on inserts first, and omit `head: true`. They throw on
+`update`/`delete`, which would change every matching row before the client
+could count them: filter on a unique key and check the returned rows instead.
+A wrong row count returns `not_single`; the error has `status: 0` and the
+result keeps the real HTTP status.
 
 ### Paging
 
@@ -208,7 +231,8 @@ const more = range !== null && count !== null && range.to + 1 < count;
 ```
 
 To walk every row, `pages(size)` requests one page after another until an
-empty one, so a server cap below `size` cannot cut it short. Order by a
+empty one, so a server cap below `size` cannot cut it short. A `limit` (or
+`range`) already on the query caps the total number of rows. Order by a
 unique column so pages neither overlap nor skip rows; a failed page throws
 its `NelcotaError`:
 
@@ -288,10 +312,17 @@ are coordinated:
   `localStorage` view is stale. A reservation is committed before HTTP.
 
 Native browser persistence requires IndexedDB. Storage failures reject
-explicit auth calls; observe automatic refresh failures with the
-`auth: { onBackgroundError }` option. If an owner disappears during rotation or cannot
-save its replacement, another client refuses to reuse the reserved token.
-Retry from the owning client, sign in again, or call `signOut()` to clear it.
+sign-in, sign-out and `setSession`; `getSession()`, `refreshSession()` and
+requests return them as `session_unavailable`. Observe automatic refresh
+failures with the `auth: { onBackgroundError }` option.
+
+A reservation belongs to one client for 10 seconds, the server's
+refresh-token retry window. Meanwhile other tabs keep reading the session and
+using its access token, and an explicit refresh returns `refresh_pending`. A
+reservation older than that (its tab closed or crashed mid-refresh) is taken
+over: the next refresh retries the stored token, and the server either rotates
+it or, when the lost rotation had already committed, answers `invalid_grant`,
+which signs out cleanly.
 
 Without Web Locks, a local queue coordinates clients in the same module
 instance. The native journal prevents competing owners from spending a
@@ -302,8 +333,9 @@ Keep the same storage key when sharing a session adapter.
 
 On upgrade, the journal imports the existing `localStorage` session once.
 Reload all open tabs to avoid mixing old and new coordination protocols.
-Use `signOut()` or clear all site data to remove native sessions; editing
-only `localStorage` no longer changes authoritative session state.
+Removing the `localStorage` copy of a session (clearing site data or the key)
+signs it out: once a stored session is more than five seconds old, a missing
+copy clears the journal too.
 Signing out also clears the pending OAuth verifier from the journal and
 its storage mirror, including when no session exists or server logout fails.
 
@@ -312,8 +344,11 @@ prior journal revision remains current, even if another client wrote that
 prior revision. A new committed revision supersedes it, including an explicit
 publication of the same value.
 
-If a refresh fails for a transient reason, the old token is still sent. The
-request then fails with 401 instead of silently running as a visitor.
+If a refresh fails for a transient reason (network, 429, 5xx, another tab's
+pending rotation) while the access token is still valid, reads and requests
+keep using it; further attempts wait for `Retry-After` or two seconds instead
+of rotating on every request. An expired token is never sent: the request
+returns the refresh failure instead of running as a visitor.
 
 **OAuth (Google, GitHub)** uses PKCE, with the verifier kept in this
 browser:
@@ -332,11 +367,20 @@ replaces the previous attempt. Verifier publication, navigation and callback
 consumption use the same lock so asynchronous work cannot reorder them. Use
 separate storage keys for independent login flows.
 
+`handleRedirect()` acts only while a sign-in started here is pending (a stored
+verifier): otherwise it returns `null` data and leaves the URL alone, so an
+app's own `?code=` parameter is not mistaken for a callback. Server error
+codes (`access_denied`, `provider_error`, `email_conflict`...) are kept;
+any other `?error=` value becomes `oauth_error` with a sanitized copy in
+`details`.
+
 Native PKCE publication and consumption also use the IndexedDB journal, so
 stale localStorage cannot supply an older verifier or reuse a consumed one.
-An already cancelled exchange keeps its verifier. Once consumption begins,
-the bounded exchange persists an accepted session even if its caller cancels
-the wait; the first exchange's timeout still applies.
+The verifier is consumed only once the server answers definitely (a session
+or a 4xx refusal): after a network failure, timeout or 5xx the same callback
+can retry. An already cancelled exchange keeps its verifier. Once the exchange
+starts, it persists an accepted session even if its caller cancels the wait;
+the first exchange's timeout still applies.
 
 **Email links** arrive as `https://your.app/page#type=...&token=...`.
 `readEmailLink()` takes the token and removes it from the address bar and
@@ -401,6 +445,11 @@ files.publicUrl('logo.png');                                                 // 
 - **`open(name, { range, ifNoneMatch, download })`** returns the raw
   `Response`, for streaming `response.body`, resuming with ranges (206) or
   revalidating with ETags (304).
+- **Timeouts.** `upload`, `download` and `open` have no timeout by default,
+  unlike every other call (30 seconds per attempt): a large transfer may
+  legitimately take longer. Pass `{ timeout }` (it covers the whole transfer,
+  including a buffered body) or a `signal` such as `AbortSignal.timeout(ms)`
+  to bound them.
 - **Names** are normalized to NFC and encoded segment by segment. Empty,
   `.` and `..` segments, control characters and backslashes are refused.
 - **Buckets** are managed with `createBucket`, `updateBucket`,

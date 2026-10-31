@@ -398,7 +398,7 @@ pub(super) fn parse_filter(table: &Table, key: &str, value: &str) -> Result<Filt
         "lte" => Op::Cmp(CmpOp::Lte, operand.to_owned()),
         "like" | "ilike" => Op::Like {
             insensitive: op == "ilike",
-            pattern: operand.replace('*', "%"),
+            pattern: like_pattern(operand),
         },
         "in" => Op::In(parse_in_list(operand)?),
         "is" => Op::Is(match operand {
@@ -416,6 +416,30 @@ pub(super) fn parse_filter(table: &Table, key: &str, value: &str) -> Result<Filt
         negate,
         op,
     })
+}
+
+/// Translate the URL wildcard into SQL LIKE: an unescaped `*` matches any
+/// text (`%`), and `\*` is a literal `*` (not special in LIKE, so it is
+/// emitted bare). Every other backslash escape passes through unchanged for
+/// LIKE's default escape character, so `\%`, `\_` and `\\` keep their meaning.
+pub(super) fn like_pattern(operand: &str) -> String {
+    let mut out = String::with_capacity(operand.len());
+    let mut chars = operand.chars();
+    while let Some(c) = chars.next() {
+        match c {
+            '*' => out.push('%'),
+            '\\' => match chars.next() {
+                Some('*') => out.push('*'),
+                Some(next) => {
+                    out.push('\\');
+                    out.push(next);
+                }
+                None => out.push('\\'),
+            },
+            _ => out.push(c),
+        }
+    }
+    out
 }
 
 /// `or=(a.eq.1,and(b.gt.2,c.lt.3))`, `and=(...)`, `not.or=(...)`: the
@@ -644,3 +668,23 @@ pub(super) fn parse(
 }
 
 // ------------------------------------------------------------------ SQL
+
+#[cfg(test)]
+mod tests {
+    use super::like_pattern;
+
+    #[test]
+    fn like_wildcards_and_escaped_stars() {
+        assert_eq!(like_pattern("*abc*"), "%abc%");
+        assert_eq!(like_pattern(r"a\*b"), "a*b");
+        assert_eq!(like_pattern(r"\**"), "*%");
+        // Other escapes keep LIKE's default backslash meaning.
+        assert_eq!(like_pattern(r"100\%"), r"100\%");
+        assert_eq!(like_pattern(r"a\_b"), r"a\_b");
+        // An escaped backslash does not escape the following star.
+        assert_eq!(like_pattern(r"a\\*"), r"a\\%");
+        assert_eq!(like_pattern(r"a\\\*"), r"a\\*");
+        assert_eq!(like_pattern("trailing\\"), "trailing\\");
+        assert_eq!(like_pattern("plain"), "plain");
+    }
+}

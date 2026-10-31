@@ -3,9 +3,9 @@ import { expect } from "vitest";
 
 import { promiseResult } from "../src/lifecycle/promise-result.js";
 import { PostgresSessionStore } from "../src/postgres.js";
-import { requiredValue } from "../src/required-value.js";
 import { gate as controlGate } from "./gate.js";
 import { waitForQueuedOwner } from "./postgres-integration-fixtures.js";
+import { requiredValue } from "./required-value.js";
 type Ownership = {
   one: PostgresSessionStore;
   two: PostgresSessionStore;

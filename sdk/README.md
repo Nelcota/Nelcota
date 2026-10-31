@@ -11,10 +11,9 @@ application dependencies.
 | `@nelcota/nextjs` | 0.1.2 | [Next.js App Router](nextjs/README.md); Next 16.4.3 / React 19.3.1, Bun 1.4.3+ or Node 22/24/26 |
 | `@nelcota/ssr` | 0.1.0 | [Framework-agnostic SSR sessions](ssr/README.md), the core of the Next.js adapter; Bun 1.4.3+ or Node 22/24/26 |
 
-The current releases are available from npm and crates.io. [Publication receipts](https://github.com/Nelcota/Nelcota/pull/167#issuecomment-6391372294)
-record TypeScript 0.2.3 and Rust 0.1.6; [October 26 receipts](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169) record TypeScript 0.2.4, Rust 0.1.7 and Next.js 0.1.2; October 27 receipts record [TypeScript 0.2.5](https://github.com/Nelcota/Nelcota/pull/202#issuecomment-6445288705) and [SSR 0.1.0](https://github.com/Nelcota/Nelcota/pull/203#issuecomment-6446199815); [Next.js acceptance](https://github.com/Nelcota/Nelcota/issues/151)
-records published 0.1.1, its PostgreSQL contention correction and the pinned
-Next 15 compatibility consumer. The package peer range still targets Next 16.
+The current releases are available from npm and crates.io. The
+[Next.js verification record](nextjs/docs/verification.md) collects the
+publication receipts for these releases and the adapter's test evidence.
 Read the [upgrade guide](../docs/releases/README.md) before changing application lockfiles.
 All clients retain PostgreSQL grants/RLS as the authorization boundary.
 

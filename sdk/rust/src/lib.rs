@@ -41,6 +41,11 @@ pub struct Response<T> {
 
 /// An omitted write field differs from an explicit JSON null.
 /// Generated Insert/Update types use `Field<Option<T>>` for nullable columns.
+///
+/// A struct field of this type needs
+/// `#[serde(default, skip_serializing_if = "nelcota_client::Field::is_omitted")]`
+/// (generated models always have it). Without it, serializing `Field::Omit`
+/// fails instead of silently writing NULL.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum Field<T> {
     #[default]
@@ -63,7 +68,9 @@ impl<T: Serialize> Serialize for Field<T> {
         serializer: S,
     ) -> std::result::Result<S::Ok, S::Error> {
         match self {
-            Self::Omit => serializer.serialize_unit(),
+            Self::Omit => Err(serde::ser::Error::custom(
+                "Field::Omit cannot be serialized: annotate the field with                  #[serde(default, skip_serializing_if = \"nelcota_client::Field::is_omitted\")]",
+            )),
             Self::Value(value) => value.serialize(serializer),
         }
     }
@@ -80,6 +87,29 @@ impl<'de, T: serde::Deserialize<'de>> serde::Deserialize<'de> for Field<T> {
 enum TokenMode {
     Session,
     Fixed(Option<String>),
+    /// An explicit token that cannot be sent as a header; every request fails.
+    Invalid,
+}
+impl TokenMode {
+    fn fixed(token: String) -> Self {
+        match valid_token(&token) {
+            Ok(()) => Self::Fixed(Some(token)),
+            Err(_) => Self::Invalid,
+        }
+    }
+}
+
+/// A future boxed for recursion through the transport (token refresh sends HTTP).
+pub(crate) type BoxFuture<'a, T> =
+    std::pin::Pin<Box<dyn std::future::Future<Output = Result<T>> + Send + 'a>>;
+
+fn valid_token(token: &str) -> Result<()> {
+    HeaderValue::from_str(&format!("Bearer {token}"))
+        .map(|_| ())
+        .map_err(|_| invalid_token())
+}
+pub(crate) fn invalid_token() -> Error {
+    Error::Usage("invalid access token header".into())
 }
 
 pub(crate) struct Inner {
@@ -141,11 +171,31 @@ impl Client {
     }
 
     /// Use an explicit token for REST/storage without changing the shared login session.
-    /// Automatic session refresh is disabled for this scoped client.
+    /// Automatic session refresh is disabled for this scoped client. A token
+    /// that cannot be sent as a header is detected here; every request of the
+    /// scoped client then fails with the same `Error::Usage` as
+    /// [`ClientBuilder::build`]. Use [`try_with_access_token`](Self::try_with_access_token)
+    /// to get that error immediately.
     pub fn with_access_token(&self, token: impl Into<String>) -> Self {
         Self {
-            token: TokenMode::Fixed(Some(token.into())),
+            token: TokenMode::fixed(token.into()),
             ..self.clone()
+        }
+    }
+
+    /// Like [`with_access_token`](Self::with_access_token), refusing an invalid token now.
+    pub fn try_with_access_token(&self, token: impl Into<String>) -> Result<Self> {
+        let token = token.into();
+        valid_token(&token)?;
+        Ok(self.with_access_token(token))
+    }
+
+    /// A session-mode clone with default options, for tasks the client owns.
+    pub(crate) fn shared_session(inner: Arc<Inner>) -> Self {
+        Self {
+            inner,
+            token: TokenMode::Session,
+            options: RequestOptions::default(),
         }
     }
 
@@ -198,8 +248,10 @@ impl ClientBuilder {
         self.headers.push((name.into(), value.into()));
         self
     }
+    /// An explicit token for every request; `build` refuses one that cannot
+    /// be sent as a header.
     pub fn access_token(mut self, token: impl Into<String>) -> Self {
-        self.token = TokenMode::Fixed(Some(token.into()));
+        self.token = TokenMode::fixed(token.into());
         self
     }
     pub fn timeout(mut self, timeout: Duration) -> Self {
@@ -242,9 +294,8 @@ impl ClientBuilder {
                 "base URL must be HTTP(S) without credentials, query or fragment".into(),
             ));
         }
-        if let TokenMode::Fixed(Some(token)) = &self.token {
-            HeaderValue::from_str(&format!("Bearer {token}"))
-                .map_err(|_| Error::Usage("invalid access token header".into()))?;
+        if let TokenMode::Invalid = self.token {
+            return Err(invalid_token());
         }
         let mut headers = HeaderMap::new();
         for (name, value) in &self.headers {

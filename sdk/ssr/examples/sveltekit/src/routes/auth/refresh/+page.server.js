@@ -9,10 +9,12 @@ const HTTP_SEE_OTHER = 303;
 /** @satisfies {import("@sveltejs/kit").Actions} */
 export const actions = {
   default: async (event) => {
-    const next = safeReturnTo(event.url.searchParams.get("next") ?? "/");
-    const result = await (await nelcota()).action(event, ({ auth }) => auth.refresh());
+    const sessions = await nelcota();
+    // `next` comes from the guard, base path included.
+    const next = safeReturnTo(event.url.searchParams.get("next") ?? `${sessions.basePath}/`);
+    const result = await sessions.action(event, ({ auth }) => auth.refresh());
     if (result.error !== null || result.data === null)
-      redirect(HTTP_SEE_OTHER, `/login?next=${encodeURIComponent(next)}`);
+      redirect(HTTP_SEE_OTHER, `${sessions.basePath}/login?next=${encodeURIComponent(next)}`);
     redirect(HTTP_SEE_OTHER, next);
   },
 };

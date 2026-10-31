@@ -20,8 +20,10 @@ it.each(["single", "maybeSingle"] as const)(
       const query = client.from("notes").select()[mode]();
       expect(new URLSearchParams(query.toString()).get("limit")).toBe("2");
       const result = await query.execute();
-      expect(result.status).toBe(406);
-      expect(result.error?.status).toBe(406);
+      // The cardinality check is the client's: the result keeps the real HTTP status.
+      expect(result.status).toBe(200);
+      expect(result.error?.code).toBe("not_single");
+      expect(result.error?.status).toBe(0);
     } finally {
       client.dispose();
     }

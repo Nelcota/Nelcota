@@ -1,5 +1,4 @@
 import type { Result } from "../../core/client.errors.js";
-import { promiseResult } from "../../core/promise-result.js";
 import { Broadcast } from "../browser/coordination.js";
 import { QUICK_RETRY_REFRESH_MS, RefreshScheduler, RETRY_REFRESH_MS } from "../scheduler.js";
 import type { Session } from "../session.js";
@@ -49,10 +48,7 @@ export class SessionBackground {
         const session = this.context.callerOwned ? null : await this.context.store.read();
         if (this.#listeners.has(subscription) === false) return;
         subscription.ready = true;
-        this.observe(
-          promiseResult(() => listener("initial_session", session)),
-          false,
-        );
+        this.observe(invoke(listener, "initial_session", session), false);
       }),
     );
     return () => this.#listeners.delete(subscription);
@@ -60,10 +56,7 @@ export class SessionBackground {
   emit(event: AuthEvent, session: Session | null): void {
     for (const subscription of this.#listeners) {
       if (subscription.ready === false) continue;
-      this.observe(
-        promiseResult(() => subscription.listener(event, session)),
-        false,
-      );
+      this.observe(invoke(subscription.listener, event, session), false);
     }
   }
 
@@ -71,6 +64,11 @@ export class SessionBackground {
   #tick(): void {
     this.observe(
       this.context.get().then(async ({ data, error }) => {
+        // Storage failures pause refresh and reach onBackgroundError as thrown.
+        if (error?.code === "session_unavailable") {
+          await this.#report(error.cause ?? error, true);
+          return;
+        }
         if (error != null && error.code !== "invalid_grant" && error.code !== "session_missing") {
           this.#scheduler.schedule(
             await this.context.current(),
@@ -84,16 +82,17 @@ export class SessionBackground {
     );
   }
   observe(operation: Promise<unknown>, pause = true): void {
-    void operation.catch(async (error) => {
-      if (this.#scheduler.disposed) return;
-      if (pause) this.#scheduler.schedule(null);
-      // Listener failures do not pause refresh. Error handlers are isolated.
-      try {
-        await this.context.onError(error);
-      } catch {
-        /* Includes asynchronous handler failures. */
-      }
-    });
+    void operation.catch((error: unknown) => this.#report(error, pause));
+  }
+  async #report(error: unknown, pause: boolean): Promise<void> {
+    if (this.#scheduler.disposed) return;
+    if (pause) this.#scheduler.schedule(null);
+    // Listener failures do not pause refresh. Error handlers are isolated.
+    try {
+      await this.context.onError(error);
+    } catch {
+      /* Includes asynchronous handler failures. */
+    }
   }
   dispose(): void {
     this.#scheduler.dispose();
@@ -109,4 +108,15 @@ function privateStorage(store: SessionStore): boolean {
     // Sandboxed storage cannot participate in private-tab identity checks.
     return false;
   }
+}
+
+/** Runs a listener now; a synchronous throw becomes a rejection, like an asynchronous one. */
+function invoke(
+  listener: AuthListener,
+  event: AuthEvent,
+  session: Session | null,
+): Promise<unknown> {
+  return new Promise((resolve) => {
+    resolve(listener(event, session));
+  });
 }

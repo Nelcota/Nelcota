@@ -5,18 +5,53 @@ successful publication; a source version or Git tag alone is insufficient.
 
 ## Unreleased
 
+The next release is a minor, 0.2.0 (unreleased): the core now ships as a
+dependency and the integration gains new properties.
+
+### Added
+
+- `NextIntegration` exposes its validated `origin` and `basePath` (read-only),
+  for absolute redirects that never depend on raw environment values or headers.
+
+### Changed
+
+- Tests and smokes that exercised only the session core moved to `@nelcota/ssr`
+  (`sdk/ssr/test/lineage.test.ts`, `sdk/ssr/scripts/*-smoke.mjs`); the proxy
+  bootstrap tests stay here and use only public `@nelcota/ssr` exports.
+
 ### Fixed
 
+- Private proxy responses send `Referrer-Policy: same-origin` instead of
+  `no-referrer`, under which Chromium sends `Origin: null` with native
+  same-origin form POSTs and the CSRF check refuses them.
 - The authentication proxy returns 503 when its session store is unavailable,
   retaining the browser cookie and the existing session.
+- `dist/memory-store.js` (`/testing`) is listed in `sideEffects`, like the other
+  `server-only` entry points.
+- The App Router example honors the proxy's `next` return path after sign-in and
+  session renewal, shows a generic message for invalid credentials, maps refused
+  and unavailable session errors to generic pages, does not cache a failed
+  configuration, enables `allowInsecureDevelopment` only for a plain-HTTP
+  loopback origin, loads the development store only when it is selected, and
+  no longer redirects with an unvalidated `APP_ORIGIN`.
 
 ### Changed
 
 - The session core moved to the new framework-agnostic `@nelcota/ssr` package,
-  now a required peer dependency; install it next to `@nelcota/client`. The
-  package entry points, options and behavior are unchanged, and existing
-  cookies and session rows remain valid. `sql/session-store.sql` now ships in
-  `@nelcota/ssr`.
+  installed automatically as a regular dependency (`~0.1.0`); applications do
+  not install or import it. The package entry points, options and behavior are
+  unchanged, and existing cookies and session rows remain valid.
+  `sql/session-store.sql` now ships in `@nelcota/ssr`.
+- The documented singleton creates the integration on first use and retries
+  after a failed configuration instead of rejecting at module load.
+- Test evidence and publication receipts moved to `docs/verification.md`; the
+  README documents the proxy's per-request auth check, including prefetches.
+- The pinned Next 15 compatibility consumer was removed from CI; the peer range
+  has always been Next 16.
+
+### Removed
+
+- The internal `dist/required-value.js` helper, which was not an entry point.
 
 ## 0.1.2 — 2026-10-26
 

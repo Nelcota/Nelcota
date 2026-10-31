@@ -15,6 +15,9 @@ pub enum Error {
     },
     #[error("invalid SDK input: {0}")]
     Usage(String),
+    /// A transport failure. The message includes the transport's cause
+    /// chain (without request URLs); the variant keeps no source object so
+    /// `Error` stays `Clone` for shared session refresh results.
     #[error("network request failed: {0}")]
     Network(String),
     #[error("request timed out")]
@@ -32,6 +35,10 @@ pub enum Error {
     SessionMissing,
     #[error("session storage failed: {0}")]
     SessionStorage(String),
+    /// The store holds content that is not a session (corrupt, truncated).
+    /// Unlike [`Error::SessionStorage`], it counts as signed out.
+    #[error("stored session is invalid: {0}")]
+    SessionInvalid(String),
 }
 
 /// The optional Postgres fields of an error response (`db_error`). Older
@@ -86,6 +93,7 @@ impl Error {
             Self::Cardinality { .. } => "not_single",
             Self::SessionMissing => "session_missing",
             Self::SessionStorage(_) => "session_storage_error",
+            Self::SessionInvalid(_) => "session_invalid",
         }
     }
 
@@ -180,7 +188,18 @@ impl Error {
             return Self::Timeout;
         }
         // URLs may contain signed storage tokens. Never include them in errors.
-        Self::Network(error.without_url().to_string())
+        let error = error.without_url();
+        let mut message = error.to_string();
+        let mut source = std::error::Error::source(&error);
+        while let Some(cause) = source {
+            let cause_text = cause.to_string();
+            if !message.ends_with(&cause_text) {
+                message.push_str(": ");
+                message.push_str(&cause_text);
+            }
+            source = cause.source();
+        }
+        Self::Network(message)
     }
 }
 

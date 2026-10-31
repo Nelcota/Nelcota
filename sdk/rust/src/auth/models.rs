@@ -35,6 +35,9 @@ impl std::fmt::Debug for Session {
     }
 }
 impl Session {
+    /// Time left until `expires_at`, read against this machine's wall clock.
+    /// Sessions the client receives from the server have `expires_at` set from
+    /// the local clock and `expires_in`, so server clock skew does not count.
     pub fn expires_in_now(&self) -> Duration {
         Duration::from_secs(self.expires_at.saturating_sub(now()))
     }
@@ -52,7 +55,7 @@ impl Session {
         Ok(())
     }
 }
-fn now() -> u64 {
+pub(super) fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()

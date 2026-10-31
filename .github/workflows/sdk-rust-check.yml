@@ -37,7 +37,7 @@ jobs:
         env:
           RUSTDOCFLAGS: '-D warnings'
       - run: cargo package -p nelcota-client
-      - run: python sdk/rust/scripts/package-test.py
+      - run: python sdk/rust/scripts/test-package.py
 
   msrv:
     runs-on: ubuntu-latest

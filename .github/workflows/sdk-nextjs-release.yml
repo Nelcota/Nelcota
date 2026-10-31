@@ -41,8 +41,10 @@ jobs:
             if (process.env.RELEASE_TAG !== `nextjs-sdk-v${metadata.version}` || metadata.private === true) process.exit(1);
           '
           npm view @nelcota/client@0.2.2 version
-          # The adapter's peer: publish @nelcota/ssr (tag ssr-sdk-v*) first.
-          npm view @nelcota/ssr@0.1.0 version
+          # The adapter's runtime dependency: publish @nelcota/ssr (tag ssr-sdk-v*) first.
+          # The Bun `resolutions` entry only applies inside this checkout.
+          core=$(bun -p "require('./package.json').dependencies['@nelcota/ssr']")
+          test -n "$(npm view "@nelcota/ssr@$core" version)"
       - name: Skip an already published version
         id: published
         run: |

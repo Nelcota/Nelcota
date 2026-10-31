@@ -7,13 +7,23 @@
 /** Codes produced by the client itself, never by the server. */
 export type ClientErrorCode =
   | "network_error"
+  // The server answered with a success status but its body could not be read;
+  // a write may have committed.
+  | "response_body_error"
   // Also sent by the server when a request outlives its time budget (504).
   | "timeout"
   | "aborted"
   | "invalid_response"
+  // single()/maybeSingle() received another number of rows.
   | "not_single"
   | "session_missing"
+  // The session storage or its cross-tab coordination failed; `cause` holds the original error.
+  | "session_unavailable"
+  // Another tab is rotating the same refresh token; retry shortly.
+  | "refresh_pending"
   | "pkce_missing"
+  // An OAuth redirect carried an error code the client does not know; see `details`.
+  | "oauth_error"
   // Statuses without a JSON error body (HEAD requests, proxies).
   | "unauthorized"
   | "forbidden";
@@ -189,4 +199,15 @@ export function unwrap<T>(
 
 export function clientError(code: ClientErrorCode, message: string, cause?: unknown): NelcotaError {
   return new NelcotaError({ status: 0, code, message, cause });
+}
+
+/**
+ * Keeps the `Result` contract at the session boundary: a `NelcotaError` stays
+ * as is, a usage error is still thrown, and anything else thrown by session
+ * storage or coordination becomes `session_unavailable` with the original as `cause`.
+ */
+export function sessionFailure(error: unknown): NelcotaError {
+  if (error instanceof NelcotaError) return error;
+  if (error instanceof NelcotaUsageError) throw error;
+  return clientError("session_unavailable", "The stored session could not be read or saved", error);
 }

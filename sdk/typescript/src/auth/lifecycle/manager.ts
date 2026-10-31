@@ -1,7 +1,16 @@
 import { abortable } from "../../core/cancellation.js";
-import { NelcotaUsageError, clientError, fail, ok, type Result } from "../../core/client.errors.js";
-import { isBrowser } from "../../core/jwt.js";
+import {
+  type NelcotaError,
+  NelcotaUsageError,
+  clientError,
+  fail,
+  ok,
+  sessionFailure,
+  type Result,
+} from "../../core/client.errors.js";
+import { isBrowser } from "../../core/runtime.js";
 import { withLock, sessionLock } from "../browser/coordination.js";
+import { retryDelayInMs } from "../scheduler.js";
 import { isSession, secondsLeft, type Session, type User } from "../session.js";
 import { SessionStore, storageKey } from "../store.js";
 import type { AuthListener, AuthOptions, AuthRequestOptions, SessionTransport } from "../types.js";
@@ -10,6 +19,7 @@ import { SessionPublication } from "./publication.js";
 const DEFAULT_REFRESH_MARGIN_SECONDS = 60;
 const HTTP_CLIENT_ERROR_START = 400;
 const HTTP_SERVER_ERROR_START = 500;
+const HTTP_TOO_MANY_REQUESTS = 429;
 
 export type { AuthListener, AuthOptions, AuthRequestOptions } from "../types.js";
 
@@ -32,6 +42,8 @@ export class SessionManager {
   readonly #callerOwned: boolean;
   readonly #onBackgroundError: AuthOptions["onBackgroundError"];
   #refreshing: Promise<Result<Session>> | null = null;
+  /** Until then (ms), reads keep a still-valid token instead of retrying a failed refresh. */
+  #retryAt = 0;
 
   constructor(
     url: URL,
@@ -67,7 +79,8 @@ export class SessionManager {
       marginFor: (session) => this.#marginFor(session),
       locked: (task) => this.#locked(task),
       current: () => this.current(),
-      get: () => this.get(),
+      // The scheduler owns its own retry delays, so it sees every refresh failure.
+      get: () => this.#get({}, false),
       reload: (event, revision) => this.#publication.reload(event, revision),
       onError: (error) => this.#onBackgroundError?.(error),
     });
@@ -83,6 +96,9 @@ export class SessionManager {
   }
   setVerifier(value: string): Promise<void> {
     return this.#store.setVerifier(value);
+  }
+  peekVerifier(): Promise<string | null> {
+    return this.#store.peekVerifier();
   }
   consumeVerifier(): Promise<string | null> {
     return this.#store.consumeVerifier();
@@ -106,7 +122,7 @@ export class SessionManager {
   set(session: Session): Promise<void> {
     if (isSession(session) === false) throw new NelcotaUsageError("Not a Nelcota session");
     return this.#locked(async () => {
-      if (this.#store.journaled) await this.#store.read(true, true);
+      if (this.#store.journaled) await this.#store.read(true);
       await this.#publication.write(session, "signed_in");
     });
   }
@@ -123,7 +139,7 @@ export class SessionManager {
         if (task == null) return fail(clientError("aborted", "The request was aborted"));
         // Capture the receipt before HTTP: failed publication must retain an
         // accepted sign-in until that exact receipt is superseded.
-        if (this.#store.journaled) await this.#store.read(true, true);
+        if (this.#store.journaled) await this.#store.read(true);
         const result = await task();
         if (result.error != null) return result;
         const data: Authentication = result.data;
@@ -138,17 +154,40 @@ export class SessionManager {
     );
     return result.data ?? result;
   }
-  async get(options: AuthRequestOptions = {}): Promise<Result<Session | null>> {
+  /**
+   * The session, refreshed when it is within the margin. A transient refresh
+   * failure (network, 429, 5xx, another tab's pending rotation) keeps
+   * a still-valid access token: the read succeeds and further foreground
+   * attempts wait for `Retry-After` or a short backoff. An expired token
+   * returns the failure instead of being sent.
+   */
+  get(options: AuthRequestOptions = {}): Promise<Result<Session | null>> {
+    return this.#get(options, true);
+  }
+  async #get(options: AuthRequestOptions, tolerant: boolean): Promise<Result<Session | null>> {
     if (options.signal?.aborted === true)
       return fail(clientError("aborted", "The request was aborted"));
-    const current = await abortable(this.current(), options.signal);
+    const current = await abortable(this.current(), options.signal).catch((error: unknown) =>
+      fail(sessionFailure(error)),
+    );
     if (current.error != null) return fail(current.error);
     const session = current.data;
     if (session == null || secondsLeft(session) > this.#marginFor(session)) return ok(session);
-    const refreshed = await this.refresh(options, session);
-    const failure = refreshed.error?.code;
-    if (failure === "invalid_grant" || failure === "session_missing") return ok(null);
-    return refreshed;
+    const usable = tolerant && secondsLeft(session) > 0 ? session : null;
+    if (usable != null && Date.now() < this.#retryAt) return ok(usable);
+    return this.#settle(await this.refresh(options, session), usable);
+  }
+  /** A refresh outcome as a read: `usable` is the still-valid session to keep on a transient failure. */
+  #settle(refreshed: Result<Session>, usable: Session | null): Result<Session | null> {
+    const failure = refreshed.error;
+    if (failure == null) {
+      this.#retryAt = 0;
+      return refreshed;
+    }
+    if (failure.code === "invalid_grant" || failure.code === "session_missing") return ok(null);
+    if (usable == null || transient(failure) === false) return refreshed;
+    this.#retryAt = Date.now() + retryDelayInMs(failure.retryAfter);
+    return ok(usable);
   }
   async accessToken(): Promise<string | null> {
     const result = await this.get();
@@ -173,9 +212,11 @@ export class SessionManager {
           return ok(current);
         return await this.#rotate(current, options);
       });
-    })().finally(() => {
-      this.#refreshing = null;
-    });
+    })()
+      .catch((error: unknown) => fail(sessionFailure(error)))
+      .finally(() => {
+        this.#refreshing = null;
+      });
     return abortable(this.#refreshing, options.signal).then((result) => result.data ?? result);
   }
   async #rotate(
@@ -183,30 +224,38 @@ export class SessionManager {
     options: AuthRequestOptions,
     publish = true,
   ): Promise<Result<Session>> {
-    await this.#store.reserve(current);
+    const pending = await this.#store.reserve(current);
+    if (pending != null) return fail(pending);
     // Accepted rotation owns publication independently of a cancelled waiter.
-    const result = await this.transport.rotate(
-      current.refresh_token,
-      options.timeout === undefined ? {} : { timeout: options.timeout },
-    );
+    // The reservation is renewed while the request runs, however long it takes.
+    const stopRenewal = this.#store.holdReservation();
+    let result: Result<Session>;
+    try {
+      result = await this.transport.rotate(
+        current.refresh_token,
+        options.timeout === undefined ? {} : { timeout: options.timeout },
+      );
+    } finally {
+      await stopRenewal?.();
+    }
     if (result.error != null) {
-      if (publish && result.error.code === "invalid_grant")
-        await this.#publication.write(null, "signed_out", true);
-      // Every other 4xx is returned before the rotation commits (rate limit,
-      // malformed request), so the stored token is still valid. A 5xx can
-      // follow an ambiguous commit and a lost response has no answer at all:
-      // preserve their reservation.
-      const { code, status } = result.error;
-      if (
-        code !== "invalid_grant" &&
-        status >= HTTP_CLIENT_ERROR_START &&
-        status < HTTP_SERVER_ERROR_START
-      )
-        await this.#store.release(current);
+      await this.#rejected(current, result.error, publish);
       return result;
     }
     if (publish) await this.#publication.write(result.data, "refreshed", true);
     return result;
+  }
+  async #rejected(current: Session, error: NelcotaError, publish: boolean): Promise<void> {
+    if (error.code === "invalid_grant") {
+      if (publish) await this.#publication.write(null, "signed_out", true);
+      return;
+    }
+    // Every other 4xx is returned before the rotation commits (rate limit,
+    // malformed request), so the stored token is still valid. A 5xx can
+    // follow an ambiguous commit and a lost response has no answer at all:
+    // preserve their reservation.
+    if (error.status >= HTTP_CLIENT_ERROR_START && error.status < HTTP_SERVER_ERROR_START)
+      await this.#store.release(current);
   }
   rememberUser(snapshot: Session): (user: User) => Promise<void> {
     return this.#publication.rememberUser(snapshot);
@@ -217,7 +266,7 @@ export class SessionManager {
   ): Promise<Result<null>> {
     return this.#locked(async () => {
       try {
-        const session = await this.#store.read(true, true);
+        const session = await this.#store.read(true);
         // The only transition: sign-out never publishes or announces a renewal.
         if (session != null) return await this.#endSession(session, request, options);
         if (this.#store.dirty) await this.#publication.persist();
@@ -267,4 +316,15 @@ export class SessionManager {
   dispose(): void {
     this.#lifecycle.dispose();
   }
+}
+
+/** A failure that a later attempt can fix, unlike a refusal or a cancellation. */
+function transient(error: NelcotaError): boolean {
+  // Cancellation is the caller's; a storage failure is reported, not hidden.
+  if (error.code === "aborted" || error.code === "session_unavailable") return false;
+  return (
+    error.status === 0 ||
+    error.status === HTTP_TOO_MANY_REQUESTS ||
+    error.status >= HTTP_SERVER_ERROR_START
+  );
 }
