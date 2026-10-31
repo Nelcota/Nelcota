@@ -198,6 +198,15 @@ for the October 27 server scope and independent SDK publication checkpoint.
   navigation; keyboard navigation still shows it.
 - `Retry-After` on rate-limited auth requests rounds up, so clients no longer
   retry a second early and get another 429.
+- Uploads without `Content-Length` no longer read the storage total from the
+  database for every received chunk while holding the process-wide admission
+  lock. Their reservation grows up to 1 MiB ahead of the bytes received, never
+  past half of the remaining capacity; the committed total is still checked
+  at publication.
+- The storage guide no longer claims that every download carries
+  `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox`:
+  S3 downloads redirect to presigned URLs that cannot set them. It now asks S3
+  deployments to add both on the provider or a CDN in front of the bucket.
 
 ### Security
 
@@ -218,6 +227,16 @@ for the October 27 server scope and independent SDK publication checkpoint.
   through, after a delay and up to a second budget of the same size; other
   networks receive 429 until the budget refills. The per-email-and-IP budget, which the per-IP budget always
   reached first, is gone.
+- Signed file URLs are bound to the version that was signed (D113). After a
+  file is replaced, or deleted and uploaded again under the same name, an
+  earlier URL answers 404 instead of serving the new bytes. URLs signed before
+  this upgrade name no version and stop working (403 `invalid_signature`);
+  sign them again.
+- An upload (`POST`) or replacement (`PUT`) to a name taken by a file the
+  caller's policies hide answers exactly like a policy refusal (403, or 401
+  for `anon`) instead of 409 `object_exists` or a distinct RLS message, which
+  revealed that the hidden file exists. Callers who can see the file still get
+  409.
 
 ## [0.5.6] — 2026-10-27
 

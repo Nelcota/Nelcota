@@ -567,7 +567,7 @@ outside the request timeout and the gzip layer.
 
 **D79. User files are served as inert content.** Every object response
 carries `X-Content-Type-Options: nosniff` and `Content-Security-Policy:
-sandbox`; only raster images, audio, video and plain text are served
+sandbox` (on the S3 backend the redirected download cannot, see `storage.md`); only raster images, audio, video and plain text are served
 `inline`, everything else (HTML, SVG, PDF...) as an `attachment`. The type is
 sniffed from the first bytes, not taken from the client. Paths reject `..`,
 empty segments, control characters and over-long names, and are normalized
@@ -1060,6 +1060,13 @@ server-side renderer presents for many users, never count as known. The REST and
 APIs have a per-account or per-IP budget (`NELCOTA_API_RATE_LIMIT_PER_MINUTE`,
 `service_role` exempt). The client IP skips `NELCOTA_TRUSTED_PROXY_HOPS`
 trusted proxies from the right.
+
+**D113. Signed URLs are bound to one stored version.** Amends D79: a signed
+URL names the version (the key of the bytes, D78) the signer could read, not
+only the bucket and path. Replacing a file, or deleting it and uploading again
+under the same name, creates another version, which the old URL answers with
+404 as if the file were gone; a grant that names no version is refused.
+Sharing a file does not share whatever is stored under its name later.
 
 ### Known pending items
 
