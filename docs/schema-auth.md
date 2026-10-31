@@ -252,7 +252,9 @@ Over the account budget, an attempt from a known network waits 125, 250, 500,
 budget of the same size; once that is spent too, it also receives `429`. An
 attempt from any other network receives `429` until the first budget refills.
 A network is known when the account has an open session, created or refreshed
-in the last 30 days, from the same IPv4 /24 or IPv6 /64. Signing out or
+in the last 30 days, that was opened from the same IPv4 /24 or IPv6 /64. Only
+the network where the session signed in counts: refreshing it from elsewhere
+keeps that network known but does not make the new one known. Signing out or
 changing the password revokes sessions and so forgets their networks, and
 prune removes sessions whose refresh tokens expired, so the window is also
 bounded by `NELCOTA_REFRESH_TOKEN_TTL_DAYS`. The check reads the sessions

@@ -332,6 +332,9 @@ const KNOWN_NETWORK_DAYS: i32 = 30;
 /// the last 30 days, that was opened from the network of `ip`: the same IPv4
 /// /24 (also when stored IPv4-mapped by a dual-stack listener), so rotating
 /// carrier and residential addresses still match, or the same IPv6 /64.
+/// The network is the one the session was opened from (`auth.sessions.ip` is
+/// written at sign-in only): refreshes keep that network known for the window
+/// even when they come from elsewhere, and never make their own network known.
 /// Revoked sessions do not count, so a network stops being known after a
 /// password change or sign-out there. Prune removes sessions whose refresh
 /// tokens expired, so the window is also bounded by the refresh lifetime.
