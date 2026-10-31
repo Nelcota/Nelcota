@@ -129,6 +129,11 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- The table editor's JSON `null` handling no longer rewrites the SQL text the
+  REST query compiler generates, which failed with a 500 if that text ever
+  changed shape. The compiler now offers it as explicit options that only the
+  panel uses: per-column `IS NULL` flags on reads and a typed JSON `null`
+  write value. REST API statements and responses are unchanged.
 - A refresh retry inside the ten-second grace window no longer signs out a
   holder that did receive the rotated answer. The retry now returns the same
   successor refresh token (with a new access token) instead of minting a new
