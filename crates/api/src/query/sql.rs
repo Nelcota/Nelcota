@@ -331,25 +331,14 @@ pub(super) fn with_representation(
     )
 }
 
-/// Columns of a JSON body (object or array of objects), validated.
-pub(super) fn body_columns(table: &Table, rows: &[Value]) -> Result<Vec<String>, QueryError> {
-    let mut columns: Vec<String> = Vec::new();
-    for row in rows {
-        let map = match row {
-            Value::Object(map) => map,
-            _ => {
-                return Err(invalid(
-                    "the body must be a JSON object or an array of objects",
-                ));
-            }
-        };
-        for key in map.keys() {
-            if !columns.iter().any(|c| c == key) {
-                columns.push(column(table, key)?.name.clone());
-            }
-        }
-    }
-    Ok(columns)
+/// Columns of a JSON object body, validated (object keys are unique).
+pub(super) fn body_columns(
+    table: &Table,
+    map: &Map<String, Value>,
+) -> Result<Vec<String>, QueryError> {
+    map.keys()
+        .map(|key| column(table, key).map(|c| c.name.clone()))
+        .collect()
 }
 
 /// `INSERT` from JSON: Postgres converts each field to the column type
@@ -502,7 +491,7 @@ pub fn update(
             return Err(invalid("the PATCH body must be a JSON object"));
         }
     };
-    let columns = body_columns(table, &[Value::Object(map.clone())])?;
+    let columns = body_columns(table, &map)?;
     if columns.is_empty() {
         return Err(invalid("the PATCH body has no columns"));
     }
