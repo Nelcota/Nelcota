@@ -126,6 +126,12 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- A refresh retry inside the ten-second grace window no longer signs out a
+  holder that did receive the rotated answer. The retry now returns the same
+  successor refresh token (with a new access token) instead of minting a new
+  pair and revoking that successor, so two tabs or instances racing with one
+  token keep the session. Internal migration V21 adds the encrypted successor
+  column to `auth.refresh_tokens` and is part of the standalone auth selection.
 - REST `like`/`ilike` filters can match a literal `*`: an unescaped `*` is still
   the `%` wildcard, while `\*` now means `*`. Other backslash escapes (`\%`,
   `\_`, `\\`) keep their SQL LIKE meaning. Previously every `*` became `%`.

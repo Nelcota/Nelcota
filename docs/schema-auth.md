@@ -74,6 +74,7 @@ One row per login.
 | `session_id` | `uuid` → `auth.sessions` | the token's "family" |
 | `token_hash` | `bytea` unique | **SHA-256** of the opaque token; the token itself is never stored |
 | `revoked` | `boolean` | `true` once used (rotation) |
+| `retry_successor` | `bytea` | the successor this token's rotation issued, encrypted under a key derived from this token; cleared after the retry window |
 | `created_at`, `expires_at` | `timestamptz` | default validity: 30 days |
 
 ### Rotation and reuse detection
@@ -85,12 +86,20 @@ One row per login.
 
 **Retry grace window.** A client that lost the answer to step 2 (network drop,
 two tabs refreshing at once) still holds only R1. For **10 seconds** after the
-rotation, presenting R1 again is treated as a retry: the server revokes R2 (and
-any other live token of the session issued after R1) and answers with a fresh
-pair for the **same session**. Retries never extend the window, which counts
-from the original rotation (its `refreshed_at`). Once R2's successor has been
-rotated in turn, or after the window, R1 is reuse again and step 3 applies.
-The client should still serialize refreshes; the window only absorbs retries.
+rotation, presenting R1 again is treated as a retry: the server answers with
+the **same R2** that the rotation issued and a freshly signed access token for
+the same session. R2 stays valid, so every holder ends up with the one live
+token. Retries never extend the window, which counts from the original
+rotation (its `refreshed_at`). Once R2 has been rotated in turn, or after the
+window, R1 is reuse again and step 3 applies. The client should still
+serialize refreshes; the window only absorbs retries.
+
+Only hashes of refresh tokens are stored, so the rotation keeps R2 in
+`retry_successor` on R1's row, encrypted under a key derived from R1 itself
+(HKDF-SHA256, separate from the stored SHA-256). Only whoever presents R1 can
+recover R2, which that holder could already obtain within the window. A
+rotation stored before this column existed has no successor; its retry
+instead revokes R2 and answers with a fresh pair in the same session.
 
 Retry grace also requires R1 to remain unexpired: `expires_at <= now()` is
 expired, including at the exact deadline. An expired, rotated token follows
@@ -101,7 +110,9 @@ reuse handling and ends that session; it never issues another pair.
 Once an hour the server deletes refresh tokens past `expires_at` (a rotated
 token stays until then, so reuse is still detected), sessions left without
 any token, and sessions revoked more than 7 days ago (with their tokens).
-Nothing that could still sign anyone in is removed.
+Nothing that could still sign anyone in is removed. The same pass clears a
+`retry_successor` once its retry window has passed; the next rotation in the
+session clears it sooner.
 
 ## `auth.one_time_tokens`
 

@@ -117,8 +117,8 @@ assume an issuer/audience policy that the existing contract does not enforce.
 
 Access JWTs remain stateless until expiry. Logout/revocation prevents refresh;
 it does not retract an already-issued access token. Refresh rotation preserves
-the documented short retry grace: competing requests can both return a response,
-but only the newest successor remains usable. Recovery, confirmation, magic-link
+the documented short retry grace: competing requests with one token all receive
+the same successor, which remains the only usable token. Recovery, confirmation, magic-link
 and PKCE credentials retain their single-use database consumption boundaries.
 Password/link changes and revocation must not resurrect an ended session.
 Retry grace never extends a refresh token's expiration: the exact deadline is
@@ -126,9 +126,9 @@ expired, and an expired, rotated token follows the existing reuse handling.
 
 ## Database lifecycle and authorization
 
-`nelcota_auth::bootstrap` installs canonical versions 1, 2, 5, 9, 10 and 14.
+`nelcota_auth::bootstrap` installs canonical versions 1, 2, 5, 9, 10, 14 and 21.
 These are the auth tables, shared roles/context functions, single-use links,
-OAuth identities and the user-listing index. Shared infrastructure includes
+OAuth identities, the user-listing index and the refresh retry successor. Shared infrastructure includes
 `nelcota.schema_migrations`, `extensions`, pgcrypto and pg_stat_statements.
 Panel tables, catalog triggers, storage and webhook objects are absent.
 Bootstrap needs an administrator able to create roles and the extensions.

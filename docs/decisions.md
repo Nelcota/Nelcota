@@ -1098,6 +1098,18 @@ instead of returning to the pool, so a late cancel cannot reach another
 request. This limits
 concurrency, not request rate; a per-minute rate limit is a separate control.
 
+**D116. A refresh retry returns the successor it repeats.** Amends D23 and the
+ten-second retry grace: a retry of the latest rotation used to mint a new
+pair and revoke the lost successor, so a second holder that did receive that
+successor later presented it as reuse and lost the session. Now a retry
+answers with the same successor and a new access token. Because only token
+hashes are stored, each rotation keeps its successor on the rotated token's
+row, XORed with an HKDF-SHA256 key derived from the rotated token (one-time:
+a token rotates at most once) and checked against the successor's hash on
+the way out. Holding the rotated token already gave that power within the
+window. The next rotation and hourly pruning clear it. Rotations from before
+V21 keep the previous behaviour; reuse outside the window is unchanged.
+
 ### Known pending items
 
 - Filtering parent rows by their embeds (`!inner`) and self-referencing embeds.
