@@ -126,6 +126,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- The panel labels webhook deliveries deferred with `dns_busy` and a resend
+  refused with `webhook_queue_full` in English and Portuguese instead of
+  showing the raw codes.
 - The table editor tells a JSON `null` in a json/jsonb column apart from SQL
   NULL: it shows as the text `null`, and saving the text `null` stores a JSON
   `null` instead of SQL NULL, so edits round-trip.
