@@ -13,10 +13,15 @@ use nelcota_core::{ApiError, Claims, db::begin_request};
 use object_store::path::Path as Key;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use std::pin::Pin;
+use std::{pin::Pin, time::Duration};
 use uuid::Uuid;
 
 pub type UploadStream = Pin<Box<dyn Stream<Item = Result<Bytes, std::io::Error>> + Send>>;
+
+/// How long a body may go without a byte. Upload slots are shared by every
+/// caller; without this a trickling body holds one until the whole upload
+/// timeout (an hour by default) runs out.
+const BODY_IDLE: Duration = Duration::from_secs(60);
 #[derive(Default)]
 pub struct UploadOptions {
     pub content_length: Option<u64>,
@@ -265,6 +270,21 @@ async fn visible(
     Ok(row.is_some())
 }
 
+/// The next body chunk, or an error when the body fails or stalls.
+async fn next_chunk(stream: &mut UploadStream) -> Result<Option<Bytes>, ApiError> {
+    match tokio::time::timeout(BODY_IDLE, stream.next()).await {
+        Err(_) => Err(upload_timeout()),
+        Ok(None) => Ok(None),
+        Ok(Some(chunk)) => chunk.map(Some).map_err(|_| {
+            ApiError::new(
+                StatusCode::BAD_REQUEST,
+                "upload_interrupted",
+                "the upload was interrupted",
+            )
+        }),
+    }
+}
+
 fn upload_timeout() -> ApiError {
     ApiError::new(
         StatusCode::REQUEST_TIMEOUT,
@@ -348,13 +368,6 @@ async fn receive(
     declared_type: Option<&str>,
     allowed: Option<&[String]>,
 ) -> Result<Received, ApiError> {
-    let interrupted = |_| {
-        ApiError::new(
-            StatusCode::BAD_REQUEST,
-            "upload_interrupted",
-            "the upload was interrupted",
-        )
-    };
     let mut stream = body;
     let mut hasher = Sha256::new();
     let mut size = 0u64;
@@ -371,8 +384,7 @@ async fn receive(
     // The first bytes decide the type before anything is written.
     let mut head = Vec::new();
     let mut ended = true;
-    while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(interrupted)?;
+    while let Some(chunk) = next_chunk(&mut stream).await? {
         take(&chunk).await?;
         head.extend_from_slice(&chunk);
         if head.len() >= SNIFF_BYTES {
@@ -400,9 +412,10 @@ async fn receive(
             let mut writer = store.writer(key).await.map_err(store_failed)?;
             writer.write(&head);
             let mut result = Ok(());
-            while let Some(chunk) = stream.next().await {
-                let chunk = match chunk.map_err(interrupted) {
-                    Ok(chunk) => chunk,
+            loop {
+                let chunk = match next_chunk(&mut stream).await {
+                    Ok(Some(chunk)) => chunk,
+                    Ok(None) => break,
                     Err(err) => {
                         result = Err(err);
                         break;
