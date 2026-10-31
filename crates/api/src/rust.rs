@@ -327,6 +327,7 @@ mod tests {
             has_default: default,
             generated,
             comment: None,
+            privileges: Default::default(),
         };
         let mut mood = column("type", "public.mood", false, true, false);
         mood.enum_values = vec![

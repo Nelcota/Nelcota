@@ -20,7 +20,7 @@ use axum::{
 };
 use http_body_util::BodyExt;
 use jsonwebtoken::{EncodingKey, Header, get_current_timestamp};
-use nelcota_api::{ApiSettings, CatalogHandle, spawn_reload_listener};
+use nelcota_api::{ApiSettings, CallerLimit, CatalogHandle, spawn_reload_listener};
 use nelcota_auth::{
     AuthSettings, AuthState, Email, Keys, MailError, Mailer, Passwords, RateLimiter,
     generate_ed25519_private_key,
@@ -146,6 +146,9 @@ pub struct Options {
     pub max_rows: Option<i64>,
     /// REST body limit (`NELCOTA_MAX_BODY_BYTES`).
     pub max_body_bytes: usize,
+    /// Concurrent REST requests per caller; 0 (the default here) keeps the
+    /// limit off so suites that fan out requests stay unaffected.
+    pub api_concurrency_per_caller: usize,
     /// Storage limits (on a disk store in a temporary directory).
     pub storage: nelcota_storage::StorageSettings,
     /// Another store instead of the temporary directory (S3 tests).
@@ -172,6 +175,7 @@ impl Default for Options {
             access_ttl_secs: 900,
             max_rows: None,
             max_body_bytes: nelcota_core::config::DEFAULT_MAX_BODY_BYTES,
+            api_concurrency_per_caller: 0,
             storage: nelcota_storage::StorageSettings {
                 max_file_size: 1024 * 1024,
                 max_total_size: None,
@@ -298,6 +302,8 @@ impl TestApp {
             api: Arc::new(ApiSettings {
                 max_rows: options.max_rows,
                 max_body_bytes: options.max_body_bytes,
+                callers: Arc::new(CallerLimit::new(options.api_concurrency_per_caller)),
+                proxy_hops: 0,
             }),
             api_limit: nelcota_server::ApiRateLimit::new(options.api_rate_limit_per_minute, 0),
         };

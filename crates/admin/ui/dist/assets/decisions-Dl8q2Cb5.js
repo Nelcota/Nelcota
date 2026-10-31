@@ -1068,6 +1068,17 @@ under the same name, creates another version, which the old URL answers with
 404 as if the file were gone; a grant that names no version is refused.
 Sharing a file does not share whatever is stored under its name later.
 
+**D115. One caller cannot hold the REST pool.** The request pool is small and
+RLS says which rows a query may see, not how much it may cost, so the server
+bounds who uses the pool: each REST request takes one of its caller's slots
+(the signed-in user, otherwise the client address with IPv6 grouped per /64;
+\`service_role\` is exempt), \`NELCOTA_API_CONCURRENCY_PER_CALLER\` at a time and
+half of the pool by default. Extras wait one second, then get 429. A request
+that is dropped cancels its PostgreSQL statement, and its connection is closed
+instead of returning to the pool, so a late cancel cannot reach another
+request. This limits
+concurrency, not request rate; a per-minute rate limit is a separate control.
+
 ### Known pending items
 
 - Filtering parent rows by their embeds (\`!inner\`) and self-referencing embeds.

@@ -182,6 +182,18 @@ impl ApiError {
     /// detail, hint and constraint; transient ones become a retryable 503;
     /// anything else is logged and hidden behind a 500.
     pub fn from_db(err: tokio_postgres::Error, role: Role) -> Self {
+        Self::from_db_in(err, role, false)
+    }
+
+    /// [`from_db`](Self::from_db) for a `READ ONLY` request transaction: a
+    /// view or policy that writes during a read (`25006`) is the request's
+    /// fault there (400). Elsewhere a read-only database (a failover, a replica
+    /// configured by mistake) stays a server error.
+    pub fn from_read_db(err: tokio_postgres::Error, role: Role) -> Self {
+        Self::from_db_in(err, role, true)
+    }
+
+    fn from_db_in(err: tokio_postgres::Error, role: Role, read_only: bool) -> Self {
         let db = match err.as_db_error() {
             Some(db) => db,
             _ => {
@@ -201,7 +213,12 @@ impl ApiError {
                 "the JSON response exceeds the 8 MiB budget; narrow the selection or page the results",
             );
         }
-        let (status, api_code) = match classify(db.code(), role) {
+        let writes_in_read = read_only && db.code() == &SqlState::READ_ONLY_SQL_TRANSACTION;
+        let class = match writes_in_read {
+            true => Class::Client(StatusCode::BAD_REQUEST),
+            false => classify(db.code(), role),
+        };
+        let (status, api_code) = match class {
             Class::Client(status) => (status, "db_error"),
             Class::Transient => {
                 tracing::warn!(

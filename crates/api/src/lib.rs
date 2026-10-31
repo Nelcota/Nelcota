@@ -10,7 +10,8 @@
 //!
 //! Each request runs in a transaction with the JWT role and claims
 //! (`nelcota_core::db::begin_request`). The API does not decide permissions:
-//! Postgres does (GRANTs + RLS).
+//! Postgres does (GRANTs + RLS). Each caller runs a bounded number of
+//! requests at a time ([`CallerLimit`]).
 
 pub mod catalog;
 pub mod openapi;
@@ -18,6 +19,7 @@ pub mod query;
 pub mod rust;
 pub mod typescript;
 
+mod concurrency;
 mod http;
 mod operations;
 use axum::{
@@ -26,6 +28,7 @@ use axum::{
     routing::{get, post},
 };
 pub use catalog::{Catalog, CatalogHandle, ReloadListener, spawn_reload_listener};
+pub use concurrency::{CallerLimit, CallerSlot};
 use deadpool_postgres::Pool;
 use nelcota_auth::SharedVerifier;
 use std::sync::Arc;
@@ -38,6 +41,12 @@ pub struct ApiSettings {
     /// Largest request body, in bytes (`NELCOTA_MAX_BODY_BYTES`); the server
     /// applies it to these routes, a larger body gets 413.
     pub max_body_bytes: usize,
+    /// Concurrent requests per caller (`NELCOTA_API_CONCURRENCY_PER_CALLER`).
+    pub callers: Arc<CallerLimit>,
+    /// Trusted proxies whose `X-Forwarded-For` entries name the caller's
+    /// address (`NELCOTA_TRUST_PROXY`, `NELCOTA_TRUSTED_PROXY_HOPS`); 0 reads
+    /// the TCP peer.
+    pub proxy_hops: u8,
 }
 
 impl Default for ApiSettings {
@@ -45,6 +54,8 @@ impl Default for ApiSettings {
         ApiSettings {
             max_rows: None,
             max_body_bytes: nelcota_core::config::DEFAULT_MAX_BODY_BYTES,
+            callers: Arc::default(),
+            proxy_hops: 0,
         }
     }
 }

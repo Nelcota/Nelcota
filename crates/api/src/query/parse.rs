@@ -95,6 +95,18 @@ pub(super) fn parse_select(
             "select accepts at most {MAX_SELECT_ITEMS} items including nested relations"
         )));
     }
+    fn embed_count(select: &Select) -> usize {
+        select
+            .embeds
+            .iter()
+            .map(|embed| 1 + embed_count(&embed.select))
+            .sum()
+    }
+    if depth == 0 && embed_count(&select) > MAX_EMBEDS {
+        return Err(invalid(format!(
+            "select embeds at most {MAX_EMBEDS} relations per request, nested ones included"
+        )));
+    }
     Ok(select)
 }
 
@@ -133,6 +145,13 @@ pub(super) fn parse_embed(
     let alias = alias.unwrap_or(name);
     if alias.is_empty() || alias.len() > MAX_IDENTIFIER_BYTES || alias.contains('\0') {
         return Err(invalid(format!("invalid embed alias: '{alias}'")));
+    }
+    // The generated SQL names its own subqueries `_r`, `_e<n>`, `_j<n>`...: a
+    // key of that form would shadow them and change the response.
+    if alias.starts_with('_') {
+        return Err(invalid(format!(
+            "embed key '{alias}' cannot start with '_': rename it with key:{name}(...)"
+        )));
     }
     let (many, join) = resolve_relation(&catalog.schema, parent, target, hint)?;
     if inner.trim().is_empty() {
