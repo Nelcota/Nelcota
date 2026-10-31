@@ -188,10 +188,13 @@ pub(crate) async fn refresh(state: &AuthState, token: Option<String>) -> Result<
         json: row.get(7),
     };
     if revoked && !expired && is_retry(&tx, session_id, token_id).await? {
-        // The client lost the answer to its rotation (network drop, two tabs
-        // racing) and is retrying with the token it still has. Hand out a
-        // fresh pair in the same session and retire whatever the lost answer
-        // carried, so only the newest token stays valid.
+        // The client lost the answer to its rotation (network drop) and is
+        // retrying with the token it still has. Hand out a fresh pair in the
+        // same session and retire whatever the lost answer carried, so only the
+        // newest token stays valid. Two holders racing with one token (tabs
+        // that do not coordinate) both get an answer, but presenting the
+        // retired one later is reuse and ends the session; the SDKs
+        // coordinate their tabs so only one of them rotates.
         tx.execute(
             "UPDATE auth.refresh_tokens SET revoked = true
              WHERE session_id = $1 AND id > $2 AND NOT revoked",
