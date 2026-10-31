@@ -96,8 +96,19 @@ pub fn qualified(schema: &str, name: &str) -> String {
 }
 
 /// Text literal (`standard_conforming_strings` is the default since 9.1).
+///
+/// A carriage return is written as an `E'\r'` escape, never as a raw byte:
+/// migration files have CRLF normalized to LF before they are checksummed
+/// and run, which would otherwise change a comment such as `"a\r\nb"`.
 pub fn literal(text: &str) -> String {
-    format!("'{}'", text.replace('\'', "''"))
+    if !text.contains('\r') {
+        return format!("'{}'", text.replace('\'', "''"));
+    }
+    let escaped = text
+        .replace('\\', r"\\")
+        .replace('\'', "''")
+        .replace('\r', r"\r");
+    format!("E'{escaped}'")
 }
 
 /// Required (non-empty) SQL expression, in parentheses.
@@ -363,6 +374,8 @@ mod tests {
     #[test]
     fn literal_and_escaped_identifiers() {
         assert_eq!(literal("O'Reilly"), "'O''Reilly'");
+        assert_eq!(literal("a\\b\nc"), "'a\\b\nc'");
+        assert_eq!(literal("it's\r\na\\b"), "E'it''s\\r\na\\\\b'");
         assert_eq!(qualified("public", "a\"b"), "\"public\".\"a\"\"b\"");
     }
 
