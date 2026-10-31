@@ -6,7 +6,7 @@ import {
   ok,
   type Result,
 } from "../core/client.errors.js";
-import { isBrowser } from "../core/environment.js";
+import { isBrowser } from "../core/runtime.js";
 /**
  * Sign-up, sign-in (password, OAuth with PKCE, email links) and the session's
  * life: stored, refreshed before it expires, shared across tabs.

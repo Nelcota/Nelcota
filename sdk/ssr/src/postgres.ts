@@ -20,7 +20,7 @@ const MAX_QUEUED_OWNERS = 256;
  * waiters fairly; a server-side statement timeout bounds every acquisition.
  *
  * A write lease holds one pooled connection for its whole callback, so at most
- * `maxLeases` (default half the pool) run at once; reads use the rest of the pool.
+ * `maxLeases` (default the pool size minus one) run at once; reads keep the rest.
  */
 export class PostgresSessionStore implements SessionStore {
   readonly durability = "shared" as const;

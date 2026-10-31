@@ -79,15 +79,17 @@ A `write` owns its browser session for the whole callback: it holds one pooled
 connection and a PostgreSQL advisory lock until the callback returns, so keep
 slow, unrelated work (uploads, third-party calls) outside `write` where you can.
 To keep rendering available, at most `maxLeases` writes run at once (default
-half the pool's `max`, at least one); further writers wait for a slot and reads
-use the remaining connections. With `max: 8`, four writes run concurrently.
+the pool's `max` minus one, at least one); further writers wait for a slot and
+reads always keep a connection. Writers for the same session queue in-process
+and take one slot between them. Lower `maxLeases` to reserve more read capacity
+when writes call slow upstream services.
 
 ```ts
 new PostgresSessionStore(pool, {
   timeout: 5_000,       // each statement and connection borrow
   leaseTimeout: 60_000, // longest one write may own its session
   lockTimeout: 60_000,  // how long a writer waits for the same session (default: leaseTimeout)
-  maxLeases: 4,         // concurrent write leases (default: half the pool)
+  maxLeases: 4,         // concurrent write leases (default: pool max - 1)
 });
 ```
 

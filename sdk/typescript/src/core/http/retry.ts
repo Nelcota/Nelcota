@@ -1,4 +1,4 @@
-import { SECOND_IN_MS } from "../time.js";
+import { SECOND_IN_MS } from "../runtime.js";
 
 const BASE_RETRY_WAIT_IN_MS = 200;
 export const MAX_RETRY_WAIT_MS = 30_000;

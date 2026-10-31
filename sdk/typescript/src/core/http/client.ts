@@ -1,7 +1,7 @@
 import { abortable, isAborted } from "../cancellation.js";
 import { NelcotaError, NelcotaUsageError, clientError } from "../client.errors.js";
 import { encodeJson, parseJson } from "../json.js";
-import { MAX_TIMER_IN_MS } from "../time.js";
+import { MAX_TIMER_IN_MS } from "../runtime.js";
 import { errorFromResponse } from "./errors.js";
 import {
   requestHeaders,

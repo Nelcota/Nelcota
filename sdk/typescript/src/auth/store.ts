@@ -1,5 +1,5 @@
 import { type NelcotaError, clientError } from "../core/client.errors.js";
-import { isBrowser } from "../core/environment.js";
+import { isBrowser } from "../core/runtime.js";
 import { encodeJson } from "../core/json.js";
 import { BrowserRefreshPendingError } from "./browser/session.errors.js";
 import { BrowserSessionState } from "./browser/state.js";

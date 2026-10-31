@@ -19,9 +19,9 @@ export interface PostgresSessionStoreOptions {
    * Default `leaseTimeout`, so a waiter never gives up on an owner that is still
    * within its own budget. Shorter values fail fast with `session_store`. */
   lockTimeout?: number;
-  /** Concurrent write leases, each holding one pooled connection. Default half the
-   * pool's `max` (node-postgres default 10), at least one, so reads always keep
-   * connections. Further writers wait for a slot within `lockTimeout`. */
+  /** Concurrent write leases, each holding one pooled connection. Default the
+   * pool's `max` (node-postgres default 10) minus one, at least one, so a read
+   * always finds a connection. Further writers wait for a slot within `lockTimeout`. */
   maxLeases?: number;
 }
 
@@ -53,13 +53,13 @@ export function storeDeadlines(
   return deadlines;
 }
 
-/** Half the pool, so reads keep connections while writes hold theirs. */
+/** All but one pooled connection, so reads are never starved by held writes. */
 function defaultLeases(poolSize: number | undefined): number {
   const size =
     poolSize !== undefined && Number.isSafeInteger(poolSize) && poolSize > 0
       ? poolSize
       : DEFAULT_POOL_SIZE;
-  return Math.max(1, Math.floor(size / 2));
+  return Math.max(1, size - 1);
 }
 
 function requireDeadlines({ timeout, leaseTimeout, lockTimeout, maxLeases }: StoreDeadlines): void {

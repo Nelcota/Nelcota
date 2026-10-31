@@ -8,7 +8,7 @@ import {
   sessionFailure,
   type Result,
 } from "../../core/client.errors.js";
-import { isBrowser } from "../../core/environment.js";
+import { isBrowser } from "../../core/runtime.js";
 import { withLock, sessionLock } from "../browser/coordination.js";
 import { retryDelayInMs } from "../scheduler.js";
 import { isSession, secondsLeft, type Session, type User } from "../session.js";

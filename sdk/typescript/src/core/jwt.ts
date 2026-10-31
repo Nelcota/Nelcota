@@ -5,14 +5,8 @@
  */
 
 import { NelcotaUsageError } from "./client.errors.js";
-import { isBrowser, isWorkerScope } from "./environment.js";
+import { isBrowser, isWorkerScope } from "./runtime.js";
 const JWT_SEGMENT_COUNT = 3;
-
-export function base64UrlEncode(bytes: Uint8Array): string {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
-}
 
 function base64UrlDecode(text: string): string {
   return new TextDecoder().decode(

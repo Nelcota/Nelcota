@@ -1,7 +1,7 @@
 import { isAborted } from "../cancellation.js";
 import { NelcotaError, NelcotaUsageError, clientError } from "../client.errors.js";
 import { assertTokenAllowed } from "../jwt.js";
-import { SECOND_IN_MS } from "../time.js";
+import { SECOND_IN_MS } from "../runtime.js";
 import { HTTP_STATUS } from "./errors.js";
 import { MAX_RETRY_WAIT_MS } from "./retry.js";
 import type { RequestSpec, Attempt } from "./types.js";

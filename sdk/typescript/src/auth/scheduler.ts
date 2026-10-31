@@ -1,5 +1,5 @@
 /** When the next background refresh is due. It owns the timer, not what the refresh does. */
-import { MAX_TIMER_IN_MS, SECOND_IN_MS } from "../core/time.js";
+import { MAX_TIMER_IN_MS, SECOND_IN_MS } from "../core/runtime.js";
 import { secondsLeft, type Session } from "./session.js";
 
 const MAX_REFRESH_JITTER_IN_MS = 5_000;

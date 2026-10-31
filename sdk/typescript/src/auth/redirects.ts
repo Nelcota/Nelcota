@@ -1,5 +1,5 @@
 import { NelcotaError, NelcotaUsageError, clientError } from "../core/client.errors.js";
-import { isBrowser } from "../core/environment.js";
+import { isBrowser } from "../core/runtime.js";
 import type { EmailLink, EmailLinkType } from "./types.js";
 
 const MAX_EMAIL_TOKEN_LENGTH = 128;

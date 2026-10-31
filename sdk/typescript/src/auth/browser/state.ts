@@ -5,7 +5,7 @@
  * token for one owner while the rotation is in flight.
  */
 import { encodeJson } from "../../core/json.js";
-import { RANDOM_ID_CHARS, randomId } from "../../core/random-id.js";
+import { RANDOM_ID_CHARS, randomId } from "../../core/runtime.js";
 import { parseSession, type Session } from "../session.js";
 import { BrowserRefreshPendingError, BrowserSessionConflictError } from "./session.errors.js";
 const MAX_OWNER_CHARS = 128;

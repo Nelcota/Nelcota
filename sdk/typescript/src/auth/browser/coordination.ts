@@ -1,5 +1,5 @@
-import { isWorkerScope } from "../../core/environment.js";
-import { RANDOM_ID_CHARS } from "../../core/random-id.js";
+import { isWorkerScope } from "../../core/runtime.js";
+import { RANDOM_ID_CHARS } from "../../core/runtime.js";
 import type { SessionStorage } from "../session.js";
 import type { AuthEvent } from "../types.js";
 

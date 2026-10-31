@@ -17,7 +17,7 @@ import {
 import { requiredValue } from "./required-value.js";
 
 it("serializes two independent store instances and survives connection loss on a disposable database", async () => {
-  const database = new PostgresDatabase({ sizes: [2, 2], timeoutInMs: 2000 });
+  const database = new PostgresDatabase({ sizes: [3, 3], timeoutInMs: 2000 });
   const first = requiredValue(database.pools[0], "database pool"),
     second = requiredValue(database.pools[1], "database pool");
   try {

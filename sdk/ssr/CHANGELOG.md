@@ -13,9 +13,9 @@ successful publication; a source version or Git tag alone is insufficient.
   same lineage-head check, so a row's liveness reads the same on either version.
   While mixed, a 0.1.x instance still tombstones a rotated-away row immediately and
   skips upstream revocation of replaced sessions; both are safe, only less tidy.
-- `PostgresSessionStore` now caps concurrent write leases at half the pool's
-  `max` by default and lets a writer wait up to `leaseTimeout` (60 s) for a busy
-  session instead of 5 s. Tune with `maxLeases` and `lockTimeout`.
+- `PostgresSessionStore` now caps concurrent write leases at the pool's `max`
+  minus one by default, so reads always find a connection, and lets a writer
+  wait up to `leaseTimeout` (60 s) for a busy session instead of 5 s. Tune with `maxLeases` and `lockTimeout`.
 - `privateResponse` sends `Referrer-Policy: same-origin` instead of `no-referrer`.
 - App code: the SvelteKit guard's `next` parameter now includes `paths.base`;
   drop any manual prefixing in login/refresh actions in the same deploy (only
