@@ -275,6 +275,10 @@ for the October 27 server scope and independent SDK publication checkpoint.
   for `anon`) instead of 409 `object_exists` or a distinct RLS message, which
   revealed that the hidden file exists. Callers who can see the file still get
   409.
+- The migration backup agent serves up to 8 connections at once and drops a
+  caller that has not presented the project capability within 1 second, so
+  local users who can reach its socket can no longer stall a migration's
+  backup. The capability is compared in constant time.
 
 ## [0.5.6] — 2026-10-27
 

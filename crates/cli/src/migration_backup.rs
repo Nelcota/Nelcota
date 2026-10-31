@@ -22,7 +22,8 @@ use serde::{Deserialize, Serialize};
 use std::{
     io::{Read, Write},
     process::Stdio,
-    time::Duration,
+    sync::atomic::{AtomicUsize, Ordering},
+    time::{Duration, Instant},
 };
 
 pub(crate) mod install;
@@ -140,23 +141,50 @@ fn capture(host: &Host, project: &Project) -> anyhow::Result<String> {
         .context("invalid backup filename")?
         .to_owned())
 }
+/// The socket is reachable by every local user; only the capability authorizes.
+/// Each connection must present it within this deadline, and at most
+/// `MAX_CONNECTIONS` are served at once, so idle callers cannot starve the app.
+#[cfg(unix)]
+const CAPABILITY_DEADLINE: Duration = Duration::from_secs(1);
+#[cfg(unix)]
+const MAX_CONNECTIONS: usize = 8;
+#[cfg(unix)]
+fn read_capability(
+    stream: &mut std::os::unix::net::UnixStream,
+    auth: &mut [u8],
+) -> anyhow::Result<()> {
+    let deadline = Instant::now() + CAPABILITY_DEADLINE;
+    let mut filled = 0;
+    while filled < auth.len() {
+        let remaining = deadline
+            .checked_duration_since(Instant::now())
+            .filter(|remaining| !remaining.is_zero())
+            .context("backup capability not presented in time")?;
+        stream.set_read_timeout(Some(remaining))?;
+        match stream.read(&mut auth[filled..])? {
+            0 => bail!("backup capability incomplete"),
+            read => filled += read,
+        }
+    }
+    Ok(())
+}
 #[cfg(unix)]
 fn handle(
     host: &Host,
     project: &Project,
     mut stream: std::os::unix::net::UnixStream,
 ) -> anyhow::Result<()> {
-    stream.set_read_timeout(Some(Duration::from_secs(5)))?;
+    use subtle::ConstantTimeEq;
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
     let mut auth = [0; 65];
-    stream.read_exact(&mut auth)?;
+    read_capability(&mut stream, &mut auth)?;
     // Reload the root-owned environment for every request, binding the capability
     // to the current project incarnation. No project/path/command is accepted.
     let token = project
         .env()
         .get("NELCOTA_MIGRATION_BACKUP_TOKEN")?
         .context("backup agent disabled")?;
-    if !valid_token(&token) || auth[0] != b'1' || auth[1..] != *token.as_bytes() {
+    if !valid_token(&token) || auth[0] != b'1' || !bool::from(auth[1..].ct_eq(token.as_bytes())) {
         bail!("invalid backup capability");
     }
     let _lease = crate::host::acquire_mutation_lease(host.root())?;
@@ -210,12 +238,34 @@ fn serve(host: &Host, project: &Project, socket: &Path) -> anyhow::Result<()> {
     // Only the random project capability authorizes capture, including native
     // DynamicUser processes; the socket never grants a general host operation.
     fs::set_permissions(socket, fs::Permissions::from_mode(0o666))?;
-    for stream in listener.incoming() {
-        if let Err(error) = handle(host, project, stream?) {
-            eprintln!("Migration backup refused: {error}");
+    let active = AtomicUsize::new(0);
+    std::thread::scope(|scope| {
+        for stream in listener.incoming() {
+            let stream = stream?;
+            if active.fetch_add(1, Ordering::AcqRel) >= MAX_CONNECTIONS {
+                active.fetch_sub(1, Ordering::AcqRel);
+                eprintln!("Migration backup refused: too many connections");
+                continue;
+            }
+            let slot = Slot(&active);
+            scope.spawn(move || {
+                let _slot = slot;
+                if let Err(error) = handle(host, project, stream) {
+                    eprintln!("Migration backup refused: {error}");
+                }
+            });
         }
+        Ok(())
+    })
+}
+/// One served connection; released even when its handler panics.
+#[cfg(unix)]
+struct Slot<'a>(&'a AtomicUsize);
+#[cfg(unix)]
+impl Drop for Slot<'_> {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::AcqRel);
     }
-    Ok(())
 }
 #[cfg(not(unix))]
 fn serve(_host: &Host, _project: &Project, _socket: &Path) -> anyhow::Result<()> {
@@ -257,5 +307,36 @@ mod tests {
             assert!(!host.root().join(FENCE).exists());
             assert!(!project.path("backups").exists());
         }
+    }
+    #[test]
+    fn a_stalled_caller_is_dropped_at_the_capability_deadline() {
+        let temp = tempfile::tempdir().unwrap();
+        let host = Host::new(temp.path());
+        let project = Project::new(
+            "shop",
+            &host.project_dir("shop"),
+            crate::host::Runtime::Docker,
+        );
+        crate::private_fs::dir(&project.dir).unwrap();
+        crate::private_fs::write(
+            &project.path(".env"),
+            format!("NELCOTA_MIGRATION_BACKUP_TOKEN={}\n", "a".repeat(64)),
+        )
+        .unwrap();
+        let (server, mut client) = std::os::unix::net::UnixStream::pair().unwrap();
+        // A slow drip of a valid prefix must not extend the deadline.
+        let drip = std::thread::spawn(move || {
+            for _ in 0..8 {
+                if client.write_all(b"1").is_err() {
+                    return;
+                }
+                std::thread::sleep(Duration::from_millis(400));
+            }
+        });
+        let started = Instant::now();
+        assert!(handle(&host, &project, server).is_err());
+        assert!(started.elapsed() < Duration::from_secs(3));
+        assert!(!host.root().join(FENCE).exists());
+        drip.join().unwrap();
     }
 }
