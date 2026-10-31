@@ -53,7 +53,12 @@ Dates identify release entries; registry availability requires a successful publ
   `Error::SessionInvalid` (`FileStorage` does); any other `load` error, such as
   a sharing violation, is returned and the stored session is kept.
 - Background refresh backs off (up to 60 s) instead of waking every second when
-  a refreshed session is immediately due again.
+  a refreshed session is immediately due again. After a transient refresh
+  failure it also waits out the server's Retry-After (or the 2 s backoff)
+  before rotating again.
+- An absurd `expires_in`, `expires_at` (from the server, a store or
+  `set_session`) or `Retry-After` no longer panics with an `Instant` overflow;
+  it counts as a deadline far in the future.
 - Concurrent refresh callers on a multi-threaded runtime share one rotation;
   the decision to join or start one is atomic.
   A rotation task that panics no longer leaves later callers waiting on it.

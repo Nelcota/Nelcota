@@ -705,6 +705,59 @@ async fn requests_keep_a_valid_token_without_rotating_during_the_backoff() {
 }
 
 #[tokio::test]
+async fn an_absurd_token_lifetime_does_not_panic() {
+    let mut issued = serde_json::to_value(session("a1", "r1")).unwrap();
+    issued["expires_in"] = json!(u64::MAX);
+    let (url, _, task) = rest_server(replying(StatusCode::OK, issued), Duration::ZERO).await;
+    let client = Client::builder(url).build().unwrap();
+    let signed_in = client
+        .auth()
+        .sign_in_with_password("a@example.com", "fixture")
+        .await
+        .unwrap();
+    assert_eq!(signed_in.expires_at, u64::MAX);
+    assert_eq!(sent_token(&client).await.unwrap(), "Bearer a1");
+    let mut restored = session("a2", "r2");
+    restored.expires_at = u64::MAX;
+    client.auth().set_session(restored).await.unwrap();
+    assert_eq!(sent_token(&client).await.unwrap(), "Bearer a2");
+    task.abort();
+}
+
+#[tokio::test]
+async fn an_absurd_retry_after_does_not_kill_the_rotation() {
+    let count = Arc::new(AtomicUsize::new(0));
+    let router = Router::new().route(
+        "/auth/v1/token",
+        post({
+            let count = count.clone();
+            move || {
+                count.fetch_add(1, Ordering::SeqCst);
+                async {
+                    (
+                        StatusCode::TOO_MANY_REQUESTS,
+                        [("retry-after", u64::MAX.to_string())],
+                        Json(json!({"code":"rate_limited","message":"slow down"})),
+                    )
+                }
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let client = Client::builder(format!("http://{}", listener.local_addr().unwrap()))
+        .build()
+        .unwrap();
+    let task = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    // Inside the 60 s refresh margin, but still valid.
+    client.auth().set_session(expiring_in(30)).await.unwrap();
+    let error = client.auth().refresh_session().await.unwrap_err();
+    // The server's answer, not a rotation task that died computing its backoff.
+    assert_eq!(error.code(), "rate_limited");
+    assert_eq!(count.load(Ordering::SeqCst), 1);
+    task.abort();
+}
+
+#[tokio::test]
 async fn a_rotation_that_panics_does_not_block_later_refreshes() {
     use nelcota_client::auth::{SessionStorage, StorageFuture};
     #[derive(Default)]
