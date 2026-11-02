@@ -109,6 +109,9 @@ async fn send(
     let _ = rustls::crypto::ring::default_provider().install_default();
     let client = Client::builder()
         .redirect(reqwest::redirect::Policy::none())
+        // The long total budget covers server-side migrations; an unreachable
+        // origin should fail fast instead of waiting all of it out.
+        .connect_timeout(Duration::from_secs(15))
         .timeout(Duration::from_secs(660))
         .build()?;
     let mut request = client

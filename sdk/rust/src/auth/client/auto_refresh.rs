@@ -7,6 +7,9 @@ use tokio::sync::broadcast;
 /// Upper bound for the pause while a session keeps looking due right after
 /// a successful refresh (a very short token lifetime, a misbehaving server).
 const MAX_DUE_BACKOFF: Duration = Duration::from_secs(60);
+/// Upper bound for waiting out a server's Retry-After: an absurd value must
+/// not park background refresh; waking early only checks the backoff again.
+const MAX_RETRY_WAIT: Duration = Duration::from_secs(5 * 60);
 
 impl AuthClient {
     /// Opt-in background refresh. Keep the handle: dropping it stops the timer.
@@ -42,9 +45,15 @@ impl AuthClient {
                 let auth = Client::shared_session(inner).auth();
                 let manager = auth.manager();
                 let delay = match manager.loaded(&RequestOptions::default()).await {
+                    // After a transient failure, wait out its Retry-After (or the
+                    // short backoff) instead of rotating again as soon as it is due.
                     Ok(snapshot) => snapshot
                         .current
-                        .map(|current| manager.due_in(&current))
+                        .as_ref()
+                        .map(|current| {
+                            let retry = snapshot.retry_in().min(MAX_RETRY_WAIT);
+                            manager.due_in(current).max(retry)
+                        })
                         .unwrap_or(Duration::from_secs(30)),
                     Err(_) => Duration::from_secs(10),
                 };

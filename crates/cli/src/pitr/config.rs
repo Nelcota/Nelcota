@@ -158,7 +158,9 @@ fn upgrade_compose(project: &Project) -> anyhow::Result<bool> {
     for (old, new) in COMPOSE_UPGRADE {
         compose = compose.replace(old, new);
     }
-    fs::write(&path, compose)?;
+    // A torn write would no longer match either template, leaving the project
+    // without a usable compose file; replace it as one unit, like enrollment.
+    nelcota_deployment::atomic_write(&path, compose.as_bytes())?;
     ok("docker-compose.yml: Postgres built with pgBackRest, with an egress network");
     Ok(true)
 }

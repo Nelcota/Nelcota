@@ -38,6 +38,7 @@ pub fn spawn_reload_listener(
     pool: deadpool_postgres::Pool,
     config: tokio_postgres::Config,
 ) -> ReloadListener {
+    let config = listener_config(config);
     ReloadListener(tokio::spawn(async move {
         let mut backoff = Duration::from_secs(1);
         loop {
@@ -51,6 +52,32 @@ pub fn spawn_reload_listener(
             backoff = (backoff * 2).min(Duration::from_secs(30));
         }
     }))
+}
+
+/// The listening connection is idle between schema changes. NAT gateways and
+/// cloud load balancers drop idle flows after a few minutes without telling
+/// either end, and the default TCP keepalive (2 hours) would leave a dead
+/// `LISTEN` in place, missing every reload until then. Probe sooner, and
+/// bound how long one connection attempt may hang. Shorter settings from the
+/// database URL, and keepalives turned off there, are kept.
+fn listener_config(mut config: tokio_postgres::Config) -> tokio_postgres::Config {
+    const KEEPALIVE_IDLE: Duration = Duration::from_secs(60);
+    const KEEPALIVE_INTERVAL: Duration = Duration::from_secs(10);
+    const KEEPALIVE_RETRIES: u32 = 3;
+    const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+    if config.get_keepalives() && config.get_keepalives_idle() > KEEPALIVE_IDLE {
+        config.keepalives_idle(KEEPALIVE_IDLE);
+    }
+    if config.get_keepalives_interval().is_none() {
+        config.keepalives_interval(KEEPALIVE_INTERVAL);
+    }
+    if config.get_keepalives_retries().is_none() {
+        config.keepalives_retries(KEEPALIVE_RETRIES);
+    }
+    if config.get_connect_timeout().is_none() {
+        config.connect_timeout(CONNECT_TIMEOUT);
+    }
+    config
 }
 
 async fn listen_once(
@@ -97,6 +124,24 @@ async fn listen_once(
 mod tests {
     use super::*;
     use crate::Catalog;
+
+    #[test]
+    fn listener_probes_an_idle_connection_but_keeps_shorter_url_settings() {
+        let config = listener_config(tokio_postgres::Config::new());
+        assert_eq!(config.get_keepalives_idle(), Duration::from_secs(60));
+        assert_eq!(
+            config.get_keepalives_interval(),
+            Some(Duration::from_secs(10))
+        );
+        assert_eq!(config.get_keepalives_retries(), Some(3));
+        assert_eq!(config.get_connect_timeout(), Some(&Duration::from_secs(10)));
+        let mut own = tokio_postgres::Config::new();
+        own.keepalives_idle(Duration::from_secs(5))
+            .connect_timeout(Duration::from_secs(2));
+        let config = listener_config(own);
+        assert_eq!(config.get_keepalives_idle(), Duration::from_secs(5));
+        assert_eq!(config.get_connect_timeout(), Some(&Duration::from_secs(2)));
+    }
 
     #[tokio::test]
     async fn dropping_listener_releases_catalog_and_reconnect_task() {

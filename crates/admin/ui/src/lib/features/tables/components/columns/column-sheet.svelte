@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import { CloseGuard } from "$lib/forms/close-guard.svelte";
+  import { RemoteResource } from "$lib/resources/remote-resource.svelte";
   import UnsavedChangesDialog from "$lib/components/shared/dialogs/unsaved-changes-dialog.svelte";
   import { Save, LoaderCircle } from "@lucide/svelte";
 
@@ -38,7 +39,10 @@
   } = $props();
 
   let column = $state<ColumnDef>(blankColumn());
-  let tables = $state<Record<string, string[]>>({});
+  // Only the newest opening's reply fills the list: one from an earlier
+  // opening may arrive later and would replace it with an older schema.
+  const schema = new RemoteResource<Record<string, string[]>>();
+  const tables = $derived(schema.data ?? {});
   let saving = $state(false);
   let initialValue = $state("");
   const guard = new CloseGuard({
@@ -55,10 +59,10 @@
       column = original != null ? toColumnDef(original) : blankColumn();
       initialValue = JSON.stringify(column);
       void loadTypes();
-      loadSchemaColumns()
-        .then((t) => (tables = t))
-        .catch(() => (tables = {}));
+      schema.clear();
+      void schema.load(() => loadSchemaColumns());
     });
+    return () => schema.cancel();
   });
 
   const actions = $derived.by((): AlterAction[] => {

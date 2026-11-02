@@ -6,20 +6,20 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use std::{
-    path::Path,
+    path::{Path, PathBuf},
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
     },
 };
 #[derive(Clone)]
-pub struct TrafficGate(Arc<AtomicBool>, Option<(std::path::PathBuf, String)>);
+pub struct TrafficGate(Arc<AtomicBool>, Option<Arc<(PathBuf, String)>>);
 impl TrafficGate {
     pub fn new(validation: bool) -> Self {
         Self(Arc::new(AtomicBool::new(!validation)), None)
     }
-    pub fn with_proof(path: std::path::PathBuf, id: String) -> Self {
-        Self(Arc::new(AtomicBool::new(false)), Some((path, id)))
+    pub fn with_proof(path: PathBuf, id: String) -> Self {
+        Self(Arc::new(AtomicBool::new(false)), Some(Arc::new((path, id))))
     }
     pub fn commit(&self) {
         self.0.store(true, Ordering::Release);
@@ -30,13 +30,15 @@ pub async fn reject_uncommitted(
     request: Request,
     next: Next,
 ) -> Response {
-    if (!gate.0.load(Ordering::Acquire)
-        || gate
-            .1
-            .as_ref()
-            .is_some_and(|(path, id)| !committed(path, id)))
-        && request.uri().path() != "/health"
-    {
+    if request.uri().path() == "/health" {
+        return next.run(request).await;
+    }
+    let open = gate.0.load(Ordering::Acquire)
+        && match &gate.1 {
+            Some(proof) => proof_committed(proof.clone()).await,
+            None => true,
+        };
+    if !open {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
             [(header::RETRY_AFTER, "60")],
@@ -45,6 +47,17 @@ pub async fn reject_uncommitted(
             .into_response();
     }
     next.run(request).await
+}
+/// [`committed`] on the blocking pool: it stats and reads a file, which must
+/// not stall the async workers (this runs on every request of a candidate).
+async fn proof_committed(proof: Arc<(PathBuf, String)>) -> bool {
+    tokio::task::spawn_blocking(move || committed(&proof.0, &proof.1))
+        .await
+        .unwrap_or(false)
+}
+/// [`committed`] for async callers, off the async workers.
+pub async fn committed_async(path: PathBuf, id: String) -> bool {
+    proof_committed(Arc::new((path, id))).await
 }
 pub fn committed(path: &Path, id: &str) -> bool {
     if id.len() != 64

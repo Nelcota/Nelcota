@@ -160,7 +160,20 @@ fn compress(dist: &Path, path: &str, target: &Path) -> Option<Variant> {
             .unwrap_or_else(|error| panic!("cannot brotli-compress {path}: {error}"));
     }
     // Written even when it does not shrink, so the cache check above stays valid.
-    fs::write(&output, &brotli)
+    // The cache trusts any existing file, so publish it with a rename: a build
+    // interrupted mid-write must not leave a truncated variant to embed later.
+    // Identical files share a stem and compress on different threads, so each
+    // write gets its own partial name.
+    static PARTIAL: AtomicUsize = AtomicUsize::new(0);
+    let partial = target.join(format!(
+        "{}.br.{}-{}.partial",
+        variant.file_stem,
+        std::process::id(),
+        PARTIAL.fetch_add(1, Ordering::Relaxed)
+    ));
+    fs::write(&partial, &brotli)
+        .unwrap_or_else(|error| panic!("cannot write {}: {error}", partial.display()));
+    fs::rename(&partial, &output)
         .unwrap_or_else(|error| panic!("cannot write {}: {error}", output.display()));
     (brotli.len() < original.len()).then_some(variant)
 }

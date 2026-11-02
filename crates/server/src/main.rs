@@ -289,11 +289,10 @@ async fn serve(config: Config) -> anyhow::Result<()> {
     let effects = tokio::spawn(async move {
         if validation {
             let path = gate.expect("checked deployment gate");
+            let identity = identity.unwrap_or_default();
             loop {
-                if nelcota_server::deployment::committed(
-                    &path,
-                    identity.as_deref().unwrap_or_default(),
-                ) {
+                if nelcota_server::deployment::committed_async(path.clone(), identity.clone()).await
+                {
                     break;
                 }
                 tokio::time::sleep(Duration::from_secs(1)).await;

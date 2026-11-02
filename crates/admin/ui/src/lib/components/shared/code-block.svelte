@@ -3,6 +3,7 @@
   import Check from "@lucide/svelte/icons/check";
   import { t } from "$lib/i18n/index.svelte";
   import { copyText } from "$lib/browser/clipboard";
+  import { CopyFeedback } from "$lib/browser/copy-feedback.svelte";
   import { highlight, type CodeLang, type Token } from "$lib/components/shared/highlight";
 
   let {
@@ -19,7 +20,10 @@
     wrap?: boolean;
   } = $props();
 
-  let copied = $state(false);
+  // A second copy restarts the feedback instead of being cut short by the
+  // first one, and closing the block does not leave its timer running.
+  const feedback = new CopyFeedback(1500);
+  $effect(() => () => feedback.dispose());
   let tokens = $state<Token[] | null>(null);
   $effect(() => {
     const source = code,
@@ -46,10 +50,7 @@
   };
 
   async function copy() {
-    const copyFeedbackInMs = 1500;
-
-    copied = await copyText(code);
-    setTimeout(() => (copied = false), copyFeedbackInMs);
+    feedback.report(await copyText(code));
   }
 </script>
 
@@ -74,7 +75,7 @@
     aria-label={label ?? t("common.copy")}
     onclick={copy}
   >
-    {#if copied}<Check class="size-4 text-success" />{/if}
-    {#if !copied}<Copy class="size-4" />{/if}
+    {#if feedback.copied}<Check class="size-4 text-success" />{/if}
+    {#if !feedback.copied}<Copy class="size-4" />{/if}
   </button>
 </div>
