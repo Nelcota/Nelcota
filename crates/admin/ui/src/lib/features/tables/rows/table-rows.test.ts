@@ -53,7 +53,7 @@ it("table row operations: clear forgets rows and selection, so a read as someone
   expect(rows.selected.size).toBe(0);
 });
 
-it("table row operations: reconciles an edit by primary key after rows change position", async () => {
+it("table row operations: reloads authoritative rows after an edit even when positions changed", async () => {
   const { rows, adapter } = fixture(),
     pending = deferred<{ count: number }>();
   adapter.update = vi.fn(() => pending.promise);
@@ -61,6 +61,12 @@ it("table row operations: reconciles an edit by primary key after rows change po
   const edit = rows.edit({ id: "1" }, "value", null);
   const data = requiredValue(rows.data, "response data");
   data.rows = data.rows.toReversed();
+  const saved = page("docs", ["2", "1"]);
+  saved.rows = [
+    { id: "2", value: "old-2" },
+    { id: "1", value: null },
+  ];
+  adapter.read.mockResolvedValueOnce(saved);
   pending.resolve({ count: 1 });
   expect(await edit).toBe(1);
   expect(requiredValue(rows.data, "response data").rows).toEqual([
@@ -68,33 +74,83 @@ it("table row operations: reconciles an edit by primary key after rows change po
     { id: "1", value: null },
   ]);
   expect(adapter.update).toHaveBeenCalledWith("docs", { id: "1" }, { value: null });
+  expect(adapter.read).toHaveBeenCalledTimes(2);
 });
 
-it("table row operations: replaces the edited row instead of mutating the loaded page", async () => {
-  const { rows } = fixture();
+it("table row operations: uses persisted normalization and derived values without mutating the old page", async () => {
+  const { rows, adapter } = fixture();
   await rows.load("docs", new URLSearchParams());
   const before = rows.data;
   if (before === null) throw new Error("rows loaded");
-  const [first, second] = before.rows;
-  expect(await rows.edit({ id: "2" }, "value", "changed")).toBe(1);
+  const saved = page("docs");
+  saved.rows = [
+    { id: "1", value: "old-1" },
+    { id: "2", value: "1.24", computed: "2.48", updated_at: "new" },
+  ];
+  adapter.read.mockResolvedValueOnce(saved);
+  expect(await rows.edit({ id: "2" }, "value", "1.239")).toBe(1);
   expect(rows.data).not.toBe(before);
   expect(before.rows).toEqual([
     { id: "1", value: "old-1" },
     { id: "2", value: "old-2" },
   ]);
-  expect(rows.data?.rows[0]).toBe(first);
-  expect(rows.data?.rows[1]).not.toBe(second);
-  expect(rows.data?.rows[1]).toEqual({ id: "2", value: "changed" });
+  expect(rows.data?.rows).toEqual(saved.rows);
+  expect(adapter.read).toHaveBeenCalledTimes(2);
+  expect(adapter.update).toHaveBeenCalledWith("docs", { id: "2" }, { value: "1.239" });
 });
 
-it("table row operations: keeps the loaded page when the update matched no row", async () => {
+it("table row operations: removes a stale row when the update matched nothing", async () => {
   const { rows, adapter } = fixture();
   adapter.update = vi.fn(() => promiseResult(() => ({ count: 0 })));
   await rows.load("docs", new URLSearchParams());
-  const before = rows.data;
+  adapter.read.mockResolvedValueOnce(page("docs", ["2"]));
   expect(await rows.edit({ id: "1" }, "value", "changed")).toBe(0);
-  expect(rows.data).toBe(before);
-  expect(rows.data?.rows[0]?.value).toBe("old-1");
+  expect(rows.data?.rows).toEqual([{ id: "2", value: "old-2" }]);
+  expect(rows.data?.total).toBe(1);
+  expect(adapter.read).toHaveBeenCalledTimes(2);
+});
+
+it("table row operations: reconciles filters, ordering and totals after a successful edit", async () => {
+  const { rows, adapter } = fixture();
+  const params = new URLSearchParams({
+    sort: "value",
+    desc: "true",
+    filters: JSON.stringify([{ column: "value", op: "neq", value: "hidden" }]),
+  });
+  await rows.load("docs", params);
+  const saved = page("docs", ["2", "3"]);
+  saved.total = 3;
+  saved.has_next = true;
+  adapter.read.mockResolvedValueOnce(saved);
+  expect(await rows.edit({ id: "1" }, "value", "hidden")).toBe(1);
+  expect(rows.data).toEqual(saved);
+  expect(adapter.read).toHaveBeenLastCalledWith("docs", params, expect.any(AbortSignal));
+});
+
+it("table row operations: does not reload a cancelled page when its write finishes", async () => {
+  const { rows, adapter } = fixture(),
+    pending = deferred<{ count: number }>();
+  adapter.update = vi.fn(() => pending.promise);
+  await rows.load("docs", new URLSearchParams());
+  const edit = rows.edit({ id: "1" }, "value", "changed");
+  rows.cancel();
+  pending.resolve({ count: 1 });
+  expect(await edit).toBe(1);
+  expect(adapter.read).toHaveBeenCalledTimes(1);
+  expect(await rows.edit({ id: "2" }, "value", "cancelled")).toBeUndefined();
+  expect(adapter.update).toHaveBeenCalledTimes(1);
+  expect(rows.saving).toBe(false);
+});
+
+it("table row operations: reports reload failure without replaying a committed edit", async () => {
+  const { rows, adapter } = fixture();
+  await rows.load("docs", new URLSearchParams());
+  const failure = new Error("read unavailable");
+  adapter.read.mockRejectedValueOnce(failure);
+  expect(await rows.edit({ id: "1" }, "value", "changed")).toBe(1);
+  expect(rows.error).toBe(failure);
+  expect(rows.saving).toBe(false);
+  expect(adapter.update).toHaveBeenCalledTimes(1);
 });
 
 it("table row operations: does not mutate or reload another table when a write finishes after navigation", async () => {

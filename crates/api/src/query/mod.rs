@@ -67,6 +67,8 @@ impl ToSql for Param {
 pub struct Sql {
     pub text: String,
     pub params: Vec<Param>,
+    /// A grouped minimal write returns one affected-row count, not a command tag.
+    pub(crate) returns_write_count: bool,
     embed_limit: Option<i64>,
     checked_json: bool,
 }
@@ -82,6 +84,7 @@ impl Default for Sql {
         Self {
             text: String::new(),
             params: Vec::new(),
+            returns_write_count: false,
             embed_limit: Some(DEFAULT_MAX_ROWS),
             checked_json: true,
         }
@@ -634,7 +637,8 @@ mod tests {
         );
         assert!(
             sql.text.contains(
-                "_w2 AS (INSERT INTO \"public\".\"todos\" AS _t DEFAULT VALUES) SELECT 3"
+                "_w2 AS (INSERT INTO \"public\".\"todos\" AS _t DEFAULT VALUES RETURNING 1) \
+                 SELECT (SELECT count(*) FROM _w0) + (SELECT count(*) FROM _w1) + (SELECT count(*) FROM _w2)"
             )
         );
         assert!(
@@ -647,6 +651,60 @@ mod tests {
             serde_json::json!([{"title":"a"},false]),
         ] {
             assert!(insert("public", &t, bad, None, None).is_err());
+        }
+    }
+
+    #[test]
+    fn grouped_minimal_inserts_count_returned_rows_without_reading_columns() {
+        let t = table();
+        let sql = insert("public", &t, json!([{}, {}, {"title": "a"}]), None, None).unwrap();
+        assert!(sql.returns_write_count);
+        assert_eq!(sql.text.matches("RETURNING 1").count(), 3);
+        assert!(sql.text.ends_with(
+            "SELECT (SELECT count(*) FROM _w0) + (SELECT count(*) FROM _w1) + (SELECT count(*) FROM _w2)"
+        ));
+        assert!(!sql.text.contains("_t.*"));
+        let single = insert(
+            "public",
+            &t,
+            json!([{"title": "a"}, {"title": "b"}]),
+            None,
+            None,
+        )
+        .unwrap();
+        assert!(!single.returns_write_count);
+        assert!(single.text.starts_with("INSERT INTO"));
+    }
+
+    #[test]
+    fn write_representations_read_only_selected_columns() {
+        let t = table();
+        let request = parse_request(&pairs(&[("select", "title"), ("id", "eq.1")]), &t).unwrap();
+        let projection = Some(&request.select);
+        let writes = [
+            insert("public", &t, json!({"title": "a"}), projection, None).unwrap(),
+            insert(
+                "public",
+                &t,
+                json!([{"title": "a"}, {"title": "b", "done": true}]),
+                projection,
+                None,
+            )
+            .unwrap(),
+            update(
+                "public",
+                &t,
+                json!({"title": "a"}),
+                &request.filters,
+                projection,
+            )
+            .unwrap(),
+            delete("public", &t, &request.filters, projection),
+        ];
+        for sql in writes {
+            assert!(sql.text.contains("RETURNING _t.\"title\")"), "{}", sql.text);
+            assert!(!sql.text.contains("_t.*"), "{}", sql.text);
+            assert!(!sql.returns_write_count);
         }
     }
 
@@ -938,6 +996,37 @@ mod tests {
         assert!(text.contains(
             "(SELECT coalesce(json_agg(extensions.nelcota_check_json(to_json(_j1), 8388608)), '[]') FROM (SELECT _e1.* FROM \"public\".\"items\" AS _e1 WHERE _e1.\"order_id\" = _t.\"id\" LIMIT $1) AS _j1) AS \"items\""
         ), "{text}");
+    }
+
+    #[test]
+    fn write_representations_include_embed_join_keys_once_without_unrelated_columns() {
+        let catalog = shop();
+        let t = catalog.table("orders").unwrap();
+        let request = parse_request_with_relations(
+            &pairs(&[("select", "id,customers(name),items(qty)")]),
+            t,
+            &catalog,
+        )
+        .unwrap();
+        let sql = insert(
+            "public",
+            t,
+            json!([{"id": 1, "customer_id": 2}, {"id": 2, "customer_id": 2, "total": 10}]),
+            Some(&request.select),
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            sql.text
+                .matches("RETURNING _t.\"id\", _t.\"customer_id\")")
+                .count(),
+            2,
+            "{}",
+            sql.text
+        );
+        assert!(!sql.text.contains("RETURNING _t.*"), "{}", sql.text);
+        assert!(sql.text.contains("_e0.\"id\" = _t.\"customer_id\""));
+        assert!(sql.text.contains("_e1.\"order_id\" = _t.\"id\""));
     }
 
     #[test]
