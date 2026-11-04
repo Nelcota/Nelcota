@@ -122,6 +122,8 @@ impl Mailer for Outbox {
 }
 
 pub struct Options {
+    /// Email content/lifetimes for the real runtime and its startup projection.
+    pub email_config: nelcota_core::Config,
     pub cors_allow_origins: Option<String>,
     pub production: bool,
     pub migration_backup: Option<nelcota_core::migration_backup::BackupAgent>,
@@ -159,6 +161,7 @@ pub struct Options {
 impl Default for Options {
     fn default() -> Self {
         Options {
+            email_config: nelcota_core::Config::default(),
             cors_allow_origins: None,
             production: false,
             migration_backup: None,
@@ -310,7 +313,7 @@ impl TestApp {
                     max_body_bytes: options.max_body_bytes,
                     api_rate_limit_per_minute: options.api_rate_limit_per_minute,
                     api_concurrency_per_caller: Some(options.api_concurrency_per_caller),
-                    ..nelcota_core::Config::default()
+                    ..options.email_config.clone()
                 },
             )),
             cors: nelcota_server::ApiCors::from_config(&nelcota_core::Config {
@@ -381,7 +384,13 @@ impl TestApp {
         };
         let outbox = Arc::new(Outbox::default());
         let auth = AuthState {
-            mail_delivery: Arc::default(),
+            mail_delivery: Arc::new(
+                nelcota_auth::MailDelivery::default()
+                    .with_email_settings(
+                        nelcota_core::email::Settings::from_config(&options.email_config).unwrap(),
+                    )
+                    .unwrap(),
+            ),
             mailer: options.mail.then(|| {
                 options
                     .mailer

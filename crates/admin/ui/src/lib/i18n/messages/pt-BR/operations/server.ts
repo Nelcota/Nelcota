@@ -1,8 +1,10 @@
 import alerts from "./alerts";
+import email from "./email";
 import routine from "./project-settings";
 
 const ptBR = {
   routine,
+  email,
   project_settings: "Configurações do projeto",
   unknown_project_setting: "O lote contém um campo que não pode ser alterado por este fluxo.",
   invalid_project_setting: "Confira os tipos e os limites dos campos do lote.",

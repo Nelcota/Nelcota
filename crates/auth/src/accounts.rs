@@ -167,7 +167,12 @@ pub(crate) async fn signup(
             ));
         }
     };
-    let (pending, token) = confirmation::pending_signup(&tx, user_id, code_challenge).await?;
+    let ttl = state
+        .mail_delivery
+        .email_settings()
+        .template(LinkKind::Signup)
+        .ttl_minutes;
+    let (pending, token) = confirmation::pending_signup(&tx, user_id, code_challenge, ttl).await?;
     tx.commit().await.map_err(db_error)?;
     if let Some(token) = token {
         links::deliver(state, LinkKind::Signup, &email, &token, mail_slot);
@@ -196,7 +201,20 @@ async fn existing_signup(
         .map_err(db_error)?
         .map(|row| (row.get::<_, Uuid>(0), row.get::<_, bool>(1)));
     let token = match account {
-        Some((user_id, false)) => links::issue(&tx, user_id, LinkKind::Signup, None).await?,
+        Some((user_id, false)) => {
+            links::issue(
+                &tx,
+                user_id,
+                LinkKind::Signup,
+                None,
+                state
+                    .mail_delivery
+                    .email_settings()
+                    .template(LinkKind::Signup)
+                    .ttl_minutes,
+            )
+            .await?
+        }
         _ => None,
     };
     // Same shape as `USER_JSON` for a row inserted just now; nothing in it

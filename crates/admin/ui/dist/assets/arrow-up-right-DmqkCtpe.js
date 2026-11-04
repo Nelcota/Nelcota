@@ -1,0 +1,1 @@
+import{O as e,k as t}from"./api-Cu8UJ7cY.js";import{y as n}from"./circle-alert-Cj8DX0cQ.js";var r={name:`arrow-up-right`,size:24,node:[[`path`,{d:`M7 7h10v10`}],[`path`,{d:`M7 17 17 7`}]]};r.node;var i=new Set([`$$slots`,`$$events`,`$$legacy`]);function a(a,o){let s=e(o,i);n(a,t(()=>s,{get icon(){return r}}))}export{a as t};

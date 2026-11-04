@@ -49,18 +49,7 @@ impl AuthSettings {
         .into_iter()
         .flatten()
         {
-            let url =
-                url::Url::parse(page).map_err(|_| SettingsError("invalid email link page"))?;
-            if !matches!(url.scheme(), "http" | "https")
-                || url.host_str().is_none()
-                || url.fragment().is_some()
-                || !url.username().is_empty()
-                || url.password().is_some()
-            {
-                return Err(SettingsError(
-                    "email link pages need HTTP(S), a host and no fragment or credentials",
-                ));
-            }
+            nelcota_core::email::validate_link_page(page).map_err(|_| SettingsError("email link pages need HTTP(S), a host, no fragment or credentials, and at most 2048 bytes"))?;
         }
         Ok(())
     }

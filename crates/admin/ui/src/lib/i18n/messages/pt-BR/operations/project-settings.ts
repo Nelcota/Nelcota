@@ -1,6 +1,46 @@
 import type { ProjectSettingKey } from "$lib/generated/contracts";
 
 const fields = {
+  email_language: {
+    label: "Idioma dos emails",
+    hint: "Padrões em inglês ou português. Modelos personalizados são preservados; revise-os ao trocar o idioma.",
+  },
+  email_recovery_subject_base64: {
+    label: "Assunto de recuperação",
+    hint: "Texto de uma linha, até 200 bytes UTF-8. Variáveis: {{project_name}} e {{validity}}; nunca tokens ou destinatários no assunto.",
+  },
+  email_recovery_text_base64: {
+    label: "Mensagem de recuperação",
+    hint: "Texto simples com até 2.048 bytes UTF-8 e exatamente um {{link}}. Quebras de linha são preservadas sem interpretação pelo shell.",
+  },
+  email_signup_subject_base64: {
+    label: "Assunto de confirmação",
+    hint: "Texto de uma linha, até 200 bytes UTF-8. Usar o padrão acompanha o idioma selecionado.",
+  },
+  email_signup_text_base64: {
+    label: "Mensagem de confirmação",
+    hint: "Texto simples com até 2.048 bytes UTF-8 e exatamente um {{link}}. Não aceita HTML executável ou variáveis desconhecidas.",
+  },
+  email_magiclink_subject_base64: {
+    label: "Assunto do link de acesso",
+    hint: "Texto de uma linha, até 200 bytes UTF-8. Usar o padrão acompanha o idioma selecionado.",
+  },
+  email_magiclink_text_base64: {
+    label: "Mensagem do link de acesso",
+    hint: "Texto simples com até 2.048 bytes UTF-8 e exatamente um {{link}}. O link continua sendo de uso único.",
+  },
+  email_recovery_ttl_minutes: {
+    label: "Validade da recuperação (minutos)",
+    hint: "De 5 a 1.440 minutos. Aplica-se somente aos novos links; não altera os já emitidos.",
+  },
+  email_signup_ttl_minutes: {
+    label: "Validade da confirmação (minutos)",
+    hint: "De 5 a 10.080 minutos. Aplica-se somente aos novos links; não desabilita a confirmação de email.",
+  },
+  email_magiclink_ttl_minutes: {
+    label: "Validade do link de acesso (minutos)",
+    hint: "De 1 a 60 minutos. Este link autentica por si só; mantenha uma validade curta.",
+  },
   signup_enabled: {
     label: "Cadastro público",
     hint: "Permite criar contas. Desabilitar não bloqueia contas já existentes.",
@@ -98,6 +138,7 @@ const ptBR = {
   reviewedChanges: "Alterações validadas pelo servidor",
   groups: {
     authentication: "Autenticação e sessões",
+    email: "Emails transacionais e links",
     api: "API e desempenho",
     storage: "Limites globais de arquivos",
   },

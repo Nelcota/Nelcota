@@ -853,7 +853,11 @@ fn project_settings_campaign(
     effects: &FixtureEffects,
 ) {
     use nelcota_deployment::operations::Configuration;
+    let other_environment = read_private(&other.path(".env"), 65536).unwrap();
     for boundary in 0..=5 {
+        let email_text = format!(
+            "Olá {{{{email}}}}!\nD'água $HOME \\ # · {boundary}\n{{{{link}}}}\n{{{{validity}}}}"
+        );
         let before =
             String::from_utf8(read_private(&project.path(".env"), 65536).unwrap()).unwrap();
         let identity =
@@ -869,6 +873,9 @@ fn project_settings_campaign(
                     "jwt_expiry_secs": 1200 + boundary,
                     "request_timeout_secs": 20 + boundary,
                     "storage_uploads_per_caller": 4,
+                    "email_language": "pt-BR",
+                    "email_recovery_text_base64": email_text,
+                    "email_recovery_ttl_minutes": 10 + boundary,
                 }))
                 .unwrap(),
             },
@@ -913,6 +920,25 @@ fn project_settings_campaign(
             assert_eq!(done.public.stage, Stage::Completed);
             assert_eq!(effects.restarts.get() - before_restarts, 1);
         }
+        let after = String::from_utf8(read_private(&project.path(".env"), 65536).unwrap()).unwrap();
+        let runtime = super::live::settings_snapshot_sync(project).unwrap();
+        crate::configuration::verify_runtime(&after, &runtime).unwrap();
+        if done.public.stage == Stage::Completed {
+            assert_eq!(
+                runtime.values.get("email_recovery_text_base64"),
+                Some(&nelcota_deployment::settings::Value::Text(email_text))
+            );
+            assert_eq!(
+                runtime.values.get("email_recovery_ttl_minutes"),
+                Some(&nelcota_deployment::settings::Value::Integer(
+                    (10 + boundary) as u64
+                ))
+            );
+        }
+        if done.public.stage == Stage::RolledBack {
+            assert!(after == before);
+        }
+        assert!(read_private(&other.path(".env"), 65536).unwrap() == other_environment);
         assert!(!project.path(crate::maintenance::MARKER).exists());
         assert_eq!(
             sql(project, "SELECT value FROM public.routine_probe"),

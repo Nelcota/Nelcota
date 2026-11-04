@@ -16,6 +16,18 @@ Use an initialized project with panel credentials and access to its API origin.
 The project administrator can run privileged SQL; this is not an end-user token
 or an enrolled update-operator login. This reference describes current source.
 
+## Authentication emails
+
+Email subjects/messages, English/Portuguese defaults and link lifetimes are in
+**Server → Settings → Project settings**, under the email group. Saving requires
+the separately authenticated host operator and a reviewed application restart;
+project-panel login alone does not grant that authority.
+
+Draft previews use fictional data and issue no authentication token. SMTP tests
+send only to the current project's configured administrator, at most once per
+minute per process; acceptance is not proof of inbox delivery. Neither action
+saves the draft. See [email templates](email-templates.md) for limits and setup.
+
 ## Several projects
 
 Each project has its own panel, on its own domain, showing only its data. At

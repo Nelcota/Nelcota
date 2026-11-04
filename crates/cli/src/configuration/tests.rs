@@ -71,11 +71,102 @@ fn stale_source_replaced_project_and_unknown_or_host_controls_fail_closed() {
         assert!(prepare_changes(&before, input).is_err());
     }
     assert!(
-        serde_json::from_value::<BTreeMap<String, Value>>(
+        prepare_changes(
+            &before,
             json!({"signup_enabled": "false\nNELCOTA_PRODUCTION=false"})
         )
         .is_err()
     );
+}
+
+#[test]
+fn text_transport_values_do_not_bypass_the_catalogs_per_field_types() {
+    let before = source_env();
+    for input in [
+        json!({"signup_enabled": "false"}),
+        json!({"jwt_expiry_secs": "900"}),
+        json!({"cors_allow_origins": "https://example.test"}),
+        json!({"email_recovery_ttl_minutes": "10"}),
+        json!({"email_language": false}),
+        json!({"email_recovery_text_base64": true}),
+        json!({"email_recovery_subject_base64": 123}),
+        json!({"email_signup_text_base64": ["{{link}}"]}),
+    ] {
+        let error = prepare_changes(&before, input).err().unwrap();
+        assert_eq!(error.to_string(), "invalid_project_setting");
+    }
+}
+
+#[test]
+fn email_templates_preserve_multiline_literals_and_language_derived_impact() {
+    let before = source_env();
+    let text = "Olá {{email}}!\nD'água, $HOME, \\ e # continuam literais.\n{{link}}\n{{validity}}";
+    let batch = prepare_changes(
+        &before,
+        json!({
+            "email_language": "pt-BR", "email_recovery_text_base64": text,
+            "email_recovery_ttl_minutes": 10
+        }),
+    )
+    .unwrap();
+    assert!(!batch.after.contains("Olá"));
+    assert!(batch.after.contains("NELCOTA_EMAIL_RECOVERY_TEXT_BASE64='"));
+    assert_eq!(
+        load(&source(&batch.after).unwrap()).unwrap().email_language,
+        "pt-BR"
+    );
+    let config = load(&source(&batch.after).unwrap()).unwrap();
+    let policy = nelcota_core::email::Settings::from_config(&config).unwrap();
+    assert_eq!(policy.content(nelcota_core::email::Kind::Recovery).1, text);
+    assert_eq!(policy.recovery.ttl_minutes, 10);
+    assert!(
+        batch
+            .changes
+            .iter()
+            .any(|change| change.key == "email_signup_subject_base64")
+    );
+    verify_runtime(&batch.after, &runtime(&batch.after)).unwrap();
+    assert!(verify_runtime(&before, &runtime(&batch.after)).is_err());
+    let reset = prepare_changes(&batch.after, json!({"email_recovery_text_base64": null})).unwrap();
+    assert!(!reset.after.contains("NELCOTA_EMAIL_RECOVERY_TEXT_BASE64="));
+    let public =
+        serde_json::to_string(&view(&batch.after, "id", Some(&runtime(&batch.after))).unwrap())
+            .unwrap();
+    assert!(!public.contains("private"));
+    for input in [
+        json!({"email_language": "unknown"}),
+        json!({"email_recovery_subject_base64": "x\r\nBcc: private@example.test"}),
+        json!({"email_recovery_text_base64": "{{secret}} {{link}}"}),
+        json!({"email_recovery_text_base64": "no link"}),
+        json!({"email_magiclink_ttl_minutes": 61}),
+        json!({"email_signup_ttl_minutes": 0}),
+    ] {
+        let error = prepare_changes(&before, input).err().unwrap();
+        assert!(!error.to_string().contains("private"));
+    }
+}
+
+#[test]
+fn combined_escaped_email_and_cors_batches_fit_the_shared_http_and_ipc_bound() {
+    let label = "a".repeat(60);
+    let origins = (0..32)
+        .map(|n| format!("https://{label}.{label}.{label}.{label}.test:{}", 60000 + n))
+        .collect::<Vec<_>>();
+    let text = format!("{}{{{{link}}}}", "\n".repeat(2040));
+    let input = json!({"cors_allow_origins": origins, "email_language": "pt-BR", "email_recovery_text_base64": text, "email_signup_text_base64": text, "email_magiclink_text_base64": text});
+    let request = nelcota_deployment::protocol::Request::HostConfigurePlan {
+        token: "a".repeat(64),
+        project: "shop".into(),
+        configuration: nelcota_deployment::operations::Configuration::ProjectSettings {
+            expected_revision: "b".repeat(64),
+            values: changes(input.clone()),
+        },
+    };
+    let bytes = serde_json::to_vec(&request).unwrap();
+    assert!(bytes.len() > 16384);
+    assert!(bytes.len() <= nelcota_deployment::protocol::MAX_REQUEST_BYTES);
+    let batch = prepare_changes(&source_env(), input).unwrap();
+    verify_runtime(&batch.after, &runtime(&batch.after)).unwrap();
 }
 
 #[test]

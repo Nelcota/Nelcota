@@ -40,8 +40,9 @@ pub(crate) async fn pending_signup(
     tx: &Transaction<'_>,
     user_id: Uuid,
     code_challenge: Option<&str>,
+    ttl_minutes: u32,
 ) -> Result<(Value, Option<String>), ApiError> {
-    let token = links::issue(tx, user_id, LinkKind::Signup, code_challenge).await?;
+    let token = links::issue(tx, user_id, LinkKind::Signup, code_challenge, ttl_minutes).await?;
     let user: Value = tx
         .query_one(
             &format!("SELECT {USER_JSON} FROM auth.users u WHERE u.id = $1"),

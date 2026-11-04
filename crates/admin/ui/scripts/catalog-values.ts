@@ -15,3 +15,11 @@ export function translationList(value: unknown): string[] {
   if (Array.isArray(value) === false) throw new TypeError("Expected a translation array");
   return value.map((text: unknown) => translationText(text));
 }
+
+/** Include newly added source fragments as well as blank translation placeholders. */
+export function missingTranslations(
+  fragments: readonly string[],
+  catalog: Readonly<Record<string, string>>,
+): string[] {
+  return fragments.filter((fragment) => Boolean(catalog[fragment]?.trim()) === false);
+}

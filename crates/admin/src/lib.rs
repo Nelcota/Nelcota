@@ -18,6 +18,7 @@ pub mod contracts;
 mod ddl;
 mod denied;
 mod deploy;
+mod emails;
 mod error;
 mod metrics;
 mod middleware;
@@ -55,6 +56,7 @@ use axum::{
     response::Redirect,
     routing::{delete, get, post, put},
 };
+pub use emails::router as email_router;
 pub use error::ApiError;
 use error::api_not_found;
 use middleware::{same_origin, security_headers};

@@ -282,6 +282,7 @@
     ></label
   >
   {#if section === "project_settings"}<ProjectSettings
+      {project}
       view={view?.project_settings ?? null}
       disabled={blocked}
       {prepare}

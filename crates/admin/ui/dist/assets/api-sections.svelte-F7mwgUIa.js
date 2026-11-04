@@ -1,1 +1,0 @@
-import{Ft as e}from"./read-body-CJU4GKUW.js";var t=e({current:`api-address`});export{t};

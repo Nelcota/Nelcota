@@ -290,7 +290,9 @@ pub fn controller_router(config: ControllerConfig) -> Router {
         .route("/admin", get(|| async { Redirect::to("/admin/") }))
         .route("/admin/", get(crate::assets::controller_spa))
         .route("/admin/{*rest}", get(crate::assets::controller_spa))
-        .layer(DefaultBodyLimit::max(16384))
+        .layer(DefaultBodyLimit::max(
+            nelcota_deployment::protocol::MAX_REQUEST_BYTES,
+        ))
         .layer(middleware::from_fn_with_state(state.clone(), boundary))
         .layer(middleware::from_fn(crate::middleware::security_headers))
         .with_state(state)
@@ -427,32 +429,40 @@ mod tests {
         );
     }
     #[tokio::test]
-    async fn routine_batches_require_a_controller_session_and_reject_untyped_payloads() {
+    async fn routine_batches_require_a_controller_session_and_reject_malformed_payloads() {
         let app = controller_router(config());
-        let payload = json!({"action":"host_configure_plan", "project":"shop", "configuration":{
-            "section":"project_settings", "expected_revision":"a".repeat(64), "values":{"signup_enabled":false}
-        }});
-        let mut request = post(
-            Some("https://updates.example.test"),
-            "updates.example.test",
-            &payload.to_string(),
-        );
-        request.headers_mut().insert(
-            header::COOKIE,
-            HeaderValue::from_static("nelcota_session=project-session"),
-        );
-        request.headers_mut().insert(
-            header::AUTHORIZATION,
-            HeaderValue::from_static("Bearer service-role-token"),
-        );
-        assert_eq!(
-            app.clone().oneshot(request).await.unwrap().status(),
-            StatusCode::UNAUTHORIZED
-        );
+        // Strings are valid transport values now. The worker's catalog owns
+        // per-key types; neither valid text nor a mistyped boolean grants a session.
+        for values in [
+            json!({"signup_enabled": false}),
+            json!({"email_language": "pt-BR"}),
+            json!({"signup_enabled": "false"}),
+        ] {
+            let payload = json!({"action":"host_configure_plan", "project":"shop", "configuration":{
+                "section":"project_settings", "expected_revision":"a".repeat(64), "values":values
+            }});
+            let mut request = post(
+                Some("https://updates.example.test"),
+                "updates.example.test",
+                &payload.to_string(),
+            );
+            request.headers_mut().insert(
+                header::COOKIE,
+                HeaderValue::from_static("nelcota_session=project-session"),
+            );
+            request.headers_mut().insert(
+                header::AUTHORIZATION,
+                HeaderValue::from_static("Bearer service-role-token"),
+            );
+            assert_eq!(
+                app.clone().oneshot(request).await.unwrap().status(),
+                StatusCode::UNAUTHORIZED
+            );
+        }
         for invalid in [
-            json!({"section":"project_settings", "expected_revision":"a".repeat(64), "values":{"signup_enabled":"false"}}),
             json!({"section":"project_settings", "expected_revision":"a".repeat(64), "values":{"signup_enabled":false}, "command":"arbitrary"}),
             json!({"section":"project_settings", "expected_revision":"a".repeat(64), "values":{"signup_enabled":{"secret":"private"}}}),
+            json!({"section":"project_settings", "expected_revision":"a".repeat(64), "values":{"email_language":{"secret":"private"}}}),
         ] {
             let body =
                 json!({"action":"host_configure_plan", "project":"shop", "configuration":invalid});

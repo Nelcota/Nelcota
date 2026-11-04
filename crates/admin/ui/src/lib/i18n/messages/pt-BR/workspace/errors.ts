@@ -4,6 +4,15 @@
 import common from "./common";
 
 const ptBR = {
+  email_content_invalid:
+    "Confira o idioma, os limites, as variáveis e a presença de exatamente um {{link}} na mensagem. O assunto deve ter uma única linha, sem link ou destinatário.",
+  email_project_mismatch: "Abra o painel do próprio projeto selecionado para usar o SMTP dele.",
+  email_not_configured: "Aplique a configuração SMTP deste projeto antes de enviar um teste.",
+  email_test_failed:
+    "O SMTP não confirmou o teste. Confira o provedor; nenhum link de autenticação foi emitido. Não há confirmação de entrega na caixa de entrada.",
+  mail_busy: "Todos os envios de email estão ocupados. Aguarde e tente novamente.",
+  rate_limited:
+    "Limite de solicitações atingido. Aguarde antes de tentar novamente; testes de email são limitados a um por minuto.",
   network: "Sem resposta do servidor. Confira se ele está rodando e tente de novo.",
   // Set by the panel itself when the response is not a panel error (api.ts).
   server_unreachable:

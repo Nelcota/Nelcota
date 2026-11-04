@@ -69,7 +69,7 @@ pub enum StorageBackend {
 /// rows fits well under it; raise it for larger batches if memory allows.
 pub const DEFAULT_MAX_BODY_BYTES: usize = 2 * 1024 * 1024;
 pub const DEFAULT_MAX_ROWS: i64 = 1000;
-/// Leave room for the other fields in a bounded 16 KiB controller request.
+/// Leave room for the other fields in a bounded 32 KiB controller request.
 pub const MAX_CORS_ORIGIN_LIST_BYTES: usize = 12 * 1024;
 /// Upper bound of `NELCOTA_TRUSTED_PROXY_HOPS`; real chains are 1 or 2 deep.
 pub const MAX_PROXY_HOPS: u8 = 8;
@@ -125,6 +125,19 @@ pub struct Config {
     pub smtp_from: Option<String>,
     /// Additional PEM trust anchor for a private SMTP server. TLS validation stays enabled.
     pub smtp_ca_file: Option<std::path::PathBuf>,
+    /// Default language of auth emails: `en` or `pt-BR`.
+    pub email_language: String,
+    /// Optional RFC 4648 base64 templates. The panel edits decoded plain text;
+    /// private environment files never interpret newlines or shell escapes.
+    pub email_recovery_subject_base64: Option<String>,
+    pub email_recovery_text_base64: Option<String>,
+    pub email_signup_subject_base64: Option<String>,
+    pub email_signup_text_base64: Option<String>,
+    pub email_magiclink_subject_base64: Option<String>,
+    pub email_magiclink_text_base64: Option<String>,
+    pub email_recovery_ttl_minutes: u32,
+    pub email_signup_ttl_minutes: u32,
+    pub email_magiclink_ttl_minutes: u32,
     /// App page that receives the password recovery link. The token goes in the
     /// fragment (`#type=recovery&token=...`), which never reaches a server.
     pub password_recovery_url: Option<String>,
@@ -248,6 +261,16 @@ impl Default for Config {
             smtp_url: None,
             smtp_from: None,
             smtp_ca_file: None,
+            email_language: "en".into(),
+            email_recovery_subject_base64: None,
+            email_recovery_text_base64: None,
+            email_signup_subject_base64: None,
+            email_signup_text_base64: None,
+            email_magiclink_subject_base64: None,
+            email_magiclink_text_base64: None,
+            email_recovery_ttl_minutes: crate::email::Kind::Recovery.default_minutes(),
+            email_signup_ttl_minutes: crate::email::Kind::Signup.default_minutes(),
+            email_magiclink_ttl_minutes: crate::email::Kind::MagicLink.default_minutes(),
             password_recovery_url: None,
             email_confirmation_url: None,
             magic_link_url: None,
@@ -450,6 +473,8 @@ impl Config {
             ));
         }
         self.mail()?;
+        crate::email::Settings::from_config(self)
+            .map_err(|_| ConfigError::Invalid("invalid auth email content or link lifetime"))?;
         self.cors_origins()?;
         self.validate_storage()?;
         self.database_config()?;
@@ -739,10 +764,7 @@ fn client<'a>(
 /// An app page that receives a link: the token is appended as the fragment,
 /// so the page must not carry one.
 fn link_page<'a>(page: &'a str, invalid: &'static str) -> Result<&'a str, ConfigError> {
-    let http = page.starts_with("https://") || page.starts_with("http://");
-    if !http || page.contains('#') {
-        return Err(ConfigError::Invalid(invalid));
-    }
+    crate::email::validate_link_page(page).map_err(|_| ConfigError::Invalid(invalid))?;
     Ok(page)
 }
 

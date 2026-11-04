@@ -129,7 +129,7 @@ pub async fn run(path: PathBuf) -> anyhow::Result<()> {
 }
 async fn serve(mut stream: UnixStream, state: Arc<State>) -> anyhow::Result<()> {
     let length = stream.read_u32().await? as usize;
-    if length == 0 || length > 16384 {
+    if length == 0 || length > nelcota_deployment::protocol::MAX_REQUEST_BYTES {
         bail!("invalid IPC length");
     }
     let mut bytes = vec![0; length];
