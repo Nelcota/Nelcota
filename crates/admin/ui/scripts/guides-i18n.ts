@@ -2,7 +2,12 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 import { proseFragments, validateTranslations } from "../src/lib/features/guides/prose.ts";
-import { stringCatalog, translationText, translationList } from "./catalog-values.ts";
+import {
+  stringCatalog,
+  translationText,
+  translationList,
+  missingTranslations,
+} from "./catalog-values.ts";
 
 const root = new URL("../../../../", import.meta.url);
 const catalogRoot = new URL("docs/i18n/pt-BR/", root);
@@ -77,7 +82,7 @@ async function processGuide(id: string, source: string): Promise<number> {
     return 0;
   }
   if (mode === "--pending") {
-    const pending = fragments.filter((fragment) => catalog[fragment] === "");
+    const pending = missingTranslations(fragments, catalog);
     if (pending.length > 0)
       console.log(JSON.stringify({ id, source, fragments: pending }, null, 2));
     return 0;
