@@ -142,6 +142,9 @@ fn configuration(
         }
         for p in &projects {
             p.wait_healthy(Service::App, crate::lifecycle::HEALTH_TIMEOUT)?;
+            if prepared.section == nelcota_deployment::operations::Section::ProjectSettings {
+                settings::verify_running(p)?;
+            }
         }
         for p in &projects {
             if p.path(crate::maintenance::MARKER).exists() {
@@ -170,6 +173,9 @@ fn configuration(
         journal.advance(task, Stage::Verifying, None)?;
         for p in &projects {
             p.wait_healthy(Service::App, crate::lifecycle::HEALTH_TIMEOUT)?;
+            if prepared.section == nelcota_deployment::operations::Section::ProjectSettings {
+                settings::verify_running(p)?;
+            }
         }
         for p in &projects {
             effects.resume(&host, p)?;
@@ -188,6 +194,9 @@ fn configuration(
         for p in &projects {
             effects.restart(p)?;
             p.wait_healthy(Service::App, crate::lifecycle::HEALTH_TIMEOUT)?;
+            if prepared.section == nelcota_deployment::operations::Section::ProjectSettings {
+                settings::verify_running(p)?;
+            }
         }
         for p in &projects {
             if p.path(crate::maintenance::MARKER).exists() {

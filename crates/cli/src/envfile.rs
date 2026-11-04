@@ -113,6 +113,54 @@ pub fn parse(text: &str) -> Vec<(String, String)> {
         .collect()
 }
 
+/// Literal Compose/systemd values supported by controller-owned patches. Reject
+/// escaping instead of changing the meaning of a credential or adding a line.
+#[cfg(any(target_os = "linux", test))]
+pub(crate) fn validate_literal(value: &str, max: usize) -> anyhow::Result<()> {
+    if value.len() > max || value.chars().any(char::is_control) || value.contains(['\'', '\\']) {
+        anyhow::bail!("invalid_configuration_value");
+    }
+    Ok(())
+}
+
+/// Replace a bounded allowlisted set of environment values, preserving unrelated
+/// lines. Callers own key authorization; values are always single-quoted.
+#[cfg(any(target_os = "linux", test))]
+pub(crate) fn patch_literal(
+    before: &str,
+    values: &std::collections::BTreeMap<String, Option<String>>,
+) -> anyhow::Result<String> {
+    let mut seen = std::collections::HashSet::new();
+    let mut lines = Vec::new();
+    for line in before.lines() {
+        let key = line.split_once('=').map(|(k, _)| k.trim());
+        match key.and_then(|k| values.get_key_value(k)) {
+            Some((key, value)) => {
+                if seen.insert(key)
+                    && let Some(value) = value
+                {
+                    validate_literal(value, 8192)?;
+                    lines.push(format!("{key}='{value}'"));
+                }
+            }
+            None => lines.push(line.to_owned()),
+        }
+    }
+    for (key, value) in values {
+        if !seen.contains(key)
+            && let Some(value) = value
+        {
+            validate_literal(value, 8192)?;
+            lines.push(format!("{key}='{value}'"));
+        }
+    }
+    let result = lines.join("\n") + "\n";
+    if result.len() > 65536 {
+        anyhow::bail!("configuration_too_large");
+    }
+    Ok(result)
+}
+
 /// Writes a file readable only by its owner (0600 on Unix).
 pub fn write_private(path: &Path, content: &str) -> anyhow::Result<()> {
     crate::private_fs::write(path, content)

@@ -73,7 +73,7 @@ pub struct Sql {
     checked_json: bool,
 }
 
-pub const DEFAULT_MAX_ROWS: i64 = 1000;
+pub const DEFAULT_MAX_ROWS: i64 = nelcota_core::config::DEFAULT_MAX_ROWS;
 pub const MAX_JSON_BYTES: i64 = 8 * 1024 * 1024;
 pub const MAX_BATCH_ROWS: usize = 1000;
 const MAX_INSERT_GROUPS: usize = 128;

@@ -74,6 +74,32 @@ Configuration execution persists its effects and recovery decision. Failed start
 
 External backup copies verify encrypted configuration plus dump/files after download, with reserve for three times the estimated database/file bytes plus the existing host buffer. The destination test uses a unique probe object and removes it; it never deletes backup history. Saving a destination does not test it: run **Test backup** after saving. Destination, SMTP and alert tests change no configuration, so a test that fails ends `failed` and never blocks the change that fixes it; only a test interrupted by a worker restart waits for explicit recovery. Daily retention is local and keeps 1–365 copies. Readback evidence is not the off-host restore acceptance required to enable updates. All existing update gates and minimum reserves remain in force.
 
+### Project settings in the current checkout
+
+**Server → Settings → Project settings** adds a catalog-backed batch for routine
+authentication/session, API/performance, CORS and global file limits. It shows
+saved/default values, source and the configuration loaded by the running app.
+Only the independently authenticated host operator can prepare/apply a change;
+the project sign-in page links to the controller without sharing its authority.
+
+Preparation requires an unchanged source revision and a compatible application
+runtime projection. One batch restarts only the selected app once. After
+startup, apply and rollback compare the safe process snapshot with the saved
+candidate instead of treating a healthy service or container environment as
+proof. The fixed internal probe accepts no browser command arguments; its HTTP
+endpoint permits only real socket-loopback peers, never forwarded IP claims.
+Older applications without this protocol remain readable but cannot be edited
+through this new batch workflow. Use matching controller and app builds.
+
+The existing layout, identity, lease, maintenance, service-host and recovery
+checks remain. Root trust, proxy trust, production migration enforcement, signing
+keys and credentials are not generic catalog fields. Ambiguous/interpolated
+environment files and explicit additional TOML files fail closed. See
+[configuration](configuration.md#project-configuration-batches-current-checkout)
+for scope and the [complete ledger](goals/panel-configuration.md) for pending
+S3/PITR/native, security and advanced-administration stages. Source changes do
+not establish production-host acceptance.
+
 ## Operational alerts
 
 **Server → Alerts** adds host-wide application/database/HTTPS health, disk,

@@ -10,6 +10,8 @@
 mod backup;
 mod caddy;
 mod checks;
+#[cfg(any(target_os = "linux", test))]
+mod configuration;
 mod db;
 mod dev;
 pub use dev::{
@@ -74,6 +76,10 @@ pub enum Command {
     Updates(updates::UpdatesArgs),
     /// Starts the HTTP server (the default when no command is given).
     Serve,
+    /// Internal, bounded loopback read of the running process's safe settings.
+    #[cfg(any(target_os = "linux", test))]
+    #[command(hide = true)]
+    ConfigurationState,
     /// Internal container entrypoint: refuses to serve a PITR-fenced project.
     #[command(hide = true)]
     GuardedServe {
@@ -790,6 +796,8 @@ pub fn run(cli: Cli) -> anyhow::Result<Outcome> {
             lifecycle::recreate_apps(&affected)?;
             Ok(Outcome::Done)
         }
+        #[cfg(any(target_os = "linux", test))]
+        Command::ConfigurationState => done(configuration::print_runtime()),
         Command::Healthcheck { addr } => match util::healthcheck(&addr) {
             true => Ok(Outcome::Done),
             false => std::process::exit(1),

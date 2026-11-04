@@ -631,6 +631,7 @@ fn routine_configuration_campaign(
         &other,
         "CREATE TABLE public.routine_probe (value text); INSERT INTO public.routine_probe VALUES ('other')",
     );
+    project_settings_campaign(policy, shop, &p, &other, effects);
     for boundary in 1..=11 {
         let password = nelcota_deployment::token().unwrap();
         let prepared = settings::prepare(
@@ -831,10 +832,98 @@ fn routine_configuration_campaign(
         sql(&other, "SELECT value FROM public.routine_probe"),
         "other"
     );
-    let configured = settings::view(policy, shop).unwrap();
+    let configured = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(settings::view(policy, shop))
+        .unwrap();
     let public = serde_json::to_string(&configured).unwrap();
     assert!(!public.contains("argon2id"));
     assert!(!public.contains("SSO_SECRET"));
+}
+
+/// The batch must reuse the same durable configuration recovery as secret
+/// settings, but affect just one app and never replay a database snapshot.
+fn project_settings_campaign(
+    policy: &Policy,
+    name: &str,
+    project: &Project,
+    other: &Project,
+    effects: &FixtureEffects,
+) {
+    use nelcota_deployment::operations::Configuration;
+    for boundary in 0..=5 {
+        let before =
+            String::from_utf8(read_private(&project.path(".env"), 65536).unwrap()).unwrap();
+        let identity =
+            String::from_utf8(read_private(&project.path(".deployment-project-id"), 64).unwrap())
+                .unwrap();
+        let expected_revision = crate::configuration::revision(&before, &identity);
+        let prepared = settings::prepare(
+            policy,
+            name,
+            Configuration::ProjectSettings {
+                expected_revision,
+                values: serde_json::from_value(serde_json::json!({
+                    "jwt_expiry_secs": 1200 + boundary,
+                    "request_timeout_secs": 20 + boundary,
+                    "storage_uploads_per_caller": 4,
+                }))
+                .unwrap(),
+            },
+        )
+        .unwrap();
+        assert_eq!(prepared.restarts, vec![name.to_owned()]);
+        assert!(
+            !serde_json::to_string(&prepared.changes)
+                .unwrap()
+                .contains("PRIVATE_KEY")
+        );
+        let op = Operation::Configure {
+            project: name.into(),
+            section: prepared.section,
+            revision: prepared.revision.clone(),
+        };
+        let bytes = serde_json::to_vec(&prepared).unwrap();
+        let task = accepted_input(policy, op, Some(&bytes)).unwrap();
+        effects.checkpoints.set(0);
+        effects.fault_after.set((boundary > 0).then_some(boundary));
+        let before_restarts = effects.restarts.get();
+        let _ = execute_with(policy, &task.public.id, false, effects);
+        let journal = HostJournal::open(&policy.root).unwrap();
+        let receipt = || {
+            journal
+                .list()
+                .unwrap()
+                .into_iter()
+                .find(|t| t.public.id == task.public.id)
+                .unwrap()
+        };
+        if receipt().public.stage == Stage::NeedsAttention {
+            execute_with(policy, &task.public.id, true, effects).unwrap();
+        }
+        let done = receipt();
+        assert!(matches!(
+            done.public.stage,
+            Stage::Completed | Stage::RolledBack
+        ));
+        assert_eq!(done.public.affected_projects, vec![name.to_owned()]);
+        if boundary == 0 {
+            assert_eq!(done.public.stage, Stage::Completed);
+            assert_eq!(effects.restarts.get() - before_restarts, 1);
+        }
+        assert!(!project.path(crate::maintenance::MARKER).exists());
+        assert_eq!(
+            sql(project, "SELECT value FROM public.routine_probe"),
+            "acknowledged"
+        );
+        assert_eq!(
+            sql(other, "SELECT value FROM public.routine_probe"),
+            "other"
+        );
+    }
+    effects.fault_after.set(None);
 }
 #[test]
 fn policy_addresses_refuse_reserved_and_ipv4_embedding_forms() {

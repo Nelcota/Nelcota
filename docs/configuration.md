@@ -49,9 +49,12 @@ provider IDs or generated values require your own credentials.
 | `NELCOTA_SIGNUP_ENABLED` | `bool` | `true` | `false` | Allows public signup. Provider sign-in for existing linked accounts has its own documented flow. |
 | `NELCOTA_AUTH_RATE_LIMIT_PER_MINUTE` | `u32` | `30` | `30` | Positive password/signup/email/provider budget per IP (IPv6 per /64); signup also per IPv6 /48. Existing accounts also have a per-account password budget of 10x; over it only networks (IPv4 /24, IPv6 /64) where the account has an open session from the last 30 days get through, after a delay and up to a second 10x budget. Refresh/PKCE use a separate 10x budget. |
 | `NELCOTA_API_RATE_LIMIT_PER_MINUTE` | `u32` | `600` | `600` | REST and storage budget: per account with a user token, per IP (IPv6 per /64) without one. `service_role` tokens and public or signed file downloads are exempt. 0 turns it off. |
+| `NELCOTA_CORS_ALLOW_ORIGINS` | `Option<String>` | `unset (any origin)` | `https://app.example.com,http://localhost:5173` | Current checkout: up to 32 unique exact HTTP(S) origins, comma-separated, at most 2 KiB each / 12 KiB total. An explicit empty string allows no cross-origin browser access. No wildcard, opaque null, path, trailing slash, credentials, query or fragment; use canonical origins. Applies to the public API, never administrator routes. Does not replace JWT/RLS; preflights remain cached for two hours. |
 | `NELCOTA_TRUST_PROXY` | `bool` | `false` | `true` | Reads the caller IP from X-Forwarded-For (see `NELCOTA_TRUSTED_PROXY_HOPS`) and marks panel session cookies `Secure` (an `https://` `NELCOTA_API_URL` also does). Enable only behind a correctly configured trusted HTTPS proxy with direct access restricted. |
 | `NELCOTA_TRUSTED_PROXY_HOPS` | `u8` | `1` | `2` | With `NELCOTA_TRUST_PROXY`, how many trusted proxies append to X-Forwarded-For; the caller is that many entries from the right. 1 for Caddy alone, 2 for a CDN in front of Caddy (Caddy must then list the CDN ranges in `trusted_proxies`). Between 1 and 8 when the proxy is trusted; ignored otherwise. |
 | `NELCOTA_PRODUCTION` | `bool` | `false` | `true` | Block direct panel table/policy schema writes; deploy repository migrations instead. |
+| `NELCOTA_MIGRATION_BACKUP_SOCKET` | `Option<PathBuf>` | `unset` | `controller-managed absolute socket` | Project-scoped pre-migration backup agent. Set with its token through the CLI installation workflow; production migration writes fail closed without a usable agent. |
+| `NELCOTA_MIGRATION_BACKUP_TOKEN` | `Option<Secret>` | `unset` | `controller-managed 64-character hexadecimal token` | Private agent credential. Must be paired with the absolute socket; never expose to clients. |
 | `NELCOTA_SMTP_URL` | `Option<Secret>` | `unset` | `smtps://user:REPLACE@smtp.example.com:465` | Auth email transport: `smtps://` or `smtp://` with one `tls=required`. Other TLS/query options, repeated options and fragments are refused. Set sender and recovery page together. Blank is absent. |
 | `NELCOTA_SMTP_CA_FILE` | `Option<PathBuf>` | `unset` | `/path/to/private-ca.pem` | Additional PEM trust anchor for a private SMTP server. Hostname and certificate verification remain enabled. |
 | `NELCOTA_SMTP_FROM` | `Option<String>` | `unset` | `App <no-reply@example.com>` | Sender mailbox/display name. Quote spaces in the deployment environment-file format. |
@@ -98,9 +101,38 @@ provider IDs or generated values require your own credentials.
 | `NELCOTA_STORAGE_UPLOAD_TIMEOUT_SECS` | `u64` | `3600` | `3600` | Positive admission/policy/byte-reception deadline in seconds when enabled, at most 86400 (one day). Metadata publication and multipart cleanup have separate bounded settlement. |
 | `NELCOTA_STORAGE_UPLOADS_PER_CALLER` | `usize` | `8` | `8` | Concurrent uploads per caller (signed-in user, else client address; IPv6 per /64; `service_role` exempt), at most 32 (the process's upload slots). Extras wait up to 1 s, then get 429 with Retry-After. 0 disables. |
 
-All 53 fields are listed above. `Secret` affects log formatting, not encryption
-of the environment file. API signatures are not a substitute for private key
-storage. Backend and backup S3 credentials/settings are separate.
+The table lists public startup fields. `dev_migrations_dir` is internal and
+cannot be enabled through configuration. `Secret` affects log formatting, not
+encryption of the environment file. API signatures are not a substitute for
+private key storage. Backend and backup S3 credentials/settings are separate.
+
+## Project configuration batches (current checkout)
+
+With a matching server and enrolled controller, **Server → Settings → Project
+settings** edits signup, access/refresh lifetimes, authentication/API budgets,
+CORS, REST row/body/concurrency limits, connection-pool size, request/statement
+timeouts and global file size/quota/free-space/upload limits. The core catalog
+defines tighter bounds for panel operations without narrowing the established
+startup configuration contract. Nullable fields offer a reset to their default.
+
+The operator reviews the exact non-secret before/after values and confirms one
+batch with one app restart. The panel distinguishes saved values, their default
+or environment-file source, and values captured by the actual running process.
+An unavailable or incompatible runtime never counts as verified application.
+Restarting clears project-panel sessions, not existing application JWTs.
+
+Preparation validates the complete private candidate, checks the source revision
+and project identity, and rejects unknown keys, ambiguous environment syntax and
+additional `NELCOTA_CONFIG` files. Apply/recovery checks for foreign edits and
+verifies the active values after startup or configuration rollback. No database
+snapshot is restored. The internal runtime projection is socket-loopback-only;
+proxy/client-IP headers cannot grant access to it. Keep the independent CLI/SSH
+recovery path and use matching controller/application builds.
+
+Docker/disk layout restrictions remain in place. S3 migration, native/systemd,
+PITR, MFA, email customization and other approved stages are tracked separately
+in the [full implementation ledger](goals/panel-configuration.md); they are not
+enabled by these fields or by removing a blocker.
 
 ## CLI and installer variables
 

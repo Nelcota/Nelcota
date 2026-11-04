@@ -2,7 +2,10 @@
 //! It lives in a lib (not only in `main`) so the integration tests use the
 //! same `Router` as production.
 
+mod cors;
 pub mod deployment;
+mod settings;
+pub use cors::ApiCors;
 
 use std::{net::SocketAddr, time::Duration};
 
@@ -22,7 +25,6 @@ use serde_json::json;
 use std::sync::Arc;
 use tower_http::{
     compression::CompressionLayer,
-    cors::{Any, CorsLayer},
     request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer},
     timeout::TimeoutLayer,
     trace::TraceLayer,
@@ -30,6 +32,8 @@ use tower_http::{
 
 #[derive(Clone, FromRef)]
 pub struct AppState {
+    pub settings: Arc<nelcota_core::settings::Snapshot>,
+    pub cors: ApiCors,
     pub pool: Pool,
     pub verifier: SharedVerifier,
     pub catalog: Arc<CatalogHandle>,
@@ -137,42 +141,9 @@ pub fn app(
     storage: Option<nelcota_storage::StorageState>,
     request_timeout: Duration,
 ) -> Router {
-    // The API is called straight from the browser, from any origin; the
-    // protection is JWT + RLS, not CORS. Cookies are not used (no credentials).
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods([
-            Method::GET,
-            Method::HEAD,
-            Method::POST,
-            Method::PUT,
-            Method::PATCH,
-            Method::DELETE,
-            Method::OPTIONS,
-        ])
-        .allow_headers([
-            header::AUTHORIZATION,
-            header::CONTENT_TYPE,
-            header::RANGE,
-            header::IF_NONE_MATCH,
-            header::IF_RANGE,
-            HeaderName::from_static("prefer"),
-            REQUEST_ID,
-        ])
-        // What a browser client needs to read: paging totals, file metadata,
-        // the applied preferences and how long to wait after a 429.
-        .expose_headers([
-            header::CONTENT_RANGE,
-            header::CONTENT_DISPOSITION,
-            header::ETAG,
-            header::LAST_MODIFIED,
-            header::RETRY_AFTER,
-            HeaderName::from_static("preference-applied"),
-            REQUEST_ID,
-        ])
-        // Browsers cache the preflight for 2 hours (Chromium caps it there)
-        // instead of sending an OPTIONS before every non-simple request.
-        .max_age(Duration::from_secs(2 * 60 * 60));
+    // CORS only controls browser access to public API routes. JWT + RLS remain
+    // the authorization boundary. The panel is merged AFTER this layer.
+    let cors = state.cors.layer();
 
     let verifier = state.verifier.clone();
     let api_limit = state
@@ -186,6 +157,7 @@ pub fn app(
     }
     let mut router = Router::new()
         .route("/health", get(health))
+        .route("/health/configuration", get(settings::runtime))
         .merge(rest)
         .with_state(state)
         .merge(nelcota_auth::router(auth))

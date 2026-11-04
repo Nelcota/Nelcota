@@ -1,10 +1,17 @@
+import type { ProjectSettingKey } from "$lib/generated/contracts";
 import * as contracts from "$lib/generated/validators.js";
 
 import { ControllerError } from "../updates/controller";
 import type { AlertSettings } from "./alerts-contracts";
+import {
+  consistentProjectSettings,
+  type ProjectSettingsView,
+  type SettingValue,
+} from "./project-settings";
 const HTTP_BAD_GATEWAY = 502;
 
 const sections = [
+  "project_settings",
   "alerts",
   "smtp",
   "oauth_google",
@@ -15,6 +22,11 @@ const sections = [
 ] as const;
 export type Section = (typeof sections)[number];
 export type Configuration =
+  | {
+      section: "project_settings";
+      expected_revision: string;
+      values: Partial<Record<ProjectSettingKey, SettingValue>>;
+    }
   | {
       section: "alerts";
       settings: AlertSettings;
@@ -56,6 +68,7 @@ export type ConfigurationView = {
   github_configured: boolean;
   backup_configured: boolean;
   shared_login: boolean;
+  project_settings?: ProjectSettingsView | null;
 };
 type CheckStatus = "passed" | "warning" | "failed" | "unavailable";
 export type Diagnostics = {
@@ -75,7 +88,10 @@ function invalid(): never {
 }
 export function parseConfiguration(v: unknown): ConfigurationView {
   if (contracts.HostConfigurationView(v) === false) return invalid();
-  return v as ConfigurationView;
+  const view = v as ConfigurationView;
+  if (view.project_settings != null && consistentProjectSettings(view.project_settings) === false)
+    return invalid();
+  return view;
 }
 // The wire shapes come from the Rust contracts (D83); these rules span several values.
 export function parseDiagnostics(v: unknown): Diagnostics {

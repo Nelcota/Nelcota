@@ -33,6 +33,8 @@ pub(crate) struct Prepared {
     pub section: Section,
     pub(super) edits: Vec<Edit>,
     pub restarts: Vec<String>,
+    #[serde(default)]
+    pub changes: Vec<nelcota_deployment::settings::Change>,
 }
 #[cfg(test)]
 mod tests;
@@ -81,7 +83,30 @@ pub(crate) fn prepare(
     let section = input.section();
     let mut restarts = Vec::new();
     let mut edits = Vec::new();
+    let mut changes = Vec::new();
     match input {
+        Configuration::ProjectSettings {
+            expected_revision,
+            values,
+        } => {
+            let target = project_target(&project)?;
+            let identity = match &target {
+                Target::Project { identity, .. } => identity,
+                _ => bail!("configuration_project_changed"),
+            };
+            let before = String::from_utf8(read_private(&project.path(".env"), 65536)?)?;
+            let batch =
+                crate::configuration::prepare(&before, identity, &expected_revision, values)?;
+            let runtime = super::live::settings_snapshot_sync(&project)?;
+            crate::configuration::verify_runtime(&before, &runtime)?;
+            changes = batch.changes;
+            edits.push(Edit {
+                target,
+                before,
+                after: batch.after,
+            });
+            restarts.push(name.into());
+        }
         Configuration::Alerts {
             settings,
             webhook_url,
@@ -317,11 +342,19 @@ pub(crate) fn prepare(
         section,
         edits,
         restarts,
+        changes,
     };
     if serde_json::to_vec(&prepared)?.len() > 4 * 1024 * 1024 {
         bail!("configuration_too_large");
     }
     Ok(prepared)
+}
+
+/// Check what the running application actually loaded, including after rollback.
+pub(crate) fn verify_running(project: &Project) -> anyhow::Result<()> {
+    let before = String::from_utf8(read_private(&project.path(".env"), 65536)?)?;
+    let runtime = super::live::settings_snapshot_sync(project)?;
+    crate::configuration::verify_runtime(&before, &runtime)
 }
 
 /// Service grants are rechecked by the executing worker, not only by the browser plan.

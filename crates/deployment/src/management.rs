@@ -212,6 +212,13 @@ impl Stage {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Plan {
+    /// Only allowlisted non-secret routine values, never SMTP/OAuth credentials.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[cfg_attr(
+        feature = "schema",
+        schemars(skip_serializing_if = "Vec::is_empty", length(max = 32))
+    )]
+    pub configuration_changes: Vec<crate::settings::Change>,
     #[serde(default)]
     #[cfg_attr(feature = "schema", schemars(skip_serializing_if = "Vec::is_empty"))]
     #[cfg_attr(feature = "schema", schemars(length(max = crate::schema::MAX_PROJECTS), inner(pattern(crate::schema::PROJECT)), extend("uniqueItems" = true)))]

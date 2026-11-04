@@ -13,6 +13,7 @@
     type Section,
   } from "./contracts";
   import type { Operation } from "../host/controller";
+  import ProjectSettings from "./project-settings.svelte";
   const MIN_ADMIN_PASSWORD_LENGTH = 16;
   const MAX_HOUR = 23;
   const MAX_MINUTE = 59;
@@ -47,7 +48,7 @@
     loading = $derived(configurationView.loading);
   let failure = $state(""),
     dirty = $state(false);
-  let section = $state<SettingsSection>("smtp"),
+  let section = $state<SettingsSection>("project_settings"),
     enabled = $state(false);
   let smtpUrl = $state(""),
     from = $state(""),
@@ -69,7 +70,9 @@
     repeat = $state("");
   const s = (key: string) => translate(i18n.locale, `server.${key}`);
   const choices = $derived<SettingsSection[]>(
-    backups ? ["backup", "schedule"] : ["smtp", "oauth_google", "oauth_github", "admin_password"],
+    backups
+      ? ["backup", "schedule"]
+      : ["project_settings", "smtp", "oauth_google", "oauth_github", "admin_password"],
   );
   const blocked = $derived(disabled || loading || Boolean(view) === false);
   const valid = $derived(
@@ -154,7 +157,7 @@
       changed = revision;
     untrack(() => {
       if (dirty === false && selected !== "") {
-        if (choices.includes(section) === false) section = mode ? "backup" : "smtp";
+        if (choices.includes(section) === false) section = mode ? "backup" : "project_settings";
         void load();
       }
     });
@@ -210,6 +213,8 @@
   }
   function selectedConfiguration(): Configuration | null {
     switch (section) {
+      case "project_settings":
+        return null;
       case "smtp":
         return mailConfiguration();
       case "oauth_google":
@@ -276,222 +281,232 @@
       >{#each choices as choice}<option value={choice}>{s(choice)}</option>{/each}</select
     ></label
   >
-  <form class="grid gap-4" onsubmit={submit} oninput={() => mark(true)}>
-    <p class="text-sm text-muted-foreground">{s("credentials")}</p>
-    {#if ["smtp", "oauth_google", "oauth_github", "backup"].includes(section)}<label
-        class="flex items-center gap-3"
-        ><input type="checkbox" bind:checked={enabled} disabled={blocked} />{s("enabled")}</label
-      >{/if}
-    {#if section === "smtp"}
-      <label class="grid gap-2"
-        ><span>{s("smtpUrl")}</span><Input
-          type="password"
-          autocomplete="new-password"
-          maxlength={4096}
-          bind:value={smtpUrl}
-          disabled={blocked || !enabled}
-          placeholder="smtps://user:password@smtp.example.com:465"
-        /></label
-      >
-      <label class="grid gap-2"
-        ><span>{s("from")}</span><Input
-          bind:value={from}
-          maxlength={1024}
-          disabled={blocked || !enabled}
-          required={enabled}
-        /></label
-      >
-      <label class="grid gap-2"
-        ><span>{s("recovery")}</span><Input
-          type="url"
-          bind:value={recovery}
-          maxlength={2048}
-          disabled={blocked || !enabled}
-          required={enabled}
-        /></label
-      >
-      <label class="grid gap-2"
-        ><span>{s("confirmation")}</span><Input
-          type="url"
-          bind:value={confirmation}
-          maxlength={2048}
-          disabled={blocked || !enabled}
-        /></label
-      >
-      <label class="grid gap-2"
-        ><span>{s("magic")}</span><Input
-          type="url"
-          bind:value={magic}
-          maxlength={2048}
-          disabled={blocked || !enabled}
-        /></label
-      >
-      <p class="text-sm text-muted-foreground">{s("testImpact")}</p>
-      <Button
-        type="button"
-        variant="outline"
-        disabled={blocked || dirty || !view?.smtp_configured}
-        onclick={() => void action({ kind: "test_smtp", project })}>{s("testSmtp")}</Button
-      >
-    {/if}
-    {#if section === "oauth_google" || section === "oauth_github"}
-      <p class="text-sm text-muted-foreground">{s("redirectShared")}</p>
-      <p class="break-all text-sm">
-        {s("callback")}: <span translate="no">https://{domain}/auth/v1/callback</span>
-      </p>
-      <label class="grid gap-2"
-        ><span>{s("clientId")}</span><Input
-          bind:value={clientId}
-          maxlength={1024}
-          disabled={blocked || !enabled}
-          required={enabled}
-        /></label
-      >
-      <label class="grid gap-2"
-        ><span>{s("clientSecret")}</span><Input
-          type="password"
-          autocomplete="new-password"
-          bind:value={clientSecret}
-          maxlength={4096}
-          disabled={blocked || !enabled}
-        /></label
-      >
-      <label class="grid gap-2"
-        ><span>{s("redirects")}</span><textarea
-          class="min-h-24 rounded-xl border border-border bg-background p-3"
-          bind:value={redirects}
-          maxlength={8192}
-          disabled={blocked || !enabled}
-          required={enabled}></textarea></label
-      >
-    {/if}
-    {#if section === "backup"}
-      <p class="text-sm text-muted-foreground">{s("backupImpact")}</p>
-      <label class="grid gap-2"
-        ><span>{s("endpoint")}</span><Input
-          type="url"
-          bind:value={endpoint}
-          maxlength={2048}
-          disabled={blocked || !enabled}
-          required={enabled}
-        /></label
-      >
-      <label class="grid gap-2"
-        ><span>{s("bucket")}</span><Input
-          bind:value={bucket}
-          maxlength={63}
-          disabled={blocked || !enabled}
-          required={enabled}
-        /></label
-      >
-      <label class="grid gap-2"
-        ><span>{s("region")}</span><Input
-          bind:value={region}
-          maxlength={64}
-          disabled={blocked || !enabled}
-          required={enabled}
-        /></label
-      >
-      <label class="grid gap-2"
-        ><span>{s("accessKey")}</span><Input
-          type="password"
-          autocomplete="new-password"
-          bind:value={accessKey}
-          maxlength={4096}
-          disabled={blocked || !enabled}
-        /></label
-      >
-      <label class="grid gap-2"
-        ><span>{s("secretKey")}</span><Input
-          type="password"
-          autocomplete="new-password"
-          bind:value={secretKey}
-          maxlength={4096}
-          disabled={blocked || !enabled}
-        /></label
-      >
-    {/if}
-    {#if section === "schedule"}
-      <label class="grid gap-2"
-        ><span>{s("hour")}</span><Input
-          type="number"
-          min={0}
-          max={23}
-          step={1}
-          value={hour}
-          oninput={(e) => (hour = e.currentTarget.value)}
-          disabled={blocked}
-          required
-        /></label
-      >
-      <label class="grid gap-2"
-        ><span>{s("minute")}</span><Input
-          type="number"
-          min={0}
-          max={59}
-          step={1}
-          value={minute}
-          oninput={(e) => (minute = e.currentTarget.value)}
-          disabled={blocked}
-          required
-        /></label
-      >
-      <label class="grid gap-2"
-        ><span>{s("keep")}</span><Input
-          type="number"
-          min={1}
-          max={365}
-          step={1}
-          value={keep}
-          oninput={(e) => (keep = e.currentTarget.value)}
-          disabled={blocked}
-          required
-        /></label
-      >
-    {/if}
-    {#if section === "admin_password"}
-      <p class="text-sm text-muted-foreground">{s("passwordImpact")}</p>
-      {#if view?.shared_login}<p
-          role="status"
-          class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm"
+  {#if section === "project_settings"}<ProjectSettings
+      view={view?.project_settings ?? null}
+      disabled={blocked}
+      {prepare}
+      ondirty={mark}
+    />{/if}
+  {#if section !== "project_settings"}<form
+      class="grid gap-4"
+      onsubmit={submit}
+      oninput={() => mark(true)}
+    >
+      <p class="text-sm text-muted-foreground">{s("credentials")}</p>
+      {#if ["smtp", "oauth_google", "oauth_github", "backup"].includes(section)}<label
+          class="flex items-center gap-3"
+          ><input type="checkbox" bind:checked={enabled} disabled={blocked} />{s("enabled")}</label
+        >{/if}
+      {#if section === "smtp"}
+        <label class="grid gap-2"
+          ><span>{s("smtpUrl")}</span><Input
+            type="password"
+            autocomplete="new-password"
+            maxlength={4096}
+            bind:value={smtpUrl}
+            disabled={blocked || !enabled}
+            placeholder="smtps://user:password@smtp.example.com:465"
+          /></label
         >
-          {s("sharedPassword")}
-        </p>{/if}
-      <label class="grid gap-2"
-        ><span>{s("newPassword")}</span><Input
-          type="password"
-          autocomplete="new-password"
-          bind:value={password}
-          minlength={16}
-          maxlength={1024}
-          disabled={blocked}
-          required
-        /></label
-      >
-      <label class="grid gap-2"
-        ><span>{s("confirmPassword")}</span><Input
-          type="password"
-          autocomplete="new-password"
-          bind:value={repeat}
-          minlength={16}
-          maxlength={1024}
-          disabled={blocked}
-          required
-        /></label
-      >
-    {/if}
-    <p class="text-sm text-muted-foreground">
-      {s(
-        section === "backup"
-          ? "backupImpact"
-          : section === "schedule"
-            ? "scheduleImpact"
-            : "impact",
-      )}
-    </p>
-    {#if dirty}<p role="status" class="text-sm text-warning">{s("dirty")}</p>{/if}
-    <Button class="w-fit" type="submit" disabled={blocked || !valid}>{s("preview")}</Button>
-  </form>
+        <label class="grid gap-2"
+          ><span>{s("from")}</span><Input
+            bind:value={from}
+            maxlength={1024}
+            disabled={blocked || !enabled}
+            required={enabled}
+          /></label
+        >
+        <label class="grid gap-2"
+          ><span>{s("recovery")}</span><Input
+            type="url"
+            bind:value={recovery}
+            maxlength={2048}
+            disabled={blocked || !enabled}
+            required={enabled}
+          /></label
+        >
+        <label class="grid gap-2"
+          ><span>{s("confirmation")}</span><Input
+            type="url"
+            bind:value={confirmation}
+            maxlength={2048}
+            disabled={blocked || !enabled}
+          /></label
+        >
+        <label class="grid gap-2"
+          ><span>{s("magic")}</span><Input
+            type="url"
+            bind:value={magic}
+            maxlength={2048}
+            disabled={blocked || !enabled}
+          /></label
+        >
+        <p class="text-sm text-muted-foreground">{s("testImpact")}</p>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={blocked || dirty || !view?.smtp_configured}
+          onclick={() => void action({ kind: "test_smtp", project })}>{s("testSmtp")}</Button
+        >
+      {/if}
+      {#if section === "oauth_google" || section === "oauth_github"}
+        <p class="text-sm text-muted-foreground">{s("redirectShared")}</p>
+        <p class="break-all text-sm">
+          {s("callback")}: <span translate="no">https://{domain}/auth/v1/callback</span>
+        </p>
+        <label class="grid gap-2"
+          ><span>{s("clientId")}</span><Input
+            bind:value={clientId}
+            maxlength={1024}
+            disabled={blocked || !enabled}
+            required={enabled}
+          /></label
+        >
+        <label class="grid gap-2"
+          ><span>{s("clientSecret")}</span><Input
+            type="password"
+            autocomplete="new-password"
+            bind:value={clientSecret}
+            maxlength={4096}
+            disabled={blocked || !enabled}
+          /></label
+        >
+        <label class="grid gap-2"
+          ><span>{s("redirects")}</span><textarea
+            class="min-h-24 rounded-xl border border-border bg-background p-3"
+            bind:value={redirects}
+            maxlength={8192}
+            disabled={blocked || !enabled}
+            required={enabled}></textarea></label
+        >
+      {/if}
+      {#if section === "backup"}
+        <p class="text-sm text-muted-foreground">{s("backupImpact")}</p>
+        <label class="grid gap-2"
+          ><span>{s("endpoint")}</span><Input
+            type="url"
+            bind:value={endpoint}
+            maxlength={2048}
+            disabled={blocked || !enabled}
+            required={enabled}
+          /></label
+        >
+        <label class="grid gap-2"
+          ><span>{s("bucket")}</span><Input
+            bind:value={bucket}
+            maxlength={63}
+            disabled={blocked || !enabled}
+            required={enabled}
+          /></label
+        >
+        <label class="grid gap-2"
+          ><span>{s("region")}</span><Input
+            bind:value={region}
+            maxlength={64}
+            disabled={blocked || !enabled}
+            required={enabled}
+          /></label
+        >
+        <label class="grid gap-2"
+          ><span>{s("accessKey")}</span><Input
+            type="password"
+            autocomplete="new-password"
+            bind:value={accessKey}
+            maxlength={4096}
+            disabled={blocked || !enabled}
+          /></label
+        >
+        <label class="grid gap-2"
+          ><span>{s("secretKey")}</span><Input
+            type="password"
+            autocomplete="new-password"
+            bind:value={secretKey}
+            maxlength={4096}
+            disabled={blocked || !enabled}
+          /></label
+        >
+      {/if}
+      {#if section === "schedule"}
+        <label class="grid gap-2"
+          ><span>{s("hour")}</span><Input
+            type="number"
+            min={0}
+            max={23}
+            step={1}
+            value={hour}
+            oninput={(e) => (hour = e.currentTarget.value)}
+            disabled={blocked}
+            required
+          /></label
+        >
+        <label class="grid gap-2"
+          ><span>{s("minute")}</span><Input
+            type="number"
+            min={0}
+            max={59}
+            step={1}
+            value={minute}
+            oninput={(e) => (minute = e.currentTarget.value)}
+            disabled={blocked}
+            required
+          /></label
+        >
+        <label class="grid gap-2"
+          ><span>{s("keep")}</span><Input
+            type="number"
+            min={1}
+            max={365}
+            step={1}
+            value={keep}
+            oninput={(e) => (keep = e.currentTarget.value)}
+            disabled={blocked}
+            required
+          /></label
+        >
+      {/if}
+      {#if section === "admin_password"}
+        <p class="text-sm text-muted-foreground">{s("passwordImpact")}</p>
+        {#if view?.shared_login}<p
+            role="status"
+            class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm"
+          >
+            {s("sharedPassword")}
+          </p>{/if}
+        <label class="grid gap-2"
+          ><span>{s("newPassword")}</span><Input
+            type="password"
+            autocomplete="new-password"
+            bind:value={password}
+            minlength={16}
+            maxlength={1024}
+            disabled={blocked}
+            required
+          /></label
+        >
+        <label class="grid gap-2"
+          ><span>{s("confirmPassword")}</span><Input
+            type="password"
+            autocomplete="new-password"
+            bind:value={repeat}
+            minlength={16}
+            maxlength={1024}
+            disabled={blocked}
+            required
+          /></label
+        >
+      {/if}
+      <p class="text-sm text-muted-foreground">
+        {s(
+          section === "backup"
+            ? "backupImpact"
+            : section === "schedule"
+              ? "scheduleImpact"
+              : "impact",
+        )}
+      </p>
+      {#if dirty}<p role="status" class="text-sm text-warning">{s("dirty")}</p>{/if}
+      <Button class="w-fit" type="submit" disabled={blocked || !valid}>{s("preview")}</Button>
+    </form>{/if}
   {#if backups}<div class="grid gap-3 border-t border-border pt-4">
       <p class="text-sm text-muted-foreground">{s("offsiteImpact")}</p>
       <div class="flex flex-wrap gap-3">

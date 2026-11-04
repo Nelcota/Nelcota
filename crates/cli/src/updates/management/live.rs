@@ -58,6 +58,38 @@ pub(super) async fn check(project: &Project) -> anyhow::Result<bool> {
     let id = output(command).await?;
     matches(project, &output(inspect(&id)?).await?)
 }
+/// A fixed, read-only loopback probe in the app container. Never loads Config
+/// again, invokes a shell or accepts browser-supplied command arguments.
+fn snapshot_command(project: &Project) -> Command {
+    let mut command = project.compose_command();
+    command.args([
+        "exec",
+        "-T",
+        "app",
+        "/usr/local/bin/nelcota",
+        "configuration-state",
+    ]);
+    command
+}
+pub(super) async fn settings_snapshot(
+    project: &Project,
+) -> anyhow::Result<nelcota_deployment::settings::Runtime> {
+    let body = output(snapshot_command(project))
+        .await
+        .context("project_settings_not_supported")?;
+    let snapshot = serde_json::from_str(&body).context("invalid_runtime_configuration")?;
+    crate::configuration::checked_runtime(&snapshot)?;
+    Ok(snapshot)
+}
+pub(super) fn settings_snapshot_sync(
+    project: &Project,
+) -> anyhow::Result<nelcota_deployment::settings::Runtime> {
+    let body = super::super::probes::output(&snapshot_command(project))
+        .context("project_settings_not_supported")?;
+    let snapshot = serde_json::from_str(&body).context("invalid_runtime_configuration")?;
+    crate::configuration::checked_runtime(&snapshot)?;
+    Ok(snapshot)
+}
 pub(super) fn check_sync(project: &Project) -> anyhow::Result<()> {
     let mut command = project.compose_command();
     command.args(["ps", "-a", "-q", "app"]);

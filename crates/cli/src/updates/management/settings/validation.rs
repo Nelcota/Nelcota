@@ -3,10 +3,7 @@ use super::*;
 pub(super) fn text(value: &str, max: usize) -> anyhow::Result<()> {
     // Single-quoted Compose/systemd env values are literal. Reject unsupported
     // escapes rather than silently changing provider credentials or lines.
-    if value.len() > max || value.chars().any(char::is_control) || value.contains(['\'', '\\']) {
-        bail!("invalid_configuration_value");
-    }
-    Ok(())
+    crate::envfile::validate_literal(value, max)
 }
 pub(super) fn page(value: &str, optional: bool) -> anyhow::Result<()> {
     if optional && value.is_empty() {
@@ -45,35 +42,7 @@ pub(super) fn patch(
     before: &str,
     values: &BTreeMap<String, Option<String>>,
 ) -> anyhow::Result<String> {
-    let mut seen = std::collections::HashSet::new();
-    let mut lines = Vec::new();
-    for line in before.lines() {
-        let key = line.split_once('=').map(|(k, _)| k.trim());
-        match key.and_then(|k| values.get_key_value(k)) {
-            Some((key, value)) => {
-                if seen.insert(key)
-                    && let Some(value) = value
-                {
-                    text(value, 8192)?;
-                    lines.push(format!("{key}='{value}'"));
-                }
-            }
-            None => lines.push(line.to_owned()),
-        }
-    }
-    for (key, value) in values {
-        if !seen.contains(key)
-            && let Some(value) = value
-        {
-            text(value, 8192)?;
-            lines.push(format!("{key}='{value}'"));
-        }
-    }
-    let result = lines.join("\n") + "\n";
-    if result.len() > 65536 {
-        bail!("configuration_too_large");
-    }
-    Ok(result)
+    crate::envfile::patch_literal(before, values)
 }
 pub(crate) fn bytes_digest(bytes: &[u8]) -> String {
     use sha2::{Digest, Sha256};
@@ -100,6 +69,17 @@ pub(crate) fn error_code(error: &anyhow::Error) -> &'static str {
         "invalid_oauth_configuration" => "invalid_oauth_configuration",
         "credential_required" => "credential_required",
         "configuration_too_large" => "configuration_too_large",
+        "unknown_project_setting" => "unknown_project_setting",
+        "invalid_project_setting" => "invalid_project_setting",
+        "invalid_project_settings_combination" => "invalid_project_settings_combination",
+        "invalid_project_configuration" => "invalid_project_configuration",
+        "ambiguous_project_environment" => "ambiguous_project_environment",
+        "project_configuration_file_override" => "project_configuration_file_override",
+        "project_configuration_changed" => "project_configuration_changed",
+        "project_configuration_unchanged" => "project_configuration_unchanged",
+        "project_configuration_not_effective" => "project_configuration_not_effective",
+        "project_settings_not_supported" => "project_settings_not_supported",
+        "invalid_runtime_configuration" => "invalid_runtime_configuration",
         "running_configuration_changed" | "running_configuration_unavailable" => {
             "running_configuration_changed"
         }

@@ -166,6 +166,56 @@ async fn panel_rejections_are_json_and_public_cors_does_not_cover_the_panel() {
 }
 
 #[tokio::test]
+async fn configured_api_cors_does_not_grant_project_panel_authority() {
+    let app = TestApp::spawn_with(common::Options {
+        cors_allow_origins: Some("https://app.example.test".into()),
+        ..common::Options::default()
+    })
+    .await;
+    let cookie = panel::login(&app).await;
+    let api = app
+        .raw(
+            Method::GET,
+            "/rest/v1/products",
+            &[("origin", "https://app.example.test")],
+            String::new(),
+        )
+        .await;
+    assert_eq!(
+        api.headers[header::ACCESS_CONTROL_ALLOW_ORIGIN],
+        "https://app.example.test"
+    );
+    let refused = app
+        .raw(
+            Method::POST,
+            "/admin/api/sql",
+            &[
+                ("origin", "https://app.example.test"),
+                ("cookie", cookie.as_str()),
+                panel::JSON,
+            ],
+            r#"{"sql":"SELECT 1"}"#.into(),
+        )
+        .await;
+    assert_eq!(refused.status, StatusCode::FORBIDDEN);
+    assert!(
+        !refused
+            .headers
+            .contains_key(header::ACCESS_CONTROL_ALLOW_ORIGIN)
+    );
+    let remote_snapshot = app
+        .raw(
+            Method::GET,
+            "/health/configuration",
+            &[("x-forwarded-for", "127.0.0.1")],
+            String::new(),
+        )
+        .await;
+    assert_eq!(remote_snapshot.status, StatusCode::FORBIDDEN);
+    assert!(remote_snapshot.body.get("values").is_none());
+}
+
+#[tokio::test]
 async fn pooled_connections_rollback_unowned_transactions_before_reuse() {
     let app = TestApp::spawn().await;
     let pool = nelcota_core::db::api_pool(&app.admin, common::authenticator_password(), 1);

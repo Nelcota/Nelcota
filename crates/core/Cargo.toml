@@ -23,6 +23,7 @@ tokio-postgres.workspace = true
 tracing.workspace = true
 tokio = { workspace = true, features = ["rt", "net", "time", "io-util", "macros"] }
 uuid.workspace = true
+url.workspace = true
 
 [dev-dependencies]
 tower.workspace = true

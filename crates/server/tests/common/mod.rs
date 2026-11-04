@@ -122,6 +122,7 @@ impl Mailer for Outbox {
 }
 
 pub struct Options {
+    pub cors_allow_origins: Option<String>,
     pub production: bool,
     pub migration_backup: Option<nelcota_core::migration_backup::BackupAgent>,
     pub pool_size: usize,
@@ -158,6 +159,7 @@ pub struct Options {
 impl Default for Options {
     fn default() -> Self {
         Options {
+            cors_allow_origins: None,
             production: false,
             migration_backup: None,
             pool_size: 4,
@@ -298,6 +300,24 @@ impl TestApp {
             db::authenticator_config(&admin, authenticator_password()),
         );
         let state = AppState {
+            settings: Arc::new(nelcota_core::settings::Snapshot::new(
+                &nelcota_core::Config {
+                    signup_enabled: options.signup_enabled,
+                    jwt_expiry_secs: options.access_ttl_secs,
+                    cors_allow_origins: options.cors_allow_origins.clone(),
+                    db_pool_size: options.pool_size,
+                    max_rows: options.max_rows,
+                    max_body_bytes: options.max_body_bytes,
+                    api_rate_limit_per_minute: options.api_rate_limit_per_minute,
+                    api_concurrency_per_caller: Some(options.api_concurrency_per_caller),
+                    ..nelcota_core::Config::default()
+                },
+            )),
+            cors: nelcota_server::ApiCors::from_config(&nelcota_core::Config {
+                cors_allow_origins: options.cors_allow_origins.clone(),
+                ..nelcota_core::Config::default()
+            })
+            .unwrap(),
             pool: pool.clone(),
             verifier: keys.clone(),
             catalog: catalog.clone(),
