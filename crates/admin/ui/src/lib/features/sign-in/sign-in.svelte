@@ -8,6 +8,7 @@
   import { PageHeader, CodeBlock, LoadError } from "$lib/components/shared";
 
   import OptionCard from "$lib/features/sign-in/components/option-card.svelte";
+  import HostLink from "$lib/features/host/host-link.svelte";
   import { SignInSettings } from "./settings-resource.svelte";
   import { minutes, signInOptions } from "$lib/features/sign-in/sign-in-options";
   import { errorMessage, intlLocale, t } from "$lib/i18n/index.svelte";
@@ -47,6 +48,7 @@
         ><BookOpen data-icon="inline-start" aria-hidden="true" />{t("signIn.examples")}</Button
       >{/snippet}
   </PageHeader>
+  <HostLink />
 
   {#if resource.error}
     <LoadError message={errorMessage(resource.error)} onretry={load} busy={resource.loading} />

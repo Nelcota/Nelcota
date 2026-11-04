@@ -1,11 +1,15 @@
 //! Explicit non-secret projection of current configuration and installed cron.
 use super::*;
 use crate::backup;
-pub(crate) fn view(policy: &Policy, name: &str) -> anyhow::Result<ConfigurationView> {
+pub(crate) async fn view(policy: &Policy, name: &str) -> anyhow::Result<ConfigurationView> {
     let p = control_project(policy, name)?;
     let host = Host::new(&policy.root);
     let env = p.env();
     let mut fields = BTreeMap::new();
+    let before = String::from_utf8(read_private(&p.path(".env"), 65536)?)?;
+    let identity = String::from_utf8(read_private(&p.path(".deployment-project-id"), 64)?)?;
+    let runtime = super::super::live::settings_snapshot(&p).await.ok();
+    let project_settings = crate::configuration::view(&before, &identity, runtime.as_ref())?;
     for key in [
         "NELCOTA_SMTP_FROM",
         "NELCOTA_PASSWORD_RECOVERY_URL",
@@ -59,6 +63,7 @@ pub(crate) fn view(policy: &Policy, name: &str) -> anyhow::Result<ConfigurationV
         github_configured: env.get("NELCOTA_OAUTH_GITHUB_CLIENT_SECRET")?.is_some(),
         backup_configured: backup::valid_destination(&host),
         shared_login: host.require()?.panel_login == crate::host::PanelLogin::Shared,
+        project_settings: Some(project_settings),
     })
 }
 

@@ -1,11 +1,11 @@
 import { spawnSync } from "node:child_process";
 // Shared setup for the real-Next smoke scripts.
-import { lstat, mkdir, readlink, symlink } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { fixtureObject, fixtureString } from "./fixture-values.mjs";
+import { linkSelf } from "./self-link.mjs";
 
 const WEBPACK_FLAG_MAJOR = 16;
 const MAX_BUILD_OUTPUT_BYTES = 4_194_304;
@@ -29,18 +29,7 @@ export const nextBin = dependencies.resolve("next/dist/bin/next");
  * next/react; a second installed copy would split Next's request storage. */
 export async function linkPackage() {
   if (registryExample != null && registryExample !== "") return; // External consumers must keep their registry dependencies.
-  const scope = new URL("../node_modules/@nelcota/", import.meta.url),
-    link = new URL("nextjs", scope);
-  await mkdir(scope, { recursive: true });
-  try {
-    const stat = await lstat(link);
-    if (stat.isSymbolicLink() === false || (await readlink(link)) !== "../..")
-      throw new Error(`Refusing to replace ${fileURLToPath(link)}`);
-  } catch (error) {
-    if (error instanceof Error === false || ("code" in error && error.code === "ENOENT") === false)
-      throw error;
-    await symlink("../..", link, "dir");
-  }
+  await linkSelf(new URL("../", import.meta.url));
 }
 
 /** Real production webpack build of the example; returns the spawn result. */

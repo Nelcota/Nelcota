@@ -8,6 +8,7 @@ pub mod error;
 pub mod extract;
 pub mod migration_backup;
 pub mod net;
+pub mod settings;
 pub mod user_migrations;
 
 pub use claims::{Claims, InvalidClaims, Role};

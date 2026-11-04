@@ -13,6 +13,7 @@ mod tests;
 pub mod management;
 pub mod operations;
 pub mod protocol;
+pub mod settings;
 
 pub mod alerts;
 mod schema;

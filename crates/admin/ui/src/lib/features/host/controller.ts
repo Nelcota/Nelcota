@@ -1,6 +1,7 @@
 import * as contracts from "$lib/generated/validators.js";
 
 import type { Section } from "../server/contracts";
+import type { SettingChange } from "../server/project-settings";
 import { ControllerError, hash } from "../updates/controller";
 const MAX_STATUS_TEXT_CHARS = 1024;
 const HTTP_BAD_GATEWAY = 502;
@@ -66,6 +67,7 @@ export type Status = {
   free_bytes: number;
 };
 export type Plan = {
+  configuration_changes?: SettingChange[];
   affected_projects?: string[];
   id: string;
   operation: Operation;
@@ -134,6 +136,13 @@ export function parsePlan(v: unknown): Plan {
   if (
     confirms(plan.confirmation, plan.operation) === false ||
     plan.destructive !== ["remove", "restore"].includes(plan.operation.kind)
+  )
+    return invalid();
+  const changes = plan.configuration_changes ?? [];
+  if (new Set(changes.map((change) => change.key)).size !== changes.length) return invalid();
+  if (
+    changes.length > 0 &&
+    (plan.operation.kind !== "configure" || plan.operation.section !== "project_settings")
   )
     return invalid();
   return plan;

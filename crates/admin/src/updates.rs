@@ -426,6 +426,48 @@ mod tests {
             "__Host-nelcota_updates=; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=0",
         );
     }
+    #[tokio::test]
+    async fn routine_batches_require_a_controller_session_and_reject_untyped_payloads() {
+        let app = controller_router(config());
+        let payload = json!({"action":"host_configure_plan", "project":"shop", "configuration":{
+            "section":"project_settings", "expected_revision":"a".repeat(64), "values":{"signup_enabled":false}
+        }});
+        let mut request = post(
+            Some("https://updates.example.test"),
+            "updates.example.test",
+            &payload.to_string(),
+        );
+        request.headers_mut().insert(
+            header::COOKIE,
+            HeaderValue::from_static("nelcota_session=project-session"),
+        );
+        request.headers_mut().insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_static("Bearer service-role-token"),
+        );
+        assert_eq!(
+            app.clone().oneshot(request).await.unwrap().status(),
+            StatusCode::UNAUTHORIZED
+        );
+        for invalid in [
+            json!({"section":"project_settings", "expected_revision":"a".repeat(64), "values":{"signup_enabled":"false"}}),
+            json!({"section":"project_settings", "expected_revision":"a".repeat(64), "values":{"signup_enabled":false}, "command":"arbitrary"}),
+            json!({"section":"project_settings", "expected_revision":"a".repeat(64), "values":{"signup_enabled":{"secret":"private"}}}),
+        ] {
+            let body =
+                json!({"action":"host_configure_plan", "project":"shop", "configuration":invalid});
+            let reply = app
+                .clone()
+                .oneshot(post(
+                    Some("https://updates.example.test"),
+                    "updates.example.test",
+                    &body.to_string(),
+                ))
+                .await
+                .unwrap();
+            assert_eq!(reply.status(), StatusCode::UNPROCESSABLE_ENTITY);
+        }
+    }
     #[test]
     fn session_reads_one_valid_cookie_across_headers() {
         let token = "a".repeat(64);

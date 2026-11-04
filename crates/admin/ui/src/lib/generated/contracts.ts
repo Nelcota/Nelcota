@@ -126,4 +126,5 @@ using: string | null,
  * Which new/changed rows are accepted.
  */
 check: string | null, };
+export type ProjectSettingKey = "signup_enabled" | "jwt_expiry_secs" | "refresh_token_ttl_days" | "auth_rate_limit_per_minute" | "api_rate_limit_per_minute" | "cors_allow_origins" | "max_rows" | "max_body_bytes" | "api_concurrency_per_caller" | "db_pool_size" | "request_timeout_secs" | "statement_timeout_secs" | "storage_max_file_size" | "storage_max_total_size" | "storage_min_free_bytes" | "storage_upload_timeout_secs" | "storage_uploads_per_caller";
 export type RowData = Record<string, string | null>;

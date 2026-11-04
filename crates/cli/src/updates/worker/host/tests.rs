@@ -40,6 +40,15 @@ async fn scoped_operators_cannot_create_or_inspect_host_projects() {
         Request::HostConfigurePlan {
             token: token.clone(),
             project: "shop".into(),
+            configuration: nelcota_deployment::operations::Configuration::ProjectSettings {
+                expected_revision: "a".repeat(64),
+                values: serde_json::from_value(serde_json::json!({"signup_enabled":false}))
+                    .unwrap(),
+            },
+        },
+        Request::HostConfigurePlan {
+            token: token.clone(),
+            project: "shop".into(),
             configuration: nelcota_deployment::operations::Configuration::AdminPassword {
                 new_password: "never-processed-without-authority".into(),
             },

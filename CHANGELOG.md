@@ -12,6 +12,15 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Added
 
+- Catalog-backed project settings in the enrolled host panel: batch edits for
+  auth/session, API/performance and global file limits with source revisions,
+  non-secret impact review, one app restart and configuration-only recovery.
+  Compare saved values with a socket-loopback-only startup projection before
+  editing and after apply/rollback; incompatible applications fail closed.
+- Optional exact-origin CORS allowlists for the public API, configurable in the
+  same batch. The default remains any origin; an explicit empty list allows no
+  cross-origin browser access. Panel same-origin checks and JWT/RLS stay separate.
+
 - The TypeScript, Rust, SSR and Next.js SDKs send the signup `code_challenge`
   and confirm signup links with its `code_verifier`, so SDK users who confirm
   by email keep the password they chose (D117).

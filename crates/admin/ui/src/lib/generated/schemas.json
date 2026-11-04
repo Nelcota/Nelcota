@@ -1910,6 +1910,221 @@
     "type": "object"
   },
   "HostConfigurationView": {
+    "$defs": {
+      "Blocker": {
+        "enum": [
+          "file_override",
+          "invalid_saved_configuration"
+        ],
+        "type": "string"
+      },
+      "Group": {
+        "enum": [
+          "authentication",
+          "api",
+          "storage"
+        ],
+        "type": "string"
+      },
+      "Kind": {
+        "enum": [
+          "boolean",
+          "integer",
+          "origins"
+        ],
+        "type": "string"
+      },
+      "RuntimeStatus": {
+        "enum": [
+          "effective",
+          "unavailable",
+          "file_override",
+          "invalid"
+        ],
+        "type": "string"
+      },
+      "Setting": {
+        "additionalProperties": false,
+        "properties": {
+          "default_value": {
+            "$ref": "#/$defs/Value"
+          },
+          "dependencies": {
+            "items": {
+              "enum": [
+                "signup_enabled",
+                "jwt_expiry_secs",
+                "refresh_token_ttl_days",
+                "auth_rate_limit_per_minute",
+                "api_rate_limit_per_minute",
+                "cors_allow_origins",
+                "max_rows",
+                "max_body_bytes",
+                "api_concurrency_per_caller",
+                "db_pool_size",
+                "request_timeout_secs",
+                "statement_timeout_secs",
+                "storage_max_file_size",
+                "storage_max_total_size",
+                "storage_min_free_bytes",
+                "storage_upload_timeout_secs",
+                "storage_uploads_per_caller"
+              ],
+              "type": "string"
+            },
+            "maxItems": 17,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "expected_value": {
+            "$ref": "#/$defs/Value",
+            "description": "Effective value implied by the saved configuration, including defaults\nderived from other fields. Used to distinguish drift from auto behavior."
+          },
+          "group": {
+            "$ref": "#/$defs/Group"
+          },
+          "key": {
+            "enum": [
+              "signup_enabled",
+              "jwt_expiry_secs",
+              "refresh_token_ttl_days",
+              "auth_rate_limit_per_minute",
+              "api_rate_limit_per_minute",
+              "cors_allow_origins",
+              "max_rows",
+              "max_body_bytes",
+              "api_concurrency_per_caller",
+              "db_pool_size",
+              "request_timeout_secs",
+              "statement_timeout_secs",
+              "storage_max_file_size",
+              "storage_max_total_size",
+              "storage_min_free_bytes",
+              "storage_upload_timeout_secs",
+              "storage_uploads_per_caller"
+            ],
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/$defs/Kind"
+          },
+          "maximum": {
+            "format": "uint64",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "minimum": {
+            "format": "uint64",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "nullable": {
+            "type": "boolean"
+          },
+          "pending_restart": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "runtime_value": {
+            "$ref": "#/$defs/Value"
+          },
+          "saved_value": {
+            "$ref": "#/$defs/Value"
+          },
+          "source": {
+            "$ref": "#/$defs/Source"
+          }
+        },
+        "required": [
+          "key",
+          "group",
+          "kind",
+          "nullable",
+          "minimum",
+          "maximum",
+          "dependencies",
+          "default_value",
+          "saved_value",
+          "expected_value",
+          "runtime_value",
+          "source",
+          "pending_restart"
+        ],
+        "type": "object"
+      },
+      "Source": {
+        "enum": [
+          "default",
+          "environment"
+        ],
+        "type": "string"
+      },
+      "Value": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "format": "uint64",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          {
+            "items": {
+              "maxLength": 2048,
+              "pattern": "^[^\\u0000-\\u001f]*$",
+              "type": "string"
+            },
+            "maxItems": 32,
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "View": {
+        "additionalProperties": false,
+        "properties": {
+          "blocked": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Blocker"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "revision": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "runtime_status": {
+            "$ref": "#/$defs/RuntimeStatus"
+          },
+          "settings": {
+            "items": {
+              "$ref": "#/$defs/Setting"
+            },
+            "maxItems": 32,
+            "type": "array"
+          }
+        },
+        "required": [
+          "revision",
+          "settings",
+          "runtime_status",
+          "blocked"
+        ],
+        "type": "object"
+      }
+    },
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "properties": {
       "backup_configured": {
@@ -1950,6 +2165,16 @@
       "project": {
         "pattern": "^[a-z0-9-]{1,32}$",
         "type": "string"
+      },
+      "project_settings": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/View"
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "shared_login": {
         "type": "boolean"
@@ -2311,6 +2536,7 @@
       },
       "Section": {
         "enum": [
+          "project_settings",
           "alerts",
           "smtp",
           "oauth_google",
@@ -2454,6 +2680,7 @@
     "$defs": {
       "Section": {
         "enum": [
+          "project_settings",
           "alerts",
           "smtp",
           "oauth_google",
@@ -2683,6 +2910,46 @@
   },
   "HostPlan": {
     "$defs": {
+      "Change": {
+        "additionalProperties": false,
+        "properties": {
+          "after": {
+            "$ref": "#/$defs/Value"
+          },
+          "before": {
+            "$ref": "#/$defs/Value"
+          },
+          "key": {
+            "description": "Effective impact, including implicit changes to derived defaults.",
+            "enum": [
+              "signup_enabled",
+              "jwt_expiry_secs",
+              "refresh_token_ttl_days",
+              "auth_rate_limit_per_minute",
+              "api_rate_limit_per_minute",
+              "cors_allow_origins",
+              "max_rows",
+              "max_body_bytes",
+              "api_concurrency_per_caller",
+              "db_pool_size",
+              "request_timeout_secs",
+              "statement_timeout_secs",
+              "storage_max_file_size",
+              "storage_max_total_size",
+              "storage_min_free_bytes",
+              "storage_upload_timeout_secs",
+              "storage_uploads_per_caller"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "before",
+          "after"
+        ],
+        "type": "object"
+      },
       "Operation": {
         "oneOf": [
           {
@@ -2900,6 +3167,7 @@
       },
       "Section": {
         "enum": [
+          "project_settings",
           "alerts",
           "smtp",
           "oauth_google",
@@ -2909,6 +3177,31 @@
           "admin_password"
         ],
         "type": "string"
+      },
+      "Value": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "format": "uint64",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          {
+            "items": {
+              "maxLength": 2048,
+              "pattern": "^[^\\u0000-\\u001f]*$",
+              "type": "string"
+            },
+            "maxItems": 32,
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ]
       }
     },
     "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2927,6 +3220,14 @@
         "items": {
           "maxLength": 1024,
           "type": "string"
+        },
+        "maxItems": 32,
+        "type": "array"
+      },
+      "configuration_changes": {
+        "description": "Only allowlisted non-secret routine values, never SMTP/OAuth credentials.",
+        "items": {
+          "$ref": "#/$defs/Change"
         },
         "maxItems": 32,
         "type": "array"
@@ -3337,6 +3638,7 @@
       },
       "Section": {
         "enum": [
+          "project_settings",
           "alerts",
           "smtp",
           "oauth_google",

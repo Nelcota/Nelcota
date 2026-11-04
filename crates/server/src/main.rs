@@ -61,6 +61,8 @@ async fn serve(config: Config) -> anyhow::Result<()> {
         db::authenticator_config(&admin, config.authenticator_password.expose()),
     );
     let state = AppState {
+        settings: Arc::new(nelcota_core::settings::Snapshot::new(&config)),
+        cors: nelcota_server::ApiCors::from_config(&config)?,
         pool: pool.clone(),
         verifier: keys.clone(),
         catalog,

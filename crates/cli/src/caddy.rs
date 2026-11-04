@@ -47,7 +47,7 @@ fn render_paused(manifest: &Manifest, paused: &BTreeSet<String>) -> String {
         out.push_str(&format!(
             // Files under /storage go byte for byte (ranges, ETags): not compressed.
             "\n{domain} {{\n{tls}\t@compressible not path /storage/*\n\
-             \tencode @compressible zstd gzip\n\treverse_proxy {upstream}\n\theader {{\n\
+             \tencode @compressible zstd gzip\n\trespond /health/configuration \"Not found\" 404\n\treverse_proxy {upstream}\n\theader {{\n\
              \t\t-Server\n\t\tStrict-Transport-Security \"max-age=31536000\"\n\
              \t\tX-Content-Type-Options \"nosniff\"\n\t}}\n}}\n",
             domain = project.domain,
@@ -260,7 +260,7 @@ mod tests {
         let caddyfile = render(&manifest(false));
         assert!(caddyfile.contains(
             "api.shop.com {\n\t@compressible not path /storage/*\n\
-             \tencode @compressible zstd gzip\n\treverse_proxy app-shop:8000"
+             \tencode @compressible zstd gzip\n\trespond /health/configuration \"Not found\" 404\n\treverse_proxy app-shop:8000"
         ));
         assert!(caddyfile.contains("blog.example.com {"));
         assert!(caddyfile.contains("reverse_proxy app-blog:8000"));
@@ -275,5 +275,19 @@ mod tests {
         assert!(caddyfile.contains("respond \"Project temporarily unavailable\" 503"));
         assert!(!caddyfile.contains("reverse_proxy app-shop:8000"));
         assert!(caddyfile.contains("reverse_proxy app-blog:8000"));
+    }
+    #[test]
+    fn runtime_configuration_is_never_proxied_in_docker_or_native_sites() {
+        for runtime in [Runtime::Docker, Runtime::Systemd] {
+            let mut host = manifest(false);
+            host.runtime = runtime;
+            let text = render(&host);
+            assert_eq!(
+                text.matches("respond /health/configuration \"Not found\" 404")
+                    .count(),
+                host.projects.len()
+            );
+            assert!(!text.contains("respond /health \""));
+        }
     }
 }

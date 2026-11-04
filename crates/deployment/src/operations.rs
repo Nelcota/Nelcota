@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Section {
+    ProjectSettings,
     Alerts,
     Smtp,
     OauthGoogle,
@@ -19,6 +20,10 @@ pub enum Section {
 #[derive(Deserialize, Serialize)]
 #[serde(tag = "section", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Configuration {
+    ProjectSettings {
+        expected_revision: String,
+        values: std::collections::BTreeMap<String, crate::settings::Value>,
+    },
     Alerts {
         settings: crate::alerts::Settings,
         webhook_url: Option<String>,
@@ -64,6 +69,7 @@ pub enum Configuration {
 impl Configuration {
     pub fn section(&self) -> Section {
         match self {
+            Self::ProjectSettings { .. } => Section::ProjectSettings,
             Self::Alerts { .. } => Section::Alerts,
             Self::Smtp { .. } => Section::Smtp,
             Self::OauthGoogle { .. } => Section::OauthGoogle,
@@ -96,6 +102,9 @@ pub struct ConfigurationView {
     pub github_configured: bool,
     pub backup_configured: bool,
     pub shared_login: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "schema", schemars(skip_serializing_if = "Option::is_none"))]
+    pub project_settings: Option<crate::settings::View>,
 }
 
 #[derive(Serialize, Deserialize)]

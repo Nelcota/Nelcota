@@ -68,6 +68,9 @@ pub enum StorageBackend {
 /// A body is buffered and parsed whole, and a 1000-row insert of typical
 /// rows fits well under it; raise it for larger batches if memory allows.
 pub const DEFAULT_MAX_BODY_BYTES: usize = 2 * 1024 * 1024;
+pub const DEFAULT_MAX_ROWS: i64 = 1000;
+/// Leave room for the other fields in a bounded 16 KiB controller request.
+pub const MAX_CORS_ORIGIN_LIST_BYTES: usize = 12 * 1024;
 /// Upper bound of `NELCOTA_TRUSTED_PROXY_HOPS`; real chains are 1 or 2 deep.
 pub const MAX_PROXY_HOPS: u8 = 8;
 /// Upper bound for the statement and upload timeouts: one day. Larger values
@@ -106,6 +109,10 @@ pub struct Config {
     /// Requests per minute, per IP, on the REST and storage APIs; 0 turns
     /// the limit off. `service_role` tokens are exempt.
     pub api_rate_limit_per_minute: u32,
+    /// Public API browser origins, comma-separated. Unset allows any origin;
+    /// an explicit empty string permits no cross-origin browser clients.
+    /// Never applies to the separately protected administrator routes.
+    pub cors_allow_origins: Option<String>,
     /// Trust `X-Forwarded-For` (only behind a proxy such as Caddy).
     pub trust_proxy: bool,
     /// With `trust_proxy`, how many trusted proxies append to
@@ -235,6 +242,7 @@ impl Default for Config {
             signup_enabled: true,
             auth_rate_limit_per_minute: 30,
             api_rate_limit_per_minute: 600,
+            cors_allow_origins: None,
             trust_proxy: false,
             trusted_proxy_hops: 1,
             smtp_url: None,
@@ -260,7 +268,7 @@ impl Default for Config {
             migration_backup_token: None,
             dev_migrations_dir: None,
             db_schema: "public".into(),
-            max_rows: Some(1000),
+            max_rows: Some(DEFAULT_MAX_ROWS),
             max_body_bytes: DEFAULT_MAX_BODY_BYTES,
             api_concurrency_per_caller: None,
             listen: SocketAddr::from(([0, 0, 0, 0], 8000)),
@@ -291,6 +299,26 @@ impl Default for Config {
 }
 
 impl Config {
+    /// Load an explicitly supplied service environment over defaults, without
+    /// reading the caller's environment or any TOML file. Host adapters must
+    /// reject file-based overrides before using this for candidate validation.
+    /// Errors can contain private source values: never send them to a browser.
+    pub fn from_environment<'a>(
+        entries: impl IntoIterator<Item = (&'a str, &'a str)>,
+    ) -> Result<Self, ConfigError> {
+        let mut values = figment::value::Dict::new();
+        for (key, value) in entries {
+            if let Some(key) = key.strip_prefix("NELCOTA_") {
+                values.insert(key.to_ascii_lowercase(), value.parse().expect("infallible"));
+            }
+        }
+        Figment::from(Serialized::defaults(Config::default()))
+            .merge(Serialized::defaults(values))
+            .extract()
+            .map_err(Box::new)
+            .map_err(ConfigError::from)
+    }
+
     pub fn load() -> Result<Self, ConfigError> {
         let file = std::env::var("NELCOTA_CONFIG").unwrap_or_else(|_| "nelcota.toml".into());
         let config: Config = Figment::from(Serialized::defaults(Config::default()))
@@ -422,6 +450,7 @@ impl Config {
             ));
         }
         self.mail()?;
+        self.cors_origins()?;
         self.validate_storage()?;
         self.database_config()?;
         Ok(())
@@ -481,6 +510,45 @@ impl Config {
             true => self.trusted_proxy_hops,
             false => 0,
         }
+    }
+
+    /// Validated exact HTTP(S) origins. No paths, credentials, wildcards, opaque
+    /// `null` origins or signed URL parameters; CORS is not API authorization.
+    pub fn cors_origins(&self) -> Result<Option<Vec<String>>, ConfigError> {
+        let raw = match &self.cors_allow_origins {
+            Some(raw) => raw,
+            None => return Ok(None),
+        };
+        if raw.is_empty() {
+            return Ok(Some(Vec::new()));
+        }
+        let invalid = || {
+            ConfigError::Invalid(
+                "NELCOTA_CORS_ALLOW_ORIGINS needs at most 32 unique exact http(s) origins without paths, credentials, queries or fragments",
+            )
+        };
+        if raw.len() > MAX_CORS_ORIGIN_LIST_BYTES {
+            return Err(invalid());
+        }
+        let mut origins = Vec::new();
+        for origin in raw.split(',').map(str::trim) {
+            let url = url::Url::parse(origin).map_err(|_| invalid())?;
+            if origin.len() > 2048
+                || !matches!(url.scheme(), "http" | "https")
+                || url.host_str().is_none()
+                || !url.username().is_empty()
+                || url.password().is_some()
+                || url.query().is_some()
+                || url.fragment().is_some()
+                || url.origin().ascii_serialization() != origin
+                || origins.iter().any(|o| o == origin)
+                || origins.len() >= 32
+            {
+                return Err(invalid());
+            }
+            origins.push(origin.to_owned());
+        }
+        Ok(Some(origins))
     }
 
     /// Whether panel session cookies carry `Secure`: behind a trusted proxy,

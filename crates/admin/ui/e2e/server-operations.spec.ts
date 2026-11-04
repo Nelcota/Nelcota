@@ -118,6 +118,7 @@ test("configuration reviews do not execute automatically or persist credentials 
   const actions: Record<string, unknown>[] = [];
   await mount(page, actions);
   await page.getByRole("button", { name: "Configurações", exact: true }).click();
+  await page.getByRole("combobox", { name: "Configurações", exact: true }).selectOption("smtp");
   await page.getByLabel("Habilitar esta configuração").check();
   const secret = "smtps://operator:private-smtp-password@smtp.example.test:465";
   await page.getByLabel("Nova URL SMTP com TLS").fill(secret);
@@ -154,6 +155,7 @@ test("draft changes require visual discard before leaving server settings", asyn
   const actions: Record<string, unknown>[] = [];
   await mount(page, actions);
   await page.getByRole("button", { name: "Configurações", exact: true }).click();
+  await page.getByRole("combobox", { name: "Configurações", exact: true }).selectOption("smtp");
   await page.getByLabel("Habilitar esta configuração").check();
   await page.getByLabel("Remetente", { exact: true }).fill("Draft <draft@example.test>");
   await page.getByRole("button", { name: "Saúde", exact: true }).click();

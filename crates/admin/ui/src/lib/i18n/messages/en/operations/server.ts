@@ -1,8 +1,30 @@
 import type { Messages } from "../../../index.svelte";
 import type ptBR from "../../pt-BR/operations/server";
 import alerts from "./alerts";
+import routine from "./project-settings";
 
 const en: Messages<typeof ptBR> = {
+  routine,
+  project_settings: "Project settings",
+  unknown_project_setting: "The batch contains a field that this workflow cannot change.",
+  invalid_project_setting: "Check the batch’s field types and limits.",
+  invalid_project_settings_combination:
+    "Timeouts or concurrency limits are incompatible. Adjust related fields in the same batch.",
+  invalid_project_configuration:
+    "The complete project configuration is invalid. Review dependencies with the operator.",
+  ambiguous_project_environment:
+    "The file contains duplicates, interpolation or syntax that cannot be applied safely. Ask the operator to review its source.",
+  project_configuration_file_override:
+    "An additional TOML file prevents safe validation through this workflow. Review it with the operator.",
+  project_configuration_changed:
+    "Configuration changed since it was read. Reload and review again; nothing was overwritten.",
+  project_configuration_unchanged: "There are no new changes to apply.",
+  project_configuration_not_effective:
+    "Saved configuration does not match the application. The operation cannot complete without verifying active values; check recovery state.",
+  project_settings_not_supported:
+    "The application does not offer the safe active-settings protocol. Install compatible server and controller versions before editing.",
+  invalid_runtime_configuration:
+    "The process projection is incomplete or incompatible. No active values will be assumed.",
   alerts: alerts.title,
   test_alerts: alerts.test,
   invalid_alert_limits: alerts.invalid_alert_limits,

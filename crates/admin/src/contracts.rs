@@ -344,6 +344,32 @@ pub fn exports() -> (String, String) {
             "UpdateJob" => PublicJob,
         );
     }
+    // Catalog keys are generated from core, not copied into deployment or the UI.
+    // Keep the generic deployment transport independent of runtime dependencies,
+    // while the browser still rejects injected credential/internal field names.
+    let keys: Vec<_> = nelcota_core::settings::CATALOG
+        .iter()
+        .map(|d| d.key)
+        .collect();
+    for (name, definition) in [("HostConfigurationView", "Setting"), ("HostPlan", "Change")] {
+        let properties = &mut schemas.get_mut(name).expect("controller schema")["$defs"]
+            [definition]["properties"];
+        properties["key"]["enum"] = serde_json::json!(keys);
+        if definition == "Setting" {
+            properties["dependencies"]["items"]["enum"] = serde_json::json!(keys);
+            properties["dependencies"]["maxItems"] = serde_json::json!(keys.len());
+            properties["dependencies"]["uniqueItems"] = serde_json::json!(true);
+        }
+    }
+    types.push_str("export type ProjectSettingKey = ");
+    types.push_str(
+        &keys
+            .iter()
+            .map(|k| format!("\"{k}\""))
+            .collect::<Vec<_>>()
+            .join(" | "),
+    );
+    types.push_str(";\n");
     types.push_str("export type RowData = Record<string, string | null>;\n");
     let types = types
         .lines()
@@ -375,6 +401,32 @@ fn safe_integer(schema: &mut schemars::Schema) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn routine_catalog_contracts_never_admit_credentials_or_internal_names() {
+        let schemas = exported();
+        let keys =
+            &schemas["HostConfigurationView"]["$defs"]["Setting"]["properties"]["key"]["enum"];
+        let expected: Vec<_> = nelcota_core::settings::CATALOG
+            .iter()
+            .map(|d| d.key)
+            .collect();
+        assert_eq!(keys, &serde_json::json!(expected));
+        assert_eq!(
+            keys,
+            &schemas["HostPlan"]["$defs"]["Change"]["properties"]["key"]["enum"]
+        );
+        for private in [
+            "database_url",
+            "jwt_secret",
+            "jwt_private_key",
+            "admin_password_hash",
+            "trust_proxy",
+            "deployment_validation",
+            "storage_backend",
+        ] {
+            assert!(!expected.contains(&private));
+        }
+    }
     #[test]
     fn migration_response_preserves_the_core_report_wire_shape() {
         use nelcota_core::user_migrations::{MigrationReport, MigrationState, MigrationStatus};

@@ -4,6 +4,7 @@
   import { i18n, translate } from "$lib/i18n/index.svelte";
   import { hostText as h, serverText, label } from "../model";
   import type { HostConsoleState } from "../console-state.svelte";
+  import ConfigurationChanges from "./configuration-changes.svelte";
   let { model }: { model: HostConsoleState } = $props();
 </script>
 
@@ -49,6 +50,9 @@
           resuming={model.recovery?.last_stage === "verifying"}
         />{/if}
     </div>
+    {#if model.plan?.configuration_changes?.length}<ConfigurationChanges
+        changes={model.plan.configuration_changes}
+      />{/if}
     <div class="grid gap-2 rounded-2xl bg-well p-4">
       <p class="text-sm font-medium text-muted-foreground">
         2 · {h("acknowledge")}

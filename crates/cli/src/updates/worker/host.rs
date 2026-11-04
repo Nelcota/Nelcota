@@ -134,7 +134,7 @@ pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Re
                 .try_acquire_owned()
                 .context("host_read_busy")?;
             Ok(Response::HostConfiguration {
-                data: management::settings::view(&state.policy, &project)?,
+                data: management::settings::view(&state.policy, &project).await?,
             })
         }
         Request::HostStatus { key, .. } => {
@@ -247,6 +247,10 @@ pub(super) async fn dispatch(state: &Arc<State>, request: Request) -> anyhow::Re
                 None => vec![operation.project().to_owned()],
             };
             let public = HostPlan {
+                configuration_changes: configuration
+                    .as_ref()
+                    .map(|c| c.changes.clone())
+                    .unwrap_or_default(),
                 affected_projects,
                 id: token()?,
                 confirmation: operation.confirmation(),

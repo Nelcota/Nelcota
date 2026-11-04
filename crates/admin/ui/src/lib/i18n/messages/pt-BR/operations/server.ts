@@ -1,6 +1,28 @@
 import alerts from "./alerts";
+import routine from "./project-settings";
 
 const ptBR = {
+  routine,
+  project_settings: "Configurações do projeto",
+  unknown_project_setting: "O lote contém um campo que não pode ser alterado por este fluxo.",
+  invalid_project_setting: "Confira os tipos e os limites dos campos do lote.",
+  invalid_project_settings_combination:
+    "Os prazos ou limites de concorrência são incompatíveis. Ajuste os campos relacionados no mesmo lote.",
+  invalid_project_configuration:
+    "A configuração completa do projeto não é válida. Revise as dependências com o operador.",
+  ambiguous_project_environment:
+    "O arquivo usa duplicatas, interpolação ou sintaxe que não pode ser aplicada com segurança. Peça ao operador para revisar a origem.",
+  project_configuration_file_override:
+    "Um arquivo TOML adicional impede a validação segura deste fluxo. Revise-o com o operador.",
+  project_configuration_changed:
+    "A configuração mudou desde a leitura. Recarregue e revise novamente; nada foi sobrescrito.",
+  project_configuration_unchanged: "Não há alterações novas para aplicar.",
+  project_configuration_not_effective:
+    "A configuração salva não corresponde à aplicação. A operação não será concluída sem verificar os valores em uso; consulte o estado de recuperação.",
+  project_settings_not_supported:
+    "A aplicação não oferece a consulta segura de valores em uso. Instale versões compatíveis do servidor e do controlador antes de editar.",
+  invalid_runtime_configuration:
+    "A projeção do processo está incompleta ou incompatível. Nenhum valor em uso será presumido.",
   alerts: alerts.title,
   test_alerts: alerts.test,
   invalid_alert_limits: alerts.invalid_alert_limits,
