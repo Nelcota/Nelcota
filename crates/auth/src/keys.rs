@@ -357,7 +357,7 @@ mod tests {
         let both = Keys::new(Some(&generate_ed25519_private_key()), Some(secret)).unwrap();
         assert!(both.verify(&token).is_ok());
         assert_eq!(
-            jsonwebtoken::decode_header(&both.sign(&payload()).unwrap())
+            jsonwebtoken::decode_header(both.sign(&payload()).unwrap())
                 .unwrap()
                 .alg,
             Algorithm::EdDSA
