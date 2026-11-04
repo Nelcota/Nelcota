@@ -97,7 +97,7 @@ const helpers = [
 ].toSorted();
 const prelude = (await Promise.all(helpers.map(runtimeHelper))).join("\n");
 const STRICT = '"use strict";';
-const body = compiled.replace(RUNTIME_HELPER, (_match, name: string) => `ajv_runtime_${name}`);
+const body = compiled.replaceAll(RUNTIME_HELPER, (_match, name: string) => `ajv_runtime_${name}`);
 const code = body.startsWith(STRICT)
   ? `${STRICT}\n${prelude}\n${body.slice(STRICT.length)}`
   : `${prelude}\n${body}`;

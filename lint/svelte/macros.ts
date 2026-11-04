@@ -16,7 +16,11 @@ function bindingDefaults(name: ts.BindingName): SourceRange[] {
   return name.elements.flatMap((element) => {
     const value = element.initializer;
     if (isMacro(value, "$bindable") === false || value.arguments.length !== 0) return [];
-    return [{ start: value.getStart(), end: value.end }];
+    const binding = element.name.getStart();
+    return [
+      { start: binding, end: binding + 1 },
+      { start: value.getStart(), end: value.end },
+    ];
   });
 }
 
