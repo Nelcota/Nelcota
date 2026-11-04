@@ -97,7 +97,7 @@ export async function queryRead<T>(
     // Cancelling one reader must not cancel another reader of the same query.
     const result = signal != null ? await waitForReader(pending, signal) : await pending;
     if (started !== querySession()) throw new DOMException("Session changed", "AbortError");
-    // Table cell editing mutates local rows; it must not mutate cached JSON.
+    // Readers own their snapshots; local state must not mutate cached JSON.
     return structuredClone(result);
   } finally {
     releaseReader(key, { queryKey, signal });

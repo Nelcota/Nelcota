@@ -11,6 +11,7 @@
     "knip": "knip --config knip.config.ts",
     "package-size": "bun lint/check-package-size.ts",
     "test:rules": "bun test lint --max-concurrency 2",
+    "test:dependencies": "bun test lint/dependencies --max-concurrency 2",
     "check:rules": "bun run typecheck:rules && bun run typecheck:scripts && bun run format:check && bun run lint && bun run knip && bun run package-size && bun run test:rules",
     "typecheck:rules": "bun lint/checks/typecheck.ts tsconfig.json",
     "typecheck:scripts": "bun lint/checks/typecheck.ts sdk/nextjs/scripts/tsconfig.json sdk/ssr/scripts/tsconfig.json sdk/typescript/test/tsconfig.json sdk/typescript/examples/tsconfig.json sdk/typescript/tsconfig.scripts.json sdk/ssr/examples/sveltekit/tsconfig.json crates/admin/ui/tsconfig.scripts.json sdk/nextjs/examples/app-router/tsconfig.json sdk/typescript/test/contract/tsconfig.json",

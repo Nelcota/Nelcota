@@ -217,11 +217,15 @@ transactional behavior and missing columns still receive their defaults.
 - `order`, `limit` and `offset` are refused on `PATCH`/`DELETE` (400
   `invalid_query`): they change every row the filters match, so narrow the
   filters instead.
-- With `Prefer: count=exact`, `PATCH`/`DELETE` answer `Content-Range: */<n>`
+- With `Prefer: count=exact`, all writes answer `Content-Range: */<n>`
   with the number of rows changed (and `Preference-Applied: count=exact`),
-  with or without `return=representation`.
+  with or without `return=representation`. Mixed-key batches and rows of
+  defaults are counted individually; ignored duplicates and rows skipped by
+  triggers do not count.
 - `return=representation` runs `RETURNING`, which requires `SELECT`
-  permission (GRANT + policy) on the written rows.
+  permission (GRANT + policy) on the written rows. Column grants are needed
+  only for the selected columns and any parent join keys used by embeds,
+  not unrelated columns.
 
 ### Upsert: create or update in one call
 
@@ -280,6 +284,9 @@ the role holds a table or column GRANT on it. Its row schema, used by the
 responses and filters, lists only the columns (and their comments) the role may
 read; the `POST` and `PATCH` bodies list only the columns it may insert or
 update, respectively.
+
+The `PATCH` body has no required fields, even when the same columns are
+mandatory on `POST`. Include only the columns you want to change.
 
 Schema models: `nelcota types -o database.ts` (TypeScript, default), or
 `nelcota types --lang rust -o database.rs` for the

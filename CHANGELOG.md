@@ -61,6 +61,11 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Changed
 
+- Apply a versioned prototype-poisoning fix to the Svelte build dependency,
+  remove disabled hosted Scalar features from embedded assets, and enforce the
+  reference's complete startup JavaScript budget. Cover tooling and examples
+  with dependency update automation and lockfile audits.
+
 - Extend the project journey through access verification, migrations, named-environment
   deployment and recovery. Render typed migration previews/results, retain explicit
   approval, and show actionable backup/history errors with the deployment time budget.
@@ -128,6 +133,17 @@ for the October 27 server scope and independent SDK publication checkpoint.
   `trusted_proxy_hops`. `ip_key` and `retry_after_secs` are now public.
 
 ### Fixed
+
+- REST write representations read only the selected columns and required embed
+  join keys, so unrelated column-level SELECT restrictions no longer reject
+  otherwise permitted inserts, updates or deletes.
+- Grouped inserts and upserts report the actual affected-row count, including
+  default-only rows, ignored duplicates and rows skipped by insert triggers.
+- OpenAPI PATCH bodies no longer inherit required fields from complete row
+  schemas when readable and writable columns match.
+- Inline table edits reload the current page instead of displaying the input
+  as persisted data, retaining PostgreSQL normalization, generated/triggered
+  values and the current filters, ordering and totals.
 
 - The table editor's JSON `null` handling no longer rewrites the SQL text the
   REST query compiler generates, which failed with a 500 if that text ever

@@ -2,6 +2,7 @@
 import { NelcotaUsageError, clientError, fail, ok, type Result } from "../core/client.errors.js";
 import { bucketId, folderPrefix, objectPath } from "../core/encoding.js";
 import type { HttpClient, RequestSpec } from "../core/http/client.js";
+import { isRecord } from "../core/json.js";
 import { requireFileBody } from "./input.js";
 import type {
   FileBody,
@@ -154,7 +155,7 @@ export class BucketFiles {
     ) {
       throw new NelcotaUsageError("expiresIn is 1 to 604800 seconds");
     }
-    const result = await this.#http.json<{ signed_url?: unknown }>({
+    const result = await this.#http.json<unknown>({
       method: "POST",
       path: this.#path("sign/", name),
       json: { expires_in: expiresIn },
@@ -162,7 +163,7 @@ export class BucketFiles {
       timeout: options.timeout,
     });
     if (result.error != null) return fail(result.error);
-    const relative = result.data.signed_url;
+    const relative = isRecord(result.data) && result.data["signed_url"];
     if (typeof relative !== "string" || relative.startsWith("/storage/v1/object/sign/") === false) {
       return fail(clientError("invalid_response", "Invalid signed URL response"));
     }

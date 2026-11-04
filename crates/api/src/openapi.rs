@@ -67,14 +67,13 @@ fn table_schema(table: &Table, columns: &[&Column]) -> Value {
     schema
 }
 
-/// The schema of a request body that writes `columns`: the row schema when the
-/// role may write exactly the columns it reads, else an inline schema of only
-/// the writable ones, so names and comments of unreadable columns stay out of
-/// the response schema and those of unwritable columns out of the body.
+/// Inserts can share the row schema when readable and writable columns match.
+/// Partial updates always use their own schema without required fields. Only
+/// writable columns appear in either body, never unrelated column metadata.
 fn body_schema(table: &Table, readable: &[&Column], writable: &[&Column], partial: bool) -> Value {
     let same = readable.len() == writable.len()
         && readable.iter().zip(writable).all(|(a, b)| a.name == b.name);
-    if same {
+    if same && !partial {
         return reference(&table.name);
     }
     let mut schema = table_schema(table, writable);
@@ -457,7 +456,7 @@ mod tests {
         assert_eq!(response, &array_of("votes"));
         let parameters = path["get"]["parameters"].to_string();
         assert!(!parameters.contains("ballot") && !parameters.contains("\"note\""));
-        // Full privileges keep the shared row reference.
+        // Inserts keep the shared row reference; PATCH must not inherit its requirements.
         let path = &doc["paths"]["/polls"];
         let body = &path["post"]["requestBody"]["content"]["application/json"]["schema"];
         assert_eq!(
@@ -465,7 +464,15 @@ mod tests {
             &json!({ "oneOf": [reference("polls"), array_of("polls")] })
         );
         let body = &path["patch"]["requestBody"]["content"]["application/json"]["schema"];
-        assert_eq!(body, &reference("polls"));
+        assert_eq!(body["type"], "object");
+        assert!(body["properties"].get("id").is_some(), "{body}");
+        assert!(body["properties"].get("title").is_some(), "{body}");
+        assert!(body.get("required").is_none(), "{body}");
+        assert!(body.get("$ref").is_none(), "{body}");
+        assert_eq!(
+            doc["components"]["schemas"]["polls"]["required"],
+            json!(["id", "title"])
+        );
     }
 
     #[test]

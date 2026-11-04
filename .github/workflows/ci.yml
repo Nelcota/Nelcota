@@ -196,6 +196,27 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+  javascript-supply-chain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.3
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun install --cwd crates/admin/ui --frozen-lockfile --ignore-scripts
+      - run: bun install --cwd sdk/ssr/examples/sveltekit --frozen-lockfile --ignore-scripts
+      - name: Check both installed deepmerge patches
+        run: bun run test:dependencies
+      - name: Audit every JavaScript lockfile, including tooling and examples
+        run: |
+          for directory in . crates/admin/ui sdk/typescript sdk/ssr sdk/nextjs \
+            sdk/ssr/examples/sveltekit sdk/nextjs/examples/app-router; do
+            bun audit --cwd "$directory" --audit-level=high
+          done
+
   upgrade:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -251,6 +272,7 @@ jobs:
         run: git diff --exit-code -- src/lib/generated
       - run: bun run check
       - run: bun run test
+      - run: bun run test:build
       - run: bun run test:memory
       - run: bunx playwright install --with-deps chromium
       - run: bun run test:e2e

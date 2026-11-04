@@ -6,6 +6,8 @@ import { svelte } from "@sveltejs/vite-plugin-svelte";
 import tailwindcss from "@tailwindcss/vite";
 import { searchForWorkspaceRoot, type Plugin } from "vite";
 import { defineConfig } from "vitest/config";
+
+import { referenceBuild } from "./scripts/reference-build.ts";
 const ASSET_HASH_LENGTH = 8;
 
 // .env.example exports NELCOTA_API_URL empty, which is not a proxy target.
@@ -61,7 +63,7 @@ export default defineConfig({
     __VUE_PROD_DEVTOOLS__: false,
     __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
   },
-  plugins: [themeInit(), tailwindcss(), svelte()],
+  plugins: [themeInit(), tailwindcss(), svelte(), referenceBuild()],
   resolve: {
     alias: { $lib: fileURLToPath(new URL("./src/lib", import.meta.url)) },
   },

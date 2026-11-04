@@ -145,6 +145,11 @@ count, a guide link and one primary creation action. The
 table sidebar and search appear once tables exist. A failed catalog request
 shows a retryable error, never an empty-project message.
 
+After an inline edit, the grid reloads the current page from PostgreSQL. This
+keeps normalized values, generated columns, trigger changes, filters, ordering
+and totals consistent with the stored rows. If the read fails after a successful
+write, retry the read rather than repeating the write.
+
 CSV exports protect spreadsheet imports: formula-like cells and headers receive
 a quoted tab prefix, including formulas hidden behind whitespace or control
 characters. Negative numeric literals keep their digits and numeric form.
