@@ -139,20 +139,32 @@ async function settingsRoute(route: Route, fixture: SettingsFixture) {
   }
 }
 
-async function settingsPage(page: Page, options: { unavailable?: boolean; stale?: boolean } = {}) {
+async function settingsPage(
+  page: Page,
+  options: { unavailable?: boolean; stale?: boolean; legacy?: boolean } = {},
+) {
   const actions: Record<string, unknown>[] = [];
+  const current = structuredClone(snapshot);
+  if (options.legacy === true) {
+    const jwt = current.settings.find((field) => field.key === "jwt_expiry_secs");
+    if (jwt === undefined) throw new Error("Missing JWT fixture");
+    jwt.saved_value = 172800;
+    jwt.expected_value = 172800;
+    jwt.runtime_value = 172800;
+    jwt.source = "environment";
+  }
   const projected: ProjectSettingsView =
     options.unavailable === true
       ? {
-          ...snapshot,
+          ...current,
           runtime_status: "unavailable",
-          settings: snapshot.settings.map((field) => ({
+          settings: current.settings.map((field) => ({
             ...field,
             runtime_value: null,
             pending_restart: null,
           })),
         }
-      : snapshot;
+      : current;
   await mount(page);
   await page.route("**/admin/api/updates", (route) =>
     settingsRoute(route, { actions, projected, stale: options.stale === true }),
@@ -227,4 +239,24 @@ test("unavailable process evidence is not shown as active and blocks editing", a
   expect(
     actions.some((action) => ["host_start", "host_configure_plan"].includes(String(action.action))),
   ).toBe(false);
+});
+
+test("unchanged legacy values outside panel bounds do not block an unrelated batch", async ({
+  page,
+}) => {
+  const actions = await settingsPage(page, { legacy: true });
+  await page.getByLabel("Cadastro público", { exact: true }).uncheck();
+  const lifetime = page.getByLabel("Validade do token de acesso (segundos)", { exact: true });
+  await lifetime.fill("172801");
+  await expect(
+    page.getByRole("button", { name: "Validar lote e revisar impacto", exact: true }),
+  ).toBeDisabled();
+  await lifetime.fill("172800");
+  await page.getByRole("button", { name: "Validar lote e revisar impacto", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Revise antes de confirmar", exact: true }),
+  ).toBeVisible();
+  const plans = actions.filter((action) => action.action === "host_configure_plan");
+  expect(plans).toHaveLength(1);
+  expect(jsonObject(plans[0]?.configuration)).toMatchObject({ values: { signup_enabled: false } });
 });

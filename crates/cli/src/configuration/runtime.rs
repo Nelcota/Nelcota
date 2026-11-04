@@ -2,16 +2,24 @@
 use super::*;
 use std::time::Duration;
 
+fn client() -> Result<reqwest::Client, reqwest::Error> {
+    // This command is a fresh process: no server/mail client has initialized
+    // rustls. reqwest's rustls-no-provider backend needs our pinned provider
+    // even for a plain HTTP request.
+    let _ = rustls::crypto::ring::default_provider().install_default();
+    reqwest::Client::builder()
+        .no_proxy()
+        .redirect(reqwest::redirect::Policy::none())
+        .timeout(Duration::from_secs(3))
+        .build()
+}
+
 pub(crate) fn print_runtime() -> anyhow::Result<()> {
     let snapshot = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?
         .block_on(async {
-            let client = reqwest::Client::builder()
-                .no_proxy()
-                .redirect(reqwest::redirect::Policy::none())
-                .timeout(Duration::from_secs(3))
-                .build()?;
+            let client = client()?;
             let mut response = client
                 .get("http://127.0.0.1:8000/health/configuration")
                 .send()
@@ -34,4 +42,38 @@ pub(crate) fn print_runtime() -> anyhow::Result<()> {
         })?;
     println!("{}", serde_json::to_string(&snapshot)?);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn transport_initializes_in_a_fresh_process_without_other_tls_clients() {
+        const CHILD: &str = "NELCOTA_CONFIGURATION_TRANSPORT_TEST_CHILD";
+        if std::env::var_os(CHILD).is_some() {
+            let runtime = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            let _guard = runtime.enter();
+            super::client().unwrap();
+            return;
+        }
+        // A provider installed by an unrelated test must not conceal a broken
+        // standalone `configuration-state` process.
+        let output = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "configuration::runtime::tests::transport_initializes_in_a_fresh_process_without_other_tls_clients",
+                "--nocapture",
+            ])
+            .env(CHILD, "1")
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
 }

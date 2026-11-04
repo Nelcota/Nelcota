@@ -66,6 +66,15 @@
     const value = draft[key];
     return typeof value === "string" ? value : "";
   }
+  function inputBound(setting: ProjectSetting, bound: "minimum" | "maximum"): number {
+    // The model permits an unchanged legacy value outside the panel's tighter
+    // range. Native form validation must permit it too; changed values still
+    // go through projectChanges and the controller's catalog validation.
+    const saved = setting.saved_value;
+    if (typeof saved !== "number") return setting[bound];
+    if (bound === "minimum") return Math.min(setting.minimum, saved);
+    return Math.max(setting.maximum, saved);
+  }
   async function submit(event: SubmitEvent) {
     event.preventDefault();
     if (blocked || view === null || changes === null || count === 0) return;
@@ -117,8 +126,8 @@
               <Input
                 id={`setting-${setting.key}`}
                 type="number"
-                min={setting.minimum}
-                max={setting.maximum}
+                min={inputBound(setting, "minimum")}
+                max={inputBound(setting, "maximum")}
                 step={1}
                 required={draft[setting.key] !== null}
                 disabled={blocked || draft[setting.key] === null}

@@ -66,7 +66,7 @@ fn source(before: &str) -> anyhow::Result<Vec<(String, String)>> {
         let raw = raw.trim();
         let literal = raw.strip_prefix('\'').and_then(|v| v.strip_suffix('\''));
         if let Some(literal) = literal {
-            crate::envfile::validate_literal(literal, 8192)
+            crate::envfile::validate_environment_literal(key, literal)
                 .map_err(|_| anyhow::anyhow!("ambiguous_project_environment"))?;
             continue;
         }

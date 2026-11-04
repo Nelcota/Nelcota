@@ -123,6 +123,15 @@ pub(crate) fn validate_literal(value: &str, max: usize) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[cfg(any(target_os = "linux", test))]
+pub(crate) fn validate_environment_literal(key: &str, value: &str) -> anyhow::Result<()> {
+    let max = match key {
+        "NELCOTA_CORS_ALLOW_ORIGINS" => nelcota_core::config::MAX_CORS_ORIGIN_LIST_BYTES,
+        _ => 8192,
+    };
+    validate_literal(value, max)
+}
+
 /// Replace a bounded allowlisted set of environment values, preserving unrelated
 /// lines. Callers own key authorization; values are always single-quoted.
 #[cfg(any(target_os = "linux", test))]
@@ -139,7 +148,7 @@ pub(crate) fn patch_literal(
                 if seen.insert(key)
                     && let Some(value) = value
                 {
-                    validate_literal(value, 8192)?;
+                    validate_environment_literal(key, value)?;
                     lines.push(format!("{key}='{value}'"));
                 }
             }
@@ -150,7 +159,7 @@ pub(crate) fn patch_literal(
         if !seen.contains(key)
             && let Some(value) = value
         {
-            validate_literal(value, 8192)?;
+            validate_environment_literal(key, value)?;
             lines.push(format!("{key}='{value}'"));
         }
     }

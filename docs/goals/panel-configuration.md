@@ -145,3 +145,31 @@ campaign have not been compiled/executed locally. PostgreSQL/CORS-panel
 integration, actual restarts/rollback, systemd, real VPS, provider, TLS and PITR
 acceptance remain pending. Do not deploy this branch on the strength of local
 UI mocks or these unit checks alone.
+
+### Follow-up PR review (2026-11-04)
+
+The first remote CI run for PR #251 passed the Rust partitions, PostgreSQL/S3
+integration, panel, SDKs and full Linux NelcotaRules checks, but **failed** the
+Docker host-lifecycle campaign during preparation. That run is not a passing
+acceptance result. A fresh `configuration-state` process had not installed the
+pinned ring provider before constructing reqwest's `rustls-no-provider` client.
+The fix initializes that provider without relying on another client in the same
+process. A subprocess regression failed before the fix and passes afterwards.
+
+Review also reproduced and corrected two boundary mismatches:
+
+- The shared CORS contract permits 12 KiB, but literal environment persistence
+  rejected values above 8 KiB. The source reader and writer now share the CORS
+  limit; unrelated credentials retain their original limit. A 32-origin batch
+  above 8 KiB roundtrips and remains editable; oversized literals still fail.
+- The draft model preserves unchanged legacy integer settings outside the
+  panel's tighter range, but native HTML constraints prevented submitting an
+  unrelated edit. Input bounds now admit the existing saved value, while the
+  model and backend still reject newly changed out-of-range values. A browser
+  regression failed before the fix and passes afterwards.
+
+Follow-up Windows checks: 10 CLI configuration tests, 20 scoped UI unit tests,
+9 Chromium scenarios (one worker), panel typecheck, scoped lint and CLI Clippy
+with all targets and `-D warnings` passed. Docker remains unavailable locally;
+the corrected real-container campaign still requires a new successful CI run.
+These results do not complete the remaining roadmap or real-provider/VPS gates.

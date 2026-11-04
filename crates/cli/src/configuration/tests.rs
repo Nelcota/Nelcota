@@ -268,3 +268,42 @@ fn cors_allowlist_roundtrips_default_restricted_and_explicitly_empty_states() {
             .contains("private")
     );
 }
+
+#[test]
+fn cors_lists_above_eight_kib_roundtrip_without_loosening_secret_limits() {
+    let label = "a".repeat(60);
+    let origins = (0..32)
+        .map(|n| format!("https://{label}.{label}.{label}.{label}.test:{}", 60000 + n))
+        .collect::<Vec<_>>();
+    let text = origins.join(",");
+    assert!(text.len() > 8192);
+    assert!(text.len() <= nelcota_core::config::MAX_CORS_ORIGIN_LIST_BYTES);
+    let batch = prepare_changes(&source_env(), json!({"cors_allow_origins": origins})).unwrap();
+    assert_eq!(
+        load(&source(&batch.after).unwrap())
+            .unwrap()
+            .cors_origins()
+            .unwrap(),
+        Some(origins)
+    );
+    verify_runtime(&batch.after, &runtime(&batch.after)).unwrap();
+    // An unrelated edit must accept the literal source written by this batch.
+    prepare_changes(&batch.after, json!({"signup_enabled": false})).unwrap();
+    assert!(
+        crate::envfile::patch_literal(
+            "",
+            &BTreeMap::from([("NELCOTA_JWT_SECRET".into(), Some("x".repeat(8193)))])
+        )
+        .is_err()
+    );
+    assert!(
+        crate::envfile::patch_literal(
+            "",
+            &BTreeMap::from([(
+                "NELCOTA_CORS_ALLOW_ORIGINS".into(),
+                Some("x".repeat(nelcota_core::config::MAX_CORS_ORIGIN_LIST_BYTES + 1))
+            )])
+        )
+        .is_err()
+    );
+}
