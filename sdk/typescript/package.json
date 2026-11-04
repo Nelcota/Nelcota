@@ -75,7 +75,7 @@
     "prepublishOnly": "bun run check && bun run test && bun run test:types && bun run build && bun run size && npm run test:package"
   },
   "devDependencies": {
-    "@types/bun": "1.4.2",
+    "@types/bun": "1.4.3",
     "@types/node": "^26.6.5",
     "@types/pg": "8.23.1",
     "fake-indexeddb": "6.2.6",
