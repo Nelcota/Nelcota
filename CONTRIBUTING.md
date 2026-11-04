@@ -61,6 +61,10 @@ ignored without their disposable provider settings; CI provisions the provider
 and runs them explicitly. Check `.github/workflows/ci.yml` for the exact commands.
 Do not report ignored/unrun checks as passed.
 
+See [dependency maintenance](docs/engineering/dependencies.md) for versioned npm
+patches, their regression checks, the reference bundle budget and Rust advisory
+exceptions. Keep these controls when updating dependencies.
+
 For a full requested validation, `scripts/test.sh all` runs Rust then panel
 Vitest; it does not replace SDK/browser/provider or supply-chain checks. The
 shared test container uses port 55432 by default and tmpfs. The script creates

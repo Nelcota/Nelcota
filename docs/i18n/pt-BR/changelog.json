@@ -1,4 +1,5 @@
 {
+  "`createSignedUrl()` returns `invalid_response` for null, empty or non-object\nsuccess bodies instead of rejecting with an unexpected `TypeError`.": "`createSignedUrl()` retorna `invalid_response` para corpos de sucesso nulos, vazios ou que não sejam objetos, em vez de rejeitar com um `TypeError` inesperado.",
   "Changelog": "Histórico de alterações",
   "Package releases use Semantic Versioning and Keep a Changelog categories.\nDates identify release entries; registry availability requires a successful publish.": "Os pacotes usam Semantic Versioning e categorias de Keep a Changelog. As datas identificam entradas de versão; a disponibilidade no registro exige publicação bem-sucedida.",
   "Unreleased": "Não lançado",

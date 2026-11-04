@@ -69,6 +69,9 @@ Dates identify release entries; registry availability requires a successful publ
 
 ### Fixed
 
+- `createSignedUrl()` returns `invalid_response` for null, empty or non-object
+  success bodies instead of rejecting with an unexpected `TypeError`.
+
 - Refuse `service_role` tokens in Web Workers and Service Workers as well as pages.
 - Preserve transient refresh errors for data requests instead of sending an expired
   access token and replacing the original failure with a later authorization error.

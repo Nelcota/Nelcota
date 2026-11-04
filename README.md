@@ -119,7 +119,7 @@ import { createClient } from '@nelcota/client';
 
 const nelcota = createClient('https://api.yourdomain.com');
 await nelcota.auth.signInWithPassword({ email, password });
-const { data: notes } = await nelcota.from('notes').select('id,body');
+const { data: notes } = await nelcota.from('notes').select('id,body').execute();
 ```
 
 | Platform | Package | Guide |

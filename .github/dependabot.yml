@@ -15,6 +15,20 @@ updates:
         patterns: ["*"]
 
   - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      tooling:
+        patterns: ["*"]
+    ignore:
+      # Compiler API consumers still require TypeScript 6; the CLI has its own alias.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: bun
     directory: /crates/admin/ui
     schedule:
       interval: weekly
@@ -62,6 +76,32 @@ updates:
     ignore:
       # Linked from the workspace (file:../typescript); updated with the base SDK.
       - dependency-name: "@nelcota/client"
+
+  - package-ecosystem: bun
+    directory: /sdk/ssr/examples/sveltekit
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      sveltekit-example:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # Local file dependencies are updated with their SDKs, not from the registry.
+      - dependency-name: "@nelcota/client"
+      - dependency-name: "@nelcota/ssr"
+
+  - package-ecosystem: bun
+    directory: /sdk/nextjs/examples/app-router
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      nextjs-example:
+        patterns: ["*"]
 
   - package-ecosystem: github-actions
     directory: /

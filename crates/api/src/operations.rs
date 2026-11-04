@@ -84,6 +84,10 @@ async fn fetch_json(
 
 async fn execute(tx: &Transaction<'_>, sql: &Sql) -> Result<u64, tokio_postgres::Error> {
     let statement = tx.prepare(&sql.text).await?;
+    if sql.returns_write_count {
+        let row = tx.query_one(&statement, &sql.param_refs()).await?;
+        return Ok(u64::try_from(row.get::<_, i64>(0)).unwrap_or_default());
+    }
     tx.execute(&statement, &sql.param_refs()).await
 }
 

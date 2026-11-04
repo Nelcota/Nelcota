@@ -389,6 +389,36 @@ pub fn count(schema: &str, table: &Table, request: &Request) -> Sql {
     sql
 }
 
+/// Columns needed to render a write's representation. An embed also needs the
+/// parent's join keys, but unrelated columns must not require SELECT grants.
+fn returning_columns(select: &Select) -> String {
+    if select.star {
+        return "_t.*".to_owned();
+    }
+    let mut columns = select
+        .columns
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>();
+    for column in select
+        .embeds
+        .iter()
+        .flat_map(|embed| embed.join.iter().map(|(_, own)| own.as_str()))
+    {
+        if !columns.contains(&column) {
+            columns.push(column);
+        }
+    }
+    if columns.is_empty() {
+        return "1".to_owned();
+    }
+    columns
+        .iter()
+        .map(|column| format!("_t.{}", ident(column)))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 /// Wraps a write to return the representation (`Prefer: return=representation`).
 pub(super) fn with_representation(
     sql: &mut Sql,
@@ -397,8 +427,9 @@ pub(super) fn with_representation(
     select: &Select,
 ) -> String {
     format!(
-        "WITH _w AS ({write} RETURNING _t.*) \
+        "WITH _w AS ({write} RETURNING {}) \
          SELECT coalesce(json_agg({}), '[]')::text, count(*) FROM (SELECT {} FROM _w AS _t) _r",
+        returning_columns(select),
         sql.json("_r"),
         select_list(sql, schema, select, "_t", ""),
     )
@@ -613,10 +644,11 @@ fn insert_with(
         (1, Some(select)) => with_representation(&mut sql, schema, statements.remove(0), select),
         (1, None) => statements.remove(0),
         (_, Some(select)) => {
+            let returning = returning_columns(select);
             let ctes: Vec<String> = statements
                 .iter()
                 .enumerate()
-                .map(|(i, s)| format!("_w{i} AS ({s} RETURNING _t.*)"))
+                .map(|(i, s)| format!("_w{i} AS ({s} RETURNING {returning})"))
                 .collect();
             let union: Vec<String> = (0..statements.len())
                 .map(|i| format!("SELECT * FROM _w{i}"))
@@ -630,12 +662,17 @@ fn insert_with(
             )
         }
         (n, None) => {
+            sql.returns_write_count = true;
             let ctes: Vec<String> = statements
                 .iter()
                 .enumerate()
-                .map(|(i, s)| format!("_w{i} AS ({s})"))
+                .map(|(i, s)| format!("_w{i} AS ({s} RETURNING 1)"))
                 .collect();
-            format!("WITH {} SELECT {n}", ctes.join(", "))
+            let counts = (0..n)
+                .map(|i| format!("(SELECT count(*) FROM _w{i})"))
+                .collect::<Vec<_>>()
+                .join(" + ");
+            format!("WITH {} SELECT {counts}", ctes.join(", "))
         }
     };
     Ok(sql)

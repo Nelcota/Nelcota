@@ -1,5 +1,5 @@
 {
-  "lockfileVersion": 3,
+  "lockfileVersion": 2,
   "configVersion": 0,
   "workspaces": {
     "": {
@@ -13,7 +13,7 @@
         "@fontsource-variable/manrope": "^5.3.0",
         "@fontsource/ibm-plex-mono": "^5.3.0",
         "@lezer/highlight": "^1.2.5",
-        "@scalar/api-reference": "^1.74.0",
+        "@scalar/api-reference": "1.76.0",
         "@tanstack/svelte-query": "^6.3.5",
         "@tanstack/svelte-table": "^9.3.1",
         "@uppy/core": "^6.3.0",
@@ -50,19 +50,9 @@
       },
     },
   },
-  "overrides": {
-    "@ai-sdk/gateway@3": {
-      ".": "3.0.221",
-    },
-    "@ai-sdk/provider-utils@4": {
-      ".": "4.0.62",
-    },
-    "@ai-sdk/vue@3": {
-      ".": "3.0.315",
-    },
-    "ai@6": {
-      ".": "6.0.315",
-    },
+  "patchedDependencies": {
+    "@scalar/api-reference@1.76.0": "../../../patches/@scalar%2Fapi-reference@1.76.0.patch",
+    "deepmerge@4.3.1": "../../../patches/deepmerge@4.3.1.patch",
   },
   "packages": {
     "@ai-sdk/gateway": ["@ai-sdk/gateway@4.0.115", "", { "dependencies": { "@ai-sdk/provider": "4.0.28", "@ai-sdk/provider-utils": "5.0.61", "@vercel/oidc": "3.2.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-Xn+gDWM4Ti2FzYmxhlZtjEuGBGZlOYaQMpwcVRSN4c9qCMUszD5F5TAbkxgLV/tHKeMfEX+WEuTCl6Kkj2r73A=="],

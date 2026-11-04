@@ -302,6 +302,10 @@ mod tests {
         let keys = Keys::new(Some(&generate_ed25519_private_key()), None).unwrap();
         assert_eq!(keys.algorithm(), Algorithm::EdDSA);
         let token = keys.sign(&payload()).unwrap();
+        assert_eq!(
+            jsonwebtoken::decode_header(&token).unwrap().alg,
+            Algorithm::EdDSA
+        );
         assert!(keys.verify(&token).is_ok());
 
         let jwks: Value = serde_json::from_str(keys.jwks_json()).unwrap();
@@ -341,6 +345,10 @@ mod tests {
         let secret = b"test-secret-with-more-than-32-characters";
         let hs = Keys::new(None, Some(secret)).unwrap();
         let token = hs.sign(&payload()).unwrap();
+        assert_eq!(
+            jsonwebtoken::decode_header(&token).unwrap().alg,
+            Algorithm::HS256
+        );
         assert!(hs.verify(&token).is_ok());
         assert_eq!(hs.jwks_json(), r#"{"keys":[]}"#);
 
@@ -348,6 +356,38 @@ mod tests {
         assert!(ed_only.verify(&token).is_err());
         let both = Keys::new(Some(&generate_ed25519_private_key()), Some(secret)).unwrap();
         assert!(both.verify(&token).is_ok());
+        assert_eq!(
+            jsonwebtoken::decode_header(both.sign(&payload()).unwrap())
+                .unwrap()
+                .alg,
+            Algorithm::EdDSA
+        );
+    }
+
+    #[test]
+    fn local_tokens_reject_rsa_and_ecdsa_before_signature_verification() {
+        // D16/D104 permit these dependencies only for provider PUBLIC-key verification.
+        // Local tokens must never select them, even during the HS256 migration.
+        for keys in time_claim_keys() {
+            for algorithm in [
+                Algorithm::RS256,
+                Algorithm::RS384,
+                Algorithm::RS512,
+                Algorithm::PS256,
+                Algorithm::PS384,
+                Algorithm::PS512,
+                Algorithm::ES256,
+                Algorithm::ES384,
+            ] {
+                let header =
+                    URL_SAFE_NO_PAD.encode(serde_json::to_vec(&Header::new(algorithm)).unwrap());
+                let token = format!("{header}.e30.AA");
+                assert!(
+                    matches!(keys.verify_payload(&token), Err(VerifyError::UnknownKey)),
+                    "{algorithm:?} must be rejected before entering its crypto backend"
+                );
+            }
+        }
     }
 
     #[test]
