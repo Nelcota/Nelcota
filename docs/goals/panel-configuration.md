@@ -171,7 +171,7 @@ Review also reproduced and corrected two boundary mismatches:
   model and backend still reject newly changed out-of-range values. A browser
   regression failed before the fix and passes afterwards.
 
-Follow-up Windows checks: 10 CLI configuration tests, 3 Caddy tests, 20 scoped UI
+Follow-up Windows checks: 10 CLI configuration tests, 3 environment-file tests, 20 scoped UI
 unit tests, 9 Chromium scenarios (one worker), panel typecheck, scoped lint and CLI Clippy
 with all targets and `-D warnings` passed. Docker remained unavailable locally;
 the corrected real-container campaign required the successful remote run below.
@@ -201,3 +201,21 @@ The final integrated head still needs fresh complete CI. Native/systemd, real
 VPS, public DNS/TLS, external-provider and PITR acceptance remain unexecuted;
 stages 3–12 are still pending. No release or production deployment is established
 by these results.
+
+### Dependency integration checkpoint (2026-11-04, Windows x64)
+
+The review branch was synchronized with `main` at `f9f4942c`, after complete CI
+and squash merges of #248, #249 and #252. The combined dependency set passed
+10 CLI configuration tests, 3 environment-file tests, 20 scoped panel unit tests,
+9 Chromium configuration/recovery scenarios, panel and script typechecks, Knip,
+native lint and all 224 typed Svelte mirrors. The mirror invocations were batched
+only to fit Windows command limits; the maintained compiler, configuration and
+source mapping were unchanged. The real SDK contract artifact supplied the
+previously missing local fixture.
+
+This checkpoint also reproduced a Windows-only check-bootstrap defect: reading
+the existing relative Next.js self-link returned backslashes and was rejected
+as a foreign installation. Comparing its resolved target fixes repeated setup
+without replacing foreign links or installed directories. All three filesystem
+regressions passed on Windows. This local evidence does not replace fresh CI
+for the synchronized head.
