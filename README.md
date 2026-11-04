@@ -139,7 +139,7 @@ You need a Linux server (Debian/Ubuntu or Fedora/RHEL) with root access, ports
 80 and 443 open, and a DNS A record pointing at it. Then run:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo NELCOTA_VERSION=0.5.6 sh -s -- api.yourdomain.com
+curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo NELCOTA_VERSION=0.6.0 sh -s -- api.yourdomain.com
 ```
 
 The installer sets up cron, Docker and the CLI, creates the host in
@@ -158,7 +158,7 @@ with a preview and one confirmation:
 curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo sh -s -- --update
 ```
 
-CLI releases after 0.5.6 also provide `sudo nelcota update`. See
+CLI 0.6.0 also provides `sudo nelcota update`. See
 [updating an existing host](docs/update.md) for previews, project selection and
 hosts managed by the update controller.
 
@@ -190,9 +190,9 @@ and [host management](docs/host-management.md).
 
 ## Status
 
-This source targets server **0.5.6**. Nelcota is still `0.x`: read the
+This source targets server **0.6.0**. Nelcota is still `0.x`: read the
 [upgrade notes](docs/releases/README.md) and test backup and restore before
-upgrading production. See what changed in the [0.5.6 release notes](docs/releases/0.5.6.en.md);
+upgrading production. See what changed in the [0.6.0 release notes](docs/releases/0.6.0.en.md);
 newer changes are listed under [Unreleased](CHANGELOG.md#unreleased) and in the
 [current status](docs/current-status.md).
 

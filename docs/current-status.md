@@ -1,16 +1,19 @@
 # Current implementation and release status
 
-Documentation checkpoint: **2026-10-27**, server 0.5.6 scope after the hardened installer
-(#204–#209), readable panel passwords (#210) and the controller test fix (#212). SDK publication statements use the
+Documentation checkpoint: **2026-11-04**, server 0.6.0 source through reviewed
+configuration batches (#253) and transactional emails (#254), following the
+deployment, authentication and resource-isolation changes since 0.5.6.
+SDK publication statements use the
 [October 26](https://github.com/Nelcota/Nelcota/pull/181#issuecomment-6423930169) and
 [October 27](https://github.com/Nelcota/Nelcota/pull/202#issuecomment-6445288705) receipts; this page does not
 claim another production validation run. Verify server artifact availability and signed readiness on the
-[release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.6).
+[release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.6.0).
 
 ## Server and installation
 
-The workspace targets **0.5.6**. Its [release notes](releases/0.5.6.en.md) include
-the changes developed after published 0.5.5. A version number in source does not
+The workspace targets **0.6.0**. Its [release notes](releases/0.6.0.en.md) include
+the changes developed after published 0.5.6, including internal migrations
+V17–V22 and compatibility considerations. A version number in source does not
 publish an artifact: retain the tag, source and artifact hash when identifying
 a build. Future changes are listed under [Unreleased](../CHANGELOG.md#unreleased).
 
@@ -26,6 +29,10 @@ a build. Future changes are listed under [Unreleased](../CHANGELOG.md#unreleased
 | Outbound destinations | Project and host alert webhooks share one public-address policy; host management keeps a looser check for the operator's own servers | [Decisions](decisions.md), [0.5.5 notes](releases/0.5.5.en.md) |
 | Panel passwords | Generated without look-alike characters (0/O, 1/l/I); each one is printed with the command that makes a new one | [0.5.6 notes](releases/0.5.6.en.md) |
 | Controller tests | A failed backup, SMTP or alert test ends `failed` instead of blocking every later operation | [Host management](host-management.md), [0.5.6 notes](releases/0.5.6.en.md) |
+| Reviewed configuration | Host operators batch project settings/CORS, inspect impact, restart once and compare saved versus effective startup values | [Project settings](host-management.md#project-settings-in-the-current-checkout) |
+| Authentication emails | English/Portuguese templates, bounded link lifetimes, fictional previews and fixed-administrator SMTP tests | [Email templates](email-templates.md) |
+| Deployment and recovery | Scoped deployment tokens, named environments, uploaded migrations and automatic pre-migration backup agent | [Remote migrations](remote-migrations.md) |
+| Resource isolation | API rate/concurrency limits, bounded uploads, cancelled dropped queries and fair webhook claims | [0.6.0 notes](releases/0.6.0.en.md) |
 
 The installer script is fetched from `main` independently of the downloaded
 binary. Select and verify matching artifacts for the chosen version; a version

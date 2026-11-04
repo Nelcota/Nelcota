@@ -16,16 +16,14 @@ curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/instal
 nelcota --version
 ```
 
-This guide targets server 0.5.6. The basic manual migration and SDK path works
-with that published release. Project-owned development containers, migration
-watching and local email testing below are explicitly marked as current-checkout
-capabilities; they are not added by reinstalling the published 0.5.6 binary.
-Confirm published artifacts on the
-[release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.5.6). To build
-that release on macOS/Windows with Rust 1.99+:
+This guide targets server 0.6.0. It includes project-owned development containers,
+migration watching and local email testing. These capabilities are absent from
+0.5.6. Confirm published artifacts on the
+[release page](https://github.com/Nelcota/Nelcota/releases/tag/v0.6.0). To build
+that release on macOS/Windows with the pinned Rust toolchain:
 
 ```sh
-cargo install --locked --git https://github.com/Nelcota/Nelcota --tag v0.5.6 nelcota-server
+cargo install --locked --git https://github.com/Nelcota/Nelcota --tag v0.6.0 nelcota-server
 ```
 
 For this checkout, run `cargo build --locked -p nelcota-server` and use the
@@ -45,9 +43,8 @@ nelcota dev
 The command starts PostgreSQL 17, stores data in a Docker volume, applies
 internal migrations and serves the API in the foreground. The API is at
 `http://127.0.0.1:8000`, and the panel is at `/admin/`. Apply application files
-explicitly with `nelcota migrate` in step 4. Current-checkout builds also apply
-existing application migrations on startup and watch for changes; published
-0.5.6 does not watch the folder.
+explicitly with `nelcota migrate` in step 4. Version 0.6.0 also applies existing
+application migrations on startup and watches for changes.
 Its account is `admin@localhost`; read `ADMIN_PASSWORD` locally from
 `.nelcota/dev.env`. Do not share that file.
 
@@ -67,9 +64,9 @@ Use
 `--listen 127.0.0.1:9000` or `--db-port 54323` for free ports; changing the database
 port selects another container/volume, rather than moving data. Ctrl+C stops
 the API; the database container and its data remain until you stop/remove them.
-Current-checkout builds name containers and volumes using the canonical project
-folder and database port, print that pairing and refuse a port owned by another
-project. Published 0.5.6 uses a port-based container name: select a different free
+Version 0.6.0 names containers and volumes using the canonical project
+folder and database port, prints that pairing and refuses a port owned by another
+project. Version 0.5.6 uses a port-based container name: select a different free
 `--db-port` for each application. Preserve existing containers and explicitly dump
 and restore data if moving an application; changing a port does not migrate it.
 
@@ -77,10 +74,10 @@ and restore data if moving an application; changing a port does not migrate it.
 therefore returns a session immediately. It uses generated settings, not your
 application's `.env` overrides.
 
-### Optional: local email with the current checkout
+### Optional: local email
 
-This option requires a current-checkout binary; published 0.5.6 does not accept
-`--mail`. To exercise signup confirmation, resend, recovery and magic links locally, run
+This option requires 0.6.0; version 0.5.6 does not accept `--mail`.
+To exercise signup confirmation, resend, recovery and magic links locally, run
 `nelcota dev --mail`. It starts project-owned Mailpit, prints its loopback inbox
 URL, and uses verified STARTTLS with a private certificate in `.nelcota/mail/`.
 Docker and OpenSSL are required. The default application callback is
@@ -89,6 +86,10 @@ handler, which consumes the fragment with `auth.verifyEmailLink`. Signup returns
 `session: null` until confirmed, and early password sign-in returns
 `email_not_confirmed`. Mailpit remains available after stopping the API; remove
 its printed project container when finished. Captured links are credentials.
+
+Native Windows local mail currently has an extended-path/OpenSSL/Docker mount
+limitation. Use Linux for this optional workflow; building the Windows server
+does not establish that `dev --mail` works there.
 
 ## 3. Write a migration
 
@@ -223,7 +224,7 @@ variables and optional TOML. Host Compose/systemd and `dev` load their own setti
 Keep these environments distinct: the application folder owns SQL and generated
 types; a production host owns services, credentials and recovery backups.
 
-1. Use the panel to create a table and review access. Current-checkout panels
+1. Use the panel to create a table and review access. Version 0.6.0 panels
    group these steps under **Project journey**.
    Open the table's **View as** control to inspect a visitor and a selected user.
    Confirm both allowed and denied rows; the administrator view bypasses RLS.
@@ -232,11 +233,11 @@ types; a production host owns services, credentials and recovery backups.
    alone does not certify your grants or row policies.
 3. Keep the complete migration folder in Git. Export changes made through the
    panel; manual SQL editor changes need a migration file of their own.
-4. For published 0.5.6, provision a separate host using [deploy](deploy.md), copy
-   the complete migration folder into its project and apply it on that host.
-   Current-checkout builds also support the named-environment deployment flow
-   in [remote migrations](remote-migrations.md); use **Connect → Deployment
-   tokens** for its guided sequence and backup prerequisite.
+4. Provision a separate host using [deploy](deploy.md), then use the
+   named-environment deployment flow in [remote migrations](remote-migrations.md)
+   with matching 0.6.0 CLI/server artifacts. Use **Connect → Deployment tokens**
+   for its guided sequence and backup prerequisite. Older 0.5.6 hosts need the
+   complete migration folder applied locally until upgraded.
 5. Deploy your application code through its own hosting workflow, using the
    intended API origin. Applying database migrations does not publish a frontend.
 6. Before relying on production recovery, rehearse [database and file
