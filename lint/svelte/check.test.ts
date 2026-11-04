@@ -90,6 +90,23 @@ test("models deferred reactive conditions while retaining genuinely constant che
   expect(diagnostics[0]?.labels[0]?.span.line).toBe(4);
 });
 
+test("typed props exclusions retain unsafe defaults inside their binding", () => {
+  writeFileSync(
+    join(source, "probe.svelte"),
+    `<script lang="ts">
+  let {
+    value = JSON.parse("null"),
+  }: { value?: string } = $props();
+  </script>
+  <p>{value}</p>`,
+  );
+  const unsafe = checkSvelte(fixture).filter(
+    (diagnostic) => diagnostic.code === "typescript(no-unsafe-assignment)",
+  );
+  expect(unsafe).toHaveLength(1);
+  expect(unsafe[0]?.labels[0]?.span.line).toBe(3);
+});
+
 test("fails on invalid components and refuses component/Rune module collisions", () => {
   writeFileSync(join(source, "probe.svelte"), '<script lang="ts">const value = ;</script>');
   expect(() => checkSvelte(fixture)).toThrow();
