@@ -1,15 +1,15 @@
 # CLI reference
 
-Use `nelcota --help` and `<command> --help` for the installed binary. The baseline
-help below describes published server 0.5.6; the separate current-checkout
-section describes newer commands. Match release/tag and checksum, not the
+Use `nelcota --help` and `<command> --help` for the installed binary. The
+help below targets server 0.6.0, including the deployment commands near the end.
+Match release/tag and checksum, not the
 version string alone: a source build can still carry the workspace version.
 
 | Workflow | Required capability |
 | --- | --- |
-| Manual local migrations and types | Published 0.5.6 or a current-checkout build |
-| `dev --mail`, migration watching and project-owned development containers | Current-checkout build; absent from published 0.5.6 |
-| `link`, named remote environments, `migrate status`, deployment tokens and `db reset` | Current-checkout CLI and a matching deployment-capable server |
+| Manual local migrations and types | Version 0.5.6 or later |
+| `dev --mail`, migration watching and project-owned development containers | Version 0.6.0; local mail currently requires Linux |
+| `link`, named remote environments, `migrate status`, deployment tokens and `db reset` | Version 0.6.0 CLI and a matching deployment-capable server |
 | Automatic backups before production migrations | Matching backup-capable server/CLI and an explicitly configured project host agent |
 
 A guide or a panel build does not upgrade an installed CLI. If a command is
@@ -780,10 +780,10 @@ and [controlled updates](panel-updates.md).
 
 ## Current-checkout capabilities
 
-The following commands are not present in the published 0.5.6 CLI. Build the
-current checkout and use its absolute binary path, or use a later verified
-release that includes these capabilities. Remote deployment also requires a
-matching server; a newer CLI alone cannot add its HTTP endpoints.
+The following capabilities are included in 0.6.0 and absent from 0.5.6.
+Install matching verified CLI/server artifacts, or build the reviewed checkout
+and use its absolute binary path. A newer CLI alone cannot add remote deployment
+HTTP endpoints to an older server.
 
 ### nelcota link
 

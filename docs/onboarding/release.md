@@ -1,13 +1,13 @@
 # Release handoff after Notes acceptance
 
-The 0.5.6 release generates panel passwords without look-alike characters and
-keeps a failed controller test from blocking the host, as recorded
+The 0.6.0 release adds reviewed configuration, transactional email templates,
+deployment workflows and authentication/resource-isolation fixes, as recorded
 in the [server changelog](../../CHANGELOG.md). A local acceptance pass proves
 the selected binary and its Notes workflow; it does not publish binaries,
 container images, Rust crates or either SDK package.
 
 Historical Notes acceptance evidence for 0.4.0 is in
-[Notes acceptance evidence](validation.md); record new reports for the 0.5.6
+[Notes acceptance evidence](validation.md); record new reports for the 0.6.0
 candidate before publishing.
 
 ## Candidate evidence
@@ -27,10 +27,10 @@ of the release scope.
 
 ## Upgrade an existing project
 
-The 0.5.5 → 0.5.6 patch retains internal schema V16 with no new migration.
+The 0.5.6 → 0.6.0 upgrade applies internal migrations V17–V22.
 Rehearse that exact upgrade and a paired database/file restore on a disposable
 installation before publishing. Existing legacy-upgrade CI also covers
-0.3.1 → this checkout; that result does not substitute for the 0.5.5 baseline.
+0.3.1 → this checkout; that result does not substitute for the 0.5.6 baseline.
 
 Since 0.5.1, SMTP requires implicit TLS or mandatory STARTTLS, and Linux
 initialization checks privileges, the cron scheduler and requested UFW
@@ -40,12 +40,12 @@ operations; upgrades from 0.5.0 or older must review these. Review
 1. Take a database backup and, for disk storage, its paired file snapshot.
    Keep the `.dump` and `.dump.files/` together and test their restore in a
    separate project. Use [backup.md](../backup.md) for the commands.
-2. Allow a maintenance window for internal migrations `V14`, `V15` and `V16`
-   when upgrading from the published `0.4.0`. V14/V15 index user listing and
-   storage directories; adding stored columns and indexes can lock or rewrite
-   a large storage metadata table. V16 adds durable panel SSO redemption receipts
-   and is not part of the standalone auth migration selection. Measure the
-   upgrade on a representative staging copy before changing existing projects.
+2. Allow a maintenance window for `V17`–`V22` from `0.5.6`: deployment tokens
+   and audit, private avatar editor data, webhook queue/fair-claim changes,
+   encrypted refresh successors and signup PKCE binding. Older `0.4.0` projects
+   also need `V14`–`V16`; indexes and stored columns can lock or rewrite large
+   metadata tables. Measure the upgrade on a representative staging copy before
+   changing existing projects. Never edit released migration SQL/checksums.
 3. Once the target version is published, install its CLI and use
    `nelcota -p <project> upgrade --version <version>`. Check health, existing
    user login/refresh, RLS, an existing file download and webhook delivery.
@@ -58,6 +58,11 @@ Auth refresh lifetime validation now rejects values that cannot fit a
 PostgreSQL timestamp. Keep the normal `NELCOTA_REFRESH_TOKEN_TTL_DAYS=30`,
 or choose a positive representable value. Hash worker and webhook scheduling
 changes preserve the HTTP contract and password hashing parameters.
+
+Read the [0.6.0 compatibility notes](../releases/0.6.0.en.md#before-upgrading):
+existing signed file links must be reissued, API rate limits are on by default,
+signup password retention needs PKCE and Rust auth/core constructors changed.
+Server publication does not publish the source-only SDK changes.
 
 ## Publish a version
 

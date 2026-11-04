@@ -6,9 +6,11 @@ Dates use UTC.
 Server releases are listed here. The [TypeScript SDK](sdk/typescript/CHANGELOG.md)
 [Rust SDK](sdk/rust/CHANGELOG.md) and [Next.js integration](sdk/nextjs/CHANGELOG.md)
 have independent package versions. See [current status](docs/current-status.md)
-for the October 27 server scope and independent SDK publication checkpoint.
+for the current server scope and independent SDK publication checkpoints.
 
 ## [Unreleased]
+
+## [0.6.0] — 2026-11-04
 
 ### Added
 

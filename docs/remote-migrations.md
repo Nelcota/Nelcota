@@ -2,11 +2,10 @@
 
 Keep application SQL in `migrations/V<n>__<name>.sql`, commit it with the app,
 and apply the same complete folder in every environment. This workflow requires
-a server and CLI built with deployment API support; installing an older release
-does not add these source changes. Published 0.5.6 lacks `link`, named remote
+matching 0.6.0 server and CLI artifacts. Version 0.5.6 lacks `link`, named remote
 environments, deployment tokens and the automatic migration backup agent.
-Use the same reviewed current-checkout capability on the CLI and project server,
-or a later verified release that includes it; check installed `--help` first.
+Installing a newer CLI alone does not upgrade the project server. Verify both
+artifacts and check installed `--help` before continuing.
 
 ## Issue and link a deployment credential
 

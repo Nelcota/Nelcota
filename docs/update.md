@@ -9,7 +9,7 @@ Projects are processed one at a time.
 
 ## Availability
 
-The `update` command ships with CLI releases after 0.5.6. With such a CLI
+The `update` command ships with CLI 0.6.0. With that CLI
 installed:
 
 ```sh
@@ -39,11 +39,11 @@ sudo nelcota update --dry-run
 sudo nelcota -C /srv/nelcota -p shop update
 
 # Pin an exact stable release and accept the plan for automation.
-sudo nelcota update --version 0.5.6 --yes
+sudo nelcota update --version 0.6.0 --yes
 
 # Equivalent options for the installer used with an older CLI.
 curl -fsSL https://raw.githubusercontent.com/Nelcota/Nelcota/main/scripts/install.sh | sudo sh -s -- \
-  --update --dir /srv/nelcota --project shop --version 0.5.6 --dry-run
+  --update --dir /srv/nelcota --project shop --version 0.6.0 --dry-run
 ```
 
 Without a project selection, all projects are selected. Without `--version`,
