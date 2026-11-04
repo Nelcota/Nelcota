@@ -61,6 +61,11 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Changed
 
+- Apply a versioned prototype-poisoning fix to the Svelte build dependency,
+  remove disabled hosted Scalar features from embedded assets, and enforce the
+  reference's complete startup JavaScript budget. Cover tooling and examples
+  with dependency update automation and lockfile audits.
+
 - Extend the project journey through access verification, migrations, named-environment
   deployment and recovery. Render typed migration previews/results, retain explicit
   approval, and show actionable backup/history errors with the deployment time budget.

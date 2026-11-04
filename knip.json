@@ -13,6 +13,7 @@
         "src/main.ts",
         "src/theme-init.js",
         "assets/reference.html",
+        "src/reference.ts",
         "scripts/dev-panel.ts",
         "src/app.css",
         "src/**/*.memory.ts",
@@ -45,7 +46,7 @@
       "project": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.mjs"]
     },
     "sdk/nextjs": {
-      "entry": ["src/index.ts", "test/**/*.ts", "scripts/*.{ts,mjs}"],
+      "entry": ["test/**/*.ts", "scripts/*.{ts,mjs}"],
       "project": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.{ts,mjs}"]
     }
   }

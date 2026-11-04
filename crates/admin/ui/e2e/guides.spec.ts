@@ -133,6 +133,14 @@ test("Scalar renders an interactive OpenAPI reference and downloads the document
   await expect(reference.getByRole("button", { name: /Testar Requisição/i }).first()).toBeVisible();
   // The panel runs on a local URL, where Scalar would offer its hosted SDK sign-up.
   await expect(reference.getByRole("button", { name: /Gerar SDK/i })).toHaveCount(0);
+  await expect(reference.locator(".ask-agent-scalar-input")).toHaveCount(0);
+  await expect(reference.locator(".references-developer-tools")).toHaveCount(0);
+  await reference
+    .getByRole("button", { name: /Testar Requisição/i })
+    .first()
+    .click();
+  await expect(reference.getByRole("dialog").first()).toBeVisible();
+  await page.keyboard.press("Escape");
   expect(
     await page.locator("main").evaluate((element) => element.scrollWidth <= element.clientWidth),
   ).toBe(true);

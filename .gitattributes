@@ -1,2 +1,4 @@
 * text=auto eol=lf
 *.sh text eol=lf
+# Unified diffs need context spaces before tabs and on otherwise blank lines.
+patches/*.patch whitespace=-blank-at-eol,-space-before-tab

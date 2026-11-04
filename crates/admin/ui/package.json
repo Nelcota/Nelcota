@@ -11,6 +11,7 @@
     "guides:pending": "bun scripts/guides-i18n.ts --pending",
     "test": "bun --bun vitest run src",
     "test:node": "vitest run src",
+    "test:build": "bun --bun vitest run scripts",
     "test:memory": "vitest run --config vite.memory.config.ts",
     "contracts": "cargo run --manifest-path ../../../Cargo.toml -p nelcota-admin --example export_contracts && bun scripts/contracts.ts",
     "test:e2e": "playwright test"
@@ -24,7 +25,7 @@
     "@fontsource-variable/manrope": "^5.3.0",
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@lezer/highlight": "^1.2.5",
-    "@scalar/api-reference": "^1.74.0",
+    "@scalar/api-reference": "1.76.0",
     "@tanstack/svelte-query": "^6.3.5",
     "@tanstack/svelte-table": "^9.3.1",
     "@uppy/core": "^6.3.0",
@@ -59,10 +60,8 @@
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
   },
-  "overrides": {
-    "@ai-sdk/gateway@3": "3.0.221",
-    "@ai-sdk/provider-utils@4": "4.0.62",
-    "@ai-sdk/vue@3": "3.0.315",
-    "ai@6": "6.0.315"
+  "patchedDependencies": {
+    "@scalar/api-reference@1.76.0": "../../../patches/@scalar%2Fapi-reference@1.76.0.patch",
+    "deepmerge@4.3.1": "../../../patches/deepmerge@4.3.1.patch"
   }
 }
