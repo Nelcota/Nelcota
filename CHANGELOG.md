@@ -136,6 +136,9 @@ for the October 27 server scope and independent SDK publication checkpoint.
   default-only rows, ignored duplicates and rows skipped by insert triggers.
 - OpenAPI PATCH bodies no longer inherit required fields from complete row
   schemas when readable and writable columns match.
+- Inline table edits reload the current page instead of displaying the input
+  as persisted data, retaining PostgreSQL normalization, generated/triggered
+  values and the current filters, ordering and totals.
 
 - The table editor's JSON `null` handling no longer rewrites the SQL text the
   REST query compiler generates, which failed with a 500 if that text ever

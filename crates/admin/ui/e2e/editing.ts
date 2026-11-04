@@ -1,4 +1,4 @@
-import type { Page, Route } from "@playwright/test";
+import { expect, type Page, type Route } from "@playwright/test";
 
 import { rowPatch } from "./request-json";
 import { tableFixture } from "./response-json";
@@ -9,6 +9,12 @@ export async function editing(page: Page) {
   let patch!: { pk: Record<string, string>; values: Record<string, string | null> };
   const rowsHandler = async (route: Route) => {
     patch = rowPatch(route.request());
+    const values = { ...patch.values };
+    // Model server-side normalization: the displayed value must come from a read.
+    if (typeof values.title === "string") values.title = values.title.trim();
+    reordered.rows = reordered.rows.map((row) =>
+      row.id === patch.pk.id ? { ...row, ...values } : row,
+    );
     await route.fulfill({ json: { count: 1 } });
   };
   await page.route("**/admin/api/tables/notes/rows", rowsHandler);
@@ -24,7 +30,7 @@ export async function editing(page: Page) {
   await page.unroute("**/admin/api/tables/notes?*", listHandler);
   await page.unroute("**/admin/api/tables/notes/rows", rowsHandler);
   console.log(
-    "PASS: delayed refresh, primary key identity, keyboard NULL, 81-character focus, dirty cancel/Escape",
+    "PASS: delayed refresh, persisted normalization, primary key identity, keyboard NULL, 81-character focus, dirty cancel/Escape",
   );
 }
 
@@ -46,14 +52,15 @@ async function inlineEditing(page: Page, readPatch: () => Patch) {
     "Delayed response must reorder rows",
   );
   await page.locator('[data-cell="0:1"]').dblclick();
-  await page.locator("#inline-editor").fill("Edited correct row");
+  await page.locator("#inline-editor").fill("  Edited correct row  ");
   await page.locator("#inline-editor").press("Enter");
   await page.waitForFunction(() => Boolean(document.querySelector('[aria-busy="true"]')) === false);
   assert(readPatch().pk.id?.endsWith("012"), "Save must address the edited primary key");
   assert(
-    (await page.locator('[data-cell="0:1"]').innerText()) === "Edited correct row",
-    "Local update must affect same row",
+    readPatch().values.title === "  Edited correct row  ",
+    "The write must preserve the draft before server normalization",
   );
+  await expect(page.locator('[data-cell="0:1"]')).toHaveText("Edited correct row");
   await page.locator('[data-cell="0:2"]').dblclick();
   await page.locator("#inline-editor").press("Tab");
   assert(
