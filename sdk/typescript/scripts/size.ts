@@ -85,7 +85,8 @@ const BUDGETS: Record<string, number> = {
   "rest/index.js": 11_995,
   // Failed persistence must retain rotated tokens; background failures are observed.
   "auth/index.js": 17_210,
-  "storage/index.js": 9_420,
+  // Validating signed-URL response objects adds 12 B gzip (9,422 B total).
+  "storage/index.js": 9_440,
 };
 
 function closure(entry: string, seen = new Set<string>()): Set<string> {
