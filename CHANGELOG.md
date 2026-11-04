@@ -129,6 +129,14 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Fixed
 
+- REST write representations read only the selected columns and required embed
+  join keys, so unrelated column-level SELECT restrictions no longer reject
+  otherwise permitted inserts, updates or deletes.
+- Grouped inserts and upserts report the actual affected-row count, including
+  default-only rows, ignored duplicates and rows skipped by insert triggers.
+- OpenAPI PATCH bodies no longer inherit required fields from complete row
+  schemas when readable and writable columns match.
+
 - The table editor's JSON `null` handling no longer rewrites the SQL text the
   REST query compiler generates, which failed with a 500 if that text ever
   changed shape. The compiler now offers it as explicit options that only the
