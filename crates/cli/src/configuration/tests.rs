@@ -80,6 +80,24 @@ fn stale_source_replaced_project_and_unknown_or_host_controls_fail_closed() {
 }
 
 #[test]
+fn text_transport_values_do_not_bypass_the_catalogs_per_field_types() {
+    let before = source_env();
+    for input in [
+        json!({"signup_enabled": "false"}),
+        json!({"jwt_expiry_secs": "900"}),
+        json!({"cors_allow_origins": "https://example.test"}),
+        json!({"email_recovery_ttl_minutes": "10"}),
+        json!({"email_language": false}),
+        json!({"email_recovery_text_base64": true}),
+        json!({"email_recovery_subject_base64": 123}),
+        json!({"email_signup_text_base64": ["{{link}}"]}),
+    ] {
+        let error = prepare_changes(&before, input).err().unwrap();
+        assert_eq!(error.to_string(), "invalid_project_setting");
+    }
+}
+
+#[test]
 fn email_templates_preserve_multiline_literals_and_language_derived_impact() {
     let before = source_env();
     let text = "Olá {{email}}!\nD'água, $HOME, \\ e # continuam literais.\n{{link}}\n{{validity}}";

@@ -18,7 +18,7 @@ configuration rollback restores configuration, never a database snapshot.
 | --- | --- | --- |
 | 1 | Non-secret configuration catalog; batch auth/session, API/performance and global storage limits; saved/effective/source projection; conflict checks; localized review/apply UI | Initial 17-setting slice merged in #253; all 44 checks passed at `30175418`, then main CI passed at `04bc36b0`; real-host acceptance pending |
 | 2 | Public API CORS allowlist, preserving separate panel same-origin checks | Merged in #253 with complete CI, including owned Docker lifecycle/fault acceptance; real-host acceptance pending |
-| 3 | Email subjects, templates, language, preview and link lifetimes with bounded private persistence | Source implemented; Windows/Linux unit and real-PostgreSQL checks, browser scenarios, owned Docker controller recovery and verified-STARTTLS panel delivery passed; complete feature CI pending |
+| 3 | Email subjects, templates, language, preview and link lifetimes with bounded private persistence | Source implemented; Windows/Linux unit and real-PostgreSQL checks, browser scenarios, owned Docker recovery and verified-STARTTLS panel delivery passed; exact-head remote CI required in #254; real-host/provider acceptance pending |
 | 4 | Application S3 settings and credential testing, durable disk/S3 migration with object/version reconciliation and recovery | Pending |
 | 5 | Domain transitions with enrolled DNS scope, DNS/TLS preflight, proxy changes, OAuth/URL impact and recovery | Pending |
 | 6 | Per-project backup policies, richer schedules, retention and verified offsite recovery | Pending |
@@ -306,7 +306,32 @@ throttling. Its content assertion normalizes SMTP's RFC-mandated CRLF endings;
 production rendering and delivery were unchanged. Linux Clippy for
 core/auth/CLI/admin/server, all targets with `-D warnings`, also passed.
 
-Complete fresh feature CI is the remaining merge gate. These local results do
+Complete fresh feature CI is required before merge. These local results do
 not establish external-provider inbox delivery, real VPS/systemd, public DNS/TLS,
 S3 migration or PITR acceptance. Stages 4–12 and production deployment remain
 outside this delivery.
+
+### Email CI review follow-up (2026-11-04)
+
+The initial PR [#254](https://github.com/Nelcota/Nelcota/pull/254) head
+`cda5b956096325ac2f85e59a9adba6d43303056a` failed Rust partition 1 in
+[CI 41903076392](https://github.com/Nelcota/Nelcota/actions/runs/41903076392).
+Its fail-fast result is not accepted as a complete test pass. The other
+configured checks, including real Docker recovery, SMTP integration, complete
+Linux quality, panel/browser, SDK platforms and CodeQL, passed at that head.
+
+The failure was reproduced on Windows: an existing controller test expected a
+string-valued setting to fail JSON deserialization with 422. Strings now also
+carry email text, so a missing controller session correctly fails with 401;
+per-field types are still enforced by the worker's shared catalog. The corrected
+test separates malformed objects/injected fields from transport-valid text and
+checks that project cookies/bearer tokens authorize neither a valid email field
+nor a mistyped boolean. A new CLI regression explicitly rejects text in boolean,
+integer and origin fields, and non-text email templates, before preparing a batch.
+
+Controller tests passed on Windows (5) and Linux (6, including Unix IPC), CLI
+configuration tests passed on both (13), and all-target admin/CLI Clippy passed
+with `-D warnings` on both. This follow-up changes tests/documentation only;
+production behavior and the separately built assets are unchanged. Complete CI
+must run again for the corrected head; #254 retains the final immutable head/run
+evidence rather than treating the initial failed run as green.
