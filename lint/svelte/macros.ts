@@ -16,7 +16,11 @@ function bindingDefaults(name: ts.BindingName): SourceRange[] {
   return name.elements.flatMap((element) => {
     const value = element.initializer;
     if (isMacro(value, "$bindable") === false || value.arguments.length !== 0) return [];
-    return [{ start: value.getStart(), end: value.end }];
+    const binding = element.name.getStart();
+    return [
+      { start: binding, end: binding + 1 },
+      { start: value.getStart(), end: value.end },
+    ];
   });
 }
 
@@ -38,9 +42,15 @@ export function macroAssignments(component: Component): SourceRange[] {
       if (
         ts.isVariableDeclaration(node) &&
         node.type !== undefined &&
-        isMacro(node.initializer, "$props")
+        isMacro(node.initializer, "$props") &&
+        node.initializer.arguments.length === 0
       ) {
+        // Newer Oxlint reports the macro's assignment at the binding, not
+        // the initializer. Exclude only its first token position, never the
+        // binding's defaults: those may contain genuinely unsafe expressions.
+        const binding = node.name.getStart();
         ranges.push(
+          { start: binding, end: binding + 1 },
           { start: node.initializer.getStart(), end: node.initializer.end },
           ...bindingDefaults(node.name),
         );

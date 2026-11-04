@@ -22,7 +22,8 @@
 
   // A second copy restarts the feedback instead of being cut short by the
   // first one, and closing the block does not leave its timer running.
-  const feedback = new CopyFeedback(1500);
+  const COPY_FEEDBACK_DURATION_MS = 1_500;
+  const feedback = new CopyFeedback(COPY_FEEDBACK_DURATION_MS);
   $effect(() => () => feedback.dispose());
   let tokens = $state<Token[] | null>(null);
   $effect(() => {
