@@ -8,8 +8,7 @@
   import { Sheet, Button } from "$lib/components/ui";
 
   import { toast } from "svelte-sonner";
-  import ColumnFields from "./column-fields.svelte";
-  import SqlPreview from "$lib/shared/schema/components/sql-preview.svelte";
+  import ColumnSheetFields from "./column-sheet-fields.svelte";
   import {
     blankColumn,
     columnChanges,
@@ -118,21 +117,7 @@
       onsubmit={submit}
     >
       <fieldset class="contents" disabled={saving} aria-busy={saving}>
-        <ColumnFields bind:column {tables} mode={original ? "edit" : "add"} />
-        {#if original && column.data_type.trim() !== original.data_type}
-          <p class="rounded-2xl bg-well px-4 py-3 text-sm text-muted-foreground">
-            {t("tables.columnSheet.conversionBefore")}
-            <code>{original.name}::{column.data_type}</code>. {t(
-              "tables.columnSheet.conversionAfter",
-            )}
-          </p>
-        {/if}
-        <SqlPreview
-          {preview}
-          placeholder={original
-            ? t("tables.columnSheet.previewEdit")
-            : t("tables.columnSheet.previewAdd")}
-        />
+        <ColumnSheetFields bind:column {tables} {original} {preview} />
       </fieldset>
     </form>
 
