@@ -6,6 +6,15 @@ import type ptBR from "../../pt-BR/workspace/errors";
 import common from "./common";
 
 const en: Messages<typeof ptBR> = {
+  email_content_invalid:
+    "Check the language, limits, variables and exactly one {{link}} in the message. The subject must be one line without a link or recipient.",
+  email_project_mismatch: "Open the selected project's own panel to use its SMTP.",
+  email_not_configured: "Apply this project's SMTP configuration before sending a test.",
+  email_test_failed:
+    "SMTP did not confirm the test. Check the provider; no authentication link was issued. Inbox delivery is not confirmed.",
+  mail_busy: "All email delivery slots are busy. Wait and retry.",
+  rate_limited:
+    "Request limit reached. Wait before retrying; email tests are limited to one per minute.",
   network: "No answer from the server. Check that it is running and try again.",
   server_unreachable:
     "The server is not responding (HTTP {status}). It may be restarting: try again in a moment.",

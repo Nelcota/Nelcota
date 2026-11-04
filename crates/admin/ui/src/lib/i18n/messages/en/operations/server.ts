@@ -1,10 +1,12 @@
 import type { Messages } from "../../../index.svelte";
 import type ptBR from "../../pt-BR/operations/server";
 import alerts from "./alerts";
+import email from "./email";
 import routine from "./project-settings";
 
 const en: Messages<typeof ptBR> = {
   routine,
+  email,
   project_settings: "Project settings",
   unknown_project_setting: "The batch contains a field that this workflow cannot change.",
   invalid_project_setting: "Check the batch’s field types and limits.",

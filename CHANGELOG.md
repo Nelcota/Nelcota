@@ -12,6 +12,12 @@ for the October 27 server scope and independent SDK publication checkpoint.
 
 ### Added
 
+- Configurable English/Portuguese authentication emails: bounded plain-text
+  subjects/messages, safe placeholders, fictional previews and administrator-only
+  SMTP tests that issue no credentials. Reviewed host batches persist multiline
+  templates explicitly and configure actual recovery/confirmation/magic-link
+  expirations without changing existing links or their single-use/PKCE rules.
+
 - Catalog-backed project settings in the enrolled host panel: batch edits for
   auth/session, API/performance and global file limits with source revisions,
   non-secret impact review, one app restart and configuration-only recovery.

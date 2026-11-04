@@ -1,39 +1,37 @@
-//! Text of the link emails.
+//! Link rendering uses the same bounded policy as startup and panel previews.
 use super::LinkKind;
 use crate::Email;
+use nelcota_core::email::{Language, Settings};
 
-/// Email carrying a link to `page_url`. The token goes in the fragment: the
-/// browser does not send it to the app's server, so it never shows in logs or
-/// the `Referer`.
-pub(super) fn compose(kind: LinkKind, to: &str, page_url: &str, token: &str) -> Email {
+/// Tokens remain in the fragment and never enter subject headers or diagnostics.
+pub(super) fn compose(
+    kind: LinkKind,
+    to: &str,
+    page_url: &str,
+    token: &str,
+    settings: &Settings,
+) -> Result<Email, nelcota_core::email::Error> {
     let link = format!("{page_url}#type={}&token={token}", kind.as_str());
-    let validity = describe_minutes(kind.ttl_minutes());
-    let (subject, text) = match kind {
-        LinkKind::Recovery => (
-            "Reset your password",
+    let rendered = settings.render(kind, to, &link)?;
+    Ok(Email {
+        to: to.to_owned(),
+        subject: rendered.subject,
+        text: rendered.text,
+    })
+}
+
+pub(super) fn signup_notice(to: &str, language: Language) -> Email {
+    let (subject, text) = match language {
+        Language::English => (
+            "Your account already exists",
             format!(
-                "We received a request to reset the password of the account {to}.\n\n\
-                 To choose a new password, open the link below. It is valid for {validity} \
-                 and can be used only once:\n\n{link}\n\n\
-                 If this was not you, ignore this email: your password stays the same.\n"
+                "Someone tried to create an account with the email {to}, which already has one.\n\nIf it was you, sign in instead. If you forgot your password, reset it from the sign-in page.\n\nIf this was not you, ignore this email: your account has not changed.\n"
             ),
         ),
-        LinkKind::Signup => (
-            "Confirm your email",
+        Language::Portuguese => (
+            "Sua conta já existe",
             format!(
-                "Someone created an account with the email {to}.\n\n\
-                 To confirm it, open the link below. It is valid for {validity} \
-                 and can be used only once:\n\n{link}\n\n\
-                 If this was not you, ignore this email: the account stays unconfirmed.\n"
-            ),
-        ),
-        LinkKind::MagicLink => (
-            "Your sign-in link",
-            format!(
-                "We received a request to sign in to the account {to}.\n\n\
-                 To sign in, open the link below. It is valid for {validity} \
-                 and can be used only once:\n\n{link}\n\n\
-                 If this was not you, ignore this email: nobody signs in without the link.\n"
+                "Alguém tentou criar uma conta com o email {to}, que já tem uma.\n\nSe foi você, entre na conta. Se esqueceu a senha, redefina-a na página de acesso.\n\nSe não foi você, ignore este email: sua conta não foi alterada.\n"
             ),
         ),
     };
@@ -44,87 +42,49 @@ pub(super) fn compose(kind: LinkKind, to: &str, page_url: &str, token: &str) -> 
     }
 }
 
-/// Email telling the owner of an existing account that someone tried to sign
-/// up with its address. Signup answers that attempt like a new one, so this
-/// email is the only place where the account's existence shows.
-pub(super) fn signup_notice(to: &str) -> Email {
-    Email {
-        to: to.to_owned(),
-        subject: "Your account already exists".into(),
-        text: format!(
-            "Someone tried to create an account with the email {to}, \
-             which already has one.\n\n\
-             If it was you, sign in instead. If you forgot your password, \
-             reset it from the sign-in page.\n\n\
-             If this was not you, ignore this email: your account has not changed.\n"
-        ),
-    }
-}
-
-fn describe_minutes(minutes: i32) -> String {
-    match minutes {
-        60 => "1 hour".into(),
-        m if m % 60 == 0 => format!("{} hours", m / 60),
-        m => format!("{m} minutes"),
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{LinkKind, compose, describe_minutes, signup_notice};
-
+    use super::*;
     #[test]
-    fn link_carries_its_kind_and_token_in_the_fragment() {
+    fn links_and_reported_lifetimes_share_the_policy() {
+        let mut settings = Settings::default();
+        settings.recovery.ttl_minutes = 10;
+        settings.recovery.subject = Some("{{project_name}} · {{validity}}".into());
+        for kind in [LinkKind::Recovery, LinkKind::Signup, LinkKind::MagicLink] {
+            let email = compose(
+                kind,
+                "ana@example.test",
+                "https://app.example.test/receive",
+                "opaque",
+                &settings,
+            )
+            .unwrap();
+            assert!(
+                email
+                    .text
+                    .contains(&format!("#type={}&token=opaque", kind.as_str()))
+            );
+            assert!(!email.subject.contains("opaque"));
+            assert!(!format!("{email:?}").contains("opaque"));
+            assert!(email.text.contains("ana@example.test"));
+        }
         let email = compose(
             LinkKind::Recovery,
-            "ana@x.com",
-            "https://app.x.com/new-password",
-            "abc_-123",
-        );
-        assert_eq!(email.to, "ana@x.com");
-        assert!(
-            email
-                .text
-                .contains("https://app.x.com/new-password#type=recovery&token=abc_-123")
-        );
-        assert!(email.text.contains("ana@x.com"));
-        assert!(email.text.contains("valid for 1 hour"));
-
-        let email = compose(
-            LinkKind::MagicLink,
-            "ana@x.com",
-            "https://app.x.com/in",
-            "t",
-        );
-        assert!(
-            email
-                .text
-                .contains("https://app.x.com/in#type=magiclink&token=t")
-        );
-        assert!(email.text.contains("valid for 15 minutes"));
-
-        let email = compose(LinkKind::Signup, "ana@x.com", "https://app.x.com/ok", "t");
-        assert!(
-            email
-                .text
-                .contains("https://app.x.com/ok#type=signup&token=t")
-        );
-        assert!(email.text.contains("valid for 24 hours"));
+            "ana@example.test",
+            "https://app.example.test/receive",
+            "opaque",
+            &settings,
+        )
+        .unwrap();
+        assert_eq!(email.subject, "Nelcota · 10 minutes");
+        assert!(email.text.contains("valid for 10 minutes"));
     }
-
     #[test]
-    fn signup_notice_names_the_account_and_carries_no_link() {
-        let email = signup_notice("ana@x.com");
-        assert_eq!(email.to, "ana@x.com");
-        assert_eq!(email.subject, "Your account already exists");
-        assert!(email.text.contains("ana@x.com"));
-        assert!(!email.text.contains("http"), "{}", email.text);
-    }
-
-    #[test]
-    fn durations_read_naturally() {
-        assert_eq!(describe_minutes(15), "15 minutes");
-        assert_eq!(describe_minutes(60), "1 hour");
-        assert_eq!(describe_minutes(1440), "24 hours");
+    fn notices_have_no_link_in_both_languages() {
+        for language in [Language::English, Language::Portuguese] {
+            let email = signup_notice("ana@example.test", language);
+            assert!(email.text.contains("ana@example.test"));
+            assert!(!email.text.contains("http"));
+        }
     }
 }

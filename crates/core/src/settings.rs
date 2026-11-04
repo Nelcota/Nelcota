@@ -28,11 +28,13 @@ pub enum Kind {
     Boolean,
     Integer,
     Origins,
+    Text,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Group {
     Authentication,
+    Email,
     Api,
     Storage,
 }
@@ -81,6 +83,17 @@ pub enum SettingsError {
 }
 
 macro_rules! value {
+    (text, $v:ident) => {
+        $v.as_str().ok_or(SettingsError::Value)?.to_owned()
+    };
+    (encoded, $v:ident) => {
+        match $v.is_null() {
+            true => None,
+            false => Some(crate::email::encode(
+                $v.as_str().ok_or(SettingsError::Value)?,
+            )),
+        }
+    };
     (origins, $v:ident) => {
         Some(
             $v.as_array()
@@ -108,6 +121,12 @@ macro_rules! value {
     };
 }
 macro_rules! kind {
+    (text) => {
+        Kind::Text
+    };
+    (encoded) => {
+        Kind::Text
+    };
     (origins) => {
         Kind::Origins
     };
@@ -122,6 +141,12 @@ macro_rules! kind {
     };
 }
 macro_rules! nullable {
+    (text) => {
+        false
+    };
+    (encoded) => {
+        true
+    };
     (origins) => {
         true
     };
@@ -136,6 +161,9 @@ macro_rules! nullable {
     };
 }
 macro_rules! read {
+    (encoded, $c:ident, $field:ident) => {
+        serde_json::json!(crate::email::decode($c.$field.as_deref()).ok().flatten())
+    };
     (origins, $c:ident, $field:ident) => {
         match $c.cors_origins() {
             Ok(value) => serde_json::json!(value),
@@ -162,6 +190,13 @@ macro_rules! catalog {
 }
 
 macro_rules! effective {
+    ($field:ident, encoded, $c:ident) => {
+        serde_json::json!(
+            crate::email::Settings::from_config($c)
+                .ok()
+                .and_then(|s| s.catalog_value(stringify!($field)))
+        )
+    };
     (api_concurrency_per_caller, $kind:ident, $c:ident) => {
         serde_json::json!($c.api_concurrency_limit())
     };
@@ -182,6 +217,16 @@ catalog! {
     jwt_expiry_secs: integer, Authentication, 60, 86_400, [];
     refresh_token_ttl_days: integer, Authentication, 1, 3_650, [];
     auth_rate_limit_per_minute: integer, Authentication, 1, 1_000_000, [];
+    email_language: text, Email, 2, 5, [];
+    email_recovery_subject_base64: encoded, Email, 1, crate::email::MAX_SUBJECT_BYTES as u64, ["email_language"];
+    email_recovery_text_base64: encoded, Email, 1, crate::email::MAX_TEXT_BYTES as u64, ["email_language"];
+    email_signup_subject_base64: encoded, Email, 1, crate::email::MAX_SUBJECT_BYTES as u64, ["email_language"];
+    email_signup_text_base64: encoded, Email, 1, crate::email::MAX_TEXT_BYTES as u64, ["email_language"];
+    email_magiclink_subject_base64: encoded, Email, 1, crate::email::MAX_SUBJECT_BYTES as u64, ["email_language"];
+    email_magiclink_text_base64: encoded, Email, 1, crate::email::MAX_TEXT_BYTES as u64, ["email_language"];
+    email_recovery_ttl_minutes: integer, Email, crate::email::Kind::Recovery.bounds().0 as u64, crate::email::Kind::Recovery.bounds().1 as u64, [];
+    email_signup_ttl_minutes: integer, Email, crate::email::Kind::Signup.bounds().0 as u64, crate::email::Kind::Signup.bounds().1 as u64, [];
+    email_magiclink_ttl_minutes: integer, Email, crate::email::Kind::MagicLink.bounds().0 as u64, crate::email::Kind::MagicLink.bounds().1 as u64, [];
     api_rate_limit_per_minute: integer, Api, 0, 10_000_000, [];
     cors_allow_origins: origins, Api, 0, 32, [];
     max_rows: optional, Api, 1, 1_000_000, [];
@@ -222,6 +267,9 @@ impl Definition {
         }
         let valid = match self.kind {
             Kind::Boolean => value.is_boolean(),
+            Kind::Text => value
+                .as_str()
+                .is_some_and(|v| (self.minimum..=self.maximum).contains(&(v.len() as u64))),
             Kind::Integer => value
                 .as_u64()
                 .is_some_and(|v| (self.minimum..=self.maximum).contains(&v)),

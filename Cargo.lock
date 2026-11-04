@@ -2246,6 +2246,7 @@ name = "nelcota-core"
 version = "0.5.6"
 dependencies = [
  "axum",
+ "base64 0.23.1",
  "deadpool-postgres",
  "figment",
  "postgres-protocol",

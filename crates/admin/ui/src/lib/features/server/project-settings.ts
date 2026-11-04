@@ -1,10 +1,10 @@
 import type { ProjectSettingKey } from "$lib/generated/contracts";
 
-export type SettingValue = boolean | number | string[] | null;
+export type SettingValue = boolean | number | string | string[] | null;
 export type ProjectSetting = {
   key: ProjectSettingKey;
-  group: "authentication" | "api" | "storage";
-  kind: "boolean" | "integer" | "origins";
+  group: "authentication" | "email" | "api" | "storage";
+  kind: "boolean" | "integer" | "origins" | "text";
   nullable: boolean;
   minimum: number;
   maximum: number;
@@ -30,6 +30,7 @@ function matchesKind(setting: ProjectSetting, value: SettingValue): boolean {
   if (value === null) return setting.nullable;
   if (setting.kind === "boolean") return typeof value === "boolean";
   if (setting.kind === "origins") return validOrigins(value);
+  if (setting.kind === "text") return typeof value === "string";
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
 
@@ -126,6 +127,12 @@ function originsDraft(raw: DraftValue): string[] | undefined {
   return validOrigins(origins) ? origins : undefined;
 }
 
+function textValue(setting: ProjectSetting, raw: DraftValue): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const bytes = new TextEncoder().encode(raw).length;
+  return bytes >= setting.minimum && bytes <= setting.maximum ? raw : undefined;
+}
+
 function parsedDraft(setting: ProjectSetting, raw: DraftValue): SettingValue | undefined {
   if (raw === null && setting.nullable) return null;
   switch (setting.kind) {
@@ -135,6 +142,8 @@ function parsedDraft(setting: ProjectSetting, raw: DraftValue): SettingValue | u
       return originsDraft(raw);
     case "integer":
       return integerDraft(setting, raw);
+    case "text":
+      return textValue(setting, raw);
   }
 }
 

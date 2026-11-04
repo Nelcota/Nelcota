@@ -118,13 +118,19 @@ session clears it sooner.
 
 Links sent by email: password recovery, signup confirmation and magic link.
 
+The current checkout supports English/Portuguese defaults, bounded plain-text
+templates, fictional panel previews and fixed-administrator SMTP tests. Link
+lifetimes configure the actual expiration of new tokens; existing tokens,
+single-use consumption and PKCE are unchanged. See
+[email templates](email-templates.md) for bounds, variables and operator authority.
+
 | Column | Type | Notes |
 |---|---|---|
 | `id` | `bigint` PK | |
 | `user_id` | `uuid` → `auth.users` | `ON DELETE CASCADE` |
 | `kind` | `text` | `recovery`, `signup` or `magiclink`; a token only works as its kind |
 | `token_hash` | `bytea` unique | **SHA-256** of the token; the token itself is never stored |
-| `created_at`, `expires_at` | `timestamptz` | validity: recovery 1 hour, signup 24 hours, magic link 15 minutes |
+| `created_at`, `expires_at` | `timestamptz` | default validity: recovery 1 hour, signup 24 hours, magic link 15 minutes; configurable for newly issued links |
 | `used_at` | `timestamptz` | set on use; the link does not work again |
 | `code_challenge` | `text` | signup links only: the S256 challenge sent with the signup; the confirmation keeps the signup password only with its verifier (V22) |
 
@@ -359,7 +365,7 @@ the service or disable limits as a recovery shortcut.
 
 1. The app calls `POST /auth/v1/recover {email}`. The answer is always
    `200 {}`, so it does not reveal who has an account. If the account exists,
-   an email arrives (in English, subject "Reset your password") with the link
+   an email arrives (by default in English, subject "Reset your password") with the link
    `https://app.shop.com/new-password#type=recovery&token=...`.
 2. That app page reads the token from the fragment (`location.hash`), asks for
    the new password and calls `POST /auth/v1/verify {type: "recovery", token,
@@ -370,7 +376,7 @@ Guarantees:
 
 - The token travels in the URL fragment, which the browser sends to no server:
   it does not show up in logs or in the `Referer`.
-- It is valid for 1 hour and only once. Asking again voids the previous link.
+- By default it is valid for 1 hour and only once. Asking again voids the previous link.
 - At most one email per minute for the same account, on top of the per-IP
   rate limit: the endpoint cannot be used to flood someone's inbox.
 - The email goes out in the background: response time does not reveal whether
@@ -391,7 +397,7 @@ NELCOTA_EMAIL_CONFIRMATION_URL=https://app.shop.com/welcome
 
 1. `POST /auth/v1/signup` creates the account and answers `201 {"user": {...}}`
    **without** a session; an email ("Confirm your email") carries
-   `https://app.shop.com/welcome#type=signup&token=...`, valid for 24 hours.
+   `https://app.shop.com/welcome#type=signup&token=...`, valid for 24 hours by default.
    To keep the signup password, the client sends a PKCE pair, as for
    provider sign-in: it keeps a random `code_verifier` and sends
    `code_challenge = base64url(SHA-256(code_verifier))` with
@@ -456,7 +462,7 @@ NELCOTA_MAGIC_LINK_URL=https://app.shop.com/signed-in
 1. `POST /auth/v1/magiclink {email}` always answers `200 {}`. If the account
    exists, an email ("Your sign-in link") carries
    `https://app.shop.com/signed-in#type=magiclink&token=...`, valid for 15
-   minutes.
+   minutes by default.
 2. The page calls `POST /auth/v1/verify {type: "magiclink", token}` and gets a
    session; the email counts as confirmed.
 

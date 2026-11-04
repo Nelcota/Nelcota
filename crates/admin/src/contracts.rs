@@ -148,6 +148,33 @@ dto!(SignInProviders {
     github: bool
 });
 dto!(SignIn { signup_enabled: bool, email: bool, email_confirmation: bool, password_recovery: bool, magic_link: bool, providers: SignInProviders, redirect_urls: Vec<String>, callback_url: Option<String>, access_ttl_secs: u64, refresh_ttl_days: u32, rate_limit_per_minute: u32 });
+#[derive(Serialize, Deserialize, JsonSchema, TS)]
+#[serde(deny_unknown_fields)]
+pub struct EmailPreviewRequest {
+    #[schemars(length(max = 63))]
+    pub project: String,
+    #[schemars(length(max = 9))]
+    pub kind: String,
+    #[schemars(length(max = 5))]
+    pub language: String,
+    #[schemars(length(max = 200))]
+    pub subject: Option<String>,
+    #[schemars(length(max = 2048))]
+    pub text: Option<String>,
+    #[schemars(range(min = 1, max = 10080))]
+    pub ttl_minutes: u32,
+}
+dto!(EmailPreview {
+    subject: String,
+    text: String,
+    ttl_minutes: u32
+});
+dto!(EmailCapabilities {
+    project: String,
+    configured: bool,
+    test_recipient: String
+});
+dto!(EmailTest { accepted: bool });
 dto!(TypesResponse { base: Vec<String>, enums: Vec<String> });
 #[derive(Clone, Serialize, Deserialize, JsonSchema, TS)]
 #[serde(deny_unknown_fields)]
@@ -282,6 +309,10 @@ pub fn exports() -> (String, String) {
         MetricsResponse,
         SignInProviders,
         SignIn,
+        EmailPreviewRequest,
+        EmailPreview,
+        EmailCapabilities,
+        EmailTest,
         TypesResponse,
         AvatarCrop,
         AvatarEditor,

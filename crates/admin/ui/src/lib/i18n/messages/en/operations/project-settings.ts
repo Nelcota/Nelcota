@@ -28,6 +28,7 @@ const en: Messages<typeof ptBR> = {
   reviewedChanges: "Server-validated changes",
   groups: {
     authentication: "Authentication and sessions",
+    email: "Transactional emails and links",
     api: "API and performance",
     storage: "Global file limits",
   },
@@ -48,6 +49,46 @@ const en: Messages<typeof ptBR> = {
       "Saved configuration is invalid or uses ambiguous syntax. The operator must correct it through the recovery procedure; it will not be overwritten.",
   },
   fields: {
+    email_language: {
+      label: "Email language",
+      hint: "English or Portuguese defaults. Custom templates are preserved; review them when changing language.",
+    },
+    email_recovery_subject_base64: {
+      label: "Recovery subject",
+      hint: "One line, up to 200 UTF-8 bytes. Variables: {{project_name}} and {{validity}}; never tokens or recipients in the subject.",
+    },
+    email_recovery_text_base64: {
+      label: "Recovery message",
+      hint: "Plain text up to 2,048 UTF-8 bytes and exactly one {{link}}. Line breaks are preserved without shell interpretation.",
+    },
+    email_signup_subject_base64: {
+      label: "Confirmation subject",
+      hint: "One line, up to 200 UTF-8 bytes. Default behavior follows the selected language.",
+    },
+    email_signup_text_base64: {
+      label: "Confirmation message",
+      hint: "Plain text up to 2,048 UTF-8 bytes and exactly one {{link}}. No executable HTML or unknown variables.",
+    },
+    email_magiclink_subject_base64: {
+      label: "Sign-in link subject",
+      hint: "One line, up to 200 UTF-8 bytes. Default behavior follows the selected language.",
+    },
+    email_magiclink_text_base64: {
+      label: "Sign-in link message",
+      hint: "Plain text up to 2,048 UTF-8 bytes and exactly one {{link}}. Links remain single-use.",
+    },
+    email_recovery_ttl_minutes: {
+      label: "Recovery lifetime (minutes)",
+      hint: "5–1,440 minutes. Applies only to new links; already issued links are unchanged.",
+    },
+    email_signup_ttl_minutes: {
+      label: "Confirmation lifetime (minutes)",
+      hint: "5–10,080 minutes. Applies only to new links; does not disable email confirmation.",
+    },
+    email_magiclink_ttl_minutes: {
+      label: "Sign-in link lifetime (minutes)",
+      hint: "1–60 minutes. This link authenticates by itself; keep its lifetime short.",
+    },
     signup_enabled: {
       label: "Public signup",
       hint: "Allows new accounts. Disabling does not block existing accounts.",

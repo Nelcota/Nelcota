@@ -125,6 +125,10 @@ pub(crate) fn prepare(
             let text = match change {
                 Value::Automatic(()) => None,
                 Value::Origins(origins) => Some(origins.join(",")),
+                Value::Text(value) if definition.key.ends_with("_base64") => {
+                    Some(nelcota_core::email::encode(value))
+                }
+                Value::Text(value) => Some(value.clone()),
                 _ => Some(serde_json::to_string(change)?),
             };
             values.insert(definition.environment_key(), text);
@@ -212,6 +216,7 @@ pub(crate) fn view(
                 key: definition.key.into(),
                 group: match definition.group {
                     settings::Group::Authentication => wire::Group::Authentication,
+                    settings::Group::Email => wire::Group::Email,
                     settings::Group::Api => wire::Group::Api,
                     settings::Group::Storage => wire::Group::Storage,
                 },
@@ -219,6 +224,7 @@ pub(crate) fn view(
                     settings::Kind::Boolean => wire::Kind::Boolean,
                     settings::Kind::Integer => wire::Kind::Integer,
                     settings::Kind::Origins => wire::Kind::Origins,
+                    settings::Kind::Text => wire::Kind::Text,
                 },
                 nullable: definition.nullable,
                 minimum: definition.minimum,
@@ -258,6 +264,9 @@ pub(crate) fn checked_runtime(snapshot: &wire::Runtime) -> anyhow::Result<()> {
             (_, Value::Automatic(())) => definition.nullable,
             (settings::Kind::Boolean, Value::Boolean(_)) => true,
             (settings::Kind::Integer, Value::Integer(_)) => true,
+            (settings::Kind::Text, Value::Text(_)) => {
+                definition.validate(&serde_json::to_value(value)?).is_ok()
+            }
             (settings::Kind::Origins, Value::Origins(_)) => {
                 definition.validate(&serde_json::to_value(value)?).is_ok()
             }

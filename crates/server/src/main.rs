@@ -140,7 +140,10 @@ async fn serve(config: Config) -> anyhow::Result<()> {
     let passwords = Arc::new(Passwords::new(hash_concurrency()));
     let auth = AuthState {
         mailer,
-        mail_delivery: Arc::default(),
+        mail_delivery: Arc::new(
+            nelcota_auth::MailDelivery::default()
+                .with_email_settings(nelcota_core::email::Settings::from_config(&config)?)?,
+        ),
         oauth,
         pool: pool.clone(),
         keys: keys.clone(),

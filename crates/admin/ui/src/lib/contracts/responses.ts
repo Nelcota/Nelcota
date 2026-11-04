@@ -46,6 +46,7 @@ const READ_CONTRACTS: Record<string, ContractName> = {
   "/storage": "StorageOverview",
   "/types": "TypesResponse",
   "/sign-in": "SignIn",
+  "/email": "EmailCapabilities",
   "/denied": "DeniedRequests",
   "/metrics": "MetricsResponse",
   "/webhooks": "WebhookEndpoints",
@@ -59,6 +60,8 @@ interface RouteContract {
   name: ContractName;
 }
 const ROUTE_CONTRACTS: readonly RouteContract[] = [
+  { methods: ["POST"], pattern: /^\/email\/preview$/, name: "EmailPreview" },
+  { methods: ["POST"], pattern: /^\/email\/test$/, name: "EmailTest" },
   { methods: ["GET"], pattern: /^\/tables\/[^/]+\/structure$/, name: "Structure" },
   { methods: ["GET"], pattern: /^\/tables\/[^/]+$/, name: "TableData" },
   { methods: ["GET"], pattern: /^\/storage\/buckets\/[^/]+\/objects$/, name: "StorageListing" },

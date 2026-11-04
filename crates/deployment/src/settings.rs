@@ -15,6 +15,7 @@ pub struct Runtime {
 pub enum Value {
     Boolean(bool),
     Integer(u64),
+    Text(#[cfg_attr(feature = "schema", schemars(length(max = 2048)))] String),
     Origins(
         #[cfg_attr(
             feature = "schema",
@@ -35,6 +36,7 @@ pub enum Kind {
     Boolean,
     Integer,
     Origins,
+    Text,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -42,6 +44,7 @@ pub enum Kind {
 #[serde(rename_all = "snake_case")]
 pub enum Group {
     Authentication,
+    Email,
     Api,
     Storage,
 }

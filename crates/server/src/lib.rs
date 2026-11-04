@@ -160,7 +160,7 @@ pub fn app(
         .route("/health/configuration", get(settings::runtime))
         .merge(rest)
         .with_state(state)
-        .merge(nelcota_auth::router(auth))
+        .merge(nelcota_auth::router(auth.clone()))
         .layer(TimeoutLayer::with_status_code(
             StatusCode::GATEWAY_TIMEOUT,
             request_timeout,
@@ -181,6 +181,9 @@ pub fn app(
     }
     router = router.layer(cors);
     if let Some(admin) = admin {
+        router = router.merge(nelcota_admin::email_router(admin.clone(), auth).layer(
+            TimeoutLayer::with_status_code(StatusCode::GATEWAY_TIMEOUT, Duration::from_secs(35)),
+        ));
         // Panel statements have a 30 s database limit and may wait 5 s for
         // a pool connection. Let PostgreSQL finish before the HTTP deadline.
         router = router.merge(

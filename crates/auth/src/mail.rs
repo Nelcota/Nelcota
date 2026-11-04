@@ -48,6 +48,8 @@ pub trait Mailer: Send + Sync + 'static {
 pub struct MailDelivery {
     slots: Arc<Semaphore>,
     timeout: Duration,
+    settings: nelcota_core::email::Settings,
+    last_test: std::sync::Mutex<Option<std::time::Instant>>,
 }
 
 impl Default for MailDelivery {
@@ -61,6 +63,50 @@ impl MailDelivery {
         Self {
             slots: Arc::new(Semaphore::new(max_in_flight.max(1))),
             timeout,
+            settings: nelcota_core::email::Settings::default(),
+            last_test: std::sync::Mutex::new(None),
+        }
+    }
+
+    /// Configure content without changing the published standalone AuthSettings.
+    pub fn with_email_settings(
+        mut self,
+        settings: nelcota_core::email::Settings,
+    ) -> Result<Self, nelcota_core::email::Error> {
+        settings.validate()?;
+        self.settings = settings;
+        Ok(self)
+    }
+
+    pub fn email_settings(&self) -> &nelcota_core::email::Settings {
+        &self.settings
+    }
+
+    /// A panel test shares admission/deadlines but never creates an auth token.
+    /// The caller must choose the configured administrator, never a request address.
+    pub async fn send_test(&self, mailer: Arc<dyn Mailer>, message: Email) -> Result<(), ApiError> {
+        let slot = self.reserve()?;
+        {
+            let mut last = self.last_test.lock().map_err(|_| ApiError::internal())?;
+            if let Some(previous) = *last {
+                let elapsed = previous.elapsed();
+                if elapsed < Duration::from_secs(60) {
+                    return Err(ApiError::rate_limited(crate::retry_after_secs(
+                        Duration::from_secs(60) - elapsed,
+                    )));
+                }
+            }
+            *last = Some(std::time::Instant::now());
+        }
+        let result = tokio::time::timeout(slot.timeout, mailer.send(message)).await;
+        drop(slot);
+        match result {
+            Ok(Ok(())) => Ok(()),
+            _ => Err(ApiError::new(
+                StatusCode::BAD_GATEWAY,
+                "email_test_failed",
+                "SMTP did not confirm the test message; no authentication link was issued",
+            )),
         }
     }
 
@@ -376,5 +422,64 @@ mod tests {
             .unwrap();
         assert!(err.0.contains("NELCOTA_SMTP_FROM"));
         assert!(!err.0.contains("secret"));
+    }
+
+    fn preview_message() -> Email {
+        Email {
+            to: "admin@example.test".into(),
+            subject: "[TEST] preview".into(),
+            text: "No issued token".into(),
+        }
+    }
+
+    struct PreviewMailer {
+        pending: bool,
+    }
+    impl Mailer for PreviewMailer {
+        fn send(&self, _: Email) -> BoxFuture<'_, Result<(), MailError>> {
+            Box::pin(async {
+                if self.pending {
+                    return std::future::pending().await;
+                }
+                Ok(())
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn test_overload_preserves_cooldown_and_deadline_releases_admission() {
+        let delivery = MailDelivery::new(1, Duration::from_millis(10));
+        let slot = delivery.reserve().unwrap();
+        let mailer = Arc::new(PreviewMailer { pending: false });
+        assert_eq!(
+            delivery
+                .send_test(mailer.clone(), preview_message())
+                .await
+                .unwrap_err()
+                .code(),
+            "mail_busy"
+        );
+        drop(slot);
+        delivery
+            .send_test(mailer.clone(), preview_message())
+            .await
+            .unwrap();
+        assert_eq!(
+            delivery
+                .send_test(mailer, preview_message())
+                .await
+                .unwrap_err()
+                .status(),
+            StatusCode::TOO_MANY_REQUESTS
+        );
+        assert!(delivery.reserve().is_ok());
+
+        let delivery = MailDelivery::new(1, Duration::from_millis(10));
+        let error = delivery
+            .send_test(Arc::new(PreviewMailer { pending: true }), preview_message())
+            .await
+            .unwrap_err();
+        assert_eq!(error.code(), "email_test_failed");
+        assert!(delivery.reserve().is_ok());
     }
 }

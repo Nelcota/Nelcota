@@ -193,6 +193,9 @@ pub enum Response {
         code: String,
     },
 }
+/// Bounded controller batch, including escaped email text and the CORS allowlist.
+pub const MAX_REQUEST_BYTES: usize = 32768;
+
 #[cfg(unix)]
 pub fn call(socket: &std::path::Path, request: &Request) -> anyhow::Result<Response> {
     use std::{
@@ -204,7 +207,7 @@ pub fn call(socket: &std::path::Path, request: &Request) -> anyhow::Result<Respo
     stream.set_read_timeout(Some(Duration::from_secs(15)))?;
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
     let bytes = serde_json::to_vec(request)?;
-    if bytes.len() > 16384 {
+    if bytes.len() > MAX_REQUEST_BYTES {
         anyhow::bail!("request too large");
     }
     stream.write_all(&(bytes.len() as u32).to_be_bytes())?;

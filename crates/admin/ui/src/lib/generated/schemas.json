@@ -1387,6 +1387,111 @@
     "title": "DeploymentMigrationState",
     "type": "string"
   },
+  "EmailCapabilities": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+      "configured": {
+        "type": "boolean"
+      },
+      "project": {
+        "type": "string"
+      },
+      "test_recipient": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "project",
+      "configured",
+      "test_recipient"
+    ],
+    "title": "EmailCapabilities",
+    "type": "object"
+  },
+  "EmailPreview": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+      "subject": {
+        "type": "string"
+      },
+      "text": {
+        "type": "string"
+      },
+      "ttl_minutes": {
+        "format": "uint32",
+        "minimum": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "subject",
+      "text",
+      "ttl_minutes"
+    ],
+    "title": "EmailPreview",
+    "type": "object"
+  },
+  "EmailPreviewRequest": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "properties": {
+      "kind": {
+        "maxLength": 9,
+        "type": "string"
+      },
+      "language": {
+        "maxLength": 5,
+        "type": "string"
+      },
+      "project": {
+        "maxLength": 63,
+        "type": "string"
+      },
+      "subject": {
+        "maxLength": 200,
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "text": {
+        "maxLength": 2048,
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "ttl_minutes": {
+        "format": "uint32",
+        "maximum": 10080,
+        "minimum": 1,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "project",
+      "kind",
+      "language",
+      "subject",
+      "text",
+      "ttl_minutes"
+    ],
+    "title": "EmailPreviewRequest",
+    "type": "object"
+  },
+  "EmailTest": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+      "accepted": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "accepted"
+    ],
+    "title": "EmailTest",
+    "type": "object"
+  },
   "ExportedMigration": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "properties": {
@@ -1921,6 +2026,7 @@
       "Group": {
         "enum": [
           "authentication",
+          "email",
           "api",
           "storage"
         ],
@@ -1930,7 +2036,8 @@
         "enum": [
           "boolean",
           "integer",
-          "origins"
+          "origins",
+          "text"
         ],
         "type": "string"
       },
@@ -1956,6 +2063,16 @@
                 "jwt_expiry_secs",
                 "refresh_token_ttl_days",
                 "auth_rate_limit_per_minute",
+                "email_language",
+                "email_recovery_subject_base64",
+                "email_recovery_text_base64",
+                "email_signup_subject_base64",
+                "email_signup_text_base64",
+                "email_magiclink_subject_base64",
+                "email_magiclink_text_base64",
+                "email_recovery_ttl_minutes",
+                "email_signup_ttl_minutes",
+                "email_magiclink_ttl_minutes",
                 "api_rate_limit_per_minute",
                 "cors_allow_origins",
                 "max_rows",
@@ -1972,7 +2089,7 @@
               ],
               "type": "string"
             },
-            "maxItems": 17,
+            "maxItems": 27,
             "type": "array",
             "uniqueItems": true
           },
@@ -1989,6 +2106,16 @@
               "jwt_expiry_secs",
               "refresh_token_ttl_days",
               "auth_rate_limit_per_minute",
+              "email_language",
+              "email_recovery_subject_base64",
+              "email_recovery_text_base64",
+              "email_signup_subject_base64",
+              "email_signup_text_base64",
+              "email_magiclink_subject_base64",
+              "email_magiclink_text_base64",
+              "email_recovery_ttl_minutes",
+              "email_signup_ttl_minutes",
+              "email_magiclink_ttl_minutes",
               "api_rate_limit_per_minute",
               "cors_allow_origins",
               "max_rows",
@@ -2073,6 +2200,10 @@
             "maximum": 9007199254740991,
             "minimum": 0,
             "type": "integer"
+          },
+          {
+            "maxLength": 2048,
+            "type": "string"
           },
           {
             "items": {
@@ -2926,6 +3057,16 @@
               "jwt_expiry_secs",
               "refresh_token_ttl_days",
               "auth_rate_limit_per_minute",
+              "email_language",
+              "email_recovery_subject_base64",
+              "email_recovery_text_base64",
+              "email_signup_subject_base64",
+              "email_signup_text_base64",
+              "email_magiclink_subject_base64",
+              "email_magiclink_text_base64",
+              "email_recovery_ttl_minutes",
+              "email_signup_ttl_minutes",
+              "email_magiclink_ttl_minutes",
               "api_rate_limit_per_minute",
               "cors_allow_origins",
               "max_rows",
@@ -3188,6 +3329,10 @@
             "maximum": 9007199254740991,
             "minimum": 0,
             "type": "integer"
+          },
+          {
+            "maxLength": 2048,
+            "type": "string"
           },
           {
             "items": {

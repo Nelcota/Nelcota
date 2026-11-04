@@ -58,6 +58,16 @@ provider IDs or generated values require your own credentials.
 | `NELCOTA_SMTP_URL` | `Option<Secret>` | `unset` | `smtps://user:REPLACE@smtp.example.com:465` | Auth email transport: `smtps://` or `smtp://` with one `tls=required`. Other TLS/query options, repeated options and fragments are refused. Set sender and recovery page together. Blank is absent. |
 | `NELCOTA_SMTP_CA_FILE` | `Option<PathBuf>` | `unset` | `/path/to/private-ca.pem` | Additional PEM trust anchor for a private SMTP server. Hostname and certificate verification remain enabled. |
 | `NELCOTA_SMTP_FROM` | `Option<String>` | `unset` | `App <no-reply@example.com>` | Sender mailbox/display name. Quote spaces in the deployment environment-file format. |
+| `NELCOTA_EMAIL_LANGUAGE` | `String` | `en` | `pt-BR` | Default auth email language: exactly en or pt-BR. Custom templates are preserved. |
+| `NELCOTA_EMAIL_RECOVERY_TTL_MINUTES` | `u32` | `60` | `10` | Actual expiration of new recovery links; 5–1440 minutes. |
+| `NELCOTA_EMAIL_SIGNUP_TTL_MINUTES` | `u32` | `1440` | `60` | Actual expiration of new confirmation links; 5–10080 minutes. |
+| `NELCOTA_EMAIL_MAGICLINK_TTL_MINUTES` | `u32` | `15` | `5` | Actual expiration of new passwordless links; 1–60 minutes. |
+| `NELCOTA_EMAIL_RECOVERY_SUBJECT_BASE64` | `Option<String>` | `unset` | `RFC 4648 base64` | Optional UTF-8 subject, one line, at most 200 decoded bytes. |
+| `NELCOTA_EMAIL_RECOVERY_TEXT_BASE64` | `Option<String>` | `unset` | `RFC 4648 base64` | Optional plain-text message, at most 2048 decoded UTF-8 bytes. |
+| `NELCOTA_EMAIL_SIGNUP_SUBJECT_BASE64` | `Option<String>` | `unset` | `RFC 4648 base64` | Optional confirmation subject, one line, at most 200 decoded bytes. |
+| `NELCOTA_EMAIL_SIGNUP_TEXT_BASE64` | `Option<String>` | `unset` | `RFC 4648 base64` | Optional confirmation message, at most 2048 decoded UTF-8 bytes. |
+| `NELCOTA_EMAIL_MAGICLINK_SUBJECT_BASE64` | `Option<String>` | `unset` | `RFC 4648 base64` | Optional sign-in subject, one line, at most 200 decoded bytes. |
+| `NELCOTA_EMAIL_MAGICLINK_TEXT_BASE64` | `Option<String>` | `unset` | `RFC 4648 base64` | Optional sign-in message, at most 2048 decoded UTF-8 bytes. |
 | `NELCOTA_PASSWORD_RECOVERY_URL` | `Option<String>` | `unset` | `https://app.example.com/recovery` | Required with SMTP; HTTP(S) application link page without a fragment. Production should use HTTPS. |
 | `NELCOTA_EMAIL_CONFIRMATION_URL` | `Option<String>` | `unset` | `https://app.example.com/confirm` | With SMTP, makes signup wait for email confirmation. HTTP(S) page without a fragment. |
 | `NELCOTA_MAGIC_LINK_URL` | `Option<String>` | `unset` | `https://app.example.com/sign-in` | With SMTP, enables passwordless links for existing accounts. HTTP(S) page without a fragment. |
@@ -106,6 +116,11 @@ cannot be enabled through configuration. `Secret` affects log formatting, not
 encryption of the environment file. API signatures are not a substitute for
 private key storage. Backend and backup S3 credentials/settings are separate.
 
+Email link pages are bounded to 2048 bytes and reject credentials, fragments and
+whitespace. Templates use explicit base64 only in private startup persistence;
+the panel edits plain text. See [email templates](email-templates.md) for allowed
+variables, defaults, preview/test boundaries and standalone examples.
+
 ## Project configuration batches (current checkout)
 
 With a matching server and enrolled controller, **Server → Settings → Project
@@ -113,7 +128,10 @@ settings** edits signup, access/refresh lifetimes, authentication/API budgets,
 CORS, REST row/body/concurrency limits, connection-pool size, request/statement
 timeouts and global file size/quota/free-space/upload limits. The core catalog
 defines tighter bounds for panel operations without narrowing the established
-startup configuration contract. Nullable fields offer a reset to their default.
+startup configuration contract. The email group adds ten catalog fields for
+language, subjects/messages and link expiration. Nullable templates reset to
+their selected language's default; the effective projection shows that actual
+text. Changing language reviews its implicit effect on default templates too.
 
 The operator reviews the exact non-secret before/after values and confirms one
 batch with one app restart. The panel distinguishes saved values, their default
@@ -130,7 +148,7 @@ proxy/client-IP headers cannot grant access to it. Keep the independent CLI/SSH
 recovery path and use matching controller/application builds.
 
 Docker/disk layout restrictions remain in place. S3 migration, native/systemd,
-PITR, MFA, email customization and other approved stages are tracked separately
+PITR, MFA and other approved stages are tracked separately
 in the [full implementation ledger](goals/panel-configuration.md); they are not
 enabled by these fields or by removing a blocker.
 

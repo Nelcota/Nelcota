@@ -3,6 +3,7 @@
 import argparse
 import base64
 import hashlib
+import http.cookiejar
 import json
 import pathlib
 import socket
@@ -23,11 +24,17 @@ def free_port():
         return listener.getsockname()[1]
 
 
-def request(url, body=None):
+def request(url, body=None, *, opener=None, origin=None):
     data = None if body is None else json.dumps(body).encode()
-    req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'})
+    headers = {'Content-Type': 'application/json'}
+    if origin is not None:
+        headers['Origin'] = origin
+    req = urllib.request.Request(url, data=data, headers=headers)
+    send = urllib.request.urlopen
+    if opener is not None:
+        send = opener.open
     try:
-        with urllib.request.urlopen(req, timeout=5) as response:
+        with send(req, timeout=5) as response:
             return response.status, json.load(response)
     except urllib.error.HTTPError as error:
         return error.code, json.load(error)
@@ -44,6 +51,48 @@ def wait_for(task):
             pass
         time.sleep(0.2)
     raise AssertionError('development fixture did not become ready')
+
+
+def panel_email(base, project, inbox, postgres):
+    """Exercise production SMTP through the panel, not an in-memory mailer."""
+    state = dict(line.split('=', 1) for line in (project / '.nelcota/dev.env').read_text().splitlines() if line and not line.startswith('#'))
+    session = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+
+    def panel(path, body=None):
+        return request(base + '/admin/api/' + path, body, opener=session, origin=base)
+
+    status, _ = panel('login', {'email': shlex.split(state['ADMIN_EMAIL'])[0], 'password': shlex.split(state['ADMIN_PASSWORD'])[0]})
+    assert status == 200
+    status, capability = panel('email')
+    assert status == 200 and capability['configured'] is True
+    draft = {
+        'project': capability['project'], 'kind': 'recovery', 'language': 'pt-BR',
+        'subject': '{{project_name}} · {{validity}}',
+        'text': "Olá {{email}}!\nD'água $HOME \\ #\n{{link}}\n{{validity}}", 'ttl_minutes': 10,
+    }
+    status, preview = panel('email/preview', draft)
+    assert status == 200 and preview['subject'] == 'Projeto exemplo · 10 minutos'
+    assert 'person@example.invalid' in preview['text']
+    assert 'preview-not-an-authentication-token' in preview['text']
+
+    def token_count():
+        return subprocess.check_output(['docker', 'exec', postgres, 'psql', '-U', 'postgres', '-Atc', 'SELECT count(*) FROM auth.one_time_tokens'], text=True).strip()
+
+    before = token_count()
+    status, sent = panel('email/test', draft)
+    assert status == 200 and sent['accepted'] is True
+    messages = wait_for(lambda: [item for item in request(inbox + '/api/v1/messages')[1].get('messages', []) if item['Subject'].startswith('[TEST] ')])
+    assert len(messages) == 1
+    message = request(inbox + '/api/v1/message/' + messages[0]['ID'])[1]
+    assert message['Subject'] == '[TEST] ' + preview['subject']
+    assert [recipient['Address'] for recipient in message['To']] == [capability['test_recipient']]
+    # SMTP canonicalizes LF to CRLF; compare decoded message content, not wire endings.
+    assert preview['text'] in message['Text'].replace('\r\n', '\n')
+    assert 'No authentication link was issued' in message['Text']
+    assert token_count() == before
+    status, rejected = panel('email/test', draft)
+    assert status == 429 and rejected['code'] == 'rate_limited'
+    print('PASS: panel preview/test, verified STARTTLS capture, fixed recipient, literal Unicode/newlines, no issued token and one-minute budget')
 
 
 def run(binary, testing_helpers=False, remote_migrations=False, browser=False):
@@ -127,6 +176,7 @@ def run(binary, testing_helpers=False, remote_migrations=False, browser=False):
                 status, verified = request(base + '/auth/v1/verify', {**{key: value[0] for key, value in fragment.items()}, 'code_verifier': verifier})
                 assert status == 200 and verified['access_token']
                 assert request(base + '/auth/v1/token?grant_type=password', account)[0] == 200
+                panel_email(base, first, inbox, pg)
                 processes[-1].terminate()
                 processes[-1].wait(timeout=15)
                 start()

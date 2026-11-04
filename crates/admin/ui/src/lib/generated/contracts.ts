@@ -47,6 +47,10 @@ export type MetricsTotals = { requests: number, refused: number, errors: number,
 export type MetricsResponse = { range: string, step_secs: number, since: string, points: Array<MetricsPoint>, totals: MetricsTotals, };
 export type SignInProviders = { google: boolean, github: boolean, };
 export type SignIn = { signup_enabled: boolean, email: boolean, email_confirmation: boolean, password_recovery: boolean, magic_link: boolean, providers: SignInProviders, redirect_urls: Array<string>, callback_url: string | null, access_ttl_secs: number, refresh_ttl_days: number, rate_limit_per_minute: number, };
+export type EmailPreviewRequest = { project: string, kind: string, language: string, subject: string | null, text: string | null, ttl_minutes: number, };
+export type EmailPreview = { subject: string, text: string, ttl_minutes: number, };
+export type EmailCapabilities = { project: string, configured: boolean, test_recipient: string, };
+export type EmailTest = { accepted: boolean, };
 export type TypesResponse = { base: Array<string>, enums: Array<string>, };
 export type AvatarCrop = { x: number, y: number, zoom: number, rotation: number, };
 export type AvatarEditor = { source: string, crop: AvatarCrop, };
@@ -126,5 +130,5 @@ using: string | null,
  * Which new/changed rows are accepted.
  */
 check: string | null, };
-export type ProjectSettingKey = "signup_enabled" | "jwt_expiry_secs" | "refresh_token_ttl_days" | "auth_rate_limit_per_minute" | "api_rate_limit_per_minute" | "cors_allow_origins" | "max_rows" | "max_body_bytes" | "api_concurrency_per_caller" | "db_pool_size" | "request_timeout_secs" | "statement_timeout_secs" | "storage_max_file_size" | "storage_max_total_size" | "storage_min_free_bytes" | "storage_upload_timeout_secs" | "storage_uploads_per_caller";
+export type ProjectSettingKey = "signup_enabled" | "jwt_expiry_secs" | "refresh_token_ttl_days" | "auth_rate_limit_per_minute" | "email_language" | "email_recovery_subject_base64" | "email_recovery_text_base64" | "email_signup_subject_base64" | "email_signup_text_base64" | "email_magiclink_subject_base64" | "email_magiclink_text_base64" | "email_recovery_ttl_minutes" | "email_signup_ttl_minutes" | "email_magiclink_ttl_minutes" | "api_rate_limit_per_minute" | "cors_allow_origins" | "max_rows" | "max_body_bytes" | "api_concurrency_per_caller" | "db_pool_size" | "request_timeout_secs" | "statement_timeout_secs" | "storage_max_file_size" | "storage_max_total_size" | "storage_min_free_bytes" | "storage_upload_timeout_secs" | "storage_uploads_per_caller";
 export type RowData = Record<string, string | null>;

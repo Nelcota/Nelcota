@@ -20,7 +20,13 @@ pub(crate) async fn issue(
     user_id: Uuid,
     kind: LinkKind,
     code_challenge: Option<&str>,
+    ttl_minutes: u32,
 ) -> Result<Option<String>, ApiError> {
+    let (minimum, maximum) = kind.bounds();
+    if !(minimum..=maximum).contains(&ttl_minutes) {
+        return Err(ApiError::internal());
+    }
+    let ttl_minutes = i32::try_from(ttl_minutes).map_err(|_| ApiError::internal())?;
     // Serializes the empty-token case too. There is no token row to lock on
     // the first request; every issuer instead locks the owning account.
     let eligible = tx
@@ -63,7 +69,7 @@ pub(crate) async fn issue(
             &user_id,
             &kind.as_str(),
             &hash,
-            &kind.ttl_minutes(),
+            &ttl_minutes,
             &code_challenge,
         ],
     )

@@ -4,6 +4,7 @@
 pub mod claims;
 pub mod config;
 pub mod db;
+pub mod email;
 pub mod error;
 pub mod extract;
 pub mod migration_backup;

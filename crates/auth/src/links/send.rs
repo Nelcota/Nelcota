@@ -102,7 +102,20 @@ async fn send_pending(
         .map_err(db_error)?
         .map(|row| row.get(0));
     let token = match user {
-        Some(user_id) => issue(&tx, user_id, kind, None).await?,
+        Some(user_id) => {
+            issue(
+                &tx,
+                user_id,
+                kind,
+                None,
+                state
+                    .mail_delivery
+                    .email_settings()
+                    .template(kind)
+                    .ttl_minutes,
+            )
+            .await?
+        }
         None => None,
     };
     tx.commit().await.map_err(db_error)?;
@@ -124,7 +137,11 @@ pub(crate) fn notify_existing_signup(state: &AuthState, to: &str, slot: MailSlot
     if !state.limiter.signup_notice(to) {
         return;
     }
-    slot.send(mailer.clone(), signup_notice(to), "signup_notice");
+    slot.send(
+        mailer.clone(),
+        signup_notice(to, state.mail_delivery.email_settings().language),
+        "signup_notice",
+    );
 }
 
 /// Sends a committed link in the background: the response time does not
@@ -138,6 +155,22 @@ pub(crate) fn deliver(state: &AuthState, kind: LinkKind, to: &str, token: &str, 
             return;
         }
     };
-    let message = compose(kind, to, page_url, token);
+    let message = match compose(
+        kind,
+        to,
+        page_url,
+        token,
+        state.mail_delivery.email_settings(),
+    ) {
+        Ok(message) => message,
+        Err(_) => {
+            tracing::error!(
+                event = "auth.email_render_failed",
+                kind = kind.as_str(),
+                "could not render a link email"
+            );
+            return;
+        }
+    };
     slot.send(mailer.clone(), message, kind.as_str());
 }

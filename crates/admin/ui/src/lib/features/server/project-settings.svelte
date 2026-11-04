@@ -3,6 +3,7 @@
   import { Button, Input } from "$lib/components/ui";
   import { i18n, intlLocale, translate } from "$lib/i18n/index.svelte";
   import type { Configuration } from "./contracts";
+  import EmailPreview from "./email-preview.svelte";
   import type { ProjectSettingKey } from "$lib/generated/contracts";
   import {
     projectChanges,
@@ -15,11 +16,13 @@
 
   let {
     view,
+    project,
     disabled,
     prepare,
     ondirty,
   }: {
     view: ProjectSettingsView | null;
+    project: string;
     disabled: boolean;
     prepare: (configuration: Configuration) => Promise<boolean>;
     ondirty: (dirty: boolean) => void;
@@ -30,7 +33,11 @@
   const blocked = $derived(disabled || canEdit(view) === false);
   const changes = $derived(view === null ? null : projectChanges(view, draft));
   const count = $derived(changes === null ? 0 : Object.keys(changes).length);
-  const groups = ["authentication", "api", "storage"] as const;
+  const groups = $derived(
+    (["authentication", "email", "api", "storage"] as const).filter(
+      (group) => view?.settings.some((setting) => setting.group === group) === true,
+    ),
+  );
   const formatter = $derived(new Intl.NumberFormat(intlLocale()));
   $effect(() => {
     const snapshot = view;
@@ -54,10 +61,12 @@
   function display(value: SettingValue, key: ProjectSettingKey): string {
     if (value === null) return s(key === "cors_allow_origins" ? "anyOrigin" : "automatic");
     if (typeof value === "boolean") return s(value ? "yes" : "no");
+    if (typeof value === "string") return value;
     if (Array.isArray(value)) return value.length === 0 ? s("noOrigins") : value.join(", ");
     return formatter.format(value);
   }
   function explicitDraft(setting: ProjectSetting): string {
+    if (setting.kind === "text") return String(setting.saved_value ?? setting.expected_value ?? "");
     if (setting.kind === "origins")
       return Array.isArray(setting.saved_value) ? setting.saved_value.join("\n") : "";
     return String(setting.saved_value ?? setting.minimum);
@@ -106,10 +115,10 @@
       </p>{/if}
     {#if failure !== ""}<p role="alert" class="text-sm text-destructive">{failure}</p>{/if}
     {#each groups as group (group)}
-      <fieldset class="grid gap-4" disabled={blocked}>
+      <fieldset class="grid min-w-0 gap-4" disabled={blocked}>
         <legend class="mb-3 text-lg font-semibold">{s(`groups.${group}`)}</legend>
         {#each view.settings.filter((setting) => setting.group === group) as setting (setting.key)}
-          <div class="grid gap-2 rounded-2xl border border-border p-4">
+          <div class="grid min-w-0 gap-2 rounded-2xl border border-border p-4">
             <label class="flex flex-wrap items-center gap-3" for={`setting-${setting.key}`}>
               <span class="font-medium">{s(`fields.${setting.key}.label`)}</span>
               {#if setting.kind === "boolean"}
@@ -143,6 +152,37 @@
                 disabled={blocked || draft[setting.key] === null}
                 oninput={(event) => edit(setting.key, event.currentTarget.value)}
                 aria-describedby={`hint-${setting.key}`}></textarea>{/if}
+            {#if setting.kind === "text" && setting.key === "email_language"}
+              <select
+                id={`setting-${setting.key}`}
+                class="rounded-xl border border-border bg-background p-3"
+                value={textDraft(setting.key)}
+                onchange={(event) => edit(setting.key, event.currentTarget.value)}
+                aria-describedby={`hint-${setting.key}`}
+              >
+                <option value="en">English</option><option value="pt-BR">Português (Brasil)</option>
+              </select>
+            {/if}
+            {#if setting.kind === "text" && setting.key.endsWith("_subject_base64")}
+              <Input
+                id={`setting-${setting.key}`}
+                maxlength={setting.maximum}
+                value={textDraft(setting.key)}
+                disabled={blocked || draft[setting.key] === null}
+                oninput={(event) => edit(setting.key, event.currentTarget.value)}
+                aria-describedby={`hint-${setting.key}`}
+              />
+            {/if}
+            {#if setting.kind === "text" && setting.key.endsWith("_text_base64")}
+              <textarea
+                id={`setting-${setting.key}`}
+                class="min-h-20 w-full min-w-0 rounded-xl border border-border bg-background p-3"
+                maxlength={setting.maximum}
+                value={textDraft(setting.key)}
+                disabled={blocked || draft[setting.key] === null}
+                oninput={(event) => edit(setting.key, event.currentTarget.value)}
+                aria-describedby={`hint-${setting.key}`}></textarea>
+            {/if}
             {#if setting.nullable}
               <label class="flex items-center gap-2 text-sm"
                 ><input
@@ -171,6 +211,9 @@
               </p>{/if}
           </div>
         {/each}
+        {#if group === "email" && view.settings.some((setting) => setting.group === "email")}
+          <EmailPreview {project} {view} {draft} disabled={blocked} />
+        {/if}
       </fieldset>
     {/each}
     <p class="text-sm text-muted-foreground">{s("impact")}</p>

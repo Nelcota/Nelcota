@@ -16,9 +16,9 @@ configuration rollback restores configuration, never a database snapshot.
 
 | Stage | Deliverable | Status |
 | --- | --- | --- |
-| 1 | Non-secret configuration catalog; batch auth/session, API/performance and global storage limits; saved/effective/source projection; conflict checks; localized review/apply UI | Initial 17-setting slice implemented; local checks and remote Linux/owned Docker CI passed at `ba1b61a1`; real-host acceptance pending |
-| 2 | Public API CORS allowlist, preserving separate panel same-origin checks | Source implemented; local checks and remote Linux/owned Docker CI passed at `ba1b61a1`; real-host acceptance pending |
-| 3 | Email subjects, templates, language, preview and link lifetimes with bounded private persistence | Pending |
+| 1 | Non-secret configuration catalog; batch auth/session, API/performance and global storage limits; saved/effective/source projection; conflict checks; localized review/apply UI | Initial 17-setting slice merged in #253; all 44 checks passed at `30175418`, then main CI passed at `04bc36b0`; real-host acceptance pending |
+| 2 | Public API CORS allowlist, preserving separate panel same-origin checks | Merged in #253 with complete CI, including owned Docker lifecycle/fault acceptance; real-host acceptance pending |
+| 3 | Email subjects, templates, language, preview and link lifetimes with bounded private persistence | Source implemented; Windows/Linux unit and real-PostgreSQL checks, browser scenarios, owned Docker controller recovery and verified-STARTTLS panel delivery passed; complete feature CI pending |
 | 4 | Application S3 settings and credential testing, durable disk/S3 migration with object/version reconciliation and recovery | Pending |
 | 5 | Domain transitions with enrolled DNS scope, DNS/TLS preflight, proxy changes, OAuth/URL impact and recovery | Pending |
 | 6 | Per-project backup policies, richer schedules, retention and verified offsite recovery | Pending |
@@ -197,10 +197,10 @@ explicit doubles, as documented in [host management](../host-management.md).
 Disposable S3 integration is not acceptance of application-storage migration or
 an operator's external provider.
 
-The final integrated head still needs fresh complete CI. Native/systemd, real
-VPS, public DNS/TLS, external-provider and PITR acceptance remain unexecuted;
-stages 3–12 are still pending. No release or production deployment is established
-by these results.
+At this historical checkpoint, the final integrated head still needed fresh
+complete CI and stages 3–12 were pending. Native/systemd, real VPS, public
+DNS/TLS, external-provider and PITR acceptance remained unexecuted. No release
+or production deployment is established by these results.
 
 ### Dependency integration checkpoint (2026-11-04, Windows x64)
 
@@ -219,3 +219,94 @@ as a foreign installation. Comparing its resolved target fixes repeated setup
 without replacing foreign links or installed directories. All three filesystem
 regressions passed on Windows. This local evidence does not replace fresh CI
 for the synchronized head.
+
+### Final configuration integration (2026-11-04)
+
+PR [#253](https://github.com/Nelcota/Nelcota/pull/253) was squash-merged only
+after all **44 individual checks** passed for
+`3017541828d14506b958472fd320d2cb1f96e418`:
+
+- [CI 41889264028](https://github.com/Nelcota/Nelcota/actions/runs/41889264028):
+  complete Linux quality, owned Docker lifecycle/fault acceptance, PostgreSQL/S3,
+  panel/browser, SDKs, packaging, upgrade and supply-chain jobs passed.
+- [CodeQL 41889255258](https://github.com/Nelcota/Nelcota/actions/runs/41889255258),
+  [Rust SDK 41889263711](https://github.com/Nelcota/Nelcota/actions/runs/41889263711)
+  and [SSR SDK 41889263696](https://github.com/Nelcota/Nelcota/actions/runs/41889263696)
+  passed. The macOS SDK job twice failed to acquire a hosted runner; the unchanged
+  third attempt ran and passed. Cancelled jobs were not accepted as green.
+- The resulting main commit `04bc36b02c14d18fc49f74acd80d318e2c098ae0` passed all
+  43 post-merge checks, including
+  [CI 41897488760](https://github.com/Nelcota/Nelcota/actions/runs/41897488760).
+
+This validates the integrated configuration/CORS delivery, not stage 3's later
+source changes, remaining roadmap stages or a production deployment.
+
+### Email implementation checkpoint (2026-11-04, Windows x64)
+
+The separate `feat/panel-email` work adds ten email fields to the catalog (27
+total), English/Portuguese defaults, bounded single-pass plain-text templates,
+explicit UTF-8/base64 persistence, fictional previews, fixed-administrator SMTP
+tests and actual configured expiration for newly issued links. It preserves the
+host/project authority split, write-only SMTP credentials and configuration-only
+recovery. Existing `AuthSettings` and `AdminState` construction remains compatible.
+
+Related checks ran sequentially against the final source:
+
+| Check | Result |
+| --- | --- |
+| Core configuration / email / settings | 18 / 5 / 5 tests passed |
+| Auth link rendering / mail delivery | 4 / 8 tests passed |
+| CLI configuration | 12 tests passed, including escaped email/CORS request bounds |
+| Real PostgreSQL email configuration | 4 scenarios passed, including valid service-role JWT denial, CSRF, fixed recipient, no issued test token, sanitized SMTP failure and all three configured-lifetime/single-use flows |
+| Existing recovery / signup / magic-link PostgreSQL regressions | 5 / 7 / 4 passed |
+| Admin contracts / email renderer / embedded assets | 6 / 1 / 7 passed |
+| Settings/controller/response and guide/catalog Vitest | 77 passed across 7 related files |
+| Email/settings/recovery Chromium | 12 passed, one worker, including narrow-screen inert previews and unsaved drafts |
+| Native lint / all typed Svelte mirrors | No diagnostics; all 225 mirrors checked in Windows-sized batches using the maintained compiler/configuration |
+| Formatting, script/rule/panel typechecks, Knip, package size, boundaries and documentation versions | Passed; Knip retains its 12 existing non-blocking configuration hints |
+| Generated contracts and browser validators | Rust contract drift tests passed; regenerating browser validators was byte-for-byte unchanged |
+| Panel production build / Windows server rebuild | Passed; reference startup remains 1,088,062 B gzip within the 1,100,000 B gate |
+
+The real database scenarios used the shared disposable PostgreSQL 17 container
+on port 55433; their leftover test databases were removed. Linux compilation,
+the extended controller restart/rollback campaign and the production panel-send
+path through verified STARTTLS remain separate checks at this checkpoint.
+Complete feature CI is still required before integration. Real VPS/systemd,
+public DNS/TLS, external-provider inbox delivery and PITR acceptance remain
+unexecuted; stages 4–12 remain pending. No release or deployment was performed.
+
+### Email Linux/Docker checkpoint (2026-11-04)
+
+Linux amd64 validation used the pinned Rust 1.99.1 Bookworm image with four build
+jobs, a four-CPU/eight-GiB container limit and low-priority sequential suites. A
+Linux-owned volume provided real POSIX private-file semantics and isolated build
+outputs; the Windows source tree and unrelated containers were not modified.
+
+- Server build passed. Core email/settings (5/5), auth mail delivery (8), CLI
+  configuration (12) and all four real-PostgreSQL email scenarios passed.
+- `scripts/test-host-management.py` passed the complete owned-container lifecycle
+  campaign (306 seconds). The added email batch exercised literal multiline
+  persistence, actual runtime readback after apply/recovery, exact source recovery
+  on rollback, one application restart and unchanged other-project configuration
+  and acknowledged database writes in the baseline and five injected-fault runs.
+- The campaign's DNS/provenance, public TLS, proxy reload and unused PITR image
+  extension remain explicit doubles. This is Docker acceptance, not VPS/systemd
+  or external-provider acceptance.
+
+The first SMTP attempt failed before the new panel test: Docker Desktop did not
+forward Mailpit's automatically published ports to the outer Linux container's
+loopback. Independent probes verified STARTTLS/TLS 1.3 using the generated CA and
+the expected certificate identity through the host gateway. Only the owned
+fixture's TCP ports were transparently forwarded for the rerun; SMTP settings,
+certificate/hostname verification and production source were not relaxed.
+The rerun of `scripts/test-dev.py` passed: real signup delivery/confirmation and
+restart persistence, then authenticated panel preview/test, fixed administrator
+delivery, Unicode/multiline content, no added token rows and one-minute test
+throttling. Its content assertion normalizes SMTP's RFC-mandated CRLF endings;
+production rendering and delivery were unchanged. Linux Clippy for
+core/auth/CLI/admin/server, all targets with `-D warnings`, also passed.
+
+Complete fresh feature CI is the remaining merge gate. These local results do
+not establish external-provider inbox delivery, real VPS/systemd, public DNS/TLS,
+S3 migration or PITR acceptance. Stages 4–12 and production deployment remain
+outside this delivery.

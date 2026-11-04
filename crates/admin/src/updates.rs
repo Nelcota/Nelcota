@@ -290,7 +290,9 @@ pub fn controller_router(config: ControllerConfig) -> Router {
         .route("/admin", get(|| async { Redirect::to("/admin/") }))
         .route("/admin/", get(crate::assets::controller_spa))
         .route("/admin/{*rest}", get(crate::assets::controller_spa))
-        .layer(DefaultBodyLimit::max(16384))
+        .layer(DefaultBodyLimit::max(
+            nelcota_deployment::protocol::MAX_REQUEST_BYTES,
+        ))
         .layer(middleware::from_fn_with_state(state.clone(), boundary))
         .layer(middleware::from_fn(crate::middleware::security_headers))
         .with_state(state)
