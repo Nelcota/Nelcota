@@ -16,8 +16,8 @@ configuration rollback restores configuration, never a database snapshot.
 
 | Stage | Deliverable | Status |
 | --- | --- | --- |
-| 1 | Non-secret configuration catalog; batch auth/session, API/performance and global storage limits; saved/effective/source projection; conflict checks; localized review/apply UI | Source implemented; local unit/browser checks passed; Linux/Docker acceptance pending |
-| 2 | Public API CORS allowlist, preserving separate panel same-origin checks | Source implemented; local unit/browser checks passed; Linux/Docker acceptance pending |
+| 1 | Non-secret configuration catalog; batch auth/session, API/performance and global storage limits; saved/effective/source projection; conflict checks; localized review/apply UI | Initial 17-setting slice implemented; local checks and remote Linux/owned Docker CI passed at `ba1b61a1`; real-host acceptance pending |
+| 2 | Public API CORS allowlist, preserving separate panel same-origin checks | Source implemented; local checks and remote Linux/owned Docker CI passed at `ba1b61a1`; real-host acceptance pending |
 | 3 | Email subjects, templates, language, preview and link lifetimes with bounded private persistence | Pending |
 | 4 | Application S3 settings and credential testing, durable disk/S3 migration with object/version reconciliation and recovery | Pending |
 | 5 | Domain transitions with enrolled DNS scope, DNS/TLS preflight, proxy changes, OAuth/URL impact and recovery | Pending |
@@ -105,9 +105,12 @@ application panel is down. Never overwrite a foreign edit during recovery.
 Document the exact tests run below as implementation lands; a source build or
 local mock is not production acceptance.
 
-- Current branch: `feat/panel-configuration` (based on `6771e853`).
-- No Docker/PostgreSQL, native/systemd, real VPS, DNS/TLS, S3 or PITR acceptance
-  has been claimed for these changes.
+- Initial implementation branch: `feat/panel-configuration` (based on `6771e853`),
+  preserved in replacement PR [#253](https://github.com/Nelcota/Nelcota/pull/253)
+  after the follow-up review of superseded PR #251.
+- The initial Windows evidence below did not include Docker/PostgreSQL, S3,
+  native/systemd, real VPS, DNS/TLS or PITR acceptance. Later remote evidence is
+  recorded separately with its exact commit and run.
 - Full root JavaScript quality checks require the generated real SDK database
   fixture; do not fabricate a replacement schema to bypass that prerequisite.
 
@@ -133,18 +136,18 @@ Completed sequentially, without PostgreSQL integration fixtures:
 | Panel production build | Passed; reference startup 1,088,062 B gzip, below 1,100,000 B |
 | `cargo build --locked -p nelcota-server` after panel rebuild | Passed; Windows debug binary embeds the rebuilt assets |
 
-`bun run lint` remains blocked by the absent real CLI-generated
-`sdk/typescript/test/contract/generated/database.ts`. The full Svelte mirror
+At this initial local checkpoint, `bun run lint` was blocked by the absent real
+CLI-generated `sdk/typescript/test/contract/generated/database.ts`. The full Svelte mirror
 command also exceeds the Windows argument limit; the same maintained compiler,
 configuration and source-map checks were run on all five changed components.
 Neither targeted check is reported as a passing full root quality run.
 
 The Docker daemon was unreachable, including after the agent-server restart.
-The Linux-only controller wiring and the extended real-host fault-injection
-campaign have not been compiled/executed locally. PostgreSQL/CORS-panel
-integration, actual restarts/rollback, systemd, real VPS, provider, TLS and PITR
-acceptance remain pending. Do not deploy this branch on the strength of local
-UI mocks or these unit checks alone.
+The Linux-only controller wiring and the extended owned-container fault-injection
+campaign were not compiled/executed locally. PostgreSQL/CORS-panel integration
+and actual restarts/rollback required remote validation at this checkpoint.
+Systemd, real VPS, public-provider, TLS and PITR acceptance remain separate gates.
+Do not deploy on the strength of local UI mocks or these unit checks alone.
 
 ### Follow-up PR review (2026-11-04)
 
@@ -168,8 +171,33 @@ Review also reproduced and corrected two boundary mismatches:
   model and backend still reject newly changed out-of-range values. A browser
   regression failed before the fix and passes afterwards.
 
-Follow-up Windows checks: 10 CLI configuration tests, 20 scoped UI unit tests,
-9 Chromium scenarios (one worker), panel typecheck, scoped lint and CLI Clippy
-with all targets and `-D warnings` passed. Docker remains unavailable locally;
-the corrected real-container campaign still requires a new successful CI run.
-These results do not complete the remaining roadmap or real-provider/VPS gates.
+Follow-up Windows checks: 10 CLI configuration tests, 3 Caddy tests, 20 scoped UI
+unit tests, 9 Chromium scenarios (one worker), panel typecheck, scoped lint and CLI Clippy
+with all targets and `-D warnings` passed. Docker remained unavailable locally;
+the corrected real-container campaign required the successful remote run below.
+These local results do not complete the remaining roadmap or real-provider/VPS gates.
+
+### Corrected remote CI (2026-11-04)
+
+PR #253 passed complete CI at
+`ba1b61a14d5e7b5132d4dbe0dda3bc6974218792`, before integration of the remaining
+dependency PRs. This is historical evidence for that commit, not validation of a
+later synchronized branch or a production deployment.
+
+| Run | Result and scope |
+| --- | --- |
+| [CI 41878236174](https://github.com/Nelcota/Nelcota/actions/runs/41878236174) | All jobs passed: owned Docker host-lifecycle/fault campaign, PostgreSQL/S3 integration, Rust partitions, panel/browser checks, SDKs, full Linux NelcotaRules, upgrades and supply-chain checks |
+| [CodeQL 41878232116](https://github.com/Nelcota/Nelcota/actions/runs/41878232116) | All configured analyses passed |
+| [Rust SDK 41878236282](https://github.com/Nelcota/Nelcota/actions/runs/41878236282) | Linux, Windows, macOS and MSRV checks passed |
+
+The owned Docker campaign exercised the corrected fresh-process configuration
+probe and controller apply/restart/rollback/recovery paths. Its DNS/provenance,
+public TLS, proxy reload and unused PITR image-extension boundaries remain
+explicit doubles, as documented in [host management](../host-management.md).
+Disposable S3 integration is not acceptance of application-storage migration or
+an operator's external provider.
+
+The final integrated head still needs fresh complete CI. Native/systemd, real
+VPS, public DNS/TLS, external-provider and PITR acceptance remain unexecuted;
+stages 3–12 are still pending. No release or production deployment is established
+by these results.
