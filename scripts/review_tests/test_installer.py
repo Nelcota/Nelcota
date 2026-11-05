@@ -14,7 +14,7 @@ VERSION = "1.2.3"
 BIN = "nelcota-x86_64-unknown-linux-musl"
 # Real system commands the tests replace with fakes, or remove to simulate a
 # machine without them. Everything else comes from the system folders.
-FAKED = {"apt-get", "curl", "debconf-set-selections", "dnf", "docker", "dpkg", "firewall-cmd", "free", "id",
+FAKED = {"apt-get", "curl", "debconf-set-selections", "dnf", "docker", "firewall-cmd", "free", "id",
          "mkswap", "sleep", "sudo", "swapon", "systemctl", "ufw", "uname"}
 
 # Records every call, serves the fixtures and answers the latest-release
@@ -119,7 +119,6 @@ class Installer(unittest.TestCase):
         FIXTURE_RAM_MB / FIXTURE_SWAP_MB set what `free` reports."""
         self.tool("id", "#!/bin/sh\nprintf '0\\n'\n")
         self.logging_tool(package_manager)
-        self.logging_tool("dpkg")
         self.logging_tool("systemctl", 'case "$*" in *is-active*firewalld*) [ -n "${FIXTURE_FIREWALLD:-}" ] ;; esac\n')
         self.logging_tool("firewall-cmd")
         self.tool("debconf-set-selections", '#!/bin/sh\nprintf \'debconf %s\\n\' "$(cat)" >> "$CALLS"\n')
@@ -192,7 +191,7 @@ class Installer(unittest.TestCase):
             f"nelcota -C {self.host} status",
         ])
         self.assertEqual(sum("/releases/latest" in c for c in self.downloads()), 1)
-        self.assertFalse(any(c.startswith(("apt-get", "dpkg", "debconf", "dnf", "systemctl", "ufw", "docker", "get-docker", "swapon"))
+        self.assertFalse(any(c.startswith(("apt-get", "dnf", "systemctl", "ufw", "docker", "get-docker", "swapon"))
                              for c in calls), calls)
         self.assertFalse(any(" init " in c or " backup " in c for c in calls), calls)
 
@@ -245,7 +244,7 @@ class Installer(unittest.TestCase):
         self.prepare_update()
         result = self.install("--dir", str(self.host), "--yes", "--update")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertFalse(any(c.startswith(("apt-get", "dpkg", "debconf", "systemctl", "ufw")) for c in self.calls()))
+        self.assertFalse(any(c.startswith(("apt-get", "systemctl", "ufw")) for c in self.calls()))
         self.assertFalse(any(" init " in c for c in self.calls()))
 
     def test_update_refuses_enrolled_hosts_before_downloading_or_replacing(self):
@@ -472,171 +471,6 @@ class Installer(unittest.TestCase):
         self.assertLess(calls.index("systemctl enable --now cron.service"),
                         calls.index(nelcota[0]))
 
-    def assert_prerequisites_stopped(self, result, message, destination):
-        self.assert_rejected(result, message, destination)
-        self.assertFalse(self.host.exists())
-        self.assertFalse((self.root / "swapfile").exists())
-        self.assertFalse((self.root / "fstab").exists())
-        self.assertFalse(any(call.startswith(("systemctl", "ufw", "firewall-cmd", "docker", "get-docker",
-                                               "swapon", "mkswap", "nelcota", "curl"))
-                             for call in self.calls()), self.calls())
-
-    def test_setup_audits_dpkg_before_any_package_or_service_change(self):
-        self.fake_root()
-        self.logging_tool("dpkg", '[ "${LC_ALL:-}" = C ] || exit 99\n')
-        result = self.install("--dir", str(self.host), "api.example.com")
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.calls()[0], "dpkg --audit")
-        self.assertEqual([call for call in self.calls() if call.startswith("dpkg")], ["dpkg --audit"])
-
-    def test_setup_refuses_missing_dpkg_before_changing_anything(self):
-        self.fake_root()
-        (self.tools / "dpkg").unlink()
-        destination = self.existing_installation()
-        result = self.install("--dir", str(self.host), "api.example.com")
-        self.assert_prerequisites_stopped(result, "dpkg not found", destination)
-        self.assertEqual(self.calls(), [])
-
-    def test_setup_refuses_pending_packages_even_when_audit_exits_zero(self):
-        self.fake_root()
-        self.logging_tool("dpkg", "printf 'Packages were unpacked but not yet configured: fixture\\n'\n")
-        destination = self.existing_installation()
-        result = self.install("--dir", str(self.host), "api.example.com", "--yes")
-        self.assert_prerequisites_stopped(result, "unfinished or inconsistent packages", destination)
-        self.assertIn("dpkg --configure -a", result.stderr)
-        self.assertIn("other apt/dpkg operations", result.stderr)
-        self.assertIn("Packages were unpacked", result.stderr)
-        self.assertEqual(self.calls(), ["dpkg --audit"])
-
-    def test_setup_keeps_audit_failure_diagnostics_without_attempting_repair(self):
-        self.fake_root()
-        destination = self.existing_installation()
-        for detail in ("dpkg: error: parsing file '/var/lib/dpkg/updates/0054' near line 0: end of file after field name ''",
-                       "dpkg: error: parsing file '/var/lib/dpkg/status' near line 1", ""):
-            with self.subTest(detail=detail):
-                self.log.write_text("")
-                self.environment["FIXTURE_DPKG_ERROR"] = detail
-                self.logging_tool("dpkg", 'printf \'%s\\n\' "$FIXTURE_DPKG_ERROR" >&2\nexit 2\n')
-                result = self.install("--dir", str(self.host), "api.example.com", "--yes",
-                                      "--s3-secret-key", "do-not-log-this")
-                self.assert_prerequisites_stopped(result, "cannot audit the dpkg database", destination)
-                self.assertIn(detail, result.stderr)
-                self.assertIn("Do not delete", result.stderr)
-                self.assertIn("installer-recovery.md", result.stderr)
-                self.assertNotIn("do-not-log-this", result.stdout + result.stderr)
-                self.assertNotIn("run 'dpkg --configure -a'", result.stderr)
-                self.assertEqual(self.calls(), ["dpkg --audit"])
-
-    def isolated_dpkg(self, status="", updates=None):
-        """Run real read-only dpkg against a private database, never the system's."""
-        real = Path("/usr/bin/dpkg")
-        self.assertTrue(real.is_file(), "Real dpkg is required for the isolated package-database regression")
-        database = self.root / "dpkg database"
-        database.mkdir()
-        (database / "updates").mkdir()
-        (database / "info").mkdir()
-        (database / "status").write_text(status)
-        for name, content in (updates or {}).items():
-            (database / "updates" / name).write_bytes(content)
-        self.environment.update(FIXTURE_DPKG_REAL=str(real), FIXTURE_DPKG_DATABASE=str(database))
-        self.logging_tool("dpkg", '[ "$#" -eq 1 ] && [ "$1" = --audit ] || exit 99\n'
-                                  'exec "$FIXTURE_DPKG_REAL" --admindir="$FIXTURE_DPKG_DATABASE" --audit\n')
-        return database
-
-    def database_bytes(self, database):
-        return {str(path.relative_to(database)): path.read_bytes()
-                for path in database.rglob("*") if path.is_file()}
-
-    def test_real_dpkg_audit_accepts_a_clean_database_without_writing_it(self):
-        self.fake_root()
-        database = self.isolated_dpkg()
-        before = self.database_bytes(database)
-        result = self.install("--dir", str(self.host), "api.example.com")
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.database_bytes(database), before)
-        self.assertEqual([call for call in self.calls() if call.startswith("dpkg")], ["dpkg --audit"])
-
-    def test_real_dpkg_rejects_nul_corruption_without_removing_any_record(self):
-        self.fake_root()
-        database = self.isolated_dpkg(updates={"0054": b"\x00" * 128, "0055": b"unreviewed journal data"})
-        before = self.database_bytes(database)
-        destination = self.existing_installation()
-        result = self.install("--dir", str(self.host), "api.example.com")
-        self.assert_prerequisites_stopped(result, "cannot audit the dpkg database", destination)
-        self.assertIn("parsing file", result.stderr)
-        self.assertIn("/updates/0054", result.stderr)
-        self.assertIn("end of file after field name", result.stderr)
-        self.assertEqual(self.database_bytes(database), before)
-        self.assertEqual(self.calls(), ["dpkg --audit"])
-
-    def test_real_dpkg_pending_configuration_stops_before_provisioning(self):
-        self.fake_root()
-        database = self.isolated_dpkg("Package: fixture\nStatus: install ok unpacked\n"
-                                     "Maintainer: Fixture <fixture@example.test>\nArchitecture: all\n"
-                                     "Version: 1.0\nDescription: Isolated pending package\n\n")
-        before = self.database_bytes(database)
-        destination = self.existing_installation()
-        result = self.install("--dir", str(self.host), "api.example.com")
-        self.assert_prerequisites_stopped(result, "unfinished or inconsistent packages", destination)
-        self.assertIn("fixture", result.stderr)
-        self.assertIn("dpkg --configure -a", result.stderr)
-        self.assertEqual(self.database_bytes(database), before)
-        self.assertEqual(self.calls(), ["dpkg --audit"])
-
-    def test_failed_package_install_rechecks_dpkg_and_never_starts_the_host(self):
-        self.fake_root()
-        destination = self.existing_installation()
-        self.logging_tool("apt-get", 'case " $* " in *" install "*) echo "E: package install failed" >&2; exit 100;; esac\n')
-        result = self.install("--dir", str(self.host), "api.example.com")
-        self.assert_prerequisites_stopped(result, "could not install prerequisites", destination)
-        self.assertIn("E: package install failed", result.stderr)
-        self.assertEqual([call for call in self.calls() if call.startswith("dpkg")],
-                         ["dpkg --audit", "dpkg --audit"])
-
-    def test_apt_failure_detects_new_dpkg_corruption_without_retrying(self):
-        self.fake_root()
-        destination = self.existing_installation()
-        self.environment["FIXTURE_APT_FAILED"] = str(self.root / "apt-failed")
-        self.logging_tool("apt-get", 'touch "$FIXTURE_APT_FAILED"\nexit 100\n')
-        self.logging_tool("dpkg", '[ -e "$FIXTURE_APT_FAILED" ] || exit 0\n'
-                                  'echo "dpkg: error: parsing file /var/lib/dpkg/updates/0054" >&2\nexit 2\n')
-        self.logging_tool("sleep")
-        result = self.install("--dir", str(self.host), "api.example.com")
-        self.assert_prerequisites_stopped(result, "cannot audit the dpkg database", destination)
-        self.assertEqual(sum(call.startswith("apt-get") for call in self.calls()), 1)
-        self.assertEqual(sum(call.startswith("dpkg") for call in self.calls()), 2)
-        self.assertFalse(any(call.startswith("sleep") for call in self.calls()))
-
-    def test_apt_update_still_retries_transient_failures_with_lock_timeout(self):
-        self.fake_root()
-        self.logging_tool("sleep")
-        self.logging_tool("apt-get", 'case " $* " in *" update "*)\n'
-                                    '  [ "$(grep -c \'^apt-get .* update \' "$CALLS")" -ge 3 ] && exit 0\n'
-                                    '  echo "E: transient repository failure" >&2\nexit 100;; esac\n')
-        result = self.install("--dir", str(self.host), "api.example.com")
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(sum(" update " in call for call in self.calls()), 3)
-        self.assertEqual([call for call in self.calls() if call.startswith("sleep")], ["sleep 10", "sleep 10"])
-        self.assertTrue(all("DPkg::Lock::Timeout=" in call for call in self.calls() if call.startswith("apt-get")))
-        self.assertNotIn("another apt process may be running", result.stdout)
-
-    def test_apt_update_persistent_failure_remains_bounded(self):
-        self.fake_root()
-        destination = self.existing_installation()
-        self.logging_tool("sleep")
-        self.logging_tool("apt-get", 'echo "E: repository unavailable" >&2\nexit 100\n')
-        result = self.install("--dir", str(self.host), "api.example.com")
-        self.assert_prerequisites_stopped(result, "apt-get update kept failing", destination)
-        self.assertEqual(sum(call.startswith("apt-get") for call in self.calls()), 6)
-        self.assertEqual(sum(call.startswith("sleep") for call in self.calls()), 5)
-
-    def test_binary_only_installation_does_not_audit_or_repair_packages(self):
-        self.fake_root()
-        self.logging_tool("dpkg", 'echo "corrupt package database" >&2\nexit 2\n')
-        result = self.install()
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertFalse(any(call.startswith(("dpkg", "apt-get", "debconf", "systemctl")) for call in self.calls()))
-
     def test_setup_starts_docker_before_creating_the_host(self):
         self.environment["NELCOTA_SKIP_DOCKER"] = "0"
         result = self.setup_vps("api.example.com")
@@ -806,7 +640,6 @@ class Installer(unittest.TestCase):
         self.assertIn("no firewall turned on", result.stdout)
         self.assertEqual(self.init_call(), f"nelcota -C {self.host} init --yes api.example.com")
         self.assertNotIn("ufw", next(c for c in self.calls() if c.startswith("dnf install")))
-        self.assertFalse(any(call.startswith("dpkg") for call in self.calls()))
 
     def test_automatic_security_updates_are_installed_and_enabled(self):
         result = self.setup_vps("api.example.com")

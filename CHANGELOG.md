@@ -10,14 +10,6 @@ for the current server scope and independent SDK publication checkpoints.
 
 ## [Unreleased]
 
-### Fixed
-
-- VPS setup audits the Debian/Ubuntu package database before package, debconf or
-  host changes. Incomplete configuration and unreadable/corrupt dpkg state stop
-  with the original diagnostics and manual recovery guidance, without automatic
-  package repairs or journal/lock deletion. APT failures recheck that state and
-  keep bounded update retries without mislabeling every failure as lock contention.
-
 ## [0.6.0] — 2026-11-04
 
 ### Added

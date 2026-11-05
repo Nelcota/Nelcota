@@ -104,26 +104,6 @@ validate_host_dir() {
   [ "$(printf '%s' "$HOST_DIR" | tr -s /)" != / ] || die "--dir cannot be the root folder"
 }
 
-# Audit only: configuring packages runs unrelated maintainer scripts, and
-# removing a corrupt journal can discard package state. Both need an operator.
-check_dpkg() {
-  command -v dpkg >/dev/null 2>&1 ||
-    die "dpkg not found; repair the system package manager before setting up an apt-based VPS"
-  dpkg_status=0
-  dpkg_report=$(LC_ALL=C dpkg --audit 2>&1) || dpkg_status=$?
-  if [ "$dpkg_status" -eq 0 ] && [ -z "$dpkg_report" ]; then
-    return
-  fi
-  [ -z "$dpkg_report" ] || printf '%s\n' "$dpkg_report" >&2
-  printf '%s\n' 'Do not delete dpkg lock files, /var/lib/dpkg/status or /var/lib/dpkg/updates records to bypass this check.' >&2
-  printf 'See: https://github.com/%s/blob/main/docs/installer-recovery.md\n' "$REPO" >&2
-  if [ "$dpkg_status" -ne 0 ]; then
-    die "cannot audit the dpkg database; inspect the error, disk space and filesystem, and back up /var/lib/dpkg before administrator-led recovery. No automatic repair is attempted"
-  fi
-  # --audit can report incomplete packages while still returning success.
-  die "dpkg reports unfinished or inconsistent packages; wait for other apt/dpkg operations to finish and review the report. For interrupted configuration, run 'dpkg --configure -a' as root, then retry only after 'dpkg --audit' succeeds without output"
-}
-
 # Packages init needs before it writes anything: an active cron scheduler
 # reading /etc/cron.d, ufw for the firewall (Debian/Ubuntu; Fedora/RHEL use
 # firewalld) and automatic security updates.
@@ -132,7 +112,6 @@ install_prerequisites() {
     die "setting up a VPS needs systemd (systemctl not found); install the binary without arguments and follow docs/deploy.md"
   packages="ca-certificates curl coreutils"
   if command -v apt-get >/dev/null 2>&1; then
-    check_dpkg
     say "Installing prerequisites with apt-get"
     export DEBIAN_FRONTEND=noninteractive
     [ "$FIREWALL" -eq 0 ] || packages="$packages ufw"
@@ -142,10 +121,7 @@ install_prerequisites() {
     fi
     apt_update
     # shellcheck disable=SC2086
-    if ! apt-get -o DPkg::Lock::Timeout="$APT_LOCK_WAIT_SECONDS" install -y -qq $packages cron unattended-upgrades >/dev/null; then
-      check_dpkg
-      die "apt-get could not install prerequisites; inspect the error above and repair the reported package/repository problem before retrying setup"
-    fi
+    apt-get -o DPkg::Lock::Timeout="$APT_LOCK_WAIT_SECONDS" install -y -qq $packages cron unattended-upgrades >/dev/null
     systemctl enable --now cron.service
   elif command -v dnf >/dev/null 2>&1; then
     say "Installing prerequisites with dnf"
@@ -249,9 +225,8 @@ swap_in_fstab() {
 apt_update() {
   attempt=1
   until apt-get -o DPkg::Lock::Timeout="$APT_LOCK_WAIT_SECONDS" update -qq; do
-    check_dpkg
     [ "$attempt" -lt "$APT_UPDATE_ATTEMPTS" ] || die "apt-get update kept failing; check the messages above and run the same command again"
-    say "apt-get update failed; check the error above (packages, repositories, network or locks); retrying in 10 s"
+    say "apt-get update failed (another apt process may be running); retrying in 10 s"
     attempt=$((attempt + 1))
     sleep 10
   done
