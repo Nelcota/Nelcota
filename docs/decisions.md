@@ -1131,6 +1131,15 @@ that, like the account store, never drops a recent key (an untracked email
 falls back to the per-IP budget while it is full), instead of D112's 4,096
 shared decoys.
 
+**D118. `astral-tokio-tar` ignored in `cargo audit`/`cargo deny`
+(RUSTSEC-2026-0440).** The advisory marks the crate unmaintained since
+2026-11-03; it reports no vulnerability, and no release fixes it. It reaches the
+workspace only through `testcontainers` (via `testcontainers-modules`), a
+dev-dependency of `nelcota-server` used by integration tests to start Postgres,
+so it is never part of a shipped binary. The latest `testcontainers` (0.28)
+still depends on it, and `testcontainers-modules` 0.15 requires 0.27. Remove the
+ignore once `testcontainers` moves to a maintained tar crate.
+
 ### Known pending items
 
 - Filtering parent rows by their embeds (`!inner`) and self-referencing embeds.

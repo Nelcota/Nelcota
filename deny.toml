@@ -8,6 +8,7 @@ all-features = false
 ignore = [
     { id = "RUSTSEC-2023-0071", reason = "rsa only used to verify (we never sign with RSA)" },
     { id = "RUSTSEC-2026-0387", reason = "crypto-bigint 0.5 via p256/p384: ECDSA only verifies public signatures (D104)" },
+    { id = "RUSTSEC-2026-0440", reason = "astral-tokio-tar unmaintained, only via testcontainers in dev-dependencies; no fixed release (D118)" },
 ]
 
 [licenses]
