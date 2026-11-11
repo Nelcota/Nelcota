@@ -115,6 +115,8 @@ def campaign(arguments):
         raise RuntimeError(
             "S3 campaign needs four CPUs for app, DB, generator and object service"
         )
+    # Record the generator digest before the first k6 container starts.
+    docker("pull", K6)
     pg, app = identity + "-pg", identity + "-app"
     s3 = identity + "-s3"
     volume = identity + "-data"
