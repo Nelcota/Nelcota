@@ -8,7 +8,7 @@ on:
 # A new push to a pull request supersedes its previous run. Runs on main
 # always finish so every merged commit keeps a complete result.
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.sha }}
+  group: ci-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
@@ -24,6 +24,7 @@ jobs:
   # Formatting, architecture/doc scripts and clippy: fast feedback without tests.
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -47,6 +48,7 @@ jobs:
   test:
     name: test (${{ matrix.partition }}/3)
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
@@ -78,6 +80,7 @@ jobs:
   # Scripted end-to-end checks against the built binary.
   integration:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -116,6 +119,7 @@ jobs:
 
       # Storage on a real S3-compatible service (presigned URLs, multipart).
       - name: storage on S3
+        timeout-minutes: 8
         env:
           AWS_ACCESS_KEY_ID: nelcotatest
           AWS_SECRET_ACCESS_KEY: nelcotatestsecret
@@ -124,15 +128,27 @@ jobs:
           NELCOTA_TEST_S3_BUCKET: nelcota-files
           NELCOTA_TEST_S3_ACCESS_KEY_ID: nelcotatest
           NELCOTA_TEST_S3_SECRET_ACCESS_KEY: nelcotatestsecret
+          AWS_MAX_ATTEMPTS: "1"
         run: |
           docker run -d --name s3 -p 127.0.0.1:9100:9000 \
             -e RUSTFS_ACCESS_KEY=nelcotatest -e RUSTFS_SECRET_KEY=nelcotatestsecret \
             rustfs/rustfs:1.0.1
+          s3=(aws --endpoint-url "$NELCOTA_TEST_S3_ENDPOINT" --cli-connect-timeout 2 --cli-read-timeout 3 s3api)
+          ready=false
           for _ in $(seq 1 30); do
-            aws --endpoint-url "$NELCOTA_TEST_S3_ENDPOINT" s3 mb s3://nelcota-files && break
+            if "${s3[@]}" create-bucket --bucket "$NELCOTA_TEST_S3_BUCKET" ||
+              "${s3[@]}" head-bucket --bucket "$NELCOTA_TEST_S3_BUCKET"; then
+              ready=true
+              break
+            fi
             sleep 1
           done
-          cargo test -p nelcota-server --test storage_s3 -- --ignored
+          if [[ "$ready" != true ]]; then
+            docker logs s3
+            echo "::error::S3 fixture did not become ready"
+            exit 1
+          fi
+          cargo test --locked -p nelcota-server --test storage_s3 -- --ignored
           # The COMMIT fault cases collect old versions; never mix their
           # physical object namespace with the other provider fixtures.
           aws --endpoint-url "$NELCOTA_TEST_S3_ENDPOINT" s3 mb s3://nelcota-commit
@@ -142,6 +158,7 @@ jobs:
   # The longest scripted scenario runs on its own runner.
   host-lifecycle:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -158,24 +175,24 @@ jobs:
         timeout-minutes: 12
         run: python3 scripts/test-host-management.py --binary target/debug/nelcota
 
-  # The required status check: passes only when every Rust job above passed.
-  # `always()` keeps a failed or cancelled dependency from turning this job
-  # into "skipped", which branch protection would accept as passing.
+  # Required check for all verification jobs. A failed
+  # or skipped dependency must not turn this check into an accepted skip.
   check:
     if: always()
-    needs: [lint, test, integration, host-lifecycle]
+    needs: [lint, test, integration, host-lifecycle, native-lint, supply-chain, javascript-supply-chain, upgrade, admin-ui, sdk]
+    permissions: {}
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     steps:
       - env:
-          RESULTS: ${{ join(needs.*.result, ' ') }}
+          RESULTS: ${{ toJSON(needs) }}
         run: |
-          echo "$RESULTS"
-          for result in $RESULTS; do
-            [ "$result" = success ] || exit 1
-          done
+          jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<< "$RESULTS"
+          jq -e 'all(.[]; .result == "success")' <<< "$RESULTS" >/dev/null
 
   native-lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -198,6 +215,7 @@ jobs:
 
   javascript-supply-chain:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -252,6 +270,7 @@ jobs:
   # not depend on Node. This job makes sure it is up to date.
   admin-ui:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: crates/admin/ui
