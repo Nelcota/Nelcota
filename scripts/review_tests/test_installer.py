@@ -7,6 +7,7 @@ import pty
 import signal
 import subprocess
 import tempfile
+import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -699,18 +700,27 @@ class Installer(unittest.TestCase):
                                                  env=self.environment, process_group=0)
                     with installer.stdin as pipe:
                         pipe.write(script.read())
-                    _, stopped = os.waitpid(installer.pid, os.WUNTRACED)
-                    if os.WIFSTOPPED(stopped):
-                        # Old sudo-rs foregrounds the group but only resumes its leader.
-                        os.tcsetpgrp(0, installer.pid)
-                        os.kill(installer.pid, signal.SIGCONT)
-                        try:
-                            status = installer.wait(timeout=5)
-                        except subprocess.TimeoutExpired:
-                            os.killpg(installer.pid, signal.SIGKILL)
-                            installer.wait()
-                    else:
-                        status = os.waitstatus_to_exitcode(stopped)
+                    timeout = 5
+                    deadline = time.monotonic() + timeout
+                    try:
+                        while True:
+                            pid, event = os.waitpid(installer.pid, os.WNOHANG | os.WUNTRACED)
+                            if pid == installer.pid:
+                                break
+                            if time.monotonic() >= deadline:
+                                raise subprocess.TimeoutExpired(installer.args, timeout)
+                            time.sleep(0.01)
+                        if os.WIFSTOPPED(event):
+                            # Old sudo-rs foregrounds the group but only resumes its leader.
+                            os.tcsetpgrp(0, installer.pid)
+                            os.kill(installer.pid, signal.SIGCONT)
+                            status = installer.wait(timeout=timeout)
+                        if os.WIFEXITED(event) or os.WIFSIGNALED(event):
+                            status = os.waitstatus_to_exitcode(event)
+                    except subprocess.TimeoutExpired:
+                        os.killpg(installer.pid, signal.SIGKILL)
+                        installer.wait()
+                        log.write(b"\nTimed out waiting for the installer in the sudo terminal.\n")
             finally:
                 os._exit(0 if status == 0 else 1)
         self.addCleanup(os.close, terminal)
