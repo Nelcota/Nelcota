@@ -1,0 +1,6 @@
+# Repository administrators review changes to CI and release infrastructure.
+/.github/ @HanielCota @GuiSatierf @Magalhaesz
+/scripts/assert-update-ci.py @HanielCota @GuiSatierf @Magalhaesz
+/scripts/build-update-manifest.py @HanielCota @GuiSatierf @Magalhaesz
+/deploy/release.Dockerfile @HanielCota @GuiSatierf @Magalhaesz
+/bench/ @HanielCota @GuiSatierf @Magalhaesz

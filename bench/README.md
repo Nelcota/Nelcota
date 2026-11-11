@@ -94,10 +94,10 @@ python3 bench/campaign.py --binary target/release/nelcota --output target/s3-cam
 
 RustFS adds a 1-CPU/512-MiB fixture on a fourth CPU affinity slot; S3
 campaigns require at least four available CPUs. The small S3 campaign does not claim a
-30-minute S3 soak or production cloud/network capacity. Long campaigns belong
-on a dedicated host. `.github/workflows/stress.yml` provides a manual job for a
-self-hosted Linux runner labeled `nelcota-benchmark`, keeping this workload
-outside ordinary PR checks.
+30-minute S3 soak or production cloud/network capacity. The manual
+`.github/workflows/stress.yml` job runs on a fresh GitHub-hosted Ubuntu 24.04 VM
+with Docker. For performance comparisons, collect the baseline and candidate
+under equivalent resource and runner conditions.
 
 Save a release baseline binary before refactoring, then compare equivalent runs:
 
