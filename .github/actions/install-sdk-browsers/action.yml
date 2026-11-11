@@ -1,0 +1,43 @@
+name: Install SDK browsers
+description: Install the SDK's pinned Playwright browsers and cache their Ubuntu dependencies.
+
+runs:
+  using: composite
+  steps:
+    - name: Identify the runner image
+      id: image
+      shell: bash
+      run: echo "name=${ImageOS:?Expected a GitHub-hosted Ubuntu runner}" >> "$GITHUB_OUTPUT"
+    - name: Restore browsers and Ubuntu packages
+      id: cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.cache/ms-playwright
+          ~/.cache/playwright-apt
+        key: playwright-${{ steps.image.outputs.name }}-${{ runner.arch }}-all-${{ hashFiles('sdk/typescript/bun.lock') }}
+        restore-keys: playwright-${{ steps.image.outputs.name }}-${{ runner.arch }}-all-${{ hashFiles('sdk/typescript/bun.lock') }}-partial-
+    - name: Install browsers and Ubuntu dependencies
+      id: install
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p ~/.cache/playwright-apt
+        sudo find ~/.cache/playwright-apt -name '*.deb' -exec cp -t /var/cache/apt/archives {} +
+        # The Azure mirror has caused timeouts on this runner image.
+        sudo sed -i 's#http://azure\.archive\.ubuntu\.com/ubuntu/#http://archive.ubuntu.com/ubuntu/#' /etc/apt/apt-mirrors.txt
+        node "$GITHUB_WORKSPACE/sdk/typescript/node_modules/playwright-core/cli.js" install --with-deps chromium firefox webkit
+    # Save partial downloads too, so the next run can resume a failed install.
+    - name: Collect downloaded Ubuntu packages
+      id: collect
+      if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.install.outcome != 'skipped' && steps.cache.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -exec cp -t ~/.cache/playwright-apt {} +
+    - name: Save browsers and Ubuntu packages
+      if: ${{ !cancelled() && steps.collect.outcome == 'success' }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.cache/ms-playwright
+          ~/.cache/playwright-apt
+        key: ${{ steps.cache.outputs.cache-primary-key }}${{ steps.install.outcome != 'success' && format('-partial-{0}-{1}', github.run_id, github.run_attempt) || '' }}
