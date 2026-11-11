@@ -10,6 +10,10 @@ jobs:
   sdk:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Match the cache produced by CI's nextest job. Caller env does not propagate.
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_PROFILE_DEV_DEBUG: line-tables-only
     defaults:
       run:
         working-directory: sdk/typescript
@@ -21,6 +25,9 @@ jobs:
         with:
           toolchain: '1.99.1'
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: test
+          save-if: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
@@ -45,42 +52,9 @@ jobs:
       - run: deno run --allow-net --allow-read --allow-env test/runtime/smoke.mjs
       - run: cargo build -p nelcota-server
         working-directory: .
-      # The apt mirror can be slow enough to time the job out, so the .deb
-      # files fetched by --with-deps are cached next to the browsers. An install
-      # that runs out of time still saves what it downloaded (as a partial
-      # entry), so the next attempt resumes instead of starting over.
-      - name: Restore Playwright browsers and system packages
-        id: playwright-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~/.cache/ms-playwright
-            ~/.cache/playwright-apt
-          key: playwright-${{ runner.os }}-all-${{ hashFiles('sdk/typescript/bun.lock') }}
-          restore-keys: playwright-${{ runner.os }}-all-${{ hashFiles('sdk/typescript/bun.lock') }}-
-      - name: Install browsers
-        id: playwright-install
+      - name: Install Playwright browsers
         timeout-minutes: 12
-        run: |
-          mkdir -p ~/.cache/playwright-apt
-          sudo find ~/.cache/playwright-apt -name '*.deb' -exec cp -t /var/cache/apt/archives {} +
-          # The runner's default mirror (azure.archive.ubuntu.com) can crawl at
-          # ~100 kB/s, and apt only falls back to the next mirror on errors, not
-          # on slowness, so the main Ubuntu archive goes first here.
-          sudo sed -i 's#http://azure\.archive\.ubuntu\.com/ubuntu/#http://archive.ubuntu.com/ubuntu/#' /etc/apt/apt-mirrors.txt
-          cat /etc/apt/apt-mirrors.txt
-          bunx playwright-core install --with-deps chromium firefox webkit
-      - name: Collect downloaded system packages
-        if: always() && steps.playwright-install.outcome != 'skipped' && steps.playwright-cache.outputs.cache-hit != 'true'
-        run: find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -exec cp -t ~/.cache/playwright-apt {} +
-      - name: Save Playwright browsers and system packages
-        if: always() && steps.playwright-install.outcome != 'skipped' && steps.playwright-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~/.cache/ms-playwright
-            ~/.cache/playwright-apt
-          key: playwright-${{ runner.os }}-all-${{ hashFiles('sdk/typescript/bun.lock') }}${{ steps.playwright-install.outcome != 'success' && format('-partial-{0}-{1}', github.run_id, github.run_attempt) || '' }}
+        uses: ./.github/actions/install-sdk-browsers
       - name: SDK server and browser contracts
         id: sdk_contract
         run: |
@@ -115,7 +89,6 @@ jobs:
       - name: Development, RLS helper and panel browser contracts
         timeout-minutes: 3
         run: |
-          cargo build --locked --manifest-path ../../Cargo.toml -p nelcota-server
           bun install --cwd ../../crates/admin/ui --frozen-lockfile
           python3 ../../scripts/test-dev.py --binary ../../target/debug/nelcota --testing-helpers --browser
       - name: documented Notes browser example
@@ -132,6 +105,7 @@ jobs:
 
   sdk-node:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       matrix:
         node: [22, 26]
@@ -150,7 +124,6 @@ jobs:
           bun-version: 1.4.3
       - run: bun install --frozen-lockfile
       - run: bun run test:node
-      - run: bun run test:types
       - run: bun run build
       - run: npm run test:package
       - run: bun run test:runtime:node

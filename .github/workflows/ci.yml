@@ -262,6 +262,9 @@ jobs:
         with:
           toolchain: '1.99.1'
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: test
+          save-if: false
       - run: cargo build --locked -p nelcota-server
       # Check both the published release and this PR's binary. A fresh cluster
       # per scenario also exercises V13's new cluster-wide role creation.
