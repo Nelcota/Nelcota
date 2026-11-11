@@ -465,6 +465,21 @@ warn_if_not_on_path() {
   esac
 }
 
+foreground_init_terminal() {
+  [ ! -t 0 ] && [ -n "${SUDO_COMMAND:-}" ] || return 0
+  IFS= read -r tty_stat 2>/dev/null <"/proc/$$/stat" || return 0
+  # After (comm), Linux reports state, parent, group, session, tty and foreground group.
+  read -r _tty_state tty_parent tty_group tty_session _tty_device tty_foreground _tty_rest <<EOF
+${tty_stat##*) }
+EOF
+  if [ "$tty_group" = "$$" ] && [ "$tty_parent" = "$tty_session" ] && [ "$tty_foreground" = "$tty_session" ]; then
+    # sudo starts a piped command in the background of its private terminal.
+    # Older sudo-rs foregrounds the group on SIGTTIN but resumes only this shell
+    # (upstream #1530). Ask for the terminal before starting the CLI that reads it.
+    kill -s TTIN "$$"
+  fi
+}
+
 main() {
   REPO="${NELCOTA_REPO:-Nelcota/Nelcota}"
   VERSION="${NELCOTA_VERSION:-latest}"
@@ -598,6 +613,7 @@ main() {
       [ "$INIT_FIREWALL" -eq 0 ] || set -- "$@" --firewall
       # Under `curl | sh` stdin is the script itself: ask questions on the terminal.
       if [ "$ASSUME_YES" -eq 0 ] && (: </dev/tty) 2>/dev/null; then
+        foreground_init_terminal
         "$PREFIX/nelcota" -C "$HOST_DIR" init "$@" </dev/tty ||
           die "nelcota init failed; fix the problem above and run the same command again"
       else
