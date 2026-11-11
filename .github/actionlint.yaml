@@ -1,3 +1,13 @@
 self-hosted-runner:
   labels:
     - nelcota-benchmark
+
+# actionlint 1.7.12 does not recognize GitHub's release queue key.
+# https://github.com/rhysd/actionlint/issues/657
+paths:
+  .github/workflows/release.yml:
+    ignore:
+      - '^unexpected key "queue" for "concurrency" section\.'
+  .github/workflows/sdk-release.yml:
+    ignore:
+      - '^unexpected key "queue" for "concurrency" section\.'
