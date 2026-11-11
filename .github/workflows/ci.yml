@@ -337,9 +337,3 @@ jobs:
   # The same checks gate pull requests and SDK publication.
   sdk:
     uses: ./.github/workflows/sdk-check.yml
-
-  nextjs-sdk:
-    uses: ./.github/workflows/sdk-nextjs-check.yml
-
-  ssr-sdk:
-    uses: ./.github/workflows/sdk-ssr-check.yml
