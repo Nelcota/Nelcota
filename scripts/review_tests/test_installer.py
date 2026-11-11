@@ -4,6 +4,7 @@ import hashlib
 import os
 from pathlib import Path
 import pty
+import signal
 import subprocess
 import tempfile
 import unittest
@@ -675,6 +676,49 @@ class Installer(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertIn(f"nelcota -C {self.host} init --yes api.example.com --email me@example.com --firewall",
                               self.calls())
+
+    def test_enter_skips_s3_when_sudo_resumes_only_the_installer_shell(self):
+        self.fake_root()
+        self.environment["SUDO_COMMAND"] = "sh -s -- api.example.com"
+        with self.binary.open("a") as binary:
+            binary.write('if [ "$3" = init ]; then\n'
+                         '  [ -t 0 ] || exit 1\n'
+                         '  printf "S3 endpoint (Enter to skip): "\n'
+                         '  IFS= read -r endpoint && [ -z "$endpoint" ] || exit 1\n'
+                         'fi\n')
+        self.write_checksum(hashlib.sha256(self.binary.read_bytes()).hexdigest() + "  " + BIN)
+
+        output = self.root / "installer.log"
+        monitor, terminal = pty.fork()
+        if monitor == 0:
+            status = 1
+            try:
+                with INSTALLER.open("rb") as script, output.open("wb") as log:
+                    installer = subprocess.Popen(["sh", "-s", "--", "--dir", str(self.host), "api.example.com"],
+                                                 stdin=subprocess.PIPE, stdout=log, stderr=log,
+                                                 env=self.environment, process_group=0)
+                    with installer.stdin as pipe:
+                        pipe.write(script.read())
+                    _, stopped = os.waitpid(installer.pid, os.WUNTRACED)
+                    if os.WIFSTOPPED(stopped):
+                        # Old sudo-rs foregrounds the group but only resumes its leader.
+                        os.tcsetpgrp(0, installer.pid)
+                        os.kill(installer.pid, signal.SIGCONT)
+                        try:
+                            status = installer.wait(timeout=5)
+                        except subprocess.TimeoutExpired:
+                            os.killpg(installer.pid, signal.SIGKILL)
+                            installer.wait()
+                    else:
+                        status = os.waitstatus_to_exitcode(stopped)
+            finally:
+                os._exit(0 if status == 0 else 1)
+        self.addCleanup(os.close, terminal)
+        os.write(terminal, b"\n")
+        _, status = os.waitpid(monitor, 0)
+        self.assertEqual(os.waitstatus_to_exitcode(status), 0, output.read_text())
+        self.assertIn("S3 endpoint (Enter to skip)", output.read_text())
+        self.assertIn(f"nelcota -C {self.host} up", self.calls())
 
     def test_setup_skips_init_when_the_host_exists(self):
         self.host = self.root / "host dir"
