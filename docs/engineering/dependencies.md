@@ -41,7 +41,7 @@ the registry audit does not inspect local patches. Do not describe that as an
 unpatched installation or a clean upstream audit. Remove the patch only after
 the plugin resolves a fixed release and the regressions still pass.
 
-### Scalar 1.76.0
+### Scalar 1.76.2
 
 The panel genuinely imports `@scalar/api-reference` from its separate
 `src/reference.ts` entry; Knip lists that entry explicitly. Do not remove the

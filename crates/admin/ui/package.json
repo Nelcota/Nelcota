@@ -61,7 +61,7 @@
     "vitest": "^5.0.5"
   },
   "patchedDependencies": {
-    "@scalar/api-reference@1.76.0": "../../../patches/@scalar%2Fapi-reference@1.76.0.patch",
+    "@scalar/api-reference@1.76.2": "../../../patches/@scalar%2Fapi-reference@1.76.2.patch",
     "deepmerge@4.3.1": "../../../patches/deepmerge@4.3.1.patch"
   }
 }
