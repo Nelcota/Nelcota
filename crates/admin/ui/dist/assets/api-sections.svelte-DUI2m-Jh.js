@@ -1,0 +1,1 @@
+import{Gt as e}from"./api-BkdKTSIC.js";var t=e({current:`api-address`});export{t};

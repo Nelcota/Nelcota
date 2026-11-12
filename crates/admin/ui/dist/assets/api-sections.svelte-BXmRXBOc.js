@@ -1,1 +1,0 @@
-import{Gt as e}from"./api-Cu8UJ7cY.js";var t=e({current:`api-address`});export{t};
