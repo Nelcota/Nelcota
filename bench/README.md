@@ -96,10 +96,16 @@ RustFS adds a 1-CPU/512-MiB fixture on a fourth CPU affinity slot; S3
 campaigns require at least four available CPUs. The small S3 campaign does not claim a
 30-minute S3 soak or production cloud/network capacity. The manual
 `.github/workflows/stress.yml` job runs on a fresh GitHub-hosted Ubuntu 24.04 VM
-with Docker. For performance comparisons, collect the baseline and candidate
-under equivalent resource and runner conditions.
+with Docker. It uses the fixture image digests and 21 steady samples recorded
+in [`baselines/github-ubuntu-24.04`](baselines/github-ubuntu-24.04) from
+[run 43120778395](https://github.com/Nelcota/Nelcota/actions/runs/43120778395)
+on commit `cd741a88ceec2456297983c7918dc48be03bb8ee`. After a successful
+campaign, the job runs `bench/compare.py` against those samples. A regression
+or an incomparable result fails the job. The `release-stress-report`
+artifact includes `comparison.json` even when the comparison fails.
 
-Save a release baseline binary before refactoring, then compare equivalent runs:
+For local comparisons, save a release baseline binary before refactoring and
+collect the baseline and candidate under equivalent resource and runner conditions:
 
 ```sh
 python3 bench/compare.py target/baseline target/candidate --output target/comparison.json
