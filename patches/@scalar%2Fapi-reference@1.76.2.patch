@@ -1,5 +1,5 @@
 diff --git a/dist/components/ApiReference.vue_vue_type_script_setup_true_lang.js b/dist/components/ApiReference.vue_vue_type_script_setup_true_lang.js
-index 616feb0..2c5838f 100644
+index 616feb0..d987219 100644
 --- a/dist/components/ApiReference.vue_vue_type_script_setup_true_lang.js
 +++ b/dist/components/ApiReference.vue_vue_type_script_setup_true_lang.js
 @@ -3,8 +3,6 @@ import { filterAsyncApiNavigation } from "../blocks/scalar-asyncapi-sidebar-filt
@@ -49,7 +49,7 @@ index 616feb0..2c5838f 100644
  var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ defineComponent({
  	__name: "ApiReference",
  	props: { configuration: {} },
-@@ -818,6 +806,10 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+@@ -818,6 +806,11 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
  		* - If the agent key is set, it should be enabled
  		*/
  		const agent = useAgent({ agentEnabled: computed(() => {
@@ -57,10 +57,11 @@ index 616feb0..2c5838f 100644
 +				return false;
 +			}
 +
++
  			if (configList.value[activeSlug.value]?.agent?.disabled) return false;
  			if (typeof window !== "undefined" && isLocalUrl(window.location.href)) return true;
  			return Boolean(configList.value[activeSlug.value]?.agent?.key);
-@@ -830,13 +822,14 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+@@ -830,13 +823,14 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
  		* installation instructions).
  		*/
  		const generateSdk = useGenerateSdk({
@@ -78,7 +79,7 @@ index 616feb0..2c5838f 100644
  		const hasOpenedAgent = ref(false);
  		watch(agent.showAgent, (open) => {
  			if (open) hasOpenedAgent.value = true;
-@@ -1020,251 +1013,9 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+@@ -1020,251 +1014,9 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
  		});
  		const bodyScrollLocked = useScrollLock(typeof document !== "undefined" ? document.body : null);
  		watch(agent.showAgent, () => bodyScrollLocked.value = agent.showAgent.value);
@@ -331,7 +332,7 @@ index 616feb0..2c5838f 100644
  				createElementVNode("div", {
  					ref: "documentEl",
  					class: normalizeClass(["scalar-app scalar-api-reference references-layout", [{
-@@ -1273,13 +1024,12 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+@@ -1273,13 +1025,12 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
  						"references-editable": mergedConfig.value.isEditable,
  						"references-sidebar": mergedConfig.value.showSidebar,
  						"references-sidebar-mobile-open": isSidebarOpen.value,
@@ -347,7 +348,7 @@ index 616feb0..2c5838f 100644
  						key: 0,
  						externalUrls: mergedConfig.value.externalUrls,
  						morphStickers: false,
-@@ -1293,7 +1043,7 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+@@ -1293,7 +1044,7 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
  						"url",
  						"workspace"
  					])) : createCommentVNode("", true),
@@ -356,7 +357,7 @@ index 616feb0..2c5838f 100644
  						key: 1,
  						agentScalarConfiguration: configList.value[activeSlug.value]?.agent,
  						externalUrls: mergedConfig.value.externalUrls,
-@@ -1359,7 +1109,7 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+@@ -1359,7 +1110,7 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
  									"hideModels",
  									"modelsSectionLabel",
  									"searchHotKey"
@@ -365,7 +366,7 @@ index 616feb0..2c5838f 100644
  								renderSlot(_ctx.$slots, "sidebar-start", normalizeProps(guardReactiveProps(slotProps.value)), void 0, true)
  							]),
  							before: withCtx(() => [createVNode(unref(AsyncApiSidebarFilters_default), {
-@@ -1396,7 +1146,7 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+@@ -1396,7 +1147,7 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
  									modelValue: colorMode.value === "dark",
  									"onUpdate:modelValue": _cache[7] || (_cache[7] = () => unref(toggleColorMode)())
  								}, null, 8, ["modelValue"])) : (openBlock(), createElementBlock("span", _hoisted_4))]),
@@ -374,7 +375,7 @@ index 616feb0..2c5838f 100644
  									key: 0,
  									buttonSource: "sidebar",
  									integration: mergedConfig.value._integration,
-@@ -1406,17 +1156,6 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+@@ -1406,17 +1157,6 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
  									"integration",
  									"isDevelopment",
  									"url"
@@ -392,7 +393,7 @@ index 616feb0..2c5838f 100644
  								])) : createCommentVNode("", true)]),
  								_: 1
  							})], true)]),
-@@ -1475,20 +1214,6 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+@@ -1475,20 +1215,6 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
  								ref_key: "documentStartRef",
  								ref: documentStartRef
  							}, null, 512),
