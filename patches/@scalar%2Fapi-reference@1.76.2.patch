@@ -1,0 +1,416 @@
+diff --git a/dist/components/ApiReference.vue_vue_type_script_setup_true_lang.js b/dist/components/ApiReference.vue_vue_type_script_setup_true_lang.js
+index 616feb0..d987219 100644
+--- a/dist/components/ApiReference.vue_vue_type_script_setup_true_lang.js
++++ b/dist/components/ApiReference.vue_vue_type_script_setup_true_lang.js
+@@ -3,8 +3,6 @@ import { filterAsyncApiNavigation } from "../blocks/scalar-asyncapi-sidebar-filt
+ import { provideLocalization, resolveLocalization } from "../features/localization/use-localization.js";
+ import { hasRenderableSdks } from "../blocks/scalar-sdk-installation-instructions/helpers/renderable-sdks.js";
+ import { AGENT_CONTEXT_SYMBOL, useAgent } from "../hooks/use-agent.js";
+-import AgentScalarButton_default from "./AgentScalar/AgentScalarButton.vue.js";
+-import OpenMCPButton_default from "./AgentScalar/OpenMCPButton.vue.js";
+ import ClassicHeader_default from "./ClassicHeader.vue.js";
+ import { useIntersection } from "../hooks/use-intersection.js";
+ import { createPluginManager } from "../plugins/plugin-manager.js";
+@@ -18,8 +16,6 @@ import Content_default from "./Content/Content.vue.js";
+ import CrawlerNav_default from "./CrawlerNav.vue.js";
+ import MobileHeader_default from "./MobileHeader.vue.js";
+ import { GENERATE_SDK_CONTEXT_SYMBOL, useGenerateSdk } from "../features/generate-sdk/use-generate-sdk.js";
+-import DeveloperTools_default from "../features/developer-tools/DeveloperTools.vue.js";
+-import { useShellPanel } from "../features/developer-tools/use-shell-panel.js";
+ import DocumentSelector_default from "../features/multiple-documents/DocumentSelector.vue.js";
+ import { INTRODUCTION_ENTRY_ID_SUFFIX, isIntroductionEntry } from "../helpers/is-introduction-entry.js";
+ import SearchButton_default from "../features/Search/components/SearchButton.vue.js";
+@@ -63,8 +59,10 @@ import { createWorkspaceEventBus } from "@scalar/workspace-store/events";
+ import { EXTERNAL_EXAMPLES } from "@scalar/workspace-store/helpers/use-external-examples";
+ import { getActiveEnvironment, getServers } from "@scalar/workspace-store/request-example";
+ import { isAsyncApiDocument, isOpenApiDocument } from "@scalar/workspace-store/schemas/type-guards";
+-import { useMediaQuery, useScrollLock } from "@vueuse/core";
++import { useScrollLock } from "@vueuse/core";
+ //#region src/components/ApiReference.vue?vue&type=script&setup=true&lang.ts
++// Nelcota embeds an offline reference. Keep hosted features out of the bundle.
++const NELCOTA_HOSTED_FEATURES = false;
+ var _hoisted_1 = ["dir", "lang"];
+ var _hoisted_2 = {
+ 	key: 1,
+@@ -87,16 +85,6 @@ var _hoisted_10 = ["role"];
+ /** Exactly one footer call to action may render, so the choice lives in a single computed */
+ var version = "1.76.2";
+ if (typeof window !== "undefined") console.info(`@scalar/api-reference@${version}`);
+-/**
+-* Numbers the localhost shell's side panels, so every reference on a page gets its own panel id.
+-* A plain counter rather than `useId()`: that would take an id from the shared sequence on every
+-* host, and shift the ids of everything rendered after the reference.
+-*/
+-var shellPanelCount = 0;
+-var createShellPanelId = () => {
+-	shellPanelCount += 1;
+-	return `scalar-shell-panel-${shellPanelCount}`;
+-};
+ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ defineComponent({
+ 	__name: "ApiReference",
+ 	props: { configuration: {} },
+@@ -818,6 +806,11 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+ 		* - If the agent key is set, it should be enabled
+ 		*/
+ 		const agent = useAgent({ agentEnabled: computed(() => {
++			if (!NELCOTA_HOSTED_FEATURES) {
++				return false;
++			}
++
++
+ 			if (configList.value[activeSlug.value]?.agent?.disabled) return false;
+ 			if (typeof window !== "undefined" && isLocalUrl(window.location.href)) return true;
+ 			return Boolean(configList.value[activeSlug.value]?.agent?.key);
+@@ -830,13 +823,14 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+ 		* installation instructions).
+ 		*/
+ 		const generateSdk = useGenerateSdk({
+-			disabled: () => mergedConfig.value.showDeveloperTools === "never",
++			disabled: () => !NELCOTA_HOSTED_FEATURES || mergedConfig.value.showDeveloperTools === "never",
+ 			hasDocument: () => isOpenApiDocument(workspaceStore.workspace.activeDocument),
+ 			hasSdk: () => hasRenderableSdks(workspaceStore.workspace.activeDocument)
+ 		});
++		provide(GENERATE_SDK_CONTEXT_SYMBOL, generateSdk);
+ 		/** Only mounted while Generate SDK is offered, so public hosts never fetch the dialog chunk */
+-		const GenerateSdkDialog = defineAsyncComponent(() => import("../features/explore-scalar/components/ExploreScalarModal.vue.js"));
+-		const AgentScalarDrawer = defineAsyncComponent(() => import("./AgentScalar/AgentScalarDrawer.vue.js"));
++		const GenerateSdkDialog = NELCOTA_HOSTED_FEATURES && defineAsyncComponent(() => import("../features/explore-scalar/components/ExploreScalarModal.vue.js"));
++		const AgentScalarDrawer = NELCOTA_HOSTED_FEATURES && defineAsyncComponent(() => import("./AgentScalar/AgentScalarDrawer.vue.js"));
+ 		const hasOpenedAgent = ref(false);
+ 		watch(agent.showAgent, (open) => {
+ 			if (open) hasOpenedAgent.value = true;
+@@ -1020,251 +1014,9 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+ 		});
+ 		const bodyScrollLocked = useScrollLock(typeof document !== "undefined" ? document.body : null);
+ 		watch(agent.showAgent, () => bodyScrollLocked.value = agent.showAgent.value);
+-		/**
+-		* Only the browser knows the host. Reading window inside a computed makes the server render one
+-		* footer and the client another (a hydration mismatch), so we resolve it after mount: SSR on
+-		* localhost shows the API client button for one frame, then swaps.
+-		*/
+-		const isLocalhost = ref(false);
+-		onMounted(() => {
+-			isLocalhost.value = isLocalUrl(window.location.href);
+-		});
+-		/**
+-		* Localhost only: the developer toolbar leaves the content column for a sticky bar above the whole
+-		* reference, and the reference renders as a bordered card on a tinted backdrop.
+-		*
+-		* Gated on the host itself rather than on `showDeveloperTools`, so a hosted reference never gets
+-		* the shell, not even with `showDeveloperTools: 'always'` (its toolbar stays in the content column).
+-		* `isLocalhost` resolves after mount, so the server and the hydrating client both render the plain
+-		* layout and the shell appears before the first paint of a client-only mount.
+-		*/
+-		const isShell = computed(() => isLocalhost.value && mergedConfig.value.showDeveloperTools !== "never");
+-		/**
+-		* The shell's side panel shows one developer tool at a time beside the card, which narrows to make
+-		* room for it. Only the toolbar's breakpoint has that room: narrower screens hide the toolbar, keep
+-		* the dialog for Generate SDK, and close the panel when the window shrinks past it.
+-		*/
+-		const shellPanel = useShellPanel(createShellPanelId());
+-		const isWideViewport = useMediaQuery("(min-width: 1000px)");
+-		/**
+-		* Set when the panel's chunk fails to load. The shell then behaves as if it had no room for a panel:
+-		* toggles stay closed and Generate SDK opens its dialog.
+-		*/
+-		const shellPanelFailed = ref(false);
+-		const hasShellPanel = computed(() => isShell.value && isWideViewport.value && !shellPanelFailed.value);
+-		/** Whether focus was last inside the panel, kept by its focusin and focusout */
+-		const shellPanelHadFocus = ref(false);
+-		const onShellPanelFocusOut = (event) => {
+-			if (event.relatedTarget !== null) shellPanelHadFocus.value = false;
+-		};
+-		/** Whether focus is in the panel, which then hands it back to the trigger when the panel goes away */
+-		const isFocusInShellPanel = () => document.getElementById(shellPanel.id)?.contains(document.activeElement) ?? false;
+-		/**
+-		* Closes the panel from outside it (the window narrowed, its tool stopped applying). Focus inside it
+-		* goes back to the trigger, or to the content when the trigger is hidden with the toolbar, so
+-		* keyboard users carry on from the reference rather than the top of the page.
+-		*/
+-		const closeShellPanelFromOutside = () => {
+-			const hadFocus = isFocusInShellPanel() || shellPanelHadFocus.value && document.activeElement === document.body;
+-			shellPanelHadFocus.value = false;
+-			shellPanel.close({ restoreFocus: hadFocus });
+-			const active = document.activeElement;
+-			const backOnTrigger = active instanceof HTMLElement && active !== document.body && active.checkVisibility?.() !== false;
+-			if (hadFocus && !backOnTrigger) {
+-				const content = referenceLayout.value?.querySelector(".references-rendered");
+-				if (content) {
+-					content.setAttribute("tabindex", "-1");
+-					content.focus({ preventScroll: true });
+-					content.addEventListener("blur", () => content.removeAttribute("tabindex"), { once: true });
+-				}
+-			}
+-		};
+-		watch(hasShellPanel, (available) => {
+-			if (!available) closeShellPanelFromOutside();
+-		});
+-		/**
+-		* A panel only makes sense while its tool does: sharing, deploying and Generate SDK need a document,
+-		* and Generate SDK only applies to an OpenAPI document without SDKs of its own.
+-		*/
+-		watch(() => shellPanel.active.value === "sdk" ? generateSdk.enabled.value : shellPanel.active.value === "share" || shellPanel.active.value === "deploy" ? Boolean(workspaceStore.workspace.activeDocument) : true, (available) => {
+-			if (!available) closeShellPanelFromOutside();
+-		});
+-		/**
+-		* The panel's component, fetched once the shell is active, so a hosted reference never loads it.
+-		* Held as a resolved component (not an async wrapper) so a panel renders in the same tick it opens,
+-		* which lets the reading position below be measured around that change.
+-		*/
+-		const ShellPanelComponent = shallowRef();
+-		let shellPanelChunk;
+-		const loadShellPanel = () => shellPanelChunk ??= import("../features/developer-tools/DeveloperToolsPanel.vue.js").then((module) => {
+-			ShellPanelComponent.value = module.default;
+-		}).catch((error) => {
+-			shellPanelFailed.value = true;
+-			console.error(error);
+-		});
+-		watch(isShell, (shell) => {
+-			if (shell) loadShellPanel();
+-		});
+-		const isShellPanelShown = computed(() => ShellPanelComponent.value !== void 0 && hasShellPanel.value && shellPanel.active.value !== void 0);
+-		/**
+-		* Only the shell adds attributes to the root, so a hosted reference renders the same `<div>` as
+-		* before. The shell follows the reference's text direction, so the toolbar, the card and the panel
+-		* mirror together. `data-shell-panel` marks the narrower card, which the agent drawer stays inside.
+-		*/
+-		const shellAttrs = computed(() => isShell.value ? {
+-			"class": "scalar-app references-shell",
+-			"dir": apiReferenceLocalization.direction.value,
+-			"data-shell-panel": isShellPanelShown.value ? "" : void 0
+-		} : {});
+-		/** The reference card, which the reading position and the focus fallback look into */
+-		const referenceLayout = useTemplateRef("documentEl");
+-		/**
+-		* The element the reader is looking at: the first piece of content that starts at or just below the
+-		* toolbar, in the left column where people read. Scanning down from the toolbar finds it even when
+-		* the line itself crosses padding or a container whose inside reflows. Sticky boxes (the example
+-		* column, for one) stay put while the page scrolls, so they never anchor anything. When nothing
+-		* qualifies, the section the sidebar marks as current anchors instead.
+-		*/
+-		const findReadingAnchor = () => {
+-			const content = referenceLayout.value?.querySelector(".references-rendered");
+-			const toolbar = document.querySelector(".references-shell-toolbar");
+-			if (!content || !toolbar) return null;
+-			const area = content.getBoundingClientRect();
+-			const line = Math.max(area.top, toolbar.getBoundingClientRect().bottom);
+-			const isPinned = (element) => {
+-				for (let current = element; current && current !== content; current = current.parentElement) {
+-					const { position } = getComputedStyle(current);
+-					if (position === "sticky" || position === "fixed") return true;
+-				}
+-				return false;
+-			};
+-			for (let y = line + 4; y < line + 240; y += 12) for (const fraction of [
+-				.05,
+-				.15,
+-				.3
+-			]) {
+-				const hit = document.elementFromPoint(area.left + area.width * fraction, y);
+-				if (!hit || hit === content || !content.contains(hit)) continue;
+-				const { top, height } = hit.getBoundingClientRect();
+-				if (top >= line - 4 && height > 0 && height < 240 && !isPinned(hit)) return hit;
+-			}
+-			const selectedId = sidebarState.selectedItem.value;
+-			const section = selectedId ? document.getElementById(selectedId) : null;
+-			return section && content.contains(section) ? section : null;
+-		};
+-		/**
+-		* Opening or closing the panel changes the card's width, and the content reflows with it (operations
+-		* switch between one and two columns around 900px). Keep what the reader was looking at in place, so
+-		* the page does not jump to another operation and the address bar keeps pointing at the same one.
+-		* Runs before the panel renders, measures, then corrects the scroll once the new layout is in.
+-		*/
+-		watch(isShellPanelShown, () => {
+-			const anchor = findReadingAnchor();
+-			if (!anchor) return;
+-			const before = anchor.getBoundingClientRect().top;
+-			nextTick(() => {
+-				if (!anchor.isConnected) return;
+-				const shift = anchor.getBoundingClientRect().top - before;
+-				if (Math.abs(shift) >= 1) window.scrollBy({
+-					top: shift,
+-					behavior: "instant"
+-				});
+-			});
+-		}, { flush: "pre" });
+-		/** Opens or closes a panel from the toolbar; nothing to open when the panel could not load */
+-		const toggleShellPanel = (panel) => {
+-			if (!hasShellPanel.value) return;
+-			loadShellPanel();
+-			shellPanel.toggle(panel);
+-		};
+-		/**
+-		* Wide localhost screens show the Explore Scalar content in the shell's side panel instead of the
+-		* dialog. Focus follows it there, unless the button sits in the toolbar right above the panel.
+-		*/
+-		const openGenerateSdk = () => {
+-			if (!hasShellPanel.value) {
+-				generateSdk.open();
+-				return;
+-			}
+-			const fromToolbar = document.activeElement?.closest(".references-shell-toolbar") != null;
+-			loadShellPanel();
+-			shellPanel.toggle("sdk", { focus: !fromToolbar });
+-		};
+-		provide(GENERATE_SDK_CONTEXT_SYMBOL, {
+-			...generateSdk,
+-			open: openGenerateSdk,
+-			panel: {
+-				id: shellPanel.id,
+-				active: hasShellPanel,
+-				expanded: computed(() => shellPanel.active.value === "sdk")
+-			}
+-		});
+-		const sidebarCta = computed(() => {
+-			const { mcp, hideClientButton } = mergedConfig.value;
+-			if (!mcp?.disabled && (mcp?.name || mcp?.url)) return "mcp";
+-			if (isShell.value) return null;
+-			if (mcp?.disabled) return hideClientButton ? null : "client";
+-			if (isLocalhost.value) return hideClientButton ? null : "client";
+-			if (mcp) return "mcp";
+-			return hideClientButton ? null : "client";
+-		});
+ 		return (_ctx, _cache) => {
+-			return openBlock(), createElementBlock("div", normalizeProps(guardReactiveProps(shellAttrs.value)), [
++			return openBlock(), createElementBlock("div", null, [
+ 				(openBlock(), createBlock(resolveDynamicComponent("style"), { innerHTML: styleContent.value }, null, 8, ["innerHTML"])),
+-				isShell.value ? (openBlock(), createElementBlock(Fragment, { key: 0 }, [
+-					createVNode(unref(DeveloperTools_default), {
+-						overrides: configurationOverrides.value,
+-						"onUpdate:overrides": _cache[0] || (_cache[0] = ($event) => configurationOverrides.value = $event),
+-						activePanel: unref(shellPanel).active.value,
+-						class: "references-developer-tools references-shell-toolbar",
+-						configuration: mergedConfig.value,
+-						externalUrls: mergedConfig.value.externalUrls,
+-						panelId: unref(shellPanel).id,
+-						variant: "shell",
+-						workspace: unref(workspaceStore).workspace.activeDocument ? unref(workspaceStore) : void 0,
+-						onTogglePanel: toggleShellPanel
+-					}, null, 8, [
+-						"overrides",
+-						"activePanel",
+-						"configuration",
+-						"externalUrls",
+-						"panelId",
+-						"workspace"
+-					]),
+-					isShellPanelShown.value ? (openBlock(), createBlock(resolveDynamicComponent(ShellPanelComponent.value), {
+-						key: 0,
+-						id: unref(shellPanel).id,
+-						overrides: configurationOverrides.value,
+-						"onUpdate:overrides": _cache[1] || (_cache[1] = ($event) => configurationOverrides.value = $event),
+-						class: "references-shell-panel",
+-						configuration: mergedConfig.value,
+-						documentKey: unref(workspaceStore).workspace["x-scalar-active-document"],
+-						externalUrls: mergedConfig.value.externalUrls,
+-						focusRequest: unref(shellPanel).focusRequest.value,
+-						integration: mergedConfig.value._integration,
+-						panel: unref(shellPanel).active.value,
+-						url: documentUrl.value,
+-						workspace: unref(workspaceStore).workspace.activeDocument ? unref(workspaceStore) : void 0,
+-						onClose: _cache[2] || (_cache[2] = ($event) => unref(shellPanel).close({ restoreFocus: true })),
+-						onFocusin: _cache[3] || (_cache[3] = ($event) => shellPanelHadFocus.value = true),
+-						onFocusout: onShellPanelFocusOut
+-					}, null, 40, [
+-						"id",
+-						"overrides",
+-						"configuration",
+-						"documentKey",
+-						"externalUrls",
+-						"focusRequest",
+-						"integration",
+-						"panel",
+-						"url",
+-						"workspace"
+-					])) : createCommentVNode("", true),
+-					_cache[16] || (_cache[16] = createElementVNode("div", {
+-						"aria-hidden": "true",
+-						class: "references-shell-frame"
+-					}, null, -1))
+-				], 64)) : createCommentVNode("", true),
+ 				createElementVNode("div", {
+ 					ref: "documentEl",
+ 					class: normalizeClass(["scalar-app scalar-api-reference references-layout", [{
+@@ -1273,13 +1025,12 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+ 						"references-editable": mergedConfig.value.isEditable,
+ 						"references-sidebar": mergedConfig.value.showSidebar,
+ 						"references-sidebar-mobile-open": isSidebarOpen.value,
+-						"references-classic": mergedConfig.value.layout === "classic",
+-						"references-shell-card": isShell.value
++						"references-classic": mergedConfig.value.layout === "classic"
+ 					}, _ctx.$attrs.class]]),
+ 					dir: unref(apiReferenceLocalization).direction.value,
+ 					lang: documentLang.value
+ 				}, [
+-					unref(generateSdk).enabled.value ? (openBlock(), createBlock(unref(GenerateSdkDialog), {
++					NELCOTA_HOSTED_FEATURES && unref(generateSdk).enabled.value ? (openBlock(), createBlock(unref(GenerateSdkDialog), {
+ 						key: 0,
+ 						externalUrls: mergedConfig.value.externalUrls,
+ 						morphStickers: false,
+@@ -1293,7 +1044,7 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+ 						"url",
+ 						"workspace"
+ 					])) : createCommentVNode("", true),
+-					unref(agent).agentEnabled.value && hasOpenedAgent.value ? (openBlock(), createBlock(unref(AgentScalarDrawer), {
++					NELCOTA_HOSTED_FEATURES && unref(agent).agentEnabled.value && hasOpenedAgent.value ? (openBlock(), createBlock(unref(AgentScalarDrawer), {
+ 						key: 1,
+ 						agentScalarConfiguration: configList.value[activeSlug.value]?.agent,
+ 						externalUrls: mergedConfig.value.externalUrls,
+@@ -1359,7 +1110,7 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+ 									"hideModels",
+ 									"modelsSectionLabel",
+ 									"searchHotKey"
+-								]), unref(agent).agentEnabled.value ? (openBlock(), createBlock(unref(AgentScalarButton_default), { key: 0 })) : createCommentVNode("", true)])) : createCommentVNode("", true),
++								]), NELCOTA_HOSTED_FEATURES && unref(agent).agentEnabled.value ? (openBlock(), createBlock(unref(AgentScalarButton_default), { key: 0 })) : createCommentVNode("", true)])) : createCommentVNode("", true),
+ 								renderSlot(_ctx.$slots, "sidebar-start", normalizeProps(guardReactiveProps(slotProps.value)), void 0, true)
+ 							]),
+ 							before: withCtx(() => [createVNode(unref(AsyncApiSidebarFilters_default), {
+@@ -1396,7 +1147,7 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+ 									modelValue: colorMode.value === "dark",
+ 									"onUpdate:modelValue": _cache[7] || (_cache[7] = () => unref(toggleColorMode)())
+ 								}, null, 8, ["modelValue"])) : (openBlock(), createElementBlock("span", _hoisted_4))]),
+-								default: withCtx(() => [sidebarCta.value === "client" ? (openBlock(), createBlock(unref(OpenApiClientButton), {
++								default: withCtx(() => [!mergedConfig.value.hideClientButton ? (openBlock(), createBlock(unref(OpenApiClientButton), {
+ 									key: 0,
+ 									buttonSource: "sidebar",
+ 									integration: mergedConfig.value._integration,
+@@ -1406,17 +1157,6 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+ 									"integration",
+ 									"isDevelopment",
+ 									"url"
+-								])) : createCommentVNode("", true), sidebarCta.value === "mcp" ? (openBlock(), createBlock(unref(OpenMCPButton_default), {
+-									key: 1,
+-									config: mergedConfig.value.mcp,
+-									externalUrls: mergedConfig.value.externalUrls,
+-									url: documentUrl.value,
+-									workspace: unref(workspaceStore)
+-								}, null, 8, [
+-									"config",
+-									"externalUrls",
+-									"url",
+-									"workspace"
+ 								])) : createCommentVNode("", true)]),
+ 								_: 1
+ 							})], true)]),
+@@ -1475,20 +1215,6 @@ var ApiReference_vue_vue_type_script_setup_true_lang_default = /*@__PURE__*/ def
+ 								ref_key: "documentStartRef",
+ 								ref: documentStartRef
+ 							}, null, 512),
+-							!isShell.value && unref(workspaceStore).workspace.activeDocument ? (openBlock(), createBlock(unref(DeveloperTools_default), {
+-								key: 0,
+-								overrides: configurationOverrides.value,
+-								"onUpdate:overrides": _cache[11] || (_cache[11] = ($event) => configurationOverrides.value = $event),
+-								class: "references-developer-tools",
+-								configuration: mergedConfig.value,
+-								externalUrls: mergedConfig.value.externalUrls,
+-								workspace: unref(workspaceStore)
+-							}, null, 8, [
+-								"overrides",
+-								"configuration",
+-								"externalUrls",
+-								"workspace"
+-							])) : createCommentVNode("", true),
+ 							mergedConfig.value.layout === "classic" ? (openBlock(), createBlock(ClassicHeader_default, { key: 1 }, {
+ 								"dark-mode-toggle": withCtx(() => [!mergedConfig.value.hideDarkModeToggle && !mergedConfig.value.forceDarkModeState ? (openBlock(), createBlock(unref(ScalarColorModeToggleIcon), {
+ 									key: 0,
