@@ -8,9 +8,8 @@ permissions:
 
 jobs:
   stress:
-    # Dedicated host with at least three CPUs and Docker. Heavy load is kept
-    # off pull-request runners and uses explicit per-container budgets.
-    runs-on: [self-hosted, linux, x64, nelcota-benchmark]
+    # The public Ubuntu runner has the CPU slots required by the campaign.
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
