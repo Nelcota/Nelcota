@@ -74,10 +74,15 @@ that final commit before creating its `v<version>` tag.
 
 The server [release workflow](../../.github/workflows/release.yml) builds
 checksum-protected Linux amd64/arm64 musl binaries and publishes
-`ghcr.io/nelcota/nelcota-server:<version>`. Verify the released binary checksum,
-image availability and the Notes installation before updating a public
-staging project. Tags and registry packages are separate publication actions;
-none is performed by the local acceptance runner.
+`ghcr.io/nelcota/nelcota-server:<version>`. Before publishing, the workflow
+requires a stable tag that matches the workspace version and successful main
+CI for that commit. Retry the run for that tag to retain the tagged provenance.
+This policy applies to tags that contain the updated workflow. After publishing
+the signed receipt, the workflow updates GHCR `latest` only if the tag is
+still the newest stable tag. Verify the released binary checksum, image
+availability and the Notes installation before updating a public staging
+project. Tags and registry packages are separate publication actions. The
+local acceptance runner leaves both untouched.
 
 Auth/core publication and the SDKs have independent gates. Keep the TypeScript
 cross-tab persistence fix in its own package changelog and version before

@@ -13,6 +13,11 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: nelcota-sdk-release
+  cancel-in-progress: false
+  queue: max
+
 jobs:
   verify:
     uses: ./.github/workflows/sdk-check.yml
@@ -20,6 +25,7 @@ jobs:
   publish:
     needs: verify
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: npm
     permissions:
       contents: read
@@ -52,9 +58,13 @@ jobs:
         id: published
         run: |
           version=$(bun -p "require('./package.json').version")
-          if npm view "@nelcota/client@$version" version >/dev/null 2>&1; then
+          if published=$(npm view "@nelcota/client@$version" version --json); then
+            jq -e --arg version "$version" '. == $version' <<< "$published" >/dev/null
             echo "::notice::@nelcota/client@$version is already on npm"
             echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif ! jq -e '.error.code == "E404"' <<< "$published" >/dev/null; then
+            echo "::error::Could not verify whether @nelcota/client@$version is published"
+            exit 1
           fi
       - if: steps.published.outputs.skip != 'true'
         run: bun install --frozen-lockfile
