@@ -1,0 +1,53 @@
+{
+  "binary_sha256": "b0ea38f68ad0f45b1122b0b93ad7ae16dbd33cc0073855b6ba005896a6b7263b",
+  "git": "cd741a88ceec2456297983c7918dc48be03bb8ee",
+  "dirty": false,
+  "cpu_count": 4,
+  "cpu_affinity": [
+    0,
+    1,
+    2
+  ],
+  "app_cpus": 1,
+  "app_memory_mb": 128,
+  "pg_cpus": 1,
+  "pg_memory_mb": 384,
+  "generator_memory_mb": 512,
+  "generator_go_memory_limit_mib": 448,
+  "pg_data": "disposable disk volume",
+  "max_wal_mb": 64,
+  "max_fixture_disk_mb": 512,
+  "pool": 8,
+  "max_connections": 40,
+  "k6": "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+  "storage_backend": "disk",
+  "steady_rate": 0,
+  "steady_duration": "30s",
+  "workloads": [
+    "read",
+    "rls",
+    "panel",
+    "storage",
+    "login",
+    "refresh",
+    "mixed"
+  ],
+  "postgres_version": "PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "images": {
+    "ubuntu:24.04": [
+      "ubuntu@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852"
+    ],
+    "postgres:17-alpine": [
+      "postgres@sha256:e5d2edd28b1f8d40a0a6c0c9cdc545b19b56a0d5d88f94bc11a97d970d4700d0"
+    ],
+    "grafana/k6:1.6.1@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1": [
+      "grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1"
+    ]
+  },
+  "dataset": {
+    "products": 100000,
+    "private": 100000,
+    "objects": 10000
+  },
+  "started_utc": "2026-11-11T23:38:25Z"
+}
