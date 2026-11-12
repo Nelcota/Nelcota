@@ -11,6 +11,8 @@ jobs:
     # The public Ubuntu runner has the CPU slots required by the campaign.
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    env:
+      BENCHMARK_BASELINE: bench/baselines/github-ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -18,8 +20,18 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.99.1'
+      - name: Prepare the baseline fixture images
+        shell: bash
+        run: |
+          for image in ubuntu:24.04 postgres:17-alpine; do
+            reference=$(jq -er --arg image "$image" '.images[$image][0]' "$BENCHMARK_BASELINE/metadata.json")
+            docker pull "$reference"
+            docker tag "$reference" "$image"
+          done
       - run: nice -n19 ionice -c3 cargo build --locked --release -p nelcota-server
       - run: nice -n19 ionice -c3 python3 bench/campaign.py --binary target/release/nelcota --output target/stress-report
+      - name: Check for performance regressions
+        run: python3 bench/compare.py "$BENCHMARK_BASELINE" target/stress-report --output target/stress-report/comparison.json
       - name: Campaign diagnostics
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
